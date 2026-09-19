@@ -876,6 +876,35 @@ a {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+select {
+  font: inherit;
+  font-size: 12px;
+  border: 1px solid var(--line-2);
+  border-radius: 5px;
+  padding: 4px 30px 4px 10px;
+  background: var(--surface);
+  color: var(--ink);
+  min-height: 28px;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+  background-size: 13px;
+}
+select:hover {
+  border-color: var(--muted);
+}
+select:focus {
+  outline: none;
+  border-color: var(--action);
+  box-shadow: 0 0 0 3px var(--action-soft);
+}
+select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .vsel {
   display: flex;
   align-items: center;
@@ -887,12 +916,10 @@ a {
   border-left: 1px solid var(--line-2);
 }
 .vsel select {
-  border: 1px solid var(--line-2);
-  border-radius: var(--r);
-  padding: 3px 22px 3px 8px;
-  font: inherit;
-  font-size: 12px;
-  background-color: var(--surface);
+  min-height: 26px;
+  padding: 3px 27px 3px 9px;
+  background-position: right 8px center;
+  background-size: 12px;
 }
 
 .canvas {
