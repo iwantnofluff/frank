@@ -87,6 +87,36 @@ Storage), Zustand for light UI state, TanStack Query for all server state.
   (`set_agency_id_from_project()` is one instance — see
   `phase6_shared_links.sql`), not by trusting a client-supplied `agency_id`
   on insert.
+- The service-role client has no `auth.uid()` — it isn't signed in as
+  anyone. Anything keyed on caller identity behaves differently under it
+  than it would for a real user. `comments_enforce_visibility()`
+  (`supabase/seed.sql`) is the concrete instance that actually bit a test
+  once: it calls `is_agency_staff(agency_id)`, which checks `auth.uid()`,
+  and silently coerces `visibility` to `'public'` for anyone it doesn't
+  recognise as staff — including a service-role insert, which it can never
+  recognise as staff since there's no caller to check. A seed script that
+  inserts a "private" comment through the service-role client gets a public
+  one back with no error, and won't notice unless it reads the row back
+  before asserting anything against it. See
+  `docs/comment-visibility-verification.md` for the full account of this
+  going wrong once, and the corrected fixture shape.
+  The `set_agency_id_from_*` triggers are a related but distinct case: they
+  also silently overwrite a column your insert tried to set (`agency_id`,
+  always, for every caller), but they derive it from the parent row, not
+  from `auth.uid()` — a service-role insert isn't specifically affected
+  differently there, any caller's explicit `agency_id` gets overridden the
+  same way. The shared lesson for a seed script either way is the same:
+  don't assume the row you get back matches the payload you sent just
+  because the insert didn't error. Where a test genuinely needs a value
+  that depends on *who's calling* (visibility being the current example,
+  anything else keyed on `auth.uid()`/`is_agency_staff()`/`is_agency_admin()`
+  in the future), seed it through a real authenticated session — sign in
+  with the anon key, insert through that client — not the service-role
+  client. The Phase 4 test fixture (`tests/e2e/`) follows this: fixture
+  setup (agency/users/client/project/creative) still uses the service-role
+  client, since none of those rows care who's calling, but anything
+  asserting on a caller-dependent value is seeded through a signed-in
+  session instead.
 - Public/unauthenticated flows (the shared-review link) don't lean on RLS at
   all: the relevant Postgres functions are `SECURITY DEFINER` and look the
   row up themselves after validating a token (and passcode, if set). Anon
