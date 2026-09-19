@@ -39,7 +39,7 @@ export function LoginForm() {
       <h1 className="h1">Sign in to Frank</h1>
       <p className="sub">Use the account your agency invited you with.</p>
 
-      <label className="field">
+      <label className="authfield">
         <span>Email</span>
         <input
           type="email"
@@ -51,7 +51,7 @@ export function LoginForm() {
         />
       </label>
 
-      <label className="field">
+      <label className="authfield">
         <span>Password</span>
         <input
           type="password"
