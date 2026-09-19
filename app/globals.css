@@ -882,7 +882,16 @@ body.lightrail .avatar {
   cursor: pointer;
 }
 
-/* Creative review — the split stage/comments screen */
+/* Creative review — the split stage/comments screen.
+   Known, deliberate drift from the prototype's own .review (confirmed by
+   scripts/css-coverage.mjs): the prototype is
+   `grid-template-columns:0 minmax(0,1fr) 427px` with a .22s transition and
+   two extra state classes, .review.feedrailed / .review.withfeed, that
+   widen the first column into an Instagram feed/grid panel. That panel
+   needs a platform-connections feature (OAuth + synced feed data) this
+   schema doesn't have — porting the empty column and its states would be
+   dead CSS with nothing to put in it. Left as a plain two-column grid on
+   purpose. See docs/parity-gaps.md. */
 
 .review {
   display: grid;
