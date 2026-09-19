@@ -1667,9 +1667,12 @@ select:disabled {
   padding: 4px 0;
 }
 
-/* Generic modal */
+/* Generic modal — .scrim matches frank-prototype.html's own name for this
+   (the prototype toggles it with .scrim.on; this app mounts/unmounts the
+   component instead, same pattern as .awaiting/.brief/.replybox, so there's
+   no .on variant here). */
 
-.modal-backdrop {
+.scrim {
   position: fixed;
   inset: 0;
   background: rgba(20, 22, 26, 0.45);

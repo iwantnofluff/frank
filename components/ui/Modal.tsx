@@ -22,7 +22,7 @@ export function Modal({
   }, [onClose]);
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="scrim" onClick={onClose}>
       <div
         className="modal"
         role="dialog"
