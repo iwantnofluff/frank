@@ -110,7 +110,11 @@ export const test = base.extend<{ frank: Frank }>({
         name: "E2E Test Creative",
         format: "ig_feed",
         stage: 5,
-        scheduled_at: new Date(Date.now() + 86400000).toISOString(),
+        // Fixed, not Date.now()-relative — the page renders this with
+        // exact hour:minute via toLocaleString, so a relative timestamp
+        // makes the screenshot's text non-deterministic between runs and
+        // fails toHaveScreenshot on nothing but wall-clock drift.
+        scheduled_at: "2027-03-15T14:00:00.000Z",
         created_by: staffAuth.user.id,
       })
       .select("id")
