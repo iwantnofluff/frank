@@ -304,6 +304,74 @@ a {
   color: var(--rail);
 }
 
+/* body.lightrail — complete alternate rail/topbar theme (prototype lines
+   ~76-93). Ported as one block, matching every declaration verbatim; no UI
+   currently sets this class on <body> (same as body.comfortable, above —
+   neither has a settings toggle wired up yet). */
+body.lightrail .crumb {
+  color: rgba(0, 0, 0, 0.55);
+}
+body.lightrail .crumb b {
+  color: var(--ink);
+}
+body.lightrail .crumb .sep {
+  color: rgba(0, 0, 0, 0.25);
+}
+body.lightrail .crumb button {
+  color: rgba(0, 0, 0, 0.62);
+}
+body.lightrail .crumb button:hover {
+  color: var(--action);
+}
+body.lightrail .search {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.12);
+  color: rgba(0, 0, 0, 0.6);
+}
+body.lightrail .kbd {
+  border-color: rgba(0, 0, 0, 0.2);
+}
+body.lightrail .bell {
+  color: rgba(0, 0, 0, 0.6);
+}
+body.lightrail .bell:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--ink);
+}
+body.lightrail .modeswitch {
+  border-color: rgba(0, 0, 0, 0.2);
+}
+body.lightrail .modeswitch .msl {
+  color: rgba(0, 0, 0, 0.45);
+}
+body.lightrail .modeswitch button {
+  color: rgba(0, 0, 0, 0.6);
+}
+body.lightrail .modeswitch button[aria-pressed="true"] {
+  background: var(--ink);
+  color: #fff;
+}
+body.lightrail .topbar .btn.primary {
+  background: var(--action);
+  color: #fff;
+}
+body.lightrail .rbtn {
+  color: rgba(0, 0, 0, 0.55);
+}
+body.lightrail .rbtn:hover,
+body.lightrail .rbtn[aria-current="true"] {
+  background: rgba(0, 0, 0, 0.09);
+  color: var(--ink);
+}
+body.lightrail .mark {
+  background: var(--action);
+  color: #fff;
+}
+body.lightrail .avatar {
+  background: rgba(0, 0, 0, 0.18);
+  color: var(--ink);
+}
+
 .search {
   display: flex;
   align-items: center;
