@@ -142,6 +142,12 @@ function Composer({
               checked={internal}
               onChange={(e) => setInternal(e.target.checked)}
             />
+            <span className="lockic">
+              <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M3 12h18M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18" />
+              </svg>
+            </span>
             Mark internal
           </label>
         ) : lockedPrivate ? (
@@ -185,7 +191,7 @@ function CommentCard({
   return (
     <div
       id={`cmt-${thread.id}`}
-      className={`cmt${thread.resolved_at ? " resolved" : ""}${isHighlighted ? " act" : ""}`}
+      className={`cmt${thread.resolved_at ? " resolved" : ""}${isHighlighted ? " act" : ""}${thread.visibility === "private" ? " internal" : ""}`}
       onClick={thread.anchor ? onSelect : undefined}
       style={thread.anchor ? { cursor: "pointer" } : undefined}
     >

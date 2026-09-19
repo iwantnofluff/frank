@@ -1261,6 +1261,10 @@ a {
 .cmt.resolved {
   opacity: 0.55;
 }
+/* Internal notes are marked hard, because the cost of one leaking is high */
+.cmt.internal {
+  border-color: var(--private);
+}
 .cmt-h {
   display: flex;
   align-items: center;
@@ -1377,6 +1381,25 @@ a {
   height: 14px;
   accent-color: var(--action);
   margin: 0;
+}
+.intog .lockic {
+  display: none;
+}
+.intog .lockic svg {
+  width: 12px;
+  height: 12px;
+  stroke: var(--action);
+  fill: none;
+  stroke-width: 1.8;
+}
+.intog:has(input:checked) {
+  color: var(--action);
+  border-color: var(--action);
+  font-weight: 600;
+}
+.intog:has(input:checked) .lockic {
+  display: grid;
+  place-items: center;
 }
 
 /* Custom columns — the "+ Add column" form and inline cell editors */
