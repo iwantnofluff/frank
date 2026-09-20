@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Frank
 
-## Getting Started
+A multi-tenant SaaS for agency content planning, review and client approval. Next.js App Router, TypeScript, Supabase (Postgres + Auth + Storage), Zustand for light UI state, TanStack Query for all server state.
 
-First, run the development server:
+The UI source of truth is `project-details/frank-prototype.html`, a static HTML/CSS/JS prototype. It is read-only — never edit it. Every authenticated screen in the app is meant to be a faithful CSS/DOM port of the matching screen in that file; see the `prototype-parity` skill (`.claude/skills/prototype-parity/`) for the working method, and `docs/css-coverage.md` / `docs/parity-gaps.md` for the current state of that port.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Prerequisites
+
+- Node 20.6 or later. Some scripts in this repo (`scripts/*.mjs`) use the built-in `process.loadEnvFile`, which needs it.
+- A Supabase project (see below).
+
+## Environment variables
+
+Copy these into `.env.local` at the repo root (gitignored — never commit it):
+
+```
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+All three come from your Supabase project's dashboard, under **Project Settings → API**:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `NEXT_PUBLIC_SUPABASE_URL` — the Project URL.
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` — the `anon` `public` key. Safe to expose client-side; RLS is what actually restricts it.
+- `SUPABASE_SERVICE_ROLE_KEY` — the `service_role` key. **Never expose this to the client or commit it.** It bypasses RLS entirely. It's used server-side only (`app/api/shared-review/route.ts`, for signing Storage URLs) and in one-off Node scripts under `scripts/` and `tests/e2e/fixtures.ts` for test/audit data seeding. See the "seeding through the service-role client" note in `frank-conventions` before writing anything new that uses it — it has no `auth.uid()`, and several triggers key off caller identity.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Supabase project setup
 
-## Learn More
+1. Create a new Supabase project.
+2. In the SQL editor, run `supabase/seed.sql` in full. It's a complete schema — every table, type, RLS policy, trigger and helper function needed, including everything phases 1 through 8 added (confirmed against the live project this was developed against; see `docs/phase5-baseline-note.md` for how that was verified). You do not need to also run anything under `supabase/migrations/` — those are the incremental history of how the current project's schema got here, already folded into `seed.sql`, not additional setup steps for a fresh one.
+3. In **Storage**, confirm the `assets` bucket exists (created by `seed.sql`'s storage section) and is **not** public — files are only ever reached through signed URLs.
+4. In **Authentication → Providers**, email/password is all this app currently uses. No further provider setup needed.
+5. Create your first user through Supabase Auth (dashboard or `auth.admin.createUser`), then give them a `public.users` row and an agency `membership` with `role = 'admin'` and `client_id = null` — there's no self-serve signup or invite flow yet, so the first account has to be seeded directly.
 
-To learn more about Next.js, take a look at the following resources:
+## Commands
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run dev        # dev server, localhost:3000
+npm run build      # production build
+npm run start      # run a production build
+npm run lint       # eslint
+npm run test:e2e   # Playwright visual-regression suite (tests/e2e/)
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`test:e2e` requires the dev server already running on port 3000 and `SUPABASE_SERVICE_ROLE_KEY` set — it creates and tears down real, throwaway data through the service-role key for each test (see `tests/e2e/fixtures.ts`). It compares screenshots against baselines committed under `tests/e2e/*-snapshots/`; to update a baseline after an intentional UI change, run `npm run test:e2e -- --update-snapshots` and review the diff before committing the new image.
 
-## Deploy on Vercel
+## `proxy.ts`, not `middleware.ts`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Auth routing lives in `proxy.ts` at the repo root. This is Next 16's renamed `middleware.ts` — **`middleware.ts` does not exist in this codebase and never will.** If routing/auth seems broken, start there.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Where things live
+
+- `app/` — routes (App Router). `(app)/` is the authenticated shell; `login/` and `review/[token]/` are public.
+- `components/` — one directory per feature area.
+- `hooks/` — every piece of server state, one TanStack Query hook per resource. Components never call `fetch` or `supabase-js` directly.
+- `app/globals.css` — hand-ported plain CSS from the prototype. No Tailwind, no CSS-in-JS, no component library.
+- `supabase/` — `seed.sql` (full schema) and `migrations/` (incremental history from `phase6_shared_links.sql` onward, plus `phase0_baseline.sql`, a reconstruction of what predates it — see `docs/phase5-baseline-note.md`).
+- `docs/` — `css-coverage.md` (prototype-vs-app CSS audit), `parity-gaps.md` (things the prototype does that the app deliberately doesn't yet, and why), `comment-visibility-verification.md`, `phase5-baseline-note.md`.
+- `.claude/skills/` — `frank-conventions` and `prototype-parity`, the standing rules for working in this codebase.
