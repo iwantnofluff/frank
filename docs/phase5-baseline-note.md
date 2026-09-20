@@ -27,3 +27,7 @@ Closing any of these needs a direct Postgres connection (a database password —
 ## What was produced
 
 `supabase/migrations/phase0_baseline.sql` — `seed.sql`'s content for everything not already covered by the four existing migration files, extracted (not retyped) with exactly two adjustments needed to stay replayable in sequence before them: `creatives` omits the three columns `phase6_shared_links.sql` adds by `ALTER TABLE`, and `comments` omits the two guest columns (and keeps `author_id` `NOT NULL`) for the same reason. Not applied to the live project.
+
+## Untested — the replay itself has not been run
+
+Checked for a way to actually run it: `docker`, `psql`, `postgres`, `pg_ctl`, and WSL are all absent from this environment (checked directly, not assumed). No local Postgres, no `supabase start` — so applying `phase0_baseline.sql` plus the four existing migrations against an empty database, in order, then re-running `scripts/check-seed-sql-completeness.mjs` against the result, hasn't happened. `phase0_baseline.sql` says this at its own end too, not just here — the two adjustments above are reasoned from reading `phase6_shared_links.sql`'s `ALTER TABLE` statements, and reasoned correctly is not the same as executed successfully. Whoever has a real Postgres to point at should run that replay before relying on this file to rebuild anything.

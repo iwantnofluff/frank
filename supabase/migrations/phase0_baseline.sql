@@ -29,6 +29,19 @@
 -- Applying this file, then the four existing migrations in their existing
 -- order, should reproduce the live schema exactly. NOT applied to the live
 -- project — this is a reconstruction to check, not a change to make.
+--
+-- ** UNTESTED — the replay itself has not been run. ** No local Postgres or
+-- Docker is available in the environment this was written in (checked:
+-- `docker`, `psql`, `postgres`, `pg_ctl`, WSL — none present), so
+-- `supabase start` / a local `supabase db reset` chain (this file + the
+-- four existing migrations, in order, against an empty database, then
+-- scripts/check-seed-sql-completeness.mjs against the result) has not
+-- happened. Everything else in this file was verified — the target schema
+-- against the live database, table by table and column by column — but
+-- whether these statements actually EXECUTE in this order, with no missing
+-- dependency or ordering mistake introduced while extracting them from
+-- seed.sql, is unconfirmed. Run that replay before trusting this file to
+-- rebuild anything.
 
 create extension if not exists pgcrypto;
 create extension if not exists citext;
