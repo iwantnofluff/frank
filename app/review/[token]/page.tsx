@@ -65,6 +65,11 @@ export default function SharedReviewPage({
   const { token } = use(params);
   const controller = useReviewController(token);
   const { data, isLoading, isError, setPasscode } = controller;
+  // Matches the prototype's own default (`let shareView="phone"`) exactly —
+  // not a responsive guess at the visitor's actual device. See
+  // docs/parity-gaps.md for why that's a deliberate, disclosed change from
+  // this page's previous behaviour.
+  const [view, setView] = useState<"phone" | "desktop">("phone");
 
   if (isLoading) {
     return (
@@ -92,7 +97,32 @@ export default function SharedReviewPage({
     typeof window !== "undefined" ? window.location.href : `/review/${token}`;
 
   return (
-    <div className="phonewrap">
+    <div className={`phonewrap${view === "desktop" ? " desk" : ""}`}>
+      <div className="pw-side">
+        <b>Shared review</b>
+        <span>
+          This is what the client opens. The link works on any phone; no
+          account is needed to read the work or the comments.
+        </span>
+        <div className="pw-seg">
+          <button
+            type="button"
+            data-sv="phone"
+            aria-pressed={view === "phone"}
+            onClick={() => setView("phone")}
+          >
+            Phone
+          </button>
+          <button
+            type="button"
+            data-sv="desktop"
+            aria-pressed={view === "desktop"}
+            onClick={() => setView("desktop")}
+          >
+            Desktop
+          </button>
+        </div>
+      </div>
       <MobileReview controller={controller} agencyName={agencyName} />
       <DesktopReview
         controller={controller}

@@ -2060,14 +2060,17 @@ select:disabled {
 
 /* Public review — the shared, unauthenticated /review/[token] page.
    Two full layouts share one data assembly and one set of handlers
-   (developer handover, "One renderer, two shapes") — CSS media queries
-   decide which is visible, not a manual toggle. */
+   (developer handover, "One renderer, two shapes") — which one is visible
+   is a manual .pw-seg toggle (the .desk class on .phonewrap), matching the
+   prototype exactly. See docs/parity-gaps.md for the behaviour change this
+   was — a real visitor's device no longer picks the shape automatically. */
 
 .phonewrap {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 54px;
   background: #101318;
   padding: 24px;
 }
@@ -2541,19 +2544,60 @@ select:disabled {
   color: var(--ink);
 }
 
-/* Mobile-first: phone is the default, browser only above the breakpoint. */
-.phone {
-  display: block;
-}
-.browser {
+/* Which shape shows is a manual toggle (.pw-seg, below), not a media query —
+   matches the prototype's own mechanism exactly (frank-prototype.html:
+   `.phonewrap.desk .phone{display:none}` /
+   `.phonewrap:not(.desk) .browser{display:none}`). Previously this was a
+   min-width:900px media query instead; replaced deliberately (see
+   docs/parity-gaps.md) — a real visitor's own device no longer decides
+   this on its own, the segmented control does, same as the prototype. */
+.phonewrap.desk .phone {
   display: none;
 }
-@media (min-width: 900px) {
-  .phone {
+.phonewrap:not(.desk) .browser {
+  display: none;
+}
+
+/* Phone/Desktop preview toggle, prototype's .pw-side/.pw-seg. */
+.pw-side {
+  width: 290px;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  color: #fff;
+}
+.pw-side b {
+  font-size: 19px;
+  font-weight: 600;
+}
+.pw-side > span {
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.62);
+}
+.pw-seg {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  margin-bottom: 4px;
+}
+.pw-seg button {
+  flex: 1;
+  padding: 6px 0;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+}
+.pw-seg button[aria-pressed="true"] {
+  background: #fff;
+  color: #101318;
+}
+@media (max-width: 1100px) {
+  .pw-side {
     display: none;
-  }
-  .browser {
-    display: flex;
   }
 }
 

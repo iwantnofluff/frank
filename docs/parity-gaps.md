@@ -18,13 +18,20 @@ The base `.review` rule is confirmed Drifted (see `docs/css-coverage.md`): the p
 
 Not restoring this: the leading column and its two states exist entirely to host the feed panel, which requires a platform-connections feature (OAuth to Instagram/Meta, storing and syncing feed data) that doesn't exist in this schema. Porting the grid mechanics without anything to put in that column would just be dead CSS. Left alone deliberately — see the inline comment at `.review` in `app/globals.css`.
 
-## Shared-review preview toggle — missing entirely, not just drifted
+## Shared-review preview toggle — RESOLVED
 
-The prototype's `.phonewrap`/`.browser`/`.phone` were flagged as Drifted in the CSS audit (the app switches phone/browser layout with a `min-width:900px` media query; the prototype uses a `.desk` class toggled by JS). Digging into *why* the prototype does it that way changes the classification: `.phonewrap` is a full-screen overlay (`position:fixed;inset:0;z-index:200`) with its own `.pw-seg` **Phone / Desktop toggle buttons** (`data-sv="phone"` / `data-sv="desktop"`, prototype lines ~1922-1923, wired at ~5341-5344) that let an agency user viewing a share-preview force either layout regardless of their actual viewport — a manual QA/preview control, not a responsive layout.
+Was: the app switched phone/browser layout with a `min-width:900px` media query; the prototype uses a `.desk` class toggled by a `.pw-seg` **Phone / Desktop** segmented control (`data-sv="phone"` / `data-sv="desktop"`, prototype lines ~1922-1923, wired at ~5341-5344) — a manual override, not a responsive layout.
 
-The app has no equivalent: no full-screen preview overlay, no manual phone/desktop toggle, nothing that lets an agency user check "what will this look like on a phone" from their own desktop browser before sending a share link. The `min-width:900px` media query only ever shows what the *viewer's own* device would naturally get — it can't be forced either way.
+**Fixed on `/review/[token]` itself**, not as a separate agency-only overlay. Reading the prototype's actual markup (`#phoneWrap`, lines 1917-1938) and script (`openPhone()`/`#pwClose`/`#pwReset`, ~5075-5100 and ~5340-5346) first showed this control lives inside a `position:fixed;inset:0;z-index:200` overlay triggered from the Share modal's "Preview" button (`#shPreview`) — an agency-only QA view with "Start over" and "Back to the agency view" buttons and a link-metadata readout (`#pwState`: expiry, passcode, approve permission), all addressed to agency staff checking a link before sending it, not to the guest who opens it.
 
-This is a missing feature (an overlay component, two buttons, and the state to drive them), not a value to restore in a CSS pass. Not built here. If picked up later: it would live wherever the Share modal's "preview" action is triggered from (`ShareModal.tsx` doesn't currently have one), needs no new schema (it's pure client-side view state), and should reuse the existing `.phonewrap`/`.pw-seg`/`.browser`/`.phone` CSS once ported rather than inventing new classes.
+Building that exact overlay would mean a new trigger in `ShareModal.tsx`, a new full-screen modal layer, and duplicating the phone/desktop rendering already on the real public page — a bigger feature than "port the toggle mechanism." Instead, the toggle itself was added directly to the page a real guest already opens, since that page already renders both shapes and already needs something to decide which one shows. Two things deliberately left out because they don't apply to that page:
+
+- **`#pwState`'s link-metadata readout** (expiry/passcode/approve-permission) — agency-relevant configuration, not something a guest needs told back to them about their own link, and only partially derivable from `useSharedReview`'s current response shape (`scope`, `can_approve` exist; expiry and passcode-required don't).
+- **"Start over" / "Back to the agency view"** — reset a demo-only sign-in simulation and return to the authenticated app respectively. Neither concept exists for an unauthenticated guest.
+
+**Behaviour change, disclosed, not silent**: the page now defaults to the prototype's own default (`shareView="phone"`) regardless of the visitor's actual device, replacing the previous responsive default. A real visitor on a desktop browser now sees the phone-shaped preview first and has to click "Desktop" — matching the prototype exactly, but a genuine change from what this page did before.
+
+Spec coverage: `tests/e2e/shared-review-public.spec.ts`, one case per state (`shared-review-phone` at the default 1280px viewport, `shared-review-desktop` at 1600px — the browser frame plus `.pw-side` plus the gap between them overflows 1280px once both are on screen).
 
 ## Primary nav — three icons led to a dead 404 — RESOLVED
 

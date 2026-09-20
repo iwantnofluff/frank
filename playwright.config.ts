@@ -9,6 +9,14 @@ export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: false,
   retries: 0,
+  // Each spec's `frank` fixture does real Supabase setup (2 auth users, 6+
+  // rows) before the test body even starts. At the default worker count
+  // (CPU-based, often 8+ on a dev machine) that many fixtures hitting the
+  // dev server and Supabase at once caused a bare page.goto to exceed its
+  // 30s timeout — not a flaky assertion, navigation itself never
+  // completed. Capped rather than raising the timeout, since the timeout
+  // wasn't wrong, the concurrency was.
+  workers: 4,
   reporter: "list",
   use: {
     baseURL: "http://localhost:3000",
