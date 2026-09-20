@@ -837,10 +837,8 @@ body.lightrail .avatar {
   margin-top: 4px;
 }
 
-/* Project view — dual-mode creative table. No prototype equivalent exists
-   for a plain flat list (the prototype's table is the full resizable,
-   reorderable, custom-column grid — a later phase); this is a simplified
-   stand-in built from the same tokens. */
+/* Project view — dual-mode creative table. Rationale for why this doesn't
+   match the prototype's grid: docs/parity-gaps.md. */
 
 .ptable {
   border: 1px solid var(--line);
