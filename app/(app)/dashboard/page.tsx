@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useClients } from "@/hooks/use-clients";
+import { useMyAgency } from "@/hooks/use-my-agency";
+import { useAgencyCreativeStats } from "@/hooks/use-agency-creative-stats";
 import { SearchIcon } from "@/components/app-shell/icons";
 
 type Filter = "active" | "archived";
@@ -19,6 +21,15 @@ function clientInitials(name: string) {
 
 export default function DashboardPage() {
   const { data: clients, isLoading, isError, error } = useClients();
+  const { data: agency } = useMyAgency();
+  // isPending, not isLoading: this query stays disabled (and isLoading
+  // false, since it isn't fetching) until agency.agencyId resolves, so
+  // isLoading alone would flash a false "done, no data" state — the same
+  // shape as the isStaff loading-flash bug — before the query has even
+  // started. isPending stays true the whole time there's no data yet,
+  // disabled or not.
+  const { data: creativeStats, isPending: statsLoading } =
+    useAgencyCreativeStats(agency?.agencyId);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("active");
 
@@ -51,6 +62,22 @@ export default function DashboardPage() {
         <div className="stat">
           <div className="n">{activeCount}</div>
           <div className="l">Active Clients</div>
+        </div>
+        <div className="stat">
+          <div className="n">{statsLoading ? "…" : (creativeStats?.liveProjects ?? 0)}</div>
+          <div className="l">Live Projects</div>
+        </div>
+        <div className="stat">
+          <div className={`n${statsLoading ? "" : " flag"}`}>
+            {statsLoading ? "…" : (creativeStats?.waitingOnApproval ?? 0)}
+          </div>
+          <div className="l">Waiting on Approval</div>
+        </div>
+        <div className="stat">
+          <div className={`n${statsLoading ? "" : " flag"}`}>
+            {statsLoading ? "…" : (creativeStats?.feedbackToAction ?? 0)}
+          </div>
+          <div className="l">Feedback to Action</div>
         </div>
       </div>
 
