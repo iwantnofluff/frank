@@ -4,6 +4,9 @@ import { use } from "react";
 import Link from "next/link";
 import { useClientDetail } from "@/hooks/use-client";
 import { useProjects } from "@/hooks/use-projects";
+import { useProjectCreativeStats } from "@/hooks/use-project-creative-stats";
+import { useUIStore } from "@/store/ui-store";
+import { KBadge } from "@/components/project/KBadge";
 
 function projectInitials(name: string) {
   return name
@@ -40,6 +43,9 @@ export default function ClientWorkspacePage({
     isError: projectsError,
     error: projectsErrorObj,
   } = useProjects(id);
+  const { data: projectStats, isPending: statsPending } =
+    useProjectCreativeStats(id);
+  const previewMode = useUIStore((s) => s.previewMode);
 
   const isLoading = clientLoading || projectsLoading;
 
@@ -88,40 +94,74 @@ export default function ClientWorkspacePage({
         <div className="clients">
           <div className="crow head">
             <div>Project</div>
-            <div>Type</div>
             <div>Creatives</div>
-            <div>Mode</div>
+            <div>Approval progress</div>
+            <div>Status</div>
             <div className="ago">Due</div>
             <div></div>
           </div>
-          {projects.map((p) => (
-            <Link href={`/projects/${p.id}`} className="crow" key={p.id}>
-              <div className="cname">
-                <div
-                  className="logo"
-                  style={{ background: p.accent_colour || "#6B7280" }}
-                >
-                  {projectInitials(p.name)}
+          {projects.map((p) => {
+            const s = projectStats?.[p.id];
+            const total = s?.total ?? 0;
+            const done = s?.done ?? 0;
+            const pending = (s?.waitingOnApproval ?? 0) + (s?.feedbackToAction ?? 0);
+            // Same shape as the prototype's projStats()-driven status tag:
+            // pend is the two "needs attention" bands combined into one
+            // count, not shown as separate tag states at the project-row
+            // level (that split only applies to the dashboard's stat cards).
+            const status = !total
+              ? { tone: "grey", label: "Not started" }
+              : pending > 0
+                ? {
+                    tone: "amber",
+                    label: `${pending} ${previewMode === "client" ? "need your review" : "with the client"}`,
+                  }
+                : done === total
+                  ? { tone: "green", label: "All approved" }
+                  : { tone: "blue", label: "In production" };
+            return (
+              <Link href={`/projects/${p.id}`} className="crow" key={p.id}>
+                <div className="cname">
+                  <div
+                    className="logo"
+                    style={{ background: p.accent_colour || "#6B7280" }}
+                  >
+                    {projectInitials(p.name)}
+                  </div>
+                  <div className="t">
+                    <b>{p.name}</b>
+                    <span className="sub">
+                      <KBadge delivery={p.delivery} />
+                      <span>{p.type || "—"}</span>
+                    </span>
+                  </div>
                 </div>
-                <div className="t">
-                  <b>{p.name}</b>
-                  <span>{p.type || "—"}</span>
+                <div style={{ fontSize: 13, color: "var(--muted)" }}>
+                  {statsPending ? "…" : `${total} total`}
                 </div>
-              </div>
-              <div style={{ fontSize: 13, color: "var(--muted)" }}>
-                {p.type || "—"}
-              </div>
-              <div style={{ fontSize: 13, color: "var(--muted)" }}>—</div>
-              <div>
-                <span className="tag blue">
-                  <span className="dot" />
-                  {p.delivery === "scheduled" ? "Scheduled" : "Continuous"}
-                </span>
-              </div>
-              <div className="ago">{formatDate(p.due_on)}</div>
-              <div></div>
-            </Link>
-          ))}
+                <div>
+                  <div className="bar">
+                    <i
+                      style={{
+                        width: `${total ? Math.round((done / total) * 100) : 0}%`,
+                      }}
+                    />
+                  </div>
+                  <div className="barlbl">
+                    {statsPending ? "…" : `${done} of ${total} approved`}
+                  </div>
+                </div>
+                <div>
+                  <span className={`tag ${status.tone}`}>
+                    <span className="dot" />
+                    {statsPending ? "…" : status.label}
+                  </span>
+                </div>
+                <div className="ago">{formatDate(p.due_on)}</div>
+                <div></div>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

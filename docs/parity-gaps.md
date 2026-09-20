@@ -59,10 +59,22 @@ Spec coverage: `tests/e2e/dashboard.spec.ts`, both the re-baselined screenshot a
 
 Two related, previously-verbal-only findings, formalized here:
 
-- **`/clients/[id]`** (`ClientWorkspacePage`) renders a client's name and a flat list of its projects — no stats strip, no progress bars, no per-project deadline column. The prototype's equivalent client workspace has all of that.
-- **`/projects/[id]`** (`ProjectPage`) renders a simplified flat `.ptable` — see the note moved from `app/globals.css` below — where the prototype's is the full resizable, reorderable, custom-column calendar/table grid (`.tbl`, drag-and-drop columns, sticky headers, the whole system audited separately under "calendar" in `docs/css-coverage.md`'s deferred bucket).
+- **`/clients/[id]`** (`ClientWorkspacePage`) renders a client's name and a flat list of its projects — no stats strip, no progress bars, no per-project deadline column. The prototype's equivalent client workspace has all of that. — **Project row half RESOLVED, see below.**
+- **`/projects/[id]`** (`ProjectPage`) renders a simplified flat `.ptable` — see the note moved from `app/globals.css` below — where the prototype's is the full resizable, reorderable, custom-column calendar/table grid (`.tbl`, drag-and-drop columns, sticky headers, the whole system audited separately under "calendar" in `docs/css-coverage.md`'s deferred bucket). Still open.
 
 Neither is a CSS problem — the classes that exist are correctly styled and matched against the prototype. Both are feature-completeness gaps: the richer prototype views need real queries, real aggregation, and in the project table's case a substantial column-management feature, not a stylesheet change.
+
+### Client workspace project rows — RESOLVED
+
+Was: creative count, approval progress and status columns all rendered `—`, and the row's only real content in that half was a `<span class="tag blue">Scheduled/Continuous</span>` standing in for delivery mode — a placeholder pattern, not the prototype's `renderProjects()`.
+
+**Fixed**: `hooks/use-project-creative-stats.ts` (per-project `bandOf()` aggregation, same shape as the dashboard's hook) now drives the creative count (`${total} total`), the approval bar (`.bar`/`.bar i`/`.barlbl`, ported from the prototype, width `Math.round(done/total*100)%`), and the status tag — `grey` "Not started" / `amber` "`N` with the client" (or "need your review" in client-preview mode, reading `store/ui-store.ts`'s existing `previewMode` the same way the prototype reads `MODE==="client"`) / `green` "All approved" / `blue` "In production", with `pending = waitingOnApproval + feedbackToAction` combined into one count exactly as the prototype's `projStats().pend` is — deliberately not split into two tag states the way the dashboard's cards are.
+
+**Delivery mode relocated, not deleted**: the prototype puts `KBADGE(p.kind)` in the row's `.sub` line under the project name, alongside the project's `type` text — ported as `components/project/KBadge.tsx` plus `.kbadge`/`.cname .t .sub` CSS, both copied verbatim from the prototype. This also resolved a head-row mismatch: the app had grown an extra "Type" column (`Project`/`Type`/`Creatives`/`Mode`/`Due`) not present in the prototype's actual head row (`Project`/`Creatives`/`Approval Progress`/`Status`/`Deadline`) — `.crow`'s grid-template-columns (`1fr 96px 150px 128px 92px 70px`) already matched the prototype's 5-data-column-plus-actions shape, so the extra column was always being squeezed into tracks sized for something else. Removed; project type now reads from the `.sub` line instead of its own column.
+
+Loading state follows the same `isPending`-driven `…` placeholder as the dashboard's cards, for the same reason (`useProjectCreativeStats` returning no data yet reads as legitimately unresolved, not as a confirmed zero).
+
+Spec coverage: `tests/e2e/client-workspace.spec.ts`, re-baselined screenshot plus a dedicated case asserting the badge, count, bar label and status tag text against the fixture's known seed data.
 
 ### `.ptable` — moved here from `app/globals.css`
 
