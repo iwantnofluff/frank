@@ -730,15 +730,59 @@ create policy creatives_select on creatives
   );
 create policy creatives_insert on creatives
   for insert with check (is_agency_staff(agency_id));
+-- Staff-only (phase9_advance_creative_stage.sql) — a client-role session
+-- has no client-permitted write on creatives today. A future one should
+-- go through its own SECURITY DEFINER function (see
+-- advance_creative_stage below), not widen this policy back out.
 create policy creatives_update on creatives
-  for update using (
-    is_agency_staff(agency_id)
-    or exists (
-      select 1 from projects
-      where projects.id = creatives.project_id
-        and projects.client_id in (select current_client_ids(creatives.agency_id))
-    )
-  );
+  for update using (is_agency_staff(agency_id));
+
+-- advance_creative_stage — the only stage transition built so far
+-- (phase9_advance_creative_stage.sql). Legal moves only: internal band
+-- (stage < 5) -> Client Review (5), and Client Review -> back to
+-- Internal QC (4). Nothing else — no exception setting, no approval
+-- attribution, no audit table; see docs/parity-gaps.md, "Stage
+-- transitions — scoped, not built" for what's deliberately deferred.
+-- Staff-only. SECURITY DEFINER isn't load-bearing here (creatives_update
+-- already lets staff write stage directly) — the legal-move check
+-- belongs in one place rather than trusting whatever a caller sends, and
+-- this is the extension point if a client-permitted transition is ever
+-- added. No pgcrypto call, so search_path is pinned to `public` alone
+-- (see phase7_fix_pgcrypto_search_path.sql for when `extensions` is
+-- actually needed).
+create or replace function advance_creative_stage(p_creative_id uuid, p_direction text)
+returns creatives
+language plpgsql security definer set search_path = public as $$
+declare
+  v_creative creatives%rowtype;
+begin
+  select * into v_creative from creatives where id = p_creative_id;
+  if not found then
+    raise exception 'creative not found';
+  end if;
+  if not is_agency_staff(v_creative.agency_id) then
+    raise exception 'not permitted';
+  end if;
+
+  if p_direction = 'to_review' then
+    if v_creative.stage >= 5 then
+      raise exception 'already at or past Client Review';
+    end if;
+    update creatives set stage = 5 where id = p_creative_id returning * into v_creative;
+  elsif p_direction = 'to_internal' then
+    if v_creative.stage != 5 then
+      raise exception 'only a Client Review creative can move back to internal';
+    end if;
+    update creatives set stage = 4 where id = p_creative_id returning * into v_creative;
+  else
+    raise exception 'unknown direction: %', p_direction;
+  end if;
+
+  return v_creative;
+end;
+$$;
+
+grant execute on function advance_creative_stage(uuid, text) to authenticated;
 
 -- creative_versions / copy_versions: same shape, one join further down.
 create policy creative_versions_select on creative_versions

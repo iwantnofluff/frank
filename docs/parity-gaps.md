@@ -20,9 +20,15 @@ Confirmed symptom, not a theoretical gap: a real bug report ("creatives uploaded
 
 Spec coverage: `tests/e2e/share-eligibility.spec.ts`, zero-eligible and partially-eligible cases. Fixed two more fixture-teardown gaps this surfaced along the way (same class as `format_directions` below): `shared_links` created through the real UI, not `frank.createSharedLink()`, weren't covered by the token-tracking cleanup, and `creatives` created via a new `createCreativeAtStage()` fixture helper needed the same. Both now sweep by `agency_id` like the other tables.
 
-## Stage transitions — scoped, not built
+## Stage transitions — RESOLVED (minimal), rest still deferred
 
-The confirmed root cause above is really a missing feature, not a ShareModal defect: there is no way, anywhere in this app today, to move a creative out of the internal band. Scoping what that would take, against the prototype's intent and this schema's actual constraints:
+**Built**: `supabase/migrations/phase9_advance_creative_stage.sql` — staff can move a creative from the internal band (stage < 5) to Client Review, and back to Internal QC (stage 4). Nothing else; exception-setting, approval attribution and an audit table all stay deferred, exactly as scoped below. `advance_creative_stage(p_creative_id, p_direction)` is `SECURITY DEFINER`, `search_path` pinned to `public` (no `extensions` needed — no `crypt()`/pgcrypto call here, unlike the guest-path functions `phase7_fix_pgcrypto_search_path.sql` had to widen). Entry point is a button on the creative review page itself (`+ New Brief`'s sibling toolbar), gated on the same `isStaff` (real membership) pattern used everywhere else in this app.
+
+Also resolved along the way: `creatives_update`'s RLS, previously broad enough that a client-role session could write *any* column on a creative it could read — narrowed to staff-only. The scoping below already flagged this as broader than anything the UI exposed; closing it was a precondition for building the transition at all, not a separate decision. A future client-permitted transition (approving, say) should get its own `SECURITY DEFINER` function rather than widening this policy back out — `advance_creative_stage` is the template.
+
+Verified empirically against real authenticated sessions, both roles, before any UI was written: a client's direct table write on `stage` is silently blocked (0 rows, no error — ordinary RLS semantics); a client's call to `advance_creative_stage` is explicitly rejected (`not permitted`); staff's calls succeed and the legal-move guards hold (`already at or past Client Review` / `only a Client Review creative can move back to internal` on the wrong-direction case); staff's direct table write on `stage` still succeeds too, confirming `creatives_update` isn't locked to the RPC path, only to staff. Spec coverage: `tests/e2e/stage-transition.spec.ts` — a staff advance making a creative visible through a real shared link, a client having no entry point and being rejected at the RPC layer directly (not just UI absence), and ShareModal's eligibility warning (see above) clearing once the move happens.
+
+The rest of this entry is the original scoping this was built against — still accurate for what's still deferred (exception, audit, approval attribution), against the prototype's intent and this schema's actual constraints:
 
 **What the prototype intends** (`frank-prototype.html`): fewer real transitions than the UI suggests, and — tellingly — the prototype's own script doesn't fully implement all of them either.
 
@@ -43,7 +49,7 @@ The confirmed root cause above is really a missing feature, not a ShareModal def
 **Plainly, schema vs. product:**
 
 - Schema decisions already made and not in question: exception requires stage ≤ 5; approving clears exception; nothing enforces stage ordering.
-- Schema decisions still open: whether stage/exception writes should move to a narrower RPC (departing from this app's plain-table-write convention) given how broad `creatives_update` already is; whether `approved_by_name/email` (denormalized for the guest case) is the right shape for an authenticated approval, or whether that needs a real `user_id` reference instead; whether a `status_events` table (already deferred, not newly proposed) lands now or later.
+- Schema decisions still open: whether *exception* writes (as opposed to the stage transition already built above) should move to a narrower RPC too, or reuse `creatives_update` now that it's staff-only; whether `approved_by_name/email` (denormalized for the guest case) is the right shape for an authenticated approval, or whether that needs a real `user_id` reference instead; whether a `status_events` table (already deferred, not newly proposed) lands now or later.
 - Product decisions, not derivable from either the prototype or the schema: what actually produces `changes_requested`/`rejected` (the prototype never shows a working path to either); whether Request Revision should set an exception at all, or stay comment-only as the prototype's own script actually does; what "Send for Review" should mean as a manual action distinct from the automatic stage-3 bump on first upload; whether an Unpublish reason needs real structured storage rather than a toast.
 
 ## New Brief — RESOLVED, Copy Options still scoped out of v1

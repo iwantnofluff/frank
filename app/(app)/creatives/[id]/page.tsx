@@ -8,6 +8,7 @@ import { useAssetSignedUrl } from "@/hooks/use-asset-signed-url";
 import { useComments } from "@/hooks/use-comments";
 import { useCreateComment } from "@/hooks/use-create-comment";
 import { useMyMembership } from "@/hooks/use-my-membership";
+import { useAdvanceCreativeStage } from "@/hooks/use-advance-creative-stage";
 import { stageLabel } from "@/lib/stage-labels";
 import {
   isHighlightAnchor,
@@ -42,6 +43,7 @@ export default function CreativeReviewPage({
     creative?.agency_id,
   );
   const isStaff = membership ? membership.client_id === null : false;
+  const advanceStage = useAdvanceCreativeStage(id);
 
   // Independent selections: picking a copy version never touches which
   // artwork version is showing, and vice versa (frank-schema.docx —
@@ -219,6 +221,26 @@ export default function CreativeReviewPage({
                 <path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" />
               </svg>
             </button>
+            {isStaff && creative.stage < 5 && (
+              <button
+                type="button"
+                className="btn"
+                disabled={advanceStage.isPending}
+                onClick={() => advanceStage.mutate("to_review")}
+              >
+                {advanceStage.isPending ? "Moving…" : "Move to Client Review"}
+              </button>
+            )}
+            {isStaff && creative.stage === 5 && (
+              <button
+                type="button"
+                className="btn"
+                disabled={advanceStage.isPending}
+                onClick={() => advanceStage.mutate("to_internal")}
+              >
+                {advanceStage.isPending ? "Moving…" : "Move back to Internal"}
+              </button>
+            )}
             {isStaff && activeCreativeVersion && (
               <button
                 type="button"
@@ -230,6 +252,13 @@ export default function CreativeReviewPage({
             )}
           </div>
         </div>
+        {advanceStage.error && (
+          <p className="autherr" style={{ padding: "0 20px" }}>
+            {advanceStage.error instanceof Error
+              ? advanceStage.error.message
+              : "Couldn't move this creative"}
+          </p>
+        )}
 
         <div className="canvas">
           <div>
