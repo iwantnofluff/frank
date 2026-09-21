@@ -35,6 +35,21 @@ test("settings — team roster", async ({ page, frank }) => {
   });
 });
 
+// AddFormatForm used to accept free-text format_id; now it selects from
+// lib/formats.ts's 41-entry catalog, ported from the prototype's FORMATS
+// object.
+test("settings — add a format from the catalog", async ({ page, frank }) => {
+  await frank.loginAsStaff(page);
+  await page.goto("/settings/knowledge");
+  await page.waitForSelector('button:has-text("Add format")');
+
+  await page.click('button:has-text("Add format")');
+  await page.selectOption("select", "ig_feed");
+  await page.click('button:has-text("Add")');
+
+  await expect(page.locator(".brief .bf-h", { hasText: "ig_feed" })).toBeVisible();
+});
+
 // Settings/layout.tsx guards every /settings/* route directly, not just
 // NavRail's link — a client typing the URL should never render staff
 // configuration (docs/parity-gaps.md, client-view audit).

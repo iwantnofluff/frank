@@ -203,6 +203,12 @@ export const test = base.extend<{ frank: Frank }>({
       ["comments", () => admin.from("comments").delete().eq("creative_id", creative.id)],
       ["creatives", () => admin.from("creatives").delete().eq("id", creative.id)],
       ["projects", () => admin.from("projects").delete().eq("id", project.id)],
+      // No RLS delete policy exists for format_directions at all — even
+      // staff can't remove one through the app — so a spec that adds one
+      // (settings.spec.ts's catalog test) needs the service-role client to
+      // clean it up, or agencies' delete below fails on the FK and leaves
+      // this whole fixture orphaned.
+      ["format_directions", () => admin.from("format_directions").delete().eq("agency_id", agency.id)],
       ["memberships", () => admin.from("memberships").delete().eq("agency_id", agency.id)],
       ["clients", () => admin.from("clients").delete().eq("id", client.id)],
       ["agencies", () => admin.from("agencies").delete().eq("id", agency.id)],

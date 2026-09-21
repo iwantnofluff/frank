@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useUpsertFormatDirection } from "@/hooks/use-format-direction-mutations";
+import { FORMAT_CATEGORIES, formatsByCategory } from "@/lib/formats";
 
 export function AddFormatForm({ agencyId }: { agencyId: string }) {
   const [open, setOpen] = useState(false);
@@ -9,9 +10,9 @@ export function AddFormatForm({ agencyId }: { agencyId: string }) {
   const upsert = useUpsertFormatDirection(agencyId);
 
   async function handleAdd() {
-    if (!formatId.trim()) return;
+    if (!formatId) return;
     await upsert.mutateAsync({
-      format_id: formatId.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_"),
+      format_id: formatId,
       direction_text: null,
       caption_chars: null,
       sentences_min: null,
@@ -34,17 +35,29 @@ export function AddFormatForm({ agencyId }: { agencyId: string }) {
 
   return (
     <div className="addcol">
-      <input
+      <select
         className="bin one"
-        placeholder="Format key, e.g. ig_feed"
         value={formatId}
         onChange={(e) => setFormatId(e.target.value)}
         autoFocus
-      />
+      >
+        <option value="" disabled>
+          Choose a format…
+        </option>
+        {FORMAT_CATEGORIES.map((category) => (
+          <optgroup key={category} label={category}>
+            {formatsByCategory(category).map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.label}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
       <button
         type="button"
         className="btn primary sm"
-        disabled={!formatId.trim() || upsert.isPending}
+        disabled={!formatId || upsert.isPending}
         onClick={handleAdd}
       >
         Add
