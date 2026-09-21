@@ -172,6 +172,7 @@ function CommentCard({
   thread,
   replies,
   isStaff,
+  currentUserId,
   isHighlighted,
   onSelect,
   onReply,
@@ -180,6 +181,7 @@ function CommentCard({
   thread: CommentRow;
   replies: CommentRow[];
   isStaff: boolean;
+  currentUserId: string | undefined;
   isHighlighted: boolean;
   onSelect: () => void;
   onReply: (body: string, visibility: "private" | "public") => Promise<void>;
@@ -187,6 +189,13 @@ function CommentCard({
 }) {
   const [replying, setReplying] = useState(false);
   const authorName = thread.author?.name ?? thread.guest_name ?? "Someone";
+  // comments_update_own (supabase/seed.sql) allows author_id = auth.uid()
+  // or is_agency_staff — authorship, not role. A client resolving/
+  // reopening a thread they started themselves succeeds at the database
+  // layer (verified empirically); isStaff alone was stricter than that,
+  // and stricter than the prototype, which only gates the Make
+  // Public/Private toggle behind MODE==="client", not Resolve/Reopen.
+  const canResolve = isStaff || thread.author_id === currentUserId;
 
   return (
     <div
@@ -216,7 +225,7 @@ function CommentCard({
           Reply
         </button>
         <div className="acts">
-          {isStaff && (
+          {canResolve && (
             <button
               type="button"
               onClick={() => onToggleResolved(!thread.resolved_at)}
@@ -375,6 +384,7 @@ export function CommentsPanel({
             thread={thread}
             replies={repliesByParent.get(thread.id) ?? []}
             isStaff={isStaff}
+            currentUserId={currentUser?.id}
             isHighlighted={highlightedCommentId === thread.id}
             onSelect={() => onHighlight?.(thread.id)}
             onReply={(body, visibility) =>
