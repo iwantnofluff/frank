@@ -88,8 +88,17 @@ export function useCreateCreative(projectId: string) {
 
       return creative.id as string;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["creatives", projectId] });
+    // Same shape as useAdvanceCreativeStage's fix: ShareModal reads this
+    // same query for its eligibility counts, and can't be assumed mounted
+    // (and thus "active") at the moment a brief is created — refetchType:
+    // "all" keeps the cache itself current regardless, so a share link
+    // made right after New Brief never undercounts the piece that was
+    // just added.
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["creatives", projectId],
+        refetchType: "all",
+      });
     },
   });
 }

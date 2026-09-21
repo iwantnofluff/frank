@@ -34,6 +34,19 @@ Storage), Zustand for light UI state, TanStack Query for all server state.
   as active) `await` the invalidation rather than firing it — see
   `use-upload-creative-version.ts` and `use-save-copy-fields.ts` for the
   pattern and why (a stale-cache race otherwise).
+- Mutations whose result feeds a gating or warning UI elsewhere (e.g.
+  ShareModal's eligibility note, computed from `useCreatives`) must
+  `await` an `invalidateQueries` with `refetchType: "all"`, not just
+  `await` the default. The default refetchType ("active") skips queries
+  with no current observer and only marks them stale — if the consuming
+  component (ShareModal) isn't mounted yet at the moment of the mutation,
+  the cache still holds pre-mutation data until that component's own
+  mount kicks off a background refetch, and whatever reads it first sees
+  the stale, wrong claim. See `use-advance-creative-stage.ts` and
+  `use-create-creative.ts`. Local Playwright specs run at near-zero
+  latency, so this stale-cache window — real against production network
+  latency — is invisible to the suite; don't take a green e2e run here as
+  proof the race doesn't exist.
 - `useCreatives`/`useClients`/etc. never add an explicit `agency_id` (or
   `client_id`) filter to the query — RLS enforces the tenant scope
   server-side regardless of what the client asks for. Don't add a defensive
