@@ -1,14 +1,16 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import Link from "next/link";
 import { useProject } from "@/hooks/use-project";
 import { useCreatives, type CreativeListRow } from "@/hooks/use-creatives";
 import { useCustomColumns, type CustomColumnRow } from "@/hooks/use-custom-columns";
 import { useUpdateCreativeCx } from "@/hooks/use-update-creative-cx";
+import { useIsStaff } from "@/hooks/use-is-staff";
 import { stageLabel } from "@/lib/stage-labels";
 import { CxCell } from "@/components/project/CxCell";
 import { AddColumnForm } from "@/components/project/AddColumnForm";
+import { NewBriefModal } from "@/components/project/NewBriefModal";
 
 function formatDateTime(value: string | null) {
   if (!value) return "—";
@@ -48,9 +50,16 @@ export default function ProjectPage({
   } = useCreatives(id);
   const { data: customColumns } = useCustomColumns(id);
   const updateCx = useUpdateCreativeCx(id);
+  const { isStaff, isPending: isStaffPending } = useIsStaff();
+  const [newBriefOpen, setNewBriefOpen] = useState(false);
 
   const isLoading = projectLoading || creativesLoading;
   const columns = customColumns ?? [];
+  // Entry point lives here rather than the topbar (there's nowhere else
+  // for it to go until calendar exists — docs/parity-gaps.md). Fails
+  // closed like every other isStaff gate this session: hidden while
+  // still resolving, not shown by default.
+  const showNewBrief = isStaff && !isStaffPending;
 
   function gridTemplate(delivery: "scheduled" | "continuous") {
     const extra = columns.length ? ` repeat(${columns.length}, 140px)` : "";
@@ -72,16 +81,29 @@ export default function ProjectPage({
 
   return (
     <div className="pad">
-      <h1 className="h1">{project?.name ?? "Project"}</h1>
-      <p className="sub">
-        {project?.clients?.name ?? "—"}
-        {project && (
-          <>
-            {" "}
-            · {project.delivery === "scheduled" ? "Scheduled" : "Continuous"}
-          </>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+        <div>
+          <h1 className="h1">{project?.name ?? "Project"}</h1>
+          <p className="sub">
+            {project?.clients?.name ?? "—"}
+            {project && (
+              <>
+                {" "}
+                · {project.delivery === "scheduled" ? "Scheduled" : "Continuous"}
+              </>
+            )}
+          </p>
+        </div>
+        {showNewBrief && project && (
+          <button
+            type="button"
+            className="btn primary"
+            onClick={() => setNewBriefOpen(true)}
+          >
+            + New Brief
+          </button>
         )}
-      </p>
+      </div>
 
       {isError && (
         <div className="empty">
@@ -93,7 +115,11 @@ export default function ProjectPage({
       {!isError && !isLoading && creatives?.length === 0 && (
         <div className="empty">
           <b>No creatives yet</b>
-          <span>Briefing and upload land in a later phase.</span>
+          <span>
+            {showNewBrief
+              ? "Use New Brief above to add the first one."
+              : "Your team hasn't briefed anything here yet."}
+          </span>
         </div>
       )}
 
@@ -176,6 +202,14 @@ export default function ProjectPage({
           )}
           <AddColumnForm projectId={id} nextPosition={columns.length} />
         </div>
+      )}
+
+      {newBriefOpen && project && (
+        <NewBriefModal
+          projectId={id}
+          delivery={project.delivery}
+          onClose={() => setNewBriefOpen(false)}
+        />
       )}
     </div>
   );

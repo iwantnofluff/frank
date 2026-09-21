@@ -38,6 +38,12 @@ export interface Frank {
   /** Inserts a shared_links row directly (not subject to the visibility
    * trigger, safe to seed via service role) and returns its token. */
   createSharedLink(): Promise<string>;
+  /** Creates an extra continuous-delivery project for the same client,
+   * for specs that specifically need one (new-brief.spec.ts) — not part
+   * of the base fixture, so the other ~25 specs asserting against "1
+   * project" for this client don't silently start seeing 2. Cleaned up by
+   * the agency_id-wide teardown below, no separate tracking needed. */
+  createContinuousProject(): Promise<string>;
 }
 
 async function signIn(email: string, password: string): Promise<SupabaseClient> {
@@ -187,12 +193,30 @@ export const test = base.extend<{ frank: Frank }>({
         sharedLinkTokens.push(token);
         return token;
       },
+
+      async createContinuousProject() {
+        const { data, error } = await admin
+          .from("projects")
+          .insert({ client_id: client.id, name: `E2E Continuous Project ${stamp}`, delivery: "continuous" })
+          .select("id")
+          .single();
+        if (error) throw error;
+        return data.id as string;
+      },
     };
 
     await provideFixture(frank);
 
     // Teardown, reverse dependency order. Best-effort — logged, not thrown,
     // so one failure doesn't stop the rest of cleanup from running.
+    //
+    // By agency_id throughout, not by the specific ids created above —
+    // every agency-scoped table has that column (denormalised for RLS),
+    // and specs are free to create their own extra creatives/copy versions
+    // against either project (New Brief's spec cases do exactly that).
+    // Tracking each such row individually here would be one more thing to
+    // remember per spec; agency_id sweeps all of it regardless of what a
+    // test added.
     const steps: [string, () => PromiseLike<{ error: unknown }>][] = [
       ...sharedLinkTokens.map(
         (t): [string, () => PromiseLike<{ error: unknown }>] => [
@@ -200,9 +224,12 @@ export const test = base.extend<{ frank: Frank }>({
           () => admin.from("shared_links").delete().eq("token", t),
         ],
       ),
-      ["comments", () => admin.from("comments").delete().eq("creative_id", creative.id)],
-      ["creatives", () => admin.from("creatives").delete().eq("id", creative.id)],
-      ["projects", () => admin.from("projects").delete().eq("id", project.id)],
+      ["comments", () => admin.from("comments").delete().eq("agency_id", agency.id)],
+      ["copy_versions", () => admin.from("copy_versions").delete().eq("agency_id", agency.id)],
+      ["creative_versions", () => admin.from("creative_versions").delete().eq("agency_id", agency.id)],
+      ["creatives", () => admin.from("creatives").delete().eq("agency_id", agency.id)],
+      ["custom_columns", () => admin.from("custom_columns").delete().eq("agency_id", agency.id)],
+      ["projects", () => admin.from("projects").delete().eq("agency_id", agency.id)],
       // No RLS delete policy exists for format_directions at all — even
       // staff can't remove one through the app — so a spec that adds one
       // (settings.spec.ts's catalog test) needs the service-role client to

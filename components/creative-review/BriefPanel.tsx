@@ -5,68 +5,13 @@ import type { CreativeRow } from "@/hooks/use-creative";
 import type { CopyVersionRow } from "@/hooks/use-copy-versions";
 import { useUpdateBrief } from "@/hooks/use-update-brief";
 import { useSaveSlideText } from "@/hooks/use-save-slide-text";
+import { ListEditor } from "@/components/ui/ListEditor";
 
 function ChevronIcon() {
   return (
     <svg viewBox="0 0 24 24">
       <path d="M6 9l6 6 6-6" />
     </svg>
-  );
-}
-
-function RemoveIcon() {
-  return (
-    <svg viewBox="0 0 24 24">
-      <path d="M18 6L6 18M6 6l12 12" />
-    </svg>
-  );
-}
-
-function ListEditor({
-  label,
-  itemLabel,
-  values,
-  onChange,
-}: {
-  label: string;
-  itemLabel: (index: number) => string;
-  values: string[];
-  onChange: (values: string[]) => void;
-}) {
-  return (
-    <div className="bsec">
-      <div className="bl">{label}</div>
-      {values.map((value, i) => (
-        <div className="brow" key={i}>
-          <b>{itemLabel(i)}</b>
-          <textarea
-            className="bin"
-            rows={2}
-            value={value}
-            onChange={(e) => {
-              const next = [...values];
-              next[i] = e.target.value;
-              onChange(next);
-            }}
-          />
-          <button
-            type="button"
-            className="brx"
-            title="Remove"
-            onClick={() => onChange(values.filter((_, j) => j !== i))}
-          >
-            <RemoveIcon />
-          </button>
-        </div>
-      ))}
-      <button
-        type="button"
-        className="badd"
-        onClick={() => onChange([...values, ""])}
-      >
-        + Add
-      </button>
-    </div>
   );
 }
 

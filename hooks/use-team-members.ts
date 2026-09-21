@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 
 export interface TeamMemberRow {
   id: string;
+  user_id: string;
   role: "admin" | "user" | "finance";
   client_id: string | null;
   accepted_at: string | null;
@@ -22,7 +23,7 @@ export function useTeamMembers(agencyId: string | undefined) {
       // relationship was found"). Disambiguate explicitly.
       const { data, error } = await supabase
         .from("memberships")
-        .select("id, role, client_id, accepted_at, user:users!memberships_user_id_fkey(name, email)")
+        .select("id, user_id, role, client_id, accepted_at, user:users!memberships_user_id_fkey(name, email)")
         .eq("agency_id", agencyId!)
         .is("client_id", null) // agency staff only — client contacts aren't "the team"
         .is("removed_at", null)
