@@ -55,11 +55,12 @@ export default function ProjectPage({
 
   const isLoading = projectLoading || creativesLoading;
   const columns = customColumns ?? [];
+  // Fails closed like every other isStaff gate this session: hidden/
+  // read-only while still resolving, not shown/editable by default.
+  const confirmedStaff = isStaff && !isStaffPending;
   // Entry point lives here rather than the topbar (there's nowhere else
-  // for it to go until calendar exists — docs/parity-gaps.md). Fails
-  // closed like every other isStaff gate this session: hidden while
-  // still resolving, not shown by default.
-  const showNewBrief = isStaff && !isStaffPending;
+  // for it to go until calendar exists — docs/parity-gaps.md).
+  const showNewBrief = confirmedStaff;
 
   function gridTemplate(delivery: "scheduled" | "continuous") {
     const extra = columns.length ? ` repeat(${columns.length}, 140px)` : "";
@@ -75,6 +76,7 @@ export default function ProjectPage({
         onSave={(value) =>
           updateCx.mutate({ creativeId: creative.id, key: col.key, value })
         }
+        readOnly={!confirmedStaff}
       />
     ));
   }
@@ -200,7 +202,9 @@ export default function ProjectPage({
               ))}
             </>
           )}
-          <AddColumnForm projectId={id} nextPosition={columns.length} />
+          {confirmedStaff && (
+            <AddColumnForm projectId={id} nextPosition={columns.length} />
+          )}
         </div>
       )}
 

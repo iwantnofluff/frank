@@ -265,6 +265,7 @@ export default function CreativeReviewPage({
             <BriefPanel
               creative={creative}
               latestCopyVersion={copyVersions?.[0] ?? null}
+              isStaff={isStaff}
             />
             <ChecksAndDraft />
             {!activeCreativeVersion ? (

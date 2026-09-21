@@ -54,12 +54,20 @@ export function useUpdateKnowledgeEntry(clientId: string) {
       body: string;
     }) => {
       const supabase = createClient();
-      const { error } = await supabase
+      // RLS silently returns zero rows for a blocked update rather than an
+      // error — only surfaced if a row is asked back via .select() (see
+      // useUpdateAgencyBranding for the same guard).
+      const { data, error } = await supabase
         .from("knowledge_entries")
         .update({ title, body })
-        .eq("id", id);
+        .eq("id", id)
+        .select("id")
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) {
+        throw new Error("You don't have permission to edit this entry.");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -75,12 +83,20 @@ export function useDeleteKnowledgeEntry(clientId: string) {
   return useMutation({
     mutationFn: async (id: string) => {
       const supabase = createClient();
-      const { error } = await supabase
+      // Same RLS silent-zero-rows shape as an update — a DELETE with no
+      // matching row under RLS "succeeds" at deleting nothing, unless a
+      // row is asked back via .select().
+      const { data, error } = await supabase
         .from("knowledge_entries")
         .delete()
-        .eq("id", id);
+        .eq("id", id)
+        .select("id")
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) {
+        throw new Error("You don't have permission to remove this entry.");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({

@@ -61,11 +61,16 @@ export function KnowledgeSection({
   sectionKey,
   label,
   entries,
+  isStaff,
 }: {
   clientId: string;
   sectionKey: string;
   label: string;
   entries: KnowledgeEntryRow[];
+  // knowledge_entries' insert/update/delete RLS policies were already
+  // staff-only before this session touched anything (clients only ever
+  // had a select policy) — this UI just never matched that.
+  isStaff: boolean;
 }) {
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -116,7 +121,7 @@ export function KnowledgeSection({
                   </p>
                 </>
               )}
-              {entry.kind === "text" && (
+              {entry.kind === "text" && isStaff && (
                 <div className="kbentry-acts">
                   <button
                     type="button"
@@ -142,24 +147,25 @@ export function KnowledgeSection({
           <p className="kbempty">Nothing here yet.</p>
         )}
 
-        {adding ? (
-          <EntryEditor
-            initialTitle=""
-            initialBody=""
-            saving={createEntry.isPending}
-            onCancel={() => setAdding(false)}
-            onSave={(title, body) =>
-              createEntry.mutate(
-                { section: sectionKey, title, body },
-                { onSuccess: () => setAdding(false) },
-              )
-            }
-          />
-        ) : (
-          <button type="button" className="badd" onClick={() => setAdding(true)}>
-            + Add note
-          </button>
-        )}
+        {isStaff &&
+          (adding ? (
+            <EntryEditor
+              initialTitle=""
+              initialBody=""
+              saving={createEntry.isPending}
+              onCancel={() => setAdding(false)}
+              onSave={(title, body) =>
+                createEntry.mutate(
+                  { section: sectionKey, title, body },
+                  { onSuccess: () => setAdding(false) },
+                )
+              }
+            />
+          ) : (
+            <button type="button" className="badd" onClick={() => setAdding(true)}>
+              + Add note
+            </button>
+          ))}
       </div>
     </div>
   );

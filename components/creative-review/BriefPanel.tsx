@@ -18,9 +18,16 @@ function ChevronIcon() {
 export function BriefPanel({
   creative,
   latestCopyVersion,
+  isStaff,
 }: {
   creative: CreativeRow;
   latestCopyVersion: CopyVersionRow | null;
+  // The prototype's canEdit (MODE!=="client") never renders an edit
+  // affordance for a client at all — this panel used to render one
+  // unconditionally, the one inconsistency on a page where everything
+  // else (Upload/Edit, stage transitions, New Brief) already gates on
+  // real membership. Matches that now.
+  isStaff: boolean;
 }) {
   const [open, setOpen] = useState(true);
   const [concept, setConcept] = useState(creative.concept ?? "");
@@ -76,6 +83,7 @@ export function BriefPanel({
               className="bin"
               rows={3}
               value={concept}
+              disabled={!isStaff}
               onChange={(e) => setConcept(e.target.value)}
               placeholder="What is this piece, in a sentence or two?"
             />
@@ -87,6 +95,7 @@ export function BriefPanel({
               className="bin one"
               type="url"
               value={referenceUrl}
+              disabled={!isStaff}
               onChange={(e) => setReferenceUrl(e.target.value)}
               placeholder="https://…"
             />
@@ -97,6 +106,7 @@ export function BriefPanel({
             itemLabel={(i) => `Note ${i + 1}`}
             values={approachNotes}
             onChange={setApproachNotes}
+            readOnly={!isStaff}
           />
 
           <ListEditor
@@ -104,24 +114,27 @@ export function BriefPanel({
             itemLabel={(i) => `Slide ${i + 1}`}
             values={slideText}
             onChange={setSlideText}
+            readOnly={!isStaff}
           />
 
-          <div className="bfoot">
-            <button
-              type="button"
-              className="btn primary sm"
-              onClick={handleSave}
-              disabled={saving}
-            >
-              {saving ? "Saving…" : "Save brief"}
-            </button>
-            <div className="grow" />
-            {error && (
-              <span className="berr">
-                {error instanceof Error ? error.message : "Couldn't save"}
-              </span>
-            )}
-          </div>
+          {isStaff && (
+            <div className="bfoot">
+              <button
+                type="button"
+                className="btn primary sm"
+                onClick={handleSave}
+                disabled={saving}
+              >
+                {saving ? "Saving…" : "Save brief"}
+              </button>
+              <div className="grow" />
+              {error && (
+                <span className="berr">
+                  {error instanceof Error ? error.message : "Couldn't save"}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

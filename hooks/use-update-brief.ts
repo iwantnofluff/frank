@@ -17,7 +17,11 @@ export function useUpdateBrief(creativeId: string) {
   return useMutation({
     mutationFn: async (fields: BriefFields) => {
       const supabase = createClient();
-      const { error } = await supabase
+      // RLS silently returns zero rows for a blocked update rather than an
+      // error — only surfaced if a row is asked back via .select(). Without
+      // it, a non-staff caller's blocked save reads as a no-op "success"
+      // (see useUpdateAgencyBranding for the same guard).
+      const { data, error } = await supabase
         .from("creatives")
         .update({
           concept: fields.concept.trim() || null,
@@ -26,9 +30,14 @@ export function useUpdateBrief(creativeId: string) {
             .map((n) => n.trim())
             .filter((n) => n.length > 0),
         })
-        .eq("id", creativeId);
+        .eq("id", creativeId)
+        .select("id")
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) {
+        throw new Error("You don't have permission to edit this brief.");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["creative", creativeId] });

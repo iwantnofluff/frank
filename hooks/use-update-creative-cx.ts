@@ -29,11 +29,19 @@ export function useUpdateCreativeCx(projectId: string) {
       if (fetchError) throw fetchError;
 
       const nextCx = { ...(current?.cx ?? {}), [key]: value };
-      const { error } = await supabase
+      // RLS silently returns zero rows for a blocked update rather than an
+      // error — only surfaced if a row is asked back via .select() (see
+      // useUpdateAgencyBranding for the same guard).
+      const { data, error } = await supabase
         .from("creatives")
         .update({ cx: nextCx })
-        .eq("id", creativeId);
+        .eq("id", creativeId)
+        .select("id")
+        .maybeSingle();
       if (error) throw error;
+      if (!data) {
+        throw new Error("You don't have permission to edit this field.");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["creatives", projectId] });

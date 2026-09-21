@@ -7,10 +7,14 @@ export function CxCell({
   column,
   value,
   onSave,
+  readOnly = false,
 }: {
   column: CustomColumnRow;
   value: string | number | boolean | null;
   onSave: (value: string | number | boolean | null) => void;
+  // The project table's own cell editing is staff-only in the prototype
+  // (`if(cell&&MODE!=="client"){...startEdit...}`) — this mirrors that.
+  readOnly?: boolean;
 }) {
   const [draft, setDraft] = useState(
     value === null || value === undefined ? "" : String(value),
@@ -26,6 +30,7 @@ export function CxCell({
         <input
           type="checkbox"
           checked={value === true}
+          disabled={readOnly}
           onChange={(e) => onSave(e.target.checked)}
         />
       </div>
@@ -39,6 +44,7 @@ export function CxCell({
           className="cxin"
           type="number"
           value={draft}
+          disabled={readOnly}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={() => onSave(draft === "" ? null : Number(draft))}
         />
@@ -54,6 +60,7 @@ export function CxCell({
         <select
           className="cxin"
           value={typeof value === "string" ? value : ""}
+          disabled={readOnly}
           onChange={(e) => onSave(e.target.value || null)}
         >
           <option value="">—</option>
@@ -85,6 +92,7 @@ export function CxCell({
         className="cxin"
         type="text"
         value={draft}
+        disabled={readOnly}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={() => onSave(draft || null)}
       />

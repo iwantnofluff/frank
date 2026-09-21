@@ -16,11 +16,17 @@ export function ListEditor({
   itemLabel,
   values,
   onChange,
+  readOnly = false,
 }: {
   label: string;
   itemLabel: (index: number) => string;
   values: string[];
   onChange: (values: string[]) => void;
+  // BriefPanel's client-facing view — the prototype's canEdit
+  // (MODE!=="client") never gives a client an edit affordance for the
+  // brief at all, so this mirrors that: same content, no add/remove, no
+  // editable text.
+  readOnly?: boolean;
 }) {
   return (
     <div className="bsec">
@@ -32,29 +38,34 @@ export function ListEditor({
             className="bin"
             rows={2}
             value={value}
+            disabled={readOnly}
             onChange={(e) => {
               const next = [...values];
               next[i] = e.target.value;
               onChange(next);
             }}
           />
-          <button
-            type="button"
-            className="brx"
-            title="Remove"
-            onClick={() => onChange(values.filter((_, j) => j !== i))}
-          >
-            <RemoveIcon />
-          </button>
+          {!readOnly && (
+            <button
+              type="button"
+              className="brx"
+              title="Remove"
+              onClick={() => onChange(values.filter((_, j) => j !== i))}
+            >
+              <RemoveIcon />
+            </button>
+          )}
         </div>
       ))}
-      <button
-        type="button"
-        className="badd"
-        onClick={() => onChange([...values, ""])}
-      >
-        + Add
-      </button>
+      {!readOnly && (
+        <button
+          type="button"
+          className="badd"
+          onClick={() => onChange([...values, ""])}
+        >
+          + Add
+        </button>
+      )}
     </div>
   );
 }

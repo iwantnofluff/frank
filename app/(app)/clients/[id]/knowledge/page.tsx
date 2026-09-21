@@ -3,6 +3,7 @@
 import { use } from "react";
 import { useClientDetail } from "@/hooks/use-client";
 import { useKnowledgeEntries } from "@/hooks/use-knowledge-entries";
+import { useIsStaff } from "@/hooks/use-is-staff";
 import { KnowledgeSection } from "@/components/knowledge/KnowledgeSection";
 import { KNOWLEDGE_SECTIONS } from "@/lib/knowledge-sections";
 
@@ -14,6 +15,11 @@ export default function ClientKnowledgePage({
   const { id } = use(params);
   const { data: client } = useClientDetail(id);
   const { data: entries, isLoading, isError } = useKnowledgeEntries(id);
+  // knowledge_entries' write policies were already staff-only before this
+  // session touched anything — the UI just never matched them. Fails
+  // closed while still resolving, same as every other isStaff gate.
+  const { isStaff, isPending: isStaffPending } = useIsStaff();
+  const confirmedStaff = isStaff && !isStaffPending;
 
   const filledCount = KNOWLEDGE_SECTIONS.filter((s) =>
     entries?.some((e) => e.section === s.key),
@@ -48,6 +54,7 @@ export default function ClientKnowledgePage({
                   entries={
                     entries?.filter((e) => e.section === section.key) ?? []
                   }
+                  isStaff={confirmedStaff}
                 />
               ))}
         </div>
