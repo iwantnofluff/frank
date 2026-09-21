@@ -16,9 +16,13 @@ export function useTeamMembers(agencyId: string | undefined) {
     queryKey: ["team-members", agencyId],
     queryFn: async (): Promise<TeamMemberRow[]> => {
       const supabase = createClient();
+      // memberships has two FKs to users (user_id, invited_by) — PostgREST
+      // can't pick one for a bare `users(...)` embed and errors for every
+      // caller, staff or client, RLS aside (PGRST201, "more than one
+      // relationship was found"). Disambiguate explicitly.
       const { data, error } = await supabase
         .from("memberships")
-        .select("id, role, client_id, accepted_at, user:users(name, email)")
+        .select("id, role, client_id, accepted_at, user:users!memberships_user_id_fkey(name, email)")
         .eq("agency_id", agencyId!)
         .is("client_id", null) // agency staff only — client contacts aren't "the team"
         .is("removed_at", null)
