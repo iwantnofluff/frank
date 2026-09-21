@@ -12,6 +12,20 @@ Scoped out on the grounds that each would require a schema or feature decision, 
 - **WIIFM Note input** — would duplicate or conflict with the Brief panel's existing `approach_notes` field; a data-modeling decision.
 - **Dual "Save as Coming Soon" / "Send for Review" footer buttons** — needs a stage-transition/visibility concept that doesn't exist in the schema.
 
+## New Brief — Copy Options scoped out of v1
+
+Audited (not built) against the prototype's `#briefScrim`/`openBriefModal`/`bwSave` (New Brief creates a creative; separately, `renderBrief`/`saveBrief` edit an existing one — the app's `BriefPanel.tsx` already corresponds to the latter). Ten of the thirteen fields the modal captures map onto columns or proven versioning patterns that already exist (`creatives.name/concept/reference_url/approach_notes/lead_user_id/scheduled_at/destination/due_on/format`, `copy_versions.slide_text`, `creatives.cx`). **Copy Options (`bwCopies`, "+ Add Option") does not**, and it's the one field that needs an actual decision before New Brief can be built, not a schema change derivable from what's there.
+
+The prototype's own comment calls it out as distinct from Text on Image: both "create a copy version," but Copy Options is a *list of candidate captions* offered at brief time for a copywriter to draft from — not the final content of any one version. `copy_versions.fields` (jsonb: caption/headline/cta/subject_line/preview_text/alt_text) models the opposite shape: **one version's settled content**, confirmed by how `useSaveSlideText` already uses the table — every edit inserts a new row that carries the *existing* `fields` forward untouched, changing only what that edit was for. There's no column or table anywhere for "here are three options, pick one."
+
+Open product questions this needs answered, not derived:
+
+- **Do options persist after one is picked?** Does choosing a caption promote it into `copy_versions.fields.caption` and the rest simply vanish, or do all candidates stay on record against the creative/version?
+- **Who chooses?** The brief-writer proposes them — does the copywriter pick, does a client ever see the options, or is picking itself a staff-only action regardless of who briefed it?
+- **Are rejected options kept?** If they're discarded, "Copy Options" is really just brief-writer scratch space with no lasting data shape at all — closer to a text field than a first-class list. If they're kept, that's a real new column or table, and a decision about who can read it later (comment visibility's private/public split doesn't obviously apply, but it's the closest precedent in this schema).
+
+Building New Brief without answering these would mean guessing at a data shape for a concept the prototype itself doesn't fully commit to. Scoped out of v1: a New Brief form can ship with a single caption written straight into `copy_versions.fields.caption` (via the `useSaveSlideText` pattern) and no "options" concept at all, closing this gap later once the questions above have real answers.
+
 ## `.review` grid — leaving the drift in place
 
 The base `.review` rule is confirmed Drifted (see `docs/css-coverage.md`): the prototype is `grid-template-columns:0 minmax(0,1fr) 427px` with a `.22s` transition and two additional state classes, `.review.feedrailed` / `.review.withfeed`, that widen the first column to show an Instagram grid/feed-connection panel. The app's version is a plain two-column grid with no leading zero-width column, no transition, and no state classes.
