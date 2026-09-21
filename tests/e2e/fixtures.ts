@@ -44,6 +44,11 @@ export interface Frank {
    * project" for this client don't silently start seeing 2. Cleaned up by
    * the agency_id-wide teardown below, no separate tracking needed. */
   createContinuousProject(): Promise<string>;
+  /** Creates an extra creative on the default (scheduled) project at a
+   * given stage — for share-eligibility.spec.ts, which needs creatives
+   * below Client Review (stage < 5) to exercise ShareModal's eligibility
+   * preview. Cleaned up by the same agency_id-wide teardown. */
+  createCreativeAtStage(stage: number, name?: string): Promise<string>;
 }
 
 async function signIn(email: string, password: string): Promise<SupabaseClient> {
@@ -203,6 +208,23 @@ export const test = base.extend<{ frank: Frank }>({
         if (error) throw error;
         return data.id as string;
       },
+
+      async createCreativeAtStage(stage, name = `E2E Stage ${stage} Creative ${stamp}`) {
+        const { data, error } = await admin
+          .from("creatives")
+          .insert({
+            project_id: project.id,
+            name,
+            format: "ig_feed",
+            stage,
+            scheduled_at: "2027-03-15T14:00:00.000Z",
+            created_by: staffAuth.user.id,
+          })
+          .select("id")
+          .single();
+        if (error) throw error;
+        return data.id as string;
+      },
     };
 
     await provideFixture(frank);
@@ -218,12 +240,12 @@ export const test = base.extend<{ frank: Frank }>({
     // remember per spec; agency_id sweeps all of it regardless of what a
     // test added.
     const steps: [string, () => PromiseLike<{ error: unknown }>][] = [
-      ...sharedLinkTokens.map(
-        (t): [string, () => PromiseLike<{ error: unknown }>] => [
-          "shared_links",
-          () => admin.from("shared_links").delete().eq("token", t),
-        ],
-      ),
+      // By agency_id, not by the tokens tracked in sharedLinkTokens — that
+      // array only sees links made via frank.createSharedLink(); one made
+      // through the real ShareModal UI (share-eligibility.spec.ts) goes
+      // through create_shared_link() instead and was never tracked,
+      // which is exactly the gap that orphaned an agency here once already.
+      ["shared_links", () => admin.from("shared_links").delete().eq("agency_id", agency.id)],
       ["comments", () => admin.from("comments").delete().eq("agency_id", agency.id)],
       ["copy_versions", () => admin.from("copy_versions").delete().eq("agency_id", agency.id)],
       ["creative_versions", () => admin.from("creative_versions").delete().eq("agency_id", agency.id)],

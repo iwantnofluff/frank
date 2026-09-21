@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { useCreatives } from "@/hooks/use-creatives";
 import {
   useCreateSharedLink,
   type SharedLinkScope,
 } from "@/hooks/use-create-shared-link";
+import { resolveShareEligibility } from "@/lib/shared-link-eligibility";
 
 const SCOPE_OPTIONS: {
   value: SharedLinkScope;
@@ -52,6 +53,52 @@ export function ShareModal({
 
   const { data: creatives } = useCreatives(projectId);
   const createLink = useCreateSharedLink();
+
+  // Client-side preview of shared_link_allowed_creative_ids' stage >= 5
+  // rule — not enforcement (the RPC is still the real gate), just telling
+  // staff what this link will actually show before they hand it out.
+  // Doesn't block creation: there are legitimate reasons to make a link
+  // ahead of the work being ready.
+  const eligibility = useMemo(
+    () =>
+      resolveShareEligibility(creatives ?? [], scope, {
+        currentCreativeId,
+        pickedIds: Array.from(picked),
+      }),
+    [creatives, scope, currentCreativeId, picked],
+  );
+  const eligibilityNote = useMemo(() => {
+    const { candidateCount, eligibleCount, excludedCount } = eligibility;
+    if (candidateCount === 0) {
+      // scope "pick" with nothing checked yet already has its own cue
+      // (the "0 selected" hint and the disabled Create link button) —
+      // nothing more to say here.
+      if (scope === "pick") return null;
+      return {
+        tone: "warn" as const,
+        text:
+          scope === "pending"
+            ? "Nothing is currently waiting on client review in this project."
+            : "This project has no creatives yet.",
+      };
+    }
+    if (eligibleCount === 0) {
+      return {
+        tone: "warn" as const,
+        text:
+          candidateCount === 1
+            ? "This link will show nothing yet — that piece is still in Concept, Copy, Design or Internal QC. Work only becomes visible to a client from Client Review onward."
+            : `This link will show nothing yet — all ${candidateCount} pieces it covers are still in Concept, Copy, Design or Internal QC. Work only becomes visible to a client from Client Review onward.`,
+      };
+    }
+    if (excludedCount > 0) {
+      return {
+        tone: "info" as const,
+        text: `${excludedCount} of ${candidateCount} won't show on this link — still in Concept, Copy, Design or Internal QC.`,
+      };
+    }
+    return null;
+  }, [eligibility, scope]);
 
   async function handleCreate() {
     const token = await createLink.mutateAsync({
@@ -221,6 +268,16 @@ export function ShareModal({
               <i />
             </button>
           </div>
+
+          {eligibilityNote && (
+            <div className={`note${eligibilityNote.tone === "warn" ? " warn" : ""}`}>
+              <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 16v-5M12 8h.01" />
+              </svg>
+              <div>{eligibilityNote.text}</div>
+            </div>
+          )}
 
           <div className="note">
             <svg viewBox="0 0 24 24">

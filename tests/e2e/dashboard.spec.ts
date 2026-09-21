@@ -12,6 +12,11 @@ test("dashboard — clients list", async ({ page, frank }) => {
   // land on the pending placeholder instead of real numbers depending on
   // which query happens to finish first.
   await expect(page.locator(".stats .stat .n").nth(1)).not.toHaveText("…");
+  // useIsStaff (NavRail's Settings link, #navSet) resolves independently
+  // of both queries above and fails closed (hidden) until it does — wait
+  // for it too, or this screenshot can race ahead under worker
+  // concurrency and land on a rail missing Settings.
+  await page.waitForSelector("#navSet");
   await expect(page).toHaveScreenshot("dashboard.png");
 });
 

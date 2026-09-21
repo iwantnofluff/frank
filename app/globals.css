@@ -2006,6 +2006,11 @@ select:disabled {
   flex-shrink: 0;
   margin-top: 1px;
 }
+.note.warn {
+  background: var(--amber-bg);
+  border-color: #ffd9a8;
+  color: var(--amber);
+}
 .srow {
   display: flex;
   align-items: center;
