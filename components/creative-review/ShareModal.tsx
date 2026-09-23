@@ -8,6 +8,7 @@ import {
   type SharedLinkScope,
 } from "@/hooks/use-create-shared-link";
 import { resolveShareEligibility } from "@/lib/shared-link-eligibility";
+import { errorMessage } from "@/lib/errors";
 
 const SCOPE_OPTIONS: {
   value: SharedLinkScope;
@@ -292,11 +293,7 @@ export function ShareModal({
           </div>
 
           {createLink.error && (
-            <p className="autherr">
-              {createLink.error instanceof Error
-                ? createLink.error.message
-                : "Couldn't create the link"}
-            </p>
+            <p className="autherr">{errorMessage(createLink.error, "Couldn't create the link")}</p>
           )}
         </div>
       )}

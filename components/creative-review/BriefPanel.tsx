@@ -6,6 +6,7 @@ import type { CopyVersionRow } from "@/hooks/use-copy-versions";
 import { useUpdateBrief } from "@/hooks/use-update-brief";
 import { useSaveSlideText } from "@/hooks/use-save-slide-text";
 import { ListEditor } from "@/components/ui/ListEditor";
+import { errorMessage } from "@/lib/errors";
 
 function ChevronIcon() {
   return (
@@ -128,11 +129,7 @@ export function BriefPanel({
                 {saving ? "Saving…" : "Save brief"}
               </button>
               <div className="grow" />
-              {error && (
-                <span className="berr">
-                  {error instanceof Error ? error.message : "Couldn't save"}
-                </span>
-              )}
+              {error && <span className="berr">{errorMessage(error, "Couldn't save")}</span>}
             </div>
           )}
         </div>

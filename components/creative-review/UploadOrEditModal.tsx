@@ -6,6 +6,7 @@ import type { CopyVersionRow } from "@/hooks/use-copy-versions";
 import { useUploadCreativeVersion } from "@/hooks/use-upload-creative-version";
 import { useSaveCopyFields } from "@/hooks/use-save-copy-fields";
 import { validateUploadFile, ACCEPTED_FILE_EXTENSIONS } from "@/lib/upload-validation";
+import { errorMessage } from "@/lib/errors";
 
 type Mode = "creative" | "both" | "copy";
 
@@ -187,8 +188,8 @@ export function UploadOrEditModal({
     .join(" · ");
   const error =
     fileError ||
-    (uploadCreative.error instanceof Error ? uploadCreative.error.message : null) ||
-    (saveCopy.error instanceof Error ? saveCopy.error.message : null);
+    (uploadCreative.error ? errorMessage(uploadCreative.error, "Couldn't upload") : null) ||
+    (saveCopy.error ? errorMessage(saveCopy.error, "Couldn't save") : null);
 
   function pickFile(f: File) {
     const validation = validateUploadFile(f);

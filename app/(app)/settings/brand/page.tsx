@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useMyAgency } from "@/hooks/use-my-agency";
 import { useAgencySettings, type AgencyTheme } from "@/hooks/use-agency-settings";
 import { useUpdateAgencyBranding } from "@/hooks/use-update-agency-branding";
+import { errorMessage } from "@/lib/errors";
 
 function BrandForm({
   agencyId,
@@ -99,11 +100,7 @@ function BrandForm({
           <div className="grow" />
           {update.isSuccess && <span className="bsaved">Saved</span>}
           {update.error && (
-            <span className="berr">
-              {update.error instanceof Error
-                ? update.error.message
-                : "Couldn't save"}
-            </span>
+            <span className="berr">{errorMessage(update.error, "Couldn't save")}</span>
           )}
         </div>
       </div>

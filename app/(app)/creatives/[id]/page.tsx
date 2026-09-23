@@ -10,6 +10,7 @@ import { useCreateComment } from "@/hooks/use-create-comment";
 import { useMyMembership } from "@/hooks/use-my-membership";
 import { useAdvanceCreativeStage } from "@/hooks/use-advance-creative-stage";
 import { stageLabel } from "@/lib/stage-labels";
+import { errorMessage } from "@/lib/errors";
 import {
   isHighlightAnchor,
   isPinAnchor,
@@ -254,9 +255,7 @@ export default function CreativeReviewPage({
         </div>
         {advanceStage.error && (
           <p className="autherr" style={{ padding: "0 20px" }}>
-            {advanceStage.error instanceof Error
-              ? advanceStage.error.message
-              : "Couldn't move this creative"}
+            {errorMessage(advanceStage.error, "Couldn't move this creative")}
           </p>
         )}
 
