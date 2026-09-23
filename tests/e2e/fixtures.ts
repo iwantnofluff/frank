@@ -49,6 +49,16 @@ export interface Frank {
    * below Client Review (stage < 5) to exercise ShareModal's eligibility
    * preview. Cleaned up by the same agency_id-wide teardown. */
   createCreativeAtStage(stage: number, name?: string): Promise<string>;
+  /** Inserts a copy_versions row directly (service-role, no author-
+   * dependent visibility rule here unlike comments) — for
+   * project-calendar.spec.ts's Image on Text / Post Copy version-history
+   * hover, which needs more than one version on record to have anything
+   * to show. Cleaned up by the same agency_id-wide teardown. */
+  createCopyVersion(
+    creativeId: string,
+    versionNo: number,
+    fields: { caption?: string; slideText?: string[] },
+  ): Promise<void>;
 }
 
 async function signIn(email: string, password: string): Promise<SupabaseClient> {
@@ -225,6 +235,18 @@ export const test = base.extend<{ frank: Frank }>({
         if (error) throw error;
         return data.id as string;
       },
+
+      async createCopyVersion(creativeId, versionNo, fields) {
+        const { error } = await admin.from("copy_versions").insert({
+          creative_id: creativeId,
+          version_no: versionNo,
+          fields: fields.caption ? { caption: fields.caption } : {},
+          slide_text: fields.slideText ?? [],
+          source: "in_app_edit",
+          created_by: staffAuth.user.id,
+        });
+        if (error) throw error;
+      },
     };
 
     await provideFixture(frank);
@@ -258,8 +280,23 @@ export const test = base.extend<{ frank: Frank }>({
       // clean it up, or agencies' delete below fails on the FK and leaves
       // this whole fixture orphaned.
       ["format_directions", () => admin.from("format_directions").delete().eq("agency_id", agency.id)],
+      // Before phase11_agency_knowledge.sql is applied, this errors
+      // (best-effort/logged, not thrown — same as every step here) rather
+      // than blocking the rest of cleanup.
+      ["agency_knowledge_entries", () => admin.from("agency_knowledge_entries").delete().eq("agency_id", agency.id)],
+      // References clients — must run before the clients delete below, the
+      // same reason format_directions/custom_columns run before agencies.
+      ["knowledge_entries", () => admin.from("knowledge_entries").delete().eq("agency_id", agency.id)],
       ["memberships", () => admin.from("memberships").delete().eq("agency_id", agency.id)],
-      ["clients", () => admin.from("clients").delete().eq("id", client.id)],
+      // By agency_id, not just the fixture's own client.id — new-client.spec.ts
+      // creates extra clients through the real New Client modal, same reasoning
+      // as shared_links above.
+      ["clients", () => admin.from("clients").delete().eq("agency_id", agency.id)],
+      // After clients (clients.logo_asset_id references assets) and after
+      // every other table above that references assets (creative_versions,
+      // knowledge_entries) — an asset row with anything still pointing at
+      // it fails the same way an unswept child row anywhere else here does.
+      ["assets", () => admin.from("assets").delete().eq("agency_id", agency.id)],
       ["agencies", () => admin.from("agencies").delete().eq("id", agency.id)],
       [
         "users",
