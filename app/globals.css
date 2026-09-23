@@ -896,8 +896,11 @@ body.lightrail .avatar {
   margin-top: 4px;
 }
 
-/* Project view — dual-mode creative table. Rationale for why this doesn't
-   match the prototype's grid: docs/parity-gaps.md. */
+/* Project view — dual-mode creative table. Continuous-delivery projects use
+   this flat table; scheduled-delivery projects use the calendar table
+   below instead (.tblwrap/.tbl). Rationale, and what's still not ported
+   from the prototype's fuller grid (drag/resize/reorder columns, saved
+   views, inline editing): docs/parity-gaps.md. */
 
 .ptable {
   border: 1px solid var(--line);
@@ -937,6 +940,845 @@ body.lightrail .avatar {
   overflow: hidden;
   text-overflow: ellipsis;
   cursor: pointer;
+}
+
+/* Calendar table — scheduled-delivery projects' month view. Ported subset
+   of the prototype's .tbl/.tblwrap (frank-prototype.html): the static
+   table look only, not column drag/resize/reorder, saved views, or inline
+   editing — see docs/parity-gaps.md for what's still deferred there. */
+
+.calbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.calnav {
+  display: flex;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.calnav button {
+  padding: 6px 9px;
+  color: var(--muted);
+}
+.calnav button:hover {
+  background: var(--canvas);
+  color: var(--ink);
+}
+.calnav svg {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  display: block;
+}
+.calmonth {
+  font-size: 13.5px;
+  font-weight: 600;
+  min-width: 130px;
+}
+.tblwrap {
+  overflow-x: auto;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r);
+}
+.tbl {
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+.tbl th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: #2c3039;
+  color: #fff;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  padding: 7px 9px;
+  border-right: 1px solid #3d4450;
+  white-space: nowrap;
+  text-align: left;
+}
+.tbl th small {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 400;
+  opacity: 0.6;
+  letter-spacing: 0;
+  text-transform: none;
+  margin-top: 1px;
+}
+.tbl th.k {
+  background: #007bff;
+}
+.tbl th.feedback {
+  background: var(--rose);
+}
+.feedback-note {
+  color: var(--rose);
+}
+.tbl td {
+  padding: var(--d-cell-y) var(--d-cell-x);
+  border-bottom: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  font-size: var(--d-fs);
+  line-height: var(--d-line);
+  vertical-align: top;
+  background: var(--surface);
+  overflow: hidden;
+}
+.tbl tbody tr[data-row] {
+  cursor: pointer;
+}
+.tbl tbody tr[data-row]:hover td {
+  background: #f7f9fb;
+}
+.tbl tr.done td {
+  background: #f4f8f5;
+}
+.tbl tr.wkband td {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--canvas);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--line-2);
+  border-right: none;
+}
+.wkband .bandin {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+.tbl .wkband .rng {
+  font-weight: 400;
+  color: var(--muted);
+  margin-left: 8px;
+}
+.tbl .wkband .cnt {
+  font-weight: 400;
+  color: var(--muted);
+  margin-left: 11px;
+  padding-left: 12px;
+  border-left: 1px solid var(--line-2);
+}
+.stg {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.stg .no {
+  opacity: 0.65;
+  font-weight: 700;
+}
+.pchip {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 3px;
+  margin: 0 3px 2px 0;
+  white-space: nowrap;
+}
+.lead {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.lead i {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 8.5px;
+  font-weight: 700;
+  color: #fff;
+  font-style: normal;
+}
+.cellw {
+  min-width: 200px;
+  white-space: normal;
+  line-height: 1.4;
+}
+.tdim {
+  color: var(--muted);
+}
+.callegend {
+  display: flex;
+  gap: 14px;
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.callegend span {
+  display: inline-flex;
+  align-items: center;
+}
+.callegend i {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  margin-right: 5px;
+  vertical-align: -1px;
+}
+
+/* Sticky Week/Date/Day columns — left offset is set inline per column
+   (widths are fixed constants, see ProjectCalendarTable's FROZEN_COLUMNS). */
+.tbl td.sk1,
+.tbl td.sk2,
+.tbl td.sk3 {
+  position: sticky;
+  z-index: 2;
+  background: var(--surface);
+}
+.tbl tr.done td.sk1,
+.tbl tr.done td.sk2,
+.tbl tr.done td.sk3 {
+  background: #f4f8f5;
+}
+.tbl tbody tr[data-row]:hover td.sk1,
+.tbl tbody tr[data-row]:hover td.sk2,
+.tbl tbody tr[data-row]:hover td.sk3 {
+  background: #f7f9fb;
+}
+.tbl tbody tr[data-row].done:hover td.sk1,
+.tbl tbody tr[data-row].done:hover td.sk2,
+.tbl tbody tr[data-row].done:hover td.sk3 {
+  background: #edf4ef;
+}
+.tbl th.sk1,
+.tbl th.sk2,
+.tbl th.sk3 {
+  position: sticky;
+  z-index: 4;
+  background: #2c3039;
+}
+.tbl tr.istoday td.sk1 {
+  box-shadow: inset 3px 0 0 var(--action);
+}
+
+/* View tabs ("Main Table") — cosmetic only, no multi-view management. */
+.viewbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border-bottom: 1px solid var(--line);
+  margin: 0 0 14px;
+  flex-wrap: wrap;
+}
+.vtab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  border-radius: 5px 5px 0 0;
+  cursor: pointer;
+  user-select: none;
+}
+.vtab:hover {
+  color: var(--ink);
+  background: rgba(0, 0, 0, 0.03);
+}
+.vtab[aria-selected="true"] {
+  color: var(--action);
+  border-bottom-color: var(--action);
+  font-weight: 600;
+}
+.vtab .dot2 {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--amber);
+}
+.vdots {
+  width: 19px;
+  height: 19px;
+  border-radius: 4px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.vdots:hover {
+  background: rgba(0, 0, 0, 0.09);
+  color: var(--ink);
+}
+.vdots svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+.vadd {
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  margin-left: 4px;
+  cursor: pointer;
+}
+.vadd:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--ink);
+}
+.vadd svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.2;
+}
+
+/* Split button (Save / Save as New View, with a chevron for the dropdown). */
+.split {
+  display: inline-flex;
+  position: relative;
+}
+.split .btn {
+  border-radius: var(--r) 0 0 var(--r);
+  border-right-color: rgba(255, 255, 255, 0.3);
+}
+.split .split-t {
+  border-radius: 0 var(--r) var(--r) 0;
+  padding: 4px 6px;
+  border-left: none;
+}
+.split .split-t svg {
+  width: 13px;
+  height: 13px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Column drag-to-reorder and resize (table header only). */
+.tbl th.dragcol {
+  cursor: grab;
+  position: relative;
+}
+.tbl th.dragcol:active {
+  cursor: grabbing;
+}
+.tbl th.dragging {
+  background: #3d4450;
+  opacity: 0.75;
+}
+.tbl th.drop-target {
+  box-shadow: inset 2px 0 0 var(--action);
+}
+.grip {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 7px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 5;
+}
+.grip:hover {
+  background: var(--action);
+  opacity: 0.55;
+}
+
+/* Week/Month/Calendar segmented control. */
+.seg2 {
+  display: flex;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.seg2 button {
+  padding: 4px 11px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.seg2 button[aria-pressed="true"] {
+  background: var(--ink);
+  color: #fff;
+}
+
+/* Columns show/hide dropdown. */
+.colpop {
+  position: fixed;
+  z-index: 80;
+  width: 330px;
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  box-shadow: 0 16px 48px rgba(20, 22, 26, 0.22);
+  overflow: hidden;
+}
+.cp-h {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 15px 10px;
+}
+.cp-h b {
+  font-size: 15px;
+  font-weight: 600;
+  flex: 1;
+}
+.cp-s {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 15px 10px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r);
+  padding: 7px 10px;
+}
+.cp-s svg {
+  width: 14px;
+  height: 14px;
+  stroke: var(--muted);
+  fill: none;
+  stroke-width: 1.9;
+}
+.cp-s input {
+  flex: 1;
+  border: none;
+  font: inherit;
+  font-size: 13px;
+  background: none;
+}
+.cp-s input:focus {
+  outline: none;
+}
+.cp-b {
+  max-height: 330px;
+  overflow-y: auto;
+  padding: 0 8px 10px;
+}
+.cpr {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 8px;
+  border-radius: 5px;
+  text-align: left;
+}
+.cpr:hover {
+  background: var(--canvas);
+}
+.cpr.all {
+  font-weight: 600;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  margin-bottom: 4px;
+  padding-bottom: 10px;
+}
+.cbx {
+  width: 17px;
+  height: 17px;
+  border: 1.5px solid var(--line-2);
+  border-radius: 4px;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  font-size: 10px;
+  color: transparent;
+  cursor: pointer;
+}
+.cbx:hover {
+  border-color: var(--action);
+}
+.cbx svg {
+  width: 11px;
+  height: 11px;
+  stroke: #fff;
+  stroke-width: 3;
+  fill: none;
+  display: none;
+}
+.cbx.on {
+  background: var(--action);
+  border-color: var(--action);
+}
+.cbx.on svg {
+  display: block;
+}
+.cpr .cn {
+  font-size: 13px;
+}
+.cpr .cs {
+  font-size: 11px;
+  color: var(--muted);
+  margin-left: auto;
+}
+
+/* Calendar grid ("Calendar" mode) — month grid of day cells. */
+.calhead {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: #fafbfc;
+  border-bottom: 1px solid var(--line);
+}
+.calhead div {
+  padding: 8px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.calgrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border: 1px solid var(--line-2);
+  border-top: none;
+}
+.cell {
+  min-height: 124px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 6px 7px;
+  position: relative;
+}
+.cell:nth-child(7n) {
+  border-right: none;
+}
+.cell.out {
+  background: #fafbfc;
+}
+.cell.out .dnum {
+  color: var(--line-2);
+}
+.cell.today .dnum {
+  background: var(--action);
+  color: #fff;
+  border-radius: 50%;
+  width: 21px;
+  height: 21px;
+  display: grid;
+  place-items: center;
+}
+.cell.wknd {
+  background: #fcfcfd;
+}
+.dnum {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 5px;
+  display: inline-block;
+}
+.ev {
+  display: flex;
+  gap: 5px;
+  width: 100%;
+  text-align: left;
+  padding: 3px 5px;
+  border-radius: 4px;
+  margin-bottom: 2px;
+  font-size: 11px;
+  line-height: 1.25;
+  transition: background 0.1s;
+}
+.ev:hover {
+  background: var(--canvas);
+}
+.ev .bar4 {
+  width: 3px;
+  align-self: stretch;
+  border-radius: 2px;
+  flex-shrink: 0;
+  min-height: 24px;
+}
+.ev .ebody {
+  min-width: 0;
+  flex: 1;
+}
+.ev .et {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+  display: block;
+  color: var(--ink);
+}
+.ev .erow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 1px;
+}
+.ev .etm {
+  font-size: 10px;
+  color: var(--muted);
+}
+.more {
+  font-size: 10.5px;
+  color: var(--action);
+  font-weight: 600;
+  padding: 1px 5px;
+}
+.more:hover {
+  text-decoration: underline;
+}
+.daypop {
+  position: fixed;
+  z-index: 82;
+  width: 260px;
+  max-height: 320px;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  box-shadow: 0 16px 48px rgba(20, 22, 26, 0.22);
+  padding: 10px;
+}
+.daypop h4 {
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+/* Creative hover preview. */
+.evpop {
+  position: fixed;
+  z-index: 85;
+  width: 306px;
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  box-shadow: 0 18px 54px rgba(20, 22, 26, 0.26);
+  overflow: hidden;
+  /* Unlike the prototype's own #evpop (pointer-events:none — it never
+     lets the pointer land on the card itself), this one accepts hover so
+     the preview can "hold" while the pointer crosses from the trigger
+     onto the card — see ProjectCalendarTable's cancelHide/scheduleHide. */
+}
+.evpop .rv {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  background: #fafbfc;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+.evpop .rv .rvt {
+  font-size: 11.5px;
+  font-weight: 600;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pp-h {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+}
+.pp-av {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f58529, #dd2a7b);
+  padding: 2px;
+  flex-shrink: 0;
+}
+.pp-av i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-image: linear-gradient(135deg, #007bff, #003c61);
+}
+.pp-h b {
+  font-size: 11.5px;
+  font-weight: 600;
+  display: block;
+  line-height: 1.2;
+}
+.pp-h span {
+  font-size: 10px;
+  color: var(--muted);
+  display: block;
+}
+.pp-media {
+  background: #000;
+  position: relative;
+}
+.pp-media svg {
+  width: 100%;
+  display: block;
+}
+.pp-art {
+  position: relative;
+}
+.pp-art svg {
+  width: 100%;
+  display: block;
+}
+.pp-art-overlay {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  right: 16px;
+}
+.pp-art-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.3;
+  letter-spacing: -0.2px;
+  margin-bottom: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.pp-art-time {
+  display: inline-block;
+  background: #fff;
+  color: #14161a;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 10px;
+}
+.pp-acts {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 7px 10px 3px;
+}
+.pp-acts svg {
+  width: 18px;
+  height: 18px;
+  stroke: #14161a;
+  fill: none;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.pp-pending {
+  padding: 1px 10px 0;
+  font-size: 10.5px;
+  color: var(--muted);
+  font-style: italic;
+}
+.pp-published {
+  padding: 1px 10px 0;
+  font-size: 10.5px;
+  color: var(--muted);
+}
+.pp-cap {
+  padding: 4px 10px 8px;
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+.pp-cap b {
+  font-weight: 600;
+  margin-right: 4px;
+}
+.pp-time {
+  padding: 0 10px 9px;
+  font-size: 9.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Copy version history — hover popover for the calendar table's Image on
+   Text / Post Copy cells (real copy_versions rows, newest first). */
+.copypop {
+  position: fixed;
+  z-index: 90;
+  width: 380px;
+  max-width: calc(100vw - 24px);
+  max-height: min(58vh, 520px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  border-radius: 9px;
+  box-shadow: 0 14px 40px rgba(20, 22, 26, 0.2);
+  padding: 4px 0;
+}
+.cp-row {
+  padding: 9px 13px;
+  border-bottom: 1px solid var(--line);
+}
+.cp-row:last-child {
+  border-bottom: none;
+}
+.cp-row b {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+.cp-row.live b {
+  color: var(--action);
+}
+.cp-row span {
+  font-size: 12.5px;
+  line-height: 1.55;
+  display: block;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+/* The cell's own truncated latest-version preview + hover affordance. */
+.copyc {
+  display: block;
+  cursor: default;
+}
+.cc-t {
+  display: -webkit-box;
+  font-size: var(--d-fs);
+  line-height: var(--d-line);
+  -webkit-line-clamp: var(--d-clamp);
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.cc-n {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--action);
 }
 
 /* Creative review — the split stage/comments screen.
@@ -1065,6 +1907,22 @@ select:focus {
 select:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+select.sort {
+  border-radius: var(--r);
+  padding: 4px 28px 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+  background-color: var(--surface);
+  border-color: var(--line-2);
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2314161A' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-position: right 8px center;
+  background-size: 12px;
+}
+select.sort:hover {
+  background-color: var(--canvas);
+  border-color: var(--line-2);
 }
 
 .vsel {
@@ -1716,6 +2574,17 @@ select:disabled {
   display: block;
   margin-bottom: 3px;
 }
+.kbfile {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--action);
+  display: block;
+  margin-bottom: 3px;
+  text-align: left;
+}
+.kbfile:hover {
+  text-decoration: underline;
+}
 .kbentry p {
   font-size: 12.5px;
   color: var(--muted);
@@ -1731,6 +2600,197 @@ select:disabled {
   font-size: 12px;
   color: var(--muted);
   padding: 4px 0;
+}
+
+/* Agency-level Reference Material — ports the prototype's renderMethod()
+   panel markup exactly (frank-prototype.html), rather than the generic
+   .kbcard grid above, which client-level Knowledge still uses. */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.panel-h {
+  padding: 11px 15px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.panel-h b {
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.panel-h .sync {
+  margin-left: auto;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.kb-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 15px;
+  border-bottom: 1px solid var(--line);
+}
+.kb-item:last-child {
+  border-bottom: none;
+}
+.kb-item.open {
+  cursor: pointer;
+}
+.kb-item.open:hover {
+  background: var(--canvas);
+}
+.kb-ic {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  font-size: 9px;
+  font-weight: 700;
+  color: #fff;
+}
+.kb-b {
+  flex: 1;
+  min-width: 0;
+}
+.kb-b b {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.kb-b .body {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--ink);
+  white-space: pre-wrap;
+  margin: 4px 0 5px;
+}
+.kb-b .meta {
+  font-size: 10.5px;
+  color: var(--muted);
+}
+.kb-acts {
+  display: flex;
+  gap: 5px;
+  flex-shrink: 0;
+}
+.kb-foot {
+  padding: 11px 15px;
+  border-top: 1px solid var(--line);
+}
+.fbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: var(--r);
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--action);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.fbtn:hover {
+  border-color: var(--action);
+  background: var(--action-soft);
+}
+/* Not in the prototype (its fd-row "Edit" opens a modal) — this app's
+   inline-edit convention (see .bf-b, the pattern this replaced) needed an
+   unscoped equivalent, since .bf-b's display toggle is keyed off .brief. */
+.fd-edit {
+  border-top: 1px solid var(--line);
+  padding: 2px 0;
+}
+
+/* Format Directions — the full 41-format catalog grouped into collapsible
+   categories (frank-prototype.html, renderMethod()), ported verbatim. */
+.fd-note {
+  padding: 11px 15px;
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.55;
+  border-bottom: 1px solid var(--line);
+}
+.fd-cat {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 15px;
+  cursor: pointer;
+  background: var(--canvas);
+  border-bottom: 1px solid var(--line);
+  user-select: none;
+}
+.fd-cat:hover {
+  background: var(--line);
+}
+.fd-cat svg {
+  width: 13px;
+  height: 13px;
+  stroke: var(--muted);
+  fill: none;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.15s;
+  flex-shrink: 0;
+}
+.fd-cat.open svg {
+  transform: rotate(90deg);
+}
+.fd-cat b {
+  flex: 1;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: 0;
+  text-transform: none;
+}
+.fd-cat span {
+  font-size: 10.5px;
+  color: var(--muted);
+  font-weight: 500;
+}
+.fd-row {
+  padding: 11px 15px;
+  border-bottom: 1px solid var(--line);
+}
+.fd-row:last-child {
+  border-bottom: none;
+}
+.fd-h {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 5px;
+}
+.fd-h b {
+  font-size: 12.5px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.fd-m {
+  flex: 1;
+  font-size: 10.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.fd-d {
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--ink);
 }
 
 /* Generic modal — .scrim matches frank-prototype.html's own name for this
@@ -1758,6 +2818,9 @@ select:disabled {
   display: flex;
   flex-direction: column;
   box-shadow: 0 20px 60px rgba(20, 22, 26, 0.3);
+}
+.modal.sm {
+  max-width: 420px;
 }
 .modal-h {
   display: flex;
@@ -1933,6 +2996,70 @@ select:disabled {
 .frow .field {
   flex: 1;
   min-width: 0;
+}
+.kindpick {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.kopt {
+  display: flex;
+  gap: 11px;
+  text-align: left;
+  border: 1.5px solid var(--line-2);
+  border-radius: 9px;
+  padding: 12px 13px;
+  align-items: flex-start;
+}
+.kopt:hover {
+  border-color: var(--muted);
+}
+.kopt[aria-pressed="true"] {
+  border-color: var(--action);
+  background: var(--action-soft);
+}
+.kic {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  background: var(--canvas);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.kopt[aria-pressed="true"] .kic {
+  background: var(--action);
+  color: #fff;
+}
+.kic svg {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.kt {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.kt b {
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.kt > span {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+.keg {
+  font-size: 11px;
+  color: var(--muted);
+  opacity: 0.8;
+  margin-top: 3px;
 }
 .radios {
   display: flex;
