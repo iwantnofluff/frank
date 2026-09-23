@@ -5,7 +5,10 @@ import Link from "next/link";
 import { useClients } from "@/hooks/use-clients";
 import { useMyAgency } from "@/hooks/use-my-agency";
 import { useAgencyCreativeStats } from "@/hooks/use-agency-creative-stats";
+import { useIsStaff } from "@/hooks/use-is-staff";
 import { SearchIcon } from "@/components/app-shell/icons";
+import { NewClientModal } from "@/components/clients/NewClientModal";
+import { errorMessage } from "@/lib/errors";
 
 type Filter = "active" | "archived";
 
@@ -30,8 +33,13 @@ export default function DashboardPage() {
   // disabled or not.
   const { data: creativeStats, isPending: statsLoading } =
     useAgencyCreativeStats(agency?.agencyId);
+  const { isStaff, isPending: isStaffPending } = useIsStaff();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("active");
+  const [newClientOpen, setNewClientOpen] = useState(false);
+  // Fails closed like every other isStaff gate in this app: hidden while
+  // still resolving, not shown by default.
+  const confirmedStaff = isStaff && !isStaffPending;
 
   const filtered = useMemo(() => {
     if (!clients) return [];
@@ -112,13 +120,22 @@ export default function DashboardPage() {
           >
             Archived
           </button>
+          {confirmedStaff && (
+            <button
+              className="btn sm"
+              type="button"
+              onClick={() => setNewClientOpen(true)}
+            >
+              New Client
+            </button>
+          )}
         </div>
       </div>
 
       {isError && (
         <div className="empty">
           <b>Couldn&rsquo;t load clients</b>
-          <span>{error instanceof Error ? error.message : "Unknown error"}</span>
+          <span>{errorMessage(error, "Unknown error")}</span>
         </div>
       )}
 
@@ -176,6 +193,14 @@ export default function DashboardPage() {
             </Link>
           ))}
         </div>
+      )}
+
+      {newClientOpen && agency && (
+        <NewClientModal
+          agencyId={agency.agencyId}
+          activeClientCount={activeCount}
+          onClose={() => setNewClientOpen(false)}
+        />
       )}
     </div>
   );

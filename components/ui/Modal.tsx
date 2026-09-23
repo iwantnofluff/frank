@@ -7,11 +7,15 @@ export function Modal({
   onClose,
   children,
   footer,
+  size,
 }: {
   title: string;
   onClose: () => void;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  // Matches the prototype's .modal.sm (max-width:420px) — the default
+  // width is meant for content-heavy forms like New Brief.
+  size?: "sm";
 }) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -24,7 +28,7 @@ export function Modal({
   return (
     <div className="scrim" onClick={onClose}>
       <div
-        className="modal"
+        className={size === "sm" ? "modal sm" : "modal"}
         role="dialog"
         aria-modal="true"
         aria-label={title}
