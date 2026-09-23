@@ -9,15 +9,23 @@ import { useTeamMembers } from "@/hooks/use-team-members";
 import { useMyAgency } from "@/hooks/use-my-agency";
 import { useCustomColumns } from "@/hooks/use-custom-columns";
 import { FORMAT_CATEGORIES, formatsByCategory } from "@/lib/formats";
+import { errorMessage } from "@/lib/errors";
 
 export function NewBriefModal({
   projectId,
   delivery,
   onClose,
+  onCreated,
 }: {
   projectId: string;
   delivery: "scheduled" | "continuous";
   onClose: () => void;
+  // Fires with the new creative's scheduled_at right after a successful
+  // create, before onClose — lets the caller (the calendar table, for
+  // scheduled projects) jump to the month it actually landed in, rather
+  // than leaving a brief invisible because it was briefed for a month the
+  // view doesn't currently happen to be showing.
+  onCreated?: (scheduledAt: string | null) => void;
 }) {
   const { data: agency } = useMyAgency();
   const { data: teamMembers } = useTeamMembers(agency?.agencyId);
@@ -72,6 +80,11 @@ export function NewBriefModal({
     }
     setDestinationError(null);
 
+    const scheduledAt =
+      delivery === "scheduled"
+        ? new Date(`${date}T${time || "09:00"}:00`).toISOString()
+        : null;
+
     await createCreative.mutateAsync({
       name: name.trim(),
       format,
@@ -82,22 +95,17 @@ export function NewBriefModal({
       slideText,
       caption,
       cx,
-      scheduledAt:
-        delivery === "scheduled"
-          ? new Date(`${date}T${time || "09:00"}:00`).toISOString()
-          : null,
+      scheduledAt,
       destination: delivery === "continuous" ? destination.trim() : null,
       dueOn: delivery === "continuous" ? dueOn || null : null,
     });
+    onCreated?.(scheduledAt);
     onClose();
   }
 
-  const submitError =
-    createCreative.error instanceof Error
-      ? createCreative.error.message
-      : createCreative.isError
-        ? "Couldn't create the brief"
-        : null;
+  const submitError = createCreative.error
+    ? errorMessage(createCreative.error, "Couldn't create the brief")
+    : null;
 
   return (
     <Modal

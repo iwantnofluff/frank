@@ -4,7 +4,7 @@
 // available at the Node 20.6+ this repo already requires.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { bandOf, stageLabel, type Exception } from "./stage-labels.ts";
+import { bandOf, stageLabel, stageColor, exceptionLabel, type Exception } from "./stage-labels.ts";
 
 const EXCEPTIONS: Exception[] = ["changes_requested", "rejected"];
 
@@ -72,6 +72,30 @@ test("stageLabel — unchanged by the shared-table refactor (continuous)", () =>
   assert.equal(stageLabel(8, "continuous"), "Delivered");
   // Stages 1-6 are identical text across both delivery modes.
   assert.equal(stageLabel(1, "continuous"), stageLabel(1, "scheduled"));
+});
+
+test("stageColor — exception always wins over stage, same precedence as bandOf", () => {
+  for (const exception of EXCEPTIONS) {
+    for (let stage = 1; stage <= 8; stage++) {
+      assert.equal(
+        stageColor(stage, exception),
+        stageColor(1, exception),
+        `stage ${stage} with exception ${exception} should match stage 1's colour for the same exception`,
+      );
+    }
+  }
+});
+
+test("stageColor — no exception, colour tracks the band groupings the prototype's STAGES table defines", () => {
+  assert.equal(stageColor(1, null), stageColor(4, null)); // 1-4 share the "internal" grey
+  assert.equal(stageColor(6, null), stageColor(7, null)); // 6-7 share the "approved" green
+  assert.notEqual(stageColor(4, null), stageColor(5, null)); // internal vs review differ
+  assert.notEqual(stageColor(7, null), stageColor(8, null)); // approved vs published differ
+});
+
+test("exceptionLabel — human-readable text for both exception values", () => {
+  assert.equal(exceptionLabel("changes_requested"), "Changes Requested");
+  assert.equal(exceptionLabel("rejected"), "Rejected");
 });
 
 test("stageLabel and bandOf agree on where the stage table's rows are — label and band cannot drift apart", () => {

@@ -10,11 +10,14 @@ export interface CreativeListRow {
   stage: number;
   exception: "changes_requested" | "rejected" | null;
   lead_user_id: string | null;
+  concept: string | null;
+  approach_notes: string[] | null;
   scheduled_at: string | null;
   platforms: string[] | null;
   destination: string | null;
   added_on: string;
   due_on: string | null;
+  published_at: string | null;
   cx: Record<string, string | number | boolean | null>;
   lead: { name: string } | null;
 }
@@ -32,7 +35,7 @@ export function useCreatives(projectId: string) {
       const { data: rows, error } = await supabase
         .from("creatives")
         .select(
-          "id, name, format, stage, exception, lead_user_id, scheduled_at, platforms, destination, added_on, due_on, cx",
+          "id, name, format, stage, exception, lead_user_id, concept, approach_notes, scheduled_at, platforms, destination, added_on, due_on, published_at, cx",
         )
         .eq("project_id", projectId)
         .is("archived_at", null)
