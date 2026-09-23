@@ -36,7 +36,7 @@ export function LoginForm() {
   return (
     <form className="authcard" onSubmit={handleSubmit}>
       <div className="mark authmark">F</div>
-      <h1 className="h1">Sign in to Frank</h1>
+      <h1 className="h1">Hey, sign in to Frank</h1>
       <p className="sub">Use the account your agency invited you with.</p>
 
       <label className="authfield">
