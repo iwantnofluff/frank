@@ -8,7 +8,7 @@ import { useIsStaff } from "@/hooks/use-is-staff";
 const TABS = [
   { href: "/settings/brand", label: "Branding" },
   { href: "/settings/team", label: "Team" },
-  { href: "/settings/knowledge", label: "Format directions" },
+  { href: "/settings/knowledge", label: "Knowledge" },
 ];
 
 // Each tab's page owns its own .pad + heading, same as every other page in

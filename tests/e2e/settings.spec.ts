@@ -6,8 +6,15 @@ test("settings — knowledge tab (default landing)", async ({ page, frank }) => 
   await page.waitForURL(/\/settings\/knowledge/);
   // .settingsnav is the layout shell and renders instantly regardless of
   // data state — wait for the actual page content (useMyAgency +
-  // useFormatDirections) via the always-present "+ Add format" control.
-  await page.waitForSelector('button:has-text("Add format")');
+  // useFormatDirections), via the always-present first category row.
+  await page.waitForSelector(".fd-cat");
+  // Reference Material's query needs to settle (it 404s until
+  // phase11_agency_knowledge.sql is applied — see docs/parity-gaps.md) so
+  // the screenshot isn't racing its default-3-retry error state.
+  await page.waitForSelector(
+    ".panel-h:has-text(\"Reference Material\"), .empty:has-text(\"reference\")",
+    { timeout: 20000 },
+  );
   await expect(page).toHaveScreenshot("settings-knowledge.png");
 });
 
@@ -35,19 +42,25 @@ test("settings — team roster", async ({ page, frank }) => {
   });
 });
 
-// AddFormatForm used to accept free-text format_id; now it selects from
-// lib/formats.ts's 41-entry catalog, ported from the prototype's FORMATS
-// object.
-test("settings — add a format from the catalog", async ({ page, frank }) => {
+// Format Directions now lists the whole 41-format catalog up front, grouped
+// by category (lib/formats.ts) — there's no more opt-in "+ Add format"
+// picker (docs/parity-gaps.md). Only the first category starts open.
+test("settings — edit a format direction inline", async ({ page, frank }) => {
   await frank.loginAsStaff(page);
   await page.goto("/settings/knowledge");
-  await page.waitForSelector('button:has-text("Add format")');
+  await page.waitForSelector(".fd-cat");
 
-  await page.click('button:has-text("Add format")');
-  await page.selectOption("select", "ig_feed");
-  await page.click('button:has-text("Add")');
+  const row = page.locator(".fd-row", { hasText: "Instagram Feed" });
+  await expect(row).toBeVisible();
+  await expect(row.locator(".fd-m")).toContainText("no caption");
 
-  await expect(page.locator(".brief .bf-h", { hasText: "ig_feed" })).toBeVisible();
+  await row.locator("button.fbtn", { hasText: "Edit" }).click();
+  await row.locator("textarea.bin").fill("Keep the hook in the first line.");
+  await row.locator('input[type="number"]').first().fill("125");
+  await row.locator("button.btn.primary.sm", { hasText: "Save" }).click();
+
+  await expect(row.locator(".fd-d")).toHaveText("Keep the hook in the first line.");
+  await expect(row.locator(".fd-m")).toContainText("125 chars");
 });
 
 // Settings/layout.tsx guards every /settings/* route directly, not just

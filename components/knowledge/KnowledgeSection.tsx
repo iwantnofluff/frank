@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { KnowledgeEntryRow } from "@/hooks/use-knowledge-entries";
 import {
   useCreateKnowledgeEntry,
+  useCreateKnowledgeFileEntry,
   useDeleteKnowledgeEntry,
   useUpdateKnowledgeEntry,
 } from "@/hooks/use-knowledge-mutations";
+import { KnowledgeFilePreviewModal } from "@/components/knowledge/KnowledgeFilePreviewModal";
+import { KNOWLEDGE_FILE_EXTENSIONS } from "@/lib/knowledge-file-validation";
+import { errorMessage } from "@/lib/errors";
 
 function EntryEditor({
   initialTitle,
@@ -58,12 +62,14 @@ function EntryEditor({
 
 export function KnowledgeSection({
   clientId,
+  agencyId,
   sectionKey,
   label,
   entries,
   isStaff,
 }: {
   clientId: string;
+  agencyId: string | undefined;
   sectionKey: string;
   label: string;
   entries: KnowledgeEntryRow[];
@@ -74,10 +80,23 @@ export function KnowledgeSection({
 }) {
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [previewing, setPreviewing] = useState<KnowledgeEntryRow | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const createEntry = useCreateKnowledgeEntry(clientId);
+  const createFileEntry = useCreateKnowledgeFileEntry(clientId, agencyId);
   const updateEntry = useUpdateKnowledgeEntry(clientId);
   const deleteEntry = useDeleteKnowledgeEntry(clientId);
+
+  async function handleFilePicked(file: File) {
+    setFileError(null);
+    try {
+      await createFileEntry.mutateAsync({ section: sectionKey, title: file.name, file });
+    } catch (err) {
+      setFileError(errorMessage(err, "Couldn't upload this file"));
+    }
+  }
 
   return (
     <div className="kbcard">
@@ -109,27 +128,43 @@ export function KnowledgeSection({
                   <b>{entry.title}</b>
                   <p>{entry.body || "—"}</p>
                 </>
+              ) : entry.kind === "link" ? (
+                <>
+                  <b>
+                    {entry.title} <span className="mini">{entry.kind}</span>
+                  </b>
+                  <p>{entry.url}</p>
+                </>
+              ) : entry.asset ? (
+                <>
+                  <button
+                    type="button"
+                    className="kbfile"
+                    onClick={() => setPreviewing(entry)}
+                  >
+                    {entry.title} <span className="mini">{entry.kind}</span>
+                  </button>
+                  <p>{entry.asset.filename}</p>
+                </>
               ) : (
                 <>
                   <b>
                     {entry.title} <span className="mini">{entry.kind}</span>
                   </b>
-                  <p>
-                    {entry.kind === "link"
-                      ? entry.url
-                      : "Preview isn't wired up yet — file and image entries are stored but can't be viewed in this phase."}
-                  </p>
+                  <p className="kbempty">No file behind this entry.</p>
                 </>
               )}
-              {entry.kind === "text" && isStaff && (
+              {isStaff && (
                 <div className="kbentry-acts">
-                  <button
-                    type="button"
-                    className="btn sm ghost"
-                    onClick={() => setEditingId(entry.id)}
-                  >
-                    Edit
-                  </button>
+                  {entry.kind === "text" && (
+                    <button
+                      type="button"
+                      className="btn sm ghost"
+                      onClick={() => setEditingId(entry.id)}
+                    >
+                      Edit
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="btn sm ghost"
@@ -147,26 +182,58 @@ export function KnowledgeSection({
           <p className="kbempty">Nothing here yet.</p>
         )}
 
-        {isStaff &&
-          (adding ? (
-            <EntryEditor
-              initialTitle=""
-              initialBody=""
-              saving={createEntry.isPending}
-              onCancel={() => setAdding(false)}
-              onSave={(title, body) =>
-                createEntry.mutate(
-                  { section: sectionKey, title, body },
-                  { onSuccess: () => setAdding(false) },
-                )
-              }
-            />
-          ) : (
+        {isStaff && adding && (
+          <EntryEditor
+            initialTitle=""
+            initialBody=""
+            saving={createEntry.isPending}
+            onCancel={() => setAdding(false)}
+            onSave={(title, body) =>
+              createEntry.mutate(
+                { section: sectionKey, title, body },
+                { onSuccess: () => setAdding(false) },
+              )
+            }
+          />
+        )}
+
+        {isStaff && !adding && (
+          <div className="kbentry-acts" style={{ marginTop: 0 }}>
             <button type="button" className="badd" onClick={() => setAdding(true)}>
               + Add note
             </button>
-          ))}
+            <button
+              type="button"
+              className="badd"
+              disabled={createFileEntry.isPending}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {createFileEntry.isPending ? "Uploading…" : "+ Add file"}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept={KNOWLEDGE_FILE_EXTENSIONS}
+              style={{ display: "none" }}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (file) handleFilePicked(file);
+              }}
+            />
+          </div>
+        )}
+        {fileError && <p className="autherr">{fileError}</p>}
       </div>
+
+      {previewing && previewing.asset && (
+        <KnowledgeFilePreviewModal
+          storageKey={previewing.asset.storage_key}
+          filename={previewing.asset.filename}
+          mimeType={previewing.asset.mime_type}
+          onClose={() => setPreviewing(null)}
+        />
+      )}
     </div>
   );
 }

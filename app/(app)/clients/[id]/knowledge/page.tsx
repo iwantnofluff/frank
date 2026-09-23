@@ -4,6 +4,7 @@ import { use } from "react";
 import { useClientDetail } from "@/hooks/use-client";
 import { useKnowledgeEntries } from "@/hooks/use-knowledge-entries";
 import { useIsStaff } from "@/hooks/use-is-staff";
+import { useMyAgency } from "@/hooks/use-my-agency";
 import { KnowledgeSection } from "@/components/knowledge/KnowledgeSection";
 import { KNOWLEDGE_SECTIONS } from "@/lib/knowledge-sections";
 
@@ -14,6 +15,7 @@ export default function ClientKnowledgePage({
 }) {
   const { id } = use(params);
   const { data: client } = useClientDetail(id);
+  const { data: agency } = useMyAgency();
   const { data: entries, isLoading, isError } = useKnowledgeEntries(id);
   // knowledge_entries' write policies were already staff-only before this
   // session touched anything — the UI just never matched them. Fails
@@ -49,6 +51,7 @@ export default function ClientKnowledgePage({
                 <KnowledgeSection
                   key={section.key}
                   clientId={id}
+                  agencyId={agency?.agencyId}
                   sectionKey={section.key}
                   label={section.label}
                   entries={
