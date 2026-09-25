@@ -42,8 +42,7 @@ Storage), Zustand for light UI state, TanStack Query for all server state.
   component (ShareModal) isn't mounted yet at the moment of the mutation,
   the cache still holds pre-mutation data until that component's own
   mount kicks off a background refetch, and whatever reads it first sees
-  the stale, wrong claim. See `use-advance-creative-stage.ts` and
-  `use-create-creative.ts`. Local Playwright specs run at near-zero
+  the stale, wrong claim. See `use-create-creative.ts`. Local Playwright specs run at near-zero
   latency, so this stale-cache window — real against production network
   latency — is invisible to the suite; don't take a green e2e run here as
   proof the race doesn't exist.

@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import type { PinAnchor, RegionAnchor } from "@/lib/annotations";
+import { CommentDraftForm } from "./CommentDraftForm";
 
 export type ToolMode = "pin" | "region" | null;
 
@@ -22,6 +23,7 @@ export function AnnotationLayer({
   regions,
   nextNumber,
   highlightedCommentId,
+  showVisibilityToggle,
   onSelect,
   onCreate,
 }: {
@@ -30,8 +32,9 @@ export function AnnotationLayer({
   regions: RegionMarker[];
   nextNumber: number;
   highlightedCommentId: string | null;
+  showVisibilityToggle: boolean;
   onSelect: (commentId: string) => void;
-  onCreate: (anchor: PinAnchor | RegionAnchor, body: string) => void;
+  onCreate: (anchor: PinAnchor | RegionAnchor, body: string, visibility: "private" | "public") => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const dragStart = useRef<{ x: number; y: number } | null>(null);
@@ -143,53 +146,29 @@ export function AnnotationLayer({
           style={{
             left: `${(draft.type === "pin" ? draft.x : draft.x + draft.w) * 100}%`,
             top: `${(draft.type === "pin" ? draft.y : draft.y) * 100}%`,
+            // Flips toward whichever side has room rather than always
+            // centring under the anchor — a pin/region near the artwork's
+            // own edge used to push the composer (240px wide) half off
+            // it, clipped by the page's own scroll container. 0.75/0.25
+            // thresholds match the composer's width against a typical
+            // ~460px-wide postbox closely enough without measuring the
+            // real rendered size.
+            transform: `translate(${draft.x > 0.75 ? "-95%" : draft.x < 0.25 ? "-5%" : "-50%"}, ${
+              draft.y > 0.75 ? "calc(-100% - 12px)" : "12px"
+            })`,
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          <DraftForm
+          <CommentDraftForm
+            showVisibilityToggle={showVisibilityToggle}
             onCancel={() => setDraft(null)}
-            onSubmit={(body) => {
-              onCreate(draft, body);
+            onSubmit={(body, visibility) => {
+              onCreate(draft, body, visibility);
               setDraft(null);
             }}
           />
         </div>
       )}
     </div>
-  );
-}
-
-function DraftForm({
-  onCancel,
-  onSubmit,
-}: {
-  onCancel: () => void;
-  onSubmit: (body: string) => void;
-}) {
-  const [body, setBody] = useState("");
-  return (
-    <>
-      <textarea
-        className="bin"
-        rows={2}
-        autoFocus
-        placeholder="Add a comment…"
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
-      />
-      <div className="cf">
-        <button type="button" className="btn sm" onClick={onCancel}>
-          Cancel
-        </button>
-        <button
-          type="button"
-          className="btn primary sm"
-          disabled={!body.trim()}
-          onClick={() => onSubmit(body.trim())}
-        >
-          Post
-        </button>
-      </div>
-    </>
   );
 }

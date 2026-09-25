@@ -8,6 +8,14 @@ test("settings — knowledge tab (default landing)", async ({ page, frank }) => 
   // data state — wait for the actual page content (useMyAgency +
   // useFormatDirections), via the always-present first category row.
   await page.waitForSelector(".fd-cat");
+  // Drafting Model's query needs to settle too (agencies.ai_default_model
+  // doesn't exist until phase12_ai_drafting.sql is applied) — same
+  // default-3-retry race as Reference Material below, just a different
+  // panel racing the same pending-migration error state.
+  await page.waitForSelector(
+    ".panel-h:has-text(\"Drafting Model\") ~ .bsec select, .panel-h:has-text(\"Drafting Model\") ~ .bsec .autherr",
+    { timeout: 20000 },
+  );
   // Reference Material's query needs to settle (it 404s until
   // phase11_agency_knowledge.sql is applied — see docs/parity-gaps.md) so
   // the screenshot isn't racing its default-3-retry error state.

@@ -6,7 +6,7 @@ import { bandOf } from "@/lib/stage-labels";
 
 export interface ProjectCreativeStats {
   total: number;
-  done: number; // approved + scheduled + published
+  done: number; // approved
   waitingOnApproval: number;
   feedbackToAction: number;
 }
@@ -57,7 +57,7 @@ export function useProjectCreativeStats(clientId: string) {
         if (!s) continue;
         s.total++;
         const band = bandOf(c.stage, c.exception);
-        if (band === "approved" || band === "scheduled" || band === "published") {
+        if (band === "approved") {
           s.done++;
         } else if (band === "review") {
           s.waitingOnApproval++;

@@ -8,17 +8,21 @@ function RemoveIcon() {
   );
 }
 
-// Shared by BriefPanel (editing an existing creative) and NewBriefModal
-// (creating one) — both need the same "one textarea per item, add/remove"
-// shape for Text on Image and Approach Notes.
+// Shared by BriefPanel (editing an existing creative) and CreativeModal's
+// Brief tab — both need the same "one textarea per item, add/remove" shape
+// for Text on Image.
 export function ListEditor({
   label,
   itemLabel,
   values,
   onChange,
   readOnly = false,
+  bare = false,
 }: {
-  label: string;
+  // Optional — when the caller already has its own heading for this list
+  // (CreativeModal's Brief tab renders a real .msection-h/.msection-d pair
+  // above it now), pass nothing and set bare instead of duplicating it here.
+  label?: string;
   itemLabel: (index: number) => string;
   values: string[];
   onChange: (values: string[]) => void;
@@ -27,13 +31,28 @@ export function ListEditor({
   // brief at all, so this mirrors that: same content, no add/remove, no
   // editable text.
   readOnly?: boolean;
+  // Skips the .bsec wrapper (its own padding/border-bottom) so this sits
+  // as plain content under an external section heading instead of reading
+  // as a second, nested box.
+  bare?: boolean;
 }) {
-  return (
-    <div className="bsec">
-      <div className="bl">{label}</div>
+  const items = (
+    <>
       {values.map((value, i) => (
         <div className="brow" key={i}>
-          <b>{itemLabel(i)}</b>
+          <div className="brow-h">
+            <b>{itemLabel(i)}</b>
+            {!readOnly && (
+              <button
+                type="button"
+                className="brx"
+                title="Remove"
+                onClick={() => onChange(values.filter((_, j) => j !== i))}
+              >
+                <RemoveIcon />
+              </button>
+            )}
+          </div>
           <textarea
             className="bin"
             rows={2}
@@ -45,16 +64,6 @@ export function ListEditor({
               onChange(next);
             }}
           />
-          {!readOnly && (
-            <button
-              type="button"
-              className="brx"
-              title="Remove"
-              onClick={() => onChange(values.filter((_, j) => j !== i))}
-            >
-              <RemoveIcon />
-            </button>
-          )}
         </div>
       ))}
       {!readOnly && (
@@ -66,6 +75,15 @@ export function ListEditor({
           + Add
         </button>
       )}
+    </>
+  );
+
+  if (bare) return <div className="field">{items}</div>;
+
+  return (
+    <div className="bsec">
+      {label && <div className="bl">{label}</div>}
+      {items}
     </div>
   );
 }

@@ -25,7 +25,7 @@ test("client workspace — project row creative stats", async ({ page, frank }) 
   await page.goto(`/clients/${frank.clientId}`);
   await page.waitForSelector(".clients, .empty");
   const row = page.locator(".crow:not(.head)").first();
-  // Fixture seeds exactly one project and one stage-5 (review-band)
+  // Fixture seeds exactly one project and one stage-3 (review-band)
   // creative on it: 1 total, 0 approved, 1 waiting — "with the client" in
   // the default (non-client-preview) mode, matching the prototype's
   // projStats()-driven status tag.

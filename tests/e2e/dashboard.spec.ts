@@ -30,7 +30,7 @@ test("dashboard — creative-stats cards", async ({ page, frank }) => {
   // to be final.
   const statNumbers = page.locator(".stats .stat .n");
   await expect(statNumbers.nth(1)).not.toHaveText("…");
-  // Fixture seeds exactly one project and one stage-5 (review-band)
+  // Fixture seeds exactly one project and one stage-3 (review-band)
   // creative, so: 1 live project, 1 waiting on approval, 0 needing action.
   await expect(statNumbers.nth(0)).toHaveText("1"); // Active Clients
   await expect(statNumbers.nth(1)).toHaveText("1"); // Live Projects

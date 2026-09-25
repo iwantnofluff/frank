@@ -2,15 +2,15 @@
 
 import { use, useMemo, useState } from "react";
 import { useCreative } from "@/hooks/use-creative";
+import { useAdvanceCreativeStage } from "@/hooks/use-advance-creative-stage";
 import { useCreativeVersions } from "@/hooks/use-creative-versions";
 import { useCopyVersions } from "@/hooks/use-copy-versions";
 import { useAssetSignedUrl } from "@/hooks/use-asset-signed-url";
 import { useComments } from "@/hooks/use-comments";
 import { useCreateComment } from "@/hooks/use-create-comment";
 import { useMyMembership } from "@/hooks/use-my-membership";
-import { useAdvanceCreativeStage } from "@/hooks/use-advance-creative-stage";
-import { stageLabel } from "@/lib/stage-labels";
-import { errorMessage } from "@/lib/errors";
+import { useTeamMembers } from "@/hooks/use-team-members";
+import { formatById } from "@/lib/formats";
 import {
   isHighlightAnchor,
   isPinAnchor,
@@ -20,12 +20,13 @@ import {
   type RegionAnchor,
 } from "@/lib/annotations";
 import { BriefPanel } from "@/components/creative-review/BriefPanel";
+import { ChecksPanel } from "@/components/creative-review/ChecksPanel";
+import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 import { CommentsPanel } from "@/components/creative-review/CommentsPanel";
-import { ChecksAndDraft } from "@/components/creative-review/ChecksAndDraft";
 import { ShareModal } from "@/components/creative-review/ShareModal";
 import { AnnotationLayer, type ToolMode } from "@/components/creative-review/AnnotationLayer";
 import { CaptionHighlighter } from "@/components/creative-review/CaptionHighlighter";
-import { UploadOrEditModal } from "@/components/creative-review/UploadOrEditModal";
+import { CreativeModal } from "@/components/creative-review/CreativeModal";
 
 export default function CreativeReviewPage({
   params,
@@ -43,9 +44,11 @@ export default function CreativeReviewPage({
   const { data: membership, isLoading: membershipLoading } = useMyMembership(
     creative?.agency_id,
   );
+  const { data: teamMembers } = useTeamMembers(creative?.agency_id);
   const isStaff = membership ? membership.client_id === null : false;
   const advanceStage = useAdvanceCreativeStage(id);
-
+  const leadName =
+    teamMembers?.find((m) => m.user_id === creative?.lead_user_id)?.user?.name ?? null;
   // Independent selections: picking a copy version never touches which
   // artwork version is showing, and vice versa (frank-schema.docx —
   // "Versions are independent").
@@ -54,7 +57,10 @@ export default function CreativeReviewPage({
   );
   const [copyVersionId, setCopyVersionId] = useState<string | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
-  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  // null = closed. CreativeModal replaced the separate Upload or Edit /
+  // Draft from Brief entry points with one window — this just remembers
+  // which tab it should open on for whichever button was clicked.
+  const [creativeModalTab, setCreativeModalTab] = useState<"brief" | "upload" | null>(null);
   const [toolMode, setToolMode] = useState<ToolMode>(null);
   const [highlightedCommentId, setHighlightedCommentId] = useState<
     string | null
@@ -124,16 +130,27 @@ export default function CreativeReviewPage({
     );
   }
 
-  const delivery = creative.projects?.delivery ?? "scheduled";
   const clientName = creative.projects?.clients?.name ?? "This client";
   const caption = activeCopyVersion?.fields?.caption;
   const isVideo = activeCreativeVersion?.asset?.mime_type.startsWith("video/");
 
   return (
     <div className="review">
+      {/* Reserved for a not-yet-designed mobile feed preview — see
+          docs/parity-gaps.md. No feature lives here yet. */}
+      <div className="feed-rail">
+        <div className="feed-rail-ph">
+          <svg viewBox="0 0 24 24">
+            <rect x="7" y="2" width="10" height="20" rx="2" />
+            <path d="M11 18h2" />
+          </svg>
+          <b>Feed preview</b>
+          <span>A mobile feed mockup will live here.</span>
+        </div>
+      </div>
+
       <div className="stage">
         <div className="stage-h">
-          <b className="ph">{creative.name}</b>
           <div className="tools">
             <div className="vsel">
               <label htmlFor="vCreative">Creative</label>
@@ -173,42 +190,46 @@ export default function CreativeReviewPage({
                 )}
               </select>
             </div>
-            <button
-              type="button"
-              className="tool"
-              aria-pressed={toolMode === "pin"}
-              disabled={!activeCreativeVersion || isVideo}
-              title="Pin comment"
-              onClick={() =>
-                setToolMode((m) => (m === "pin" ? null : "pin"))
-              }
-            >
-              <svg viewBox="0 0 24 24">
-                <path d="M12 21s7-6.5 7-11a7 7 0 1 0-14 0c0 4.5 7 11 7 11z" />
-                <circle cx="12" cy="10" r="2.4" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              className="tool"
-              aria-pressed={toolMode === "region"}
-              disabled={!activeCreativeVersion || isVideo}
-              title="Region comment"
-              onClick={() =>
-                setToolMode((m) => (m === "region" ? null : "region"))
-              }
-            >
-              <svg viewBox="0 0 24 24">
-                <rect
-                  x="3.5"
-                  y="3.5"
-                  width="17"
-                  height="17"
-                  rx="2"
-                  strokeDasharray="4 3"
-                />
-              </svg>
-            </button>
+            {isStaff && (
+              <>
+                <span className="toolsep" />
+                <div
+                  className="stagesw"
+                  title="Whether this post is visible through a share link, and whether it's been approved"
+                >
+                  <button
+                    type="button"
+                    aria-pressed={creative.stage < 3}
+                    disabled={advanceStage.isPending}
+                    onClick={() => {
+                      if (creative.stage >= 3) advanceStage.mutate("to_internal");
+                    }}
+                  >
+                    Internal Review
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={creative.stage === 3}
+                    disabled={advanceStage.isPending}
+                    onClick={() => {
+                      if (creative.stage !== 3) advanceStage.mutate("to_review");
+                    }}
+                  >
+                    Client Review
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={creative.stage === 4}
+                    disabled={advanceStage.isPending}
+                    onClick={() => {
+                      if (creative.stage !== 4) advanceStage.mutate("to_approved");
+                    }}
+                  >
+                    Approved
+                  </button>
+                </div>
+              </>
+            )}
             <button
               type="button"
               className="tool"
@@ -222,51 +243,28 @@ export default function CreativeReviewPage({
                 <path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" />
               </svg>
             </button>
-            {isStaff && creative.stage < 5 && (
-              <button
-                type="button"
-                className="btn"
-                disabled={advanceStage.isPending}
-                onClick={() => advanceStage.mutate("to_review")}
-              >
-                {advanceStage.isPending ? "Moving…" : "Move to Client Review"}
-              </button>
-            )}
-            {isStaff && creative.stage === 5 && (
-              <button
-                type="button"
-                className="btn"
-                disabled={advanceStage.isPending}
-                onClick={() => advanceStage.mutate("to_internal")}
-              >
-                {advanceStage.isPending ? "Moving…" : "Move back to Internal"}
-              </button>
-            )}
             {isStaff && activeCreativeVersion && (
-              <button
-                type="button"
-                className="btn primary"
-                onClick={() => setUploadModalOpen(true)}
-              >
-                Upload or Edit
-              </button>
+              <>
+                <span className="toolsep" />
+                <button
+                  type="button"
+                  className="btn primary"
+                  onClick={() => setCreativeModalTab("upload")}
+                >
+                  Edit
+                </button>
+              </>
             )}
           </div>
         </div>
-        {advanceStage.error && (
-          <p className="autherr" style={{ padding: "0 20px" }}>
-            {errorMessage(advanceStage.error, "Couldn't move this creative")}
-          </p>
-        )}
-
         <div className="canvas">
           <div>
             <BriefPanel
               creative={creative}
               latestCopyVersion={copyVersions?.[0] ?? null}
-              isStaff={isStaff}
+              leadName={leadName}
             />
-            <ChecksAndDraft />
+            <CollapsibleSection title="Content" defaultOpen>
             {!activeCreativeVersion ? (
               <div className="awaiting">
                 <svg viewBox="0 0 24 24">
@@ -287,7 +285,7 @@ export default function CreativeReviewPage({
                     type="button"
                     className="btn primary sm"
                     style={{ marginTop: 10 }}
-                    onClick={() => setUploadModalOpen(true)}
+                    onClick={() => setCreativeModalTab("upload")}
                   >
                     Upload Artwork
                   </button>
@@ -296,13 +294,9 @@ export default function CreativeReviewPage({
             ) : (
                 <div className="postbox">
               <div className="cmeta">
-                <div className="ct">
-                  {creative.name} — V{activeCreativeVersion.version_no}
-                </div>
+                <div className="ct">{creative.name}</div>
                 <div className="cs">
-                  <span>{creative.format}</span>
-                  <span className="sep">·</span>
-                  <span>{stageLabel(creative.stage, delivery)}</span>
+                  <span>{formatById(creative.format)?.label ?? creative.format}</span>
                 </div>
               </div>
               <div className="ig">
@@ -335,12 +329,13 @@ export default function CreativeReviewPage({
                         regions={regions}
                         nextNumber={nextAnnotationNumber}
                         highlightedCommentId={highlightedCommentId}
+                        showVisibilityToggle={isStaff}
                         onSelect={setHighlightedCommentId}
-                        onCreate={(anchor, body) => {
+                        onCreate={(anchor, body, visibility) => {
                           createComment.mutate({
                             body,
                             parentId: null,
-                            visibility: "private",
+                            visibility,
                             creativeVersionId: activeCreativeVersion.id,
                             anchor,
                           });
@@ -373,12 +368,13 @@ export default function CreativeReviewPage({
                       field="caption"
                       highlights={captionHighlights}
                       highlightedCommentId={highlightedCommentId}
+                      showVisibilityToggle={isStaff}
                       onSelect={setHighlightedCommentId}
-                      onCreate={(anchor, body) => {
+                      onCreate={(anchor, body, visibility) => {
                         createComment.mutate({
                           body,
                           parentId: null,
-                          visibility: "private",
+                          visibility,
                           copyVersionId: activeCopyVersion?.id ?? null,
                           anchor,
                         });
@@ -399,6 +395,11 @@ export default function CreativeReviewPage({
               </div>
             </div>
           )}
+            </CollapsibleSection>
+            <ChecksPanel
+              creative={creative}
+              latestCopyVersion={copyVersions?.[0] ?? null}
+            />
           </div>
         </div>
       </div>
@@ -407,26 +408,27 @@ export default function CreativeReviewPage({
         creativeId={id}
         highlightedCommentId={highlightedCommentId}
         onHighlight={setHighlightedCommentId}
+        toolMode={toolMode}
+        onToolModeChange={setToolMode}
+        canAnnotate={!!activeCreativeVersion && !isVideo}
       />
 
-      {shareOpen && creative.projects && (
+      {shareOpen && (
         <ShareModal
           projectId={creative.project_id}
-          projectName={creative.projects.name}
           currentCreativeId={creative.id}
           onClose={() => setShareOpen(false)}
         />
       )}
 
-      {uploadModalOpen && (
-        <UploadOrEditModal
-          creativeId={id}
-          agencyId={creative.agency_id}
-          projectName={creative.projects?.name ?? "This project"}
-          latestCreativeVersionNo={creativeVersions?.[0]?.version_no ?? 0}
-          latestCopyVersion={copyVersions?.[0] ?? null}
-          defaultMode={activeCreativeVersion ? "copy" : "both"}
-          onClose={() => setUploadModalOpen(false)}
+      {creativeModalTab && (
+        <CreativeModal
+          mode="edit"
+          creative={creative}
+          creativeVersions={creativeVersions ?? []}
+          copyVersions={copyVersions ?? []}
+          initialTab={creativeModalTab}
+          onClose={() => setCreativeModalTab(null)}
           onCreativeVersionCreated={setCreativeVersionId}
           onCopyVersionCreated={setCopyVersionId}
         />

@@ -199,8 +199,12 @@ create table creatives (
   created_by uuid not null references users (id),
   created_at timestamptz not null default now(),
   archived_at timestamptz,
-  constraint creatives_stage_range check (stage between 1 and 8),
-  constraint creatives_exception_stage check (exception is null or stage between 1 and 5)
+  -- Four stages: 1 Concept, 2 Internal Review, 3 Client Review, 4 Approved
+  -- (phase13_simplify_stage_pipeline.sql — collapsed from the original
+  -- eight; Copy/Design/Internal QC and Scheduled/Published were never
+  -- reachable by anything in the app, confirmed by repo-wide search).
+  constraint creatives_stage_range check (stage between 1 and 4),
+  constraint creatives_exception_stage check (exception is null or stage between 1 and 3)
 );
 
 create index creatives_project_position_idx on creatives (project_id, position);
@@ -737,19 +741,17 @@ create policy creatives_insert on creatives
 create policy creatives_update on creatives
   for update using (is_agency_staff(agency_id));
 
--- advance_creative_stage — the only stage transition built so far
--- (phase9_advance_creative_stage.sql). Legal moves only: internal band
--- (stage < 5) -> Client Review (5), and Client Review -> back to
--- Internal QC (4). Nothing else — no exception setting, no approval
--- attribution, no audit table; see docs/parity-gaps.md, "Stage
--- transitions — scoped, not built" for what's deliberately deferred.
--- Staff-only. SECURITY DEFINER isn't load-bearing here (creatives_update
--- already lets staff write stage directly) — the legal-move check
--- belongs in one place rather than trusting whatever a caller sends, and
--- this is the extension point if a client-permitted transition is ever
--- added. No pgcrypto call, so search_path is pinned to `public` alone
--- (see phase7_fix_pgcrypto_search_path.sql for when `extensions` is
--- actually needed).
+-- advance_creative_stage — staff-driven stage moves (originally
+-- phase9_advance_creative_stage.sql, extended by
+-- phase13_simplify_stage_pipeline.sql to add the third state and a
+-- direct staff approve/revoke path). Permissive by design: any direction
+-- from any stage, raising only if already there — SECURITY DEFINER isn't
+-- load-bearing for authorization here (creatives_update already lets
+-- staff write stage directly), it's just the one place the legal-move
+-- check and approval bookkeeping live rather than trusting whatever a
+-- raw update sends. No pgcrypto call, so search_path is pinned to
+-- `public` alone (see phase7_fix_pgcrypto_search_path.sql for when
+-- `extensions` is actually needed).
 create or replace function advance_creative_stage(p_creative_id uuid, p_direction text)
 returns creatives
 language plpgsql security definer set search_path = public as $$
@@ -764,16 +766,39 @@ begin
     raise exception 'not permitted';
   end if;
 
-  if p_direction = 'to_review' then
-    if v_creative.stage >= 5 then
-      raise exception 'already at or past Client Review';
+  if p_direction = 'to_internal' then
+    if v_creative.stage = 2 then
+      raise exception 'already at Internal Review';
     end if;
-    update creatives set stage = 5 where id = p_creative_id returning * into v_creative;
-  elsif p_direction = 'to_internal' then
-    if v_creative.stage != 5 then
-      raise exception 'only a Client Review creative can move back to internal';
+    -- Moving off Approved (forward from Concept is a harmless no-op)
+    -- means whatever approval was recorded no longer holds.
+    update creatives
+    set stage = 2, approved_at = null, approved_by_name = null, approved_by_email = null
+    where id = p_creative_id
+    returning * into v_creative;
+  elsif p_direction = 'to_review' then
+    if v_creative.stage = 3 then
+      raise exception 'already at Client Review';
     end if;
-    update creatives set stage = 4 where id = p_creative_id returning * into v_creative;
+    update creatives
+    set stage = 3, approved_at = null, approved_by_name = null, approved_by_email = null
+    where id = p_creative_id
+    returning * into v_creative;
+  elsif p_direction = 'to_approved' then
+    if v_creative.stage = 4 then
+      raise exception 'already approved';
+    end if;
+    -- The staff-side counterpart to submit_shared_approval's guest path —
+    -- same attribution shape (name/email), sourced from the caller's own
+    -- row instead of a guest-supplied name.
+    update creatives
+    set stage = 4,
+        exception = null,
+        approved_at = now(),
+        approved_by_name = (select name from users where id = auth.uid()),
+        approved_by_email = (select email from users where id = auth.uid())
+    where id = p_creative_id
+    returning * into v_creative;
   else
     raise exception 'unknown direction: %', p_direction;
   end if;
@@ -824,6 +849,28 @@ create policy copy_versions_insert on copy_versions
         and projects.client_id in (select current_client_ids(copy_versions.agency_id))
     )
   );
+
+-- Concept means "no copy and no creative written yet" — the moment
+-- either lands, that's no longer true, so this is enforced here rather
+-- than left to every insert path to remember to also bump `stage`.
+-- Unconditional past the `stage = 1` guard: a later version being added
+-- to a creative already past Concept isn't itself a stage change.
+create or replace function bump_creative_from_concept()
+returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  update creatives set stage = 2 where id = new.creative_id and stage = 1;
+  return new;
+end;
+$$;
+
+create trigger creative_versions_bump_stage
+  after insert on creative_versions
+  for each row execute function bump_creative_from_concept();
+
+create trigger copy_versions_bump_stage
+  after insert on copy_versions
+  for each row execute function bump_creative_from_concept();
 
 -- comments: staff see everything, private or public. Client-side users see
 -- only public comments on creatives that belong to their client — private
@@ -1001,21 +1048,21 @@ $$;
 grant execute on function create_shared_link(uuid, shared_link_scope, uuid, uuid[], int, text, boolean)
   to authenticated;
 
--- Resolves which creatives a link's scope covers. Stage < 5 (the internal
--- band: Concept, Copy, Design, Internal QC) is excluded unconditionally —
--- an unreleased draft never leaves the building through this door,
--- whatever scope was picked or however a creative_id ended up on the link.
+-- Resolves which creatives a link's scope covers. Stage < 3 (the internal
+-- band: Concept, Internal Review) is excluded unconditionally — an
+-- unreleased draft never leaves the building through this door, whatever
+-- scope was picked or however a creative_id ended up on the link.
 create or replace function shared_link_allowed_creative_ids(v_link shared_links)
 returns uuid[]
 language sql security definer set search_path = public stable as $$
   select array_agg(id) from creatives
   where project_id = v_link.project_id
     and archived_at is null
-    and stage >= 5
+    and stage >= 3
     and (
       case v_link.scope
         when 'all' then true
-        when 'pending' then stage = 5
+        when 'pending' then stage = 3
         when 'one' then id = v_link.creative_id
         when 'pick' then id = any(v_link.picked_creatives)
         else false
@@ -1176,7 +1223,8 @@ begin
   end if;
 
   update creatives
-  set stage = 6,
+  set stage = 4,
+      exception = null,
       approved_at = now(),
       approved_by_name = trim(p_guest_name),
       approved_by_email = nullif(trim(p_guest_email), '')

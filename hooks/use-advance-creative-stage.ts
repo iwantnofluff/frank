@@ -3,14 +3,15 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 
-export type StageDirection = "to_review" | "to_internal";
+export type StageDirection = "to_review" | "to_internal" | "to_approved";
 
-// The only stage transition built so far (docs/parity-gaps.md, "Stage
-// transitions — scoped, not built"): internal band -> Client Review, and
-// back. Calls advance_creative_stage() rather than writing `stage`
-// directly — the legal-move check (and the staff check, redundant with
-// creatives_update's RLS but explicit) lives in one place at the DB
-// layer, not just in whichever buttons happen to be rendered.
+// Staff-driven stage moves — Internal Review, Client Review, Approved,
+// any direction from any stage (phase13_simplify_stage_pipeline.sql).
+// Calls advance_creative_stage() rather than writing `stage` directly —
+// the legal-move check, the staff check (redundant with creatives_update's
+// RLS but explicit), and the approval bookkeeping (attribution on
+// to_approved, clearing it on the way back out) all live in one place at
+// the DB layer, not just in whichever buttons happen to be rendered.
 export function useAdvanceCreativeStage(creativeId: string) {
   const queryClient = useQueryClient();
 

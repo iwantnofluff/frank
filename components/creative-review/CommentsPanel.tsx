@@ -7,7 +7,9 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import { useComments, type CommentRow } from "@/hooks/use-comments";
 import { useCreateComment } from "@/hooks/use-create-comment";
 import { useToggleCommentResolved } from "@/hooks/use-toggle-comment-resolved";
+import { useToggleCommentVisibility } from "@/hooks/use-toggle-comment-visibility";
 import { isHighlightAnchor, isPinAnchor, isRegionAnchor } from "@/lib/annotations";
+import type { ToolMode } from "@/components/creative-review/AnnotationLayer";
 
 function AnchorBadge({ anchor }: { anchor: CommentRow["anchor"] }) {
   if (isPinAnchor(anchor)) {
@@ -43,7 +45,7 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: "unresolved", label: "Unresolved" },
   { key: "resolved", label: "Resolved" },
   { key: "mine", label: "Mine" },
-  { key: "internal", label: "Internal" },
+  { key: "internal", label: "Private" },
 ];
 
 const AVATAR_COLOURS = [
@@ -148,10 +150,10 @@ function Composer({
                 <path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>
             </span>
-            Mark internal
+            {internal ? "Private" : "Public"}
           </label>
         ) : lockedPrivate ? (
-          <span className="intog">Internal (replying to an internal note)</span>
+          <span className="intog">Private (replying to a private comment)</span>
         ) : null}
         <div className="grow" />
         <button
@@ -168,6 +170,40 @@ function Composer({
   );
 }
 
+// Staff-only, always shown (not just when private) — flips the comment's
+// visibility on click. Clients never see this control: the enforcement
+// trigger would just silently revert their attempt to public anyway
+// (enforce_comment_visibility, supabase/seed.sql), so offering it would
+// be confusing, not useful. A static "Private" label (unchanged from
+// before) is still shown to a client viewer when a comment is private.
+function VisibilityTag({
+  visibility,
+  isStaff,
+  onToggle,
+}: {
+  visibility: "private" | "public";
+  isStaff: boolean;
+  onToggle: () => void;
+}) {
+  const visClass = `vis-tag ${visibility === "private" ? "vis-private" : "vis-public"}`;
+  if (!isStaff) {
+    return visibility === "private" ? <span className={visClass}>Private</span> : null;
+  }
+  return (
+    <button
+      type="button"
+      className={`${visClass} vistoggle`}
+      title={`Click to make ${visibility === "private" ? "public" : "private"}`}
+      onClick={(e) => {
+        e.stopPropagation();
+        onToggle();
+      }}
+    >
+      {visibility === "private" ? "Private" : "Public"}
+    </button>
+  );
+}
+
 function CommentCard({
   thread,
   replies,
@@ -177,6 +213,7 @@ function CommentCard({
   onSelect,
   onReply,
   onToggleResolved,
+  onToggleVisibility,
 }: {
   thread: CommentRow;
   replies: CommentRow[];
@@ -186,6 +223,7 @@ function CommentCard({
   onSelect: () => void;
   onReply: (body: string, visibility: "private" | "public") => Promise<void>;
   onToggleResolved: (resolve: boolean) => void;
+  onToggleVisibility: (commentId: string, next: "private" | "public") => void;
 }) {
   const [replying, setReplying] = useState(false);
   const authorName = thread.author?.name ?? thread.guest_name ?? "Someone";
@@ -212,9 +250,13 @@ function CommentCard({
           {initialsOf(authorName)}
         </span>
         <b>{authorName}</b>
-        {thread.visibility === "private" && (
-          <span className="tag grey">Private</span>
-        )}
+        <VisibilityTag
+          visibility={thread.visibility}
+          isStaff={isStaff}
+          onToggle={() =>
+            onToggleVisibility(thread.id, thread.visibility === "private" ? "public" : "private")
+          }
+        />
         <time>{formatWhen(thread.created_at)}</time>
       </div>
       {thread.anchor && <AnchorBadge anchor={thread.anchor} />}
@@ -250,9 +292,13 @@ function CommentCard({
                 </span>
                 <div className="rb">
                   <b>{replyAuthor}</b>
-                  {r.visibility === "private" && (
-                    <span className="tag grey">Private</span>
-                  )}
+                  <VisibilityTag
+                    visibility={r.visibility}
+                    isStaff={isStaff}
+                    onToggle={() =>
+                      onToggleVisibility(r.id, r.visibility === "private" ? "public" : "private")
+                    }
+                  />
                   <p>{r.body}</p>
                 </div>
               </div>
@@ -284,10 +330,21 @@ export function CommentsPanel({
   creativeId,
   highlightedCommentId = null,
   onHighlight,
+  toolMode,
+  onToolModeChange,
+  canAnnotate,
 }: {
   creativeId: string;
   highlightedCommentId?: string | null;
   onHighlight?: (commentId: string | null) => void;
+  // Pin/Region live here (above the composer) rather than the page's own
+  // toolbar, but the annotation state itself is still owned by the page —
+  // AnnotationLayer (over the artwork) and the highlight-on-select
+  // behaviour both need the same toolMode/highlightedCommentId the page
+  // already threads through.
+  toolMode: ToolMode;
+  onToolModeChange: (mode: ToolMode) => void;
+  canAnnotate: boolean;
 }) {
   const { data: creative } = useCreative(creativeId);
   const { data: currentUser } = useCurrentUser();
@@ -295,6 +352,7 @@ export function CommentsPanel({
   const { data: comments, isLoading, isError } = useComments(creativeId);
   const createComment = useCreateComment(creativeId);
   const toggleResolved = useToggleCommentResolved(creativeId);
+  const toggleVisibility = useToggleCommentVisibility(creativeId);
 
   const [filter, setFilter] = useState<Filter>("all");
 
@@ -397,8 +455,39 @@ export function CommentsPanel({
             onToggleResolved={(resolve) =>
               toggleResolved.mutate({ commentId: thread.id, resolve })
             }
+            onToggleVisibility={(commentId, visibility) =>
+              toggleVisibility.mutate({ commentId, visibility })
+            }
           />
         ))}
+      </div>
+
+      <div className="cmt-tools">
+        <button
+          type="button"
+          className="tool"
+          aria-pressed={toolMode === "pin"}
+          disabled={!canAnnotate}
+          title="Pin comment"
+          onClick={() => onToolModeChange(toolMode === "pin" ? null : "pin")}
+        >
+          <svg viewBox="0 0 24 24">
+            <path d="M12 21s7-6.5 7-11a7 7 0 1 0-14 0c0 4.5 7 11 7 11z" />
+            <circle cx="12" cy="10" r="2.4" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          className="tool"
+          aria-pressed={toolMode === "region"}
+          disabled={!canAnnotate}
+          title="Region comment"
+          onClick={() => onToolModeChange(toolMode === "region" ? null : "region")}
+        >
+          <svg viewBox="0 0 24 24">
+            <rect x="3.5" y="3.5" width="17" height="17" rx="2" strokeDasharray="4 3" />
+          </svg>
+        </button>
       </div>
 
       <Composer

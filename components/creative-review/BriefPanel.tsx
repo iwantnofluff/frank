@@ -1,139 +1,101 @@
 "use client";
 
-import { useState } from "react";
 import type { CreativeRow } from "@/hooks/use-creative";
 import type { CopyVersionRow } from "@/hooks/use-copy-versions";
-import { useUpdateBrief } from "@/hooks/use-update-brief";
-import { useSaveSlideText } from "@/hooks/use-save-slide-text";
-import { ListEditor } from "@/components/ui/ListEditor";
-import { errorMessage } from "@/lib/errors";
+import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
+import { formatById } from "@/lib/formats";
 
-function ChevronIcon() {
-  return (
-    <svg viewBox="0 0 24 24">
-      <path d="M6 9l6 6 6-6" />
-    </svg>
-  );
-}
-
+// Informational only, on this page — editing the brief now happens in
+// CreativeModal's Brief tab (the single entry point that replaced New
+// Brief / Upload or Edit / Draft from Brief as three separate buttons).
+// Mirrors that tab's own fields, but as plain read-only text throughout —
+// no inputs, no textareas, nothing styled as an editable field box.
+// Collapsed by default, since it's a reference glance, not a workspace.
 export function BriefPanel({
   creative,
   latestCopyVersion,
-  isStaff,
+  leadName,
 }: {
   creative: CreativeRow;
   latestCopyVersion: CopyVersionRow | null;
-  // The prototype's canEdit (MODE!=="client") never renders an edit
-  // affordance for a client at all — this panel used to render one
-  // unconditionally, the one inconsistency on a page where everything
-  // else (Upload/Edit, stage transitions, New Brief) already gates on
-  // real membership. Matches that now.
-  isStaff: boolean;
+  leadName: string | null;
 }) {
-  const [open, setOpen] = useState(true);
-  const [concept, setConcept] = useState(creative.concept ?? "");
-  const [referenceUrl, setReferenceUrl] = useState(
-    creative.reference_url ?? "",
-  );
-  const [approachNotes, setApproachNotes] = useState<string[]>(
-    creative.approach_notes ?? [],
-  );
-  const [slideText, setSlideText] = useState<string[]>(
-    latestCopyVersion?.slide_text ?? [],
-  );
-
-  const updateBrief = useUpdateBrief(creative.id);
-  const saveSlideText = useSaveSlideText(creative.id);
-
-  const saving = updateBrief.isPending || saveSlideText.isPending;
-  const error = updateBrief.error || saveSlideText.error;
-
-  async function handleSave() {
-    await updateBrief.mutateAsync({ concept, referenceUrl, approachNotes });
-
-    const previousSlideText = latestCopyVersion?.slide_text ?? [];
-    const cleanedSlideText = slideText.map((s) => s.trim());
-    if (JSON.stringify(cleanedSlideText) !== JSON.stringify(previousSlideText)) {
-      await saveSlideText.mutateAsync({
-        slideText: cleanedSlideText,
-        latest: latestCopyVersion,
-      });
-    }
-  }
+  const format = formatById(creative.format);
+  const delivery = creative.projects?.delivery ?? "scheduled";
+  const slideText = latestCopyVersion?.slide_text ?? [];
 
   return (
-    <div className={`brief${open ? " open" : ""}`}>
-      <button
-        type="button"
-        className="bf-h"
-        onClick={() => setOpen(!open)}
-        aria-expanded={open}
-      >
-        <b>Brief</b>
-        {updateBrief.isSuccess && !saving && (
-          <span className="bn">Saved</span>
-        )}
-        <ChevronIcon />
-      </button>
+    <CollapsibleSection title="Brief">
+      <div className="bsec">
+        <div className="bl">What Is It Called?</div>
+        <p className="fd-d">{creative.name}</p>
+      </div>
 
-      {open && (
-        <div className="bf-b">
-          <div className="bsec">
-            <div className="bl">Concept</div>
-            <textarea
-              className="bin"
-              rows={3}
-              value={concept}
-              disabled={!isStaff}
-              onChange={(e) => setConcept(e.target.value)}
-              placeholder="What is this piece, in a sentence or two?"
-            />
-          </div>
+      <div className="bsec">
+        <div className="bl">Content Type</div>
+        <p className="fd-d">{format?.category ?? "—"}</p>
+      </div>
 
-          <div className="bsec">
-            <div className="bl">Reference link</div>
-            <input
-              className="bin one"
-              type="url"
-              value={referenceUrl}
-              disabled={!isStaff}
-              onChange={(e) => setReferenceUrl(e.target.value)}
-              placeholder="https://…"
-            />
-          </div>
+      <div className="bsec">
+        <div className="bl">Format</div>
+        <p className="fd-d">{format?.label ?? creative.format}</p>
+      </div>
 
-          <ListEditor
-            label="Approach notes — WIIFM rationale"
-            itemLabel={(i) => `Note ${i + 1}`}
-            values={approachNotes}
-            onChange={setApproachNotes}
-            readOnly={!isStaff}
-          />
-
-          <ListEditor
-            label="Text on image"
-            itemLabel={(i) => `Slide ${i + 1}`}
-            values={slideText}
-            onChange={setSlideText}
-            readOnly={!isStaff}
-          />
-
-          {isStaff && (
-            <div className="bfoot">
-              <button
-                type="button"
-                className="btn primary sm"
-                onClick={handleSave}
-                disabled={saving}
-              >
-                {saving ? "Saving…" : "Save brief"}
-              </button>
-              <div className="grow" />
-              {error && <span className="berr">{errorMessage(error, "Couldn't save")}</span>}
-            </div>
-          )}
+      {delivery === "scheduled" ? (
+        <div className="bsec">
+          <div className="bl">Publish Date</div>
+          <p className="fd-d">
+            {creative.scheduled_at
+              ? new Date(creative.scheduled_at).toLocaleString(undefined, {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                })
+              : "—"}
+          </p>
         </div>
+      ) : (
+        <>
+          <div className="bsec">
+            <div className="bl">Destination</div>
+            <p className="fd-d">{creative.destination || "—"}</p>
+          </div>
+          <div className="bsec">
+            <div className="bl">Needed By</div>
+            <p className="fd-d">
+              {creative.due_on ? new Date(creative.due_on).toLocaleDateString() : "—"}
+            </p>
+          </div>
+        </>
       )}
-    </div>
+
+      <div className="bsec">
+        <div className="bl">Lead</div>
+        <p className="fd-d">{leadName || "Unassigned"}</p>
+      </div>
+
+      <div className="bsec">
+        <div className="bl">Concept</div>
+        <p className="fd-d">{creative.concept || "—"}</p>
+      </div>
+
+      <div className="bsec">
+        <div className="bl">Reference link</div>
+        <p className="fd-d">{creative.reference_url || "—"}</p>
+      </div>
+
+      <div className="bsec">
+        <div className="bl">Text on image</div>
+        {slideText.length > 0 ? (
+          slideText.map((text, i) => (
+            <p className="fd-d" key={i}>
+              <b>Slide {i + 1}: </b>
+              {text || "—"}
+            </p>
+          ))
+        ) : (
+          <p className="fd-d">—</p>
+        )}
+      </div>
+    </CollapsibleSection>
   );
 }

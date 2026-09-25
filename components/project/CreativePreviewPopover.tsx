@@ -3,7 +3,7 @@
 import type { CSSProperties } from "react";
 import { useCopyVersions } from "@/hooks/use-copy-versions";
 import { useComments } from "@/hooks/use-comments";
-import { bandOf, stageColor, stageLabel, exceptionLabel } from "@/lib/stage-labels";
+import { stageColor, stageLabel, exceptionLabel } from "@/lib/stage-labels";
 import { formatById } from "@/lib/formats";
 import type { CreativeListRow } from "@/hooks/use-creatives";
 
@@ -83,7 +83,6 @@ export function CreativePreviewPopover({
 
   const caption = copyVersions?.[0]?.fields?.caption;
   const openComments = comments?.filter((c) => !c.resolved_at).length ?? 0;
-  const band = bandOf(creative.stage, creative.exception);
   const color = stageColor(creative.stage, creative.exception);
   const format = formatById(creative.format);
   const timeLabel = creative.scheduled_at
@@ -145,7 +144,7 @@ export function CreativePreviewPopover({
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
         </svg>
       </div>
-      {band === "published" && creative.published_at ? (
+      {creative.published_at ? (
         <div className="pp-published">Published {relativeTime(creative.published_at)}</div>
       ) : (
         <div className="pp-pending">Not published yet</div>

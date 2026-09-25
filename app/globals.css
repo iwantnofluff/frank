@@ -33,7 +33,7 @@
   --d-row-x: 16px;
   --d-list-y: 8px;
   --d-card-y: 7px;
-  --d-cmt: 10px;
+  --d-cmt: 8.5px;
   --d-set-y: 11px;
   --d-fs: 12px;
   --d-line: 1.45;
@@ -59,7 +59,7 @@ body.comfortable {
   --d-row-x: 20px;
   --d-list-y: 12px;
   --d-card-y: 11px;
-  --d-cmt: 14px;
+  --d-cmt: 12px;
   --d-set-y: 16px;
   --d-fs: 13px;
   --d-line: 1.65;
@@ -474,6 +474,17 @@ body.lightrail .avatar {
   align-items: center;
   justify-content: center;
 }
+.btn .aicon {
+  width: 13px;
+  height: 13px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
 .btn.danger {
   color: var(--rose);
   border-color: #f3c6ce;
@@ -788,6 +799,38 @@ body.lightrail .avatar {
   background: var(--canvas);
   color: var(--muted);
 }
+/* The Public/Private badge on a submitted comment (CommentsPanel.tsx) — its
+   own small, squared-off pill rather than .tag (which stays a full rounded
+   pill for its other, unrelated call sites — role badges, project stages). */
+.vis-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 9.5px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+.vis-tag.vis-public {
+  background: var(--blue-bg);
+  color: var(--blue);
+}
+.vis-tag.vis-private {
+  background: var(--rose-bg);
+  color: var(--rose);
+}
+/* Interactive (staff-only) variant — same pill, button-reset + hover.
+   font-family only, not the `font` shorthand: that resets font-size/weight
+   too, which — same element, equal specificity, declared after .vis-tag —
+   silently overrode its 9.5px back up to the button default. */
+.vistoggle {
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+.vistoggle:hover {
+  filter: brightness(0.93);
+}
 .dot {
   width: 5px;
   height: 5px;
@@ -800,17 +843,17 @@ body.lightrail .avatar {
   text-align: right;
 }
 .iconbtn {
-  width: 28px;
-  height: 28px;
-  border: 1px solid var(--line-2);
-  border-radius: var(--r);
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
   display: grid;
   place-items: center;
   color: var(--muted);
-  background: var(--surface);
+  background: var(--canvas);
 }
 .iconbtn:hover {
-  background: var(--canvas);
+  background: var(--line);
   color: var(--ink);
 }
 .iconbtn svg {
@@ -1781,28 +1824,69 @@ body.lightrail .avatar {
   color: var(--action);
 }
 
-/* Creative review — the split stage/comments screen.
-   Known, deliberate drift from the prototype's own .review (confirmed by
-   scripts/css-coverage.mjs): the prototype is
-   `grid-template-columns:0 minmax(0,1fr) 427px` with a .22s transition and
-   two extra state classes, .review.feedrailed / .review.withfeed, that
-   widen the first column into an Instagram feed/grid panel. That panel
-   needs a platform-connections feature (OAuth + synced feed data) this
-   schema doesn't have — porting the empty column and its states would be
-   dead CSS with nothing to put in it. Left as a plain two-column grid on
-   purpose. See docs/parity-gaps.md. */
+/* Creative review — the split feed-rail/stage/comments screen.
+   Three floating white panels on the canvas-grey page background, per
+   direct reference (a doc-editor screenshot: empty AI rail, white document,
+   comments sidebar). Was a plain two-column grid (stage + comments only,
+   edge to edge, no gutter) — see docs/parity-gaps.md for that history.
+   The first column corresponds to the prototype's own collapsed
+   `grid-template-columns:0 minmax(0,1fr) 427px` first slot (`.review.
+   feedrailed`/`.review.withfeed` in `frank-prototype.html`, confirmed by
+   scripts/css-coverage.mjs), which that prototype only ever expanded into
+   a live Instagram feed/grid panel — a platform-connections feature (OAuth
+   + synced feed data) this schema doesn't have. `.feed-rail` here is not
+   that: it's reserved, empty space for a not-yet-designed phone-mockup
+   feed preview, per direct instruction. No feature lives in it yet. */
 
 .review {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 427px;
+  grid-template-columns: 300px minmax(0, 1fr) 363px;
+  gap: 16px;
   min-height: 0;
+  padding: 16px;
   background: var(--canvas);
   flex: 1;
 }
 @media (min-width: 1700px) {
   .review {
-    grid-template-columns: minmax(0, 1fr) 486px;
+    grid-template-columns: 300px minmax(0, 1fr) 413px;
   }
+}
+.stage {
+  background: var(--surface);
+  border-radius: 14px;
+}
+.feed-rail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+.feed-rail-ph {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px;
+  border: 1px dashed var(--line-2);
+  border-radius: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+.feed-rail-ph svg {
+  width: 22px;
+  height: 22px;
+  stroke: var(--muted);
+  fill: none;
+  stroke-width: 1.6;
+}
+.feed-rail-ph b {
+  font-size: 12px;
+  color: var(--ink);
+}
+.feed-rail-ph span {
+  font-size: 11.5px;
+  line-height: 1.4;
 }
 .stage {
   display: flex;
@@ -1847,6 +1931,8 @@ body.lightrail .avatar {
   margin-left: auto;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  row-gap: 7px;
   gap: 5px;
 }
 .tool {
@@ -1879,6 +1965,38 @@ body.lightrail .avatar {
   stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+/* Current-state selector, not an action button — reads "which one is this
+   post in" rather than "what would clicking do", so both states are
+   always visible with the current one highlighted, same shape as the
+   topbar's own .modeswitch (Preview as Agency/Client) but in this page's
+   own light-surface palette instead of that one's dark-topbar colors. */
+.stagesw {
+  display: flex;
+  align-items: center;
+  height: 26px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.stagesw button {
+  height: 100%;
+  padding: 0 11px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.stagesw button:disabled {
+  cursor: not-allowed;
+}
+.stagesw button[aria-pressed="true"] {
+  background: var(--action-soft);
+  color: var(--action);
+  font-weight: 600;
+}
+.tools .btn.primary {
+  margin-left: 8px;
 }
 select {
   font: inherit;
@@ -1931,9 +2049,24 @@ select.sort:hover {
   gap: 6px;
   font-size: 12px;
 }
+/* Creative and Copy sit next to each other with no divider between them
+   (that would double up with the one right after them, before the stage
+   toggle) — just extra breathing room beyond the toolbar's own 5px gap. */
 .vsel + .vsel {
-  padding-left: 13px;
-  border-left: 1px solid var(--line-2);
+  margin-left: 14px;
+}
+/* Explicit divider element rather than an adjacent-sibling border — the
+   toolbar has more than one of these (before the stage toggle, then
+   between the share icon and Edit), and this keeps the space equal on
+   both sides of the line regardless of what sits next to it, rather than
+   half the gap coming from .tools' own flex `gap` and half from a
+   one-sided border/padding. */
+.toolsep {
+  width: 1px;
+  height: 22px;
+  background: var(--line-2);
+  margin: 0 8px;
+  flex-shrink: 0;
 }
 .vsel select {
   min-height: 26px;
@@ -1951,9 +2084,6 @@ select.sort:hover {
 }
 .postbox {
   width: 460px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  background: var(--surface);
   padding: 14px;
   display: flex;
   flex-direction: column;
@@ -1993,9 +2123,6 @@ select.sort:hover {
   align-items: center;
   gap: 5px;
   padding: 34px 22px;
-  border-radius: 10px;
-  border: 1.5px dashed var(--line-2);
-  background: var(--surface);
   text-align: center;
 }
 .awaiting svg {
@@ -2121,8 +2248,6 @@ select.sort:hover {
 /* Comments panel — scaffolded only; submission lands in Phase 4 */
 
 .cmts {
-  background: var(--canvas);
-  border-left: 1px solid var(--line);
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -2130,7 +2255,7 @@ select.sort:hover {
 .cmts-b {
   flex: 1;
   overflow-y: auto;
-  padding: 10px;
+  padding: 6px 14px 14px;
 }
 
 /* The Brief panel — collapsible, sits above the artwork in the canvas */
@@ -2213,24 +2338,29 @@ select.sort:hover {
   margin-bottom: 0;
 }
 .brow {
+  margin-bottom: 10px;
+}
+.brow:last-child {
+  margin-bottom: 0;
+}
+/* Label sits above its textarea, flush with the field's own left edge —
+   not to its side, which used to reserve a fixed-width column and push
+   the field's start in from every other field's own. */
+.brow-h {
   display: flex;
-  align-items: flex-start;
-  gap: 7px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   margin-bottom: 6px;
 }
-.brow b {
-  font-size: 9.5px;
-  font-weight: 600;
+.brow-h b {
+  font-size: 12.5px;
+  font-weight: 500;
   color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  min-width: 42px;
-  padding-top: 8px;
-  flex-shrink: 0;
 }
 .brx {
-  width: 22px;
-  height: 26px;
+  width: 18px;
+  height: 18px;
   border-radius: 4px;
   display: grid;
   place-items: center;
@@ -2303,73 +2433,72 @@ select.sort:hover {
 .cfilters {
   display: flex;
   gap: 4px;
-  padding: 8px 10px 0;
+  padding: 10px 14px 14px;
   flex-wrap: wrap;
   flex-shrink: 0;
 }
 .cfilters .chip {
   font-size: 11px;
-  padding: 2px 8px;
+  padding: 4px 10px;
 }
 .cmt {
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r);
   padding: var(--d-cmt);
-  margin-bottom: 8px;
-  background: var(--surface);
+  margin-bottom: 10px;
   transition: border-color 0.12s, box-shadow 0.12s;
   position: relative;
+}
+.cmt:last-child {
+  margin-bottom: 0;
 }
 .cmt.resolved {
   opacity: 0.55;
 }
-/* Internal notes are marked hard, because the cost of one leaking is high */
-.cmt.internal {
-  border-color: var(--private);
-}
 .cmt-h {
   display: flex;
   align-items: center;
-  gap: 7px;
-  margin-bottom: 6px;
-  padding-right: 76px;
+  gap: 6px;
+  margin-bottom: 9px;
+  padding-right: 68px;
 }
 .who {
-  width: 21px;
-  height: 21px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   display: grid;
   place-items: center;
-  font-size: 9.5px;
+  font-size: 8px;
   font-weight: 700;
   color: #fff;
   flex-shrink: 0;
 }
 .cmt-h b {
-  font-size: 12.5px;
+  font-size: 11px;
   font-weight: 600;
 }
 .cmt-h time {
-  font-size: 11px;
+  font-size: 9.5px;
   color: var(--muted);
   position: absolute;
   top: var(--d-cmt);
   right: var(--d-cmt);
   margin: 0;
-  line-height: 21px;
+  line-height: 18px;
 }
 .cmt p {
   font-size: 12.5px;
-  line-height: 1.45;
+  line-height: 1.4;
 }
 .cmt-f {
   display: flex;
   align-items: center;
   gap: 5px;
-  margin-top: 8px;
+  margin-top: 11px;
 }
 .cmt-f button {
-  font-size: 11.5px;
+  font-size: 10px;
   color: var(--muted);
 }
 .cmt-f button:hover {
@@ -2381,14 +2510,14 @@ select.sort:hover {
   gap: 8px;
 }
 .replies {
-  margin-top: 8px;
-  padding-top: 8px;
+  margin-top: 7px;
+  padding-top: 7px;
   border-top: 1px solid var(--line);
 }
 .reply {
   display: flex;
-  gap: 7px;
-  margin-bottom: 7px;
+  gap: 6px;
+  margin-bottom: 6px;
 }
 .reply:last-child {
   margin-bottom: 0;
@@ -2397,19 +2526,29 @@ select.sort:hover {
   min-width: 0;
 }
 .reply .rb b {
-  font-size: 12px;
+  font-size: 10.5px;
   font-weight: 600;
   margin-right: 5px;
 }
 .reply .rb p {
-  font-size: 12px;
+  font-size: 12.5px;
   color: #374151;
 }
 .replybox {
   margin-top: 7px;
 }
-.composer {
+/* Pin/Region — moved here from the stage's own toolbar so they sit right
+   above the composer they actually create a comment through. The divider
+   that used to sit directly above .composer moves up to here instead, so
+   the tool row and composer read as one footer block, not two. */
+.cmt-tools {
+  display: flex;
+  gap: 5px;
+  padding: 10px 14px 0;
   border-top: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.composer {
   padding: 10px;
   flex-shrink: 0;
   position: relative;
@@ -2813,7 +2952,7 @@ select.sort:hover {
   max-width: 560px;
   max-height: 88vh;
   background: var(--surface);
-  border-radius: 10px;
+  border-radius: 16px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -2826,16 +2965,29 @@ select.sort:hover {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 15px 20px;
+  padding: 20px 28px;
   border-bottom: 1px solid var(--line);
 }
-.modal-h b {
-  font-size: 15px;
+.modal-h .modal-title {
+  font-size: 16px;
   font-weight: 600;
   flex: 1;
 }
+/* CreativeModal's own two-line title — project name, then the post's own
+   name and format underneath it, smaller and muted. */
+.modal-title-project {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.modal-title-post {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-top: 2px;
+}
 .modal-b {
-  padding: 20px;
+  padding: 28px;
   overflow-y: auto;
   flex: 1;
 }
@@ -2849,29 +3001,12 @@ select.sort:hover {
   margin-bottom: 12px;
   width: 460px;
 }
-.checks {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.btn.chk {
-  gap: 6px;
-}
-.btn.chk svg {
-  width: 13px;
-  height: 13px;
-  stroke: currentColor;
-  fill: none;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
 .checkfind {
   display: flex;
   align-items: flex-start;
   gap: 9px;
   padding: 10px;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 7px;
   margin-bottom: 8px;
@@ -2943,7 +3078,7 @@ select.sort:hover {
 /* Share modal — form controls layered on the generic .modal from Phase 5 */
 
 .modal-f {
-  padding: 13px 20px;
+  padding: 16px 28px;
   border-top: 1px solid var(--line);
   display: flex;
   align-items: center;
@@ -2964,7 +3099,8 @@ select.sort:hover {
   display: block;
   font-size: 12.5px;
   font-weight: 500;
-  margin-bottom: 5px;
+  color: var(--muted);
+  margin-bottom: 6px;
 }
 .field .hint {
   font-size: 11.5px;
@@ -2992,6 +3128,24 @@ select.sort:hover {
 .frow {
   display: flex;
   gap: 11px;
+}
+/* Popup-only spacing bump — every actual modal renders its content inside
+   Modal.tsx's .modal-b, so scoping here (rather than the bare .field/.frow
+   rules above) means the public shared-review page's GuestComposer, which
+   also uses .field but isn't a popup, keeps its original tighter spacing. */
+.modal-b .field {
+  margin-bottom: 20px;
+}
+.modal-b .field label {
+  margin-bottom: 7px;
+}
+.modal-b .field input,
+.modal-b .field textarea,
+.modal-b .field select {
+  padding: 9px 12px;
+}
+.modal-b .frow {
+  gap: 14px;
 }
 .frow .field {
   flex: 1;
@@ -3210,43 +3364,91 @@ select.sort:hover {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.picksearch {
-  width: 100%;
-  border: 1px solid var(--line-2);
-  border-radius: var(--r);
-  padding: 7px 10px;
-  font: inherit;
-  font-size: 12.5px;
-  margin-bottom: 8px;
-}
-.picklist2 {
-  max-height: 230px;
-  overflow-y: auto;
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-}
-.pk2 {
-  display: flex;
-  align-items: center;
+/* Share modal's "Pieces" grid — one tile per creative in the project, a
+   decorative gradient (same hash-to-hue trick as CreativePreviewPopover's
+   PlaceholderArt) standing in for real artwork, since fetching a signed
+   thumbnail per creative just for this picker isn't worth a storage
+   round-trip per tile. */
+.pkgrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
-  padding: 6px 10px;
-  border-bottom: 1px solid var(--line);
-  cursor: pointer;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 2px;
 }
-.pk2:last-child {
-  border-bottom: none;
-}
-.pk2:hover {
-  background: var(--canvas);
-}
-.pk2 .pn {
-  flex: 1;
-  min-width: 0;
-  font-size: 12.5px;
-  font-weight: 500;
-  white-space: nowrap;
+.pktile {
+  position: relative;
+  /* aspect-ratio set inline, per tile — matches the creative's own format
+     (lib/formats.ts), not a fixed shape for every piece. */
+  border-radius: 8px;
   overflow: hidden;
-  text-overflow: ellipsis;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+.pktile svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.pktile.selected {
+  border-color: var(--action);
+}
+/* Scope "one" — the grid still shows every piece so the current one's
+   selection reads in context, but only "Multiple Posts" lets you click a
+   different tile. */
+.pktile.locked {
+  cursor: default;
+}
+.pktile-check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  background: rgba(20, 22, 26, 0.35);
+  display: grid;
+  place-items: center;
+}
+.pktile.selected .pktile-check {
+  background: var(--action);
+  border-color: var(--action);
+}
+.pktile-check svg {
+  width: 11px;
+  height: 11px;
+  stroke: #fff;
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+}
+.pktile.selected .pktile-check svg {
+  opacity: 1;
+}
+/* Hover-only, per the ask — the checkbox above stays visible so selection
+   state reads without hovering; the title doesn't. */
+.pktile-title {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  padding: 8px;
+  background: linear-gradient(to top, rgba(20, 22, 26, 0.7), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.12s;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+  line-height: 1.3;
+}
+.pktile:hover .pktile-title {
+  opacity: 1;
 }
 
 /* Public review — the shared, unauthenticated /review/[token] page.
@@ -3879,15 +4081,20 @@ select.sort:hover {
   border: 2px solid #fff;
 }
 .annot-composer {
+  /* transform is computed inline (AnnotationLayer.tsx) — flips toward
+     whichever side/edge has room, so a pin near the artwork's edge never
+     pushes the composer half off it. z-index is deliberately far above
+     everything else in the stage (the artwork, its own on-image text,
+     the comments rail) — this popup must never render underneath any of
+     it. */
   position: absolute;
-  transform: translate(-50%, 12px);
-  width: 220px;
+  width: 240px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 8px;
   box-shadow: 0 10px 30px rgba(20, 22, 26, 0.25);
-  z-index: 5;
+  z-index: 60;
 }
 .annot-composer .cf {
   display: flex;
@@ -4063,4 +4270,86 @@ select.sort:hover {
 .cx-v {
   font-size: 13px;
   font-weight: 600;
+}
+
+/* CreativeModal's Brief / Upload & Copy tabs — raised folder tabs, not the
+   pill-style .seg/.segbtn segmented control (that's still used inside the
+   Upload & Copy tab for "What Are You Uploading?"). Bleeds to the modal's
+   edges (negative margin against .modal-b's own 20px padding) so the tab
+   strip reads as attached to the window chrome, matching the reference. */
+/* Plain underline tabs, directly below the modal header — not a raised
+   folder strip (an earlier reference asked for that look; a later,
+   fuller reference replaced it with this simpler one, confirmed as the
+   one to copy). Sits in normal flow inside .modal-b, no bleed to the
+   modal's edges — its own border-bottom is the divider under the tabs. */
+.mtabs {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  /* -28px (not just enough to look right) cancels .modal-b's own padding
+     entirely, so the tab bar sits flush against the modal header even
+     before any scrolling — matching exactly where it ends up once stuck,
+     no jump between the two states. */
+  margin: -28px -28px 22px;
+  padding: 0 28px;
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  /* Sticky's `top` offset is measured from .modal-b's padding edge, not
+     its border edge — left at 0 it stuck 28px (.modal-b's own padding)
+     below the modal header instead of flush against it. Offsetting by
+     that same padding pulls it the rest of the way up. */
+  top: -28px;
+  z-index: 2;
+  background: var(--surface);
+}
+.mtab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 0;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+}
+/* No more populated/empty dot — the tab label itself carries that now:
+   bold + ink once there's something in it, lighter grey while empty. */
+.mtab.populated {
+  font-weight: 700;
+  color: var(--ink);
+}
+.mtab:hover:not([aria-selected="true"]):not(:disabled) {
+  color: var(--ink);
+}
+.mtab[aria-selected="true"] {
+  color: var(--action);
+  border-bottom-color: var(--action);
+}
+.mtab:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* A titled divider inside a modal, grouping the fields under it — the
+   "Iteration" / "Status" pattern from the same reference. */
+.msection-h {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+/* A short, muted explainer directly under a .msection-h's title — the
+   divider belongs to this pair, not to the heading alone, so it sits
+   after the description, not between the title and it. Every .msection-h
+   in this modal is paired with one of these right after it. */
+.msection-d {
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.4;
+  padding-bottom: 10px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--line);
 }

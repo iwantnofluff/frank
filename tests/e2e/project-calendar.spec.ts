@@ -33,7 +33,7 @@ test("project calendar — jumps to the month of a newly created brief", async (
 });
 
 test("project calendar — status filter narrows the visible rows", async ({ page, frank }) => {
-  // Fixture's default creative is stage 5 (Client Review), scheduled_at
+  // Fixture's default creative is stage 3 (Client Review), scheduled_at
   // 2027-03-15 — an extra stage-1 creative on the same date lets the
   // "Client Review" filter be checked against a real exclusion, not just
   // an empty vs. non-empty state.

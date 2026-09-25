@@ -46,7 +46,7 @@ export interface Frank {
   createContinuousProject(): Promise<string>;
   /** Creates an extra creative on the default (scheduled) project at a
    * given stage — for share-eligibility.spec.ts, which needs creatives
-   * below Client Review (stage < 5) to exercise ShareModal's eligibility
+   * below Client Review (stage < 3) to exercise ShareModal's eligibility
    * preview. Cleaned up by the same agency_id-wide teardown. */
   createCreativeAtStage(stage: number, name?: string): Promise<string>;
   /** Inserts a copy_versions row directly (service-role, no author-
@@ -121,16 +121,16 @@ export const test = base.extend<{ frank: Frank }>({
       .single();
     if (projectError) throw projectError;
 
-    // stage: 5 so the fixture creative is eligible for a shared link in any
-    // spec that needs one (stage < 5 is excluded from shared review
-    // unconditionally — see shared_link_allowed_creative_ids).
+    // stage: 3 (Client Review) so the fixture creative is eligible for a
+    // shared link in any spec that needs one (stage < 3 is excluded from
+    // shared review unconditionally — see shared_link_allowed_creative_ids).
     const { data: creative, error: creativeError } = await admin
       .from("creatives")
       .insert({
         project_id: project.id,
         name: "E2E Test Creative",
         format: "ig_feed",
-        stage: 5,
+        stage: 3,
         // Fixed, not Date.now()-relative — the page renders this with
         // exact hour:minute via toLocaleString, so a relative timestamp
         // makes the screenshot's text non-deterministic between runs and

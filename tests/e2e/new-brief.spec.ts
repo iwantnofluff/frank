@@ -15,6 +15,12 @@ test("creates a scheduled creative end to end", async ({ page, frank }) => {
   await page.fill("#nbDate", "2027-04-01");
   await page.click('button:has-text("Create Brief")');
 
+  // CreativeModal stays open on success rather than closing — creating the
+  // brief unlocks the Content tab in the same window (the merge that
+  // replaced New Brief / Upload or Edit / Draft from Brief as three
+  // separate entry points), so there's something to switch to.
+  await expect(page.getByRole("tab", { name: "Content" })).toBeEnabled();
+  await page.click('button:has-text("Cancel")');
   await expect(page.locator(".scrim")).toHaveCount(0);
   await expect(page.locator(".pname", { hasText: "New Brief E2E — Scheduled" })).toBeVisible();
 });
@@ -30,6 +36,8 @@ test("creates a continuous creative end to end", async ({ page, frank }) => {
   await page.fill("#nbDest", "https://example.com/listing");
   await page.click('button:has-text("Create Brief")');
 
+  await expect(page.getByRole("tab", { name: "Content" })).toBeEnabled();
+  await page.click('button:has-text("Cancel")');
   await expect(page.locator(".scrim")).toHaveCount(0);
   await expect(page.locator(".pname", { hasText: "New Brief E2E — Continuous" })).toBeVisible();
 });

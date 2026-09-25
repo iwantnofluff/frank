@@ -11,7 +11,7 @@ import { stageLabel } from "@/lib/stage-labels";
 import { errorMessage } from "@/lib/errors";
 import { CxCell } from "@/components/project/CxCell";
 import { AddColumnForm } from "@/components/project/AddColumnForm";
-import { NewBriefModal } from "@/components/project/NewBriefModal";
+import { CreativeModal } from "@/components/creative-review/CreativeModal";
 import { ProjectCalendarTable } from "@/components/project/ProjectCalendarTable";
 
 function formatDate(value: string | null) {
@@ -183,8 +183,10 @@ export default function ProjectPage({
       )}
 
       {newBriefOpen && project && (
-        <NewBriefModal
+        <CreativeModal
+          mode="create"
           projectId={id}
+          clientId={project.client_id}
           delivery={project.delivery}
           onClose={() => setNewBriefOpen(false)}
           onCreated={(scheduledAt) => {

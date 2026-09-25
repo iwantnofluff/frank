@@ -9,9 +9,7 @@ export interface CreateCreativeInput {
   leadUserId: string | null;
   concept: string;
   referenceUrl: string;
-  approachNotes: string[];
   slideText: string[];
-  caption: string;
   cx: Record<string, string | number | boolean | null>;
   // Exactly one side is meaningful, matching the project's delivery —
   // the caller decides which, this hook doesn't guess.
@@ -56,7 +54,9 @@ export function useCreateCreative(projectId: string) {
           lead_user_id: input.leadUserId,
           concept: input.concept.trim() || null,
           reference_url: input.referenceUrl.trim() || null,
-          approach_notes: input.approachNotes.map((n) => n.trim()).filter(Boolean),
+          // approach_notes is left null here — system-generated from copy
+          // once it exists (app/api/ai/wiifm-note), not settable at
+          // brief-creation time when there's no copy yet to derive it from.
           scheduled_at: input.scheduledAt,
           destination: input.destination,
           due_on: input.dueOn,
@@ -68,17 +68,15 @@ export function useCreateCreative(projectId: string) {
         .single();
       if (creativeError) throw creativeError;
 
+      // Caption isn't set at brief-creation time at all anymore (it lives
+      // in CreativeModal's Content tab, a separate moment) — only
+      // Text on Image, which is brief content, gets an initial version here.
       const slideText = input.slideText.map((s) => s.trim()).filter(Boolean);
-      const caption = input.caption.trim();
-      // Copy Options (the prototype's plural draft-caption list) is
-      // deliberately not built — see docs/parity-gaps.md — this writes a
-      // single caption straight into fields.caption, same insert as
-      // useSaveSlideText/useSaveCopyFields use for later edits.
-      if (slideText.length > 0 || caption) {
+      if (slideText.length > 0) {
         const { error: copyError } = await supabase.from("copy_versions").insert({
           creative_id: creative.id,
           version_no: 1,
-          fields: caption ? { caption } : {},
+          fields: {},
           slide_text: slideText,
           source: "in_app_edit",
           created_by: user.id,
@@ -88,12 +86,11 @@ export function useCreateCreative(projectId: string) {
 
       return creative.id as string;
     },
-    // Same shape as useAdvanceCreativeStage's fix: ShareModal reads this
-    // same query for its eligibility counts, and can't be assumed mounted
-    // (and thus "active") at the moment a brief is created — refetchType:
-    // "all" keeps the cache itself current regardless, so a share link
-    // made right after New Brief never undercounts the piece that was
-    // just added.
+    // ShareModal reads this same query for its eligibility counts, and
+    // can't be assumed mounted (and thus "active") at the moment a brief
+    // is created — refetchType: "all" keeps the cache itself current
+    // regardless, so a share link made right after New Brief never
+    // undercounts the piece that was just added.
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ["creatives", projectId],

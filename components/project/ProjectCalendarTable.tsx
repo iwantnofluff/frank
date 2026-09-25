@@ -42,8 +42,6 @@ const STATUS_FILTERS: { value: "all" | Band; label: string }[] = [
   { value: "changes_requested", label: "Changes Requested" },
   { value: "rejected", label: "Rejected" },
   { value: "approved", label: "Approved" },
-  { value: "scheduled", label: "Scheduled" },
-  { value: "published", label: "Published" },
 ];
 
 // Week/Date/Day are frozen — always shown, always sticky (left offsets
@@ -772,7 +770,7 @@ export function ProjectCalendarTable({
                     const color = stageColor(c.stage, c.exception);
                     const format = formatById(c.format);
                     const rowClasses = [
-                      band === "published" ? "done" : "",
+                      band === "approved" ? "done" : "",
                       dateKey(dt) === todayKey ? "istoday" : "",
                     ]
                       .filter(Boolean)
@@ -954,20 +952,12 @@ export function ProjectCalendarTable({
       )}
 
       <div className="callegend">
-        <span>
-          <i style={{ background: "#6B7280" }} />
-          1–4 In Production
-        </span>
-        <span>
-          <i style={{ background: "#007BFF" }} />5 Client Review
-        </span>
-        <span>
-          <i style={{ background: "#2BB65B" }} />
-          6–7 Approved and Scheduled
-        </span>
-        <span>
-          <i style={{ background: "#14161A" }} />8 Published
-        </span>
+        {Array.from({ length: 4 }, (_, i) => i + 1).map((stage) => (
+          <span key={stage}>
+            <i style={{ background: stageColor(stage, null) }} />
+            {stage} {stageLabel(stage, "scheduled")}
+          </span>
+        ))}
       </div>
 
       {columnsPopoverAnchor && (

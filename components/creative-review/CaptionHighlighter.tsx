@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import type { HighlightAnchor } from "@/lib/annotations";
+import { CommentDraftForm } from "./CommentDraftForm";
 
 interface ExistingHighlight extends HighlightAnchor {
   commentId: string;
@@ -12,6 +13,7 @@ export function CaptionHighlighter({
   field,
   highlights,
   highlightedCommentId,
+  showVisibilityToggle,
   onSelect,
   onCreate,
 }: {
@@ -19,8 +21,9 @@ export function CaptionHighlighter({
   field: string;
   highlights: ExistingHighlight[];
   highlightedCommentId: string | null;
+  showVisibilityToggle: boolean;
   onSelect: (commentId: string) => void;
-  onCreate: (anchor: HighlightAnchor, body: string) => void;
+  onCreate: (anchor: HighlightAnchor, body: string, visibility: "private" | "public") => void;
 }) {
   const spanRef = useRef<HTMLSpanElement>(null);
   const [pending, setPending] = useState<{
@@ -78,9 +81,11 @@ export function CaptionHighlighter({
       {pending && (
         <div className="hl-composer" onClick={(e) => e.stopPropagation()}>
           <div className="quoted">&ldquo;{pending.quote}&rdquo;</div>
-          <DraftForm
+          <CommentDraftForm
+            showVisibilityToggle={showVisibilityToggle}
+            placeholder="Comment on this text…"
             onCancel={() => setPending(null)}
-            onSubmit={(body) => {
+            onSubmit={(body, visibility) => {
               onCreate(
                 {
                   type: "highlight",
@@ -90,6 +95,7 @@ export function CaptionHighlighter({
                   quote: pending.quote,
                 },
                 body,
+                visibility,
               );
               setPending(null);
             }}
@@ -114,39 +120,4 @@ function buildSegments(text: string, highlights: ExistingHighlight[]) {
   if (cursor < text.length) segments.push({ text: text.slice(cursor), highlight: null });
 
   return segments;
-}
-
-function DraftForm({
-  onCancel,
-  onSubmit,
-}: {
-  onCancel: () => void;
-  onSubmit: (body: string) => void;
-}) {
-  const [body, setBody] = useState("");
-  return (
-    <>
-      <textarea
-        className="bin"
-        rows={2}
-        autoFocus
-        placeholder="Comment on this text…"
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
-      />
-      <div className="cf">
-        <button type="button" className="btn sm" onClick={onCancel}>
-          Cancel
-        </button>
-        <button
-          type="button"
-          className="btn primary sm"
-          disabled={!body.trim()}
-          onClick={() => onSubmit(body.trim())}
-        >
-          Post
-        </button>
-      </div>
-    </>
-  );
 }

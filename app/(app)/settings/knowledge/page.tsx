@@ -4,6 +4,7 @@ import { useMyAgency } from "@/hooks/use-my-agency";
 import { useFormatDirections } from "@/hooks/use-format-directions";
 import { FormatCategorySection } from "@/components/settings/FormatCategorySection";
 import { AgencyKnowledgeSection } from "@/components/settings/AgencyKnowledgeSection";
+import { AiModelSettings } from "@/components/settings/AiModelSettings";
 import { FORMATS, FORMAT_CATEGORIES, formatsByCategory } from "@/lib/formats";
 
 // Route stays /settings/knowledge — Format Directions and Reference
@@ -38,6 +39,8 @@ export default function FormatDirectionsPage() {
           writes and drafts against.
         </div>
       </div>
+
+      <AiModelSettings agencyId={agency?.agencyId} />
 
       <div className="panel">
         <div className="panel-h">
