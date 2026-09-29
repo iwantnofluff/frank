@@ -1,7 +1,8 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import { useRef } from "react";
 import { useCopyVersions } from "@/hooks/use-copy-versions";
+import { useViewportFit } from "@/hooks/use-viewport-fit";
 import { useComments } from "@/hooks/use-comments";
 import { stageColor, stageLabel, exceptionLabel } from "@/lib/stage-labels";
 import { formatById } from "@/lib/formats";
@@ -18,7 +19,7 @@ function relativeTime(iso: string): string {
   return `${years} year${years === 1 ? "" : "s"} ago`;
 }
 
-function hashString(s: string) {
+export function hashString(s: string) {
   let n = 0;
   for (let i = 0; i < s.length; i++) n = (n * 31 + s.charCodeAt(i)) >>> 0;
   return n;
@@ -29,13 +30,15 @@ function hashString(s: string) {
 // the spirit of the prototype's own art() (a generated placeholder, not a
 // real render) rather than its literal SVG, and drops the fabricated
 // like/view counts postHTML() shows alongside it — no schema backs those.
+// Exported: FeedPreviewGrid (creative-review) reuses it for the same
+// reason — a grid of sibling creatives with no real thumbnail to fetch.
 //
 // The title/time overlay is plain HTML, not SVG <text> — an SVG text
 // element doesn't inherit the page's font stack the way an ordinary DOM
 // node does, so it rendered in a generic fallback font at the wrong size
 // instead of the app's actual type (Inter, via the same CSS every other
 // creative name uses). The gradient rect stays SVG since it has no text.
-function PlaceholderArt({ creative, timeLabel }: { creative: CreativeListRow; timeLabel: string }) {
+export function PlaceholderArt({ creative, timeLabel }: { creative: CreativeListRow; timeLabel: string }) {
   const hue = hashString(creative.id) % 360;
   const gradientId = `pg-${creative.id}`;
   return (
@@ -93,22 +96,14 @@ export function CreativePreviewPopover({
       })
     : "—";
 
-  // Computed straight from anchorRect + the window's current size — no
-  // measurement of this popover's own (not-yet-rendered) size is needed,
-  // so this is plain render-time math, not a DOM-measuring effect.
-  const style: CSSProperties = (() => {
-    const pw = 306;
-    const ph = 340;
-    let left = anchorRect.right + 10;
-    if (left + pw > window.innerWidth - 8) left = anchorRect.left - pw - 10;
-    if (left < 8) left = 8;
-    let top = anchorRect.top - 10;
-    if (top + ph > window.innerHeight - 8) top = Math.max(8, window.innerHeight - ph - 8);
-    return { left, top };
-  })();
+  // Positioned from its real measured size, re-measured as the caption and
+  // comments load in — a fixed 340px guess ran it off the bottom of the
+  // screen once the real card turned out taller.
+  const ref = useRef<HTMLDivElement>(null);
+  useViewportFit(ref, anchorRect, { side: "beside" });
 
   return (
-    <div className="evpop on" style={style} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
+    <div ref={ref} className="evpop on" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
       <div className="rv">
         <span className="rvt">{creative.name}</span>
         <span className="tag" style={{ background: `${color}1A`, color }}>
