@@ -12,6 +12,10 @@ test("dashboard — clients list", async ({ page, frank }) => {
   // land on the pending placeholder instead of real numbers depending on
   // which query happens to finish first.
   await expect(page.locator(".stats .stat .n").nth(1)).not.toHaveText("…");
+  // useClientListStats (the table's own Projects/Last activity cells)
+  // resolves on yet another separate query — same reasoning, wait for it
+  // too or the screenshot can land on "…" there instead of real values.
+  await expect(page.locator(".crow:not(.head) > div").nth(1)).not.toHaveText("…");
   // useIsStaff (NavRail's Settings link, #navSet) resolves independently
   // of both queries above and fails closed (hidden) until it does — wait
   // for it too, or this screenshot can race ahead under worker
@@ -36,4 +40,21 @@ test("dashboard — creative-stats cards", async ({ page, frank }) => {
   await expect(statNumbers.nth(1)).toHaveText("1"); // Live Projects
   await expect(statNumbers.nth(2)).toHaveText("1"); // Waiting on Approval
   await expect(statNumbers.nth(3)).toHaveText("0"); // Feedback to Action
+});
+
+test("dashboard — client row shows real Projects/Last activity data, not placeholders", async ({
+  page,
+  frank,
+}) => {
+  await frank.loginAsStaff(page);
+  await page.goto("/dashboard");
+  await page.waitForSelector(".clients, .empty");
+  const row = page.locator(".crow:not(.head)").first();
+  const cells = row.locator("> div");
+  // Fixture seeds exactly one active project for this client, and its one
+  // creative was created moments ago by this same test run.
+  await expect(cells.nth(1)).not.toHaveText("…");
+  await expect(cells.nth(1)).toHaveText("1");
+  await expect(cells.nth(3)).not.toHaveText("—");
+  await expect(cells.nth(3)).not.toHaveText("…");
 });

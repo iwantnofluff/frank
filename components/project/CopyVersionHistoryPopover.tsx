@@ -1,6 +1,7 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import { useRef } from "react";
+import { useViewportFit } from "@/hooks/use-viewport-fit";
 
 export interface CopyHistoryRow {
   versionNo: number;
@@ -26,19 +27,11 @@ export function CopyVersionHistoryPopover({
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
 }) {
-  const style: CSSProperties = (() => {
-    const pw = 380;
-    const ph = 260;
-    let left = anchorRect.left;
-    if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
-    if (left < 8) left = 8;
-    let top = anchorRect.bottom + 6;
-    if (top + ph > window.innerHeight - 8) top = Math.max(8, anchorRect.top - ph - 6);
-    return { left, top };
-  })();
+  const ref = useRef<HTMLDivElement>(null);
+  useViewportFit(ref, anchorRect, { side: "below" });
 
   return (
-    <div className="copypop on" style={style} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
+    <div ref={ref} className="copypop on" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
       {rows.length === 0 ? (
         <div className="cp-row">
           <span className="tdim">No {label.toLowerCase()} yet</span>

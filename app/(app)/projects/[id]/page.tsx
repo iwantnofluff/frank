@@ -1,30 +1,15 @@
 "use client";
 
 import { use, useState } from "react";
-import Link from "next/link";
 import { useProject } from "@/hooks/use-project";
-import { useCreatives, type CreativeListRow } from "@/hooks/use-creatives";
-import { useCustomColumns, type CustomColumnRow } from "@/hooks/use-custom-columns";
+import { useCreatives } from "@/hooks/use-creatives";
+import { useCustomColumns } from "@/hooks/use-custom-columns";
 import { useUpdateCreativeCx } from "@/hooks/use-update-creative-cx";
 import { useIsStaff } from "@/hooks/use-is-staff";
-import { stageLabel } from "@/lib/stage-labels";
 import { errorMessage } from "@/lib/errors";
-import { CxCell } from "@/components/project/CxCell";
-import { AddColumnForm } from "@/components/project/AddColumnForm";
 import { CreativeModal } from "@/components/creative-review/CreativeModal";
 import { ProjectCalendarTable } from "@/components/project/ProjectCalendarTable";
-
-function formatDate(value: string | null) {
-  if (!value) return "—";
-  return new Date(value).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-  });
-}
-
-// Continuous-delivery projects only — scheduled-delivery uses
-// ProjectCalendarTable's own <table> instead of this CSS-grid .ptable.
-const CONTINUOUS_TEMPLATE = "1fr 120px 1fr 100px 100px 140px";
+import { ContinuousCalendarTable } from "@/components/project/ContinuousCalendarTable";
 
 export default function ProjectPage({
   params,
@@ -54,25 +39,6 @@ export default function ProjectPage({
   // own #briefWrap (only shown on the calendar view, not as a global nav
   // item) — docs/parity-gaps.md.
   const showNewBrief = confirmedStaff;
-
-  function continuousGridTemplate() {
-    const extra = columns.length ? ` repeat(${columns.length}, 140px)` : "";
-    return `${CONTINUOUS_TEMPLATE}${extra}`;
-  }
-
-  function renderCustomCells(creative: CreativeListRow) {
-    return columns.map((col: CustomColumnRow) => (
-      <CxCell
-        key={col.id}
-        column={col}
-        value={creative.cx?.[col.key] ?? null}
-        onSave={(value) =>
-          updateCx.mutate({ creativeId: creative.id, key: col.key, value })
-        }
-        readOnly={!confirmedStaff}
-      />
-    ));
-  }
 
   return (
     <div className="pad">
@@ -139,47 +105,19 @@ export default function ProjectPage({
         />
       )}
 
-      {!isError && creatives && creatives.length > 0 && project?.delivery === "continuous" && (
-        <div className="ptable">
-          <div
-            className="prow head"
-            style={{ gridTemplateColumns: continuousGridTemplate() }}
-          >
-            <div>Creative</div>
-            <div>Format</div>
-            <div>Destination</div>
-            <div>Added</div>
-            <div>Due</div>
-            <div>Stage</div>
-            {columns.map((col) => (
-              <div key={col.id}>{col.label}</div>
-            ))}
-          </div>
-          {creatives.map((c) => (
-            <div
-              className="prow"
-              key={c.id}
-              style={{ gridTemplateColumns: continuousGridTemplate() }}
-            >
-              <Link href={`/creatives/${c.id}`} className="pname">
-                {c.name}
-              </Link>
-              <div>{c.format}</div>
-              <div>{c.destination || "—"}</div>
-              <div>{formatDate(c.added_on)}</div>
-              <div>{formatDate(c.due_on)}</div>
-              <div>
-                <span className="tag blue">
-                  {stageLabel(c.stage, "continuous")}
-                </span>
-              </div>
-              {renderCustomCells(c)}
-            </div>
-          ))}
-          {confirmedStaff && (
-            <AddColumnForm projectId={id} nextPosition={columns.length} />
-          )}
-        </div>
+      {!isError && creatives && project?.delivery === "continuous" && creatives.length > 0 && (
+        <ContinuousCalendarTable
+          key={calendarFocusDate ?? "default"}
+          projectName={project.name}
+          creatives={creatives}
+          customColumns={columns}
+          onCxSave={(creativeId, key, value) =>
+            updateCx.mutate({ creativeId, key, value })
+          }
+          cxReadOnly={!confirmedStaff}
+          isStaff={confirmedStaff}
+          initialFocusDate={calendarFocusDate}
+        />
       )}
 
       {newBriefOpen && project && (
@@ -189,8 +127,9 @@ export default function ProjectPage({
           clientId={project.client_id}
           delivery={project.delivery}
           onClose={() => setNewBriefOpen(false)}
-          onCreated={(scheduledAt) => {
+          onCreated={(scheduledAt, dueOn) => {
             if (scheduledAt) setCalendarFocusDate(scheduledAt);
+            if (dueOn) setCalendarFocusDate(dueOn);
           }}
         />
       )}

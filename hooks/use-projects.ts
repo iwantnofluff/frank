@@ -18,11 +18,14 @@ export function useProjects(clientId: string) {
     queryKey: ["projects", clientId],
     queryFn: async (): Promise<ProjectListRow[]> => {
       const supabase = createClient();
+      // Fetches archived projects too, filtered client-side by the page —
+      // same shape as use-clients.ts, so the client workspace page can
+      // offer its own Active/Archived toggle rather than archiving being
+      // a one-way door with nothing to see or undo it.
       const { data, error } = await supabase
         .from("projects")
         .select("id, name, type, delivery, accent_colour, due_on, archived_at")
         .eq("client_id", clientId)
-        .is("archived_at", null)
         .order("position");
 
       if (error) throw error;

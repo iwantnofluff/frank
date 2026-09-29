@@ -4,15 +4,28 @@ import { use, useMemo, useState } from "react";
 import Link from "next/link";
 import { useClientDetail } from "@/hooks/use-client";
 import { useProjects, type ProjectListRow } from "@/hooks/use-projects";
+import { useArchiveProject } from "@/hooks/use-archive-project";
 import { useProjectCreativeStats } from "@/hooks/use-project-creative-stats";
 import { useIsStaff } from "@/hooks/use-is-staff";
 import { useUIStore } from "@/store/ui-store";
 import { KBadge } from "@/components/project/KBadge";
 import { NewProjectModal } from "@/components/project/NewProjectModal";
+import { RenameProjectModal } from "@/components/project/RenameProjectModal";
+import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
 import { SearchIcon } from "@/components/app-shell/icons";
 
 type Filter = "all" | "review" | "done";
+type ArchiveFilter = "active" | "archived";
 type Sort = "due" | "name" | "pending";
+
+// Explicit per-page override of .crow's own default template (same
+// pattern Settings > Team already uses). The last two tracks (date, then
+// the actions menu) are kept the same width as the dashboard's own
+// CLIENT_ROW_COLUMNS so the "..." button lands in an identically-sized,
+// identically-positioned slot regardless of which page it's on — true
+// regardless of how many columns sit in between, since the leading `1fr`
+// track absorbs any difference.
+const PROJECT_ROW_COLUMNS = "1fr 74px 96px 90px 92px 70px";
 
 function projectInitials(name: string) {
   return name
@@ -53,11 +66,14 @@ export default function ClientWorkspacePage({
     useProjectCreativeStats(id);
   const { isStaff, isPending: isStaffPending } = useIsStaff();
   const previewMode = useUIStore((s) => s.previewMode);
+  const archiveProject = useArchiveProject();
 
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
+  const [archiveFilter, setArchiveFilter] = useState<ArchiveFilter>("active");
   const [sort, setSort] = useState<Sort>("due");
   const [newProjectOpen, setNewProjectOpen] = useState(false);
+  const [renameProjectTarget, setRenameProjectTarget] = useState<ProjectListRow | null>(null);
 
   // Fails closed like every other isStaff gate in this app: hidden while
   // still resolving, not shown by default.
@@ -69,16 +85,25 @@ export default function ClientWorkspacePage({
     return (s?.waitingOnApproval ?? 0) + (s?.feedbackToAction ?? 0);
   }
 
+  // useProjects now returns archived projects too (so they can be seen and
+  // unarchived at all) — every stat/heuristic below that means "the
+  // client's real, active work" reads this instead of the raw list.
+  const activeProjects = useMemo(
+    () => (projects ?? []).filter((p) => !p.archived_at),
+    [projects],
+  );
+
   const filtered = useMemo(() => {
     if (!projects) return [];
     const q = query.trim().toLowerCase();
     let list = projects.filter((p) => {
+      const matchesArchive = archiveFilter === "active" ? !p.archived_at : !!p.archived_at;
       const pend = pendingFor(p);
       const matchesFilter =
         filter === "all" ? true : filter === "review" ? pend > 0 : pend === 0;
       const matchesQuery =
         !q || (p.name + " " + (p.type ?? "")).toLowerCase().includes(q);
-      return matchesFilter && matchesQuery;
+      return matchesArchive && matchesFilter && matchesQuery;
     });
     list = [...list].sort((a, b) => {
       if (sort === "name") return a.name.localeCompare(b.name);
@@ -92,7 +117,7 @@ export default function ClientWorkspacePage({
     });
     return list;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projects, query, filter, sort, projectStats]);
+  }, [projects, query, filter, archiveFilter, sort, projectStats]);
 
   // "Campaigns" heading stat: the prototype's own projStats() counts
   // distinct campaign tags on each schedule/work item, a concept this
@@ -101,9 +126,8 @@ export default function ClientWorkspacePage({
   // schema-backed stand-in rather than a fabricated column — an
   // approximation, not the same metric, flagged as such there.
   const campaignCount = useMemo(() => {
-    if (!projects) return 0;
-    return new Set(projects.map((p) => p.type).filter((t): t is string => !!t)).size;
-  }, [projects]);
+    return new Set(activeProjects.map((p) => p.type).filter((t): t is string => !!t)).size;
+  }, [activeProjects]);
 
   const waitingOnClient = useMemo(() => {
     if (!projectStats) return 0;
@@ -137,7 +161,7 @@ export default function ClientWorkspacePage({
 
       <div className="stats">
         <div className="stat">
-          <div className="n">{projects?.length ?? 0}</div>
+          <div className="n">{activeProjects.length}</div>
           <div className="l">Live Projects</div>
         </div>
         <div className="stat">
@@ -173,6 +197,23 @@ export default function ClientWorkspacePage({
           {filtered.length} project{filtered.length === 1 ? "" : "s"}
         </span>
         <div className="filters">
+          <button
+            className="chip"
+            aria-pressed={archiveFilter === "active"}
+            onClick={() => setArchiveFilter("active")}
+            type="button"
+          >
+            Active
+          </button>
+          <button
+            className="chip"
+            aria-pressed={archiveFilter === "archived"}
+            onClick={() => setArchiveFilter("archived")}
+            type="button"
+          >
+            Archived
+          </button>
+          <span className="toolsep" />
           <button
             className="chip"
             aria-pressed={filter === "all"}
@@ -234,20 +275,24 @@ export default function ClientWorkspacePage({
           <b>
             {query
               ? `No projects match “${query}”`
-              : projects?.length
-                ? "Nothing here yet"
-                : "No projects yet"}
+              : archiveFilter === "archived"
+                ? "No archived projects"
+                : activeProjects.length
+                  ? "Nothing here yet"
+                  : "No projects yet"}
           </b>
           <span>
             {query
               ? "Try a different search."
-              : projects?.length
-                ? "Try a different filter."
-                : previewMode === "client"
-                  ? "Your team is setting things up. You will get an email when there is something to review."
-                  : `Create the first project for ${client?.name ?? "this client"} to start scheduling or briefing work.`}
+              : archiveFilter === "archived"
+                ? "Nothing has been archived yet."
+                : activeProjects.length
+                  ? "Try a different filter."
+                  : previewMode === "client"
+                    ? "Your team is setting things up. You will get an email when there is something to review."
+                    : `Create the first project for ${client?.name ?? "this client"} to start scheduling or briefing work.`}
           </span>
-          {confirmedStaff && !projects?.length && (
+          {confirmedStaff && archiveFilter === "active" && !activeProjects.length && (
             <div style={{ marginTop: 14 }}>
               <button
                 className="btn primary"
@@ -263,35 +308,23 @@ export default function ClientWorkspacePage({
 
       {!projectsError && filtered.length > 0 && (
         <div className="clients">
-          <div className="crow head">
+          <div className="crow head" style={{ gridTemplateColumns: PROJECT_ROW_COLUMNS }}>
             <div>Project</div>
-            <div>Posts</div>
-            <div>Approval progress</div>
-            <div>Status</div>
-            <div className="ago">Due</div>
+            <div className="ago">Concept</div>
+            <div className="ago">Internal Review</div>
+            <div className="ago">Client Review</div>
+            <div className="ago">Latest Approved</div>
             <div></div>
           </div>
           {filtered.map((p) => {
             const s = projectStats?.[p.id];
-            const total = s?.total ?? 0;
-            const done = s?.done ?? 0;
-            const pending = pendingFor(p);
-            // Same shape as the prototype's projStats()-driven status tag:
-            // pend is the two "needs attention" bands combined into one
-            // count, not shown as separate tag states at the project-row
-            // level (that split only applies to the dashboard's stat cards).
-            const status = !total
-              ? { tone: "grey", label: "Not started" }
-              : pending > 0
-                ? {
-                    tone: "amber",
-                    label: `${pending} ${previewMode === "client" ? "need your review" : "with the client"}`,
-                  }
-                : done === total
-                  ? { tone: "green", label: "All approved" }
-                  : { tone: "blue", label: "In production" };
             return (
-              <Link href={`/projects/${p.id}`} className="crow" key={p.id}>
+              <Link
+                href={`/projects/${p.id}`}
+                className="crow"
+                style={{ gridTemplateColumns: PROJECT_ROW_COLUMNS }}
+                key={p.id}
+              >
                 <div className="cname">
                   <div
                     className="logo"
@@ -307,29 +340,35 @@ export default function ClientWorkspacePage({
                     </span>
                   </div>
                 </div>
-                <div style={{ fontSize: 13, color: "var(--muted)" }}>
-                  {statsPending ? "…" : `${total} total`}
+                <div className="stagecount ago">
+                  {statsPending ? "…" : (s?.byStage[0] ?? 0)}
                 </div>
-                <div>
-                  <div className="bar">
-                    <i
-                      style={{
-                        width: `${total ? Math.round((done / total) * 100) : 0}%`,
-                      }}
+                <div className="stagecount ago">
+                  {statsPending ? "…" : (s?.byStage[1] ?? 0)}
+                </div>
+                <div className="stagecount ago">
+                  {statsPending ? "…" : (s?.byStage[2] ?? 0)}
+                </div>
+                <div className="ago">{formatDate(s?.latestApprovedAt ?? null)}</div>
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  {confirmedStaff && (
+                    <RowActionsMenu
+                      title="Project options"
+                      items={[
+                        { label: "Rename", onClick: () => setRenameProjectTarget(p) },
+                        {
+                          label: p.archived_at ? "Unarchive" : "Archive",
+                          onClick: () =>
+                            archiveProject.mutate({
+                              projectId: p.id,
+                              clientId: id,
+                              archived: !p.archived_at,
+                            }),
+                        },
+                      ]}
                     />
-                  </div>
-                  <div className="barlbl">
-                    {statsPending ? "…" : `${done} of ${total} approved`}
-                  </div>
+                  )}
                 </div>
-                <div>
-                  <span className={`tag ${status.tone}`}>
-                    <span className="dot" />
-                    {statsPending ? "…" : status.label}
-                  </span>
-                </div>
-                <div className="ago">{formatDate(p.due_on)}</div>
-                <div></div>
               </Link>
             );
           })}
@@ -338,6 +377,15 @@ export default function ClientWorkspacePage({
 
       {newProjectOpen && (
         <NewProjectModal clientId={id} onClose={() => setNewProjectOpen(false)} />
+      )}
+
+      {renameProjectTarget && (
+        <RenameProjectModal
+          projectId={renameProjectTarget.id}
+          clientId={id}
+          currentName={renameProjectTarget.name}
+          onClose={() => setRenameProjectTarget(null)}
+        />
       )}
     </div>
   );

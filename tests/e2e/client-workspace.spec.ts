@@ -11,7 +11,7 @@ test("client workspace", async ({ page, frank }) => {
   // useProjectCreativeStats resolves on its own query, separate from
   // useProjects — wait for it to settle so the screenshot can't land on the
   // "…" pending placeholder instead of real numbers.
-  await expect(page.locator(".crow:not(.head) .barlbl").first()).not.toHaveText("…");
+  await expect(page.locator(".crow:not(.head) .stagecount").first()).not.toHaveText("…");
   // useIsStaff (NavRail's Settings link, #navSet) resolves independently
   // and fails closed (hidden) until it does — wait for it too, or this
   // screenshot can race ahead under worker concurrency and land on a
@@ -26,11 +26,10 @@ test("client workspace — project row creative stats", async ({ page, frank }) 
   await page.waitForSelector(".clients, .empty");
   const row = page.locator(".crow:not(.head)").first();
   // Fixture seeds exactly one project and one stage-3 (review-band)
-  // creative on it: 1 total, 0 approved, 1 waiting — "with the client" in
-  // the default (non-client-preview) mode, matching the prototype's
-  // projStats()-driven status tag.
+  // creative on it: waiting on the client's own approval.
   await expect(row.locator(".kbadge.sch")).toHaveText("Scheduled");
-  await expect(row).toContainText("1 total");
-  await expect(row.locator(".barlbl")).toHaveText("0 of 1 approved");
-  await expect(row.locator(".tag.amber")).toHaveText("1 with the client");
+  const stageCounts = row.locator(".stagecount");
+  await expect(stageCounts.nth(0)).toHaveText("0"); // Concept
+  await expect(stageCounts.nth(1)).toHaveText("0"); // Internal Review
+  await expect(stageCounts.nth(2)).toHaveText("1"); // Client Review
 });

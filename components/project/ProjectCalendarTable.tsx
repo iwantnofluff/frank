@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { useViewportFit } from "@/hooks/use-viewport-fit";
 import { useRouter } from "next/navigation";
 import type { CreativeListRow } from "@/hooks/use-creatives";
 import type { CustomColumnRow } from "@/hooks/use-custom-columns";
@@ -9,6 +10,7 @@ import { ProjectCalendarGrid } from "@/components/project/ProjectCalendarGrid";
 import { ColumnsPopover, type ToggleableColumn } from "@/components/project/ColumnsPopover";
 import { CreativePreviewPopover } from "@/components/project/CreativePreviewPopover";
 import { CopyVersionHistoryPopover } from "@/components/project/CopyVersionHistoryPopover";
+import { FullTextPopover } from "@/components/project/FullTextPopover";
 import { SaveViewModal } from "@/components/project/SaveViewModal";
 import { bandOf, stageLabel, stageColor, exceptionLabel, type Band } from "@/lib/stage-labels";
 import { errorMessage } from "@/lib/errors";
@@ -152,7 +154,7 @@ export function ProjectCalendarTable({
   // per-project. null activeViewId means "Main Table", the built-in
   // default that can be dirtied but never itself saved over.
   const { data: agency } = useMyAgency();
-  const { data: savedViews } = useCalendarViews();
+  const { data: savedViews } = useCalendarViews("scheduled");
   const createView = useCreateCalendarView();
   const updateView = useUpdateCalendarView();
   const deleteView = useDeleteCalendarView();
@@ -161,6 +163,10 @@ export function ProjectCalendarTable({
   const [viewMenuAnchor, setViewMenuAnchor] = useState<DOMRect | null>(null);
   const [saveDropdownAnchor, setSaveDropdownAnchor] = useState<DOMRect | null>(null);
   const saveDropdownBtnRef = useRef<HTMLButtonElement>(null);
+  const viewMenuRef = useRef<HTMLDivElement>(null);
+  const saveDropdownRef = useRef<HTMLDivElement>(null);
+  useViewportFit(viewMenuRef, viewMenuAnchor, { side: "below", gap: 4 });
+  useViewportFit(saveDropdownRef, saveDropdownAnchor, { side: "below", align: "end", gap: 4 });
 
   // Subscribing to an external event source while these popovers are open
   // — not a derived-state effect, so setState here is fine.
@@ -218,6 +224,7 @@ export function ProjectCalendarTable({
       } else {
         const created = await createView.mutateAsync({
           agencyId: agency.agencyId,
+          tableType: "scheduled",
           name,
           columnOrder,
           hiddenColumns: currentHidden,
@@ -372,6 +379,24 @@ export function ProjectCalendarTable({
     if (copyHoverTimeout.current) clearTimeout(copyHoverTimeout.current);
   }
 
+  // Same clamp-then-hover-for-the-full-text affordance as the Post
+  // Copy/Image on Text cells above, for cells with no version history of
+  // their own (Concept, Approach, Client Feedback) — just the complete text.
+  const [textHover, setTextHover] = useState<{ rect: DOMRect; lines: string[] } | null>(null);
+  const textHoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  function handleTextEnter(lines: string[], target: HTMLElement) {
+    if (textHoverTimeout.current) clearTimeout(textHoverTimeout.current);
+    const rect = target.getBoundingClientRect();
+    textHoverTimeout.current = setTimeout(() => setTextHover({ rect, lines }), 200);
+  }
+  function scheduleTextHide() {
+    if (textHoverTimeout.current) clearTimeout(textHoverTimeout.current);
+    textHoverTimeout.current = setTimeout(() => setTextHover(null), 200);
+  }
+  function cancelTextHide() {
+    if (textHoverTimeout.current) clearTimeout(textHoverTimeout.current);
+  }
+
   function versionRows(
     versions: CopyVersionSummary[] | undefined,
     field: "caption" | "slideText",
@@ -475,7 +500,7 @@ export function ProjectCalendarTable({
 
   return (
     <>
-      <p className="sub">
+      <p className="sub" style={{ marginTop: 14, marginBottom: 14 }}>
         {totalShown} scheduled post{totalShown === 1 ? "" : "s"} in this view.
       </p>
 
@@ -532,7 +557,8 @@ export function ProjectCalendarTable({
       {viewMenuAnchor && activeView && (
         <div
           className="colpop on"
-          style={{ left: viewMenuAnchor.left, top: viewMenuAnchor.bottom + 4, width: 180 }}
+          ref={viewMenuRef}
+          style={{ width: 180 }}
         >
           <div className="cp-b" style={{ padding: "4px 4px" }}>
             <button
@@ -648,7 +674,8 @@ export function ProjectCalendarTable({
             {saveDropdownAnchor && (
               <div
                 className="colpop on"
-                style={{ left: saveDropdownAnchor.right - 210, top: saveDropdownAnchor.bottom + 4, width: 210 }}
+                ref={saveDropdownRef}
+                style={{ width: 210 }}
               >
                 <div className="cp-b" style={{ padding: "4px 4px" }}>
                   {activeView && (
@@ -783,7 +810,7 @@ export function ProjectCalendarTable({
                         onClick={() => router.push(`/creatives/${c.id}`)}
                       >
                         <td className="sk1" style={{ left: 0 }}>
-                          <b>{isoWeekNumber(dt)}</b>
+                          {isoWeekNumber(dt)}
                         </td>
                         <td className="sk2" style={{ left: 66 }}>
                           {dt.getDate()} {MONTH_ABBR[dt.getMonth()]} {String(dt.getFullYear()).slice(2)}
@@ -873,14 +900,36 @@ export function ProjectCalendarTable({
                             case "concept":
                               return (
                                 <td key={key} className="cellw">
-                                  {c.concept || <span className="tdim">—</span>}
+                                  {c.concept ? (
+                                    <span
+                                      className="copyc"
+                                      onMouseEnter={(e) => handleTextEnter([c.concept as string], e.currentTarget)}
+                                      onMouseLeave={scheduleTextHide}
+                                    >
+                                      <span className="cc-t">{c.concept}</span>
+                                    </span>
+                                  ) : (
+                                    <span className="tdim">—</span>
+                                  )}
                                 </td>
                               );
                             case "approach":
                               return (
                                 <td key={key} className="cellw">
                                   {c.approach_notes?.length ? (
-                                    c.approach_notes.map((a, i) => <div key={i}>• {a}</div>)
+                                    <span
+                                      className="copyc"
+                                      onMouseEnter={(e) =>
+                                        handleTextEnter(c.approach_notes!.map((a) => `• ${a}`), e.currentTarget)
+                                      }
+                                      onMouseLeave={scheduleTextHide}
+                                    >
+                                      <span className="cc-t">
+                                        {c.approach_notes.map((a, i) => (
+                                          <div key={i}>• {a}</div>
+                                        ))}
+                                      </span>
+                                    </span>
                                   ) : (
                                     <span className="tdim">—</span>
                                   )}
@@ -902,6 +951,7 @@ export function ProjectCalendarTable({
                                       }
                                       onMouseLeave={scheduleCopyHide}
                                     >
+                                      <span className="cc-v">V{latest.versionNo}</span>
                                       <span className="cc-t">{latest.text}</span>
                                       {rows.length > 1 && (
                                         <span className="cc-n">+{rows.length - 1} earlier</span>
@@ -918,7 +968,13 @@ export function ProjectCalendarTable({
                               return (
                                 <td key={key} className="cellw">
                                   {feedback ? (
-                                    <span className="feedback-note">{feedback.body}</span>
+                                    <span
+                                      className="copyc feedback-note"
+                                      onMouseEnter={(e) => handleTextEnter([feedback.body], e.currentTarget)}
+                                      onMouseLeave={scheduleTextHide}
+                                    >
+                                      <span className="cc-t">{feedback.body}</span>
+                                    </span>
                                   ) : (
                                     <span className="tdim">—</span>
                                   )}
@@ -996,6 +1052,15 @@ export function ProjectCalendarTable({
           anchorRect={copyHover.rect}
           onMouseEnter={cancelCopyHide}
           onMouseLeave={scheduleCopyHide}
+        />
+      )}
+
+      {textHover && (
+        <FullTextPopover
+          lines={textHover.lines}
+          anchorRect={textHover.rect}
+          onMouseEnter={cancelTextHide}
+          onMouseLeave={scheduleTextHide}
         />
       )}
 

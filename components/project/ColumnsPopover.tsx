@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useViewportFit } from "@/hooks/use-viewport-fit";
 
 export interface ToggleableColumn {
   key: string;
@@ -53,13 +54,10 @@ export function ColumnsPopover({
 
   const filtered = columns.filter((c) => c.label.toLowerCase().includes(query.trim().toLowerCase()));
 
-  const pw = 330;
-  let left = anchorRect.right - pw;
-  if (left < 8) left = 8;
-  const top = anchorRect.bottom + 6;
+  useViewportFit(ref, anchorRect, { side: "below", align: "end" });
 
   return (
-    <div className="colpop on" style={{ left, top }} ref={ref}>
+    <div className="colpop on" ref={ref}>
       <div className="cp-h">
         <b>Display Columns</b>
       </div>

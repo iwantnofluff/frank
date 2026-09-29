@@ -10,6 +10,7 @@ export interface ProjectRow {
   delivery: "scheduled" | "continuous";
   type: string | null;
   due_on: string | null;
+  archived_at: string | null;
   clients: { name: string } | null;
 }
 
@@ -20,7 +21,7 @@ export function useProject(projectId: string) {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("projects")
-        .select("id, client_id, name, delivery, type, due_on, clients(name)")
+        .select("id, client_id, name, delivery, type, due_on, archived_at, clients(name)")
         .eq("id", projectId)
         .single();
 

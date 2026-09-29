@@ -37,7 +37,20 @@ export interface Frank {
   insertCommentAsStaff(body: string, visibility: "private" | "public"): Promise<string>;
   /** Inserts a shared_links row directly (not subject to the visibility
    * trigger, safe to seed via service role) and returns its token. */
-  createSharedLink(): Promise<string>;
+  createSharedLink(opts?: { canApprove?: boolean }): Promise<string>;
+  /** Inserts a client_contacts row directly for the default client — for
+   * shared-review-public.spec.ts, which needs a real Client Team entry to
+   * exercise the guest identity picker on /review/[token]. Cleaned up by
+   * the same agency_id-wide teardown. */
+  createClientContact(name: string, email: string): Promise<string>;
+  /** Reads the default (scheduled) project's own creative's stage/exception
+   * directly — for shared-review-public.spec.ts, confirming a guest's
+   * "Make Changes" action set a real status, not just a comment. */
+  getCreativeStatus(): Promise<{ stage: number; exception: string | null }>;
+  /** Reads a comment by its exact body text, on the default fixture
+   * creative — for confirming a fire-and-forget classify-comment request
+   * really names the row that was just posted, not just some id. */
+  getCommentByBody(body: string): Promise<{ id: string; issue_category: string | null } | null>;
   /** Creates an extra continuous-delivery project for the same client,
    * for specs that specifically need one (new-brief.spec.ts) — not part
    * of the base fixture, so the other ~25 specs asserting against "1
@@ -49,6 +62,21 @@ export interface Frank {
    * below Client Review (stage < 3) to exercise ShareModal's eligibility
    * preview. Cleaned up by the same agency_id-wide teardown. */
   createCreativeAtStage(stage: number, name?: string): Promise<string>;
+  /** Creates a creative directly in a given (continuous-delivery) project —
+   * for continuous-calendar.spec.ts, which needs real due_on/stage/cx data
+   * to seed ContinuousCalendarTable rather than going through the New
+   * Brief form every time. Cleaned up by the same agency_id-wide
+   * teardown. */
+  createContinuousCreative(
+    projectId: string,
+    fields: {
+      name?: string;
+      dueOn?: string;
+      destination?: string;
+      stage?: number;
+      cx?: Record<string, string | number | boolean | null>;
+    },
+  ): Promise<string>;
   /** Inserts a copy_versions row directly (service-role, no author-
    * dependent visibility rule here unlike comments) — for
    * project-calendar.spec.ts's Image on Text / Post Copy version-history
@@ -192,7 +220,7 @@ export const test = base.extend<{ frank: Frank }>({
         return data.id as string;
       },
 
-      async createSharedLink() {
+      async createSharedLink(opts) {
         const token = `e2e-${stamp}-${sharedLinkTokens.length}`;
         const { error } = await admin.from("shared_links").insert({
           agency_id: agency.id,
@@ -201,12 +229,43 @@ export const test = base.extend<{ frank: Frank }>({
           scope: "all",
           requires_passcode: false,
           passcode_hash: null,
-          can_approve: false,
+          can_approve: opts?.canApprove ?? false,
           created_by: staffAuth.user.id,
         });
         if (error) throw error;
         sharedLinkTokens.push(token);
         return token;
+      },
+
+      async createClientContact(name, email) {
+        const { data, error } = await admin
+          .from("client_contacts")
+          .insert({ agency_id: agency.id, client_id: client.id, name, email })
+          .select("id")
+          .single();
+        if (error) throw error;
+        return data.id as string;
+      },
+
+      async getCreativeStatus() {
+        const { data, error } = await admin
+          .from("creatives")
+          .select("stage, exception")
+          .eq("id", creative.id)
+          .single();
+        if (error) throw error;
+        return data;
+      },
+
+      async getCommentByBody(body: string) {
+        const { data, error } = await admin
+          .from("comments")
+          .select("id, issue_category")
+          .eq("creative_id", creative.id)
+          .eq("body", body)
+          .maybeSingle();
+        if (error) throw error;
+        return data;
       },
 
       async createContinuousProject() {
@@ -228,6 +287,25 @@ export const test = base.extend<{ frank: Frank }>({
             format: "ig_feed",
             stage,
             scheduled_at: "2027-03-15T14:00:00.000Z",
+            created_by: staffAuth.user.id,
+          })
+          .select("id")
+          .single();
+        if (error) throw error;
+        return data.id as string;
+      },
+
+      async createContinuousCreative(projectId, fields) {
+        const { data, error } = await admin
+          .from("creatives")
+          .insert({
+            project_id: projectId,
+            name: fields.name ?? `E2E Continuous Creative ${stamp}`,
+            format: "ig_feed",
+            stage: fields.stage ?? 1,
+            due_on: fields.dueOn ?? null,
+            destination: fields.destination ?? "https://example.com/listing",
+            cx: fields.cx ?? {},
             created_by: staffAuth.user.id,
           })
           .select("id")
@@ -288,6 +366,15 @@ export const test = base.extend<{ frank: Frank }>({
       // same reason format_directions/custom_columns run before agencies.
       ["knowledge_entries", () => admin.from("knowledge_entries").delete().eq("agency_id", agency.id)],
       ["memberships", () => admin.from("memberships").delete().eq("agency_id", agency.id)],
+      // References both agencies and users (created_by) — must run before
+      // both deletes below, the same reason format_directions/
+      // custom_columns run before clients/agencies. Never surfaced before
+      // continuous-calendar.spec.ts: no earlier spec ever completed a real
+      // "Save as New View" flow, only asserted the Save button's presence.
+      ["calendar_views", () => admin.from("calendar_views").delete().eq("agency_id", agency.id)],
+      // References clients — must run before the clients delete below, same
+      // reason format_directions/custom_columns do.
+      ["client_contacts", () => admin.from("client_contacts").delete().eq("agency_id", agency.id)],
       // By agency_id, not just the fixture's own client.id — new-client.spec.ts
       // creates extra clients through the real New Client modal, same reasoning
       // as shared_links above.
@@ -297,7 +384,29 @@ export const test = base.extend<{ frank: Frank }>({
       // knowledge_entries) — an asset row with anything still pointing at
       // it fails the same way an unswept child row anywhere else here does.
       ["assets", () => admin.from("assets").delete().eq("agency_id", agency.id)],
-      ["agencies", () => admin.from("agencies").delete().eq("id", agency.id)],
+      // References both agencies and users — must run before both deletes
+      // below, same reason format_directions/custom_columns do. Never
+      // surfaced before real classify-comment-triggered AI calls existed:
+      // no earlier spec logged a row here.
+      ["ai_usage_events", () => admin.from("ai_usage_events").delete().eq("agency_id", agency.id)],
+      // Retried, not a single attempt: a comment posted near the end of a
+      // test fires a background classify-comment call, and if the AI reply
+      // lands mid-teardown, its ai_usage_events row appears *after* the
+      // sweep above and blocks this delete on the FK. Re-sweep and retry
+      // until the agency is gone — once it is, any later usage insert just
+      // fails its own FK harmlessly instead of orphaning anything.
+      [
+        "agencies",
+        async () => {
+          let result = await admin.from("agencies").delete().eq("id", agency.id);
+          for (let attempt = 0; result.error && attempt < 10; attempt++) {
+            await new Promise((r) => setTimeout(r, 1000));
+            await admin.from("ai_usage_events").delete().eq("agency_id", agency.id);
+            result = await admin.from("agencies").delete().eq("id", agency.id);
+          }
+          return result;
+        },
+      ],
       [
         "users",
         () => admin.from("users").delete().in("id", [staffAuth.user.id, clientAuth.user.id]),

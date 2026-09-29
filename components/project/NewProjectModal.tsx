@@ -125,7 +125,7 @@ export function NewProjectModal({
                 Goes live on a date. You get Week, Month and Calendar views with a publish date
                 on every piece.
               </span>
-              <span className="keg">Social media · Paid campaigns</span>
+              <span className="keg">Social Media · Paid Campaigns</span>
             </span>
           </button>
           <button
@@ -146,7 +146,7 @@ export function NewProjectModal({
                 Approved then handed over. You get a list ordered by what is due, with a
                 destination instead of a date.
               </span>
-              <span className="keg">Amazon A+ · Website · Emailers · Print and events</span>
+              <span className="keg">Amazon A+ · Website · Emailers · Print and Events</span>
             </span>
           </button>
         </div>

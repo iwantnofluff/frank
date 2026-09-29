@@ -3,10 +3,9 @@ import { test, expect } from "./fixtures";
 test("project calendar", async ({ page, frank }) => {
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${frank.projectId}`);
-  // Scheduled-delivery projects (the fixture's default project) render
-  // ProjectCalendarTable, not the flat .ptable — that's continuous-only
-  // now. Its own empty state ("Nothing scheduled") covers the case where
-  // the current month has nothing in it, same as .empty elsewhere.
+  // ProjectCalendarTable's own empty state ("Nothing scheduled") covers
+  // the case where the current month has nothing in it, same as .empty
+  // elsewhere.
   await page.waitForSelector(".tblwrap, .empty");
   // useIsStaff (useMyAgency + useMyMembership) resolves on its own,
   // independent of useProject/useCreatives — the New Brief button and the
@@ -112,7 +111,7 @@ test("project calendar — Week/Date/Day stay frozen while the table scrolls hor
   // as falsy) a real horizontal-scroll screenshot caught during this
   // build; a plain visibility check at scrollLeft 0 would have missed it.
   await expect(page.locator("th.sk1")).toHaveText("WeekNo.");
-  await expect(page.locator("td.sk1 b")).toHaveText("12");
+  await expect(page.locator("td.sk1")).toHaveText("12");
 });
 
 test("project calendar — hovering a creative shows the real preview popover", async ({ page, frank }) => {

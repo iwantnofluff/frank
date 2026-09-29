@@ -2,15 +2,24 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useClients } from "@/hooks/use-clients";
+import { useClients, type ClientRow } from "@/hooks/use-clients";
 import { useMyAgency } from "@/hooks/use-my-agency";
 import { useAgencyCreativeStats } from "@/hooks/use-agency-creative-stats";
+import { useClientListStats } from "@/hooks/use-client-list-stats";
 import { useIsStaff } from "@/hooks/use-is-staff";
+import { useArchiveClient } from "@/hooks/use-archive-client";
 import { SearchIcon } from "@/components/app-shell/icons";
-import { NewClientModal } from "@/components/clients/NewClientModal";
+import { ClientModal } from "@/components/clients/ClientModal";
+import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
 import { errorMessage } from "@/lib/errors";
 
 type Filter = "active" | "archived";
+
+// Same final two column widths (date, then the actions menu) as the
+// client workspace's own project table's override, so the "..." button
+// lands in an identically-sized, identically-positioned slot on both
+// screens — see PROJECT_ROW_COLUMNS there.
+const CLIENT_ROW_COLUMNS = "1fr 96px 128px 92px 70px";
 
 function clientInitials(name: string) {
   return name
@@ -20,6 +29,14 @@ function clientInitials(name: string) {
     .map((w) => w[0])
     .join("")
     .toUpperCase();
+}
+
+function formatDate(value: string | null) {
+  if (!value) return "—";
+  return new Date(value).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
 }
 
 export default function DashboardPage() {
@@ -33,10 +50,14 @@ export default function DashboardPage() {
   // disabled or not.
   const { data: creativeStats, isPending: statsLoading } =
     useAgencyCreativeStats(agency?.agencyId);
+  const { data: clientListStats, isPending: clientStatsPending } =
+    useClientListStats(agency?.agencyId);
   const { isStaff, isPending: isStaffPending } = useIsStaff();
+  const archiveClient = useArchiveClient();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("active");
   const [newClientOpen, setNewClientOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<ClientRow | null>(null);
   // Fails closed like every other isStaff gate in this app: hidden while
   // still resolving, not shown by default.
   const confirmedStaff = isStaff && !isStaffPending;
@@ -120,6 +141,7 @@ export default function DashboardPage() {
           >
             Archived
           </button>
+          {confirmedStaff && <span className="toolsep" />}
           {confirmedStaff && (
             <button
               className="btn sm"
@@ -158,16 +180,20 @@ export default function DashboardPage() {
 
       {!isError && filtered.length > 0 && (
         <div className="clients">
-          <div className="crow head">
+          <div className="crow head" style={{ gridTemplateColumns: CLIENT_ROW_COLUMNS }}>
             <div>Client</div>
-            <div>Projects</div>
-            <div>Approval progress</div>
-            <div>Status</div>
-            <div className="ago">Last activity</div>
+            <div className="ago">Projects</div>
+            <div className="ago">Status</div>
+            <div className="ago">Last Activity</div>
             <div></div>
           </div>
           {filtered.map((c) => (
-            <Link href={`/clients/${c.id}`} className="crow" key={c.id}>
+            <Link
+              href={`/clients/${c.id}`}
+              className="crow"
+              style={{ gridTemplateColumns: CLIENT_ROW_COLUMNS }}
+              key={c.id}
+            >
               <div className="cname">
                 <div
                   className="logo"
@@ -180,26 +206,55 @@ export default function DashboardPage() {
                   <span>{c.industry || "—"}</span>
                 </div>
               </div>
-              <div style={{ fontSize: 13, color: "var(--muted)" }}>—</div>
-              <div style={{ fontSize: 13, color: "var(--muted)" }}>—</div>
-              <div>
+              <div className="ago">
+                {clientStatsPending ? "…" : (clientListStats?.[c.id]?.activeProjectCount ?? 0)}
+              </div>
+              <div className="ago">
                 <span className={`tag ${c.archived_at ? "grey" : "blue"}`}>
                   <span className="dot" />
                   {c.archived_at ? "Archived" : "Active"}
                 </span>
               </div>
-              <div className="ago">—</div>
-              <div></div>
+              <div className="ago">
+                {clientStatsPending ? "…" : formatDate(clientListStats?.[c.id]?.lastActivityAt ?? null)}
+              </div>
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                {confirmedStaff && (
+                  <RowActionsMenu
+                    title="Client options"
+                    items={[
+                      { label: "Edit", onClick: () => setEditTarget(c) },
+                      {
+                        label: c.archived_at ? "Unarchive" : "Archive",
+                        onClick: () =>
+                          archiveClient.mutate({ clientId: c.id, archived: !c.archived_at }),
+                      },
+                    ]}
+                  />
+                )}
+              </div>
             </Link>
           ))}
         </div>
       )}
 
       {newClientOpen && agency && (
-        <NewClientModal
+        <ClientModal
+          mode="create"
           agencyId={agency.agencyId}
           activeClientCount={activeCount}
           onClose={() => setNewClientOpen(false)}
+        />
+      )}
+
+      {editTarget && agency && (
+        <ClientModal
+          mode="edit"
+          agencyId={agency.agencyId}
+          clientId={editTarget.id}
+          currentName={editTarget.name}
+          currentIndustry={editTarget.industry}
+          onClose={() => setEditTarget(null)}
         />
       )}
     </div>

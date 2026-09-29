@@ -9,6 +9,16 @@ export interface ProjectCreativeStats {
   done: number; // approved
   waitingOnApproval: number;
   feedbackToAction: number;
+  // Latest approved_at among this project's creatives — null if none are
+  // approved yet. Powers the client workspace table's "Latest Approved
+  // Post" column.
+  latestApprovedAt: string | null;
+  // Count of creatives at each of the 4 stages (index 0 = stage 1/Concept
+  // ... index 3 = stage 4/Approved), by raw stage number rather than band —
+  // an exception (changes_requested/rejected) still counts under whichever
+  // stage 1-3 it's sitting at, matching lib/stage-labels.ts's STAGE_TABLE
+  // order exactly. Powers the client workspace table's 4 status columns.
+  byStage: [number, number, number, number];
 }
 
 // Per-project creative counts for the client workspace's project rows
@@ -40,14 +50,21 @@ export function useProjectCreativeStats(clientId: string) {
 
       const stats: Record<string, ProjectCreativeStats> = {};
       for (const p of projects) {
-        stats[p.id] = { total: 0, done: 0, waitingOnApproval: 0, feedbackToAction: 0 };
+        stats[p.id] = {
+          total: 0,
+          done: 0,
+          waitingOnApproval: 0,
+          feedbackToAction: 0,
+          latestApprovedAt: null,
+          byStage: [0, 0, 0, 0],
+        };
       }
       const projectIds = projects.map((p) => p.id);
       if (projectIds.length === 0) return stats;
 
       const { data: creatives, error: creativesError } = await supabase
         .from("creatives")
-        .select("project_id, stage, exception")
+        .select("project_id, stage, exception, approved_at")
         .in("project_id", projectIds)
         .is("archived_at", null);
       if (creativesError) throw creativesError;
@@ -56,6 +73,7 @@ export function useProjectCreativeStats(clientId: string) {
         const s = stats[c.project_id];
         if (!s) continue;
         s.total++;
+        if (c.stage >= 1 && c.stage <= 4) s.byStage[c.stage - 1]++;
         const band = bandOf(c.stage, c.exception);
         if (band === "approved") {
           s.done++;
@@ -63,6 +81,9 @@ export function useProjectCreativeStats(clientId: string) {
           s.waitingOnApproval++;
         } else if (band === "changes_requested" || band === "rejected") {
           s.feedbackToAction++;
+        }
+        if (c.approved_at && (!s.latestApprovedAt || c.approved_at > s.latestApprovedAt)) {
+          s.latestApprovedAt = c.approved_at;
         }
       }
 
