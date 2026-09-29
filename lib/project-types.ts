@@ -3,6 +3,6 @@
 // this value directly (no separate key/label split, unlike creatives.format
 // — see lib/formats.ts's comment on why that one differs).
 export const PROJECT_TYPE_OPTS: Record<"scheduled" | "continuous", string[]> = {
-  scheduled: ["Social media", "Paid campaign", "Launch", "Other"],
-  continuous: ["Amazon", "Web", "Email", "Print and events", "Other"],
+  scheduled: ["Social Media", "Paid Campaign", "Launch", "Other"],
+  continuous: ["Amazon", "Web", "Email", "Print and Events", "Other"],
 };
