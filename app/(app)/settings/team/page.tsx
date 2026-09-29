@@ -44,10 +44,10 @@ export default function TeamSettingsPage() {
               key={m.id}
               style={{ gridTemplateColumns: "1fr 1fr 120px 120px", cursor: "default" }}
             >
-              <div style={{ fontSize: 13.5, fontWeight: 500 }}>
+              <div style={{ fontSize: 14.5, fontWeight: 500 }}>
                 {m.user?.name ?? "—"}
               </div>
-              <div style={{ fontSize: 13, color: "var(--muted)" }}>
+              <div style={{ fontSize: 14, color: "var(--muted)" }}>
                 {m.user?.email ?? "—"}
               </div>
               <div>

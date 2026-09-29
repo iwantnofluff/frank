@@ -2,7 +2,6 @@
 
 import type { CreativeRow } from "@/hooks/use-creative";
 import type { CopyVersionRow } from "@/hooks/use-copy-versions";
-import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 import { formatById, COPY_FIELD_LABELS } from "@/lib/formats";
 
 // Informational only, same as BriefPanel — mirrors the read-only half of
@@ -26,7 +25,8 @@ export function ChecksPanel({
   const approachNotes = creative.approach_notes ?? [];
 
   return (
-    <CollapsibleSection title="Checks">
+    <div className="brief open reviewpanel">
+      <div className="bf-b" style={{ display: "block" }}>
       <div className="bsec">
         <div className="bl">
           {latestCopyVersion ? `Latest Copy Version ${latestCopyVersion.version_no}` : "Latest Copy Version"}
@@ -60,6 +60,7 @@ export function ChecksPanel({
           <p className="fd-d">No WIIFM direction yet — save some copy to generate one.</p>
         )}
       </div>
-    </CollapsibleSection>
+      </div>
+    </div>
   );
 }

@@ -2,7 +2,6 @@
 
 import type { CreativeRow } from "@/hooks/use-creative";
 import type { CopyVersionRow } from "@/hooks/use-copy-versions";
-import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 import { formatById } from "@/lib/formats";
 
 // Informational only, on this page — editing the brief now happens in
@@ -10,7 +9,8 @@ import { formatById } from "@/lib/formats";
 // Brief / Upload or Edit / Draft from Brief as three separate buttons).
 // Mirrors that tab's own fields, but as plain read-only text throughout —
 // no inputs, no textareas, nothing styled as an editable field box.
-// Collapsed by default, since it's a reference glance, not a workspace.
+// Selection (which of Brief/Content/Checks/Feed Preview shows) is the
+// page's own ReviewNav now, not a per-panel accordion.
 export function BriefPanel({
   creative,
   latestCopyVersion,
@@ -25,7 +25,8 @@ export function BriefPanel({
   const slideText = latestCopyVersion?.slide_text ?? [];
 
   return (
-    <CollapsibleSection title="Brief">
+    <div className="brief open reviewpanel">
+      <div className="bf-b" style={{ display: "block" }}>
       <div className="bsec">
         <div className="bl">What Is It Called?</div>
         <p className="fd-d">{creative.name}</p>
@@ -96,6 +97,7 @@ export function BriefPanel({
           <p className="fd-d">—</p>
         )}
       </div>
-    </CollapsibleSection>
+      </div>
+    </div>
   );
 }

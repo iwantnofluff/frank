@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useCreative } from "@/hooks/use-creative";
 import { useAdvanceCreativeStage } from "@/hooks/use-advance-creative-stage";
 import { useCreativeVersions } from "@/hooks/use-creative-versions";
@@ -21,7 +22,8 @@ import {
 } from "@/lib/annotations";
 import { BriefPanel } from "@/components/creative-review/BriefPanel";
 import { ChecksPanel } from "@/components/creative-review/ChecksPanel";
-import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
+import { ReviewNav, type ReviewSection } from "@/components/creative-review/ReviewNav";
+import { FeedPreviewGrid } from "@/components/creative-review/FeedPreviewGrid";
 import { CommentsPanel } from "@/components/creative-review/CommentsPanel";
 import { ShareModal } from "@/components/creative-review/ShareModal";
 import { AnnotationLayer, type ToolMode } from "@/components/creative-review/AnnotationLayer";
@@ -34,6 +36,7 @@ export default function CreativeReviewPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const router = useRouter();
   const {
     data: creative,
     isLoading: creativeLoading,
@@ -62,6 +65,21 @@ export default function CreativeReviewPage({
   // which tab it should open on for whichever button was clicked.
   const [creativeModalTab, setCreativeModalTab] = useState<"brief" | "upload" | null>(null);
   const [toolMode, setToolMode] = useState<ToolMode>(null);
+  // Which of Brief/Content/Checks/Feed Preview the canvas shows — replaced
+  // the three independent accordions (Brief/Content/Checks could each be
+  // open at once) with a single selection, per direct instruction.
+  const [activeSection, setActiveSection] = useState<ReviewSection>("content");
+  const [navCollapsed, setNavCollapsed] = useState(false);
+  // Feed Preview → Content linking: the same creative just switches section
+  // (no navigation needed), a different one is a real route change — this
+  // page is scoped to one creative's id, so there's no other way to show it.
+  function selectFeedCreative(clickedId: string) {
+    if (clickedId === id) {
+      setActiveSection("content");
+    } else {
+      router.push(`/creatives/${clickedId}`);
+    }
+  }
   const [highlightedCommentId, setHighlightedCommentId] = useState<
     string | null
   >(null);
@@ -135,19 +153,14 @@ export default function CreativeReviewPage({
   const isVideo = activeCreativeVersion?.asset?.mime_type.startsWith("video/");
 
   return (
-    <div className="review">
-      {/* Reserved for a not-yet-designed mobile feed preview — see
-          docs/parity-gaps.md. No feature lives here yet. */}
-      <div className="feed-rail">
-        <div className="feed-rail-ph">
-          <svg viewBox="0 0 24 24">
-            <rect x="7" y="2" width="10" height="20" rx="2" />
-            <path d="M11 18h2" />
-          </svg>
-          <b>Feed preview</b>
-          <span>A mobile feed mockup will live here.</span>
-        </div>
-      </div>
+    <div className={`review${navCollapsed ? " navcollapsed" : ""}`}>
+      <ReviewNav
+        active={activeSection}
+        onSelect={setActiveSection}
+        collapsed={navCollapsed}
+        onToggleCollapsed={() => setNavCollapsed((c) => !c)}
+      />
+      <div className="review-sep" aria-hidden="true" />
 
       <div className="stage">
         <div className="stage-h">
@@ -259,13 +272,15 @@ export default function CreativeReviewPage({
         </div>
         <div className="canvas">
           <div>
-            <BriefPanel
-              creative={creative}
-              latestCopyVersion={copyVersions?.[0] ?? null}
-              leadName={leadName}
-            />
-            <CollapsibleSection title="Content" defaultOpen>
-            {!activeCreativeVersion ? (
+            {activeSection === "brief" && (
+              <BriefPanel
+                creative={creative}
+                latestCopyVersion={copyVersions?.[0] ?? null}
+                leadName={leadName}
+              />
+            )}
+            {activeSection === "content" &&
+              (!activeCreativeVersion ? (
               <div className="awaiting">
                 <svg viewBox="0 0 24 24">
                   <rect x="3" y="4" width="18" height="16" rx="2" />
@@ -356,9 +371,6 @@ export default function CreativeReviewPage({
                     <path d="M22 2L11 13" />
                     <path d="M22 2l-7 20-4-9-9-4z" />
                   </svg>
-                  <svg className="save" viewBox="0 0 24 24">
-                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-                  </svg>
                 </div>
                 <div className="ig-cap">
                   <b>{clientName}</b>
@@ -394,15 +406,25 @@ export default function CreativeReviewPage({
                 </div>
               </div>
             </div>
-          )}
-            </CollapsibleSection>
-            <ChecksPanel
-              creative={creative}
-              latestCopyVersion={copyVersions?.[0] ?? null}
-            />
+              ))}
+            {activeSection === "checks" && (
+              <ChecksPanel
+                creative={creative}
+                latestCopyVersion={copyVersions?.[0] ?? null}
+              />
+            )}
+            {activeSection === "feed" && (
+              <FeedPreviewGrid
+                projectId={creative.project_id}
+                activeCreativeId={creative.id}
+                brandName={clientName}
+                onSelect={selectFeedCreative}
+              />
+            )}
           </div>
         </div>
       </div>
+      <div className="review-sep" aria-hidden="true" />
 
       <CommentsPanel
         creativeId={id}
