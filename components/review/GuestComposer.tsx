@@ -13,14 +13,45 @@ export function GuestComposer({
   controller: ReviewController;
   variant: "mobile" | "desktop";
 }) {
-  const { identity, commentDraft, setCommentDraft, postComment, posting, canApprove, approve, approving, active } =
-    controller;
+  const {
+    identity,
+    commentDraft,
+    setCommentDraft,
+    postComment,
+    posting,
+    canApprove,
+    approve,
+    approving,
+    active,
+    contacts,
+  } = controller;
   const [name, setName] = useState(identity.name ?? "");
   const [email, setEmail] = useState(identity.email ?? "");
   const [error, setError] = useState<string | null>(null);
+  // "" = nothing picked yet, "other" = the free-text fallback, anything
+  // else = a client_contacts row's id. Confirmed with the user directly:
+  // the list is a shortcut, never a closed set — "Someone else" always
+  // stays available for a real contact who hasn't been added yet.
+  const [pickerValue, setPickerValue] = useState("");
 
   const knowsWho = !!identity.name && !!identity.email;
   const alreadyApproved = !!active?.approved_at;
+  const showFreeTextInputs = contacts.length === 0 || pickerValue === "other";
+  const approveDisabled = approving || alreadyApproved;
+
+  function handlePickerChange(value: string) {
+    setPickerValue(value);
+    if (value === "other") {
+      setName("");
+      setEmail("");
+      return;
+    }
+    const contact = contacts.find((c) => c.id === value);
+    if (contact) {
+      setName(contact.name);
+      setEmail(contact.email);
+    }
+  }
 
   async function handlePost() {
     setError(null);
@@ -61,23 +92,58 @@ export function GuestComposer({
           </span>
         </div>
       ) : (
-        <div className="field" style={{ marginBottom: 8 }}>
-          <div className="frow">
-            <input
-              className={inputClass}
-              placeholder="Your name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-            <input
-              className={inputClass}
-              placeholder="Your email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+        <>
+          {/* A plain link back to the real app — present, never required.
+              This page stays fully anonymous either way: picking a name (or
+              typing one) below is enough to comment or approve on its own. */}
+          <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 8 }}>
+            Have an account?{" "}
+            <a href="/login" style={{ color: "var(--action)" }}>
+              Log in
+            </a>
+            .
           </div>
-        </div>
+
+          {contacts.length > 0 && (
+            <div className="field" style={{ marginBottom: 8 }}>
+              <select
+                className={inputClass}
+                value={pickerValue}
+                onChange={(e) => handlePickerChange(e.target.value)}
+              >
+                <option value="" disabled>
+                  Who are you?
+                </option>
+                {contacts.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+                <option value="other">Someone else</option>
+              </select>
+            </div>
+          )}
+
+          {showFreeTextInputs && (
+            <div className="field" style={{ marginBottom: 8 }}>
+              <div className="frow">
+                <input
+                  className={inputClass}
+                  placeholder="Your name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+                <input
+                  className={inputClass}
+                  placeholder="Your email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       <textarea
@@ -105,20 +171,27 @@ export function GuestComposer({
         </button>
       </div>
 
-      {canApprove && active && (
+      {active && (
         <div className="m-decide">
-          <button
-            type="button"
-            className="m-ok"
-            disabled={approving || alreadyApproved}
-            onClick={handleApprove}
-          >
-            {alreadyApproved
-              ? "Approved"
-              : approving
-                ? "Approving…"
-                : "Approve"}
+          {/* Best-effort — a browser only allows a script to close a tab it
+              opened itself, so on a tab the guest navigated to directly
+              (the normal way a shared link is opened) this can silently
+              no-op. There's no reliable way to detect that from here, so
+              this stays a plain, un-gated button rather than one that
+              claims to have worked. */}
+          <button type="button" className="m-close" onClick={() => window.close()}>
+            Close
           </button>
+          {canApprove && (
+            <button
+              type="button"
+              className="m-ok"
+              disabled={approveDisabled}
+              onClick={handleApprove}
+            >
+              {alreadyApproved ? "Approved" : approving ? "Approving…" : "Approve"}
+            </button>
+          )}
         </div>
       )}
     </div>

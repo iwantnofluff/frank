@@ -6,7 +6,12 @@ import { NextResponse, type NextRequest } from "next/server";
 // login obviously can't require being logged in. /api/shared-review is the
 // data-fetch endpoint the /review page itself calls (it signs asset URLs
 // server-side), so it has to be exempt for the same reason /review is.
-const PUBLIC_PATH_PREFIXES = ["/login", "/review", "/api/shared-review"];
+// /api/ai/classify-comment is the same shape again — a guest's own comment
+// (posted from /review) fires a request there too, and it validates its
+// own input independently rather than trusting the caller (see the
+// route's own comment), the same discipline /api/shared-review's use of
+// the service-role client already documents.
+const PUBLIC_PATH_PREFIXES = ["/login", "/review", "/api/shared-review", "/api/ai/classify-comment"];
 
 function isPublicPath(pathname: string) {
   return PUBLIC_PATH_PREFIXES.some(

@@ -7,6 +7,7 @@ interface RpcCreative {
   name: string;
   format: string;
   stage: number;
+  exception: "changes_requested" | "rejected" | null;
   position: number;
   scheduled_at: string | null;
   destination: string | null;

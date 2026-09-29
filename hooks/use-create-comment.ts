@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import type { Anchor } from "@/lib/annotations";
+import { classifyComment } from "@/lib/ai/classify-comment-client";
 
 export function useCreateComment(creativeId: string) {
   const queryClient = useQueryClient();
@@ -35,18 +36,23 @@ export function useCreateComment(creativeId: string) {
       // agency_id is derived server-side from creative_id; visibility for a
       // client-side author is force-corrected to 'public' there too — this
       // is what the author sees requested, not what's guaranteed to land.
-      const { error } = await supabase.from("comments").insert({
-        creative_id: creativeId,
-        parent_id: parentId,
-        author_id: user.id,
-        body,
-        visibility,
-        creative_version_id: creativeVersionId,
-        copy_version_id: copyVersionId,
-        anchor,
-      });
+      const { data, error } = await supabase
+        .from("comments")
+        .insert({
+          creative_id: creativeId,
+          parent_id: parentId,
+          author_id: user.id,
+          body,
+          visibility,
+          creative_version_id: creativeVersionId,
+          copy_version_id: copyVersionId,
+          anchor,
+        })
+        .select("id")
+        .single();
 
       if (error) throw error;
+      classifyComment(data.id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["comments", creativeId] });

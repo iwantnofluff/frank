@@ -7,6 +7,12 @@ export interface SharedCreative {
   name: string;
   format: string;
   stage: number;
+  // Real status, same field the internal app's own bandOf() reads — a
+  // Read-only from this page for now — the guest UI's own "Make Changes"
+  // action that used to set this to 'changes_requested' was pulled (kept
+  // here since the field itself, and bandOf()'s "exception always wins"
+  // read of it, are still very much live throughout the internal app).
+  exception: "changes_requested" | "rejected" | null;
   position: number;
   scheduled_at: string | null;
   destination: string | null;
@@ -29,6 +35,12 @@ export interface SharedCreative {
   }[];
 }
 
+export interface SharedReviewContact {
+  id: string;
+  name: string;
+  email: string;
+}
+
 export type SharedReviewResult =
   | { status: "not_found" }
   | { status: "passcode_required"; invalid?: boolean }
@@ -38,6 +50,10 @@ export type SharedReviewResult =
       can_approve: boolean;
       project: { id: string; name: string; delivery: "scheduled" | "continuous" };
       creatives: SharedCreative[];
+      // The client's own configured Client Team — a guest picks their
+      // identity from this instead of typing it (GuestComposer.tsx), with a
+      // free-text fallback for anyone not yet on the list.
+      contacts: SharedReviewContact[];
     };
 
 // Goes through /api/shared-review rather than calling the RPC directly —

@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useSharedReview, type SharedCreative } from "./use-shared-review";
+import { useSharedReview, type SharedCreative, type SharedReviewContact } from "./use-shared-review";
 import {
   useSubmitSharedComment,
   useSubmitSharedApproval,
+  useSubmitSharedRequestChanges,
 } from "./use-shared-actions";
 import { useGuestIdentityStore } from "@/store/guest-identity-store";
 
@@ -20,10 +21,12 @@ export function useReviewController(token: string) {
   const identity = useGuestIdentityStore();
   const submitComment = useSubmitSharedComment(token, passcode);
   const submitApproval = useSubmitSharedApproval(token, passcode);
+  const submitRequestChanges = useSubmitSharedRequestChanges(token, passcode);
 
   const creatives: SharedCreative[] = data?.status === "ok" ? data.creatives : [];
   const active = creatives[activeIndex] ?? null;
   const canApprove = data?.status === "ok" && data.can_approve;
+  const contacts: SharedReviewContact[] = data?.status === "ok" ? data.contacts : [];
 
   function goTo(index: number) {
     setActiveIndex(Math.max(0, Math.min(creatives.length - 1, index)));
@@ -53,6 +56,19 @@ export function useReviewController(token: string) {
     });
   }
 
+  async function requestChanges(name: string, email: string) {
+    if (!active) return;
+    identity.setIdentity(name, email);
+    const result = await submitRequestChanges.mutateAsync({
+      creativeId: active.id,
+      body: commentDraft.trim(),
+      guestName: name,
+      guestEmail: email,
+    });
+    if (result.status === "ok") setCommentDraft("");
+    return result;
+  }
+
   return {
     data,
     isLoading,
@@ -64,12 +80,15 @@ export function useReviewController(token: string) {
     activeIndex,
     goTo,
     canApprove,
+    contacts,
     commentDraft,
     setCommentDraft,
     postComment,
     approve,
+    requestChanges,
     posting: submitComment.isPending,
     approving: submitApproval.isPending,
+    requestingChanges: submitRequestChanges.isPending,
     identity,
   };
 }

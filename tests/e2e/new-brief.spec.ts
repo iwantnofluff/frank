@@ -8,7 +8,7 @@ import { test, expect } from "./fixtures";
 test("creates a scheduled creative end to end", async ({ page, frank }) => {
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${frank.projectId}`);
-  await page.waitForSelector(".ptable, .empty");
+  await page.waitForSelector(".tblwrap, .empty");
 
   await page.click('button:has-text("New Brief")');
   await page.fill("#nbName", "New Brief E2E — Scheduled");
@@ -29,11 +29,15 @@ test("creates a continuous creative end to end", async ({ page, frank }) => {
   const continuousProjectId = await frank.createContinuousProject();
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${continuousProjectId}`);
-  await page.waitForSelector(".ptable, .empty");
+  await page.waitForSelector(".tblwrap, .empty");
 
   await page.click('button:has-text("New Brief")');
   await page.fill("#nbName", "New Brief E2E — Continuous");
   await page.fill("#nbDest", "https://example.com/listing");
+  // due_on is optional at the schema/form level, but ContinuousCalendarTable
+  // (like ProjectCalendarTable's own scheduled_at) only shows a creative
+  // that has one — fill it so this brief actually appears afterward.
+  await page.fill("#nbDue", "2027-04-01");
   await page.click('button:has-text("Create Brief")');
 
   await expect(page.getByRole("tab", { name: "Content" })).toBeEnabled();
@@ -45,7 +49,7 @@ test("creates a continuous creative end to end", async ({ page, frank }) => {
 test("missing publish date is caught before submit, not by the DB trigger", async ({ page, frank }) => {
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${frank.projectId}`);
-  await page.waitForSelector(".ptable, .empty");
+  await page.waitForSelector(".tblwrap, .empty");
 
   await page.click('button:has-text("New Brief")');
   await page.fill("#nbName", "Should Not Be Created");
@@ -61,7 +65,7 @@ test("missing publish date is caught before submit, not by the DB trigger", asyn
 test("a real client-role session has no New Brief entry point", async ({ page, frank }) => {
   await frank.loginAsClient(page);
   await page.goto(`/projects/${frank.projectId}`);
-  await page.waitForSelector(".ptable, .empty");
+  await page.waitForSelector(".tblwrap, .empty");
 
   await expect(page.locator('button:has-text("New Brief")')).toHaveCount(0);
 });

@@ -6,8 +6,8 @@ test("creates a client end to end", async ({ page, frank }) => {
   await page.waitForSelector(".clients, .empty");
 
   await page.click('button:has-text("New Client")');
-  await page.fill("#ncName", "New Client E2E — Lotus Skincare");
-  await page.fill("#ncInd", "D2C beauty");
+  await page.fill("#cName", "New Client E2E — Lotus Skincare");
+  await page.fill("#cInd", "D2C beauty");
   await page.click('button:has-text("Create Client")');
 
   await expect(page.locator(".scrim")).toHaveCount(0);

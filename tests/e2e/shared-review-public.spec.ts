@@ -21,6 +21,119 @@ test("shared review — phone (default)", async ({ page, frank }) => {
   await expect(page).toHaveScreenshot("shared-review-phone.png");
 });
 
+test("shared review — guest picks identity from the Client Team list", async ({ page, frank }) => {
+  await frank.createClientContact("Jonathan Lead", "jonathan@example.com");
+  await frank.createClientContact("Priya Client", "priya@example.com");
+  const token = await frank.createSharedLink();
+  await page.goto(`/review/${token}`);
+  await page.waitForSelector(".m-top");
+
+  const picker = page.locator("select").first();
+  await expect(picker.locator("option")).toHaveText([
+    "Who are you?",
+    "Jonathan Lead",
+    "Priya Client",
+    "Someone else",
+  ]);
+
+  // Not on the list yet — the fallback stays available, never a closed set.
+  await picker.selectOption({ label: "Someone else" });
+  await expect(page.locator('input[placeholder="Your name"]')).toBeVisible();
+  await expect(page.locator('input[placeholder="Your email"]')).toBeVisible();
+
+  // Picking a real contact hides the free-text inputs and, once a comment
+  // is posted under that name, the picker itself is replaced by the
+  // "Commenting as X" pill — the same behavior already established for a
+  // typed identity, now also covering a picked one.
+  await picker.selectOption({ label: "Jonathan Lead" });
+  await expect(page.locator('input[placeholder="Your name"]')).toHaveCount(0);
+  await page.fill("textarea", "Looks good, approved from my side.");
+  await page.click('button:has-text("Post")');
+  await expect(page.locator("text=Commenting as").first()).toBeVisible();
+  await expect(page.locator("b", { hasText: "Jonathan Lead" }).first()).toBeVisible();
+});
+
+test("shared review — a plain login link is present but never required", async ({ page, frank }) => {
+  const token = await frank.createSharedLink();
+  await page.goto(`/review/${token}`);
+  await page.waitForSelector(".m-top");
+
+  const loginLink = page.locator('a:has-text("Log in")').first();
+  await expect(loginLink).toHaveAttribute("href", "/login");
+
+  // Commenting without ever touching that link still works.
+  await page.fill('input[placeholder="Your name"]', "Guest Reviewer");
+  await page.fill('input[placeholder="Your email"]', "guest@example.com");
+  await page.fill("textarea", "Anonymous feedback, no login used.");
+  await page.click('button:has-text("Post")');
+  await expect(page.locator("text=Commenting as").first()).toBeVisible();
+});
+
+test("shared review — posting a comment fires classification without waiting on it", async ({ page, frank }) => {
+  // Comment intelligence, Phase 1 (docs/frank-data-intelligence.pdf) — every
+  // comment gets classified after the fact. This only asserts the wiring
+  // (the right request fires, Post doesn't block on it) — the actual AI
+  // response isn't deterministic enough for a permanent, always-run test;
+  // that's verified manually against the real dev server instead (see
+  // docs/parity-gaps.md).
+  const token = await frank.createSharedLink();
+  await page.goto(`/review/${token}`);
+  await page.waitForSelector(".m-top");
+
+  const classifyRequest = page.waitForRequest(
+    (req) => req.url().includes("/api/ai/classify-comment") && req.method() === "POST",
+  );
+
+  await page.locator('input[placeholder="Your name"]').first().fill("Guest Reviewer");
+  await page.locator('input[placeholder="Your email"]').first().fill("guest@example.com");
+  await page.locator("textarea").first().fill("This serum erases wrinkles overnight.");
+  const postStart = Date.now();
+  await page.locator('button:has-text("Post")').first().click();
+  await expect(page.locator("text=Commenting as").first()).toBeVisible();
+  // Posting itself never waits on the classify call — a few hundred ms at
+  // most, nowhere near what an LLM round trip would add.
+  expect(Date.now() - postStart).toBeLessThan(3000);
+
+  const request = await classifyRequest;
+  const body = request.postDataJSON() as { commentId?: string };
+  expect(body.commentId).toBeTruthy();
+
+  const comment = await frank.getCommentByBody("This serum erases wrinkles overnight.");
+  expect(comment?.id).toBe(body.commentId);
+});
+
+test("shared review — no Make Changes button; Close is always present; Approve works standalone", async ({
+  page,
+  frank,
+}) => {
+  // A can_approve: false link — Close should still be there, Approve
+  // shouldn't render at all.
+  const plainToken = await frank.createSharedLink();
+  await page.goto(`/review/${plainToken}`);
+  await page.waitForSelector(".m-top");
+  await expect(page.locator('button:has-text("Make Changes")')).toHaveCount(0);
+  await expect(page.locator('button:has-text("Close")').first()).toBeVisible();
+  await expect(page.locator('button:has-text("Approve")')).toHaveCount(0);
+
+  // A can_approve: true link — Approve is the only real action next to
+  // Close, and clicking it still does the real thing (stage 4).
+  const token = await frank.createSharedLink({ canApprove: true });
+  await page.goto(`/review/${token}`);
+  await page.waitForSelector(".m-top");
+  await expect(page.locator('button:has-text("Make Changes")')).toHaveCount(0);
+  await expect(page.locator('button:has-text("Close")').first()).toBeVisible();
+
+  await page.locator('input[placeholder="Your name"]').first().fill("Guest Reviewer");
+  await page.locator('input[placeholder="Your email"]').first().fill("guest@example.com");
+  const approveBtn = page.locator('button:has-text("Approve")').first();
+  await expect(approveBtn).toBeEnabled();
+  await approveBtn.click();
+  await expect(page.locator('button:has-text("Approved")').first()).toBeVisible();
+
+  const { stage } = await frank.getCreativeStatus();
+  expect(stage).toBe(4);
+});
+
 test("shared review — desktop (toggled)", async ({ page, frank }) => {
   const token = await frank.createSharedLink();
   // Wider than the default 1280 viewport — .pw-side (290px) + the 54px gap
