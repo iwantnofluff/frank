@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { ListEditor } from "@/components/ui/ListEditor";
 import { CxCell } from "@/components/project/CxCell";
@@ -21,6 +21,7 @@ import { useAgencyAiSettings } from "@/hooks/use-agency-ai-settings";
 import { useFormatDirections } from "@/hooks/use-format-directions";
 import { useAgencyKnowledge } from "@/hooks/use-agency-knowledge";
 import { useKnowledgeEntries } from "@/hooks/use-knowledge-entries";
+import { useRepeatIssueCount } from "@/hooks/use-repeat-issues";
 import { FORMAT_CATEGORIES, formatsByCategory, formatById, COPY_FIELD_LABELS } from "@/lib/formats";
 import { validateUploadFile, ACCEPTED_FILE_EXTENSIONS } from "@/lib/upload-validation";
 import {
@@ -71,7 +72,7 @@ type CreativeModalProps =
       projectId: string;
       clientId: string;
       delivery: "scheduled" | "continuous";
-      onCreated?: (scheduledAt: string | null) => void;
+      onCreated?: (scheduledAt: string | null, dueOn: string | null) => void;
       onClose: () => void;
     }
   | {
@@ -297,9 +298,9 @@ function LiveCheck({
         <button type="button" className="btn sm primary" disabled={running || !canRun} onClick={run}>
           {running ? "Checking…" : CHECK_LABELS[kind]}
         </button>
-        {!running && disabledReason && <span className="sub">{disabledReason}</span>}
         {error && <span className="berr">{error}</span>}
       </div>
+      {!running && disabledReason && <p className="msection-empty" style={{ marginBottom: 6 }}>{disabledReason}</p>}
       {findings && findings.length > 0 && (
         <div>
           <FindingsList findings={findings} />
@@ -429,6 +430,11 @@ export function CreativeModal(props: CreativeModalProps) {
   );
   const formatsInCategory = useMemo(() => formatsByCategory(category), [category]);
   const [format, setFormat] = useState(isCreate ? (formatsInCategory[0]?.id ?? "") : props.creative.format);
+  // Brief-time warning (docs/frank-data-intelligence.pdf, "Where it
+  // surfaces — At the brief") — only meaningful while still choosing a
+  // format for a new brief; an existing creative's format is fixed, so
+  // there's nothing to warn about changing.
+  const { data: repeatIssue } = useRepeatIssueCount(isCreate ? clientId : undefined, isCreate ? format : undefined);
   const [leadUserId, setLeadUserId] = useState(isCreate ? "" : (props.creative.lead_user_id ?? ""));
   const [date, setDate] = useState(isCreate ? "" : isoToDateInput(props.creative.scheduled_at));
   const [time, setTime] = useState(isCreate ? "09:00" : isoToTimeInput(props.creative.scheduled_at));
@@ -497,7 +503,7 @@ export function CreativeModal(props: CreativeModalProps) {
         dueOn: delivery === "continuous" ? dueOn || null : null,
       });
       setCreatedCreativeId(newId);
-      props.onCreated?.(scheduledAt);
+      props.onCreated?.(scheduledAt, delivery === "continuous" ? dueOn || null : null);
       return;
     }
 
@@ -897,7 +903,7 @@ export function CreativeModal(props: CreativeModalProps) {
       </div>
 
       {activeTab === "brief" && (
-        <>
+        <div className="mtabbody">
           <div className="msection-h">Details</div>
           <p className="msection-d">The basics — what this is, its format, when it&rsquo;s due, and who&rsquo;s leading it.</p>
 
@@ -948,6 +954,19 @@ export function CreativeModal(props: CreativeModalProps) {
               </select>
             </div>
           </div>
+
+          {isCreate && repeatIssue && (
+            <div className="note">
+              <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 16v-5M12 8h.01" />
+              </svg>
+              <div>
+                This client has raised {repeatIssue.count} {repeatIssue.label} issues on{" "}
+                {formatById(format)?.label ?? format} in the last 90 days.
+              </div>
+            </div>
+          )}
 
           {delivery === "scheduled" ? (
             <div className="frow">
@@ -1078,11 +1097,11 @@ export function CreativeModal(props: CreativeModalProps) {
           )}
 
           {briefError && <p className="autherr">{errorMessage(briefError, "Couldn't save the brief")}</p>}
-        </>
+        </div>
       )}
 
       {activeTab === "upload" && creativeId && (
-        <>
+        <div className="mtabbody">
           <div className="msection-h">Creative</div>
           <p className="msection-d">The artwork or video for this post.</p>
           <div className="field">
@@ -1185,7 +1204,7 @@ export function CreativeModal(props: CreativeModalProps) {
           <div className="msection-h">Copy</div>
           <p className="msection-d">The caption and on-post text, matched to what this format needs.</p>
           {!includesCopy && (
-            <p className="sub">
+            <p className="msection-empty">
               {formatById(format)?.label ?? "This format"} has no caption fields — text lives in Text on
               Image only (Brief tab).
             </p>
@@ -1276,19 +1295,19 @@ export function CreativeModal(props: CreativeModalProps) {
           )}
 
           {uploadError && <p className="autherr">{uploadError}</p>}
-        </>
+        </div>
       )}
 
       {activeTab === "checks" && creativeId && (
-        <>
+        <div className="mtabbody">
           <div className="msection-h">
             {latestCopyVersion ? `Latest Copy Version ${latestCopyVersion.version_no}` : "Latest Copy Version"}
           </div>
           <p className="msection-d">The most recently saved copy — read only, edit it from the Content tab.</p>
           {!includesCopy ? (
-            <p className="sub">{formatById(format)?.label ?? "This format"} has no caption fields.</p>
+            <p className="msection-empty">{formatById(format)?.label ?? "This format"} has no caption fields.</p>
           ) : !latestCopyVersion ? (
-            <p className="sub">No copy saved yet.</p>
+            <p className="msection-empty">No copy saved yet.</p>
           ) : (
             copyFieldSpecs.map((spec) => {
               const value = latestCopyVersion.fields?.[spec.key];
@@ -1318,11 +1337,11 @@ export function CreativeModal(props: CreativeModalProps) {
               ))}
             </div>
           ) : (
-            <p className="sub">No WIIFM direction yet — save some copy to generate one.</p>
+            <p className="msection-empty">No WIIFM direction yet — save some copy to generate one.</p>
           )}
 
           {(Object.keys(CHECK_LABELS) as CheckKind[]).map((kind) => (
-            <div key={kind}>
+            <Fragment key={kind}>
               <div className="msection-h">{CHECK_LABELS[kind]}</div>
               <p className="msection-d">{CHECK_SECTION_DESCRIPTIONS[kind]}</p>
               <CheckSection
@@ -1334,9 +1353,9 @@ export function CreativeModal(props: CreativeModalProps) {
                 attachments={kind === "wiifm" ? agencyPdfAttachments : kind === "brand" ? clientPdfAttachments : []}
                 knowledgeLoading={kind === "wiifm" ? agencyKnowledgeLoading : clientKnowledgeLoading}
               />
-            </div>
+            </Fragment>
           ))}
-        </>
+        </div>
       )}
     </Modal>
   );
