@@ -84,7 +84,8 @@ export function CreativePreviewPopover({
   const { data: copyVersions } = useCopyVersions(creative.id);
   const { data: comments } = useComments(creative.id);
 
-  const caption = copyVersions?.[0]?.fields?.caption;
+  const latestCopy = copyVersions?.[0];
+  const caption = latestCopy?.fields?.caption;
   const openComments = comments?.filter((c) => !c.resolved_at).length ?? 0;
   const color = stageColor(creative.stage, creative.exception);
   const format = formatById(creative.format);
@@ -144,7 +145,12 @@ export function CreativePreviewPopover({
       ) : (
         <div className="pp-pending">Not published yet</div>
       )}
-      {caption && <div className="pp-cap">{caption}</div>}
+      {caption && (
+        <div className="pp-cap">
+          <b>V{latestCopy!.version_no}</b>
+          {caption}
+        </div>
+      )}
     </div>
   );
 }

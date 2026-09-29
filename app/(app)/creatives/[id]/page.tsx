@@ -439,6 +439,7 @@ export default function CreativeReviewPage({
         <ShareModal
           projectId={creative.project_id}
           currentCreativeId={creative.id}
+          brandName={clientName}
           onClose={() => setShareOpen(false)}
         />
       )}

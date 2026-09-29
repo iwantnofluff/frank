@@ -1780,10 +1780,13 @@ body.lightrail .avatar {
 }
 
 /* Copy version history — hover popover for the calendar table's Image on
-   Text / Post Copy cells (real copy_versions rows, newest first). */
+   Text / Post Copy cells (real copy_versions rows, newest first). Also
+   used, via FeedCaptionPopover, for the Feed Preview/Share modal grids —
+   above .scrim's z-index:100 so it isn't hidden behind ShareModal's own
+   dialog when triggered from inside it. */
 .copypop {
   position: fixed;
-  z-index: 90;
+  z-index: 110;
   width: 380px;
   max-width: calc(100vw - 24px);
   max-height: min(58vh, 520px);
@@ -1911,7 +1914,7 @@ body.lightrail .avatar {
   width: 390px;
   background: #fff;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 0;
   overflow: hidden;
   box-shadow: 0 1px 2px rgba(20, 22, 26, 0.05);
 }
@@ -1976,8 +1979,21 @@ body.lightrail .avatar {
   stroke-width: 1.7;
 }
 .feedgrid {
+  /* Always exactly 9 posts' worth of height (3 rows), regardless of how
+     many actually exist — 390px card minus its 1px border each side minus
+     2 column-gaps, /3 = 128px tile width; *5/4 for the 4:5 ratio = 160px
+     tile height; *3 rows + 2 row-gaps = 484px. Scrolls for more than 9,
+     leaves blank space below for fewer. */
+  height: 484px;
+  overflow-y: auto;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  /* Without this, a fixed container height taller than the actual content
+     (fewer than 9 posts) lets the browser's default grid alignment spread
+     the leftover space as extra row-gap between existing rows instead of
+     collecting it below the last one — reproduced directly: row 1→2 had
+     an 83px gap instead of the intended 2px. */
+  align-content: start;
   gap: 2px;
 }
 .feedgrid-tile {
@@ -1987,15 +2003,75 @@ body.lightrail .avatar {
   border-radius: 0;
 }
 .feedgrid-tile .pp-art,
-.feedgrid-tile .pp-art svg {
+.feedgrid-tile .pp-art svg,
+.feedgrid-tile .pp-art img,
+.feedgrid-tile .pp-art video {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
 }
+.feedgrid-tile .pp-art img,
+.feedgrid-tile .pp-art video {
+  object-fit: cover;
+  display: block;
+}
 .feedgrid-tile[aria-current="true"] {
   outline: 2px solid var(--action);
   outline-offset: -2px;
+}
+/* Not-live border — every post today, since nothing is actually published
+   through this app yet (direct instruction: apply it now, ahead of a real
+   "live" state existing, using creatives.published_at as the real signal
+   rather than a hardcoded true/false). A soft, light version of the
+   existing --amber warning hue, not the full-strength colour itself —
+   this is a status hint, not a warning. Empty slots (no creative at all)
+   never get it; there's no "post" there to be not-live. */
+.feedgrid-tile.not-live {
+  border: 1px solid rgba(255, 138, 0, 0.35);
+}
+/* "No Creative" (a real post/brief, nothing uploaded) / "Live Post" (a
+   padding slot beyond the real count, standing in for the client's actual
+   published feed once Meta is connected) — plain text on a flat neutral
+   fill, no decorative colour standing in for a photo that isn't there. */
+.pp-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px;
+  background: var(--canvas);
+  text-align: center;
+}
+.pp-empty b {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pp-empty span {
+  font-size: 10px;
+  color: var(--muted);
+}
+/* Deliberately not sharing .feedgrid-tile/.pktile — those classes mean
+   "a real, selectable creative tile" to more than just this stylesheet
+   (share-eligibility.spec.ts loops every `.pktile` assuming each one is a
+   real post to select; reusing the class here silently broke that,
+   caught by the full regression run). Same sizing repeated standalone
+   instead. */
+.feedgrid-tile-empty,
+.pktile-empty {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border-radius: 0;
+  cursor: default;
 }
 .feedgrid-tile .pp-art-title {
   font-size: 12px;
@@ -2328,7 +2404,7 @@ select.sort:hover {
   width: 390px;
   background: #fff;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 0;
   overflow: hidden;
   height: max-content;
   box-shadow: 0 1px 2px rgba(20, 22, 26, 0.05);
@@ -2392,7 +2468,11 @@ select.sort:hover {
   display: flex;
   align-items: center;
   gap: 13px;
-  padding: 9px 12px 15px;
+  /* Even top/bottom padding (was 9px/15px) — same total 24px of vertical
+     space as before this split, but the uneven split made the icons read
+     as sitting too high in their own row; splitting it evenly moves them
+     down to sit centred instead. */
+  padding: 12px;
 }
 .ig-acts svg {
   width: 22px;
@@ -3536,31 +3616,83 @@ textarea.cxin {
    PlaceholderArt) standing in for real artwork, since fetching a signed
    thumbnail per creative just for this picker isn't worth a storage
    round-trip per tile. */
+/* .pkcard/.pkgrid/.pktile match FeedPreviewGrid's .feedcard/.feedgrid/
+   .feedgrid-tile exactly, per direct instruction — same card chrome, same
+   tight 2px grid, same fixed 4:5 tile (not per-format any more), same
+   PlaceholderArt tile content (name/date always visible, not hover-only).
+   Only real difference: no fixed width (this sits in a modal, not the
+   review page's canvas) and a selection checkmark overlay layered on top. */
+.pkcard {
+  width: 390px;
+  /* Extra room above the card specifically — the shared .msection-d's own
+     8px margin-bottom (used by every section in this modal, not just this
+     one) reads as too tight above this particular card, but widening it
+     there would move every other section in the modal too. */
+  margin: 12px auto 0;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(20, 22, 26, 0.05);
+}
 .pkgrid {
+  /* Same fixed 9-post (3-row) height as .feedgrid, and for the same
+     reason — see its own comment for the 484px math. */
+  height: 484px;
+  overflow-y: auto;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  max-height: 320px;
-  overflow-y: auto;
-  padding: 2px;
+  /* See .feedgrid's own comment — same fixed-height-taller-than-content
+     row-gap bug, same fix. */
+  align-content: start;
+  gap: 2px;
 }
 .pktile {
   position: relative;
-  /* aspect-ratio set inline, per tile — matches the creative's own format
-     (lib/formats.ts), not a fixed shape for every piece. */
-  border-radius: 8px;
+  aspect-ratio: 4 / 5;
+  border-radius: 0;
   overflow: hidden;
   border: 2px solid transparent;
   cursor: pointer;
   padding: 0;
 }
-.pktile svg {
+.pktile .pp-art,
+.pktile .pp-art svg,
+.pktile .pp-art img,
+.pktile .pp-art video {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
+}
+.pktile .pp-art img,
+.pktile .pp-art video {
+  object-fit: cover;
   display: block;
+}
+.pktile .pp-art-title {
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+.pktile .pp-art-overlay {
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+}
+.pktile .pp-art-time {
+  font-size: 9px;
+  padding: 2px 7px;
 }
 .pktile.selected {
   border-color: var(--action);
+}
+/* Same not-live signal as .feedgrid-tile's own, via outline rather than
+   border — .pktile's border is already the selection indicator (2px,
+   transparent/--action), and a tile can be both selected and not-live at
+   once. */
+.pktile.not-live {
+  outline: 1px solid rgba(255, 138, 0, 0.35);
+  outline-offset: -1px;
 }
 /* Scope "one" — the grid still shows every piece so the current one's
    selection reads in context, but only "Multiple Posts" lets you click a
@@ -3579,6 +3711,7 @@ textarea.cxin {
   background: rgba(20, 22, 26, 0.35);
   display: grid;
   place-items: center;
+  z-index: 1;
 }
 .pktile.selected .pktile-check {
   background: var(--action);
@@ -3595,26 +3728,6 @@ textarea.cxin {
   opacity: 0;
 }
 .pktile.selected .pktile-check svg {
-  opacity: 1;
-}
-/* Hover-only, per the ask — the checkbox above stays visible so selection
-   state reads without hovering; the title doesn't. */
-.pktile-title {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: flex-end;
-  padding: 8px;
-  background: linear-gradient(to top, rgba(20, 22, 26, 0.7), transparent 60%);
-  opacity: 0;
-  transition: opacity 0.12s;
-  color: #fff;
-  font-size: 12px;
-  font-weight: 600;
-  text-align: left;
-  line-height: 1.3;
-}
-.pktile:hover .pktile-title {
   opacity: 1;
 }
 

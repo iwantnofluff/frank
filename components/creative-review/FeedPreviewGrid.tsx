@@ -1,15 +1,19 @@
 "use client";
 
-import { useCreatives } from "@/hooks/use-creatives";
-import { PlaceholderArt } from "@/components/project/CreativePreviewPopover";
+import { useRef, useState } from "react";
+import { useCreatives, type CreativeListRow } from "@/hooks/use-creatives";
+import { FeedTileArt, EmptyTileArt } from "@/components/creative-review/FeedTileArt";
+import { FeedCaptionPopover } from "@/components/creative-review/FeedCaptionPopover";
+
+const GRID_SLOTS = 9;
 
 // The 2nd reference mockup (a plain Instagram grid, header+tabs above it) —
 // every other creative in this project, per direct instruction (not the
 // whole client: this page is scoped to one project's work, and pooling
-// every project would mix in posts nothing here is reviewing). Same
-// decorative-gradient-per-tile approach as CreativePreviewPopover, for the
-// same reason: no real asset fetch per tile, no fabricated engagement
-// numbers.
+// every project would mix in posts nothing here is reviewing). Real
+// artwork per tile where one's been uploaded (FeedTileArt), a plain
+// "No Creative"/"Live Post" label otherwise — see FeedTileArt.tsx for
+// which is which and why.
 //
 // The header/tabs chrome (.fp-h/.fp-tabs) is the prototype's own
 // #feedPanel markup (frank-prototype.html) — that feature (a live
@@ -32,7 +36,30 @@ export function FeedPreviewGrid({
 }) {
   const { data: creatives, isLoading } = useCreatives(projectId);
 
+  // Same hover-preview pattern as ProjectCalendarTable's own creative
+  // rows: a short delay before showing (so a pointer passing over several
+  // tiles doesn't pop one open per tile) and before hiding (so the pointer
+  // has time to cross from the tile onto the popover itself), which the
+  // popover's own onMouseEnter/onMouseLeave then cancels/extends.
+  const [hover, setHover] = useState<{ creative: CreativeListRow; rect: DOMRect } | null>(
+    null,
+  );
+  const hoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  function handleEnter(creative: CreativeListRow, target: HTMLElement) {
+    if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
+    const rect = target.getBoundingClientRect();
+    hoverTimeout.current = setTimeout(() => setHover({ creative, rect }), 200);
+  }
+  function scheduleHide() {
+    if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
+    hoverTimeout.current = setTimeout(() => setHover(null), 200);
+  }
+  function cancelHide() {
+    if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
+  }
+
   return (
+    <>
     <div className="feedcard">
       <div className="fp-h">
         <span className="fp-av">
@@ -74,14 +101,9 @@ export function FeedPreviewGrid({
         <div className="awaiting">
           <span>Loading feed…</span>
         </div>
-      ) : !creatives?.length ? (
-        <div className="awaiting">
-          <b>Nothing to show yet</b>
-          <span>No other posts in this project yet.</span>
-        </div>
       ) : (
         <div className="feedgrid">
-          {creatives.map((c) => {
+          {(creatives ?? []).map((c) => {
             const timeLabel = c.scheduled_at
               ? new Date(c.scheduled_at).toLocaleDateString(undefined, {
                   month: "short",
@@ -92,17 +114,38 @@ export function FeedPreviewGrid({
               <button
                 key={c.id}
                 type="button"
-                className="feedgrid-tile"
+                className={`feedgrid-tile${c.published_at ? "" : " not-live"}`}
                 aria-current={c.id === activeCreativeId}
                 onClick={() => onSelect(c.id)}
+                onMouseEnter={(e) => handleEnter(c, e.currentTarget)}
+                onMouseLeave={scheduleHide}
                 title={c.name}
               >
-                <PlaceholderArt creative={c} timeLabel={timeLabel} />
+                <FeedTileArt creative={c} timeLabel={timeLabel} />
               </button>
             );
           })}
+          {/* Pad up to a fixed 9 slots — real empty tiles, not just blank
+              space, per direct instruction. Never rendered when there are
+              already 9+ real creatives; overflow scrolls instead. */}
+          {Array.from({
+            length: Math.max(0, GRID_SLOTS - (creatives?.length ?? 0)),
+          }).map((_, i) => (
+            <div key={`empty-${i}`} className="feedgrid-tile-empty">
+              <EmptyTileArt />
+            </div>
+          ))}
         </div>
       )}
     </div>
+    {hover && (
+      <FeedCaptionPopover
+        creative={hover.creative}
+        anchorRect={hover.rect}
+        onMouseEnter={cancelHide}
+        onMouseLeave={scheduleHide}
+      />
+    )}
+    </>
   );
 }

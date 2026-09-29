@@ -42,7 +42,7 @@ export function SaveViewModal({
 
   return (
     <Modal
-      title={mode === "create" ? "Save as New View" : "Rename View"}
+      title={mode === "create" ? "Save As New View" : "Rename View"}
       size="sm"
       onClose={onCancel}
       footer={

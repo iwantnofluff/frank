@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { useCreatives, type CreativeListRow } from "@/hooks/use-creatives";
 import {
@@ -9,7 +9,10 @@ import {
 } from "@/hooks/use-create-shared-link";
 import { resolveShareEligibility } from "@/lib/shared-link-eligibility";
 import { errorMessage } from "@/lib/errors";
-import { formatById } from "@/lib/formats";
+import { FeedTileArt, EmptyTileArt } from "@/components/creative-review/FeedTileArt";
+import { FeedCaptionPopover } from "@/components/creative-review/FeedCaptionPopover";
+
+const GRID_SLOTS = 9;
 
 // Only the two scopes this modal itself ever sets — "pending"/"all" are
 // still real, valid SharedLinkScope values (existing shared_links rows can
@@ -28,33 +31,21 @@ const SCOPE_OPTIONS: {
   },
 ];
 
-// "W:H" (lib/formats.ts's own FormatDefinition.aspectRatio) -> a CSS
-// aspect-ratio value. A handful of formats carry "multi" or "—" instead of
-// a real ratio (Google Display's multi-size set, SMS/email's own no-image
-// formats) — Instagram Feed's own 4:5 is the safest fallback for those,
-// and matches what "look like an Instagram feed" asked for by default.
-function aspectRatioCss(ratio: string | undefined): string {
-  const match = ratio?.match(/^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)$/);
-  return match ? `${match[1]} / ${match[2]}` : "4 / 5";
-}
-
-// Same hash-to-hue trick as CreativePreviewPopover's own PlaceholderArt —
-// a decorative gradient standing in for the real artwork, since fetching a
-// signed thumbnail URL per creative just to render a picker grid would mean
-// one storage round-trip per piece in the project. Duplicated rather than
-// shared: that component's own overlay is always-on (a hover popover has
-// no "hover" state of its own to gate it), this tile's is hover-only.
-function hashString(s: string) {
-  let n = 0;
-  for (let i = 0; i < s.length; i++) n = (n * 31 + s.charCodeAt(i)) >>> 0;
-  return n;
-}
-
+// Same tile look as FeedPreviewGrid (creative-review), per direct
+// instruction — reuses the identical FeedTileArt card (real artwork, or a
+// plain "No Creative" label when a post exists with nothing uploaded)
+// rather than this modal's own previous, visually different gradient tile
+// (hover-only title, no date, per-format aspect ratio). Fixed 4:5 for
+// every tile now, matching Feed Preview exactly, not the creative's own
+// format — a deliberate loss of the per-format-accurate shape in exchange
+// for looking like the same grid.
 function PieceTile({
   creative,
   selected,
   selectable,
   onToggle,
+  onHoverEnter,
+  onHoverLeave,
 }: {
   creative: CreativeListRow;
   selected: boolean;
@@ -63,33 +54,30 @@ function PieceTile({
   // lets you click a different tile.
   selectable: boolean;
   onToggle: () => void;
+  onHoverEnter: (creative: CreativeListRow, target: HTMLElement) => void;
+  onHoverLeave: () => void;
 }) {
-  const hue = hashString(creative.id) % 360;
-  const gradientId = `pk-${creative.id}`;
-  const ratio = aspectRatioCss(formatById(creative.format)?.aspectRatio);
+  const timeLabel = creative.scheduled_at
+    ? new Date(creative.scheduled_at).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+      })
+    : "—";
   return (
     <button
       type="button"
-      className={`pktile${selected ? " selected" : ""}${!selectable ? " locked" : ""}`}
-      style={{ aspectRatio: ratio }}
+      className={`pktile${selected ? " selected" : ""}${!selectable ? " locked" : ""}${creative.published_at ? "" : " not-live"}`}
       aria-pressed={selected}
       onClick={selectable ? onToggle : undefined}
+      onMouseEnter={(e) => onHoverEnter(creative, e.currentTarget)}
+      onMouseLeave={onHoverLeave}
     >
-      <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
-        <defs>
-          <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor={`hsl(${hue}, 55%, 24%)`} />
-            <stop offset="1" stopColor={`hsl(${hue}, 55%, 12%)`} />
-          </linearGradient>
-        </defs>
-        <rect width="100" height="100" fill={`url(#${gradientId})`} />
-      </svg>
+      <FeedTileArt creative={creative} timeLabel={timeLabel} />
       <span className="pktile-check">
         <svg viewBox="0 0 24 24">
           <path d="M20 6L9 17l-5-5" />
         </svg>
       </span>
-      <span className="pktile-title">{creative.name}</span>
     </button>
   );
 }
@@ -97,10 +85,12 @@ function PieceTile({
 export function ShareModal({
   projectId,
   currentCreativeId,
+  brandName,
   onClose,
 }: {
   projectId: string;
   currentCreativeId: string;
+  brandName: string;
   onClose: () => void;
 }) {
   const [scope, setScope] = useState<SharedLinkScope>("one");
@@ -113,6 +103,28 @@ export function ShareModal({
 
   const { data: creatives } = useCreatives(projectId);
   const createLink = useCreateSharedLink();
+
+  // Same hover-preview pattern as ProjectCalendarTable's own creative rows
+  // (and FeedPreviewGrid's identical copy of it) — a short delay before
+  // showing and before hiding, the latter cancelled/extended by the
+  // popover's own onMouseEnter/onMouseLeave so the pointer has time to
+  // cross from the tile onto it.
+  const [hover, setHover] = useState<{ creative: CreativeListRow; rect: DOMRect } | null>(
+    null,
+  );
+  const hoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  function handleHoverEnter(creative: CreativeListRow, target: HTMLElement) {
+    if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
+    const rect = target.getBoundingClientRect();
+    hoverTimeout.current = setTimeout(() => setHover({ creative, rect }), 200);
+  }
+  function scheduleHoverHide() {
+    if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
+    hoverTimeout.current = setTimeout(() => setHover(null), 200);
+  }
+  function cancelHoverHide() {
+    if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
+  }
 
   // What the grid actually shows as checked — "one" always reads as just
   // the current piece, regardless of whatever "pick" selection is sitting
@@ -188,8 +200,9 @@ export function ShareModal({
   }
 
   return (
+    <>
     <Modal
-      title="Share for review"
+      title="Share For Review"
       onClose={onClose}
       footer={
         <>
@@ -269,16 +282,64 @@ export function ShareModal({
               ? "Only the post you're viewing is included on this link."
               : `${picked.size} selected — click a post to add or remove it.`}
           </p>
-          <div className="pkgrid">
-            {creatives?.map((c) => (
-              <PieceTile
-                key={c.id}
-                creative={c}
-                selected={selectedIds.has(c.id)}
-                selectable={scope === "pick"}
-                onToggle={() => togglePiece(c.id)}
-              />
-            ))}
+          <div className="pkcard">
+            <div className="fp-h">
+              <span className="fp-av">
+                <i />
+              </span>
+              <span className="fp-t">
+                <b>{brandName}</b>
+              </span>
+            </div>
+            <div className="fp-tabs" role="tablist" aria-label="Profile sections">
+              <div className="fp-tab" aria-selected="true" title="Posts">
+                <svg viewBox="0 0 24 24">
+                  <rect x="3" y="3" width="18" height="18" rx="1.5" />
+                  <path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
+                </svg>
+              </div>
+              <div className="fp-tab" aria-selected="false" title="Reels">
+                <svg viewBox="0 0 24 24">
+                  <rect x="3" y="3" width="18" height="18" rx="4" />
+                  <path d="M3 8h18M8.5 3l3 5M15 3l3 5" />
+                  <path d="M11 12.5l4 2.2-4 2.2z" fill="currentColor" stroke="none" />
+                </svg>
+              </div>
+              <div className="fp-tab" aria-selected="false" title="Saved">
+                <svg viewBox="0 0 24 24">
+                  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                </svg>
+              </div>
+              <div className="fp-tab" aria-selected="false" title="Tagged">
+                <svg viewBox="0 0 24 24">
+                  <rect x="3" y="3" width="18" height="18" rx="3" />
+                  <circle cx="12" cy="10" r="3" />
+                  <path d="M6.5 19a5.8 5.8 0 0 1 11 0" />
+                </svg>
+              </div>
+            </div>
+            <div className="pkgrid">
+              {creatives?.map((c) => (
+                <PieceTile
+                  key={c.id}
+                  creative={c}
+                  selected={selectedIds.has(c.id)}
+                  selectable={scope === "pick"}
+                  onToggle={() => togglePiece(c.id)}
+                  onHoverEnter={handleHoverEnter}
+                  onHoverLeave={scheduleHoverHide}
+                />
+              ))}
+              {/* Pad up to a fixed 9 slots, matching Feed Preview — real
+                  empty tiles, not just blank space. */}
+              {Array.from({
+                length: Math.max(0, GRID_SLOTS - (creatives?.length ?? 0)),
+              }).map((_, i) => (
+                <div key={`empty-${i}`} className="pktile-empty">
+                  <EmptyTileArt />
+                </div>
+              ))}
+            </div>
           </div>
           {eligibilityNote && (
             <div className={`note${eligibilityNote.tone === "warn" ? " warn" : ""}`} style={{ marginTop: 14 }}>
@@ -369,5 +430,14 @@ export function ShareModal({
         </>
       )}
     </Modal>
+    {hover && (
+      <FeedCaptionPopover
+        creative={hover.creative}
+        anchorRect={hover.rect}
+        onMouseEnter={cancelHoverHide}
+        onMouseLeave={scheduleHoverHide}
+      />
+    )}
+    </>
   );
 }
