@@ -120,7 +120,7 @@ export function NewProjectModal({
               </svg>
             </span>
             <span className="kt">
-              <b>Scheduled</b>
+              <b>Content Planner</b>
               <span>
                 Goes live on a date. You get Week, Month and Calendar views with a publish date
                 on every piece.
@@ -141,7 +141,7 @@ export function NewProjectModal({
               </svg>
             </span>
             <span className="kt">
-              <b>Continuous</b>
+              <b>Other Content</b>
               <span>
                 Approved then handed over. You get a list ordered by what is due, with a
                 destination instead of a date.

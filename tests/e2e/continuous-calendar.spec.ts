@@ -41,12 +41,13 @@ test("continuous calendar — Funnel and Type chips persist", async ({ page, fra
   }
   await page.waitForSelector(".tbl");
 
-  // Default column order's td indices: 0 Live Date, 1 Creative Name,
-  // 2 Placement, 3 Funnel, 4 TG, 5 Type.
+  // Default column order's td indices: 0 the staff-only select-row
+  // checkbox, 1 Live Date, 2 Creative Name, 3 Placement, 4 Funnel, 5 TG,
+  // 6 Type.
   const row = page.locator("tr[data-row]", { hasText: "Chip Test Creative" });
   const cells = row.locator("td");
-  await cells.nth(3).locator("select").selectOption("tof");
-  await cells.nth(5).locator("select").selectOption("video");
+  await cells.nth(4).locator("select").selectOption("tof");
+  await cells.nth(6).locator("select").selectOption("video");
   await page.reload();
   await page.waitForSelector(".tblwrap, .empty");
   for (let i = 0; i < 6; i++) {
@@ -55,10 +56,10 @@ test("continuous calendar — Funnel and Type chips persist", async ({ page, fra
   await page.waitForSelector(".tbl");
   const reloadedRow = page.locator("tr[data-row]", { hasText: "Chip Test Creative" });
   const reloadedCells = reloadedRow.locator("td");
-  await expect(reloadedCells.nth(3).locator("select")).toHaveValue("tof");
-  await expect(reloadedCells.nth(3)).toContainText("TOF");
-  await expect(reloadedCells.nth(5).locator("select")).toHaveValue("video");
-  await expect(reloadedCells.nth(5)).toContainText("Video");
+  await expect(reloadedCells.nth(4).locator("select")).toHaveValue("tof");
+  await expect(reloadedCells.nth(4)).toContainText("TOF");
+  await expect(reloadedCells.nth(6).locator("select")).toHaveValue("video");
+  await expect(reloadedCells.nth(6)).toContainText("Video");
 });
 
 test("continuous calendar — V1/V2 Copy persist independently", async ({ page, frank }) => {
@@ -132,11 +133,11 @@ test("continuous calendar — jumps to the month of a newly created brief", asyn
   await page.goto(`/projects/${projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
 
-  await page.click('button:has-text("New Brief")');
+  await page.click('button:has-text("New Post")');
   await page.fill("#nbName", "Continuous Calendar Jump E2E");
   await page.fill("#nbDest", "https://example.com/listing");
   await page.fill("#nbDue", "2027-06-10");
-  await page.click('button:has-text("Create Brief")');
+  await page.click('button:has-text("Create Post")');
 
   await expect(page.locator(".calmonth")).toHaveText("June 2027");
   await expect(page.locator(".pname", { hasText: "Continuous Calendar Jump E2E" })).toBeVisible();
@@ -214,7 +215,7 @@ test("a real client-role session sees the continuous table read-only", async ({ 
   }
   await page.waitForSelector(".tbl");
 
-  await expect(page.locator('button:has-text("New Brief")')).toHaveCount(0);
+  await expect(page.locator('button:has-text("New Post")')).toHaveCount(0);
   const row = page.locator("tr[data-row]", { hasText: "Client View Creative" });
   await expect(row.locator("select").first()).toBeDisabled();
   await expect(row.locator("textarea.cxin").first()).toBeDisabled();

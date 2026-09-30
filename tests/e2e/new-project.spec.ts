@@ -19,7 +19,7 @@ test("creates a continuous project with its type", async ({ page, frank }) => {
   await page.waitForSelector(".clients, .empty");
 
   await page.click('button:has-text("New Project")');
-  await page.click('.kopt:has-text("Continuous")');
+  await page.click('.kopt:has-text("Other Content")');
   await expect(page.locator("#newType")).toHaveValue("Amazon");
   await page.fill("#newName", "New Project E2E — Continuous");
   await page.click('button:has-text("Create")');

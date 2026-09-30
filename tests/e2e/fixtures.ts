@@ -375,6 +375,11 @@ export const test = base.extend<{ frank: Frank }>({
       // References clients — must run before the clients delete below, same
       // reason format_directions/custom_columns do.
       ["client_contacts", () => admin.from("client_contacts").delete().eq("agency_id", agency.id)],
+      // References both clients (client_id) and users (created_by) — must
+      // run before both deletes below, same reason format_directions/
+      // custom_columns run before clients/agencies. projects.folder_id
+      // itself needs no ordering against this (on delete set null).
+      ["project_folders", () => admin.from("project_folders").delete().eq("agency_id", agency.id)],
       // By agency_id, not just the fixture's own client.id — new-client.spec.ts
       // creates extra clients through the real New Client modal, same reasoning
       // as shared_links above.

@@ -5,12 +5,14 @@ import { useViewportFit } from "@/hooks/use-viewport-fit";
 import { useRouter } from "next/navigation";
 import type { CreativeListRow } from "@/hooks/use-creatives";
 import type { CustomColumnRow } from "@/hooks/use-custom-columns";
+import { useArchiveCreatives } from "@/hooks/use-archive-creatives";
+import { useDeleteCreativesPermanently } from "@/hooks/use-delete-creatives-permanently";
 import { CxCell } from "@/components/project/CxCell";
-import { KBadge } from "@/components/project/KBadge";
 import { ContinuousCalendarGrid } from "@/components/project/ContinuousCalendarGrid";
 import { ColumnsPopover, type ToggleableColumn } from "@/components/project/ColumnsPopover";
 import { CreativePreviewPopover } from "@/components/project/CreativePreviewPopover";
 import { SaveViewModal } from "@/components/project/SaveViewModal";
+import { PermanentDeleteConfirm } from "@/components/project/PermanentDeleteConfirm";
 import { bandOf, stageLabel, stageColor, exceptionLabel, type Band } from "@/lib/stage-labels";
 import { errorMessage } from "@/lib/errors";
 import { getMonthWeeks, getWeekDays, isoWeekNumber, dateKey } from "@/lib/calendar-weeks";
@@ -46,6 +48,12 @@ const STATUS_FILTERS: { value: "all" | Band; label: string }[] = [
 const FROZEN_COLUMNS = [
   { key: "date", label: "Live Date", sub: "Launch date", width: 104, stickyClass: "sk1", left: 0 },
 ] as const;
+
+// Staff-only checkbox column, sticky ahead of Live Date when shown — not
+// one of FROZEN_COLUMNS: it's a selection affordance, not a data column,
+// so it's excluded from the Columns picker's counts and rendered by hand
+// rather than through the `columns` array below.
+const CHECKBOX_COL_WIDTH = 36;
 
 // The 13-field content-planner template supplied directly, replacing the
 // generic Creative/Format/Destination/Added/Due/Stage columns the old flat
@@ -163,16 +171,24 @@ function CopyTextarea({
 // navigation) — only the column definitions and per-key cell rendering
 // differ, and due_on drives grouping/filtering in place of scheduled_at.
 export function ContinuousCalendarTable({
+  projectId,
   projectName,
   creatives,
+  archiveMode,
   customColumns,
   onCxSave,
   cxReadOnly,
   isStaff,
   initialFocusDate,
 }: {
+  projectId: string;
   projectName: string;
   creatives: CreativeListRow[];
+  // Which half of the page's own Active/Archived toggle `creatives` was
+  // already filtered to — drives the checkbox bar's label and which way
+  // the archive mutation writes (delete vs. restore), same rows either
+  // way.
+  archiveMode: "active" | "archived";
   customColumns: CustomColumnRow[];
   onCxSave: (creativeId: string, key: string, value: string | number | boolean | null) => void;
   cxReadOnly: boolean;
@@ -188,6 +204,43 @@ export function ContinuousCalendarTable({
   const [anchor, setAnchor] = useState(() => (initialFocusDate ? new Date(initialFocusDate) : today));
   const [viewMode, setViewMode] = useState<ViewMode>("month");
   const [statusFilter, setStatusFilter] = useState<"all" | Band>("all");
+
+  // Checkbox multi-select — table views only (Week/Month), not the
+  // Calendar grid. Cleared whenever the underlying row set changes (the
+  // page's own Active/Archived toggle, or a successful archive/restore),
+  // so a stale selection never lingers pointing at rows no longer shown.
+  // Adjusted during render rather than in an effect (react.dev, "Adjusting
+  // some state when a prop changes") — an effect here would set state one
+  // render late, briefly showing the stale selection against new rows.
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [prevCreatives, setPrevCreatives] = useState(creatives);
+  if (prevCreatives !== creatives) {
+    setPrevCreatives(creatives);
+    setSelected(new Set());
+  }
+  const archiveCreatives = useArchiveCreatives(projectId);
+  function toggleSelected(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+  async function handleBulkArchive() {
+    await archiveCreatives.mutateAsync({
+      creativeIds: Array.from(selected),
+      archived: archiveMode === "active",
+    });
+    setSelected(new Set());
+  }
+  const deleteCreatives = useDeleteCreativesPermanently(projectId);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  async function handlePermanentDelete() {
+    await deleteCreatives.mutateAsync(Array.from(selected));
+    setConfirmDeleteOpen(false);
+    setSelected(new Set());
+  }
 
   // No entry for a key means "visible" everywhere this is read (`!== false`)
   // — a new custom column needs no sync effect to default it to shown.
@@ -410,6 +463,14 @@ export function ContinuousCalendarTable({
   }, [filtered, anchor, viewMode]);
 
   const totalShown = weeks.reduce((n, w) => n + w.items.length, 0);
+  const allVisibleIds = useMemo(
+    () => weeks.flatMap((w) => w.items.map(({ c }) => c.id)),
+    [weeks],
+  );
+  const allVisibleSelected = allVisibleIds.length > 0 && allVisibleIds.every((id) => selected.has(id));
+  function toggleSelectAll() {
+    setSelected(allVisibleSelected ? new Set() : new Set(allVisibleIds));
+  }
 
   const toggleableColumns: ToggleableColumn[] = [
     ...TOGGLABLE_COLUMNS,
@@ -426,8 +487,12 @@ export function ContinuousCalendarTable({
   const allColumnKeys = Object.keys(allColumnDefs);
   const resolvedOrder = resolveOrder(columnOrder, allColumnKeys);
   const visibleOrderedKeys = resolvedOrder.filter((k) => columnVisibility[k] !== false);
+  // Frozen columns' left offsets shift right by the checkbox column's own
+  // width whenever it's shown, so both keep sitting flush against each
+  // other rather than the checkbox overlapping Live Date.
+  const skOffset = isStaff ? CHECKBOX_COL_WIDTH : 0;
   const columns = [
-    ...FROZEN_COLUMNS.map((c) => ({ ...c, draggable: false })),
+    ...FROZEN_COLUMNS.map((c) => ({ ...c, draggable: false, left: c.left + skOffset })),
     ...visibleOrderedKeys.map((key) => ({
       key,
       label: allColumnDefs[key].label,
@@ -438,7 +503,7 @@ export function ContinuousCalendarTable({
       draggable: true,
     })),
   ];
-  const tableWidth = columns.reduce((sum, c) => sum + c.width, 0);
+  const tableWidth = columns.reduce((sum, c) => sum + c.width, 0) + skOffset;
   const visibleColumnCount = FROZEN_COLUMNS.length + visibleOrderedKeys.length;
   const totalColumnCount = FROZEN_COLUMNS.length + allColumnKeys.length;
   const customColumnByKey = new Map(customColumns.map((c) => [`cx:${c.id}`, c]));
@@ -596,7 +661,6 @@ export function ContinuousCalendarTable({
           </button>
         </div>
         <div style={{ flex: 1 }} />
-        <KBadge delivery="continuous" />
         <select
           className="sort"
           value={statusFilter}
@@ -693,6 +757,49 @@ export function ContinuousCalendarTable({
         )}
       </div>
 
+      {viewMode !== "calendar" && isStaff && selected.size > 0 && (
+        <div className="selectionbar">
+          <span>{selected.size} selected</span>
+          <div style={{ flex: 1 }} />
+          <button type="button" className="btn sm" onClick={() => setSelected(new Set())}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="btn sm"
+            disabled={archiveCreatives.isPending}
+            onClick={handleBulkArchive}
+          >
+            {archiveCreatives.isPending
+              ? archiveMode === "archived"
+                ? "Restoring…"
+                : "Archiving…"
+              : archiveMode === "archived"
+                ? "Restore"
+                : "Archive"}
+          </button>
+          <button
+            type="button"
+            className="btn sm danger"
+            onClick={() => setConfirmDeleteOpen(true)}
+          >
+            Permanently Delete
+          </button>
+        </div>
+      )}
+      {archiveCreatives.error && (
+        <p className="autherr">{errorMessage(archiveCreatives.error, "Couldn't update these posts")}</p>
+      )}
+      {confirmDeleteOpen && (
+        <PermanentDeleteConfirm
+          count={selected.size}
+          isPending={deleteCreatives.isPending}
+          error={deleteCreatives.error}
+          onConfirm={handlePermanentDelete}
+          onClose={() => setConfirmDeleteOpen(false)}
+        />
+      )}
+
       {viewMode === "calendar" ? (
         <ContinuousCalendarGrid
           year={anchor.getFullYear()}
@@ -705,7 +812,7 @@ export function ContinuousCalendarTable({
           <b>Nothing due</b>
           <span>
             {!hasAnyDue
-              ? `Nothing due in ${projectName} yet.${isStaff ? " Use New Brief to write the first one." : ""}`
+              ? `Nothing due in ${projectName} yet.${isStaff ? " Use New Post to write the first one." : ""}`
               : `No creatives match these filters in ${monthLabel}.`}
           </span>
         </div>
@@ -713,12 +820,23 @@ export function ContinuousCalendarTable({
         <div className="tblwrap">
           <table className="tbl" style={{ width: tableWidth }}>
             <colgroup>
+              {isStaff && <col style={{ width: CHECKBOX_COL_WIDTH }} />}
               {columns.map((c) => (
                 <col key={c.key} style={{ width: c.width }} />
               ))}
             </colgroup>
             <thead>
               <tr>
+                {isStaff && (
+                  <th className="skchk" style={{ left: 0 }}>
+                    <input
+                      type="checkbox"
+                      aria-label="Select all"
+                      checked={allVisibleSelected}
+                      onChange={toggleSelectAll}
+                    />
+                  </th>
+                )}
                 {columns.map((c) => {
                   const classes = [
                     c.stickyClass,
@@ -754,7 +872,7 @@ export function ContinuousCalendarTable({
                 <Fragment key={dateKey(days[0])}>
                   {viewMode === "month" && (
                     <tr className="wkband">
-                      <td colSpan={columns.length}>
+                      <td colSpan={columns.length + (isStaff ? 1 : 0)}>
                         <span className="bandin">
                           Week {isoWeekNumber(days[0])}
                           <span className="rng">
@@ -782,7 +900,17 @@ export function ContinuousCalendarTable({
                         key={c.id}
                         onClick={() => router.push(`/creatives/${c.id}`)}
                       >
-                        <td className="sk1" style={{ left: 0 }}>
+                        {isStaff && (
+                          <td className="skchk" style={{ left: 0 }} onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              aria-label={`Select ${c.name}`}
+                              checked={selected.has(c.id)}
+                              onChange={() => toggleSelected(c.id)}
+                            />
+                          </td>
+                        )}
+                        <td className="sk1" style={{ left: skOffset }}>
                           {dt.getDate()} {MONTH_ABBR[dt.getMonth()]} {String(dt.getFullYear()).slice(2)}
                         </td>
                         {visibleOrderedKeys.map((key) => {

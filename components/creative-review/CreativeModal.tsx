@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { ListEditor } from "@/components/ui/ListEditor";
+import { DateTimePicker } from "@/components/ui/DateTimePicker";
 import { CxCell } from "@/components/project/CxCell";
 import type { CreativeRow } from "@/hooks/use-creative";
 import type { CopyVersionRow } from "@/hooks/use-copy-versions";
@@ -450,14 +451,33 @@ export function CreativeModal(props: CreativeModalProps) {
   const [dateError, setDateError] = useState<string | null>(null);
   const [destinationError, setDestinationError] = useState<string | null>(null);
 
-  const updateBrief = useUpdateBrief(isCreate ? "" : props.creative.id);
-  const saveSlideText = useSaveSlideText(isCreate ? "" : props.creative.id);
+  // A brief flash beside Cancel after a successful "Update" (never shown
+  // for the first "Create Post" save) — auto-hides rather than tracking
+  // every field's dirty state, since unlike copySaveNote below it names
+  // no specific version a later edit could make stale.
+  const [showUpdatedNote, setShowUpdatedNote] = useState(false);
+  const updatedNoteTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (updatedNoteTimeout.current) clearTimeout(updatedNoteTimeout.current);
+  }, []);
 
   // Once a fresh brief is created, its id lives here — unlocks the Upload
   // & Copy tab without needing to close and reopen this window (Tab 1
-  // then shows what it just created, same fields, no longer blank).
+  // then shows what it just created, same fields, no longer blank), and
+  // lets every further "Update" click amend that same row instead of
+  // creating another one (see handleSaveBrief below).
   const [createdCreativeId, setCreatedCreativeId] = useState<string | null>(null);
   const creativeId = isCreate ? createdCreativeId : props.creative.id;
+
+  const updateBrief = useUpdateBrief(creativeId ?? "");
+  const saveSlideText = useSaveSlideText(creativeId ?? "");
+  // The slide text actually on record for this row, updated after every
+  // successful save — `initialSlideText` alone would stay frozen at `[]`
+  // once isCreate's own snapshot goes stale the moment a brief is created,
+  // making every later save re-diff against an empty baseline and re-cut
+  // a redundant copy_versions row even when nothing changed.
+  const [savedSlideText, setSavedSlideText] = useState<string[]>(initialSlideText);
+  const [savedCopyVersionNo, setSavedCopyVersionNo] = useState(latestCopyVersion?.version_no ?? 0);
   const delivery = isCreate ? props.delivery : (props.creative.projects?.delivery ?? "scheduled");
 
   const [activeTab, setActiveTab] = useState<Tab>(
@@ -489,7 +509,12 @@ export function CreativeModal(props: CreativeModalProps) {
     const scheduledAt =
       delivery === "scheduled" ? new Date(`${date}T${time || "09:00"}:00`).toISOString() : null;
 
-    if (isCreate) {
+    // Only the very first save creates the row — `isCreate` alone stays
+    // true for as long as this modal is open (it's fixed at mount from
+    // props.mode), so without the `!creativeId` guard every further click
+    // of what's now the same "Update" button inserted another creatives
+    // row rather than amending the one just made.
+    if (isCreate && !creativeId) {
       const newId = await createCreative.mutateAsync({
         name: name.trim(),
         format,
@@ -503,13 +528,21 @@ export function CreativeModal(props: CreativeModalProps) {
         dueOn: delivery === "continuous" ? dueOn || null : null,
       });
       setCreatedCreativeId(newId);
+      // Mirrors useCreateCreative's own trim-and-drop-blank-lines rule —
+      // only a non-empty result actually became a real copy_versions row
+      // there, and this is the baseline every later save on this same
+      // row diffs against (see below).
+      const persisted = slideText.map((s) => s.trim());
+      setSavedSlideText(persisted);
+      setSavedCopyVersionNo(persisted.filter(Boolean).length > 0 ? 1 : 0);
       props.onCreated?.(scheduledAt, delivery === "continuous" ? dueOn || null : null);
       return;
     }
 
     // Direct instruction: name/format/lead/schedule become editable after
     // creation too — a deliberate reversal of this modal's own original
-    // scope (see hooks/use-update-brief.ts).
+    // scope (see hooks/use-update-brief.ts). Runs both for a real edit
+    // and for the second-and-later save of a brief created this session.
     await updateBrief.mutateAsync({
       name: name.trim(),
       format,
@@ -521,9 +554,28 @@ export function CreativeModal(props: CreativeModalProps) {
       dueOn: delivery === "continuous" ? dueOn || null : null,
     });
     const cleaned = slideText.map((s) => s.trim());
-    if (JSON.stringify(cleaned) !== JSON.stringify(initialSlideText)) {
-      await saveSlideText.mutateAsync({ slideText: cleaned, latest: latestCopyVersion });
+    // Edit mode's own baseline (initialSlideText/latestCopyVersion) comes
+    // from props and already stays current across saves, since the
+    // parent's query for it shares the same key useSaveSlideText
+    // invalidates. A brief created this session has no such prop to lean
+    // on — copyVersions is fixed at `[]` for the modal's whole lifetime
+    // in create mode — so it tracks its own baseline locally instead.
+    const diffBaseline = isCreate ? savedSlideText : initialSlideText;
+    if (JSON.stringify(cleaned) !== JSON.stringify(diffBaseline)) {
+      const latest = isCreate
+        ? savedCopyVersionNo > 0
+          ? { version_no: savedCopyVersionNo, fields: {} }
+          : null
+        : latestCopyVersion;
+      await saveSlideText.mutateAsync({ slideText: cleaned, latest });
+      if (isCreate) {
+        setSavedSlideText(cleaned);
+        setSavedCopyVersionNo((n) => n + 1);
+      }
     }
+    if (updatedNoteTimeout.current) clearTimeout(updatedNoteTimeout.current);
+    setShowUpdatedNote(true);
+    updatedNoteTimeout.current = setTimeout(() => setShowUpdatedNote(false), 3000);
   }
 
   const briefSaving = isCreate
@@ -810,7 +862,7 @@ export function CreativeModal(props: CreativeModalProps) {
   // real post name nor a settled format yet, so it keeps the plain,
   // single-line title.
   const title = isCreate ? (
-    "New Brief"
+    "New Post"
   ) : (
     <>
       <div className="modal-title-project">{props.creative.projects?.name ?? "Untitled Project"}</div>
@@ -820,7 +872,7 @@ export function CreativeModal(props: CreativeModalProps) {
     </>
   );
   const titleAriaLabel = isCreate
-    ? "New Brief"
+    ? "New Post"
     : `${props.creative.projects?.name ?? "Untitled Project"} — ${props.creative.name}`;
 
   return (
@@ -833,6 +885,7 @@ export function CreativeModal(props: CreativeModalProps) {
         activeTab === "brief" ? (
           <>
             <div className="grow" />
+            {showUpdatedNote && <span className="bsaved">Post updated.</span>}
             <button type="button" className="btn" onClick={onClose}>
               Cancel
             </button>
@@ -842,7 +895,7 @@ export function CreativeModal(props: CreativeModalProps) {
               disabled={briefSaving}
               onClick={handleSaveBrief}
             >
-              {briefSaving ? "Saving…" : isCreate && !creativeId ? "Create Brief" : "Save Brief"}
+              {briefSaving ? "Saving…" : isCreate && !creativeId ? "Create Post" : "Update"}
             </button>
           </>
         ) : (
@@ -972,16 +1025,27 @@ export function CreativeModal(props: CreativeModalProps) {
             <div className="frow">
               <div className="field">
                 <label htmlFor="nbDate">Publish Date</label>
-                <input
-                  id="nbDate"
-                  className="bin one"
-                  type="date"
-                  value={date}
-                  onChange={(e) => {
-                    setDate(e.target.value);
-                    if (dateError) setDateError(null);
-                  }}
-                />
+                <div style={{ display: "flex", gap: 6 }}>
+                  <input
+                    id="nbDate"
+                    className="bin one"
+                    type="date"
+                    value={date}
+                    onChange={(e) => {
+                      setDate(e.target.value);
+                      if (dateError) setDateError(null);
+                    }}
+                  />
+                  <DateTimePicker
+                    date={date}
+                    time={time}
+                    onChangeDate={(v) => {
+                      setDate(v);
+                      if (dateError) setDateError(null);
+                    }}
+                    onChangeTime={setTime}
+                  />
+                </div>
                 {dateError && <p className="autherr">{dateError}</p>}
               </div>
               <div className="field">
@@ -1122,19 +1186,41 @@ export function CreativeModal(props: CreativeModalProps) {
                 </div>
               )}
 
+              <input
+                ref={inputRef}
+                type="file"
+                accept={ACCEPTED_FILE_EXTENSIONS}
+                style={{ display: "none" }}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) pickFile(f);
+                  e.target.value = "";
+                }}
+              />
               {!isViewingLatestCreative ? (
                 <CreativeVersionPreview
                   version={creativeVersions.find((v) => v.version_no === viewingCreativeVersionNo)!}
                 />
-              ) : (
+              ) : creativeVersions.length > 0 && !file ? (
                 <>
-                  {creativeVersions.length > 0 && !file && (
-                    <p className="sub" style={{ marginBottom: 8 }}>
-                      Current: {creativeVersions[0].asset?.filename ?? "—"} · uploaded{" "}
-                      {new Date(creativeVersions[0].created_at).toLocaleDateString()}. Drop a file below to
-                      replace it with a new version.
+                  <CreativeVersionPreview version={creativeVersions[0]} />
+                  <div style={{ marginTop: 10 }}>
+                    <button
+                      type="button"
+                      className="btn sm"
+                      onClick={() => inputRef.current?.click()}
+                    >
+                      Upload New Version
+                    </button>
+                  </div>
+                  {creativeSaveNote && (
+                    <p className="bsaved" style={{ marginTop: 10 }}>
+                      {creativeSaveNote}
                     </p>
                   )}
+                </>
+              ) : (
+                <>
                   <div
                     className={`drop${dragActive ? " over" : ""}${file ? " has-file" : ""}`}
                     onDragOver={(e) => {
@@ -1150,17 +1236,6 @@ export function CreativeModal(props: CreativeModalProps) {
                     }}
                     onClick={() => inputRef.current?.click()}
                   >
-                    <input
-                      ref={inputRef}
-                      type="file"
-                      accept={ACCEPTED_FILE_EXTENSIONS}
-                      style={{ display: "none" }}
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) pickFile(f);
-                        e.target.value = "";
-                      }}
-                    />
                     <svg viewBox="0 0 24 24">
                       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                       <path d="M7 10l5-5 5 5" />

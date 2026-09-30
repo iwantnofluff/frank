@@ -27,7 +27,7 @@ test("client workspace — project row creative stats", async ({ page, frank }) 
   const row = page.locator(".crow:not(.head)").first();
   // Fixture seeds exactly one project and one stage-3 (review-band)
   // creative on it: waiting on the client's own approval.
-  await expect(row.locator(".kbadge.sch")).toHaveText("Scheduled");
+  await expect(row.locator(".kbadge.sch")).toHaveText("Content Planner");
   const stageCounts = row.locator(".stagecount");
   await expect(stageCounts.nth(0)).toHaveText("0"); // Concept
   await expect(stageCounts.nth(1)).toHaveText("0"); // Internal Review

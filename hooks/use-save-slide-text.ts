@@ -17,7 +17,11 @@ export function useSaveSlideText(creativeId: string) {
       latest,
     }: {
       slideText: string[];
-      latest: CopyVersionRow | null;
+      // Only version_no/fields are ever read below — a Pick rather than
+      // the full row, so a caller that's tracking a just-created version
+      // locally (no real CopyVersionRow to hand back yet) can pass one
+      // without fabricating id/source/created_at it doesn't have.
+      latest: Pick<CopyVersionRow, "version_no" | "fields"> | null;
     }) => {
       const supabase = createClient();
       const {

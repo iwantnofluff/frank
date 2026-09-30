@@ -10,10 +10,10 @@ test("creates a scheduled creative end to end", async ({ page, frank }) => {
   await page.goto(`/projects/${frank.projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
 
-  await page.click('button:has-text("New Brief")');
+  await page.click('button:has-text("New Post")');
   await page.fill("#nbName", "New Brief E2E — Scheduled");
   await page.fill("#nbDate", "2027-04-01");
-  await page.click('button:has-text("Create Brief")');
+  await page.click('button:has-text("Create Post")');
 
   // CreativeModal stays open on success rather than closing — creating the
   // brief unlocks the Content tab in the same window (the merge that
@@ -31,14 +31,14 @@ test("creates a continuous creative end to end", async ({ page, frank }) => {
   await page.goto(`/projects/${continuousProjectId}`);
   await page.waitForSelector(".tblwrap, .empty");
 
-  await page.click('button:has-text("New Brief")');
+  await page.click('button:has-text("New Post")');
   await page.fill("#nbName", "New Brief E2E — Continuous");
   await page.fill("#nbDest", "https://example.com/listing");
   // due_on is optional at the schema/form level, but ContinuousCalendarTable
   // (like ProjectCalendarTable's own scheduled_at) only shows a creative
   // that has one — fill it so this brief actually appears afterward.
   await page.fill("#nbDue", "2027-04-01");
-  await page.click('button:has-text("Create Brief")');
+  await page.click('button:has-text("Create Post")');
 
   await expect(page.getByRole("tab", { name: "Content" })).toBeEnabled();
   await page.click('button:has-text("Cancel")');
@@ -51,9 +51,9 @@ test("missing publish date is caught before submit, not by the DB trigger", asyn
   await page.goto(`/projects/${frank.projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
 
-  await page.click('button:has-text("New Brief")');
+  await page.click('button:has-text("New Post")');
   await page.fill("#nbName", "Should Not Be Created");
-  await page.click('button:has-text("Create Brief")');
+  await page.click('button:has-text("Create Post")');
 
   // Field-level error, modal still open — the scheduled_at trigger never
   // gets a chance to be the thing the user meets.
@@ -67,5 +67,5 @@ test("a real client-role session has no New Brief entry point", async ({ page, f
   await page.goto(`/projects/${frank.projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
 
-  await expect(page.locator('button:has-text("New Brief")')).toHaveCount(0);
+  await expect(page.locator('button:has-text("New Post")')).toHaveCount(0);
 });

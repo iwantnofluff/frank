@@ -246,7 +246,8 @@ export default function CreativeReviewPage({
             <button
               type="button"
               className="tool"
-              title="Share for review"
+              title={creative.stage === 3 ? "Share for review" : "Only available in Client Review"}
+              disabled={creative.stage !== 3}
               onClick={() => setShareOpen(true)}
             >
               <svg viewBox="0 0 24 24">
@@ -256,7 +257,7 @@ export default function CreativeReviewPage({
                 <path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" />
               </svg>
             </button>
-            {isStaff && activeCreativeVersion && (
+            {isStaff && (
               <>
                 <span className="toolsep" />
                 <button

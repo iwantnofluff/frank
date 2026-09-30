@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useCreatives, type CreativeListRow } from "@/hooks/use-creatives";
 import { FeedTileArt, EmptyTileArt } from "@/components/creative-review/FeedTileArt";
 import { FeedCaptionPopover } from "@/components/creative-review/FeedCaptionPopover";
@@ -34,7 +34,10 @@ export function FeedPreviewGrid({
   brandName: string;
   onSelect: (creativeId: string) => void;
 }) {
-  const { data: creatives, isLoading } = useCreatives(projectId);
+  const { data: allCreatives, isLoading } = useCreatives(projectId);
+  // Deleted (archived_at) posts never show here — useCreatives now
+  // returns them too, for the project page's own Active/Archived toggle.
+  const creatives = useMemo(() => (allCreatives ?? []).filter((c) => !c.archived_at), [allCreatives]);
 
   // Same hover-preview pattern as ProjectCalendarTable's own creative
   // rows: a short delay before showing (so a pointer passing over several
@@ -103,7 +106,7 @@ export function FeedPreviewGrid({
         </div>
       ) : (
         <div className="feedgrid">
-          {(creatives ?? []).map((c) => {
+          {creatives.map((c) => {
             const timeLabel = c.scheduled_at
               ? new Date(c.scheduled_at).toLocaleDateString(undefined, {
                   month: "short",
@@ -129,7 +132,7 @@ export function FeedPreviewGrid({
               space, per direct instruction. Never rendered when there are
               already 9+ real creatives; overflow scrolls instead. */}
           {Array.from({
-            length: Math.max(0, GRID_SLOTS - (creatives?.length ?? 0)),
+            length: Math.max(0, GRID_SLOTS - creatives.length),
           }).map((_, i) => (
             <div key={`empty-${i}`} className="feedgrid-tile-empty">
               <EmptyTileArt />

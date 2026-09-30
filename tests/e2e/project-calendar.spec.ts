@@ -13,7 +13,7 @@ test("project calendar", async ({ page, frank }) => {
   // this wait the screenshot races ahead and can land on that hidden
   // state under worker concurrency, same shape as the dashboard's stat
   // cards needing their own explicit wait.
-  await page.waitForSelector('button:has-text("New Brief")');
+  await page.waitForSelector('button:has-text("New Post")');
   await expect(page).toHaveScreenshot("project-calendar.png");
 });
 
@@ -22,10 +22,10 @@ test("project calendar — jumps to the month of a newly created brief", async (
   await page.goto(`/projects/${frank.projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
 
-  await page.click('button:has-text("New Brief")');
+  await page.click('button:has-text("New Post")');
   await page.fill("#nbName", "Calendar Jump E2E");
   await page.fill("#nbDate", "2027-06-10");
-  await page.click('button:has-text("Create Brief")');
+  await page.click('button:has-text("Create Post")');
 
   await expect(page.locator(".calmonth")).toHaveText("June 2027");
   await expect(page.locator(".pname", { hasText: "Calendar Jump E2E" })).toBeVisible();

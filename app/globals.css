@@ -753,6 +753,45 @@ body.lightrail .avatar {
 .crow.head:hover {
   background: var(--canvas);
 }
+/* Folder section divider — a full-width band inside the same .clients
+   list, same idea as the calendar tables' own .wkband week divider. Not
+   built on .crow's own grid-template-columns since it has nothing to
+   align into that grid; a plain flex row instead. */
+.crow.folder-band {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--canvas);
+  cursor: pointer;
+}
+.crow.folder-band:hover {
+  background: var(--canvas);
+}
+.crow.folder-band .chev {
+  width: 14px;
+  height: 14px;
+  stroke: var(--muted);
+  fill: none;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.15s;
+  flex-shrink: 0;
+}
+.crow.folder-band.open .chev {
+  transform: rotate(90deg);
+}
+.crow.folder-band b {
+  font-size: 13px;
+  font-weight: 600;
+}
+.crow.folder-band .count {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.crow.folder-band .grow {
+  flex: 1;
+}
 .cname {
   display: flex;
   align-items: center;
@@ -1207,38 +1246,72 @@ body.lightrail .avatar {
 }
 
 /* Sticky Week/Date/Day columns — left offset is set inline per column
-   (widths are fixed constants, see ProjectCalendarTable's FROZEN_COLUMNS). */
+   (widths are fixed constants, see ProjectCalendarTable's FROZEN_COLUMNS).
+   .skchk is the staff-only checkbox column, sticky ahead of all three
+   when shown (ProjectCalendarTable's/ContinuousCalendarTable's own
+   CHECKBOX_COL_WIDTH) — same sticky treatment, grouped in throughout. */
 .tbl td.sk1,
 .tbl td.sk2,
-.tbl td.sk3 {
+.tbl td.sk3,
+.tbl td.skchk {
   position: sticky;
   z-index: 2;
   background: var(--surface);
 }
 .tbl tr.done td.sk1,
 .tbl tr.done td.sk2,
-.tbl tr.done td.sk3 {
+.tbl tr.done td.sk3,
+.tbl tr.done td.skchk {
   background: #f4f8f5;
 }
 .tbl tbody tr[data-row]:hover td.sk1,
 .tbl tbody tr[data-row]:hover td.sk2,
-.tbl tbody tr[data-row]:hover td.sk3 {
+.tbl tbody tr[data-row]:hover td.sk3,
+.tbl tbody tr[data-row]:hover td.skchk {
   background: #f7f9fb;
 }
 .tbl tbody tr[data-row].done:hover td.sk1,
 .tbl tbody tr[data-row].done:hover td.sk2,
-.tbl tbody tr[data-row].done:hover td.sk3 {
+.tbl tbody tr[data-row].done:hover td.sk3,
+.tbl tbody tr[data-row].done:hover td.skchk {
   background: #edf4ef;
 }
 .tbl th.sk1,
 .tbl th.sk2,
-.tbl th.sk3 {
+.tbl th.sk3,
+.tbl th.skchk {
   position: sticky;
   z-index: 4;
   background: #2c3039;
 }
 .tbl tr.istoday td.sk1 {
   box-shadow: inset 3px 0 0 var(--action);
+}
+.tbl td.skchk,
+.tbl th.skchk {
+  text-align: center;
+  cursor: default;
+}
+/* Nudged down a few px — a native checkbox's own rendered box sits
+   slightly above where a text cell's own glyphs start, even with the
+   same vertical-align/padding as every other cell. */
+.tbl td.skchk input[type="checkbox"] {
+  margin-top: 3px;
+}
+
+/* Bulk-select action bar — appears above the table once 1+ checkboxes
+   are ticked (staff only), same shape as .note. */
+.selectionbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--action-soft);
+  border: 1px solid #c5d2ff;
+  border-radius: var(--r);
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: #1e3a8a;
 }
 
 /* View tabs ("Main Table") — cosmetic only, no multi-view management. */
@@ -1463,6 +1536,118 @@ body.lightrail .avatar {
   border-radius: 0;
   margin-bottom: 4px;
   padding-bottom: 10px;
+}
+
+/* DateTimePicker — a calendar-icon button beside the existing native
+   date/time inputs that opens a .colpop-shell month calendar, ported from
+   the reference picker, as an additional way to set the same two values
+   rather than replacing those inputs. */
+.dtp-icon {
+  border-color: var(--line-2);
+}
+.dtp-pop {
+  width: 300px;
+  padding: 12px;
+}
+.dtp-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.dtp-input {
+  flex: 1;
+  min-width: 0;
+}
+.dtp-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.dtp-nav select {
+  border: 1px solid var(--line-2);
+  border-radius: 5px;
+  padding: 5px 6px;
+  font-size: 13px;
+  background: var(--surface);
+  /* The global `select` rule's own appearance:none — combined with its
+     custom chevron background-image — inflates this element's intrinsic
+     "auto" width to well past its actual option text (confirmed directly:
+     ~182px for a 4-digit year), which starves the month select's own
+     flex:1 down to almost nothing. Explicit widths sidestep that quirk
+     rather than fight flexbox's auto-sizing to explain it. */
+  flex: 0 0 auto;
+}
+.dtp-nav select:first-child {
+  flex: 1 1 0;
+  min-width: 90px;
+}
+.dtp-nav select:last-of-type {
+  width: 72px;
+}
+.dtp-nav-arrows {
+  display: flex;
+  gap: 2px;
+}
+.dtp-nav-arrows button {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+  color: var(--muted);
+}
+.dtp-nav-arrows button:hover {
+  background: var(--canvas);
+  color: var(--ink);
+}
+.dtp-nav-arrows svg {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.dtp-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.dtp-dow {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 4px 0;
+}
+.dtp-day {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 13px;
+  color: var(--ink);
+}
+.dtp-day:hover {
+  background: var(--canvas);
+}
+.dtp-day.out {
+  color: var(--muted);
+  opacity: 0.5;
+}
+.dtp-day.today {
+  font-weight: 700;
+  color: var(--action);
+}
+.dtp-day.selected {
+  background: var(--ink);
+  color: #fff;
+}
+.dtp-day.selected.today {
+  color: #fff;
 }
 .cbx {
   width: 17px;
@@ -3699,6 +3884,13 @@ textarea.cxin {
    different tile. */
 .pktile.locked {
   cursor: default;
+}
+/* A piece below Client Review, under scope "pick" — greyed out and
+   unclickable rather than just non-interactive, since this is telling
+   staff why it can't be picked (matches .tool:disabled's own opacity). */
+.pktile.ineligible {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 .pktile-check {
   position: absolute;

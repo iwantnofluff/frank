@@ -57,21 +57,22 @@ test("a real client-role session has no entry point and cannot advance a creativ
   await clientSession.auth.signOut();
 });
 
-test("ShareModal's eligibility warning clears once a creative moves to Client Review", async ({ page, frank }) => {
+test("Share for review becomes enabled once a creative moves to Client Review", async ({ page, frank }) => {
   const creativeId = await frank.createCreativeAtStage(1);
   await frank.loginAsStaff(page);
   await page.goto(`/creatives/${creativeId}`);
   await page.waitForSelector(".stage-h");
 
-  await page.click('button[title="Share for review"]');
-  await page.click('button[role="radio"]:has-text("Current Post")');
-  await expect(page.locator(".note.warn")).toContainText("This link will show nothing yet");
-  await page.click('.modal-h button[title="Close"]');
+  await expect(page.locator('button[title="Only available in Client Review"]')).toBeDisabled();
 
   await page.click('.stagesw button:has-text("Client Review")');
   await expect(page.locator('.stagesw button[aria-pressed="true"]')).toHaveText("Client Review");
 
-  await page.click('button[title="Share for review"]');
+  // Reactive, not just correct after a reload — advancing the stage
+  // pill alone flips the button, still on the same page.
+  const shareButton = page.locator('button[title="Share for review"]');
+  await expect(shareButton).toBeEnabled();
+  await shareButton.click();
   await page.click('button[role="radio"]:has-text("Current Post")');
   await expect(page.locator(".note.warn")).toHaveCount(0);
 });

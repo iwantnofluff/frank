@@ -5,6 +5,8 @@ import { useViewportFit } from "@/hooks/use-viewport-fit";
 import { useRouter } from "next/navigation";
 import type { CreativeListRow } from "@/hooks/use-creatives";
 import type { CustomColumnRow } from "@/hooks/use-custom-columns";
+import { useArchiveCreatives } from "@/hooks/use-archive-creatives";
+import { useDeleteCreativesPermanently } from "@/hooks/use-delete-creatives-permanently";
 import { CxCell } from "@/components/project/CxCell";
 import { ProjectCalendarGrid } from "@/components/project/ProjectCalendarGrid";
 import { ColumnsPopover, type ToggleableColumn } from "@/components/project/ColumnsPopover";
@@ -12,6 +14,7 @@ import { CreativePreviewPopover } from "@/components/project/CreativePreviewPopo
 import { CopyVersionHistoryPopover } from "@/components/project/CopyVersionHistoryPopover";
 import { FullTextPopover } from "@/components/project/FullTextPopover";
 import { SaveViewModal } from "@/components/project/SaveViewModal";
+import { PermanentDeleteConfirm } from "@/components/project/PermanentDeleteConfirm";
 import { bandOf, stageLabel, stageColor, exceptionLabel, type Band } from "@/lib/stage-labels";
 import { errorMessage } from "@/lib/errors";
 import { formatById } from "@/lib/formats";
@@ -53,6 +56,12 @@ const FROZEN_COLUMNS = [
   { key: "date", label: "Date", sub: "Of post", width: 92, stickyClass: "sk2", left: 66 },
   { key: "day", label: "Day", sub: "Of week", width: 64, stickyClass: "sk3", left: 158 },
 ] as const;
+
+// Staff-only checkbox column, sticky ahead of Week/Date/Day when shown —
+// not one of FROZEN_COLUMNS: it's a selection affordance, not a data
+// column, so it's excluded from the Columns picker's counts and rendered
+// by hand rather than through the `columns` array below.
+const CHECKBOX_COL_WIDTH = 36;
 
 // Matches the real content-planner template used on live client work
 // (Hapi Dental's Sep '26 planner, not frank-prototype.html's fictional
@@ -118,16 +127,24 @@ function sameWidths(a: Record<string, number>, b: Record<string, number>): boole
 // selector), no saved/named views, no column drag-reorder or resize, no
 // inline cell editing — see docs/parity-gaps.md.
 export function ProjectCalendarTable({
+  projectId,
   projectName,
   creatives,
+  archiveMode,
   customColumns,
   onCxSave,
   cxReadOnly,
   isStaff,
   initialFocusDate,
 }: {
+  projectId: string;
   projectName: string;
   creatives: CreativeListRow[];
+  // Which half of the page's own Active/Archived toggle `creatives` was
+  // already filtered to — drives the checkbox bar's label and which way
+  // the archive mutation writes (delete vs. restore), same rows either
+  // way.
+  archiveMode: "active" | "archived";
   customColumns: CustomColumnRow[];
   onCxSave: (creativeId: string, key: string, value: string | number | boolean | null) => void;
   cxReadOnly: boolean;
@@ -143,6 +160,43 @@ export function ProjectCalendarTable({
   const [anchor, setAnchor] = useState(() => (initialFocusDate ? new Date(initialFocusDate) : today));
   const [viewMode, setViewMode] = useState<ViewMode>("month");
   const [statusFilter, setStatusFilter] = useState<"all" | Band>("all");
+
+  // Checkbox multi-select — table views only (Week/Month), not the
+  // Calendar grid. Cleared whenever the underlying row set changes (the
+  // page's own Active/Archived toggle, or a successful archive/restore),
+  // so a stale selection never lingers pointing at rows no longer shown.
+  // Adjusted during render rather than in an effect (react.dev, "Adjusting
+  // some state when a prop changes") — an effect here would set state one
+  // render late, briefly showing the stale selection against new rows.
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [prevCreatives, setPrevCreatives] = useState(creatives);
+  if (prevCreatives !== creatives) {
+    setPrevCreatives(creatives);
+    setSelected(new Set());
+  }
+  const archiveCreatives = useArchiveCreatives(projectId);
+  function toggleSelected(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+  async function handleBulkArchive() {
+    await archiveCreatives.mutateAsync({
+      creativeIds: Array.from(selected),
+      archived: archiveMode === "active",
+    });
+    setSelected(new Set());
+  }
+  const deleteCreatives = useDeleteCreativesPermanently(projectId);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  async function handlePermanentDelete() {
+    await deleteCreatives.mutateAsync(Array.from(selected));
+    setConfirmDeleteOpen(false);
+    setSelected(new Set());
+  }
 
   // No entry for a key means "visible" everywhere this is read (`!== false`)
   // — a new custom column needs no sync effect to default it to shown.
@@ -430,6 +484,14 @@ export function ProjectCalendarTable({
   }, [filtered, anchor, viewMode]);
 
   const totalShown = weeks.reduce((n, w) => n + w.items.length, 0);
+  const allVisibleIds = useMemo(
+    () => weeks.flatMap((w) => w.items.map(({ c }) => c.id)),
+    [weeks],
+  );
+  const allVisibleSelected = allVisibleIds.length > 0 && allVisibleIds.every((id) => selected.has(id));
+  function toggleSelectAll() {
+    setSelected(allVisibleSelected ? new Set() : new Set(allVisibleIds));
+  }
 
   const toggleableColumns: ToggleableColumn[] = [
     ...TOGGLABLE_COLUMNS,
@@ -446,8 +508,12 @@ export function ProjectCalendarTable({
   const allColumnKeys = Object.keys(allColumnDefs);
   const resolvedOrder = resolveOrder(columnOrder, allColumnKeys);
   const visibleOrderedKeys = resolvedOrder.filter((k) => columnVisibility[k] !== false);
+  // Frozen columns' left offsets shift right by the checkbox column's own
+  // width whenever it's shown, so both keep sitting flush against each
+  // other rather than the checkbox overlapping Week.
+  const skOffset = isStaff ? CHECKBOX_COL_WIDTH : 0;
   const columns = [
-    ...FROZEN_COLUMNS.map((c) => ({ ...c, draggable: false })),
+    ...FROZEN_COLUMNS.map((c) => ({ ...c, draggable: false, left: c.left + skOffset })),
     ...visibleOrderedKeys.map((key) => ({
       key,
       label: allColumnDefs[key].label,
@@ -458,7 +524,7 @@ export function ProjectCalendarTable({
       draggable: true,
     })),
   ];
-  const tableWidth = columns.reduce((sum, c) => sum + c.width, 0);
+  const tableWidth = columns.reduce((sum, c) => sum + c.width, 0) + skOffset;
   const visibleColumnCount = FROZEN_COLUMNS.length + visibleOrderedKeys.length;
   const totalColumnCount = FROZEN_COLUMNS.length + allColumnKeys.length;
   const customColumnByKey = new Map(customColumns.map((c) => [`cx:${c.id}`, c]));
@@ -616,13 +682,6 @@ export function ProjectCalendarTable({
           </button>
         </div>
         <div style={{ flex: 1 }} />
-        <span className="kbadge sch">
-          <svg viewBox="0 0 24 24">
-            <rect x="3" y="5" width="18" height="16" rx="2" />
-            <path d="M3 10h18M8 3v4M16 3v4" />
-          </svg>
-          Scheduled
-        </span>
         <select
           className="sort"
           value={statusFilter}
@@ -719,6 +778,49 @@ export function ProjectCalendarTable({
         )}
       </div>
 
+      {viewMode !== "calendar" && isStaff && selected.size > 0 && (
+        <div className="selectionbar">
+          <span>{selected.size} selected</span>
+          <div style={{ flex: 1 }} />
+          <button type="button" className="btn sm" onClick={() => setSelected(new Set())}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="btn sm"
+            disabled={archiveCreatives.isPending}
+            onClick={handleBulkArchive}
+          >
+            {archiveCreatives.isPending
+              ? archiveMode === "archived"
+                ? "Restoring…"
+                : "Archiving…"
+              : archiveMode === "archived"
+                ? "Restore"
+                : "Archive"}
+          </button>
+          <button
+            type="button"
+            className="btn sm danger"
+            onClick={() => setConfirmDeleteOpen(true)}
+          >
+            Permanently Delete
+          </button>
+        </div>
+      )}
+      {archiveCreatives.error && (
+        <p className="autherr">{errorMessage(archiveCreatives.error, "Couldn't update these posts")}</p>
+      )}
+      {confirmDeleteOpen && (
+        <PermanentDeleteConfirm
+          count={selected.size}
+          isPending={deleteCreatives.isPending}
+          error={deleteCreatives.error}
+          onConfirm={handlePermanentDelete}
+          onClose={() => setConfirmDeleteOpen(false)}
+        />
+      )}
+
       {viewMode === "calendar" ? (
         <ProjectCalendarGrid
           year={anchor.getFullYear()}
@@ -731,7 +833,7 @@ export function ProjectCalendarTable({
           <b>Nothing scheduled</b>
           <span>
             {!hasAnyScheduled
-              ? `Nothing scheduled in ${projectName} yet.${isStaff ? " Use New Brief to write the first one." : ""}`
+              ? `Nothing scheduled in ${projectName} yet.${isStaff ? " Use New Post to write the first one." : ""}`
               : `No posts match these filters in ${monthLabel}.`}
           </span>
         </div>
@@ -739,12 +841,23 @@ export function ProjectCalendarTable({
         <div className="tblwrap">
           <table className="tbl" style={{ width: tableWidth }}>
             <colgroup>
+              {isStaff && <col style={{ width: CHECKBOX_COL_WIDTH }} />}
               {columns.map((c) => (
                 <col key={c.key} style={{ width: c.width }} />
               ))}
             </colgroup>
             <thead>
               <tr>
+                {isStaff && (
+                  <th className="skchk" style={{ left: 0 }}>
+                    <input
+                      type="checkbox"
+                      aria-label="Select all"
+                      checked={allVisibleSelected}
+                      onChange={toggleSelectAll}
+                    />
+                  </th>
+                )}
                 {columns.map((c) => {
                   const classes = [
                     c.key === "clientFeedback" ? "feedback" : c.stickyClass,
@@ -780,7 +893,7 @@ export function ProjectCalendarTable({
                 <Fragment key={dateKey(days[0])}>
                   {viewMode === "month" && (
                     <tr className="wkband">
-                      <td colSpan={columns.length}>
+                      <td colSpan={columns.length + (isStaff ? 1 : 0)}>
                         <span className="bandin">
                           Week {isoWeekNumber(days[0])}
                           <span className="rng">
@@ -809,13 +922,23 @@ export function ProjectCalendarTable({
                         key={c.id}
                         onClick={() => router.push(`/creatives/${c.id}`)}
                       >
-                        <td className="sk1" style={{ left: 0 }}>
+                        {isStaff && (
+                          <td className="skchk" style={{ left: 0 }} onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              aria-label={`Select ${c.name}`}
+                              checked={selected.has(c.id)}
+                              onChange={() => toggleSelected(c.id)}
+                            />
+                          </td>
+                        )}
+                        <td className="sk1" style={{ left: skOffset }}>
                           {isoWeekNumber(dt)}
                         </td>
-                        <td className="sk2" style={{ left: 66 }}>
+                        <td className="sk2" style={{ left: 66 + skOffset }}>
                           {dt.getDate()} {MONTH_ABBR[dt.getMonth()]} {String(dt.getFullYear()).slice(2)}
                         </td>
-                        <td className="sk3" style={{ left: 158 }}>
+                        <td className="sk3" style={{ left: 158 + skOffset }}>
                           {DAY_ABBR[(dt.getDay() + 6) % 7]}
                         </td>
                         {visibleOrderedKeys.map((key) => {

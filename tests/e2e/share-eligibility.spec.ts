@@ -1,51 +1,51 @@
 import { test, expect } from "./fixtures";
 
-// ShareModal used to create a link silently, with no indication that
-// shared_link_allowed_creative_ids' stage >= 3 rule would exclude
-// everything it covers — the exact failure mode behind the "creatives
-// uploaded via the live site don't display" report (docs/parity-gaps.md).
-// This previews eligibility before the link exists, without blocking
-// creation.
+// Two gates on sharing a post still in Concept or Internal Review, both
+// direct instruction: the toolbar button itself only opens Share For
+// Review from a Client Review creative, and — since a project's other
+// posts can still be below Client Review even when the one you're
+// viewing isn't — "Multiple Posts" greys those out individually rather
+// than letting them be picked and only warning about it afterward.
+// resolveShareEligibility (lib/shared-link-eligibility.ts) still backs a
+// defensive warning for the one edge case that can still reach it: a
+// piece's stage regressing after it's already selected, while the modal
+// stays open.
 
-test("ShareModal warns when a scope resolves to zero eligible creatives", async ({ page, frank }) => {
+test("Share for review is disabled outside Client Review, and enabled once there", async ({ page, frank }) => {
   const internalCreativeId = await frank.createCreativeAtStage(1);
   await frank.loginAsStaff(page);
   await page.goto(`/creatives/${internalCreativeId}`);
-  await page.click('button[title="Share for review"]');
-  await page.click('button[role="radio"]:has-text("Current Post")');
 
-  const note = page.locator(".note.warn");
-  await expect(note).toContainText("This link will show nothing yet");
-  await expect(note).toContainText("Concept or Internal Review");
+  const shareButton = page.locator('button[title="Only available in Client Review"]');
+  await expect(shareButton).toBeDisabled();
 
-  // Not blocked — creating the link is still allowed.
-  await expect(page.locator('button:has-text("Create link")')).toBeEnabled();
+  await page.goto(`/creatives/${frank.creativeId}`); // fixture's own creative is stage 3
+  await expect(page.locator('button[title="Share for review"]')).toBeEnabled();
 });
 
-test("ShareModal reports a partial exclusion without blocking link creation", async ({ page, frank }) => {
+test("ShareModal's Multiple Posts grid greys out posts still below Client Review", async ({ page, frank }) => {
   await frank.createCreativeAtStage(1);
   await frank.loginAsStaff(page);
   await page.goto(`/creatives/${frank.creativeId}`); // fixture's own creative is stage 3, eligible
   await page.click('button[title="Share for review"]');
   await page.click('button[role="radio"]:has-text("Multiple Posts")');
-  // "Multiple Posts" starts with the current piece already ticked (see
-  // ShareModal's own toggleScope) — click the rest of the grid so this
-  // covers the whole project, same as the old "The whole project" scope.
-  // Tiles only become clickable once React re-renders with scope "pick"
-  // (they carry no `disabled` attribute while locked, just no onClick),
-  // so wait for that before clicking or the click silently no-ops.
-  const tiles = page.locator(".pktile");
-  await expect(tiles.first()).not.toHaveClass(/locked/);
-  const tileCount = await tiles.count();
-  for (let i = 0; i < tileCount; i++) {
-    const isSelected = await tiles.nth(i).evaluate((el) => el.classList.contains("selected"));
-    if (!isSelected) await tiles.nth(i).click();
-  }
 
-  const note = page.locator(".note").filter({ hasNotText: "Anyone with the link" });
-  await expect(note).toContainText("1 of 2 won't show on this link");
-  await expect(note).not.toHaveClass(/warn/);
+  const internalTile = page.locator(`.pktile[title="Move this post to Client Review to share it"]`);
+  await expect(internalTile).toHaveClass(/ineligible/);
+  await expect(internalTile).toBeDisabled();
 
+  // The eligible piece (the one being viewed, auto-picked by
+  // toggleScope) is selectable — confirms only the ineligible one is
+  // locked, not every tile the way scope "one" leaves them.
+  const eligibleTile = page.locator(".pktile.selected");
+  await expect(eligibleTile).not.toHaveClass(/locked|ineligible/);
+  // Genuinely not just visually dimmed — clicking it doesn't select it.
+  await internalTile.click({ force: true }).catch(() => {});
+  await expect(internalTile).not.toHaveClass(/selected/);
+
+  // The eligible piece already picked by default (the one being viewed)
+  // creates cleanly, with nothing to warn about.
+  await expect(page.locator(".note.warn")).toHaveCount(0);
   await page.click('button:has-text("Create link")');
   await expect(page.locator(".linkrow code")).toBeVisible();
 });

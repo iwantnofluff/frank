@@ -20,6 +20,7 @@ export interface CreativeListRow {
   due_on: string | null;
   published_at: string | null;
   cx: Record<string, string | number | boolean | null>;
+  archived_at: string | null;
   lead: { name: string } | null;
 }
 
@@ -33,13 +34,17 @@ export function useCreatives(projectId: string) {
       // — same reasoning as hooks/use-comments.ts's author resolution:
       // lead_user_id is nullable, and this avoids depending on an embedded
       // join's row-dropping behaviour for that case.
+      // Fetches archived creatives too, filtered client-side by the page —
+      // same shape as use-projects.ts, so a project's own Active/Archived
+      // toggle can offer them back rather than deleting being a one-way
+      // door. FeedPreviewGrid/ShareModal (the two other callers) filter
+      // archived ones back out themselves, same convention.
       const { data: rows, error } = await supabase
         .from("creatives")
         .select(
-          "id, name, format, stage, exception, lead_user_id, concept, reference_url, approach_notes, scheduled_at, platforms, destination, added_on, due_on, published_at, cx",
+          "id, name, format, stage, exception, lead_user_id, concept, reference_url, approach_notes, scheduled_at, platforms, destination, added_on, due_on, published_at, cx, archived_at",
         )
         .eq("project_id", projectId)
-        .is("archived_at", null)
         .order("position");
 
       if (error) throw error;

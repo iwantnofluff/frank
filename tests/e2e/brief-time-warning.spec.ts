@@ -58,8 +58,8 @@ test("New Brief shows a repeat-issue warning scoped to the format being chosen",
 
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${frank.projectId}`);
-  await page.waitForSelector('button:has-text("New Brief")');
-  await page.click('button:has-text("New Brief")');
+  await page.waitForSelector('button:has-text("New Post")');
+  await page.click('button:has-text("New Post")');
   await page.waitForSelector("#nbFmt");
 
   await page.selectOption("#nbCat", "Social — organic");
@@ -90,8 +90,8 @@ test("New Brief shows no warning for a client with fewer than two matching issue
 
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${frank.projectId}`);
-  await page.waitForSelector('button:has-text("New Brief")');
-  await page.click('button:has-text("New Brief")');
+  await page.waitForSelector('button:has-text("New Post")');
+  await page.click('button:has-text("New Post")');
   await page.waitForSelector("#nbFmt");
   await page.selectOption("#nbCat", "Social — organic");
   await page.selectOption("#nbFmt", "ig_story");

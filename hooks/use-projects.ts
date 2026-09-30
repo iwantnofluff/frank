@@ -11,6 +11,7 @@ export interface ProjectListRow {
   accent_colour: string | null;
   due_on: string | null;
   archived_at: string | null;
+  folder_id: string | null;
 }
 
 export function useProjects(clientId: string) {
@@ -24,7 +25,7 @@ export function useProjects(clientId: string) {
       // a one-way door with nothing to see or undo it.
       const { data, error } = await supabase
         .from("projects")
-        .select("id, name, type, delivery, accent_colour, due_on, archived_at")
+        .select("id, name, type, delivery, accent_colour, due_on, archived_at, folder_id")
         .eq("client_id", clientId)
         .order("position");
 

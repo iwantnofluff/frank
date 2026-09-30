@@ -43,6 +43,7 @@ function PieceTile({
   creative,
   selected,
   selectable,
+  ineligible,
   onToggle,
   onHoverEnter,
   onHoverLeave,
@@ -51,8 +52,14 @@ function PieceTile({
   selected: boolean;
   // False under scope "one" — the grid still shows every piece so the
   // current one's selection reads in context, but only "Multiple Posts"
-  // lets you click a different tile.
+  // lets you click a different tile. Also false, even under "Multiple
+  // Posts", for a piece still below Client Review — see `ineligible`.
   selectable: boolean;
+  // True only under scope "pick", for a piece below Client Review —
+  // greyed out rather than just non-interactive, since (unlike scope
+  // "one"'s every-tile lock) this is telling staff *why* it can't be
+  // picked, not just that picking isn't the current mode.
+  ineligible: boolean;
   onToggle: () => void;
   onHoverEnter: (creative: CreativeListRow, target: HTMLElement) => void;
   onHoverLeave: () => void;
@@ -66,8 +73,10 @@ function PieceTile({
   return (
     <button
       type="button"
-      className={`pktile${selected ? " selected" : ""}${!selectable ? " locked" : ""}${creative.published_at ? "" : " not-live"}`}
+      className={`pktile${selected ? " selected" : ""}${!selectable ? " locked" : ""}${ineligible ? " ineligible" : ""}${creative.published_at ? "" : " not-live"}`}
       aria-pressed={selected}
+      disabled={ineligible}
+      title={ineligible ? "Move this post to Client Review to share it" : undefined}
       onClick={selectable ? onToggle : undefined}
       onMouseEnter={(e) => onHoverEnter(creative, e.currentTarget)}
       onMouseLeave={onHoverLeave}
@@ -101,7 +110,10 @@ export function ShareModal({
   const [canApprove, setCanApprove] = useState(true);
   const [link, setLink] = useState<string | null>(null);
 
-  const { data: creatives } = useCreatives(projectId);
+  const { data: allCreatives } = useCreatives(projectId);
+  // Deleted (archived_at) posts are never shareable — useCreatives now
+  // returns them too, for the project page's own Active/Archived toggle.
+  const creatives = useMemo(() => (allCreatives ?? []).filter((c) => !c.archived_at), [allCreatives]);
   const createLink = useCreateSharedLink();
 
   // Same hover-preview pattern as ProjectCalendarTable's own creative rows
@@ -157,7 +169,7 @@ export function ShareModal({
   // ahead of the work being ready.
   const eligibility = useMemo(
     () =>
-      resolveShareEligibility(creatives ?? [], scope, {
+      resolveShareEligibility(creatives, scope, {
         currentCreativeId,
         pickedIds: Array.from(picked),
       }),
@@ -319,12 +331,13 @@ export function ShareModal({
               </div>
             </div>
             <div className="pkgrid">
-              {creatives?.map((c) => (
+              {creatives.map((c) => (
                 <PieceTile
                   key={c.id}
                   creative={c}
                   selected={selectedIds.has(c.id)}
-                  selectable={scope === "pick"}
+                  selectable={scope === "pick" && c.stage >= 3}
+                  ineligible={scope === "pick" && c.stage < 3}
                   onToggle={() => togglePiece(c.id)}
                   onHoverEnter={handleHoverEnter}
                   onHoverLeave={scheduleHoverHide}
@@ -333,7 +346,7 @@ export function ShareModal({
               {/* Pad up to a fixed 9 slots, matching Feed Preview — real
                   empty tiles, not just blank space. */}
               {Array.from({
-                length: Math.max(0, GRID_SLOTS - (creatives?.length ?? 0)),
+                length: Math.max(0, GRID_SLOTS - creatives.length),
               }).map((_, i) => (
                 <div key={`empty-${i}`} className="pktile-empty">
                   <EmptyTileArt />

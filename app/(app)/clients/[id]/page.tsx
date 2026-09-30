@@ -8,13 +8,16 @@ import { useArchiveProject } from "@/hooks/use-archive-project";
 import { useProjectCreativeStats } from "@/hooks/use-project-creative-stats";
 import { useIsStaff } from "@/hooks/use-is-staff";
 import { useUIStore } from "@/store/ui-store";
+import { useProjectFolders, type ProjectFolderRow } from "@/hooks/use-project-folders";
+import { useDeleteProjectFolder } from "@/hooks/use-delete-project-folder";
 import { KBadge } from "@/components/project/KBadge";
 import { NewProjectModal } from "@/components/project/NewProjectModal";
 import { RenameProjectModal } from "@/components/project/RenameProjectModal";
+import { FolderModal } from "@/components/project/FolderModal";
+import { MoveToFolderModal } from "@/components/project/MoveToFolderModal";
 import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
 import { SearchIcon } from "@/components/app-shell/icons";
 
-type Filter = "all" | "review" | "done";
 type ArchiveFilter = "active" | "archived";
 type Sort = "due" | "name" | "pending";
 
@@ -67,13 +70,27 @@ export default function ClientWorkspacePage({
   const { isStaff, isPending: isStaffPending } = useIsStaff();
   const previewMode = useUIStore((s) => s.previewMode);
   const archiveProject = useArchiveProject();
+  const { data: folders } = useProjectFolders(id);
+  const deleteFolder = useDeleteProjectFolder();
 
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<Filter>("all");
   const [archiveFilter, setArchiveFilter] = useState<ArchiveFilter>("active");
   const [sort, setSort] = useState<Sort>("due");
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [renameProjectTarget, setRenameProjectTarget] = useState<ProjectListRow | null>(null);
+  const [folderModal, setFolderModal] = useState<
+    { mode: "create" } | { mode: "rename"; folder: ProjectFolderRow } | null
+  >(null);
+  const [moveTarget, setMoveTarget] = useState<ProjectListRow | null>(null);
+  const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
+  function toggleFolderCollapsed(folderId: string) {
+    setCollapsedFolders((prev) => {
+      const next = new Set(prev);
+      if (next.has(folderId)) next.delete(folderId);
+      else next.add(folderId);
+      return next;
+    });
+  }
 
   // Fails closed like every other isStaff gate in this app: hidden while
   // still resolving, not shown by default.
@@ -98,12 +115,9 @@ export default function ClientWorkspacePage({
     const q = query.trim().toLowerCase();
     let list = projects.filter((p) => {
       const matchesArchive = archiveFilter === "active" ? !p.archived_at : !!p.archived_at;
-      const pend = pendingFor(p);
-      const matchesFilter =
-        filter === "all" ? true : filter === "review" ? pend > 0 : pend === 0;
       const matchesQuery =
         !q || (p.name + " " + (p.type ?? "")).toLowerCase().includes(q);
-      return matchesArchive && matchesFilter && matchesQuery;
+      return matchesArchive && matchesQuery;
     });
     list = [...list].sort((a, b) => {
       if (sort === "name") return a.name.localeCompare(b.name);
@@ -117,26 +131,79 @@ export default function ClientWorkspacePage({
     });
     return list;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projects, query, filter, archiveFilter, sort, projectStats]);
+  }, [projects, query, archiveFilter, sort, projectStats]);
 
-  // "Campaigns" heading stat: the prototype's own projStats() counts
-  // distinct campaign tags on each schedule/work item, a concept this
-  // schema has no column for (see docs/parity-gaps.md). Distinct project
-  // `type` among this client's active projects is the closest real,
-  // schema-backed stand-in rather than a fabricated column — an
-  // approximation, not the same metric, flagged as such there.
-  const campaignCount = useMemo(() => {
-    return new Set(activeProjects.map((p) => p.type).filter((t): t is string => !!t)).size;
-  }, [activeProjects]);
+  // Unfiled projects show in the flat list above the folders, per direct
+  // instruction — folders are an organisational layer on top of the same
+  // filtered/sorted list, not a separate one.
+  const unfiled = useMemo(() => filtered.filter((p) => !p.folder_id), [filtered]);
 
-  const waitingOnClient = useMemo(() => {
+  function renderProjectRow(p: ProjectListRow) {
+    const s = projectStats?.[p.id];
+    return (
+      <Link
+        href={`/projects/${p.id}`}
+        className="crow"
+        style={{ gridTemplateColumns: PROJECT_ROW_COLUMNS }}
+        key={p.id}
+      >
+        <div className="cname">
+          <div className="logo" style={{ background: p.accent_colour || "#6B7280" }}>
+            {projectInitials(p.name)}
+          </div>
+          <div className="t">
+            <b>{p.name}</b>
+            <span className="sub">
+              <KBadge delivery={p.delivery} />
+              <span>{p.type || "—"}</span>
+            </span>
+          </div>
+        </div>
+        <div className="stagecount ago">{statsPending ? "…" : (s?.byStage[0] ?? 0)}</div>
+        <div className="stagecount ago">{statsPending ? "…" : (s?.byStage[1] ?? 0)}</div>
+        <div className="stagecount ago">{statsPending ? "…" : (s?.byStage[2] ?? 0)}</div>
+        <div className="ago">{formatDate(s?.latestApprovedAt ?? null)}</div>
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          {confirmedStaff && (
+            <RowActionsMenu
+              title="Project options"
+              items={[
+                { label: "Rename", onClick: () => setRenameProjectTarget(p) },
+                { label: "Move to folder", onClick: () => setMoveTarget(p) },
+                {
+                  label: p.archived_at ? "Unarchive" : "Archive",
+                  onClick: () =>
+                    archiveProject.mutate({
+                      projectId: p.id,
+                      clientId: id,
+                      archived: !p.archived_at,
+                    }),
+                },
+              ]}
+            />
+          )}
+        </div>
+      </Link>
+    );
+  }
+
+  // Same three stage buckets the table's own Concept/Internal Review/
+  // Client Review columns show per project (byStage[0..2]), just summed
+  // across every active project instead — real, schema-backed counts,
+  // not an approximation like the "Campaigns" stat this replaced.
+  const conceptCount = useMemo(() => {
     if (!projectStats) return 0;
-    return Object.values(projectStats).reduce((n, s) => n + s.waitingOnApproval, 0);
+    return Object.values(projectStats).reduce((n, s) => n + s.byStage[0], 0);
   }, [projectStats]);
 
-  const approvedCount = useMemo(() => {
+  const internalReviewCount = useMemo(() => {
     if (!projectStats) return 0;
-    return Object.values(projectStats).reduce((n, s) => n + s.done, 0);
+    return Object.values(projectStats).reduce((n, s) => n + s.byStage[1], 0);
+  }, [projectStats]);
+
+  const clientReviewCount = useMemo(() => {
+    if (!projectStats) return 0;
+    return Object.values(projectStats).reduce((n, s) => n + s.byStage[2], 0);
   }, [projectStats]);
 
   if (clientError) {
@@ -165,20 +232,16 @@ export default function ClientWorkspacePage({
           <div className="l">Live Projects</div>
         </div>
         <div className="stat">
-          <div className="n">{campaignCount}</div>
-          <div className="l">Campaigns</div>
+          <div className="n">{statsPending ? "…" : conceptCount}</div>
+          <div className="l">Concepts</div>
         </div>
         <div className="stat">
-          <div className={`n${statsPending ? "" : " flag"}`}>
-            {statsPending ? "…" : waitingOnClient}
-          </div>
-          <div className="l">
-            {previewMode === "client" ? "Waiting on You" : "Waiting on Client"}
-          </div>
+          <div className="n">{statsPending ? "…" : internalReviewCount}</div>
+          <div className="l">Internal Review</div>
         </div>
         <div className="stat">
-          <div className="n">{statsPending ? "…" : approvedCount}</div>
-          <div className="l">Approved</div>
+          <div className="n">{statsPending ? "…" : clientReviewCount}</div>
+          <div className="l">Client Review</div>
         </div>
       </div>
 
@@ -214,30 +277,6 @@ export default function ClientWorkspacePage({
             Archived
           </button>
           <span className="toolsep" />
-          <button
-            className="chip"
-            aria-pressed={filter === "all"}
-            onClick={() => setFilter("all")}
-            type="button"
-          >
-            All
-          </button>
-          <button
-            className="chip"
-            aria-pressed={filter === "review"}
-            onClick={() => setFilter("review")}
-            type="button"
-          >
-            Needs Review
-          </button>
-          <button
-            className="chip"
-            aria-pressed={filter === "done"}
-            onClick={() => setFilter("done")}
-            type="button"
-          >
-            Approved
-          </button>
           <select
             className="sort"
             value={sort}
@@ -247,6 +286,15 @@ export default function ClientWorkspacePage({
             <option value="name">Name A–Z</option>
             <option value="pending">Most Pending</option>
           </select>
+          {confirmedStaff && (
+            <button
+              className="btn sm"
+              type="button"
+              onClick={() => setFolderModal({ mode: "create" })}
+            >
+              Add Folder
+            </button>
+          )}
           {confirmedStaff && (
             <button
               className="btn sm"
@@ -309,67 +357,48 @@ export default function ClientWorkspacePage({
       {!projectsError && filtered.length > 0 && (
         <div className="clients">
           <div className="crow head" style={{ gridTemplateColumns: PROJECT_ROW_COLUMNS }}>
-            <div>Project</div>
+            <div style={{ fontSize: 13 }}>Project</div>
             <div className="ago">Concept</div>
             <div className="ago">Internal Review</div>
             <div className="ago">Client Review</div>
             <div className="ago">Latest Approved</div>
             <div></div>
           </div>
-          {filtered.map((p) => {
-            const s = projectStats?.[p.id];
+          {unfiled.map((p) => renderProjectRow(p))}
+          {(folders ?? []).map((f) => {
+            const folderProjects = filtered.filter((p) => p.folder_id === f.id);
+            const isOpen = !collapsedFolders.has(f.id);
             return (
-              <Link
-                href={`/projects/${p.id}`}
-                className="crow"
-                style={{ gridTemplateColumns: PROJECT_ROW_COLUMNS }}
-                key={p.id}
-              >
-                <div className="cname">
-                  <div
-                    className="logo"
-                    style={{ background: p.accent_colour || "#6B7280" }}
-                  >
-                    {projectInitials(p.name)}
-                  </div>
-                  <div className="t">
-                    <b>{p.name}</b>
-                    <span className="sub">
-                      <KBadge delivery={p.delivery} />
-                      <span>{p.type || "—"}</span>
-                    </span>
-                  </div>
-                </div>
-                <div className="stagecount ago">
-                  {statsPending ? "…" : (s?.byStage[0] ?? 0)}
-                </div>
-                <div className="stagecount ago">
-                  {statsPending ? "…" : (s?.byStage[1] ?? 0)}
-                </div>
-                <div className="stagecount ago">
-                  {statsPending ? "…" : (s?.byStage[2] ?? 0)}
-                </div>
-                <div className="ago">{formatDate(s?.latestApprovedAt ?? null)}</div>
-                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <div key={f.id}>
+                <div
+                  className={`crow folder-band${isOpen ? " open" : ""}`}
+                  style={{ padding: "var(--d-row-y) var(--d-row-x)" }}
+                  onClick={() => toggleFolderCollapsed(f.id)}
+                >
+                  <svg className="chev" viewBox="0 0 24 24">
+                    <path d="M9 6l6 6-6 6" />
+                  </svg>
+                  <b>{f.name}</b>
+                  <span className="count">
+                    {folderProjects.length} project{folderProjects.length === 1 ? "" : "s"}
+                  </span>
+                  <div className="grow" />
                   {confirmedStaff && (
                     <RowActionsMenu
-                      title="Project options"
+                      title="Folder options"
                       items={[
-                        { label: "Rename", onClick: () => setRenameProjectTarget(p) },
+                        { label: "Rename", onClick: () => setFolderModal({ mode: "rename", folder: f }) },
                         {
-                          label: p.archived_at ? "Unarchive" : "Archive",
-                          onClick: () =>
-                            archiveProject.mutate({
-                              projectId: p.id,
-                              clientId: id,
-                              archived: !p.archived_at,
-                            }),
+                          label: "Delete",
+                          tone: "danger",
+                          onClick: () => deleteFolder.mutate({ folderId: f.id, clientId: id }),
                         },
                       ]}
                     />
                   )}
                 </div>
-              </Link>
+                {isOpen && folderProjects.map((p) => renderProjectRow(p))}
+              </div>
             );
           })}
         </div>
@@ -385,6 +414,25 @@ export default function ClientWorkspacePage({
           clientId={id}
           currentName={renameProjectTarget.name}
           onClose={() => setRenameProjectTarget(null)}
+        />
+      )}
+
+      {folderModal && (
+        <FolderModal
+          clientId={id}
+          folder={folderModal.mode === "rename" ? folderModal.folder : null}
+          onClose={() => setFolderModal(null)}
+        />
+      )}
+
+      {moveTarget && (
+        <MoveToFolderModal
+          projectId={moveTarget.id}
+          clientId={id}
+          projectName={moveTarget.name}
+          currentFolderId={moveTarget.folder_id}
+          folders={folders ?? []}
+          onClose={() => setMoveTarget(null)}
         />
       )}
     </div>
