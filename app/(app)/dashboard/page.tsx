@@ -13,6 +13,9 @@ import { ClientModal } from "@/components/clients/ClientModal";
 import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
 import { useAvatarUrls } from "@/hooks/use-avatar-urls";
 import { errorMessage } from "@/lib/errors";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { useMyProfile, useMyFirstName } from "@/hooks/use-my-profile";
+import { addressed, pickGreeting } from "@/lib/greetings";
 
 type Filter = "active" | "archived";
 
@@ -78,16 +81,22 @@ export default function DashboardPage() {
   }, [clients, query, filter]);
 
   const activeCount = clients?.filter((c) => !c.archived_at).length ?? 0;
+  const { data: currentUser } = useCurrentUser();
+  const { isPending: profilePending } = useMyProfile();
+  const firstName = useMyFirstName();
+  const greeting =
+    currentUser && !profilePending
+      ? addressed(firstName, pickGreeting(currentUser.last_sign_in_at ?? currentUser.id))
+      : null;
   const { data: logoUrls } = useAvatarUrls((clients ?? []).map((c) => c.logo_asset_id));
 
   return (
     <div className="pad">
       <h1 className="h1">Clients</h1>
-      <p className="sub">
-        {isLoading
-          ? "Loading your clients…"
-          : `${activeCount} active client${activeCount === 1 ? "" : "s"}.`}
-      </p>
+      {/* Per direct instruction: a greeting by first name, a different one
+          each sign-in, in place of the active-client count (which the stat
+          below already shows). */}
+      <p className="sub greeting">{greeting ?? "\u00a0"}</p>
 
       <div className="stats">
         <div className="stat">

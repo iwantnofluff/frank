@@ -21,7 +21,24 @@ test("dashboard — clients list", async ({ page, frank }) => {
   // for it too, or this screenshot can race ahead under worker
   // concurrency and land on a rail missing Settings.
   await page.waitForSelector("#navSet");
-  await expect(page).toHaveScreenshot("dashboard.png");
+  // The greeting changes with every sign-in — checked on its own below.
+  await expect(page.locator(".greeting")).not.toHaveText("\u00a0");
+  await expect(page).toHaveScreenshot("dashboard.png", { mask: [page.locator(".greeting")] });
+});
+
+test("dashboard — greets the signed-in person by first name", async ({ page, frank }) => {
+  const { GREETINGS } = await import("../../lib/greetings");
+  await frank.loginAsStaff(page);
+  await page.goto("/dashboard");
+  const greeting = page.locator(".greeting");
+  await expect(greeting).toHaveText(/^E2E, /);
+  const text = (await greeting.textContent())!.replace(/^E2E, /, "");
+  expect(GREETINGS).toContain(text);
+  // The same line for the rest of this sign-in.
+  await page.reload();
+  await expect(greeting).toHaveText(`E2E, ${text}`);
+  // No longer the client count.
+  await expect(greeting).not.toContainText("active client");
 });
 
 test("dashboard — creative-stats cards", async ({ page, frank }) => {
