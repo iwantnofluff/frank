@@ -15,10 +15,12 @@ export function useUpdateClient() {
       clientId,
       name,
       industry,
+      description,
     }: {
       clientId: string;
       name: string;
       industry: string;
+      description: string;
     }) => {
       const supabase = createClient();
       // RLS silently returns zero rows for a blocked update rather than an
@@ -26,7 +28,11 @@ export function useUpdateClient() {
       // use-update-brief.ts for the same guard.
       const { data, error } = await supabase
         .from("clients")
-        .update({ name: name.trim(), industry: industry.trim() || null })
+        .update({
+          name: name.trim(),
+          industry: industry.trim() || null,
+          description: description.trim() || null,
+        })
         .eq("id", clientId)
         .select("id")
         .maybeSingle();

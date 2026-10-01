@@ -1,11 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { useCreateClient } from "@/hooks/use-create-client";
 import { useUpdateClient } from "@/hooks/use-update-client";
 import { useClientContacts } from "@/hooks/use-client-contacts";
 import { useSetClientContacts } from "@/hooks/use-set-client-contacts";
+import { useSaveClientLogo } from "@/hooks/use-client-logo";
+import { useAvatarUrls } from "@/hooks/use-avatar-urls";
+import { prepareClientLogo } from "@/lib/upload-client-logo";
+import { AVATAR_TYPES } from "@/lib/upload-avatar";
 import { errorMessage } from "@/lib/errors";
 
 function RemoveIcon() {
@@ -39,6 +43,8 @@ type ClientModalProps =
       clientId: string;
       currentName: string;
       currentIndustry: string | null;
+      currentLogoAssetId: string | null;
+      currentDescription: string | null;
       onClose: () => void;
     };
 
@@ -47,10 +53,42 @@ export function ClientModal(props: ClientModalProps) {
   const createClient = useCreateClient();
   const updateClient = useUpdateClient();
   const setContacts = useSetClientContacts();
+  const saveLogo = useSaveClientLogo();
+  const currentLogoId = isCreate ? null : props.currentLogoAssetId;
+  const { data: logoUrls } = useAvatarUrls([currentLogoId]);
+  const logoInput = useRef<HTMLInputElement>(null);
+  // A picked image is checked and prepared straight away (square, 512px),
+  // so a wrong one is refused on the spot rather than at Save.
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoRemoved, setLogoRemoved] = useState(false);
+  const [logoError, setLogoError] = useState<string | null>(null);
+  const shownLogo = logoPreview ?? (!logoRemoved && currentLogoId ? (logoUrls?.[currentLogoId] ?? null) : null);
+
+  async function pickLogo(file: File) {
+    setLogoError(null);
+    try {
+      const prepared = await prepareClientLogo(file);
+      if (logoPreview) URL.revokeObjectURL(logoPreview);
+      setLogoFile(prepared);
+      setLogoPreview(URL.createObjectURL(prepared));
+      setLogoRemoved(false);
+    } catch (e) {
+      setLogoError((e as Error).message);
+    }
+  }
+
+  function clearLogo() {
+    if (logoPreview) URL.revokeObjectURL(logoPreview);
+    setLogoFile(null);
+    setLogoPreview(null);
+    setLogoRemoved(true);
+  }
   const { data: existingContacts } = useClientContacts(isCreate ? undefined : props.clientId);
 
   const [name, setName] = useState(isCreate ? "" : props.currentName);
   const [industry, setIndustry] = useState(isCreate ? "" : (props.currentIndustry ?? ""));
+  const [description, setDescription] = useState(isCreate ? "" : (props.currentDescription ?? ""));
   const [contacts, setContactsDraft] = useState<ContactDraft[]>([]);
   const [nameError, setNameError] = useState<string | null>(null);
   const [seededContacts, setSeededContacts] = useState(false);
@@ -81,29 +119,42 @@ export function ClientModal(props: ClientModalProps) {
         agencyId: props.agencyId,
         name: name.trim(),
         industry: industry.trim(),
+        description,
       });
       if (contacts.some((c) => c.name.trim() && c.email.trim())) {
         await setContacts.mutateAsync({ clientId: created.id, agencyId: props.agencyId, contacts });
+      }
+      if (logoFile) {
+        await saveLogo.mutateAsync({ agencyId: props.agencyId, clientId: created.id, file: logoFile });
       }
     } else {
       await updateClient.mutateAsync({
         clientId: props.clientId,
         name: name.trim(),
         industry: industry.trim(),
+        description,
       });
       await setContacts.mutateAsync({ clientId: props.clientId, agencyId: props.agencyId, contacts });
+      if (logoFile) {
+        await saveLogo.mutateAsync({ agencyId: props.agencyId, clientId: props.clientId, file: logoFile });
+      } else if (logoRemoved && currentLogoId) {
+        await saveLogo.mutateAsync({ agencyId: props.agencyId, clientId: props.clientId, file: null });
+      }
     }
     props.onClose();
   }
 
-  const isPending = createClient.isPending || updateClient.isPending || setContacts.isPending;
+  const isPending =
+    createClient.isPending || updateClient.isPending || setContacts.isPending || saveLogo.isPending;
   const submitError = createClient.error
     ? errorMessage(createClient.error, "Couldn't create the client")
     : updateClient.error
       ? errorMessage(updateClient.error, "Couldn't save the client")
       : setContacts.error
         ? errorMessage(setContacts.error, "Couldn't save the Client Team list")
-        : null;
+        : saveLogo.error
+          ? errorMessage(saveLogo.error, "Couldn't save the client's image")
+          : null;
 
   return (
     <Modal
@@ -125,6 +176,43 @@ export function ClientModal(props: ClientModalProps) {
         </>
       }
     >
+      <div className="field">
+        <label>
+          Profile Image <span className="hint">optional, square</span>
+        </label>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div className="logo clogo" style={shownLogo ? undefined : { background: "var(--line-2)", color: "var(--muted)" }}>
+            {shownLogo ? (
+              // eslint-disable-next-line @next/next/no-img-element -- local preview or short-lived signed URL
+              <img src={shownLogo} alt="" />
+            ) : (
+              (name.trim() || "?").slice(0, 2).toUpperCase()
+            )}
+          </div>
+          <button type="button" className="btn sm" onClick={() => logoInput.current?.click()}>
+            {shownLogo ? "Change image" : "Upload image"}
+          </button>
+          {shownLogo && (
+            <button type="button" className="btn sm" onClick={clearLogo}>
+              Remove
+            </button>
+          )}
+          <input
+            ref={logoInput}
+            type="file"
+            accept={AVATAR_TYPES.join(",")}
+            aria-label="Client profile image"
+            hidden
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (file) pickLogo(file);
+            }}
+          />
+        </div>
+        {logoError && <p className="autherr">{logoError}</p>}
+      </div>
+
       <div className="field">
         <label htmlFor="cName">Client Name</label>
         <input
@@ -149,6 +237,20 @@ export function ClientModal(props: ClientModalProps) {
           value={industry}
           onChange={(e) => setIndustry(e.target.value)}
           placeholder="e.g. D2C beauty"
+        />
+      </div>
+
+      <div className="field">
+        <label htmlFor="cDesc">
+          Description <span className="hint">optional, {description.length}/500</span>
+        </label>
+        <textarea
+          id="cDesc"
+          rows={3}
+          maxLength={500}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Who they are and what we do for them"
         />
       </div>
 

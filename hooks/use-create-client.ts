@@ -7,6 +7,7 @@ export interface CreateClientInput {
   agencyId: string;
   name: string;
   industry: string;
+  description: string;
 }
 
 // clients_insert (phase0_baseline.sql) requires is_agency_staff(agency_id)
@@ -27,6 +28,7 @@ export function useCreateClient() {
           agency_id: input.agencyId,
           name: input.name,
           industry: input.industry || null,
+          description: input.description.trim() || null,
         })
         .select()
         .single();

@@ -15,6 +15,7 @@ import { NewProjectModal } from "@/components/project/NewProjectModal";
 import { EditProjectModal } from "@/components/project/EditProjectModal";
 import { FolderModal } from "@/components/project/FolderModal";
 import { MoveToFolderModal } from "@/components/project/MoveToFolderModal";
+import { MoveToClientModal } from "@/components/project/MoveToClientModal";
 import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
 import { SearchIcon } from "@/components/app-shell/icons";
 
@@ -27,7 +28,8 @@ type ArchiveFilter = "active" | "archived";
 // identically-positioned slot regardless of which page it's on — true
 // regardless of how many columns sit in between, since the leading `1fr`
 // track absorbs any difference.
-const PROJECT_ROW_COLUMNS = "1fr 74px 96px 90px 92px 70px";
+// Status (128px) matches the dashboard's own Status column width.
+const PROJECT_ROW_COLUMNS = "1fr 74px 96px 90px 128px 92px 70px";
 
 function projectInitials(name: string) {
   return name
@@ -76,6 +78,8 @@ export default function ClientWorkspacePage({
   const [archiveFilter, setArchiveFilter] = useState<ArchiveFilter>("active");
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [editProjectTarget, setEditProjectTarget] = useState<ProjectListRow | null>(null);
+  const [moveClientTarget, setMoveClientTarget] = useState<ProjectListRow | null>(null);
+  const [movedNotice, setMovedNotice] = useState<string | null>(null);
   const [folderModal, setFolderModal] = useState<
     { mode: "create" } | { mode: "rename"; folder: ProjectFolderRow } | null
   >(null);
@@ -130,6 +134,12 @@ export default function ClientWorkspacePage({
   // instruction — folders are an organisational layer on top of the same
   // filtered/sorted list, not a separate one.
   const unfiled = useMemo(() => filtered.filter((p) => !p.folder_id), [filtered]);
+  // Folders stay visible even once they're empty (a project moved out of
+  // the last one leaves it for the user to delete) — so on the Active tab,
+  // with no search, the table shows whenever there's a folder, not only
+  // when there's a project row.
+  const showTable =
+    filtered.length > 0 || (archiveFilter === "active" && !query.trim() && (folders?.length ?? 0) > 0);
 
   function renderProjectRow(p: ProjectListRow) {
     const s = projectStats?.[p.id];
@@ -155,6 +165,12 @@ export default function ClientWorkspacePage({
         <div className="stagecount ago">{statsPending ? "…" : (s?.byStage[0] ?? 0)}</div>
         <div className="stagecount ago">{statsPending ? "…" : (s?.byStage[1] ?? 0)}</div>
         <div className="stagecount ago">{statsPending ? "…" : (s?.byStage[2] ?? 0)}</div>
+        <div className="ago">
+          <span className={`tag ${p.archived_at ? "grey" : "blue"}`}>
+            <span className="dot" />
+            {p.archived_at ? "Archived" : "Active"}
+          </span>
+        </div>
         <div className="ago">{formatDate(s?.latestApprovedAt ?? null)}</div>
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
           {confirmedStaff && (
@@ -163,6 +179,7 @@ export default function ClientWorkspacePage({
               items={[
                 { label: "Edit", onClick: () => setEditProjectTarget(p) },
                 { label: "Move to folder", onClick: () => setMoveTarget(p) },
+                { label: "Move to client", onClick: () => setMoveClientTarget(p) },
                 {
                   label: p.archived_at ? "Unarchive" : "Archive",
                   onClick: () =>
@@ -214,9 +231,11 @@ export default function ClientWorkspacePage({
     <div className="pad">
       <h1 className="h1">{client?.name ?? "Client"}</h1>
       <p className="sub">
-        {previewMode === "client"
-          ? "Pick a project to see what is scheduled."
-          : "Pick a project to open its calendar."}
+        {client?.description
+          ? client.description
+          : previewMode === "client"
+            ? "Pick a project to see what is scheduled."
+            : "Pick a project to open its calendar."}
       </p>
 
       <div className="stats">
@@ -288,6 +307,12 @@ export default function ClientWorkspacePage({
         </div>
       </div>
 
+      {movedNotice && (
+        <p className="sub" role="status" style={{ margin: "0 0 4px" }}>
+          {movedNotice}
+        </p>
+      )}
+
       {projectsError && (
         <div className="empty">
           <b>Couldn&rsquo;t load projects</b>
@@ -299,7 +324,7 @@ export default function ClientWorkspacePage({
         </div>
       )}
 
-      {!projectsError && !isLoading && filtered.length === 0 && (
+      {!projectsError && !isLoading && !showTable && (
         <div className="empty">
           <b>
             {query
@@ -335,13 +360,14 @@ export default function ClientWorkspacePage({
         </div>
       )}
 
-      {!projectsError && filtered.length > 0 && (
+      {!projectsError && showTable && (
         <div className="clients">
           <div className="crow head" style={{ gridTemplateColumns: PROJECT_ROW_COLUMNS }}>
             <div>Project</div>
             <div className="ago">Concept</div>
             <div className="ago">Internal Review</div>
             <div className="ago">Client Review</div>
+            <div className="ago">Status</div>
             <div className="ago">Latest Approved</div>
             <div></div>
           </div>
@@ -416,6 +442,19 @@ export default function ClientWorkspacePage({
           currentFolderId={moveTarget.folder_id}
           folders={folders ?? []}
           onClose={() => setMoveTarget(null)}
+        />
+      )}
+
+      {moveClientTarget && (
+        <MoveToClientModal
+          projectId={moveClientTarget.id}
+          projectName={moveClientTarget.name}
+          fromClientId={id}
+          onClose={() => setMoveClientTarget(null)}
+          onMoved={(clientName) => {
+            setMovedNotice(`Moved “${moveClientTarget.name}” to ${clientName}.`);
+            setMoveClientTarget(null);
+          }}
         />
       )}
     </div>

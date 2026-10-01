@@ -11,6 +11,7 @@ import { useArchiveClient } from "@/hooks/use-archive-client";
 import { SearchIcon } from "@/components/app-shell/icons";
 import { ClientModal } from "@/components/clients/ClientModal";
 import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
+import { useAvatarUrls } from "@/hooks/use-avatar-urls";
 import { errorMessage } from "@/lib/errors";
 
 type Filter = "active" | "archived";
@@ -77,6 +78,7 @@ export default function DashboardPage() {
   }, [clients, query, filter]);
 
   const activeCount = clients?.filter((c) => !c.archived_at).length ?? 0;
+  const { data: logoUrls } = useAvatarUrls((clients ?? []).map((c) => c.logo_asset_id));
 
   return (
     <div className="pad">
@@ -121,9 +123,6 @@ export default function DashboardPage() {
 
       <div className="secthead">
         <h2>All Clients</h2>
-        <span className="count">
-          {filtered.length} account{filtered.length === 1 ? "" : "s"}
-        </span>
         <div className="filters">
           <button
             className="chip"
@@ -131,7 +130,7 @@ export default function DashboardPage() {
             onClick={() => setFilter("active")}
             type="button"
           >
-            Active
+            Active ({activeCount})
           </button>
           <button
             className="chip"
@@ -139,7 +138,7 @@ export default function DashboardPage() {
             onClick={() => setFilter("archived")}
             type="button"
           >
-            Archived
+            Archived ({(clients?.length ?? 0) - activeCount})
           </button>
           {confirmedStaff && <span className="toolsep" />}
           {confirmedStaff && (
@@ -199,7 +198,12 @@ export default function DashboardPage() {
                   className="logo"
                   style={{ background: c.accent_colour || "#6B7280" }}
                 >
-                  {clientInitials(c.name)}
+                  {c.logo_asset_id && logoUrls?.[c.logo_asset_id] ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
+                    <img src={logoUrls[c.logo_asset_id]} alt="" />
+                  ) : (
+                    clientInitials(c.name)
+                  )}
                 </div>
                 <div className="t">
                   <b>{c.name}</b>
@@ -254,6 +258,8 @@ export default function DashboardPage() {
           clientId={editTarget.id}
           currentName={editTarget.name}
           currentIndustry={editTarget.industry}
+          currentLogoAssetId={editTarget.logo_asset_id}
+          currentDescription={editTarget.description}
           onClose={() => setEditTarget(null)}
         />
       )}

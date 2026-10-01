@@ -4942,3 +4942,21 @@ button.avatar {
 .pcrop-zoom input {
   flex: 1;
 }
+/* A client's profile image filling its square tile (.logo is the coloured
+   initials tile in the client list; the same tile sits in the client modal). */
+.logo.clogo,
+.logo:has(> img) {
+  overflow: hidden;
+}
+.logo > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.logo.clogo {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  font-size: 18px;
+}

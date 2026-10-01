@@ -9,6 +9,8 @@ export interface ClientRow {
   industry: string | null;
   accent_colour: string | null;
   archived_at: string | null;
+  logo_asset_id: string | null;
+  description: string | null;
 }
 
 export function useClients() {
@@ -21,7 +23,7 @@ export function useClients() {
       // here, the database enforces it regardless of what this query says.
       const { data, error } = await supabase
         .from("clients")
-        .select("id, name, industry, accent_colour, archived_at")
+        .select("id, name, industry, accent_colour, archived_at, logo_asset_id, description")
         .order("name");
 
       if (error) throw error;

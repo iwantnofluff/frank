@@ -67,6 +67,9 @@ test("a profile photo shows on the rail, the Team page and comments — for clie
   browser,
   frank,
 }) => {
+  // Many steps across several pages (and, for some, a second session) —
+  // past the 30s default when the whole suite is running in parallel.
+  test.setTimeout(60_000);
   let assetId: string | null = null;
   // Before signing the browser in: the helper's own signOut() ends every
   // session for this user, the browser's included.

@@ -9,6 +9,8 @@ export interface ClientDetailRow {
   industry: string | null;
   accent_colour: string | null;
   archived_at: string | null;
+  logo_asset_id: string | null;
+  description: string | null;
 }
 
 export function useClientDetail(clientId: string) {
@@ -18,7 +20,7 @@ export function useClientDetail(clientId: string) {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("clients")
-        .select("id, name, industry, accent_colour, archived_at")
+        .select("id, name, industry, accent_colour, archived_at, logo_asset_id, description")
         .eq("id", clientId)
         .single();
 
