@@ -723,6 +723,11 @@ body.lightrail .avatar {
   border-radius: var(--r);
   overflow: hidden;
   background: var(--surface);
+  /* Per direct instruction, the Clients, Projects and Team tables sit 20px
+     lower than before. 32px, not 20: this margin collapses with the 12px
+     margin-bottom of whatever sits above it (.secthead, or the By Client
+     note), so 32 is what actually adds 20. */
+  margin-top: 32px;
 }
 .crow {
   display: grid;
@@ -742,16 +747,24 @@ body.lightrail .avatar {
 .crow:hover {
   background: #fafbfc;
 }
+/* Per direct instruction, table headers on Clients, Projects and Team use
+   the Knowledge panels' own section-header look (.panel-h: white, 14.5px
+   semibold, ink) rather than the prototype's grey 12px muted band — see
+   docs/parity-gaps.md. Right-aligned stat columns (.ago) follow suit. */
 .crow.head {
-  background: var(--canvas);
-  font-size: 12px;
-  color: var(--muted);
+  background: var(--surface);
+  font-size: 14.5px;
+  color: var(--ink);
   cursor: default;
-  font-weight: 500;
-  padding: 8px 16px;
+  font-weight: 600;
+  padding: 11px 16px;
 }
 .crow.head:hover {
-  background: var(--canvas);
+  background: var(--surface);
+}
+.crow.head .ago {
+  font-size: inherit;
+  color: inherit;
 }
 /* Folder section divider — a full-width band inside the same .clients
    list, same idea as the calendar tables' own .wkband week divider. Not

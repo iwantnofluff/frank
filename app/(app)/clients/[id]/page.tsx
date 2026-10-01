@@ -338,7 +338,7 @@ export default function ClientWorkspacePage({
       {!projectsError && filtered.length > 0 && (
         <div className="clients">
           <div className="crow head" style={{ gridTemplateColumns: PROJECT_ROW_COLUMNS }}>
-            <div style={{ fontSize: 13 }}>Project</div>
+            <div>Project</div>
             <div className="ago">Concept</div>
             <div className="ago">Internal Review</div>
             <div className="ago">Client Review</div>
