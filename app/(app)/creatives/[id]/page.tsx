@@ -311,7 +311,7 @@ export default function CreativeReviewPage({
                 artwork's place saying so — it can be read and commented on
                 the same. Only a post with neither gets the empty state. */}
             {activeSection === "content" &&
-              (!activeCreativeVersion && !activeCopyVersion ? (
+              (slides.length === 0 && !activeCopyVersion ? (
               <div className="awaiting">
                 <svg viewBox="0 0 24 24">
                   <rect x="3" y="4" width="18" height="16" rx="2" />
@@ -356,7 +356,8 @@ export default function CreativeReviewPage({
                   <div className="dots">•••</div>
                 </div>
                 <div className="ig-media">
-                  {!activeCreativeVersion ? (
+                  {/* No version yet, or one saved with every slide removed. */}
+                  {!currentSlide ? (
                     <NoArtwork
                       format={creative.format}
                       note={
@@ -403,7 +404,8 @@ export default function CreativeReviewPage({
                             body,
                             parentId: null,
                             visibility,
-                            creativeVersionId: activeCreativeVersion.id,
+                            // A slide is showing, so its version exists.
+                            creativeVersionId: activeCreativeVersion!.id,
                             anchor: slides.length > 1 ? { ...anchor, slide: slidePosition } : anchor,
                           });
                           setToolMode(null);
@@ -454,9 +456,11 @@ export default function CreativeReviewPage({
                   )}
                 </div>
                 <div className="ig-time">
-                  {activeCreativeVersion
+                  {currentSlide && activeCreativeVersion
                     ? `Uploaded ${new Date(activeCreativeVersion.created_at).toLocaleDateString()}`
-                    : `Copy saved ${new Date(activeCopyVersion!.created_at).toLocaleDateString()}`}
+                    : activeCopyVersion
+                      ? `Copy saved ${new Date(activeCopyVersion.created_at).toLocaleDateString()}`
+                      : null}
                 </div>
               </div>
             </div>
@@ -486,7 +490,7 @@ export default function CreativeReviewPage({
         onHighlight={highlightComment}
         toolMode={toolMode}
         onToolModeChange={setToolMode}
-        canAnnotate={!!activeCreativeVersion && !isVideo}
+        canAnnotate={!!currentSlide && !isVideo}
       />
 
       {shareOpen && (

@@ -223,7 +223,7 @@ export function CarouselSlots({
         <button
           type="button"
           className="btn sm primary"
-          disabled={!pending || saving || !shown.some(Boolean)}
+          disabled={!pending || saving}
           onClick={() => onSave(shown.map((s) => (!s ? null : s.kind === "file" ? { file: s.file } : { assetId: s.asset.id })))}
         >
           {saving ? "Saving…" : `Save Version ${nextVersionNo}`}

@@ -202,3 +202,62 @@ test("the review link moves between a carousel's slides", async ({ page, frank }
   await phone.getByRole("button", { name: "Next slide" }).click();
   await expect(phone.locator(".car-count")).toHaveText("2 / 3");
 });
+
+test("every slide can be removed and saved, leaving the post with no artwork", async ({ page, frank }) => {
+  test.setTimeout(60_000);
+  await seedCarousel(frank);
+  await frank.loginAsStaff(page);
+  await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
+  await page.getByRole("button", { name: "Edit" }).click();
+  await expect(page.locator(".cslot.filled")).toHaveCount(3);
+  for (const n of [1, 2, 3]) {
+    await page.locator(".cslot").nth(n - 1).hover();
+    await page.getByRole("button", { name: `Remove slide ${n}` }).click();
+  }
+  await expect(page.locator(".cslot.filled")).toHaveCount(0);
+  await page.getByRole("button", { name: "Save Version 2" }).first().click();
+  await expect(page.getByText("Saved as version 2.")).toBeVisible({ timeout: 30_000 });
+  // V1 is still there to go back to.
+  await expect(page.getByRole("tab", { name: /^V\d$/ }).first()).toHaveText("V1");
+
+  const { data: v2 } = await admin
+    .from("creative_versions")
+    .select("asset_id, slides:creative_version_slides(id)")
+    .eq("creative_id", frank.creativeId)
+    .eq("version_no", 2)
+    .single();
+  expect(v2!.asset_id).toBeNull();
+  expect(v2!.slides).toEqual([]);
+
+  await page.getByRole("button", { name: "Save and Close" }).click();
+  await expect(page.locator(".scrim")).toHaveCount(0);
+  await expect(page.locator(".awaiting", { hasText: "No artwork yet" })).toBeVisible();
+  await expect(page.locator(".car-count")).toHaveCount(0);
+
+  // The review link agrees, rather than falling back to V1.
+  const token = await frank.createSharedLink();
+  await page.goto(`${APP_URL}/review/${token}`);
+  await expect(page.locator(".phone .ig-noart")).toContainText("No artwork yet", { timeout: 15_000 });
+});
+
+test("a signed-in client sees every slide, not just the first", async ({ page, frank }) => {
+  await seedCarousel(frank);
+  const client = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  await client.auth.signInWithPassword({ email: frank.clientEmail, password: frank.clientPassword });
+  const { data } = await client
+    .from("creative_versions")
+    .select("slides:creative_version_slides(position, asset:assets(id))")
+    .eq("creative_id", frank.creativeId)
+    .single();
+  expect((data!.slides as { asset: unknown }[]).every((s) => s.asset)).toBe(true);
+
+  await frank.loginAsClient(page);
+  await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
+  const media = page.locator(".ig-media");
+  await expect(media.locator(".car-count")).toHaveText("1 / 3");
+  await media.getByRole("button", { name: "Next slide" }).click();
+  await expect(media.locator(".car-count")).toHaveText("2 / 3");
+  await expect(media.locator("img")).toBeVisible();
+});

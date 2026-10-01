@@ -18,14 +18,20 @@ export interface CreativeVersionRow {
   asset: VersionAsset | null;
   // A carousel version's slides, in order (phase31). Empty for a single
   // image — use versionSlides() rather than reading this directly.
-  slides: { position: number; asset: VersionAsset }[];
+  // The asset is null when the viewer can't read that file.
+  slides: { position: number; asset: VersionAsset | null }[];
 }
 
 // Every slide of a version, in order: a carousel's own slides, or a single
 // upload as its one slide.
 export function versionSlides(v: CreativeVersionRow | null | undefined): { position: number; asset: VersionAsset }[] {
   if (!v) return [];
-  if (v.slides?.length) return [...v.slides].sort((a, b) => a.position - b.position);
+  // A slide whose file can't be read is left out rather than breaking the
+  // page; an empty version (every slide removed) has none at all.
+  if (v.slides?.length)
+    return v.slides
+      .filter((s): s is { position: number; asset: VersionAsset } => !!s.asset)
+      .sort((a, b) => a.position - b.position);
   return v.asset ? [{ position: 1, asset: v.asset }] : [];
 }
 

@@ -87,14 +87,22 @@ export async function POST(request: Request) {
   // the same version get_shared_review's `asset` comes from. Signed here
   // for the same reason the asset is: a visitor has no session.
   const slidesById = new Map<string, { position: number; signed_url: string | null; mime_type: string; filename: string }[]>();
+  const emptied = new Set<string>();
   if (serviceRole && creatives.length) {
     const { data: versions } = await serviceRole
       .from("creative_versions")
-      .select("id, creative_id, version_no")
+      .select("id, creative_id, version_no, asset_id")
       .in("creative_id", creatives.map((c) => c.id))
       .order("version_no", { ascending: false });
     const latest = new Map<string, string>();
-    for (const v of versions ?? []) if (!latest.has(v.creative_id)) latest.set(v.creative_id, v.id);
+    for (const v of versions ?? []) {
+      if (latest.has(v.creative_id)) continue;
+      latest.set(v.creative_id, v.id);
+      // Saved with every slide removed (phase32). get_shared_review's
+      // `asset` skips a version with no file and falls back to the one
+      // before, so it's cleared here instead.
+      if (!v.asset_id) emptied.add(v.creative_id);
+    }
     const { data: rows } = latest.size
       ? await serviceRole
           .from("creative_version_slides")
@@ -119,7 +127,12 @@ export async function POST(request: Request) {
 
   const signedCreatives = await Promise.all(
     creatives.map(async (raw) => {
-      const c = { ...raw, formats: formatsById.get(raw.id) ?? [raw.format], slides: slidesById.get(raw.id) ?? [] };
+      const c = {
+        ...raw,
+        asset: emptied.has(raw.id) ? null : raw.asset,
+        formats: formatsById.get(raw.id) ?? [raw.format],
+        slides: slidesById.get(raw.id) ?? [],
+      };
       // Both branches build a fresh asset object that never includes
       // storage_key, rather than spreading the original and overwriting it
       // — `{ ...c.asset, storage_key: undefined }` still leaves the key

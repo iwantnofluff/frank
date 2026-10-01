@@ -117,7 +117,9 @@ export type SlideSource = { file: File } | { assetId: string } | null;
 // Saves a carousel as one new version: the whole set of slides, in order
 // (phase31). Empty slots are skipped but keep their places, so slide 3
 // stays slide 3. creative_versions.asset_id holds the first slide, so
-// everything that shows one image per version keeps working.
+// everything that shows one image per version keeps working. Every slot
+// empty saves a version with no images (phase32): the post goes back to
+// "No artwork yet", with the earlier versions still in its history.
 export function useUploadCarouselVersion(creativeId: string, agencyId: string, latestVersionNo: number) {
   const queryClient = useQueryClient();
 
@@ -129,7 +131,6 @@ export function useUploadCarouselVersion(creativeId: string, agencyId: string, l
           if (!validation.ok) throw new Error(validation.message);
         }
       }
-      if (!slides.some(Boolean)) throw new Error("Add at least one slide.");
 
       const supabase = createClient();
       const {
@@ -149,12 +150,14 @@ export function useUploadCarouselVersion(creativeId: string, agencyId: string, l
         .insert({
           creative_id: creativeId,
           version_no: latestVersionNo + 1,
-          asset_id: placed[0].assetId,
+          asset_id: placed[0]?.assetId ?? null,
           created_by: user.id,
         })
         .select("id")
         .single();
       if (versionError) throw versionError;
+
+      if (placed.length === 0) return version.id as string;
 
       const { data: rows, error: slidesError } = await supabase
         .from("creative_version_slides")
