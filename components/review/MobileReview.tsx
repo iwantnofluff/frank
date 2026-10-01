@@ -7,9 +7,11 @@ import { GuestComposer } from "./GuestComposer";
 export function MobileReview({
   controller,
   agencyName,
+  logoUrl,
 }: {
   controller: ReviewController;
   agencyName: string;
+  logoUrl: string | null;
 }) {
   const { creatives, active, activeIndex, goTo } = controller;
   // Already signed server-side (see /api/shared-review) — a public visitor
@@ -21,7 +23,14 @@ export function MobileReview({
       <div className="ph-notch" />
       <div className="ph-screen">
         <div className="m-top">
-          <div className="m-logo">F</div>
+          <div className="m-logo" style={logoUrl ? { overflow: "hidden", padding: 0 } : undefined}>
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
+              <img src={logoUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            ) : (
+              "F"
+            )}
+          </div>
           <div className="m-t">
             <b>{agencyName}</b>
             <span>Shared for review</span>

@@ -5,6 +5,9 @@ import { usePathname } from "next/navigation";
 import { useIsStaff } from "@/hooks/use-is-staff";
 import { useProject } from "@/hooks/use-project";
 import { useCreative } from "@/hooks/use-creative";
+import { useMyAgency } from "@/hooks/use-my-agency";
+import { useAgencySettings } from "@/hooks/use-agency-settings";
+import { useAvatarUrls } from "@/hooks/use-avatar-urls";
 import { AccountMenu } from "./AccountMenu";
 import { CalendarIcon, ClientsIcon, KnowledgeIcon, ProjectsIcon, SettingsIcon } from "./icons";
 
@@ -69,10 +72,22 @@ export function NavRail({
   // real membership (useIsStaff), not the preview toggle, and fails closed:
   // hidden while that's still resolving.
   const showStaffOnly = isStaff && !isStaffPending;
+  // The agency's logo (Settings > Branding) replaces the "F" mark.
+  const { data: agency } = useMyAgency();
+  const { data: settings } = useAgencySettings(agency?.agencyId);
+  const { data: logoUrls } = useAvatarUrls([settings?.logo_asset_id]);
+  const logoUrl = settings?.logo_asset_id ? logoUrls?.[settings.logo_asset_id] : undefined;
 
   return (
     <nav className="rail" aria-label="Main">
-      <div className="mark">F</div>
+      <div className="mark" style={logoUrl ? { overflow: "hidden", padding: 0 } : undefined}>
+        {logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
+          <img src={logoUrl} alt={agency?.name ?? "Agency"} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        ) : (
+          "F"
+        )}
+      </div>
       <RailLink href="/dashboard" label="Clients" icon={ClientsIcon} current={pathname.startsWith("/dashboard")} />
       {insideProject && clientId && (
         <RailLink href={`/clients/${clientId}`} label="Projects" icon={ProjectsIcon} current={false} />

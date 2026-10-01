@@ -54,6 +54,8 @@ export type SharedReviewResult =
       // identity from this instead of typing it (GuestComposer.tsx), with a
       // free-text fallback for anyone not yet on the list.
       contacts: SharedReviewContact[];
+      // The agency's saved theme and logo (null when it has none).
+      branding: { theme: Record<string, unknown> | null; logo_url: string | null };
     };
 
 // Goes through /api/shared-review rather than calling the RPC directly —

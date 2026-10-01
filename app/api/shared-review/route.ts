@@ -109,5 +109,43 @@ export async function POST(request: Request) {
     }),
   );
 
-  return NextResponse.json({ ...data, creatives: signedCreatives });
+  // Per direct instruction, review links carry the agency's own colours and
+  // logo. Looked up only now — after get_shared_review has validated the
+  // token (and passcode) — and only the theme and a signed logo URL leave
+  // the server; the agency's id never does.
+  let branding: { theme: Record<string, unknown> | null; logo_url: string | null } = {
+    theme: null,
+    logo_url: null,
+  };
+  if (serviceRole) {
+    const { data: link } = await serviceRole
+      .from("shared_links")
+      .select("agency_id")
+      .eq("token", token)
+      .maybeSingle();
+    if (link) {
+      const { data: settings } = await serviceRole
+        .from("agency_settings")
+        .select("theme, logo_asset_id")
+        .eq("agency_id", link.agency_id)
+        .maybeSingle();
+      let logoUrl: string | null = null;
+      if (settings?.logo_asset_id) {
+        const { data: logo } = await serviceRole
+          .from("assets")
+          .select("storage_key")
+          .eq("id", settings.logo_asset_id)
+          .maybeSingle();
+        if (logo) {
+          const { data: signed } = await serviceRole.storage
+            .from("assets")
+            .createSignedUrl(logo.storage_key, 3600);
+          logoUrl = signed?.signedUrl ?? null;
+        }
+      }
+      branding = { theme: (settings?.theme as Record<string, unknown>) ?? null, logo_url: logoUrl };
+    }
+  }
+
+  return NextResponse.json({ ...data, creatives: signedCreatives, branding });
 }

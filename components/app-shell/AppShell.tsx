@@ -1,5 +1,6 @@
 import { NavRail } from "./NavRail";
 import { Topbar } from "./Topbar";
+import { AgencyTheme } from "./AgencyTheme";
 
 export function AppShell({
   children,
@@ -14,6 +15,7 @@ export function AppShell({
 }) {
   return (
     <div className="app">
+      <AgencyTheme />
       <NavRail userInitials={userInitials} userName={userName} userEmail={userEmail} />
       <div className="main">
         <Topbar />

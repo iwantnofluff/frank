@@ -410,6 +410,9 @@ export const test = base.extend<{ frank: Frank }>({
       // every other table above that references assets (creative_versions,
       // knowledge_entries) — an asset row with anything still pointing at
       // it fails the same way an unswept child row anywhere else here does.
+      // References agencies, and (logo_asset_id) assets — so before both.
+      // Only exists once a spec saves branding (branding.spec.ts).
+      ["agency_settings", () => admin.from("agency_settings").delete().eq("agency_id", agency.id)],
       // users.avatar_asset_id points at assets, so a profile photo set in a
       // spec has to be unlinked before the sweep below can delete it.
       [

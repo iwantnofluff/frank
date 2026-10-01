@@ -1,6 +1,7 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useEffect, useState } from "react";
+import { applyTheme, normaliseTheme } from "@/lib/theme";
 import { useReviewController } from "@/hooks/use-review-controller";
 import { MobileReview } from "@/components/review/MobileReview";
 import { DesktopReview } from "@/components/review/DesktopReview";
@@ -71,6 +72,13 @@ export default function SharedReviewPage({
   // this page's previous behaviour.
   const [view, setView] = useState<"phone" | "desktop">("phone");
 
+  // The agency's colours, applied the same way the signed-in app applies
+  // them; an agency with no saved theme keeps Frank's default.
+  const branding = data?.status === "ok" ? data.branding : null;
+  useEffect(() => {
+    if (branding?.theme) applyTheme(normaliseTheme(branding.theme));
+  }, [branding?.theme]);
+
   if (isLoading) {
     return (
       <div className="phonewrap">
@@ -123,11 +131,12 @@ export default function SharedReviewPage({
           </button>
         </div>
       </div>
-      <MobileReview controller={controller} agencyName={agencyName} />
+      <MobileReview controller={controller} agencyName={agencyName} logoUrl={branding?.logo_url ?? null} />
       <DesktopReview
         controller={controller}
         agencyName={agencyName}
         linkUrl={linkUrl}
+        logoUrl={branding?.logo_url ?? null}
       />
     </div>
   );

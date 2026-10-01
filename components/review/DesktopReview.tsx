@@ -7,10 +7,12 @@ import { GuestComposer } from "./GuestComposer";
 export function DesktopReview({
   controller,
   agencyName,
+  logoUrl,
   linkUrl,
 }: {
   controller: ReviewController;
   agencyName: string;
+  logoUrl: string | null;
   linkUrl: string;
 }) {
   const { creatives, active, activeIndex, goTo } = controller;
@@ -31,7 +33,14 @@ export function DesktopReview({
       <div className="br-screen">
         <div className="dk-list">
           <div className="dk-lh">
-            <div className="m-logo">F</div>
+            <div className="m-logo" style={logoUrl ? { overflow: "hidden", padding: 0 } : undefined}>
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
+              <img src={logoUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            ) : (
+              "F"
+            )}
+          </div>
             <div>
               <b>{agencyName}</b>
               <span>{creatives.length} shared</span>
