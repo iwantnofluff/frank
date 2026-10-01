@@ -1,51 +1,63 @@
-import { test, expect } from "./fixtures";
+import { test, expect, APP_URL } from "./fixtures";
+import type { Page } from "@playwright/test";
 
-// Regression coverage for the rail dead-end fix (docs/parity-gaps.md,
-// "Primary nav — three icons led to a dead 404 — RESOLVED"). Calendar/
-// Analytics/Visibility have no route yet, so this asserts reachability
-// (rendered or not), not screenshots of screens that don't exist.
+async function railLinks(page: Page) {
+  const rail = page.getByRole("navigation", { name: "Main" });
+  // Settings is staff-only and resolves a moment after the page — wait for
+  // the rail to settle on its final set before reading it.
+  await page.waitForTimeout(300);
+  return rail.locator("a.rbtn").evaluateAll((links) =>
+    links.map((a) => `${a.getAttribute("title")} -> ${new URL((a as HTMLAnchorElement).href).pathname}`),
+  );
+}
 
-test("Calendar/Analytics/Visibility are absent outside a client context", async ({
-  page,
-  frank,
-}) => {
+test("the rail follows where you are inside a client", async ({ page, frank }) => {
   await frank.loginAsStaff(page);
-  await page.goto("/dashboard");
-  await page.waitForSelector(".clients, .empty");
 
-  await expect(page.locator('a[href="/calendar"]')).toHaveCount(0);
-  await expect(page.locator('a[href="/analytics"]')).toHaveCount(0);
-  await expect(page.locator('a[href="/visibility"]')).toHaveCount(0);
+  await page.goto(`${APP_URL}/clients/${frank.clientId}`);
+  await expect(page.locator("#navSet")).toBeVisible();
+  expect(await railLinks(page)).toEqual([
+    "Clients -> /dashboard",
+    `Knowledge -> /clients/${frank.clientId}/knowledge`,
+    "Settings -> /settings",
+  ]);
+
+  await page.goto(`${APP_URL}/projects/${frank.projectId}`);
+  await expect(page.getByRole("link", { name: "Projects" })).toBeVisible();
+  await expect(page.locator("#navSet")).toBeVisible();
+  expect(await railLinks(page)).toEqual([
+    "Clients -> /dashboard",
+    `Projects -> /clients/${frank.clientId}`,
+    `Knowledge -> /clients/${frank.clientId}/knowledge`,
+    "Settings -> /settings",
+  ]);
+
+  await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
+  await expect(page.getByRole("link", { name: "Calendar" })).toBeVisible();
+  await expect(page.locator("#navSet")).toBeVisible();
+  expect(await railLinks(page)).toEqual([
+    "Clients -> /dashboard",
+    `Projects -> /clients/${frank.clientId}`,
+    `Calendar -> /projects/${frank.projectId}`,
+    `Knowledge -> /clients/${frank.clientId}/knowledge`,
+    "Settings -> /settings",
+  ]);
+
+  // Calendar opens this post's own project table.
+  await page.getByRole("link", { name: "Calendar" }).click();
+  await page.waitForURL(`${APP_URL}/projects/${frank.projectId}`);
+  await page.getByRole("link", { name: "Projects" }).click();
+  await page.waitForURL(`${APP_URL}/clients/${frank.clientId}`);
 });
 
-test("Calendar/Analytics/Visibility are present inside a client context", async ({
-  page,
-  frank,
-}) => {
-  await frank.loginAsStaff(page);
-  await page.goto(`/clients/${frank.clientId}`);
-  await page.waitForSelector(".clients, .empty");
-
-  await expect(page.locator('a[href="/calendar"]')).toHaveCount(1);
-  await expect(page.locator('a[href="/analytics"]')).toHaveCount(1);
-  await expect(page.locator('a[href="/visibility"]')).toHaveCount(1);
-});
-
-// Visibility and Settings are permission boundaries, not just route-based
-// reachability (docs/parity-gaps.md, client-view audit) — a real
-// client-role session must not see either, even inside its own client
-// context where Calendar/Analytics/Knowledge correctly remain visible.
-test("Visibility and Settings are absent for a real client-role session", async ({
-  page,
-  frank,
-}) => {
+test("a client-side member gets the same rail, without Settings", async ({ page, frank }) => {
   await frank.loginAsClient(page);
-  await page.goto(`/clients/${frank.clientId}`);
-  await page.waitForSelector(".clients, .empty");
-
-  await expect(page.locator('a[href="/calendar"]')).toHaveCount(1);
-  await expect(page.locator('a[href="/analytics"]')).toHaveCount(1);
-  await expect(page.locator(`a[href="/clients/${frank.clientId}/knowledge"]`)).toHaveCount(1);
-  await expect(page.locator('a[href="/visibility"]')).toHaveCount(0);
-  await expect(page.locator('a[href="/settings"]')).toHaveCount(0);
+  await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
+  await expect(page.getByRole("link", { name: "Calendar" })).toBeVisible();
+  expect(await railLinks(page)).toEqual([
+    "Clients -> /dashboard",
+    `Projects -> /clients/${frank.clientId}`,
+    `Calendar -> /projects/${frank.projectId}`,
+    `Knowledge -> /clients/${frank.clientId}/knowledge`,
+  ]);
 });

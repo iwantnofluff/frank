@@ -1509,3 +1509,19 @@ At the larger size "Internal Review" and "Client Review" now wrap to two lines o
 Direct instruction: the number of projects shows in the chips — "Active (3)", "Archived (1)" — and no longer beside the "All Projects" title. Each chip counts its whole tab; the old title count followed the search box, which a tab count shouldn't, so a search can show fewer rows than the chip says. Folder sections keep their own counts.
 
 **Verified**: typecheck and lint clean. `manage-clients-projects.spec.ts`'s project test now checks the chips read "Active (1)" / "Archived (0)", then "Active (0)" / "Archived (1)" once the project is archived. `client-workspace.png` regenerated after confirming the only change was the title-and-chips row; `client-workspace` + `manage-clients-projects` pass.
+
+## The rail follows where you are inside a client
+
+Direct instruction, replacing the prototype's `syncRail()` (Calendar, Analytics and Visibility whenever a client is open):
+
+- a client's projects list — Clients, Knowledge, Settings
+- a project's calendar table — Clients, **Projects**, Knowledge, Settings
+- a post's review page — Clients, Projects, **Calendar**, Knowledge, Settings
+
+Projects goes back to that client's project list; Calendar opens the post's own project table. Knowledge now also shows on the table and review pages (before, the rail only knew the client from a `/clients/…` URL, so it disappeared once you opened a project): the client and project come from `useProject`/`useCreative`, the same cached queries those pages already load. Settings stays staff-only. The Projects icon is a folder drawn to match the rail's other icons — the prototype has no folder glyph anywhere. `AnalyticsIcon` and `VisibilityIcon` were removed as unused.
+
+**Known gap**: `/calendar`, `/analytics` and `/visibility` (placeholder pages) still exist and render if visited by URL, but nothing links to them any more.
+
+**Verified**: typecheck and lint clean. New `nav-rail.spec.ts`: the exact rail — each link's label and destination, in order — on all three pages for staff, then Calendar → the project table → Projects → the client's list by clicking through; and a client-side member's rail on a review page (the same, without Settings). Passed twice in a row. Looked at the rail on a review page. `creative-review`, `upload-artwork-modal`, `client-workspace` and `project-calendar` baselines regenerated after a pixel check confirmed every difference was inside the 84px rail. In a slow full run (7.3 min) six other specs timed out; each passed on its own.
+
+**Flaky under load (not new, not this change)**: `project-calendar.spec.ts`'s "hover preview holds open while the pointer moves onto it" fails intermittently inside a full parallel run — it depends on pointer-move timing against the popover's hide delay — and passed 5/5 run on its own. Worth giving it a wider timing margin if it keeps showing up.

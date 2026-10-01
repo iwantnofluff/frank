@@ -24,31 +24,11 @@ export function CalendarIcon() {
   );
 }
 
-export function AnalyticsIcon() {
-  return (
-    <svg viewBox="0 0 24 24">
-      <path d="M4 20h16" />
-      <rect x="5.5" y="12" width="3.5" height="5" rx="1" />
-      <rect x="10.25" y="8" width="3.5" height="9" rx="1" />
-      <rect x="15" y="4" width="3.5" height="13" rx="1" />
-    </svg>
-  );
-}
-
 export function KnowledgeIcon() {
   return (
     <svg viewBox="0 0 24 24">
       <path d="M12 6.5C10.5 5 8.5 4.5 5 4.5v13c3.5 0 5.5.5 7 2 1.5-1.5 3.5-2 7-2v-13c-3.5 0-5.5.5-7 2z" />
       <path d="M12 6.5v13" />
-    </svg>
-  );
-}
-
-export function VisibilityIcon() {
-  return (
-    <svg viewBox="0 0 24 24">
-      <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" />
-      <circle cx="12" cy="12" r="3" />
     </svg>
   );
 }
@@ -76,6 +56,16 @@ export function BellIcon() {
     <svg viewBox="0 0 24 24">
       <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
       <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+    </svg>
+  );
+}
+
+// Not in the prototype, which has no folder glyph anywhere: drawn to match
+// the rail's other icons (24px grid, the same stroke the rail applies).
+export function ProjectsIcon() {
+  return (
+    <svg viewBox="0 0 24 24">
+      <path d="M4 7.5A1.5 1.5 0 0 1 5.5 6h4.2l2 2.3h6.8A1.5 1.5 0 0 1 20 9.8v8.7a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z" />
     </svg>
   );
 }
