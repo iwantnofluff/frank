@@ -6,10 +6,6 @@ const admin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
   { auth: { persistSession: false, autoRefreshToken: false } },
 );
-const ONE_PIXEL_PNG = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
-  "base64",
-);
 
 async function staffRow(frank: Frank) {
   const { data } = await admin
@@ -78,11 +74,42 @@ test("a profile photo shows on the rail, the Team page and comments — for clie
   try {
     await frank.loginAsStaff(page);
     await page.goto(`${APP_URL}/profile`);
+    // A real-sized picture (no face in it), so drag and zoom have room to move.
+    const picture = await page.evaluate(() => {
+      const c = document.createElement("canvas");
+      c.width = 600;
+      c.height = 400;
+      const g = c.getContext("2d")!;
+      const grad = g.createLinearGradient(0, 0, 600, 400);
+      grad.addColorStop(0, "#2563eb");
+      grad.addColorStop(1, "#f59e0b");
+      g.fillStyle = grad;
+      g.fillRect(0, 0, 600, 400);
+      return c.toDataURL("image/png").split(",")[1];
+    });
     await page.getByLabel("Profile photo").setInputFiles({
       name: "me.png",
       mimeType: "image/png",
-      buffer: ONE_PIXEL_PNG,
+      buffer: Buffer.from(picture, "base64"),
     });
+    const cropper = page.getByRole("dialog", { name: "Position your photo" });
+    await expect(cropper.getByRole("status")).toHaveText(/Couldn't spot a face/, { timeout: 30000 });
+    // Dragging moves the photo under the circle.
+    const photoInCrop = cropper.locator(".pcrop img");
+    const before = await photoInCrop.evaluate((el) => (el as HTMLElement).style.transform);
+    await cropper.getByRole("slider", { name: "Zoom" }).fill("80");
+    const zoomed = await photoInCrop.evaluate((el) => (el as HTMLElement).style.transform);
+    const area = await cropper.locator(".pcrop").boundingBox();
+    await page.mouse.move(area!.x + 140, area!.y + 140);
+    await page.mouse.down();
+    await page.mouse.move(area!.x + 100, area!.y + 110, { steps: 5 });
+    await page.mouse.up();
+    const dragged = await photoInCrop.evaluate((el) => (el as HTMLElement).style.transform);
+    expect(zoomed).not.toBe(before);
+    expect(dragged).not.toBe(zoomed);
+    await cropper.getByRole("button", { name: "Use photo" }).click();
+    await expect(cropper).toHaveCount(0);
+
     await expect(page.getByRole("button", { name: "Change photo" })).toBeVisible();
     assetId = (await staffRow(frank)).avatar_asset_id;
     expect(assetId).not.toBeNull();
@@ -104,10 +131,11 @@ test("a profile photo shows on the rail, the Team page and comments — for clie
     const clientCard = clientPage.locator(".cmt", { hasText: "Photo check" });
     await expect(clientCard.locator(".who img")).toBeVisible();
     // A real, loaded image — not just an <img> pointing at a URL the
-    // client isn't allowed to fetch.
+    // client isn't allowed to fetch — and it's the cropper's 512 px square,
+    // not the 600x400 original.
     await expect
       .poll(() => clientCard.locator(".who img").evaluate((img: HTMLImageElement) => img.naturalWidth))
-      .toBe(1);
+      .toBe(512);
     await clientContext.close();
 
     await page.goto(`${APP_URL}/profile`);

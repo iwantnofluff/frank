@@ -169,6 +169,12 @@ test("accepting an invite collects a title-cased profile and photo, signs in, an
     mimeType: "image/png",
     buffer: ONE_PIXEL_PNG,
   });
+  // Picking a photo opens the cropper; a 1px image has no face to find, so
+  // it falls back to a centred square and says so.
+  const cropper = page.getByRole("dialog", { name: "Position your photo" });
+  await expect(cropper.getByRole("status")).toHaveText(/Couldn't spot a face/, { timeout: 30000 });
+  await cropper.getByRole("button", { name: "Use photo" }).click();
+  await expect(cropper).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Change photo" })).toBeVisible();
 
   await page.getByLabel("Password").fill("short");
@@ -200,13 +206,16 @@ test("accepting an invite collects a title-cased profile and photo, signs in, an
   expect(u!.avatar_asset_id).not.toBeNull();
   const { data: photo } = await admin
     .from("assets")
-    .select("storage_key")
+    .select("storage_key, mime_type")
     .eq("id", u!.avatar_asset_id)
     .single();
+  // What's stored is the cropper's re-encoded square, not the original file.
+  expect(photo!.mime_type).toBe("image/jpeg");
   expect(photo!.storage_key).toMatch(new RegExp(`^${frank.agencyId}/avatars/${invite.userId}/`));
   const { data: file, error: fileError } = await admin.storage.from("assets").download(photo!.storage_key);
   expect(fileError).toBeNull();
-  expect(file!.size).toBe(ONE_PIXEL_PNG.length);
+  expect(file!.size).toBeGreaterThan(0);
+  expect(file!.type).toBe("image/jpeg");
   await admin.storage.from("assets").remove([photo!.storage_key]);
 
   const fresh = await browser.newContext();

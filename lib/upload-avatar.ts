@@ -2,6 +2,15 @@ import { createClient } from "@/lib/supabase/client";
 
 export const AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"];
 export const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
+// What someone may pick, before cropping. Phone photos are routinely over
+// 5 MB; what's actually uploaded is the 512 px crop (lib/face-crop.ts).
+export const AVATAR_SOURCE_MAX_BYTES = 25 * 1024 * 1024;
+
+export function validateAvatarSource(file: File): string | null {
+  if (!AVATAR_TYPES.includes(file.type)) return "Use a JPG, PNG or WebP image";
+  if (file.size > AVATAR_SOURCE_MAX_BYTES) return "Use an image under 25 MB";
+  return null;
+}
 
 export function validateAvatar(file: File): string | null {
   if (!AVATAR_TYPES.includes(file.type)) return "Use a JPG, PNG or WebP image";
