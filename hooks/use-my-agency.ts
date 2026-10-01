@@ -20,6 +20,7 @@ export function useMyAgency() {
         .select("agency_id, client_id, agencies(name)")
         .eq("user_id", user!.id)
         .is("removed_at", null)
+        .not("accepted_at", "is", null)
         .order("client_id", { ascending: true, nullsFirst: true });
 
       if (error) throw error;

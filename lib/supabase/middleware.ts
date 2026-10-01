@@ -11,7 +11,15 @@ import { NextResponse, type NextRequest } from "next/server";
 // own input independently rather than trusting the caller (see the
 // route's own comment), the same discipline /api/shared-review's use of
 // the service-role client already documents.
-const PUBLIC_PATH_PREFIXES = ["/login", "/review", "/api/shared-review", "/api/ai/classify-comment"];
+const PUBLIC_PATH_PREFIXES = [
+  "/login",
+  "/review",
+  "/invite",
+  "/access-removed",
+  "/api/shared-review",
+  "/api/invite",
+  "/api/ai/classify-comment",
+];
 
 function isPublicPath(pathname: string) {
   return PUBLIC_PATH_PREFIXES.some(

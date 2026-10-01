@@ -3,9 +3,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentUser } from "./use-current-user";
+import type { AgencyRole } from "@/lib/roles";
 
 export interface MyMembership {
-  role: "admin" | "user" | "finance";
+  role: AgencyRole;
   client_id: string | null;
 }
 
@@ -24,6 +25,7 @@ export function useMyMembership(agencyId: string | undefined) {
         .eq("agency_id", agencyId!)
         .eq("user_id", user!.id)
         .is("removed_at", null)
+        .not("accepted_at", "is", null)
         .maybeSingle();
 
       if (error) throw error;

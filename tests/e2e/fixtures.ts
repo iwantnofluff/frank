@@ -339,6 +339,24 @@ export const test = base.extend<{ frank: Frank }>({
     // Tracking each such row individually here would be one more thing to
     // remember per spec; agency_id sweeps all of it regardless of what a
     // test added.
+    // Accounts a spec invited into this agency (team-invite.spec.ts) — never
+    // the fixture's own two. Restricted to the reserved .invalid domain so a
+    // real account can never be swept, whatever a spec did.
+    const { data: invitedRows } = await admin
+      .from("memberships")
+      .select("user_id, user:users!memberships_user_id_fkey(email)")
+      .eq("agency_id", agency.id);
+    const invitedUserIds = (invitedRows ?? [])
+      .filter((r) => {
+        const u = r.user as unknown as { email: string } | null;
+        return (
+          r.user_id !== staffAuth.user.id &&
+          r.user_id !== clientAuth.user.id &&
+          !!u?.email.endsWith("@example.invalid")
+        );
+      })
+      .map((r) => r.user_id as string);
+
     const steps: [string, () => PromiseLike<{ error: unknown }>][] = [
       // By agency_id, not by the tokens tracked in sharedLinkTokens — that
       // array only sees links made via frank.createSharedLink(); one made
@@ -365,6 +383,10 @@ export const test = base.extend<{ frank: Frank }>({
       // References clients — must run before the clients delete below, the
       // same reason format_directions/custom_columns run before agencies.
       ["knowledge_entries", () => admin.from("knowledge_entries").delete().eq("agency_id", agency.id)],
+      // Both cascade from memberships anyway; swept explicitly so a failure
+      // names the table instead of surfacing as a memberships FK error.
+      ["invites", () => admin.from("invites").delete().eq("agency_id", agency.id)],
+      ["staff_client_access", () => admin.from("staff_client_access").delete().eq("agency_id", agency.id)],
       ["memberships", () => admin.from("memberships").delete().eq("agency_id", agency.id)],
       // References both agencies and users (created_by) — must run before
       // both deletes below, the same reason format_directions/
@@ -414,7 +436,10 @@ export const test = base.extend<{ frank: Frank }>({
       ],
       [
         "users",
-        () => admin.from("users").delete().in("id", [staffAuth.user.id, clientAuth.user.id]),
+        () => admin
+            .from("users")
+            .delete()
+            .in("id", [staffAuth.user.id, clientAuth.user.id, ...invitedUserIds]),
       ],
     ];
     for (const [label, run] of steps) {
@@ -423,6 +448,7 @@ export const test = base.extend<{ frank: Frank }>({
     }
     await admin.auth.admin.deleteUser(staffAuth.user.id);
     await admin.auth.admin.deleteUser(clientAuth.user.id);
+    for (const id of invitedUserIds) await admin.auth.admin.deleteUser(id);
   },
 });
 
