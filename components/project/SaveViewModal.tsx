@@ -41,7 +41,7 @@ export function SaveViewModal({
   }
 
   return (
-    <Modal
+    <Modal hideCloseButton
       title={mode === "create" ? "Save As New View" : "Rename View"}
       size="sm"
       onClose={onCancel}

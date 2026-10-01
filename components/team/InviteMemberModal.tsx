@@ -37,7 +37,7 @@ export function InviteMemberModal({
   }
 
   return (
-    <Modal
+    <Modal hideCloseButton
       title="Invite Team Member"
       size="sm"
       onClose={onClose}

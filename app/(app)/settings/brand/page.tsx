@@ -392,7 +392,7 @@ function BrandForm({
       )}
 
       {savingPreset && (
-        <Modal
+        <Modal hideCloseButton
           title="Save Colour Preset"
           size="sm"
           onClose={() => setSavingPreset(false)}

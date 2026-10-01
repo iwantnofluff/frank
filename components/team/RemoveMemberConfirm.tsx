@@ -1,7 +1,6 @@
 "use client";
 
-import { Modal } from "@/components/ui/Modal";
-import { errorMessage } from "@/lib/errors";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 export function RemoveMemberConfirm({
   name,
@@ -19,20 +18,16 @@ export function RemoveMemberConfirm({
   onClose: () => void;
 }) {
   return (
-    <Modal title="Remove from team?" size="sm" onClose={onClose}>
-      <p className="sub">
-        {name} will lose all access to {agencyName} straight away. Their name stays on comments and
-        work they&rsquo;ve already done. To bring them back, you&rsquo;d send a new invite.
-      </p>
-      {!!error && <p className="autherr">{errorMessage(error, "Couldn't remove this member")}</p>}
-      <div className="frow" style={{ justifyContent: "flex-end", marginTop: 16 }}>
-        <button type="button" className="btn" onClick={onClose}>
-          Cancel
-        </button>
-        <button type="button" className="btn danger" disabled={isPending} onClick={onConfirm}>
-          {isPending ? "Removing…" : "Remove from Team"}
-        </button>
-      </div>
-    </Modal>
+    <ConfirmDialog
+      title="Remove from team?"
+      message={`${name} will lose all access to ${agencyName} straight away. Their name stays on comments and work they've already done. To bring them back, you'd send a new invite.`}
+      confirmLabel="Remove from Team"
+      pendingLabel="Removing…"
+      isPending={isPending}
+      error={error}
+      errorFallback="Couldn't remove this member"
+      onConfirm={onConfirm}
+      onClose={onClose}
+    />
   );
 }

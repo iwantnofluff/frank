@@ -45,7 +45,7 @@ export function FolderModal({
     : createFolder.error && errorMessage(createFolder.error, "Couldn't create the folder");
 
   return (
-    <Modal
+    <Modal hideCloseButton
       title={isRename ? "Rename Folder" : "Add Folder"}
       size="sm"
       onClose={onClose}

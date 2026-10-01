@@ -49,7 +49,7 @@ export function EditMemberModal({
   }
 
   return (
-    <Modal
+    <Modal hideCloseButton
       title={`Edit ${name}`}
       ariaLabel={`Edit ${name}`}
       size="sm"

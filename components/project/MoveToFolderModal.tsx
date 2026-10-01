@@ -48,7 +48,7 @@ export function MoveToFolderModal({
   }
 
   return (
-    <Modal
+    <Modal hideCloseButton
       title="Move to Folder"
       ariaLabel={`Move ${projectName} to folder`}
       size="sm"

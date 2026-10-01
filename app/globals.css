@@ -3519,6 +3519,14 @@ textarea.cxin {
 
 /* Share modal — form controls layered on the generic .modal from Phase 5 */
 
+/* ConfirmDialog's buttons: the same 28px above them as .modal-b leaves
+   below the title's separator. */
+.confirm-acts {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 28px;
+}
 .modal-f {
   padding: 16px 28px;
   border-top: 1px solid var(--line);

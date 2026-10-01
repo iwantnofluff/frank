@@ -22,10 +22,10 @@ export function Modal({
   // Matches the prototype's .modal.sm (max-width:420px) — the default
   // width is meant for content-heavy forms like New Brief.
   size?: "sm";
-  // CreativeModal's own footer now always carries a Cancel/Save-and-Close
-  // pair, so its header doesn't need a second, redundant close affordance
-  // — Escape and clicking the scrim still close it either way. Every
-  // other modal keeps the icon button (default false).
+  // Per direct instruction, a window with a Cancel button doesn't also get
+  // the corner X — every such caller passes this. Escape and clicking the
+  // scrim still close it. Only a window with no Cancel (Share for Review,
+  // which has Done; the knowledge file preview) keeps the X.
   hideCloseButton?: boolean;
 }) {
   const scrim = useRef<HTMLDivElement>(null);

@@ -95,3 +95,12 @@ export function useRemoveAvatar() {
     onSuccess: () => invalidateProfileViews(queryClient),
   });
 }
+
+// The signed-in person's first name, for addressing them ("Raj, …"):
+// first_name, else the first word of their name, else null.
+export function useMyFirstName(): string | null {
+  const { data: profile } = useMyProfile();
+  const first = profile?.first_name?.trim() || profile?.name?.trim().split(/\s+/)[0] || null;
+  // An un-set-up account's name can be its email address — never "raj@…,".
+  return first && !first.includes("@") ? first : null;
+}

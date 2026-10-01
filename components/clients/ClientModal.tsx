@@ -160,7 +160,7 @@ export function ClientModal(props: ClientModalProps) {
 
   return (
     <>
-    <Modal
+    <Modal hideCloseButton
       title={isCreate ? "New Client" : "Edit Client"}
       onClose={props.onClose}
       footer={

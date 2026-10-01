@@ -145,7 +145,8 @@ test("removing a member asks first, then drops them from the team but keeps thei
   await openMenu(page, "Gone Soon");
   await page.getByRole("button", { name: "Remove from Team" }).click();
   const confirm = page.getByRole("dialog", { name: "Remove from team?" });
-  await expect(confirm).toContainText("Gone Soon will lose all access to E2E Test Agency");
+  // Addressed to whoever is signed in (the staff fixture, first name "E2E").
+  await expect(confirm.locator(".sub")).toHaveText(/^E2E, Gone Soon will lose all access to E2E Test Agency/);
   await confirm.getByRole("button", { name: "Cancel" }).click();
   await expect(page.locator(".crow", { hasText: member.email })).toBeVisible();
 

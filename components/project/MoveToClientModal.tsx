@@ -33,7 +33,7 @@ export function MoveToClientModal({
   }
 
   return (
-    <Modal
+    <Modal hideCloseButton
       title="Move to Client"
       ariaLabel={`Move ${projectName} to another client`}
       size="sm"

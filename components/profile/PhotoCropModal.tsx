@@ -99,7 +99,7 @@ export function PhotoCropModal({
   }
 
   return (
-    <Modal
+    <Modal hideCloseButton
       title={title}
       size="sm"
       onClose={onCancel}

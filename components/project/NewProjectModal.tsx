@@ -56,7 +56,7 @@ export function NewProjectModal({
     : null;
 
   return (
-    <Modal
+    <Modal hideCloseButton
       title="New Project"
       size="sm"
       onClose={onClose}
