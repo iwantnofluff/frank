@@ -16,6 +16,11 @@ const PUBLIC_PATH_PREFIXES = [
   "/review",
   "/invite",
   "/access-removed",
+  // The face detector's runtime and model (static files in public/). The
+  // invite page crops a photo before its owner has a session, so these
+  // have to load signed out; without this they 307'd to /login and the
+  // cropper silently fell back to a centred square.
+  "/mediapipe",
   "/api/shared-review",
   "/api/invite",
   "/api/ai/classify-comment",

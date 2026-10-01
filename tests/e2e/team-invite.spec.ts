@@ -271,3 +271,19 @@ test("someone who already uses Frank just accepts, without setting a password", 
   expect(m!.accepted_at).not.toBeNull();
   await context.close();
 });
+
+test("the face detector's files load without a session, for the invite page", async ({ browser }) => {
+  const context = await browser.newContext();
+  for (const file of [
+    "/mediapipe/blaze_face_short_range.tflite",
+    "/mediapipe/wasm/vision_wasm_internal.wasm",
+    "/mediapipe/wasm/vision_wasm_internal.js",
+    "/mediapipe/wasm/vision_wasm_nosimd_internal.wasm",
+    "/mediapipe/wasm/vision_wasm_nosimd_internal.js",
+  ]) {
+    const res = await context.request.get(`${APP_URL}${file}`, { maxRedirects: 0 });
+    expect(res.status(), file).toBe(200);
+    expect((await res.body()).length, file).toBeGreaterThan(100_000);
+  }
+  await context.close();
+});
