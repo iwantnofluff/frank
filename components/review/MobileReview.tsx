@@ -2,6 +2,7 @@
 
 import type { ReviewController } from "@/hooks/use-review-controller";
 import { formatsLabel, postFormats } from "@/lib/formats";
+import { NoArtwork } from "@/components/creative-review/NoArtwork";
 import { GuestComposer } from "./GuestComposer";
 
 export function MobileReview({
@@ -105,6 +106,8 @@ export function MobileReview({
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={signedUrl} alt={active.name} style={{ width: "100%" }} />
                     )
+                  ) : !active.asset ? (
+                    <NoArtwork format={active.format} note="The agency hasn't uploaded the artwork for this post yet." />
                   ) : (
                     <div className="ig-noasset">No preview available</div>
                   )}

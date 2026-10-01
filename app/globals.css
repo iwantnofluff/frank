@@ -2644,6 +2644,12 @@ select.sort:hover {
   width: 100%;
   display: block;
 }
+/* NoArtwork: a copy-only post's stand-in for the image. */
+.ig-noart {
+  width: 100%;
+  justify-content: center;
+  background: var(--canvas);
+}
 .ig-noasset {
   aspect-ratio: 1 / 1;
   display: grid;

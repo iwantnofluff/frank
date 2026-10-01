@@ -27,6 +27,7 @@ import { FeedPreviewGrid } from "@/components/creative-review/FeedPreviewGrid";
 import { CommentsPanel } from "@/components/creative-review/CommentsPanel";
 import { ShareModal } from "@/components/creative-review/ShareModal";
 import { AnnotationLayer, type ToolMode } from "@/components/creative-review/AnnotationLayer";
+import { NoArtwork } from "@/components/creative-review/NoArtwork";
 import { CaptionHighlighter } from "@/components/creative-review/CaptionHighlighter";
 import { CreativeModal } from "@/components/creative-review/CreativeModal";
 
@@ -280,8 +281,11 @@ export default function CreativeReviewPage({
                 leadName={leadName}
               />
             )}
+            {/* With copy but no artwork it still shows as a post, the
+                artwork's place saying so — it can be read and commented on
+                the same. Only a post with neither gets the empty state. */}
             {activeSection === "content" &&
-              (!activeCreativeVersion ? (
+              (!activeCreativeVersion && !activeCopyVersion ? (
               <div className="awaiting">
                 <svg viewBox="0 0 24 24">
                   <rect x="3" y="4" width="18" height="16" rx="2" />
@@ -326,7 +330,29 @@ export default function CreativeReviewPage({
                   <div className="dots">•••</div>
                 </div>
                 <div className="ig-media">
-                  {!signedUrl ? (
+                  {!activeCreativeVersion ? (
+                    <NoArtwork
+                      format={creative.format}
+                      note={
+                        membershipLoading
+                          ? undefined
+                          : isStaff
+                            ? "The copy is in. Add the artwork once it has been made."
+                            : "The agency hasn't uploaded the artwork for this post yet."
+                      }
+                    >
+                      {isStaff && (
+                        <button
+                          type="button"
+                          className="btn primary sm"
+                          style={{ marginTop: 10 }}
+                          onClick={() => setCreativeModalTab("upload")}
+                        >
+                          Upload Artwork
+                        </button>
+                      )}
+                    </NoArtwork>
+                  ) : !signedUrl ? (
                     <div className="ig-noasset">
                       {activeCreativeVersion.asset?.filename ??
                         "No preview available"}
@@ -402,8 +428,9 @@ export default function CreativeReviewPage({
                   )}
                 </div>
                 <div className="ig-time">
-                  Uploaded{" "}
-                  {new Date(activeCreativeVersion.created_at).toLocaleDateString()}
+                  {activeCreativeVersion
+                    ? `Uploaded ${new Date(activeCreativeVersion.created_at).toLocaleDateString()}`
+                    : `Copy saved ${new Date(activeCopyVersion!.created_at).toLocaleDateString()}`}
                 </div>
               </div>
             </div>
