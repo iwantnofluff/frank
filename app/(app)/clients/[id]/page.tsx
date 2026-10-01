@@ -19,7 +19,6 @@ import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
 import { SearchIcon } from "@/components/app-shell/icons";
 
 type ArchiveFilter = "active" | "archived";
-type Sort = "due" | "name" | "pending";
 
 // Explicit per-page override of .crow's own default template (same
 // pattern Settings > Team already uses). The last two tracks (date, then
@@ -75,7 +74,6 @@ export default function ClientWorkspacePage({
 
   const [query, setQuery] = useState("");
   const [archiveFilter, setArchiveFilter] = useState<ArchiveFilter>("active");
-  const [sort, setSort] = useState<Sort>("due");
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [renameProjectTarget, setRenameProjectTarget] = useState<ProjectListRow | null>(null);
   const [folderModal, setFolderModal] = useState<
@@ -97,11 +95,6 @@ export default function ClientWorkspacePage({
   const confirmedStaff = isStaff && !isStaffPending;
   const isLoading = clientLoading || projectsLoading;
 
-  function pendingFor(p: ProjectListRow) {
-    const s = projectStats?.[p.id];
-    return (s?.waitingOnApproval ?? 0) + (s?.feedbackToAction ?? 0);
-  }
-
   // useProjects now returns archived projects too (so they can be seen and
   // unarchived at all) — every stat/heuristic below that means "the
   // client's real, active work" reads this instead of the raw list.
@@ -119,19 +112,16 @@ export default function ClientWorkspacePage({
         !q || (p.name + " " + (p.type ?? "")).toLowerCase().includes(q);
       return matchesArchive && matchesQuery;
     });
+    // By deadline, no deadline last — the prototype's own default order
+    // (a fixed high 'd' value for "No deadline" rows).
     list = [...list].sort((a, b) => {
-      if (sort === "name") return a.name.localeCompare(b.name);
-      if (sort === "pending") return pendingFor(b) - pendingFor(a);
-      // due — no deadline sorts last, matching the prototype's fallback
-      // date (a fixed high 'd' value for "No deadline" rows).
       if (!a.due_on && !b.due_on) return 0;
       if (!a.due_on) return 1;
       if (!b.due_on) return -1;
       return a.due_on.localeCompare(b.due_on);
     });
     return list;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projects, query, archiveFilter, sort, projectStats]);
+  }, [projects, query, archiveFilter]);
 
   // Unfiled projects show in the flat list above the folders, per direct
   // instruction — folders are an organisational layer on top of the same
@@ -276,16 +266,7 @@ export default function ClientWorkspacePage({
           >
             Archived
           </button>
-          <span className="toolsep" />
-          <select
-            className="sort"
-            value={sort}
-            onChange={(e) => setSort(e.target.value as Sort)}
-          >
-            <option value="due">Deadline</option>
-            <option value="name">Name A–Z</option>
-            <option value="pending">Most Pending</option>
-          </select>
+          {confirmedStaff && <span className="toolsep" />}
           {confirmedStaff && (
             <button
               className="btn sm"
