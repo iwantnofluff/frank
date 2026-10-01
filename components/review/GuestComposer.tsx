@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { ReviewController } from "@/hooks/use-review-controller";
+import { formatVideoTime } from "@/lib/annotations";
 
 // Shared by both the phone and desktop layouts — same state, same
 // handlers, only the wrapping markup differs (developer handover, "one
@@ -153,6 +154,23 @@ export function GuestComposer({
         value={commentDraft}
         onChange={(e) => setCommentDraft(e.target.value)}
       />
+      {/* A video paused at a moment: the comment is attached to it (phase34). */}
+      {controller.videoMoment !== null && (
+        <button
+          type="button"
+          className="atchip"
+          aria-pressed={controller.attachMoment}
+          onClick={() => controller.setAttachMoment(!controller.attachMoment)}
+        >
+          <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 7v5l3 2" />
+          </svg>
+          {controller.attachMoment
+            ? `At ${formatVideoTime(controller.videoMoment)}`
+            : `Not at ${formatVideoTime(controller.videoMoment)}`}
+        </button>
+      )}
 
       {error && (
         <p className="autherr" style={{ marginTop: 6 }}>

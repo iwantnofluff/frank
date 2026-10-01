@@ -8,7 +8,7 @@ import { DateTimePicker } from "@/components/ui/DateTimePicker";
 import { CxCell } from "@/components/project/CxCell";
 import type { CreativeRow } from "@/hooks/use-creative";
 import { useCopyVersions, type CopyVersionRow } from "@/hooks/use-copy-versions";
-import { useCreativeVersions, type CreativeVersionRow } from "@/hooks/use-creative-versions";
+import { useCreativeVersions, versionSlides, type CreativeVersionRow } from "@/hooks/use-creative-versions";
 import { useCreateCreative } from "@/hooks/use-create-creative";
 import { useUpdateBrief } from "@/hooks/use-update-brief";
 import { useSaveSlideText } from "@/hooks/use-save-slide-text";
@@ -20,6 +20,8 @@ import { CarouselSlots } from "./CarouselSlots";
 import { useSaveCopyFields } from "@/hooks/use-save-copy-fields";
 import { useRefreshWiifmNote } from "@/hooks/use-refresh-wiifm-note";
 import { useDeletePostVersion } from "@/hooks/use-delete-post-version";
+import { useClearArtwork } from "@/hooks/use-clear-artwork";
+import { artworkChangeReasons } from "@/lib/format-change";
 import { useComments } from "@/hooks/use-comments";
 import { useAssetSignedUrl } from "@/hooks/use-asset-signed-url";
 import { useAgencyAiSettings } from "@/hooks/use-agency-ai-settings";
@@ -513,7 +515,16 @@ export function CreativeModal(props: CreativeModalProps) {
     isCreate ? "brief" : (props.initialTab ?? "upload"),
   );
 
-  async function handleSaveBrief() {
+  // The format and slide count as last saved — what the artwork was made
+  // for — to tell whether a change means it no longer fits.
+  const [savedBrief, setSavedBrief] = useState<{ formats: string[]; slideCount: number | null } | null>(
+    isCreate ? null : { formats: postFormats(props.creative), slideCount: props.creative.slide_count ?? null },
+  );
+  // Set while the "remove uploaded creatives?" warning is open.
+  const [formatWarning, setFormatWarning] = useState<string[] | null>(null);
+  const clearArtwork = useClearArtwork(creativeId ?? "");
+
+  async function handleSaveBrief({ artworkCleared = false }: { artworkCleared?: boolean } = {}) {
     if (!name.trim()) {
       setNameError("Give the brief a name.");
       return;
@@ -553,6 +564,7 @@ export function CreativeModal(props: CreativeModalProps) {
         dueOn: delivery === "continuous" ? dueOn || null : null,
       });
       setCreatedCreativeId(newId);
+      setSavedBrief({ formats, slideCount });
       // Mirrors useCreateCreative's own trim-and-drop-blank-lines rule —
       // only a non-empty result actually became a real copy_versions row
       // there, and this is the baseline every later save on this same
@@ -562,6 +574,18 @@ export function CreativeModal(props: CreativeModalProps) {
       setSavedCopyVersionNo(persisted.filter(Boolean).length > 0 ? 1 : 0);
       props.onCreated?.(scheduledAt, delivery === "continuous" ? dueOn || null : null);
       return;
+    }
+
+    // Per direct instruction, a format change the uploaded artwork no longer
+    // fits (lib/format-change.ts) warns that it will all be removed, and
+    // only goes ahead once that's confirmed (confirmFormatChange below).
+    if (!artworkCleared && savedBrief && creativeVersions.some((v) => versionSlides(v).length > 0)) {
+      const uploadedSlides = Math.max(0, ...versionSlides(creativeVersions[0]).map((s) => s.position));
+      const reasons = artworkChangeReasons(savedBrief, { formats, slideCount }, uploadedSlides);
+      if (reasons.length) {
+        setFormatWarning(reasons);
+        return;
+      }
     }
 
     // Direct instruction: name/format/lead/schedule become editable after
@@ -579,6 +603,7 @@ export function CreativeModal(props: CreativeModalProps) {
       destination: delivery === "continuous" ? destination.trim() : null,
       dueOn: delivery === "continuous" ? dueOn || null : null,
     });
+    setSavedBrief({ formats, slideCount });
     // A carousel cut from 5 slides to 3 keeps only the first 3 slides' text.
     const cleaned = tidySlideText(slideFields(slideText, slideCount));
     // Edit mode's own baseline (initialSlideText/latestCopyVersion) comes
@@ -602,6 +627,18 @@ export function CreativeModal(props: CreativeModalProps) {
     if (updatedNoteTimeout.current) clearTimeout(updatedNoteTimeout.current);
     setShowUpdatedNote(true);
     updatedNoteTimeout.current = setTimeout(() => setShowUpdatedNote(false), 3000);
+  }
+
+  async function confirmFormatChange() {
+    try {
+      await clearArtwork.mutateAsync();
+    } catch {
+      return; // Shown in the warning itself.
+    }
+    setFormatWarning(null);
+    setViewingCreativeVersionNo(0);
+    setFile(null);
+    await handleSaveBrief({ artworkCleared: true });
   }
 
   const briefSaving = isCreate
@@ -979,7 +1016,7 @@ export function CreativeModal(props: CreativeModalProps) {
               type="button"
               className="btn primary"
               disabled={briefSaving}
-              onClick={handleSaveBrief}
+              onClick={() => handleSaveBrief()}
             >
               {briefSaving ? "Saving…" : isCreate && !creativeId ? "Create Post" : "Update"}
             </button>
@@ -1336,7 +1373,7 @@ export function CreativeModal(props: CreativeModalProps) {
                     ) : (
                       <>
                         <b>Drop a file, or browse</b>
-                        <span>JPG, PNG, WebP, GIF up to 25MB — MP4, MOV up to 500MB</span>
+                        <span>JPG, PNG, WebP, GIF up to 25MB — MP4, MOV up to 50MB</span>
                       </>
                     )}
                   </div>
@@ -1554,6 +1591,23 @@ export function CreativeModal(props: CreativeModalProps) {
       )}
 
     </Modal>
+    {formatWarning && (
+      <ConfirmDialog
+        title="Remove uploaded creatives?"
+        message="changing the format will remove all uploaded creatives — every artwork version, its files, and any comments on them. This can't be undone."
+        details={formatWarning}
+        confirmLabel="Change Format and Remove"
+        pendingLabel="Removing…"
+        isPending={clearArtwork.isPending || updateBrief.isPending}
+        error={clearArtwork.error}
+        errorFallback="Couldn't remove the artwork"
+        onConfirm={() => confirmFormatChange().catch(() => {})}
+        onClose={() => {
+          setFormatWarning(null);
+          clearArtwork.reset();
+        }}
+      />
+    )}
     {deleteTarget && (
       <ConfirmDialog
         title={`Delete ${deleteTarget.kind === "creative" ? "Creative" : "Copy"} Version ${deleteTarget.versionNo}?`}

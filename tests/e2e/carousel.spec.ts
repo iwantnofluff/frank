@@ -261,3 +261,140 @@ test("a signed-in client sees every slide, not just the first", async ({ page, f
   await expect(media.locator(".car-count")).toHaveText("2 / 3");
   await expect(media.locator("img")).toBeVisible();
 });
+
+test("an empty slide still counts: arrows show, and it says it has no image yet", async ({ page, frank }) => {
+  const versionId = await seedCarousel(frank);
+  // Keep only slide 2 of a 2-slide carousel (the case found on live).
+  await admin.from("creatives").update({ slide_count: 2 }).eq("id", frank.creativeId);
+  await admin.from("creative_version_slides").delete().eq("creative_version_id", versionId).neq("position", 2);
+  await frank.loginAsStaff(page);
+  await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
+  const media = page.locator(".ig-media");
+  await expect(media.locator(".car-count")).toHaveText("1 / 2");
+  await expect(media).toContainText("Slide 1 has no image yet.");
+  await media.getByRole("button", { name: "Next slide" }).click();
+  await expect(media.locator(".car-count")).toHaveText("2 / 2");
+  await expect(media.locator("img")).toBeVisible();
+
+  const token = await frank.createSharedLink();
+  await page.goto(`${APP_URL}/review/${token}`);
+  const phone = page.locator(".phone .ig-media");
+  await expect(phone.locator(".car-count")).toHaveText("1 / 2", { timeout: 15_000 });
+  await expect(phone).toContainText("Slide 1 has no image yet.");
+});
+
+test("extra images fill earlier empty slides, and any that don't fit are named", async ({ page, frank }) => {
+  await admin.from("creatives").update({ formats: ["ig_carousel"], slide_count: 2 }).eq("id", frank.creativeId);
+  await frank.loginAsStaff(page);
+  await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
+  await page.getByRole("button", { name: "Upload Artwork" }).click();
+
+  // Two images picked from slide 2: one there, the other back into slide 1.
+  let chooser = page.waitForEvent("filechooser");
+  await page.getByRole("button", { name: "Add slide 2" }).click();
+  await (await chooser).setFiles([await picture(page, "#0f766e", "a.png"), await picture(page, "#b45309", "b.png")]);
+  await expect(page.locator(".cslot.filled")).toHaveCount(2);
+
+  // Three images onto a full 2-slide carousel: two placed, one named as left out.
+  await page.getByRole("button", { name: "Discard Changes" }).click();
+  chooser = page.waitForEvent("filechooser");
+  await page.getByRole("button", { name: "Add slide 1" }).click();
+  await (await chooser).setFiles([
+    await picture(page, "#0f766e", "a.png"),
+    await picture(page, "#b45309", "b.png"),
+    await picture(page, "#7c3aed", "c.png"),
+  ]);
+  await expect(page.locator(".cslot.filled")).toHaveCount(2);
+  await expect(page.getByText("This carousel has 2 slides, so 1 file wasn't added.")).toBeVisible();
+});
+
+test("a format change the artwork no longer fits warns, and confirming removes all of it", async ({ page, frank }) => {
+  test.setTimeout(90_000);
+  const versionId = await seedCarousel(frank);
+  // A pin with a reply on the artwork, written the way the app writes them.
+  const staff = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  await staff.auth.signInWithPassword({ email: frank.staffEmail, password: frank.staffPassword });
+  const { data: me } = await staff.auth.getUser();
+  const { data: pin } = await staff
+    .from("comments")
+    .insert({
+      creative_id: frank.creativeId,
+      author_id: me.user!.id,
+      body: "Pin on slide one",
+      visibility: "public",
+      creative_version_id: versionId,
+      anchor: { type: "pin", x: 0.5, y: 0.5, n: 1, slide: 1 },
+    })
+    .select("id")
+    .single();
+  await staff.from("comments").insert({
+    creative_id: frank.creativeId,
+    author_id: me.user!.id,
+    body: "A reply to the pin",
+    visibility: "public",
+    parent_id: pin!.id,
+  });
+  const { data: before } = await admin.from("assets").select("id, storage_key").eq("agency_id", frank.agencyId);
+
+  await frank.loginAsStaff(page);
+  await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
+  await page.getByRole("button", { name: "Edit" }).click();
+  await page.getByRole("tab", { name: "Brief" }).click();
+
+  // A change that still fits saves without asking: more slides.
+  await page.selectOption("#nbSlides", "4");
+  await page.getByRole("button", { name: "Update", exact: true }).click();
+  await expect(page.getByText("Post updated.")).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Remove uploaded creatives?" })).toHaveCount(0);
+
+  // Carousel to Reel.
+  await page.click("#nbFmt");
+  const pop = page.getByRole("dialog", { name: "Formats" });
+  await pop.getByRole("checkbox", { name: "Instagram Reel" }).click();
+  await pop.getByRole("checkbox", { name: "Instagram Carousel" }).click();
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Update", exact: true }).click();
+  const warning = page.getByRole("dialog", { name: "Remove uploaded creatives?" });
+  await expect(warning).toContainText("E2E, changing the format will remove all uploaded creatives");
+  await expect(warning).toContainText("Instagram Carousel is a carousel and Instagram Reel is a single piece.");
+  await expect(warning).toContainText("Instagram Carousel is an image and Instagram Reel is a video.");
+  await expect(warning).toContainText("Instagram Carousel is 4:5 and Instagram Reel is 9:16.");
+
+  // Cancel changes nothing.
+  await warning.getByRole("button", { name: "Cancel" }).click();
+  const { data: still } = await admin.from("creatives").select("formats").eq("id", frank.creativeId).single();
+  expect(still!.formats).toEqual(["ig_carousel"]);
+  expect((await admin.from("creative_versions").select("id").eq("creative_id", frank.creativeId)).data).toHaveLength(1);
+
+  // Confirm removes the artwork, then saves the format.
+  await page.getByRole("button", { name: "Update", exact: true }).click();
+  await warning.getByRole("button", { name: "Change Format and Remove" }).click();
+  await expect(warning).toHaveCount(0);
+  await expect(page.getByText("Post updated.")).toBeVisible();
+  await expect
+    .poll(async () => (await admin.from("creatives").select("formats").eq("id", frank.creativeId).single()).data!.formats)
+    .toEqual(["ig_reel"]);
+  expect((await admin.from("creative_versions").select("id").eq("creative_id", frank.creativeId)).data).toEqual([]);
+  expect((await admin.from("comments").select("id").eq("creative_id", frank.creativeId).in("body", ["Pin on slide one", "A reply to the pin"])).data).toEqual([]);
+  const { data: after } = await admin.from("assets").select("id").in("id", before!.map((a) => a.id));
+  expect(after).toEqual([]);
+  const { data: files } = await admin.storage.from("assets").list(`${frank.agencyId}/${frank.creativeId}`);
+  expect((files ?? []).filter((f) => f.name.startsWith("seed-slide-"))).toEqual([]);
+
+  // The Content tab is back to an empty upload.
+  await page.getByRole("tab", { name: "Content" }).click();
+  await expect(page.getByText("Drop a file, or browse")).toBeVisible();
+});
+
+test("the database refuses to remove artwork for a client", async ({ frank }) => {
+  await seedCarousel(frank);
+  const client = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  await client.auth.signInWithPassword({ email: frank.clientEmail, password: frank.clientPassword });
+  const { error } = await client.rpc("delete_creative_artwork", { p_creative_id: frank.creativeId });
+  expect(error?.message).toContain("not permitted");
+  expect((await admin.from("creative_versions").select("id").eq("creative_id", frank.creativeId)).data).toHaveLength(1);
+});

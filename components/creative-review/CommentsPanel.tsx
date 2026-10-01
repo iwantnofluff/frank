@@ -11,10 +11,33 @@ import { useComments, type CommentRow } from "@/hooks/use-comments";
 import { useCreateComment } from "@/hooks/use-create-comment";
 import { useToggleCommentResolved } from "@/hooks/use-toggle-comment-resolved";
 import { useToggleCommentVisibility } from "@/hooks/use-toggle-comment-visibility";
-import { isHighlightAnchor, isPinAnchor, isRegionAnchor } from "@/lib/annotations";
+import {
+  commentTime,
+  formatVideoTime,
+  isHighlightAnchor,
+  isPinAnchor,
+  isRegionAnchor,
+  isTimeAnchor,
+} from "@/lib/annotations";
 import type { ToolMode } from "@/components/creative-review/AnnotationLayer";
 
+// A comment made at a moment in a video shows that moment ("0:12").
+function TimeBadge({ anchor }: { anchor: CommentRow["anchor"] }) {
+  const t = commentTime(anchor);
+  if (t === null) return null;
+  return (
+    <span className="anchor time-a">
+      <svg viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3 2" />
+      </svg>
+      {formatVideoTime(t)}
+    </span>
+  );
+}
+
 function AnchorBadge({ anchor }: { anchor: CommentRow["anchor"] }) {
+  if (isTimeAnchor(anchor)) return <TimeBadge anchor={anchor} />;
   if (isPinAnchor(anchor)) {
     return (
       <span className="anchor pin-a">
@@ -22,6 +45,7 @@ function AnchorBadge({ anchor }: { anchor: CommentRow["anchor"] }) {
           <path d="M12 21s7-6.5 7-11a7 7 0 1 0-14 0c0 4.5 7 11 7 11z" />
         </svg>
         Pin {anchor.n}
+        {commentTime(anchor) !== null && <> · {formatVideoTime(commentTime(anchor)!)}</>}
       </span>
     );
   }
@@ -32,6 +56,7 @@ function AnchorBadge({ anchor }: { anchor: CommentRow["anchor"] }) {
           <rect x="3.5" y="3.5" width="17" height="17" rx="2" strokeDasharray="4 3" />
         </svg>
         Region {anchor.n}
+        {commentTime(anchor) !== null && <> · {formatVideoTime(commentTime(anchor)!)}</>}
       </span>
     );
   }
@@ -81,8 +106,12 @@ function Composer({
   placeholder,
   autoFocus,
   submitLabel = "Post",
+  moment = null,
 }: {
-  onSubmit: (body: string, visibility: "private" | "public") => Promise<void>;
+  // A video paused at this moment: the comment is attached to it unless
+  // the chip is turned off. Receives the moment it was posted at, or null.
+  moment?: number | null;
+  onSubmit: (body: string, visibility: "private" | "public", at?: number | null) => Promise<void>;
   showInternalToggle: boolean;
   lockedPrivate?: boolean;
   placeholder: string;
@@ -93,6 +122,7 @@ function Composer({
   const [internal, setInternal] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [atMoment, setAtMoment] = useState(true);
 
   const visibility: "private" | "public" = lockedPrivate
     ? "private"
@@ -105,7 +135,7 @@ function Composer({
     setSubmitting(true);
     setError(null);
     try {
-      await onSubmit(body.trim(), visibility);
+      await onSubmit(body.trim(), visibility, moment !== null && atMoment ? moment : null);
       setBody("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't post that comment");
@@ -124,6 +154,21 @@ function Composer({
         onChange={(e) => setBody(e.target.value)}
         autoFocus={autoFocus}
       />
+      {moment !== null && (
+        <button
+          type="button"
+          className="atchip"
+          aria-pressed={atMoment}
+          title={atMoment ? "Attached to this moment — click to post without it" : "Click to attach to this moment"}
+          onClick={() => setAtMoment((v) => !v)}
+        >
+          <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 7v5l3 2" />
+          </svg>
+          {atMoment ? `At ${formatVideoTime(moment)}` : `Not at ${formatVideoTime(moment)}`}
+        </button>
+      )}
       <div className="cf">
         {showInternalToggle && !lockedPrivate ? (
           <label className="intog">
@@ -323,8 +368,14 @@ export function CommentsPanel({
   toolMode,
   onToolModeChange,
   canAnnotate,
+  videoMoment = null,
+  creativeVersionId = null,
 }: {
   creativeId: string;
+  // A video paused at this moment (phase34); new comments attach to it, and
+  // to the version being watched.
+  videoMoment?: number | null;
+  creativeVersionId?: string | null;
   highlightedCommentId?: string | null;
   onHighlight?: (commentId: string | null) => void;
   // Pin/Region live here (above the composer) rather than the page's own
@@ -485,8 +536,14 @@ export function CommentsPanel({
       <Composer
         placeholder="Add a comment…"
         showInternalToggle={isStaff}
-        onSubmit={(body, visibility) =>
-          createComment.mutateAsync({ body, parentId: null, visibility })
+        moment={videoMoment}
+        onSubmit={(body, visibility, at) =>
+          createComment.mutateAsync({
+            body,
+            parentId: null,
+            visibility,
+            ...(at != null ? { creativeVersionId, anchor: { type: "time" as const, t: Math.round(at * 100) / 100 } } : {}),
+          })
         }
       />
     </aside>

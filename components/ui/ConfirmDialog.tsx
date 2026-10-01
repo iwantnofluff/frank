@@ -13,6 +13,7 @@ import { errorMessage } from "@/lib/errors";
 export function ConfirmDialog({
   title,
   message,
+  details,
   confirmLabel,
   pendingLabel,
   isPending = false,
@@ -23,6 +24,8 @@ export function ConfirmDialog({
 }: {
   title: string;
   message: string;
+  // Supporting points, listed under the message (e.g. why a change needs it).
+  details?: string[];
   confirmLabel?: string;
   pendingLabel?: string;
   isPending?: boolean;
@@ -35,6 +38,13 @@ export function ConfirmDialog({
   return (
     <Modal hideCloseButton title={title} size="sm" onClose={onClose}>
       <p className="sub">{addressed(firstName, message)}</p>
+      {details && details.length > 0 && (
+        <ul className="confirm-list">
+          {details.map((d) => (
+            <li key={d}>{d}</li>
+          ))}
+        </ul>
+      )}
       {!!error && <p className="autherr">{errorMessage(error, errorFallback)}</p>}
       <div className="confirm-acts">
         <button type="button" className="btn" onClick={onClose}>

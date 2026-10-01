@@ -3,6 +3,7 @@
 import type { ReviewController } from "@/hooks/use-review-controller";
 import { formatsLabel, postFormats } from "@/lib/formats";
 import { ReviewMedia } from "./ReviewMedia";
+import { MomentBadge } from "./MomentBadge";
 import { GuestComposer } from "./GuestComposer";
 
 export function DesktopReview({
@@ -92,7 +93,7 @@ export function DesktopReview({
                   <div className="dots">•••</div>
                 </div>
                 <div className="ig-media">
-                  <ReviewMedia active={active} />
+                  <ReviewMedia active={active} controller={controller} />
                 </div>
                 <div className="ig-acts">
                   <svg viewBox="0 0 24 24">
@@ -130,7 +131,7 @@ export function DesktopReview({
               <p className="sub">No comments yet.</p>
             )}
             {active?.comments.map((c) => (
-              <div className="cmt" key={c.id}>
+              <div className={`cmt${controller.highlightedCommentId === c.id ? " act" : ""}`} key={c.id}>
                 <div className="cmt-h">
                   <span
                     className="who"
@@ -141,6 +142,7 @@ export function DesktopReview({
                   <b>{c.author_name}</b>
                   <time>{new Date(c.created_at).toLocaleDateString()}</time>
                 </div>
+                <MomentBadge comment={c} controller={controller} />
                 <p>{c.body}</p>
               </div>
             ))}

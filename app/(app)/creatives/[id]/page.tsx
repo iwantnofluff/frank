@@ -6,13 +6,15 @@ import { useCreative } from "@/hooks/use-creative";
 import { useAdvanceCreativeStage } from "@/hooks/use-advance-creative-stage";
 import { useCreativeVersions, versionSlides } from "@/hooks/use-creative-versions";
 import { useCopyVersions } from "@/hooks/use-copy-versions";
-import { useAssetSignedUrl } from "@/hooks/use-asset-signed-url";
+import { useAssetSignedUrl, usePreloadAssets } from "@/hooks/use-asset-signed-url";
 import { useComments } from "@/hooks/use-comments";
 import { useCreateComment } from "@/hooks/use-create-comment";
 import { useMyMembership } from "@/hooks/use-my-membership";
 import { useTeamMembers } from "@/hooks/use-team-members";
 import { formatsLabel, postFormats } from "@/lib/formats";
+import { slideFrames } from "@/lib/slide-frames";
 import {
+  commentTime,
   isHighlightAnchor,
   isPinAnchor,
   isRegionAnchor,
@@ -29,8 +31,13 @@ import { ShareModal } from "@/components/creative-review/ShareModal";
 import { AnnotationLayer, type ToolMode } from "@/components/creative-review/AnnotationLayer";
 import { NoArtwork } from "@/components/creative-review/NoArtwork";
 import { CarouselNav } from "@/components/creative-review/CarouselNav";
+import { VideoPlayer, type TimelineMarker } from "@/components/creative-review/VideoPlayer";
 import { CaptionHighlighter } from "@/components/creative-review/CaptionHighlighter";
 import { CreativeModal } from "@/components/creative-review/CreativeModal";
+
+// How close, in seconds, the paused moment has to be to a pin's for it to
+// show on the frame — about a frame or two either side.
+const VIDEO_FRAME_TOLERANCE = 0.25;
 
 export default function CreativeReviewPage({
   params,
@@ -102,26 +109,45 @@ export default function CreativeReviewPage({
     null;
 
   // A carousel's slides (a single upload is one slide). The arrows move
-  // between them; a new version starts again at the first.
+  // between them, one place per slide even if one is still empty; a new
+  // version starts again at the first.
   const slides = versionSlides(activeCreativeVersion);
+  const frames = slideFrames(slides, creative?.slide_count);
   const [slideIndex, setSlideIndex] = useState(0);
+  // Which way the last arrow went, so the next slide slides in from that side.
+  const [slideDir, setSlideDir] = useState<"next" | "prev" | null>(null);
+  function goToSlide(i: number) {
+    setSlideDir(i > frameIndex ? "next" : "prev");
+    setSlideIndex(i);
+  }
   const [slideFor, setSlideFor] = useState(activeCreativeVersion?.id);
   if (slideFor !== activeCreativeVersion?.id) {
     setSlideFor(activeCreativeVersion?.id);
     setSlideIndex(0);
+    setSlideDir(null);
   }
-  const currentSlide = slides[Math.min(slideIndex, Math.max(slides.length - 1, 0))] ?? null;
-  const slidePosition = currentSlide?.position ?? 1;
+  const frameIndex = Math.min(slideIndex, Math.max(frames.length - 1, 0));
+  const currentSlide = frames[frameIndex] ?? null;
+  const slidePosition = frameIndex + 1;
 
   const { data: signedUrl } = useAssetSignedUrl(currentSlide?.asset.storage_key);
+  usePreloadAssets(slides.filter((s) => s.asset.mime_type.startsWith("image/")).map((s) => s.asset.storage_key));
 
-  // Picking a comment pinned to another slide moves to that slide.
+  // A video (phase34): the paused moment new comments are attached to, and
+  // a request to jump to a comment's moment.
+  const [videoMoment, setVideoMoment] = useState<number | null>(null);
+  const [videoSeek, setVideoSeek] = useState<{ t: number; nonce: number } | null>(null);
+
+  // Picking a comment pinned to another slide moves to that slide; one made
+  // at a moment in a video goes to that moment.
   function highlightComment(commentId: string | null) {
     setHighlightedCommentId(commentId);
     const anchor = (allComments ?? []).find((c) => c.id === commentId)?.anchor;
+    const at = commentTime(anchor);
+    if (at !== null) setVideoSeek({ t: at, nonce: Date.now() });
     if (anchor && (isPinAnchor(anchor) || isRegionAnchor(anchor))) {
-      const i = slides.findIndex((s) => s.position === (anchor.slide ?? 1));
-      if (i >= 0) setSlideIndex(i);
+      const i = (anchor.slide ?? 1) - 1;
+      if (i < frames.length) setSlideIndex(i);
     }
   }
 
@@ -178,6 +204,15 @@ export default function CreativeReviewPage({
   const clientName = creative.projects?.clients?.name ?? "This client";
   const caption = activeCopyVersion?.fields?.caption;
   const isVideo = currentSlide?.asset.mime_type.startsWith("video/");
+  // Every comment on this version made at a moment, as timeline markers.
+  const videoMarkers: TimelineMarker[] = (allComments ?? [])
+    .filter((c) => !c.parent_id && activeCreativeVersion && c.creative_version_id === activeCreativeVersion.id)
+    .flatMap((c) => {
+      const t = commentTime(c.anchor);
+      if (t === null) return [];
+      const kind = isPinAnchor(c.anchor) ? "pin" : isRegionAnchor(c.anchor) ? "region" : "time";
+      return [{ commentId: c.id, t, kind } as TimelineMarker];
+    });
 
   return (
     <div className={`review${navCollapsed ? " navcollapsed" : ""}`}>
@@ -356,16 +391,19 @@ export default function CreativeReviewPage({
                   <div className="dots">•••</div>
                 </div>
                 <div className="ig-media">
-                  {/* No version yet, or one saved with every slide removed. */}
+                  {/* No version yet, one saved with every slide removed, or a
+                      carousel slide that has no image yet. */}
                   {!currentSlide ? (
                     <NoArtwork
                       format={creative.format}
                       note={
                         membershipLoading
                           ? undefined
-                          : isStaff
-                            ? "The copy is in. Add the artwork once it has been made."
-                            : "The agency hasn't uploaded the artwork for this post yet."
+                          : frames.length > 1
+                            ? `Slide ${slidePosition} has no image yet.`
+                            : isStaff
+                              ? "The copy is in. Add the artwork once it has been made."
+                              : "The agency hasn't uploaded the artwork for this post yet."
                       }
                     >
                       {isStaff && (
@@ -384,13 +422,49 @@ export default function CreativeReviewPage({
                       {currentSlide?.asset.filename ?? "No preview available"}
                     </div>
                   ) : isVideo ? (
-                    <video src={signedUrl} controls />
+                    <VideoPlayer
+                      src={signedUrl}
+                      markers={videoMarkers}
+                      highlightedCommentId={highlightedCommentId}
+                      onMarker={setHighlightedCommentId}
+                      seek={videoSeek}
+                      pauseNow={toolMode !== null}
+                      onMoment={setVideoMoment}
+                      // Paused, a comment's pin or box shows on the frame it
+                      // was made on; while playing, none do.
+                      overlay={(t, paused) => (
+                        <AnnotationLayer
+                          mode={paused ? toolMode : null}
+                          pins={paused ? pins.filter((p) => Math.abs((p.t ?? 0) - t) < VIDEO_FRAME_TOLERANCE) : []}
+                          regions={paused ? regions.filter((r) => Math.abs((r.t ?? 0) - t) < VIDEO_FRAME_TOLERANCE) : []}
+                          nextNumber={nextAnnotationNumber}
+                          highlightedCommentId={highlightedCommentId}
+                          showVisibilityToggle={isStaff}
+                          onSelect={setHighlightedCommentId}
+                          onCreate={(anchor, body, visibility) => {
+                            createComment.mutate({
+                              body,
+                              parentId: null,
+                              visibility,
+                              creativeVersionId: activeCreativeVersion!.id,
+                              anchor: { ...anchor, t: Math.round(t * 100) / 100 },
+                            });
+                            setToolMode(null);
+                          }}
+                        />
+                      )}
+                    />
                   ) : (
                     <>
                       {/* Signed URLs are short-lived and per-request — not a
                           fit for next/image's static optimisation. */}
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={signedUrl} alt={creative.name} />
+                      <img
+                        key={slidePosition}
+                        className={slideDir ? `car-in-${slideDir}` : undefined}
+                        src={signedUrl}
+                        alt={creative.name}
+                      />
                       <AnnotationLayer
                         mode={toolMode}
                         pins={pins}
@@ -406,14 +480,14 @@ export default function CreativeReviewPage({
                             visibility,
                             // A slide is showing, so its version exists.
                             creativeVersionId: activeCreativeVersion!.id,
-                            anchor: slides.length > 1 ? { ...anchor, slide: slidePosition } : anchor,
+                            anchor: frames.length > 1 ? { ...anchor, slide: slidePosition } : anchor,
                           });
                           setToolMode(null);
                         }}
                       />
                     </>
                   )}
-                  <CarouselNav index={Math.min(slideIndex, slides.length - 1)} count={slides.length} onChange={setSlideIndex} />
+                  <CarouselNav index={frameIndex} count={frames.length} onChange={goToSlide} />
                 </div>
                 <div className="ig-acts">
                   <svg viewBox="0 0 24 24">
@@ -456,7 +530,7 @@ export default function CreativeReviewPage({
                   )}
                 </div>
                 <div className="ig-time">
-                  {currentSlide && activeCreativeVersion
+                  {slides.length > 0 && activeCreativeVersion
                     ? `Uploaded ${new Date(activeCreativeVersion.created_at).toLocaleDateString()}`
                     : activeCopyVersion
                       ? `Copy saved ${new Date(activeCopyVersion.created_at).toLocaleDateString()}`
@@ -490,7 +564,9 @@ export default function CreativeReviewPage({
         onHighlight={highlightComment}
         toolMode={toolMode}
         onToolModeChange={setToolMode}
-        canAnnotate={!!currentSlide && !isVideo}
+        canAnnotate={!!currentSlide}
+        videoMoment={isVideo ? videoMoment : null}
+        creativeVersionId={activeCreativeVersion?.id ?? null}
       />
 
       {shareOpen && (

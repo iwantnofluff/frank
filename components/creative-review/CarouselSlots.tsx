@@ -81,24 +81,34 @@ export function CarouselSlots({
   }, []);
 
   function place(files: File[], start: number) {
-    const next = [...shown];
-    let i = start;
     for (const file of files) {
       const v = validateUploadFile(file);
       if (!v.ok) {
         onError(v.message);
         return;
       }
-      // The first file goes where it was dropped; the rest into the empty
-      // slots after it.
-      if (i !== start) while (i < next.length && next[i]) i++;
-      if (i >= next.length) break;
+    }
+    const next = [...shown];
+    // The first file goes where it was dropped or picked; the rest fill the
+    // empty slots after it, then any empty ones before it. A file with
+    // nowhere to go is never dropped silently.
+    const targets = [
+      start,
+      ...next.map((_, i) => i).filter((i) => i > start && !next[i]),
+      ...next.map((_, i) => i).filter((i) => i < start && !next[i]),
+    ];
+    const placed = Math.min(files.length, targets.length);
+    files.slice(0, placed).forEach((file, k) => {
       const url = URL.createObjectURL(file);
       urls.current.add(url);
-      next[i] = { kind: "file", file, url };
-      i++;
-    }
-    onError(null);
+      next[targets[k]] = { kind: "file", file, url };
+    });
+    const left = files.length - placed;
+    onError(
+      left > 0
+        ? `This carousel has ${slideCount} slides, so ${left} file${left === 1 ? " wasn't" : "s weren't"} added. Raise the slide count on the Brief tab to add more.`
+        : null,
+    );
     setSlots(next);
   }
 

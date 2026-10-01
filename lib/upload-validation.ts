@@ -3,7 +3,9 @@
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const ACCEPTED_VIDEO_TYPES = ["video/mp4", "video/quicktime"]; // MOV reports as quicktime
 const MAX_IMAGE_BYTES = 25 * 1024 * 1024;
-const MAX_VIDEO_BYTES = 500 * 1024 * 1024;
+// 50MB, the most the Free plan allows per file (phase34 sets the bucket to
+// match) — the spec's 500MB needs the Pro plan. docs/parity-gaps.md.
+const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
 
 export function validateUploadFile(
   file: File,

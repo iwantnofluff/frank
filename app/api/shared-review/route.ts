@@ -75,12 +75,25 @@ export async function POST(request: Request) {
   // only the main one. Looked up for exactly the creatives that function
   // just returned for this validated token, nothing wider.
   const formatsById = new Map<string, string[]>();
+  const slideCountById = new Map<string, number | null>();
   if (serviceRole && creatives.length) {
     const { data: rows } = await serviceRole
       .from("creatives")
-      .select("id, formats")
+      .select("id, formats, slide_count")
       .in("id", creatives.map((c) => c.id));
-    for (const r of rows ?? []) formatsById.set(r.id, r.formats);
+    for (const r of rows ?? []) {
+      formatsById.set(r.id, r.formats);
+      slideCountById.set(r.id, r.slide_count);
+    }
+  }
+
+  // Each comment's anchor — get_shared_review returns only the text — so
+  // a comment made at a moment in a video can show, and jump to, it.
+  const anchorById = new Map<string, unknown>();
+  const commentIds = creatives.flatMap((c) => c.comments.map((m) => m.id));
+  if (serviceRole && commentIds.length) {
+    const { data: rows } = await serviceRole.from("comments").select("id, anchor").in("id", commentIds);
+    for (const r of rows ?? []) if (r.anchor) anchorById.set(r.id, r.anchor);
   }
 
   // A carousel's slides (phase31), from each creative's latest version —
@@ -132,6 +145,8 @@ export async function POST(request: Request) {
         asset: emptied.has(raw.id) ? null : raw.asset,
         formats: formatsById.get(raw.id) ?? [raw.format],
         slides: slidesById.get(raw.id) ?? [],
+        slide_count: slideCountById.get(raw.id) ?? null,
+        comments: raw.comments.map((m) => ({ ...m, anchor: anchorById.get(m.id) ?? null })),
       };
       // Both branches build a fresh asset object that never includes
       // storage_key, rather than spreading the original and overwriting it

@@ -9,6 +9,7 @@ export interface SharedCreative {
   formats: string[]; // every format, main first
   // A carousel's slides, signed, in order — empty for a single image.
   slides: { position: number; signed_url: string | null; mime_type: string; filename: string }[];
+  slide_count: number | null; // carousels only
   stage: number;
   // Real status, same field the internal app's own bandOf() reads — a
   // Read-only from this page for now — the guest UI's own "Make Changes"
@@ -35,6 +36,8 @@ export interface SharedCreative {
     author_name: string;
     body: string;
     created_at: string;
+    // A moment in the video, when made at one (phase34).
+    anchor?: { type: string; t?: number } | null;
   }[];
 }
 

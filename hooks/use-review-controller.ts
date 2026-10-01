@@ -16,6 +16,12 @@ export function useReviewController(token: string) {
   const [passcode, setPasscode] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [commentDraft, setCommentDraft] = useState("");
+  // A video (phase34): the paused moment, whether the next comment is
+  // attached to it, the comment picked, and a request to jump to a moment.
+  const [videoMoment, setVideoMoment] = useState<number | null>(null);
+  const [attachMoment, setAttachMoment] = useState(true);
+  const [highlightedCommentId, setHighlightedCommentId] = useState<string | null>(null);
+  const [videoSeek, setVideoSeek] = useState<{ t: number; nonce: number } | null>(null);
 
   const { data, isLoading, isError } = useSharedReview(token, passcode);
   const identity = useGuestIdentityStore();
@@ -31,6 +37,9 @@ export function useReviewController(token: string) {
   function goTo(index: number) {
     setActiveIndex(Math.max(0, Math.min(creatives.length - 1, index)));
     setCommentDraft("");
+    setVideoMoment(null);
+    setHighlightedCommentId(null);
+    setVideoSeek(null);
   }
 
   async function postComment(name: string, email: string) {
@@ -41,9 +50,16 @@ export function useReviewController(token: string) {
       body: commentDraft.trim(),
       guestName: name,
       guestEmail: email,
+      atSeconds: videoMoment !== null && attachMoment ? videoMoment : null,
     });
     if (result.status === "ok") setCommentDraft("");
     return result;
+  }
+
+  // A comment picked in the list goes to its moment in the video.
+  function selectComment(id: string, t: number | null) {
+    setHighlightedCommentId(id);
+    if (t !== null) setVideoSeek({ t, nonce: Date.now() });
   }
 
   async function approve(name: string, email: string) {
@@ -90,6 +106,14 @@ export function useReviewController(token: string) {
     approving: submitApproval.isPending,
     requestingChanges: submitRequestChanges.isPending,
     identity,
+    videoMoment,
+    setVideoMoment,
+    attachMoment,
+    setAttachMoment,
+    highlightedCommentId,
+    setHighlightedCommentId,
+    videoSeek,
+    selectComment,
   };
 }
 

@@ -3573,6 +3573,16 @@ textarea.cxin {
   gap: 8px;
   margin-top: 28px;
 }
+.confirm-list {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.confirm-list li + li {
+  margin-top: 4px;
+}
 .modal-f {
   padding: 16px 28px;
   border-top: 1px solid var(--line);
@@ -5442,4 +5452,155 @@ button.avatar {
 }
 .car-dots i.on {
   background: #fff;
+}
+/* A carousel's next slide slides in from the side its arrow points to. */
+@keyframes car-in-next {
+  from {
+    transform: translateX(28%);
+    opacity: 0.4;
+  }
+}
+@keyframes car-in-prev {
+  from {
+    transform: translateX(-28%);
+    opacity: 0.4;
+  }
+}
+.car-in-next {
+  animation: car-in-next 0.24s ease-out;
+}
+.car-in-prev {
+  animation: car-in-prev 0.24s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .car-in-next,
+  .car-in-prev {
+    animation: none;
+  }
+}
+/* VideoPlayer: a video with its own controls and a timeline whose markers
+   are the comments made at a moment. */
+.vplayer {
+  background: #000;
+}
+/* Sized to the video itself, so the pin layer (inset: 0) is exactly the
+   frame; the height is capped so a 9:16 Reel and its timeline fit on
+   screen together. */
+.vframe {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
+}
+.vframe video {
+  display: block;
+  max-width: 100%;
+  max-height: 62vh;
+}
+.vbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: #14161a;
+  color: #fff;
+}
+.vplay {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 4px;
+  color: #fff;
+  flex-shrink: 0;
+}
+.vplay:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+.vplay svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+.vtrack {
+  position: relative;
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+}
+.vtrack:focus-visible {
+  outline: 2px solid var(--action);
+  outline-offset: 3px;
+}
+.vfill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 3px;
+  background: #fff;
+  pointer-events: none;
+}
+.vmark {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  transform: translateY(-50%);
+  border-radius: 3px;
+  background: var(--action);
+  border: 2px solid #14161a;
+  cursor: pointer;
+}
+.vmark.time {
+  background: var(--amber);
+}
+.vmark:hover,
+.vmark.act {
+  transform: translateY(-50%) scale(1.35);
+  border-color: #fff;
+}
+.vtime {
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.8);
+  flex-shrink: 0;
+}
+/* A comment at a moment in a video ("0:12"), and the composer's chip that
+   attaches a new comment to the paused moment. */
+.anchor.time-a {
+  background: #fff1e0;
+  color: #b45309;
+}
+.atchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 6px 0 2px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.atchip[aria-pressed="true"] {
+  border-color: #f2c48d;
+  background: #fff1e0;
+  color: #b45309;
+}
+.atchip svg {
+  width: 12px;
+  height: 12px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+.m-cmt.act {
+  box-shadow: 0 0 0 2px var(--action-soft);
+  border-radius: 8px;
 }
