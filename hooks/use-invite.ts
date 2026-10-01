@@ -26,7 +26,13 @@ export function useInvite(token: string) {
 
 export function useAcceptInvite(token: string) {
   return useMutation({
-    mutationFn: async (input: { name?: string; password?: string }) => {
+    mutationFn: async (input: {
+      first_name?: string;
+      last_name?: string;
+      designation?: string;
+      bio?: string;
+      password?: string;
+    }) => {
       const res = await fetch("/api/invite/accept", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -34,7 +40,7 @@ export function useAcceptInvite(token: string) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Couldn't accept the invite");
-      return data as { email: string; needsPassword: boolean };
+      return data as { email: string; agencyId: string; needsPassword: boolean };
     },
   });
 }

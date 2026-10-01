@@ -7,6 +7,10 @@ import { useMyAgency } from "@/hooks/use-my-agency";
 import { useMyMembership } from "@/hooks/use-my-membership";
 import { useTeamMembers, type TeamMemberRow } from "@/hooks/use-team-members";
 import { useStaffClientAccess } from "@/hooks/use-staff-client-access";
+import { useAvatarUrls } from "@/hooks/use-avatar-urls";
+import { PersonAvatar } from "@/components/ui/PersonAvatar";
+import { initials } from "@/lib/initials";
+import { avatarColour } from "@/lib/avatar-colour";
 import { useRemoveMember, useRevokeInvite, useSetMemberActive } from "@/hooks/use-manage-member";
 import { InviteMemberModal } from "@/components/team/InviteMemberModal";
 import { EditMemberModal } from "@/components/team/EditMemberModal";
@@ -48,6 +52,7 @@ export default function TeamSettingsPage() {
   const { data: members, isLoading, isError } = useTeamMembers(agencyId);
   const { data: clients } = useClients();
   const { data: access } = useStaffClientAccess(agencyId, canSeeAccess);
+  const { data: photos } = useAvatarUrls((members ?? []).map((m) => m.user?.avatar_asset_id));
   const setActive = useSetMemberActive(agencyId ?? "");
   const remove = useRemoveMember(agencyId ?? "");
   const revoke = useRevokeInvite(agencyId ?? "");
@@ -196,7 +201,20 @@ export default function TeamSettingsPage() {
                 key={m.id}
                 style={{ gridTemplateColumns: peopleColumns, cursor: "default" }}
               >
-                <div style={{ fontSize: 14.5, fontWeight: 500 }}>{m.user?.name ?? "—"}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                  <PersonAvatar
+                    className="who"
+                    style={{ width: 32, height: 32, fontSize: 12, background: avatarColour(m.user?.name ?? "?") }}
+                    initials={initials(m.user?.name, m.user?.email ?? "?")}
+                    photoUrl={m.user?.avatar_asset_id ? photos?.[m.user.avatar_asset_id] : null}
+                  />
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 14.5, fontWeight: 500 }}>{m.user?.name ?? "—"}</div>
+                    {m.user?.designation && (
+                      <div style={{ fontSize: 13, color: "var(--muted)" }}>{m.user.designation}</div>
+                    )}
+                  </div>
+                </div>
                 <div style={{ fontSize: 14, color: "var(--muted)" }}>{m.user?.email ?? "—"}</div>
                 {canSeeAccess && <div style={{ fontSize: 14 }}>{clientsCell(m)}</div>}
                 <div>

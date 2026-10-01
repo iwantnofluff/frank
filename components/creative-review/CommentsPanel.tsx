@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { avatarColour } from "@/lib/avatar-colour";
+import { PersonAvatar } from "@/components/ui/PersonAvatar";
+import { useAvatarUrls } from "@/hooks/use-avatar-urls";
 import { useCreative } from "@/hooks/use-creative";
 import { useMyMembership } from "@/hooks/use-my-membership";
 import { useCurrentUser } from "@/hooks/use-current-user";
@@ -47,21 +50,6 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: "mine", label: "Mine" },
   { key: "internal", label: "Private" },
 ];
-
-const AVATAR_COLOURS = [
-  "#007BFF",
-  "#2BB65B",
-  "#FF8A00",
-  "#DD2A7B",
-  "#6228D7",
-  "#00547F",
-];
-
-function avatarColour(name: string) {
-  let hash = 0;
-  for (const ch of name) hash = (hash * 31 + ch.charCodeAt(0)) % AVATAR_COLOURS.length;
-  return AVATAR_COLOURS[hash];
-}
 
 function initialsOf(name: string) {
   return (
@@ -214,6 +202,7 @@ function CommentCard({
   onReply,
   onToggleResolved,
   onToggleVisibility,
+  photos,
 }: {
   thread: CommentRow;
   replies: CommentRow[];
@@ -224,6 +213,7 @@ function CommentCard({
   onReply: (body: string, visibility: "private" | "public") => Promise<void>;
   onToggleResolved: (resolve: boolean) => void;
   onToggleVisibility: (commentId: string, next: "private" | "public") => void;
+  photos: Record<string, string> | undefined;
 }) {
   const [replying, setReplying] = useState(false);
   const authorName = thread.author?.name ?? thread.guest_name ?? "Someone";
@@ -243,12 +233,12 @@ function CommentCard({
       style={thread.anchor ? { cursor: "pointer" } : undefined}
     >
       <div className="cmt-h">
-        <span
+        <PersonAvatar
           className="who"
           style={{ background: avatarColour(authorName) }}
-        >
-          {initialsOf(authorName)}
-        </span>
+          initials={initialsOf(authorName)}
+          photoUrl={thread.author?.avatar_asset_id ? photos?.[thread.author.avatar_asset_id] : null}
+        />
         <b>{authorName}</b>
         <VisibilityTag
           visibility={thread.visibility}
@@ -284,12 +274,12 @@ function CommentCard({
             const replyAuthor = r.author?.name ?? r.guest_name ?? "Someone";
             return (
               <div className="reply" key={r.id}>
-                <span
+                <PersonAvatar
                   className="who"
                   style={{ background: avatarColour(replyAuthor) }}
-                >
-                  {initialsOf(replyAuthor)}
-                </span>
+                  initials={initialsOf(replyAuthor)}
+                  photoUrl={r.author?.avatar_asset_id ? photos?.[r.author.avatar_asset_id] : null}
+                />
                 <div className="rb">
                   <b>{replyAuthor}</b>
                   <VisibilityTag
@@ -350,6 +340,7 @@ export function CommentsPanel({
   const { data: currentUser } = useCurrentUser();
   const { data: membership } = useMyMembership(creative?.agency_id);
   const { data: comments, isLoading, isError } = useComments(creativeId);
+  const { data: photos } = useAvatarUrls((comments ?? []).map((c) => c.author?.avatar_asset_id));
   const createComment = useCreateComment(creativeId);
   const toggleResolved = useToggleCommentResolved(creativeId);
   const toggleVisibility = useToggleCommentVisibility(creativeId);
@@ -444,6 +435,7 @@ export function CommentsPanel({
             isStaff={isStaff}
             currentUserId={currentUser?.id}
             isHighlighted={highlightedCommentId === thread.id}
+            photos={photos}
             onSelect={() => onHighlight?.(thread.id)}
             onReply={(body, visibility) =>
               createComment.mutateAsync({

@@ -46,7 +46,9 @@ test("settings — team roster", async ({ page, frank }) => {
   // length. Mask that column; the content assertions above already cover
   // it precisely.
   await expect(page).toHaveScreenshot("settings-team.png", {
-    mask: [row.locator("div").nth(1)],
+    // The email cell is the row's second column; matched as a direct
+    // child, since the name cell now has its own nested divs (photo, name).
+    mask: [row.locator(":scope > div").nth(1)],
   });
 });
 

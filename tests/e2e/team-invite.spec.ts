@@ -2,6 +2,11 @@ import { createHash, randomBytes } from "crypto";
 import { createClient } from "@supabase/supabase-js";
 import { test, expect, APP_URL, type Frank } from "./fixtures";
 
+const ONE_PIXEL_PNG = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+  "base64",
+);
+
 const admin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -131,7 +136,7 @@ test("an Admin can't invite — no button, and the route refuses them", async ({
   expect(res.status()).toBe(403);
 });
 
-test("accepting an invite sets a name and password, signs in, and can't be reused", async ({
+test("accepting an invite collects a title-cased profile and photo, signs in, and can't be reused", async ({
   browser,
   frank,
 }) => {
@@ -144,8 +149,28 @@ test("accepting an invite sets a name and password, signs in, and can't be reuse
   await expect(page.getByLabel("Email")).toHaveValue(invite.email);
 
   await page.getByRole("button", { name: "Create account" }).click();
-  await expect(page.locator(".autherr")).toHaveText("Enter your name");
-  await page.getByLabel("Your name").fill("Invited Person");
+  await expect(page.locator(".autherr")).toHaveText("Enter your first name");
+
+  // Typed in lowercase on purpose: each field title-cases as you leave it.
+  await page.getByLabel("First name").fill("invited");
+  await page.getByLabel("Last name").fill("person");
+  await page.getByLabel("Last name").blur();
+  await expect(page.getByLabel("First name")).toHaveValue("Invited");
+  await expect(page.getByLabel("Last name")).toHaveValue("Person");
+  await page.getByRole("button", { name: "Create account" }).click();
+  await expect(page.locator(".autherr")).toHaveText("Enter your designation");
+  await page.getByLabel("Designation").fill("head of design");
+  await page.getByLabel("Designation").blur();
+  await expect(page.getByLabel("Designation")).toHaveValue("Head of Design");
+  await page.getByLabel(/Short bio/).fill("Makes things look good.");
+
+  await page.getByLabel("Profile photo").setInputFiles({
+    name: "me.png",
+    mimeType: "image/png",
+    buffer: ONE_PIXEL_PNG,
+  });
+  await expect(page.getByRole("button", { name: "Change photo" })).toBeVisible();
+
   await page.getByLabel("Password").fill("short");
   await page.getByRole("button", { name: "Create account" }).click();
   await expect(page.locator(".autherr")).toHaveText("Use at least 8 characters for your password");
@@ -160,8 +185,29 @@ test("accepting an invite sets a name and password, signs in, and can't be reuse
     .eq("id", invite.membershipId)
     .single();
   expect(m!.accepted_at).not.toBeNull();
-  const { data: u } = await admin.from("users").select("name").eq("id", invite.userId).single();
-  expect(u!.name).toBe("Invited Person");
+  const { data: u } = await admin
+    .from("users")
+    .select("name, first_name, last_name, designation, bio, avatar_asset_id")
+    .eq("id", invite.userId)
+    .single();
+  expect(u).toMatchObject({
+    name: "Invited Person",
+    first_name: "Invited",
+    last_name: "Person",
+    designation: "Head of Design",
+    bio: "Makes things look good.",
+  });
+  expect(u!.avatar_asset_id).not.toBeNull();
+  const { data: photo } = await admin
+    .from("assets")
+    .select("storage_key")
+    .eq("id", u!.avatar_asset_id)
+    .single();
+  expect(photo!.storage_key).toMatch(new RegExp(`^${frank.agencyId}/avatars/${invite.userId}/`));
+  const { data: file, error: fileError } = await admin.storage.from("assets").download(photo!.storage_key);
+  expect(fileError).toBeNull();
+  expect(file!.size).toBe(ONE_PIXEL_PNG.length);
+  await admin.storage.from("assets").remove([photo!.storage_key]);
 
   const fresh = await browser.newContext();
   const again = await fresh.newPage();

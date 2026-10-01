@@ -16,7 +16,7 @@ export interface CommentRow {
   copy_version_id: string | null;
   resolved_at: string | null;
   created_at: string;
-  author: { name: string } | null;
+  author: { name: string; avatar_asset_id: string | null } | null;
 }
 
 export function useComments(creativeId: string) {
@@ -45,19 +45,23 @@ export function useComments(creativeId: string) {
       if (error) throw error;
 
       const authorIds = [...new Set(rows.map((r) => r.author_id).filter((id): id is string => !!id))];
-      let namesById = new Map<string, string>();
+      let authorsById = new Map<string, { name: string; avatar_asset_id: string | null }>();
       if (authorIds.length > 0) {
         const { data: users, error: usersError } = await supabase
           .from("users")
-          .select("id, name")
+          .select("id, name, avatar_asset_id")
           .in("id", authorIds);
         if (usersError) throw usersError;
-        namesById = new Map(users.map((u) => [u.id, u.name]));
+        authorsById = new Map(
+          users.map((u) => [u.id, { name: u.name, avatar_asset_id: u.avatar_asset_id }]),
+        );
       }
 
       return rows.map((r) => ({
         ...r,
-        author: r.author_id ? { name: namesById.get(r.author_id) ?? "" } : null,
+        author: r.author_id
+          ? (authorsById.get(r.author_id) ?? { name: "", avatar_asset_id: null })
+          : null,
       })) as unknown as CommentRow[];
     },
     enabled: !!creativeId,

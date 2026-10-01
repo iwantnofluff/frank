@@ -8,6 +8,7 @@ export type InviteLookup =
       status: "ok";
       inviteId: string;
       membershipId: string;
+      agencyId: string;
       userId: string;
       email: string;
       agencyName: string;
@@ -23,13 +24,14 @@ export async function lookupInvite(admin: SupabaseClient, token: string): Promis
   const { data: invite } = await admin
     .from("invites")
     .select(
-      "id, expires_at, accepted_at, membership:memberships(id, user_id, role, removed_at, accepted_at, agency:agencies(name), user:users!memberships_user_id_fkey(email))",
+      "id, expires_at, accepted_at, membership:memberships(id, agency_id, user_id, role, removed_at, accepted_at, agency:agencies(name), user:users!memberships_user_id_fkey(email))",
     )
     .eq("token_hash", hashInviteToken(token))
     .maybeSingle();
 
   const m = invite?.membership as unknown as {
     id: string;
+    agency_id: string;
     user_id: string;
     role: AgencyRole;
     removed_at: string | null;
@@ -48,6 +50,7 @@ export async function lookupInvite(admin: SupabaseClient, token: string): Promis
     status: "ok",
     inviteId: invite.id,
     membershipId: m.id,
+    agencyId: m.agency_id,
     userId: m.user_id,
     email: m.user?.email ?? authUser.user?.email ?? "",
     agencyName: m.agency?.name ?? "your agency",

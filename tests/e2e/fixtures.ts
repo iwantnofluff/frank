@@ -410,6 +410,17 @@ export const test = base.extend<{ frank: Frank }>({
       // every other table above that references assets (creative_versions,
       // knowledge_entries) — an asset row with anything still pointing at
       // it fails the same way an unswept child row anywhere else here does.
+      // users.avatar_asset_id points at assets, so a profile photo set in a
+      // spec has to be unlinked before the sweep below can delete it.
+      [
+        "users.avatar_asset_id",
+        async () => {
+          const { data: owned } = await admin.from("assets").select("id").eq("agency_id", agency.id);
+          const ids = (owned ?? []).map((a) => a.id as string);
+          if (ids.length === 0) return { error: null };
+          return admin.from("users").update({ avatar_asset_id: null }).in("avatar_asset_id", ids);
+        },
+      ],
       ["assets", () => admin.from("assets").delete().eq("agency_id", agency.id)],
       // References both agencies and users — must run before both deletes
       // below, same reason format_directions/custom_columns do. Never

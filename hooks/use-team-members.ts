@@ -11,7 +11,12 @@ export interface TeamMemberRow {
   client_id: string | null;
   accepted_at: string | null;
   removed_at: string | null;
-  user: { name: string; email: string } | null;
+  user: {
+    name: string;
+    email: string;
+    designation: string | null;
+    avatar_asset_id: string | null;
+  } | null;
 }
 
 export function useTeamMembers(agencyId: string | undefined) {
@@ -25,7 +30,7 @@ export function useTeamMembers(agencyId: string | undefined) {
       // relationship was found"). Disambiguate explicitly.
       const { data, error } = await supabase
         .from("memberships")
-        .select("id, user_id, role, client_id, accepted_at, removed_at, user:users!memberships_user_id_fkey(name, email)")
+        .select("id, user_id, role, client_id, accepted_at, removed_at, user:users!memberships_user_id_fkey(name, email, designation, avatar_asset_id)")
         .eq("agency_id", agencyId!)
         .is("client_id", null) // agency staff only — client contacts aren't "the team"
         // Deactivated members stay listed (with Reactivate); Removed ones don't.

@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { useViewportFit } from "@/hooks/use-viewport-fit";
+import { useMyProfile } from "@/hooks/use-my-profile";
+import { useAvatarUrls } from "@/hooks/use-avatar-urls";
 
 // The prototype's avatar only jumped to Settings and had no way to sign
 // out; this is the same .colpop/.cpr shell RowActionsMenu uses, opening
@@ -23,6 +26,9 @@ export function AccountMenu({
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
   const [signingOut, setSigningOut] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { data: profile } = useMyProfile();
+  const { data: photos } = useAvatarUrls([profile?.avatar_asset_id]);
+  const photoUrl = profile?.avatar_asset_id ? photos?.[profile.avatar_asset_id] : undefined;
   useViewportFit(ref, anchor, { side: "beside", gap: 10 });
 
   useEffect(() => {
@@ -59,20 +65,36 @@ export function AccountMenu({
         aria-label="Your account"
         aria-haspopup="menu"
         aria-expanded={!!anchor}
+        style={photoUrl ? { overflow: "hidden" } : undefined}
         onClick={(e) => {
           const rect = e.currentTarget.getBoundingClientRect();
           setAnchor((prev) => (prev ? null : rect));
         }}
       >
-        {initials}
+        {photoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
+          <img src={photoUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        ) : (
+          initials
+        )}
       </button>
       {anchor && (
         <div className="colpop on" ref={ref} role="menu" aria-label="Your account" style={{ width: 240 }}>
           <div className="cp-b" style={{ padding: "4px 4px" }}>
             <div style={{ padding: "8px 8px 10px", borderBottom: "1px solid var(--line)", marginBottom: 4 }}>
-              {name && <div style={{ fontSize: 14, fontWeight: 600 }}>{name}</div>}
-              <div style={{ fontSize: 13, color: "var(--muted)", overflowWrap: "anywhere" }}>{email}</div>
+              {(profile?.name ?? name) && (
+                <div style={{ fontSize: 14, fontWeight: 600 }}>{profile?.name ?? name}</div>
+              )}
+              {profile?.designation && (
+                <div style={{ fontSize: 13, marginTop: 1 }}>{profile.designation}</div>
+              )}
+              <div style={{ fontSize: 13, color: "var(--muted)", overflowWrap: "anywhere", marginTop: 2 }}>
+                {email}
+              </div>
             </div>
+            <Link href="/profile" role="menuitem" className="cpr" onClick={() => setAnchor(null)}>
+              <span className="cn">Your Profile</span>
+            </Link>
             <button
               type="button"
               role="menuitem"
