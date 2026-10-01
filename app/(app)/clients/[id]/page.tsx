@@ -102,6 +102,9 @@ export default function ClientWorkspacePage({
     () => (projects ?? []).filter((p) => !p.archived_at),
     [projects],
   );
+  // Each chip counts its whole tab, not the current search — per direct
+  // instruction the count moved here from beside the title.
+  const archivedCount = (projects?.length ?? 0) - activeProjects.length;
 
   const filtered = useMemo(() => {
     if (!projects) return [];
@@ -246,9 +249,6 @@ export default function ClientWorkspacePage({
 
       <div className="secthead">
         <h2>All Projects</h2>
-        <span className="count">
-          {filtered.length} project{filtered.length === 1 ? "" : "s"}
-        </span>
         <div className="filters">
           <button
             className="chip"
@@ -256,7 +256,7 @@ export default function ClientWorkspacePage({
             onClick={() => setArchiveFilter("active")}
             type="button"
           >
-            Active
+            Active ({activeProjects.length})
           </button>
           <button
             className="chip"
@@ -264,7 +264,7 @@ export default function ClientWorkspacePage({
             onClick={() => setArchiveFilter("archived")}
             type="button"
           >
-            Archived
+            Archived ({archivedCount})
           </button>
           {confirmedStaff && <span className="toolsep" />}
           {confirmedStaff && (

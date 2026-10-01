@@ -106,10 +106,18 @@ test("edit (name and type) and archive/unarchive a project from the client works
   await expect(modal.getByLabel("Type").locator("option")).toHaveCount(4);
   await modal.getByRole("button", { name: "Cancel" }).click();
 
+  // The project count lives in the chips now, not beside the title.
+  const activeChip = page.locator("button.chip", { hasText: "Active" });
+  const archivedChip = page.locator("button.chip", { hasText: "Archived" });
+  await expect(activeChip).toHaveText("Active (1)");
+  await expect(archivedChip).toHaveText("Archived (0)");
+
   const renamedRow = page.locator(".crow", { hasText: "E2E Renamed Project" });
   await renamedRow.locator(".vdots").click();
   await page.click('.colpop button:has-text("Archive")');
   await expect(page.locator(".crow", { hasText: "E2E Renamed Project" })).toHaveCount(0);
+  await expect(activeChip).toHaveText("Active (0)");
+  await expect(archivedChip).toHaveText("Archived (1)");
 
   await page.click('button.chip:has-text("Archived")');
   const archivedRow = page.locator(".crow", { hasText: "E2E Renamed Project" });

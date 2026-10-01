@@ -1503,3 +1503,9 @@ At the larger size "Internal Review" and "Client Review" now wrap to two lines o
 **Verified**: computed style on every header cell across the four tables reads 14.5px / 600; looked at each against the Knowledge page. `dashboard.png`, `client-workspace.png` and `settings-team.png` regenerated after a pixel check confirmed every change sat in the header row and the row it pushes down; those specs plus `team-manage` and `manage-clients-projects` pass.
 
 **And 20px lower**: also by direct instruction, the same tables sit 20px further below the toolbar row above them — `.clients` (used only by these four tables) gained `margin-top: 32px`. 32, not 20: it collapses with the 12px bottom margin of whatever sits above (`.secthead`, or the By Client note), so 32 is what actually adds 20. Measured on all four, the gap went from 12px to 32px; the first attempt at a plain 20px only moved them 8px, caught by measuring rather than eyeballing. The three baselines above were regenerated again after confirming the change began at the table and nothing above it moved.
+
+## All Projects: the count moves into the Active/Archived chips
+
+Direct instruction: the number of projects shows in the chips — "Active (3)", "Archived (1)" — and no longer beside the "All Projects" title. Each chip counts its whole tab; the old title count followed the search box, which a tab count shouldn't, so a search can show fewer rows than the chip says. Folder sections keep their own counts.
+
+**Verified**: typecheck and lint clean. `manage-clients-projects.spec.ts`'s project test now checks the chips read "Active (1)" / "Archived (0)", then "Active (0)" / "Archived (1)" once the project is archived. `client-workspace.png` regenerated after confirming the only change was the title-and-chips row; `client-workspace` + `manage-clients-projects` pass.
