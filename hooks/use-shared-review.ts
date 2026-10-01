@@ -6,6 +6,7 @@ export interface SharedCreative {
   id: string;
   name: string;
   format: string;
+  formats: string[]; // every format, main first
   stage: number;
   // Real status, same field the internal app's own bandOf() reads — a
   // Read-only from this page for now — the guest UI's own "Make Changes"

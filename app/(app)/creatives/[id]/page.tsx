@@ -11,7 +11,7 @@ import { useComments } from "@/hooks/use-comments";
 import { useCreateComment } from "@/hooks/use-create-comment";
 import { useMyMembership } from "@/hooks/use-my-membership";
 import { useTeamMembers } from "@/hooks/use-team-members";
-import { formatById } from "@/lib/formats";
+import { formatsLabel, postFormats } from "@/lib/formats";
 import {
   isHighlightAnchor,
   isPinAnchor,
@@ -312,7 +312,7 @@ export default function CreativeReviewPage({
               <div className="cmeta">
                 <div className="ct">{creative.name}</div>
                 <div className="cs">
-                  <span>{formatById(creative.format)?.label ?? creative.format}</span>
+                  <span>{formatsLabel(postFormats(creative))}</span>
                 </div>
               </div>
               <div className="ig">

@@ -1,5 +1,11 @@
 import { test, expect, goToMonth } from "./fixtures";
 
+// The saved-view Save button is a .split; so, now, is New Post's — this is
+// the one that saves the view.
+function viewSaveSplit(page: import("@playwright/test").Page) {
+  return page.locator(".split", { hasText: "Save as New View" });
+}
+
 test("project calendar", async ({ page, frank }) => {
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${frank.projectId}`);
@@ -85,7 +91,7 @@ test("project calendar — Columns picker hides and reshows a column", async ({ 
   await page.waitForSelector(".colpop");
   await page.click('.cpr:has-text("Concept")');
   await expect(page.locator("th", { hasText: "Concept" })).toHaveCount(0);
-  await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 13/14");
+  await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 12/13");
 
   await page.click('button:has-text("Columns")');
   await page.click('.cpr:has-text("Concept")');
@@ -148,7 +154,7 @@ test("project calendar — hover preview holds open while the pointer moves onto
   await expect(page.locator(".evpop.on")).toBeVisible();
 });
 
-test("project calendar — matches the real content-planner template's 14 default columns", async ({
+test("project calendar — matches the real content-planner template's default columns, less Platform", async ({
   page,
   frank,
 }) => {
@@ -158,9 +164,9 @@ test("project calendar — matches the real content-planner template's 14 defaul
   await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
-  await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 14/14");
+  await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 13/13");
   for (const label of [
-    "Week", "Date", "Day", "Time", "Status", "Post Type", "Lead", "Platform",
+    "Week", "Date", "Day", "Time", "Status", "Post Type", "Lead",
     "Asset Name/Link", "Concept", "Image on Text", "Post Copy", "Approach Notes", "Client Feedback",
   ]) {
     // Anchored at the start: a th's text is always {label}{sub} with no
@@ -208,7 +214,7 @@ test("project calendar — resizing a column shows the Save button, Discard Chan
   await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
-  await expect(page.locator(".split")).toHaveCount(0);
+  await expect(viewSaveSplit(page)).toHaveCount(0);
   const statusTh = page.locator("th", { hasText: "Status" });
   const originalWidth = (await statusTh.boundingBox())!.width;
   const gripBox = (await statusTh.locator(".grip").boundingBox())!;
@@ -217,13 +223,13 @@ test("project calendar — resizing a column shows the Save button, Discard Chan
   await page.mouse.move(gripBox.x + 80, gripBox.y + 5, { steps: 5 });
   await page.mouse.up();
 
-  await expect(page.locator(".split .btn.primary").first()).toHaveText("Save as New View");
+  await expect(viewSaveSplit(page).locator(".btn.primary").first()).toHaveText("Save as New View");
   const resizedWidth = (await statusTh.boundingBox())!.width;
   expect(resizedWidth).toBeGreaterThan(originalWidth + 50);
 
-  await page.click(".split .split-t");
+  await viewSaveSplit(page).locator(".split-t").click();
   await page.click('.colpop .cpr:has-text("Discard Changes")');
-  await expect(page.locator(".split")).toHaveCount(0);
+  await expect(viewSaveSplit(page)).toHaveCount(0);
   const revertedWidth = (await statusTh.boundingBox())!.width;
   expect(Math.abs(revertedWidth - originalWidth)).toBeLessThan(2);
 });
@@ -256,7 +262,7 @@ test("project calendar — dragging a column header reorders the table", async (
   const newConceptIndex = after.findIndex((t) => t.startsWith("Concept"));
   const newStatusIndex = after.findIndex((t) => t.startsWith("Status"));
   expect(newConceptIndex).toBeLessThan(newStatusIndex);
-  await expect(page.locator(".split .btn.primary").first()).toHaveText("Save as New View");
+  await expect(viewSaveSplit(page).locator(".btn.primary").first()).toHaveText("Save as New View");
 });
 
 test("project calendar — hiding a column via the Columns picker also marks the view dirty", async ({
@@ -274,5 +280,5 @@ test("project calendar — hiding a column via the Columns picker also marks the
   await page.click('.cpr:has-text("Concept")');
   await page.keyboard.press("Escape");
 
-  await expect(page.locator(".split .btn.primary").first()).toHaveText("Save as New View");
+  await expect(viewSaveSplit(page).locator(".btn.primary").first()).toHaveText("Save as New View");
 });

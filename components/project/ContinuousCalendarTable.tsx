@@ -17,6 +17,7 @@ import { bandOf, stageLabel, stageColor, exceptionLabel, type Band } from "@/lib
 import { errorMessage } from "@/lib/errors";
 import { getMonthWeeks, getWeekDays, isoWeekNumber, dateKey } from "@/lib/calendar-weeks";
 import { useMyAgency } from "@/hooks/use-my-agency";
+import { DraftEditBar, DraftField, useDraftPost } from "@/components/project/draft-post";
 import {
   useCalendarViews,
   useCreateCalendarView,
@@ -180,6 +181,7 @@ export function ContinuousCalendarTable({
   cxReadOnly,
   isStaff,
   initialFocusDate,
+  draftRow,
 }: {
   projectId: string;
   projectName: string;
@@ -198,11 +200,19 @@ export function ContinuousCalendarTable({
   // for a different month doesn't land invisible outside whatever period
   // this view happened to already be showing.
   initialFocusDate?: string | null;
+  // Set while New Post → Row is open (components/project/draft-post.tsx).
+  draftRow?: { onClose: () => void; onCreated: (focusDate: string | null) => void } | null;
 }) {
+  const draft = useDraftPost({
+    projectId,
+    delivery: "continuous",
+    onCreated: (d) => draftRow?.onCreated(d),
+  });
   const router = useRouter();
   const today = useMemo(() => new Date(), []);
   const [anchor, setAnchor] = useState(() => (initialFocusDate ? new Date(initialFocusDate) : today));
   const [viewMode, setViewMode] = useState<ViewMode>("month");
+  if (draftRow && viewMode === "calendar") setViewMode("month");
   const [statusFilter, setStatusFilter] = useState<"all" | Band>("all");
 
   // Checkbox multi-select — table views only (Week/Month), not the
@@ -800,6 +810,23 @@ export function ContinuousCalendarTable({
         />
       )}
 
+      {draftRow && (
+        <DraftEditBar
+          label={`New post in ${projectName}`}
+          blocked={
+            !visibleOrderedKeys.includes("creative")
+              ? "Show the Creative Name column to name the post"
+              : !visibleOrderedKeys.includes("placement")
+                ? "Show the Placement column to say where it goes"
+                : null
+          }
+          problem={draft.problem}
+          saving={draft.saving}
+          onCancel={draftRow.onClose}
+          onSave={draft.save}
+        />
+      )}
+
       {viewMode === "calendar" ? (
         <ContinuousCalendarGrid
           year={anchor.getFullYear()}
@@ -807,7 +834,7 @@ export function ContinuousCalendarTable({
           creatives={creatives}
           statusFilter={statusFilter}
         />
-      ) : weeks.length === 0 ? (
+      ) : weeks.length === 0 && !draftRow ? (
         <div className="empty">
           <b>Nothing due</b>
           <span>
@@ -868,6 +895,33 @@ export function ContinuousCalendarTable({
               </tr>
             </thead>
             <tbody>
+              {draftRow && (
+                <tr className="draft" data-draft="">
+                  {isStaff && <td className="skchk" style={{ left: 0 }} />}
+                  <td className="sk1" style={{ left: skOffset }}>
+                    <DraftField draft={draft} field="date" />
+                  </td>
+                  {visibleOrderedKeys.map((key) => {
+                    const field =
+                      key === "creative"
+                        ? "name"
+                        : key === "placement"
+                          ? "destination"
+                          : key === "conceptRef"
+                            ? "concept"
+                            : null;
+                    return (
+                      <td key={key} className={key === "conceptRef" ? "cellw" : undefined}>
+                        {field ? (
+                          <DraftField draft={draft} field={field} />
+                        ) : key === "status" ? (
+                          <span className="tdim">1. {stageLabel(1, "continuous")}</span>
+                        ) : null}
+                      </td>
+                    );
+                  })}
+                </tr>
+              )}
               {weeks.map(({ days, items }) => (
                 <Fragment key={dateKey(days[0])}>
                   {viewMode === "month" && (

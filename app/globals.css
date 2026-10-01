@@ -1203,15 +1203,6 @@ body.lightrail .avatar {
   opacity: 0.65;
   font-weight: 700;
 }
-.pchip {
-  display: inline-block;
-  font-size: 11.5px;
-  font-weight: 500;
-  padding: 1px 6px;
-  border-radius: 3px;
-  margin: 0 3px 2px 0;
-  white-space: nowrap;
-}
 .lead {
   display: inline-flex;
   align-items: center;
@@ -5134,4 +5125,108 @@ button.avatar {
   height: 100%;
   object-fit: cover;
   display: block;
+}
+/* New/Edit Post format picker (FormatPicker) — a trigger dressed as the
+   .field select it replaced, opening a .colpop of ticked formats. */
+.fmtpick {
+  display: block;
+  width: 100%;
+  min-height: 35px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r);
+  padding: 7px 30px 7px 9px;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  color: var(--ink);
+  background: var(--surface)
+    url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")
+    no-repeat right 9px center / 13px;
+}
+.fmtpick:hover {
+  border-color: var(--muted);
+}
+.fmtpick:focus,
+.fmtpick[aria-expanded="true"] {
+  outline: none;
+  border-color: var(--action);
+  box-shadow: 0 0 0 3px var(--action-soft);
+}
+/* Inside a .field, so undo the form's own input box. */
+.fmtpop .cp-s input,
+.fmtpop .cp-s input:focus {
+  border: none;
+  padding: 0;
+  box-shadow: none;
+}
+.fmtpop .cp-h .cs {
+  font-size: 12px;
+  color: var(--muted);
+}
+.fmtpop-cat {
+  padding: 8px 8px 3px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+/* Quick-add draft row (New Post → Row) — ported from frank-prototype.html
+   (.editbar, .eb-t, tr.draft, .ecell), values as-is. */
+.editbar {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 70;
+  display: none;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--ink);
+  box-shadow: 0 12px 34px rgba(20, 22, 26, 0.3);
+}
+.editbar.on {
+  display: flex;
+}
+.eb-t {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #fff;
+  margin-right: 2px;
+}
+.editbar .btn {
+  border-color: rgba(255, 255, 255, 0.25);
+  background: transparent;
+  color: #fff;
+}
+.editbar .btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+.editbar .btn.primary {
+  background: #fff;
+  color: var(--ink);
+  border-color: transparent;
+}
+.tbl tr.draft td {
+  background: #fffdf5;
+  border-bottom: 2px solid var(--action);
+}
+.ecell {
+  width: 100%;
+  border: 1px solid var(--action);
+  border-radius: 5px;
+  padding: 5px 7px;
+  font: inherit;
+  font-size: var(--d-fs);
+  line-height: var(--d-line);
+  resize: vertical;
+  background: var(--surface);
+}
+.ecell:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--action-soft);
+}
+.ecell.one {
+  resize: none;
 }

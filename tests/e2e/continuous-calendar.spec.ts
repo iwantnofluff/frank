@@ -1,5 +1,11 @@
 import { test, expect, goToMonth } from "./fixtures";
 
+// The saved-view Save button is a .split; so, now, is New Post's — this is
+// the one that saves the view.
+function viewSaveSplit(page: import("@playwright/test").Page) {
+  return page.locator(".split", { hasText: "Save as New View" });
+}
+
 // ContinuousCalendarTable — a copy of ProjectCalendarTable/project-calendar
 // .spec.ts's own coverage, scoped to what's genuinely new or different here:
 // the 13-field template, the cx-jsonb-backed built-ins (Funnel/Type/TG/
@@ -141,7 +147,7 @@ test("continuous calendar — resizing a column marks the view dirty, Discard Ch
   await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
-  await expect(page.locator(".split")).toHaveCount(0);
+  await expect(viewSaveSplit(page)).toHaveCount(0);
   const statusTh = page.locator("th", { hasText: "Status" });
   const originalWidth = (await statusTh.boundingBox())!.width;
   const gripBox = (await statusTh.locator(".grip").boundingBox())!;
@@ -150,13 +156,13 @@ test("continuous calendar — resizing a column marks the view dirty, Discard Ch
   await page.mouse.move(gripBox.x + 80, gripBox.y + 5, { steps: 5 });
   await page.mouse.up();
 
-  await expect(page.locator(".split .btn.primary").first()).toHaveText("Save as New View");
+  await expect(viewSaveSplit(page).locator(".btn.primary").first()).toHaveText("Save as New View");
   const resizedWidth = (await statusTh.boundingBox())!.width;
   expect(resizedWidth).toBeGreaterThan(originalWidth + 50);
 
-  await page.click(".split .split-t");
+  await viewSaveSplit(page).locator(".split-t").click();
   await page.click('.colpop .cpr:has-text("Discard Changes")');
-  await expect(page.locator(".split")).toHaveCount(0);
+  await expect(viewSaveSplit(page)).toHaveCount(0);
 });
 
 test("continuous calendar — saved views are scoped separately from Scheduled's own", async ({ page, frank }) => {

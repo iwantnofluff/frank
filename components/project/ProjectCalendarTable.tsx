@@ -17,12 +17,12 @@ import { SaveViewModal } from "@/components/project/SaveViewModal";
 import { PermanentDeleteConfirm } from "@/components/project/PermanentDeleteConfirm";
 import { bandOf, stageLabel, stageColor, exceptionLabel, type Band } from "@/lib/stage-labels";
 import { errorMessage } from "@/lib/errors";
-import { formatById } from "@/lib/formats";
-import { platformColor } from "@/lib/platform-colors";
+import { formatsLabel, postFormats } from "@/lib/formats";
 import { getMonthWeeks, getWeekDays, isoWeekNumber, dateKey } from "@/lib/calendar-weeks";
 import { useCopyVersionsByCreative, type CopyVersionSummary } from "@/hooks/use-copy-versions-by-creative";
 import { useLatestFeedbackByCreative } from "@/hooks/use-latest-feedback-by-creative";
 import { useMyAgency } from "@/hooks/use-my-agency";
+import { DraftEditBar, DraftField, useDraftPost } from "@/components/project/draft-post";
 import {
   useCalendarViews,
   useCreateCalendarView,
@@ -71,7 +71,6 @@ const TOGGLABLE_COLUMNS = [
   { key: "status", label: "Status", sub: "Status of Post", width: 156 },
   { key: "type", label: "Post Type", sub: "Suggested Type", width: 134 },
   { key: "lead", label: "Lead", sub: "POC in Team", width: 112 },
-  { key: "platform", label: "Platform", sub: "Which Platforms", width: 132 },
   { key: "creative", label: "Asset Name/Link", sub: "Latest Post Visual", width: 196 },
   { key: "concept", label: "Concept", sub: "Describe the Post or Add Ref Link", width: 236 },
   // One column each, not three (1/2/3) — the cell shows the latest
@@ -136,6 +135,7 @@ export function ProjectCalendarTable({
   cxReadOnly,
   isStaff,
   initialFocusDate,
+  draftRow,
 }: {
   projectId: string;
   projectName: string;
@@ -154,11 +154,22 @@ export function ProjectCalendarTable({
   // post briefed for a different month doesn't land invisible outside
   // whatever period this view happened to already be showing.
   initialFocusDate?: string | null;
+  // Set while New Post → Row is open: a draft row at the top of the table,
+  // saved from the floating bar (components/project/draft-post.tsx).
+  draftRow?: { onClose: () => void; onCreated: (focusDate: string | null) => void } | null;
 }) {
   const router = useRouter();
+  const draft = useDraftPost({
+    projectId,
+    delivery: "scheduled",
+    onCreated: (d) => draftRow?.onCreated(d),
+  });
   const today = useMemo(() => new Date(), []);
   const [anchor, setAnchor] = useState(() => (initialFocusDate ? new Date(initialFocusDate) : today));
   const [viewMode, setViewMode] = useState<ViewMode>("month");
+  // The draft row lives in the table, so opening one from the Calendar grid
+  // switches to the Month table (the prototype refuses instead).
+  if (draftRow && viewMode === "calendar") setViewMode("month");
   const [statusFilter, setStatusFilter] = useState<"all" | Band>("all");
 
   // Checkbox multi-select — table views only (Week/Month), not the
@@ -821,6 +832,21 @@ export function ProjectCalendarTable({
         />
       )}
 
+      {draftRow && (
+        <DraftEditBar
+          label={`New post in ${projectName}`}
+          blocked={
+            visibleOrderedKeys.includes("creative")
+              ? null
+              : "Show the Asset Name column to name the post"
+          }
+          problem={draft.problem}
+          saving={draft.saving}
+          onCancel={draftRow.onClose}
+          onSave={draft.save}
+        />
+      )}
+
       {viewMode === "calendar" ? (
         <ProjectCalendarGrid
           year={anchor.getFullYear()}
@@ -828,7 +854,7 @@ export function ProjectCalendarTable({
           creatives={creatives}
           statusFilter={statusFilter}
         />
-      ) : weeks.length === 0 ? (
+      ) : weeks.length === 0 && !draftRow ? (
         <div className="empty">
           <b>Nothing scheduled</b>
           <span>
@@ -889,6 +915,43 @@ export function ProjectCalendarTable({
               </tr>
             </thead>
             <tbody>
+              {draftRow && (
+                <tr className="draft" data-draft="">
+                  {isStaff && <td className="skchk" style={{ left: 0 }} />}
+                  <td className="sk1" style={{ left: skOffset }}>
+                    <span className="tdim">—</span>
+                  </td>
+                  <td className="sk2" style={{ left: 66 + skOffset }}>
+                    <DraftField draft={draft} field="date" />
+                  </td>
+                  <td className="sk3" style={{ left: 158 + skOffset }}>
+                    <span className="tdim">—</span>
+                  </td>
+                  {visibleOrderedKeys.map((key) => {
+                    const field =
+                      key === "time"
+                        ? "time"
+                        : key === "type"
+                          ? "format"
+                          : key === "lead"
+                            ? "lead"
+                            : key === "creative"
+                              ? "name"
+                              : key === "concept"
+                                ? "concept"
+                                : null;
+                    return (
+                      <td key={key} className={key === "concept" ? "cellw" : undefined}>
+                        {field ? (
+                          <DraftField draft={draft} field={field} />
+                        ) : key === "status" ? (
+                          <span className="tdim">1. Concept</span>
+                        ) : null}
+                      </td>
+                    );
+                  })}
+                </tr>
+              )}
               {weeks.map(({ days, items }) => (
                 <Fragment key={dateKey(days[0])}>
                   {viewMode === "month" && (
@@ -908,7 +971,6 @@ export function ProjectCalendarTable({
                   {items.map(({ c, dt }) => {
                     const band = bandOf(c.stage, c.exception);
                     const color = stageColor(c.stage, c.exception);
-                    const format = formatById(c.format);
                     const rowClasses = [
                       band === "approved" ? "done" : "",
                       dateKey(dt) === todayKey ? "istoday" : "",
@@ -967,7 +1029,7 @@ export function ProjectCalendarTable({
                             case "type":
                               return (
                                 <td key={key}>
-                                  <span className="tdim">{format?.label ?? c.format}</span>
+                                  <span className="tdim">{formatsLabel(postFormats(c))}</span>
                                 </td>
                               );
                             case "lead":
@@ -980,24 +1042,6 @@ export function ProjectCalendarTable({
                                       </i>
                                       {c.lead.name}
                                     </span>
-                                  ) : (
-                                    <span className="tdim">—</span>
-                                  )}
-                                </td>
-                              );
-                            case "platform":
-                              return (
-                                <td key={key}>
-                                  {c.platforms?.length ? (
-                                    c.platforms.map((p) => (
-                                      <span
-                                        key={p}
-                                        className="pchip"
-                                        style={{ background: `${platformColor(p)}1A`, color: platformColor(p) }}
-                                      >
-                                        {p}
-                                      </span>
-                                    ))
                                   ) : (
                                     <span className="tdim">—</span>
                                   )}

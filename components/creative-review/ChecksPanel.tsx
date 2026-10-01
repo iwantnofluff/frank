@@ -2,7 +2,7 @@
 
 import type { CreativeRow } from "@/hooks/use-creative";
 import type { CopyVersionRow } from "@/hooks/use-copy-versions";
-import { formatById, COPY_FIELD_LABELS } from "@/lib/formats";
+import { copyFieldsFor, formatsLabel, postFormats, COPY_FIELD_LABELS } from "@/lib/formats";
 
 // Informational only, same as BriefPanel — mirrors the read-only half of
 // CreativeModal's own Checks tab (Latest Copy Version, WIIFM Direction).
@@ -16,8 +16,7 @@ export function ChecksPanel({
   creative: CreativeRow;
   latestCopyVersion: CopyVersionRow | null;
 }) {
-  const format = formatById(creative.format);
-  const copyFieldSpecs = (format?.copyFields ?? []).map((key) => ({
+  const copyFieldSpecs = copyFieldsFor(postFormats(creative)).map((key) => ({
     key,
     label: COPY_FIELD_LABELS[key] ?? key,
   }));
@@ -32,7 +31,7 @@ export function ChecksPanel({
           {latestCopyVersion ? `Latest Copy Version ${latestCopyVersion.version_no}` : "Latest Copy Version"}
         </div>
         {!includesCopy ? (
-          <p className="fd-d">{format?.label ?? "This format"} has no caption fields.</p>
+          <p className="fd-d">{postFormats(creative).length > 1 ? "These formats have" : `${formatsLabel(postFormats(creative))} has`} no caption fields.</p>
         ) : !latestCopyVersion ? (
           <p className="fd-d">No copy saved yet.</p>
         ) : (

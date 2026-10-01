@@ -111,3 +111,24 @@ export function formatById(id: string): FormatDefinition | undefined {
 export function formatsByCategory(category: string): FormatDefinition[] {
   return FORMATS.filter((f) => f.category === category);
 }
+
+// A post can have several formats (creatives.formats, phase29). The first
+// is the main one — it sets the Feed Preview's shape and is what
+// creatives.format mirrors. An older row with no formats falls back to its
+// single format.
+export function postFormats(c: { format: string; formats?: string[] | null }): string[] {
+  return c.formats && c.formats.length ? c.formats : [c.format];
+}
+
+export function formatsLabel(ids: string[]): string {
+  return ids.map((id) => formatById(id)?.label ?? id).join(" + ");
+}
+
+// Every chosen format's copy fields, once each, in first-seen order.
+export function copyFieldsFor(ids: string[]): string[] {
+  const out: string[] = [];
+  for (const id of ids) {
+    for (const key of formatById(id)?.copyFields ?? []) if (!out.includes(key)) out.push(key);
+  }
+  return out;
+}

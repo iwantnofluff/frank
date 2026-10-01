@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReviewController } from "@/hooks/use-review-controller";
-import { formatById } from "@/lib/formats";
+import { formatsLabel, postFormats } from "@/lib/formats";
 import { GuestComposer } from "./GuestComposer";
 
 export function MobileReview({
@@ -84,7 +84,7 @@ export function MobileReview({
                 <div className="m-meta">
                   <b>{active.name}</b>
                   <div className="mm">
-                    <span>{formatById(active.format)?.label ?? active.format}</span>
+                    <span>{formatsLabel(postFormats(active))}</span>
                     {active.destination && <span>· {active.destination}</span>}
                   </div>
                 </div>

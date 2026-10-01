@@ -2,7 +2,7 @@
 
 import type { CreativeRow } from "@/hooks/use-creative";
 import type { CopyVersionRow } from "@/hooks/use-copy-versions";
-import { formatById } from "@/lib/formats";
+import { formatById, formatsLabel, postFormats } from "@/lib/formats";
 
 // Informational only, on this page — editing the brief now happens in
 // CreativeModal's Brief tab (the single entry point that replaced New
@@ -20,7 +20,9 @@ export function BriefPanel({
   latestCopyVersion: CopyVersionRow | null;
   leadName: string | null;
 }) {
-  const format = formatById(creative.format);
+  const formats = postFormats(creative);
+  // Each content type once, in the order its formats were chosen.
+  const categories = [...new Set(formats.map((id) => formatById(id)?.category).filter(Boolean))];
   const delivery = creative.projects?.delivery ?? "scheduled";
   const slideText = latestCopyVersion?.slide_text ?? [];
 
@@ -34,12 +36,12 @@ export function BriefPanel({
 
       <div className="bsec">
         <div className="bl">Content Type</div>
-        <p className="fd-d">{format?.category ?? "—"}</p>
+        <p className="fd-d">{categories.length ? categories.join(" + ") : "—"}</p>
       </div>
 
       <div className="bsec">
         <div className="bl">Format</div>
-        <p className="fd-d">{format?.label ?? creative.format}</p>
+        <p className="fd-d">{formatsLabel(formats)}</p>
       </div>
 
       {delivery === "scheduled" ? (

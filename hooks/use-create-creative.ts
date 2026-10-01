@@ -5,7 +5,8 @@ import { createClient } from "@/lib/supabase/client";
 
 export interface CreateCreativeInput {
   name: string;
-  format: string; // key, e.g. "ig_feed" — never the label
+  // Keys, e.g. "ig_feed" — never labels. The first is the main format.
+  formats: string[];
   leadUserId: string | null;
   concept: string;
   referenceUrl: string;
@@ -50,7 +51,8 @@ export function useCreateCreative(projectId: string) {
         .insert({
           project_id: projectId,
           name: input.name,
-          format: input.format,
+          format: input.formats[0],
+          formats: input.formats,
           lead_user_id: input.leadUserId,
           concept: input.concept.trim() || null,
           reference_url: input.referenceUrl.trim() || null,

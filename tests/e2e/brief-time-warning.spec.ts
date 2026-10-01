@@ -1,6 +1,7 @@
 import { test, expect } from "./fixtures";
 import { createClient } from "@supabase/supabase-js";
 import path from "path";
+import type { Page } from "@playwright/test";
 process.loadEnvFile(path.resolve(__dirname, "../../.env.local"));
 const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
   auth: { persistSession: false, autoRefreshToken: false },
@@ -12,6 +13,15 @@ const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SU
 // on a live AI call, not something a permanent test should wait on — see
 // shared-review-public.spec.ts's own classification test and
 // docs/parity-gaps.md) so this test is deterministic and fast.
+// The Format field is a multi-select now: tick the new one, untick the old.
+async function swapFormat(page: Page, from: string, to: string) {
+  await page.click("#nbFmt");
+  const pop = page.getByRole("dialog", { name: "Formats" });
+  await pop.getByRole("checkbox", { name: to, exact: true }).click();
+  await pop.getByRole("checkbox", { name: from, exact: true }).click();
+  await page.keyboard.press("Escape");
+}
+
 test("New Brief shows a repeat-issue warning scoped to the format being chosen", async ({
   page,
   frank,
@@ -62,15 +72,14 @@ test("New Brief shows a repeat-issue warning scoped to the format being chosen",
   await page.click('button:has-text("New Post")');
   await page.waitForSelector("#nbFmt");
 
-  await page.selectOption("#nbCat", "Social — organic");
-  await page.selectOption("#nbFmt", "ig_story");
+  await swapFormat(page, "Instagram Feed", "Instagram Story");
   const warning = page.locator(".note", { hasText: "Craft and Layout" });
   await expect(warning).toBeVisible();
   await expect(warning).toContainText("2");
   await expect(warning).toContainText("Instagram Story");
 
   // A format with no matching history shows nothing.
-  await page.selectOption("#nbFmt", "ig_feed");
+  await swapFormat(page, "Instagram Story", "Instagram Feed");
   await expect(page.locator(".note", { hasText: "Craft and Layout" })).toHaveCount(0);
 });
 
@@ -93,8 +102,7 @@ test("New Brief shows no warning for a client with fewer than two matching issue
   await page.waitForSelector('button:has-text("New Post")');
   await page.click('button:has-text("New Post")');
   await page.waitForSelector("#nbFmt");
-  await page.selectOption("#nbCat", "Social — organic");
-  await page.selectOption("#nbFmt", "ig_story");
+  await swapFormat(page, "Instagram Feed", "Instagram Story");
   await page.waitForTimeout(800);
   await expect(page.locator(".note", { hasText: "Craft and Layout" })).toHaveCount(0);
 });

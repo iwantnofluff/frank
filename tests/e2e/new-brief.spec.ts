@@ -69,3 +69,54 @@ test("a real client-role session has no New Brief entry point", async ({ page, f
 
   await expect(page.locator('button:has-text("New Post")')).toHaveCount(0);
 });
+
+test("a post can have several formats, with all their copy fields, and closes with copy only", async ({ page, frank }) => {
+  test.setTimeout(60_000);
+  const { createClient } = await import("@supabase/supabase-js");
+  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { persistSession: false },
+  });
+  await frank.loginAsStaff(page);
+  await page.goto(`/projects/${frank.projectId}`);
+  await page.waitForSelector(".tblwrap, .empty");
+
+  await page.click('button:has-text("New Post")');
+  await page.fill("#nbName", "Multi Format E2E");
+  await page.fill("#nbDate", "2027-04-01");
+  // Instagram Feed is ticked by default; add a format from another content type.
+  await expect(page.locator("#nbFmt")).toHaveText("Instagram Feed");
+  await page.click("#nbFmt");
+  const pop = page.getByRole("dialog", { name: "Formats" });
+  await pop.getByRole("checkbox", { name: "Meta Feed Ad" }).click();
+  // The last one left can't be unticked.
+  await pop.getByRole("checkbox", { name: "Instagram Feed" }).click();
+  await pop.getByRole("checkbox", { name: "Meta Feed Ad" }).click();
+  await expect(pop.getByRole("checkbox", { name: "Meta Feed Ad" })).toHaveAttribute("aria-checked", "true");
+  await pop.getByRole("checkbox", { name: "Instagram Feed" }).click();
+  await page.keyboard.press("Escape");
+  await expect(pop).toHaveCount(0);
+  await expect(page.locator(".scrim")).toHaveCount(1);
+  await expect(page.locator("#nbFmt")).toHaveText("Meta Feed Ad + Instagram Feed");
+  await page.click('button:has-text("Create Post")');
+  await expect(page.getByRole("tab", { name: "Content" })).toBeEnabled();
+
+  const row = async () =>
+    (await admin.from("creatives").select("format, formats").eq("project_id", frank.projectId).eq("name", "Multi Format E2E").single()).data!;
+  expect(await row()).toEqual({ format: "meta_feed", formats: ["meta_feed", "ig_feed"] });
+
+  // Every chosen format's copy fields, each once.
+  await page.getByRole("tab", { name: "Content" }).click();
+  const labels = page.locator(".mtabbody .field > label");
+  for (const l of ["Primary Text", "Headline", "Description", "Call to Action", "Caption", "Alt Text"]) {
+    await expect(labels.filter({ hasText: new RegExp(`^${l}$`) })).toHaveCount(1);
+  }
+
+  // Copy only, no artwork: saving the version and then Save and Close closes.
+  await page.locator(".mtabbody .field textarea").first().fill("Copy with no creative yet.");
+  await page.getByRole("button", { name: /^Save Version 1$/ }).click();
+  await expect(page.getByText("Saved as version 1.")).toBeVisible();
+  await page.getByRole("button", { name: "Save and Close" }).click();
+  await expect(page.locator(".scrim")).toHaveCount(0);
+
+  await expect(page.locator("tr", { hasText: "Multi Format E2E" })).toContainText("Meta Feed Ad + Instagram Feed");
+});

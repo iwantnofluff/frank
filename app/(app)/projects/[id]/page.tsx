@@ -6,6 +6,7 @@ import { useCreatives } from "@/hooks/use-creatives";
 import { useCustomColumns } from "@/hooks/use-custom-columns";
 import { useUpdateCreativeCx } from "@/hooks/use-update-creative-cx";
 import { useIsStaff } from "@/hooks/use-is-staff";
+import { SplitButton } from "@/components/ui/SplitButton";
 import { errorMessage } from "@/lib/errors";
 import { CreativeModal } from "@/components/creative-review/CreativeModal";
 import { ProjectCalendarTable } from "@/components/project/ProjectCalendarTable";
@@ -30,6 +31,17 @@ export default function ProjectPage({
   const updateCx = useUpdateCreativeCx(id);
   const { isStaff, isPending: isStaffPending } = useIsStaff();
   const [newBriefOpen, setNewBriefOpen] = useState(false);
+  // New Post → Row: a draft row at the top of the table instead of the window.
+  const [draftRowOpen, setDraftRowOpen] = useState(false);
+  const draftRow = draftRowOpen
+    ? {
+        onClose: () => setDraftRowOpen(false),
+        onCreated: (focusDate: string | null) => {
+          setDraftRowOpen(false);
+          if (focusDate) setCalendarFocusDate(focusDate);
+        },
+      }
+    : null;
   const [calendarFocusDate, setCalendarFocusDate] = useState<string | null>(null);
   const [archiveFilter, setArchiveFilter] = useState<ArchiveFilter>("active");
 
@@ -103,13 +115,22 @@ export default function ProjectPage({
           )}
           {confirmedStaff && showNewBrief && <span className="toolsep" />}
           {showNewBrief && project && (
-            <button
-              type="button"
-              className="btn primary"
+            <SplitButton
+              label="+ New Post"
               onClick={() => setNewBriefOpen(true)}
-            >
-              + New Post
-            </button>
+              menuLabel="How to add it"
+              items={[
+                { label: "Window", hint: "The full form", onClick: () => setNewBriefOpen(true) },
+                {
+                  label: "Row",
+                  hint: "Type it straight into the table",
+                  onClick: () => {
+                    setArchiveFilter("active");
+                    setDraftRowOpen(true);
+                  },
+                },
+              ]}
+            />
           )}
         </div>
       </div>
@@ -121,7 +142,7 @@ export default function ProjectPage({
         </div>
       )}
 
-      {!isError && !isLoading && project?.delivery === "continuous" && archiveFilter === "active" && activeCreatives.length === 0 && (
+      {!isError && !isLoading && project?.delivery === "continuous" && archiveFilter === "active" && activeCreatives.length === 0 && !draftRowOpen && (
         <div className="empty">
           <b>No creatives yet</b>
           <span>
@@ -153,10 +174,11 @@ export default function ProjectPage({
           cxReadOnly={!confirmedStaff}
           isStaff={confirmedStaff}
           initialFocusDate={calendarFocusDate}
+          draftRow={draftRow}
         />
       )}
 
-      {!isError && creatives && project?.delivery === "continuous" && visibleCreatives.length > 0 && (
+      {!isError && creatives && project?.delivery === "continuous" && (visibleCreatives.length > 0 || draftRowOpen) && (
         <ContinuousCalendarTable
           key={calendarFocusDate ?? "default"}
           projectId={id}
@@ -170,6 +192,7 @@ export default function ProjectPage({
           cxReadOnly={!confirmedStaff}
           isStaff={confirmedStaff}
           initialFocusDate={calendarFocusDate}
+          draftRow={draftRow}
         />
       )}
 

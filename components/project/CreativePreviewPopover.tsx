@@ -5,7 +5,7 @@ import { useCopyVersions } from "@/hooks/use-copy-versions";
 import { useViewportFit } from "@/hooks/use-viewport-fit";
 import { useComments } from "@/hooks/use-comments";
 import { stageColor, stageLabel, exceptionLabel } from "@/lib/stage-labels";
-import { formatById } from "@/lib/formats";
+import { formatsLabel, postFormats } from "@/lib/formats";
 import type { CreativeListRow } from "@/hooks/use-creatives";
 
 function relativeTime(iso: string): string {
@@ -88,7 +88,6 @@ export function CreativePreviewPopover({
   const caption = latestCopy?.fields?.caption;
   const openComments = comments?.filter((c) => !c.resolved_at).length ?? 0;
   const color = stageColor(creative.stage, creative.exception);
-  const format = formatById(creative.format);
   const timeLabel = creative.scheduled_at
     ? new Date(creative.scheduled_at).toLocaleTimeString(undefined, {
         hour: "2-digit",
@@ -126,7 +125,7 @@ export function CreativePreviewPopover({
         </span>
         <div>
           <b>{creative.name}</b>
-          <span>{format?.label ?? creative.format}</span>
+          <span>{formatsLabel(postFormats(creative))}</span>
         </div>
       </div>
       <div className="pp-media">

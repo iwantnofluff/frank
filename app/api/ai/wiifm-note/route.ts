@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { runAiTask } from "@/lib/ai/run-ai-task";
-import { formatById, COPY_FIELD_LABELS } from "@/lib/formats";
+import { copyFieldsFor, postFormats, COPY_FIELD_LABELS } from "@/lib/formats";
 
 // Ported the reasoning behind removing the manual "Approach notes — WIIFM
 // rationale" input from BriefPanel.tsx: a hand-typed note goes stale the
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
 
   const { data: creative, error: creativeError } = await supabase
     .from("creatives")
-    .select("concept, format")
+    .select("concept, format, formats")
     .eq("id", creativeId)
     .single();
   if (creativeError || !creative) {
@@ -74,7 +74,8 @@ export async function POST(request: Request) {
   // for it and this route reported "No copy to analyse yet" for every
   // format that isn't caption/headline/cta shaped). Same field-plus-label
   // join CreativeModal.tsx's own copyTextForCheck uses client-side.
-  const copyFieldSpecs = (formatById(creative.format)?.copyFields ?? []).map((key) => ({
+  // A post with several formats has all their fields, combined.
+  const copyFieldSpecs = copyFieldsFor(postFormats(creative)).map((key) => ({
     key,
     label: COPY_FIELD_LABELS[key] ?? key,
   }));

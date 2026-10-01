@@ -6,8 +6,8 @@ import { ListEditor } from "@/components/ui/ListEditor";
 import { DateTimePicker } from "@/components/ui/DateTimePicker";
 import { CxCell } from "@/components/project/CxCell";
 import type { CreativeRow } from "@/hooks/use-creative";
-import type { CopyVersionRow } from "@/hooks/use-copy-versions";
-import type { CreativeVersionRow } from "@/hooks/use-creative-versions";
+import { useCopyVersions, type CopyVersionRow } from "@/hooks/use-copy-versions";
+import { useCreativeVersions, type CreativeVersionRow } from "@/hooks/use-creative-versions";
 import { useCreateCreative } from "@/hooks/use-create-creative";
 import { useUpdateBrief } from "@/hooks/use-update-brief";
 import { useSaveSlideText } from "@/hooks/use-save-slide-text";
@@ -23,7 +23,8 @@ import { useFormatDirections } from "@/hooks/use-format-directions";
 import { useAgencyKnowledge } from "@/hooks/use-agency-knowledge";
 import { useKnowledgeEntries } from "@/hooks/use-knowledge-entries";
 import { useRepeatIssueCount } from "@/hooks/use-repeat-issues";
-import { FORMAT_CATEGORIES, formatsByCategory, formatById, COPY_FIELD_LABELS } from "@/lib/formats";
+import { FORMAT_CATEGORIES, formatsByCategory, formatsLabel, copyFieldsFor, postFormats, COPY_FIELD_LABELS } from "@/lib/formats";
+import { FormatPicker } from "./FormatPicker";
 import { validateUploadFile, ACCEPTED_FILE_EXTENSIONS } from "@/lib/upload-validation";
 import {
   buildCaptionPrompt,
@@ -410,11 +411,22 @@ export function CreativeModal(props: CreativeModalProps) {
   const { data: customColumns } = useCustomColumns(projectId);
   const createCreative = useCreateCreative(projectId);
 
-  // Full history, newest first — empty in create mode, since neither can
-  // exist before the brief itself does. Needed by both tabs: Brief's own
-  // Text on Image field carries over from the latest copy version.
-  const copyVersions = isCreate ? [] : props.copyVersions;
-  const creativeVersions = isCreate ? [] : props.creativeVersions;
+  // Once a fresh brief is created, its id lives here — unlocks the Upload
+  // & Copy tab without needing to close and reopen this window (Tab 1
+  // then shows what it just created, same fields, no longer blank), and
+  // lets every further "Update" click amend that same row instead of
+  // creating another one (see handleSaveBrief below).
+  const [createdCreativeId, setCreatedCreativeId] = useState<string | null>(null);
+
+  // Full history, newest first. Needed by both tabs: Brief's own Text on
+  // Image field carries over from the latest copy version. In create mode
+  // there's no parent to pass them, so once the brief exists they're read
+  // here — otherwise a version saved in this same window never counted as
+  // saved, and Save and Close stayed disabled after saving copy.
+  const { data: createdCopyVersions } = useCopyVersions(isCreate ? (createdCreativeId ?? "") : "");
+  const { data: createdCreativeVersions } = useCreativeVersions(isCreate ? (createdCreativeId ?? "") : "");
+  const copyVersions = isCreate ? (createdCopyVersions ?? []) : props.copyVersions;
+  const creativeVersions = isCreate ? (createdCreativeVersions ?? []) : props.creativeVersions;
   const latestCopyVersion = copyVersions[0] ?? null;
   // What saving copy right now would create — shown on both the inline
   // Save Copy button and the footer's own Save button whenever this
@@ -426,11 +438,11 @@ export function CreativeModal(props: CreativeModalProps) {
 
   // ---- Brief tab state ----------------------------------------------
   const [name, setName] = useState(isCreate ? "" : props.creative.name);
-  const [category, setCategory] = useState<string>(
-    isCreate ? FORMAT_CATEGORIES[0] : (formatById(props.creative.format)?.category ?? FORMAT_CATEGORIES[0]),
+  // Every format the post goes out as; the first is the main one.
+  const [formats, setFormats] = useState<string[]>(
+    isCreate ? [formatsByCategory(FORMAT_CATEGORIES[0])[0]?.id ?? ""] : postFormats(props.creative),
   );
-  const formatsInCategory = useMemo(() => formatsByCategory(category), [category]);
-  const [format, setFormat] = useState(isCreate ? (formatsInCategory[0]?.id ?? "") : props.creative.format);
+  const format = formats[0];
   // Brief-time warning (docs/frank-data-intelligence.pdf, "Where it
   // surfaces — At the brief") — only meaningful while still choosing a
   // format for a new brief; an existing creative's format is fixed, so
@@ -461,12 +473,6 @@ export function CreativeModal(props: CreativeModalProps) {
     if (updatedNoteTimeout.current) clearTimeout(updatedNoteTimeout.current);
   }, []);
 
-  // Once a fresh brief is created, its id lives here — unlocks the Upload
-  // & Copy tab without needing to close and reopen this window (Tab 1
-  // then shows what it just created, same fields, no longer blank), and
-  // lets every further "Update" click amend that same row instead of
-  // creating another one (see handleSaveBrief below).
-  const [createdCreativeId, setCreatedCreativeId] = useState<string | null>(null);
   const creativeId = isCreate ? createdCreativeId : props.creative.id;
 
   const updateBrief = useUpdateBrief(creativeId ?? "");
@@ -483,11 +489,6 @@ export function CreativeModal(props: CreativeModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>(
     isCreate ? "brief" : (props.initialTab ?? "upload"),
   );
-
-  function handleCategoryChange(next: string) {
-    setCategory(next);
-    setFormat(formatsByCategory(next)[0]?.id ?? "");
-  }
 
   async function handleSaveBrief() {
     if (!name.trim()) {
@@ -517,7 +518,7 @@ export function CreativeModal(props: CreativeModalProps) {
     if (isCreate && !creativeId) {
       const newId = await createCreative.mutateAsync({
         name: name.trim(),
-        format,
+        formats,
         leadUserId: leadUserId || null,
         concept,
         referenceUrl,
@@ -545,7 +546,7 @@ export function CreativeModal(props: CreativeModalProps) {
     // and for the second-and-later save of a brief created this session.
     await updateBrief.mutateAsync({
       name: name.trim(),
-      format,
+      formats,
       leadUserId: leadUserId || null,
       concept,
       referenceUrl,
@@ -563,9 +564,8 @@ export function CreativeModal(props: CreativeModalProps) {
     const diffBaseline = isCreate ? savedSlideText : initialSlideText;
     if (JSON.stringify(cleaned) !== JSON.stringify(diffBaseline)) {
       const latest = isCreate
-        ? savedCopyVersionNo > 0
-          ? { version_no: savedCopyVersionNo, fields: {} }
-          : null
+        ? (latestCopyVersion ??
+          (savedCopyVersionNo > 0 ? { version_no: savedCopyVersionNo, fields: {} } : null))
         : latestCopyVersion;
       await saveSlideText.mutateAsync({ slideText: cleaned, latest });
       if (isCreate) {
@@ -668,13 +668,13 @@ export function CreativeModal(props: CreativeModalProps) {
     [clientKnowledge],
   );
 
-  // This format's own copy fields (lib/formats.ts) — Meta Feed Ad needs
-  // primary/headline/description/cta, Instagram Feed just caption/alt,
-  // several formats (Instagram Story, Packaging, ...) need none at all.
-  // Never a fixed caption/headline/cta triple regardless of format.
+  // The chosen formats' own copy fields (lib/formats.ts), combined — Meta
+  // Feed Ad needs primary/headline/description/cta, Instagram Feed just
+  // caption/alt, so a post that's both gets all six, each once. Several
+  // formats (Instagram Story, Packaging, ...) need none at all.
   const copyFieldSpecs: CopyFieldSpec[] = useMemo(
-    () => (formatById(format)?.copyFields ?? []).map((key) => ({ key, label: COPY_FIELD_LABELS[key] ?? key })),
-    [format],
+    () => copyFieldsFor(formats).map((key) => ({ key, label: COPY_FIELD_LABELS[key] ?? key })),
+    [formats],
   );
 
   // No mode selector — Creative and Copy are always both shown, each its
@@ -726,8 +726,15 @@ export function CreativeModal(props: CreativeModalProps) {
     setDrafting(true);
     setDraftOptions(null);
     try {
-      const formatDef = formatById(format);
-      const direction = formatDirections?.find((d) => d.format_id === format)?.direction_text ?? null;
+      // Each chosen format's own direction, named, so the draft can serve
+      // all of them at once.
+      const directions = formats
+        .map((id) => {
+          const text = formatDirections?.find((d) => d.format_id === id)?.direction_text;
+          return text ? (formats.length > 1 ? `${formatsLabel([id])}: ${text}` : text) : null;
+        })
+        .filter(Boolean);
+      const direction = directions.length ? directions.join("\n\n") : null;
       const clientNotes = (clientKnowledge ?? [])
         .filter((e) => e.kind === "text" && e.body)
         .map((e) => e.body as string);
@@ -735,7 +742,7 @@ export function CreativeModal(props: CreativeModalProps) {
       const prompt = buildCaptionPrompt({
         concept,
         approachNotes,
-        formatLabel: formatDef?.label ?? format,
+        formatLabel: formatsLabel(formats),
         formatDirection: direction,
         agencyNotes,
         clientNotes,
@@ -794,14 +801,9 @@ export function CreativeModal(props: CreativeModalProps) {
   // those are the only things that actually create a new version, it's
   // disabled whenever either has something pending (pendingCopyChange /
   // pendingCreativeChange), so by the time it's clickable there's nothing
-  // left for it to do beyond the one hard requirement neither of those
-  // buttons enforces on its own: a creative needs *some* artwork before
-  // this modal can close, not just save.
+  // left for it to do but close. Artwork isn't required: a post can be
+  // copy only, creative only, or both.
   async function handleSaveUpload() {
-    if (creativeVersions.length === 0) {
-      setFileError("Choose a file to upload.");
-      return;
-    }
     await saveCopyIfChanged();
     onClose();
   }
@@ -867,7 +869,7 @@ export function CreativeModal(props: CreativeModalProps) {
     <>
       <div className="modal-title-project">{props.creative.projects?.name ?? "Untitled Project"}</div>
       <div className="modal-title-post">
-        {props.creative.name} - {formatById(format)?.label ?? format}
+        {props.creative.name} - {formatsLabel(formats)}
       </div>
     </>
   );
@@ -975,37 +977,11 @@ export function CreativeModal(props: CreativeModalProps) {
             {nameError && <p className="autherr">{nameError}</p>}
           </div>
 
-          <div className="frow">
-            <div className="field">
-              <label htmlFor="nbCat">Content Type</label>
-              <select
-                id="nbCat"
-                className="bin one"
-                value={category}
-                onChange={(e) => handleCategoryChange(e.target.value)}
-              >
-                {FORMAT_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="nbFmt">Format</label>
-              <select
-                id="nbFmt"
-                className="bin one"
-                value={format}
-                onChange={(e) => setFormat(e.target.value)}
-              >
-                {formatsInCategory.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="field">
+            <label htmlFor="nbFmt">
+              Format <span className="hint">tick every format this goes out as</span>
+            </label>
+            <FormatPicker id="nbFmt" value={formats} onChange={setFormats} />
           </div>
 
           {isCreate && repeatIssue && (
@@ -1016,7 +992,7 @@ export function CreativeModal(props: CreativeModalProps) {
               </svg>
               <div>
                 This client has raised {repeatIssue.count} {repeatIssue.label} issues on{" "}
-                {formatById(format)?.label ?? format} in the last 90 days.
+                {formatsLabel([format])} in the last 90 days.
               </div>
             </div>
           )}
@@ -1277,10 +1253,10 @@ export function CreativeModal(props: CreativeModalProps) {
             </div>
 
           <div className="msection-h">Copy</div>
-          <p className="msection-d">The caption and on-post text, matched to what this format needs.</p>
+          <p className="msection-d">The caption and on-post text, matched to what the chosen formats need.</p>
           {!includesCopy && (
             <p className="msection-empty">
-              {formatById(format)?.label ?? "This format"} has no caption fields — text lives in Text on
+              {formats.length > 1 ? "These formats have" : `${formatsLabel(formats)} has`} no caption fields — text lives in Text on
               Image only (Brief tab).
             </p>
           )}
@@ -1380,7 +1356,7 @@ export function CreativeModal(props: CreativeModalProps) {
           </div>
           <p className="msection-d">The most recently saved copy — read only, edit it from the Content tab.</p>
           {!includesCopy ? (
-            <p className="msection-empty">{formatById(format)?.label ?? "This format"} has no caption fields.</p>
+            <p className="msection-empty">{formats.length > 1 ? "These formats have" : `${formatsLabel(formats)} has`} no caption fields.</p>
           ) : !latestCopyVersion ? (
             <p className="msection-empty">No copy saved yet.</p>
           ) : (

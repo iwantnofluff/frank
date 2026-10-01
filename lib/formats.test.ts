@@ -2,7 +2,7 @@
 // (or `npm run test:unit`).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { FORMATS, FORMAT_CATEGORIES, formatById, formatsByCategory } from "./formats.ts";
+import { FORMATS, FORMAT_CATEGORIES, formatById, formatsByCategory, postFormats, formatsLabel, copyFieldsFor } from "./formats.ts";
 
 test("FORMATS has exactly 41 entries, matching the prototype's catalog", () => {
   assert.equal(FORMATS.length, 41);
@@ -35,4 +35,14 @@ test("every category has at least one format, and formatsByCategory covers all o
 test("formatById finds a known format and returns undefined for an unknown one", () => {
   assert.equal(formatById("ig_feed")?.label, "Instagram Feed");
   assert.equal(formatById("not_a_real_format"), undefined);
+});
+
+test("several formats: labels joined, copy fields combined once each, older rows fall back", () => {
+  assert.equal(formatsLabel(["meta_feed", "ig_feed"]), "Meta Feed Ad + Instagram Feed");
+  assert.deepEqual(copyFieldsFor(["ig_feed", "meta_feed", "lp"]), [
+    "caption", "alt", "primary", "headline", "description", "cta", "body",
+  ]);
+  assert.deepEqual(copyFieldsFor(["ig_story"]), []);
+  assert.deepEqual(postFormats({ format: "ig_feed", formats: [] }), ["ig_feed"]);
+  assert.deepEqual(postFormats({ format: "meta_feed", formats: ["meta_feed", "ig_feed"] }), ["meta_feed", "ig_feed"]);
 });

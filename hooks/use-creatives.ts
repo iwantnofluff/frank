@@ -14,7 +14,7 @@ export interface CreativeListRow {
   reference_url: string | null;
   approach_notes: string[] | null;
   scheduled_at: string | null;
-  platforms: string[] | null;
+  formats: string[]; // every format, main first (phase29)
   destination: string | null;
   added_on: string;
   due_on: string | null;
@@ -42,7 +42,7 @@ export function useCreatives(projectId: string) {
       const { data: rows, error } = await supabase
         .from("creatives")
         .select(
-          "id, name, format, stage, exception, lead_user_id, concept, reference_url, approach_notes, scheduled_at, platforms, destination, added_on, due_on, published_at, cx, archived_at",
+          "id, name, format, stage, exception, lead_user_id, concept, reference_url, approach_notes, scheduled_at, formats, destination, added_on, due_on, published_at, cx, archived_at",
         )
         .eq("project_id", projectId)
         .order("position");

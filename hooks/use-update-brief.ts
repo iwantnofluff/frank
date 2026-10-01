@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 
 export interface BriefFields {
   name: string;
-  format: string;
+  formats: string[]; // the first is the main format
   leadUserId: string | null;
   concept: string;
   referenceUrl: string;
@@ -39,7 +39,8 @@ export function useUpdateBrief(creativeId: string) {
         .from("creatives")
         .update({
           name: fields.name.trim(),
-          format: fields.format,
+          format: fields.formats[0],
+          formats: fields.formats,
           lead_user_id: fields.leadUserId,
           concept: fields.concept.trim() || null,
           reference_url: fields.referenceUrl.trim() || null,
@@ -56,8 +57,14 @@ export function useUpdateBrief(creativeId: string) {
         throw new Error("You don't have permission to edit this brief.");
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["creative", creativeId] });
+    // The project table lists the same fields (name, formats,
+    // date), so its list is refreshed too — before, an edit only showed
+    // in the table after a reload.
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["creative", creativeId] }),
+        queryClient.invalidateQueries({ queryKey: ["creatives"] }),
+      ]);
     },
   });
 }

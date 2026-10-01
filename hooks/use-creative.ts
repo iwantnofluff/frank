@@ -13,7 +13,7 @@ export interface CreativeRow {
   exception: "changes_requested" | "rejected" | null;
   lead_user_id: string | null;
   scheduled_at: string | null;
-  platforms: string[] | null;
+  formats: string[]; // every format, main first (phase29)
   destination: string | null;
   due_on: string | null;
   concept: string | null;
@@ -36,7 +36,7 @@ export function useCreative(creativeId: string) {
       const { data, error } = await supabase
         .from("creatives")
         .select(
-          "id, agency_id, project_id, name, format, stage, exception, lead_user_id, scheduled_at, platforms, destination, due_on, concept, reference_url, approach_notes, projects(id, name, delivery, client_id, clients(name))",
+          "id, agency_id, project_id, name, format, stage, exception, lead_user_id, scheduled_at, formats, destination, due_on, concept, reference_url, approach_notes, projects(id, name, delivery, client_id, clients(name))",
         )
         .eq("id", creativeId)
         .single();

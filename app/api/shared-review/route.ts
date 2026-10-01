@@ -6,6 +6,7 @@ interface RpcCreative {
   id: string;
   name: string;
   format: string;
+  formats?: string[];
   stage: number;
   exception: "changes_requested" | "rejected" | null;
   position: number;
@@ -70,8 +71,21 @@ export async function POST(request: Request) {
     // asset pipeline this way rather than erroring the page out.
   }
 
+  // Every format a post goes out as (phase29) — get_shared_review returns
+  // only the main one. Looked up for exactly the creatives that function
+  // just returned for this validated token, nothing wider.
+  const formatsById = new Map<string, string[]>();
+  if (serviceRole && creatives.length) {
+    const { data: rows } = await serviceRole
+      .from("creatives")
+      .select("id, formats")
+      .in("id", creatives.map((c) => c.id));
+    for (const r of rows ?? []) formatsById.set(r.id, r.formats);
+  }
+
   const signedCreatives = await Promise.all(
-    creatives.map(async (c) => {
+    creatives.map(async (raw) => {
+      const c = { ...raw, formats: formatsById.get(raw.id) ?? [raw.format] };
       // Both branches build a fresh asset object that never includes
       // storage_key, rather than spreading the original and overwriting it
       // — `{ ...c.asset, storage_key: undefined }` still leaves the key

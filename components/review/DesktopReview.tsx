@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReviewController } from "@/hooks/use-review-controller";
-import { formatById } from "@/lib/formats";
+import { formatsLabel, postFormats } from "@/lib/formats";
 import { GuestComposer } from "./GuestComposer";
 
 export function DesktopReview({
@@ -56,7 +56,7 @@ export function DesktopReview({
               >
                 <div className="t">
                   <b>{c.name}</b>
-                  <span className="fmt">{formatById(c.format)?.label ?? c.format}</span>
+                  <span className="fmt">{formatsLabel(postFormats(c))}</span>
                 </div>
               </button>
             ))}
@@ -74,7 +74,7 @@ export function DesktopReview({
               <div className="cmeta">
                 <div className="ct">{active.name}</div>
                 <div className="cs">
-                  <span>{formatById(active.format)?.label ?? active.format}</span>
+                  <span>{formatsLabel(postFormats(active))}</span>
                   {active.destination && (
                     <>
                       <span className="sep">·</span>
