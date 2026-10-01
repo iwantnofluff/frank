@@ -1439,3 +1439,9 @@ Direct instruction: the project edit modal should let you change the project typ
 Delivery kind itself (Content Planner vs Other Content) isn't offered: the database refuses to change it once a project has any posts (`projects_delivery_immutable`, "duplicate the project instead"), and offering a choice that fails for nearly every real project would be worse than not offering it. A project with no type, or one outside today's list, keeps it as a selectable option, so saving the name alone never rewrites the type.
 
 **Verified**: typecheck and lint clean. `manage-clients-projects.spec.ts`'s project test now edits rather than renames: the fixture's typeless project opens on "—" with exactly the Content Planner options, saves a new name and "Paid Campaign", the row shows it, and reopening shows it selected with "—" gone. Checked by hand that an Other Content project gets its own list. `manage-clients-projects` + `client-workspace`: 8/8. `npm run build` clean.
+
+## Calendar specs no longer break when the month rolls over
+
+Not a product change. Every calendar spec reached its March 2027 test data by clicking Next exactly six times from whatever month it opened on — written in September, so on 1 October all 21 started landing on April and failing ("0 scheduled posts in this view"). They now call a shared `goToMonth(page, "March 2027")` fixture helper that clicks until the month header actually reads that month. The plain `project-calendar.png` screenshot opens on the current month too, so its month label and the empty state's sentence naming the month are masked rather than re-baselined every month.
+
+**Verified**: both calendar specs 22/22 on their own (the hover-preview timing test, which also failed in a loaded full run, passed 3/3 alone). `project-calendar.png` regenerated after confirming its diff was only the month name; `dashboard.png` regenerated after confirming its diff was only the Last Activity date.

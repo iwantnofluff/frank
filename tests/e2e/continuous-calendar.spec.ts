@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures";
+import { test, expect, goToMonth } from "./fixtures";
 
 // ContinuousCalendarTable — a copy of ProjectCalendarTable/project-calendar
 // .spec.ts's own coverage, scoped to what's genuinely new or different here:
@@ -15,9 +15,7 @@ test("continuous calendar — matches the 13-field content-planner template", as
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
-  for (let i = 0; i < 6; i++) {
-    await page.click('.calnav button[title="Next"]');
-  }
+  await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
   // 12 toggleable + the frozen Live Date column = 13.
@@ -36,9 +34,7 @@ test("continuous calendar — Funnel and Type chips persist", async ({ page, fra
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
-  for (let i = 0; i < 6; i++) {
-    await page.click('.calnav button[title="Next"]');
-  }
+  await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
   // Default column order's td indices: 0 the staff-only select-row
@@ -50,9 +46,7 @@ test("continuous calendar — Funnel and Type chips persist", async ({ page, fra
   await cells.nth(6).locator("select").selectOption("video");
   await page.reload();
   await page.waitForSelector(".tblwrap, .empty");
-  for (let i = 0; i < 6; i++) {
-    await page.click('.calnav button[title="Next"]');
-  }
+  await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
   const reloadedRow = page.locator("tr[data-row]", { hasText: "Chip Test Creative" });
   const reloadedCells = reloadedRow.locator("td");
@@ -68,9 +62,7 @@ test("continuous calendar — V1/V2 Copy persist independently", async ({ page, 
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
-  for (let i = 0; i < 6; i++) {
-    await page.click('.calnav button[title="Next"]');
-  }
+  await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
   const row = page.locator("tr[data-row]", { hasText: "Copy Test Creative" });
@@ -83,9 +75,7 @@ test("continuous calendar — V1/V2 Copy persist independently", async ({ page, 
 
   await page.reload();
   await page.waitForSelector(".tblwrap, .empty");
-  for (let i = 0; i < 6; i++) {
-    await page.click('.calnav button[title="Next"]');
-  }
+  await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
   const reloadedRow = page.locator("tr[data-row]", { hasText: "Copy Test Creative" });
   const reloadedTextareas = reloadedRow.locator("textarea.cxin");
@@ -100,9 +90,7 @@ test("continuous calendar — status filter narrows the visible rows", async ({ 
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
-  for (let i = 0; i < 6; i++) {
-    await page.click('.calnav button[title="Next"]');
-  }
+  await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
   await expect(page.locator(".pname", { hasText: "Concept Stage Creative" })).toBeVisible();
 
@@ -117,9 +105,7 @@ test("continuous calendar — Calendar mode renders the day grid from due_on", a
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
-  for (let i = 0; i < 6; i++) {
-    await page.click('.calnav button[title="Next"]');
-  }
+  await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
   await page.click('button[aria-pressed]:has-text("Calendar")');
@@ -152,9 +138,7 @@ test("continuous calendar — resizing a column marks the view dirty, Discard Ch
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
-  for (let i = 0; i < 6; i++) {
-    await page.click('.calnav button[title="Next"]');
-  }
+  await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
   await expect(page.locator(".split")).toHaveCount(0);
@@ -183,9 +167,7 @@ test("continuous calendar — saved views are scoped separately from Scheduled's
   // Save a view from the continuous table.
   await page.goto(`/projects/${projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
-  for (let i = 0; i < 6; i++) {
-    await page.click('.calnav button[title="Next"]');
-  }
+  await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
   await page.click('button:has-text("Columns")');
   await page.waitForSelector(".colpop");
@@ -210,9 +192,7 @@ test("a real client-role session sees the continuous table read-only", async ({ 
   await frank.loginAsClient(page);
   await page.goto(`/projects/${projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
-  for (let i = 0; i < 6; i++) {
-    await page.click('.calnav button[title="Next"]');
-  }
+  await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
   await expect(page.locator('button:has-text("New Post")')).toHaveCount(0);

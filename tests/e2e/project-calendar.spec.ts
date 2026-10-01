@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures";
+import { test, expect, goToMonth } from "./fixtures";
 
 test("project calendar", async ({ page, frank }) => {
   await frank.loginAsStaff(page);
@@ -14,7 +14,12 @@ test("project calendar", async ({ page, frank }) => {
   // state under worker concurrency, same shape as the dashboard's stat
   // cards needing their own explicit wait.
   await page.waitForSelector('button:has-text("New Post")');
-  await expect(page).toHaveScreenshot("project-calendar.png");
+  // The view opens on the current month, so its name (and the empty
+  // state's sentence naming it) changes every month — masked so the
+  // baseline doesn't go stale on the 1st.
+  await expect(page).toHaveScreenshot("project-calendar.png", {
+    mask: [page.locator(".calmonth"), page.locator(".empty span")],
+  });
 });
 
 test("project calendar — jumps to the month of a newly created brief", async ({ page, frank }) => {
@@ -41,9 +46,7 @@ test("project calendar — status filter narrows the visible rows", async ({ pag
   await page.goto(`/projects/${frank.projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
 
-  for (let i = 0; i < 6; i++) {
-    await page.click('.calnav button[title="Next"]');
-  }
+  await goToMonth(page, "March 2027");
   await expect(page.locator(".pname", { hasText: "Concept-Stage E2E" })).toBeVisible();
 
   await page.selectOption("select.sort", "review");
@@ -58,9 +61,7 @@ test("project calendar — Calendar mode renders the day grid and hides the Colu
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${frank.projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
-  for (let i = 0; i < 6; i++) {
-    await page.click('.calnav button[title="Next"]');
-  }
+  await goToMonth(page, "March 2027");
 
   await page.click('button[aria-pressed]:has-text("Calendar")');
   await page.waitForSelector(".calgrid");
@@ -76,9 +77,7 @@ test("project calendar — Columns picker hides and reshows a column", async ({ 
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${frank.projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
-  for (let i = 0; i < 6; i++) {
-    await page.click('.calnav button[title="Next"]');
-  }
+  await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
   await expect(page.locator("th", { hasText: "Concept" })).toBeVisible();
@@ -100,9 +99,7 @@ test("project calendar — Week/Date/Day stay frozen while the table scrolls hor
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${frank.projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
-  for (let i = 0; i < 6; i++) {
-    await page.click('.calnav button[title="Next"]');
-  }
+  await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
   await page.locator(".tblwrap").evaluate((el) => (el.scrollLeft = 300));
@@ -118,9 +115,7 @@ test("project calendar — hovering a creative shows the real preview popover", 
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${frank.projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
-  for (let i = 0; i < 6; i++) {
-    await page.click('.calnav button[title="Next"]');
-  }
+  await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
   await page.hover(".pname");
@@ -136,9 +131,7 @@ test("project calendar — hover preview holds open while the pointer moves onto
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${frank.projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
-  for (let i = 0; i < 6; i++) {
-    await page.click('.calnav button[title="Next"]');
-  }
+  await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
   const pname = page.locator(".pname").first();
@@ -162,9 +155,7 @@ test("project calendar — matches the real content-planner template's 14 defaul
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${frank.projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
-  for (let i = 0; i < 6; i++) {
-    await page.click('.calnav button[title="Next"]');
-  }
+  await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
   await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 14/14");
@@ -189,9 +180,7 @@ test("project calendar — Post Copy cell shows the latest version, older ones o
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${frank.projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
-  for (let i = 0; i < 6; i++) {
-    await page.click('.calnav button[title="Next"]');
-  }
+  await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
   const cell = page.locator("td:has(.copyc)").first();
@@ -216,9 +205,7 @@ test("project calendar — resizing a column shows the Save button, Discard Chan
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${frank.projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
-  for (let i = 0; i < 6; i++) {
-    await page.click('.calnav button[title="Next"]');
-  }
+  await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
   await expect(page.locator(".split")).toHaveCount(0);
@@ -245,9 +232,7 @@ test("project calendar — dragging a column header reorders the table", async (
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${frank.projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
-  for (let i = 0; i < 6; i++) {
-    await page.click('.calnav button[title="Next"]');
-  }
+  await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
   async function headerOrder() {
@@ -281,9 +266,7 @@ test("project calendar — hiding a column via the Columns picker also marks the
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${frank.projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
-  for (let i = 0; i < 6; i++) {
-    await page.click('.calnav button[title="Next"]');
-  }
+  await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
   await page.click('button:has-text("Columns")');
