@@ -22,6 +22,9 @@ export default defineConfig({
     baseURL: "http://localhost:3000",
     viewport: { width: 1280, height: 900 },
   },
+  expect: {
+    toHaveScreenshot: { stylePath: "./tests/e2e/screenshot.css" },
+  },
   // No maxDiffPixelRatio override. An earlier value of 0.02 here (2% of a
   // 1280x900 frame, ~23k pixels) turned out to be loose enough that a
   // premature screenshot — an entire missing table, a whole blank content

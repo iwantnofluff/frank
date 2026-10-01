@@ -1,0 +1,7 @@
+/* Applied to every toHaveScreenshot (playwright.config.ts). Next.js's
+   development indicator and its "N Issues" badge only exist under
+   `next dev`, and the badge appears on some runs and not others — it was
+   the whole cause of settings-knowledge.png's long-standing "flake". */
+nextjs-portal {
+  display: none !important;
+}

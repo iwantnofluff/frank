@@ -22,5 +22,9 @@ test("upload artwork modal", async ({ page, frank }) => {
   // empty-state trigger (.awaiting), not the topbar's "Upload or Edit".
   await page.click('button:has-text("Upload Artwork")');
   await page.waitForSelector(".scrim .modal");
+  // The Draft button reads plain "Draft" until the agency's model setting
+  // loads, then "Draft with {model}" — wait for the settled label, or the
+  // screenshot races it (this was the test's long-standing intermittent diff).
+  await expect(page.getByRole("button", { name: /^Draft with / })).toBeVisible();
   await expect(page).toHaveScreenshot("upload-artwork-modal.png");
 });
