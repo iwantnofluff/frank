@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 export function Modal({
   title,
@@ -28,16 +28,22 @@ export function Modal({
   // other modal keeps the icon button (default false).
   hideCloseButton?: boolean;
 }) {
+  const scrim = useRef<HTMLDivElement>(null);
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
+      if (e.key !== "Escape") return;
+      // With one modal open over another (the client image cropper over Edit
+      // Client), Escape closes only the topmost — the last scrim in the page.
+      const scrims = document.querySelectorAll(".scrim");
+      if (scrims[scrims.length - 1] !== scrim.current) return;
+      onClose();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
   return (
-    <div className="scrim" onClick={onClose}>
+    <div className="scrim" ref={scrim} onClick={onClose}>
       <div
         className={size === "sm" ? "modal sm" : "modal"}
         role="dialog"

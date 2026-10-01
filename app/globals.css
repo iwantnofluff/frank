@@ -4960,3 +4960,8 @@ button.avatar {
   border-radius: 10px;
   font-size: 18px;
 }
+/* Client images show as a rounded-square tile, not a circle — the guide
+   matches, so the corners that are kept don't look cut off. */
+.pcrop-ring.tile {
+  border-radius: 18%;
+}

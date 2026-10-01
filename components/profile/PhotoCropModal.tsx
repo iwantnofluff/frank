@@ -7,7 +7,7 @@ import { clampCrop, initialCrop, resizeCrop, type Crop } from "@/lib/face-crop-m
 
 const VIEW = 280;
 
-type Status = "detecting" | "found" | "none";
+type Status = "detecting" | "found" | "none" | "manual";
 
 // Opens on a square already centred on the detected face (or the middle of
 // the photo, if there isn't one); drag to move it, slide to zoom. Only the
@@ -16,14 +16,20 @@ export function PhotoCropModal({
   file,
   onCancel,
   onConfirm,
+  detectFaces = true,
+  title = "Position your photo",
 }: {
   file: File;
   onCancel: () => void;
   onConfirm: (cropped: File) => void;
+  // Off for client images (logos, brand marks): no face to look for, so it
+  // starts from the largest centred square.
+  detectFaces?: boolean;
+  title?: string;
 }) {
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [crop, setCrop] = useState<Crop | null>(null);
-  const [status, setStatus] = useState<Status>("detecting");
+  const [status, setStatus] = useState<Status>(detectFaces ? "detecting" : "manual");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const drag = useRef<{ startX: number; startY: number; from: Crop } | null>(null);
@@ -36,10 +42,10 @@ export function PhotoCropModal({
         loaded = image;
         if (cancelled) return;
         setImg(image);
-        const face = await detectFace(image);
+        const face = detectFaces ? await detectFace(image) : null;
         if (cancelled) return;
         setCrop(initialCrop(image.naturalWidth, image.naturalHeight, face));
-        setStatus(face ? "found" : "none");
+        if (detectFaces) setStatus(face ? "found" : "none");
       })
       .catch((e: Error) => {
         if (!cancelled) setError(e.message);
@@ -48,7 +54,7 @@ export function PhotoCropModal({
       cancelled = true;
       if (loaded) URL.revokeObjectURL(loaded.src);
     };
-  }, [file]);
+  }, [file, detectFaces]);
 
   const scale = crop ? VIEW / crop.size : 1;
   const maxSize = img ? Math.min(img.naturalWidth, img.naturalHeight) : 1;
@@ -85,7 +91,7 @@ export function PhotoCropModal({
     if (!img || !crop) return;
     setSaving(true);
     try {
-      onConfirm(await cropToFile(img, crop));
+      onConfirm(await cropToFile(img, crop, !detectFaces && file.type === "image/png" ? "image/png" : "image/jpeg"));
     } catch (e) {
       setError((e as Error).message);
       setSaving(false);
@@ -94,7 +100,7 @@ export function PhotoCropModal({
 
   return (
     <Modal
-      title="Position your photo"
+      title={title}
       size="sm"
       onClose={onCancel}
       footer={
@@ -109,7 +115,7 @@ export function PhotoCropModal({
             disabled={!crop || saving}
             onClick={() => confirm()}
           >
-            {saving ? "Preparing…" : "Use photo"}
+            {saving ? "Preparing…" : detectFaces ? "Use photo" : "Use image"}
           </button>
         </>
       }
@@ -137,7 +143,7 @@ export function PhotoCropModal({
             }}
           />
         )}
-        <div className="pcrop-ring" />
+        <div className={detectFaces ? "pcrop-ring" : "pcrop-ring tile"} />
       </div>
 
       {crop && img && (
@@ -160,7 +166,9 @@ export function PhotoCropModal({
       <p className="sub" role="status" style={{ margin: "10px 0 0", textAlign: "center" }}>
         {error
           ? error
-          : status === "detecting"
+          : status === "manual"
+            ? "Drag and zoom to frame the square that's kept."
+            : status === "detecting"
             ? "Finding your face…"
             : status === "found"
               ? "Centred on your face — drag or zoom to adjust."

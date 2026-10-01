@@ -113,7 +113,9 @@ test("a profile photo shows on the rail, the Team page and comments — for clie
     await cropper.getByRole("button", { name: "Use photo" }).click();
     await expect(cropper).toHaveCount(0);
 
-    await expect(page.getByRole("button", { name: "Change photo" })).toBeVisible();
+    // A real upload to storage — slower than the 5s default under a full
+    // parallel suite.
+    await expect(page.getByRole("button", { name: "Change photo" })).toBeVisible({ timeout: 20_000 });
     assetId = (await staffRow(frank)).avatar_asset_id;
     expect(assetId).not.toBeNull();
 

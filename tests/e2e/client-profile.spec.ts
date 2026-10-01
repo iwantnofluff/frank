@@ -44,13 +44,23 @@ test("a client gets a square profile image and a description", async ({ page, fr
     await expect(page.locator("button.chip", { hasText: "Archived" })).toHaveText("Archived (0)");
 
     let modal = await openEditClient(page);
-    await modal.getByLabel("Client profile image").setInputFiles(await picture(page, 600, 400));
-    await expect(modal.locator(".autherr")).toHaveText("Use a square image — this one is 600×400");
-
-    await modal.getByLabel("Client profile image").setInputFiles(await picture(page, 400, 400));
-    await expect(modal.locator(".autherr")).toHaveCount(0);
-    await expect(modal.locator(".logo.clogo img")).toBeVisible();
     await modal.getByLabel(/Description/).fill("Organic skincare brand we've run social for since 2024.");
+
+    // Any shape opens the cropper (no face detection for a client); only the
+    // square chosen there is kept.
+    await modal.getByLabel("Client profile image").setInputFiles(await picture(page, 600, 400));
+    const cropper = page.getByRole("dialog", { name: "Position the client's image" });
+    await expect(cropper.getByRole("status")).toHaveText("Drag and zoom to frame the square that's kept.");
+    // Escape closes the cropper only — the client edits underneath survive.
+    await page.keyboard.press("Escape");
+    await expect(cropper).toHaveCount(0);
+    await expect(modal).toBeVisible();
+    await expect(modal.getByLabel(/Description/)).toHaveValue("Organic skincare brand we've run social for since 2024.");
+
+    await modal.getByLabel("Client profile image").setInputFiles(await picture(page, 600, 400));
+    await cropper.getByRole("button", { name: "Use image" }).click();
+    await expect(cropper).toHaveCount(0);
+    await expect(modal.locator(".logo.clogo img")).toBeVisible();
     await modal.getByRole("button", { name: "Save" }).click();
     await expect(modal).toHaveCount(0);
 

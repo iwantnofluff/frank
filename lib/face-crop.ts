@@ -77,9 +77,14 @@ export function loadImage(file: File): Promise<HTMLImageElement> {
 
 export const AVATAR_OUTPUT_PX = 512;
 
-// The cropped square, resized to 512 px and re-encoded as JPEG — so what's
-// stored is small and consistent however large the original was.
-export function cropToFile(img: HTMLImageElement, crop: Crop): Promise<File> {
+// The cropped square, resized to 512 px — JPEG by default, so what's stored
+// is small and consistent however large the original was. Client images
+// ask for PNG when the source is PNG, to keep a logo's transparency.
+export function cropToFile(
+  img: HTMLImageElement,
+  crop: Crop,
+  type: "image/jpeg" | "image/png" = "image/jpeg",
+): Promise<File> {
   const canvas = document.createElement("canvas");
   canvas.width = AVATAR_OUTPUT_PX;
   canvas.height = AVATAR_OUTPUT_PX;
@@ -87,13 +92,14 @@ export function cropToFile(img: HTMLImageElement, crop: Crop): Promise<File> {
   if (!ctx) return Promise.reject(new Error("Couldn't prepare the photo"));
   ctx.imageSmoothingQuality = "high";
   ctx.drawImage(img, crop.x, crop.y, crop.size, crop.size, 0, 0, AVATAR_OUTPUT_PX, AVATAR_OUTPUT_PX);
+  const ext = type === "image/png" ? "png" : "jpg";
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) =>
         blob
-          ? resolve(new File([blob], "profile-photo.jpg", { type: "image/jpeg" }))
+          ? resolve(new File([blob], `cropped.${ext}`, { type }))
           : reject(new Error("Couldn't prepare the photo")),
-      "image/jpeg",
+      type,
       0.9,
     );
   });

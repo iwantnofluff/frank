@@ -8,8 +8,8 @@ import { useClientContacts } from "@/hooks/use-client-contacts";
 import { useSetClientContacts } from "@/hooks/use-set-client-contacts";
 import { useSaveClientLogo } from "@/hooks/use-client-logo";
 import { useAvatarUrls } from "@/hooks/use-avatar-urls";
-import { prepareClientLogo } from "@/lib/upload-client-logo";
-import { AVATAR_TYPES } from "@/lib/upload-avatar";
+import { PhotoCropModal } from "@/components/profile/PhotoCropModal";
+import { AVATAR_TYPES, validateAvatarSource } from "@/lib/upload-avatar";
 import { errorMessage } from "@/lib/errors";
 
 function RemoveIcon() {
@@ -57,25 +57,27 @@ export function ClientModal(props: ClientModalProps) {
   const currentLogoId = isCreate ? null : props.currentLogoAssetId;
   const { data: logoUrls } = useAvatarUrls([currentLogoId]);
   const logoInput = useRef<HTMLInputElement>(null);
-  // A picked image is checked and prepared straight away (square, 512px),
-  // so a wrong one is refused on the spot rather than at Save.
+  // A picked image goes through the same cropper as profile photos (minus
+  // face detection); only the cropped 512px square is kept and uploaded.
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoRemoved, setLogoRemoved] = useState(false);
   const [logoError, setLogoError] = useState<string | null>(null);
+  const [cropping, setCropping] = useState<File | null>(null);
   const shownLogo = logoPreview ?? (!logoRemoved && currentLogoId ? (logoUrls?.[currentLogoId] ?? null) : null);
 
-  async function pickLogo(file: File) {
-    setLogoError(null);
-    try {
-      const prepared = await prepareClientLogo(file);
-      if (logoPreview) URL.revokeObjectURL(logoPreview);
-      setLogoFile(prepared);
-      setLogoPreview(URL.createObjectURL(prepared));
-      setLogoRemoved(false);
-    } catch (e) {
-      setLogoError((e as Error).message);
-    }
+  function pickLogo(file: File) {
+    const bad = validateAvatarSource(file);
+    setLogoError(bad);
+    if (!bad) setCropping(file);
+  }
+
+  function applyCroppedLogo(cropped: File) {
+    if (logoPreview) URL.revokeObjectURL(logoPreview);
+    setLogoFile(cropped);
+    setLogoPreview(URL.createObjectURL(cropped));
+    setLogoRemoved(false);
+    setCropping(null);
   }
 
   function clearLogo() {
@@ -157,6 +159,7 @@ export function ClientModal(props: ClientModalProps) {
           : null;
 
   return (
+    <>
     <Modal
       title={isCreate ? "New Client" : "Edit Client"}
       onClose={props.onClose}
@@ -178,7 +181,7 @@ export function ClientModal(props: ClientModalProps) {
     >
       <div className="field">
         <label>
-          Profile Image <span className="hint">optional, square</span>
+          Profile Image <span className="hint">optional</span>
         </label>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div className="logo clogo" style={shownLogo ? undefined : { background: "var(--line-2)", color: "var(--muted)" }}>
@@ -300,5 +303,17 @@ export function ClientModal(props: ClientModalProps) {
 
       {submitError && <p className="autherr">{submitError}</p>}
     </Modal>
+    {/* A sibling of the client modal, not inside it: a fixed overlay nested
+        in an animating (transformed) modal would be positioned within it. */}
+    {cropping && (
+      <PhotoCropModal
+        file={cropping}
+        detectFaces={false}
+        title="Position the client's image"
+        onCancel={() => setCropping(null)}
+        onConfirm={applyCroppedLogo}
+      />
+    )}
+    </>
   );
 }
