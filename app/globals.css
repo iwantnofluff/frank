@@ -5290,3 +5290,156 @@ button.avatar {
 .ecell.one {
   resize: none;
 }
+/* Carousel slides in the Edit window (CarouselSlots): one slot per slide,
+   in the format's own shape. */
+.cslots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+}
+.cslot {
+  position: relative;
+  border: 1.5px dashed var(--line-2);
+  border-radius: var(--r);
+  background: var(--canvas);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+.cslot.filled {
+  border-style: solid;
+  border-color: var(--line);
+  cursor: grab;
+}
+.cslot img,
+.cslot video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.cslot-add {
+  width: 100%;
+  height: 100%;
+  font-size: 22px;
+  color: var(--muted);
+}
+.cslot-add:hover {
+  color: var(--action);
+  background: var(--action-soft);
+}
+.cslot-empty {
+  font-size: 11px;
+  color: var(--muted);
+  padding: 6px;
+  text-align: center;
+  word-break: break-all;
+}
+.cslot-n {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: rgba(20, 22, 26, 0.72);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.cslot-acts {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: none;
+  gap: 1px;
+  background: rgba(20, 22, 26, 0.72);
+}
+.cslot:hover .cslot-acts,
+.cslot:focus-within .cslot-acts {
+  display: flex;
+}
+.cslot-acts button {
+  flex: 1;
+  padding: 5px 0;
+  font-size: 11px;
+  font-weight: 500;
+  color: #fff;
+}
+.cslot-acts button:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+/* CarouselNav: arrows, count and dots over a carousel's image. */
+.car-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 6;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 2px 8px rgba(20, 22, 26, 0.25);
+  color: var(--ink);
+}
+.car-arrow.prev {
+  left: 10px;
+}
+.car-arrow.next {
+  right: 10px;
+}
+.car-arrow:hover {
+  background: #fff;
+}
+.car-arrow:disabled {
+  display: none;
+}
+.car-arrow svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.car-count {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 6;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(20, 22, 26, 0.7);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  pointer-events: none;
+}
+.car-dots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 10px;
+  z-index: 6;
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  pointer-events: none;
+}
+.car-dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+}
+.car-dots i.on {
+  background: #fff;
+}

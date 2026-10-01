@@ -18,6 +18,7 @@ export function ListEditor({
   onChange,
   readOnly = false,
   bare = false,
+  fixed = false,
 }: {
   // Optional — when the caller already has its own heading for this list
   // (CreativeModal's Brief tab renders a real .msection-h/.msection-d pair
@@ -35,6 +36,9 @@ export function ListEditor({
   // as plain content under an external section heading instead of reading
   // as a second, nested box.
   bare?: boolean;
+  // The number of items is set elsewhere (a carousel's slide count), so
+  // there's no add or remove here — only the text.
+  fixed?: boolean;
 }) {
   const items = (
     <>
@@ -42,7 +46,7 @@ export function ListEditor({
         <div className="brow" key={i}>
           <div className="brow-h">
             <b>{itemLabel(i)}</b>
-            {!readOnly && (
+            {!readOnly && !fixed && (
               <button
                 type="button"
                 className="brx"
@@ -66,7 +70,7 @@ export function ListEditor({
           />
         </div>
       ))}
-      {!readOnly && (
+      {!readOnly && !fixed && (
         <button
           type="button"
           className="badd"

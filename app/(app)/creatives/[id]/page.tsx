@@ -1,10 +1,10 @@
 "use client";
 
-import { use, useMemo, useState } from "react";
+import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCreative } from "@/hooks/use-creative";
 import { useAdvanceCreativeStage } from "@/hooks/use-advance-creative-stage";
-import { useCreativeVersions } from "@/hooks/use-creative-versions";
+import { useCreativeVersions, versionSlides } from "@/hooks/use-creative-versions";
 import { useCopyVersions } from "@/hooks/use-copy-versions";
 import { useAssetSignedUrl } from "@/hooks/use-asset-signed-url";
 import { useComments } from "@/hooks/use-comments";
@@ -28,6 +28,7 @@ import { CommentsPanel } from "@/components/creative-review/CommentsPanel";
 import { ShareModal } from "@/components/creative-review/ShareModal";
 import { AnnotationLayer, type ToolMode } from "@/components/creative-review/AnnotationLayer";
 import { NoArtwork } from "@/components/creative-review/NoArtwork";
+import { CarouselNav } from "@/components/creative-review/CarouselNav";
 import { CaptionHighlighter } from "@/components/creative-review/CaptionHighlighter";
 import { CreativeModal } from "@/components/creative-review/CreativeModal";
 
@@ -100,14 +101,37 @@ export default function CreativeReviewPage({
     copyVersions?.[0] ??
     null;
 
-  const { data: signedUrl } = useAssetSignedUrl(
-    activeCreativeVersion?.asset?.storage_key,
-  );
+  // A carousel's slides (a single upload is one slide). The arrows move
+  // between them; a new version starts again at the first.
+  const slides = versionSlides(activeCreativeVersion);
+  const [slideIndex, setSlideIndex] = useState(0);
+  const [slideFor, setSlideFor] = useState(activeCreativeVersion?.id);
+  if (slideFor !== activeCreativeVersion?.id) {
+    setSlideFor(activeCreativeVersion?.id);
+    setSlideIndex(0);
+  }
+  const currentSlide = slides[Math.min(slideIndex, Math.max(slides.length - 1, 0))] ?? null;
+  const slidePosition = currentSlide?.position ?? 1;
 
-  const { pins, regions, nextAnnotationNumber, captionHighlights } = useMemo(() => {
-    const forVersion = (allComments ?? []).filter(
-      (c) =>
-        activeCreativeVersion && c.creative_version_id === activeCreativeVersion.id,
+  const { data: signedUrl } = useAssetSignedUrl(currentSlide?.asset.storage_key);
+
+  // Picking a comment pinned to another slide moves to that slide.
+  function highlightComment(commentId: string | null) {
+    setHighlightedCommentId(commentId);
+    const anchor = (allComments ?? []).find((c) => c.id === commentId)?.anchor;
+    if (anchor && (isPinAnchor(anchor) || isRegionAnchor(anchor))) {
+      const i = slides.findIndex((s) => s.position === (anchor.slide ?? 1));
+      if (i >= 0) setSlideIndex(i);
+    }
+  }
+
+  const { pins, regions, nextAnnotationNumber, captionHighlights } = (() => {
+    // Only the pins and boxes on the slide being shown.
+    const onVersion = (allComments ?? []).filter(
+      (c) => activeCreativeVersion && c.creative_version_id === activeCreativeVersion.id,
+    );
+    const forVersion = onVersion.filter(
+      (c) => ((c.anchor as { slide?: number } | null)?.slide ?? 1) === slidePosition,
     );
     const pins = forVersion
       .filter((c) => isPinAnchor(c.anchor))
@@ -115,7 +139,9 @@ export default function CreativeReviewPage({
     const regions = forVersion
       .filter((c) => isRegionAnchor(c.anchor))
       .map((c) => ({ ...(c.anchor as RegionAnchor), commentId: c.id }));
-    const nextAnnotationNumber = pins.length + regions.length + 1;
+    // Numbered across every slide, so slide 2's first pin follows slide 1's.
+    const nextAnnotationNumber =
+      onVersion.filter((c) => isPinAnchor(c.anchor) || isRegionAnchor(c.anchor)).length + 1;
 
     const captionHighlights = (allComments ?? [])
       .filter(
@@ -128,7 +154,7 @@ export default function CreativeReviewPage({
       .map((c) => ({ ...(c.anchor as HighlightAnchor), commentId: c.id }));
 
     return { pins, regions, nextAnnotationNumber, captionHighlights };
-  }, [allComments, activeCreativeVersion, activeCopyVersion]);
+  })();
 
   if (creativeLoading) {
     return (
@@ -151,7 +177,7 @@ export default function CreativeReviewPage({
 
   const clientName = creative.projects?.clients?.name ?? "This client";
   const caption = activeCopyVersion?.fields?.caption;
-  const isVideo = activeCreativeVersion?.asset?.mime_type.startsWith("video/");
+  const isVideo = currentSlide?.asset.mime_type.startsWith("video/");
 
   return (
     <div className={`review${navCollapsed ? " navcollapsed" : ""}`}>
@@ -354,8 +380,7 @@ export default function CreativeReviewPage({
                     </NoArtwork>
                   ) : !signedUrl ? (
                     <div className="ig-noasset">
-                      {activeCreativeVersion.asset?.filename ??
-                        "No preview available"}
+                      {currentSlide?.asset.filename ?? "No preview available"}
                     </div>
                   ) : isVideo ? (
                     <video src={signedUrl} controls />
@@ -379,13 +404,14 @@ export default function CreativeReviewPage({
                             parentId: null,
                             visibility,
                             creativeVersionId: activeCreativeVersion.id,
-                            anchor,
+                            anchor: slides.length > 1 ? { ...anchor, slide: slidePosition } : anchor,
                           });
                           setToolMode(null);
                         }}
                       />
                     </>
                   )}
+                  <CarouselNav index={Math.min(slideIndex, slides.length - 1)} count={slides.length} onChange={setSlideIndex} />
                 </div>
                 <div className="ig-acts">
                   <svg viewBox="0 0 24 24">
@@ -457,7 +483,7 @@ export default function CreativeReviewPage({
       <CommentsPanel
         creativeId={id}
         highlightedCommentId={highlightedCommentId}
-        onHighlight={setHighlightedCommentId}
+        onHighlight={highlightComment}
         toolMode={toolMode}
         onToolModeChange={setToolMode}
         canAnnotate={!!activeCreativeVersion && !isVideo}

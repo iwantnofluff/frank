@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { tidySlideText } from "@/lib/slide-text";
 
 export interface CreateCreativeInput {
   name: string;
@@ -10,6 +11,7 @@ export interface CreateCreativeInput {
   leadUserId: string | null;
   concept: string;
   referenceUrl: string;
+  slideCount: number | null; // carousels only
   slideText: string[];
   cx: Record<string, string | number | boolean | null>;
   // Exactly one side is meaningful, matching the project's delivery —
@@ -56,6 +58,7 @@ export function useCreateCreative(projectId: string) {
           lead_user_id: input.leadUserId,
           concept: input.concept.trim() || null,
           reference_url: input.referenceUrl.trim() || null,
+          slide_count: input.slideCount,
           // approach_notes is left null here — system-generated from copy
           // once it exists (app/api/ai/wiifm-note), not settable at
           // brief-creation time when there's no copy yet to derive it from.
@@ -73,7 +76,8 @@ export function useCreateCreative(projectId: string) {
       // Caption isn't set at brief-creation time at all anymore (it lives
       // in CreativeModal's Content tab, a separate moment) — only
       // Text on Image, which is brief content, gets an initial version here.
-      const slideText = input.slideText.map((s) => s.trim()).filter(Boolean);
+      // Per slide, so only trailing blanks go (lib/slide-text.ts).
+      const slideText = tidySlideText(input.slideText);
       if (slideText.length > 0) {
         const { error: copyError } = await supabase.from("copy_versions").insert({
           creative_id: creative.id,

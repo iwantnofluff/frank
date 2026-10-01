@@ -83,9 +83,43 @@ export async function POST(request: Request) {
     for (const r of rows ?? []) formatsById.set(r.id, r.formats);
   }
 
+  // A carousel's slides (phase31), from each creative's latest version —
+  // the same version get_shared_review's `asset` comes from. Signed here
+  // for the same reason the asset is: a visitor has no session.
+  const slidesById = new Map<string, { position: number; signed_url: string | null; mime_type: string; filename: string }[]>();
+  if (serviceRole && creatives.length) {
+    const { data: versions } = await serviceRole
+      .from("creative_versions")
+      .select("id, creative_id, version_no")
+      .in("creative_id", creatives.map((c) => c.id))
+      .order("version_no", { ascending: false });
+    const latest = new Map<string, string>();
+    for (const v of versions ?? []) if (!latest.has(v.creative_id)) latest.set(v.creative_id, v.id);
+    const { data: rows } = latest.size
+      ? await serviceRole
+          .from("creative_version_slides")
+          .select("creative_version_id, position, asset:assets(storage_key, mime_type, filename)")
+          .in("creative_version_id", [...latest.values()])
+      : { data: [] };
+    const creativeOf = new Map([...latest].map(([cid, vid]) => [vid, cid]));
+    for (const r of (rows ?? []) as unknown as {
+      creative_version_id: string;
+      position: number;
+      asset: { storage_key: string; mime_type: string; filename: string } | null;
+    }[]) {
+      if (!r.asset) continue;
+      const { data: signed } = await serviceRole.storage.from("assets").createSignedUrl(r.asset.storage_key, 3600);
+      const cid = creativeOf.get(r.creative_version_id)!;
+      const list = slidesById.get(cid) ?? [];
+      list.push({ position: r.position, signed_url: signed?.signedUrl ?? null, mime_type: r.asset.mime_type, filename: r.asset.filename });
+      slidesById.set(cid, list);
+    }
+    for (const list of slidesById.values()) list.sort((a, b) => a.position - b.position);
+  }
+
   const signedCreatives = await Promise.all(
     creatives.map(async (raw) => {
-      const c = { ...raw, formats: formatsById.get(raw.id) ?? [raw.format] };
+      const c = { ...raw, formats: formatsById.get(raw.id) ?? [raw.format], slides: slidesById.get(raw.id) ?? [] };
       // Both branches build a fresh asset object that never includes
       // storage_key, rather than spreading the original and overwriting it
       // — `{ ...c.asset, storage_key: undefined }` still leaves the key

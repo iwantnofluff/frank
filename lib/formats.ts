@@ -132,3 +132,23 @@ export function copyFieldsFor(ids: string[]): string[] {
   }
   return out;
 }
+
+// Carousels (phase31). Decided directly: 2–20 slides, with Meta Carousel Ad
+// held to Meta's own limit of 10. LinkedIn's document carousel works the
+// same way, with slide images rather than a PDF.
+const CAROUSEL_MAX_SLIDES: Record<string, number> = { ig_carousel: 20, li_doc: 20, meta_carousel: 10 };
+export const CAROUSEL_MIN_SLIDES = 2;
+
+// The most slides the chosen formats allow, or null when none is a
+// carousel. With several carousel formats, the tightest limit wins.
+export function carouselMaxSlides(ids: string[]): number | null {
+  const limits = ids.map((id) => CAROUSEL_MAX_SLIDES[id]).filter((n): n is number => !!n);
+  return limits.length ? Math.min(...limits) : null;
+}
+
+// A format's shape as a CSS aspect-ratio ("4:5" → "4 / 5"); square for
+// the formats with none ("—", "varies").
+export function aspectRatioCss(id: string): string {
+  const m = formatById(id)?.aspectRatio.match(/^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)$/);
+  return m ? `${m[1]} / ${m[2]}` : "1 / 1";
+}

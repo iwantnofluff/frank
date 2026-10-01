@@ -15,7 +15,8 @@ import { useSaveSlideText } from "@/hooks/use-save-slide-text";
 import { useTeamMembers } from "@/hooks/use-team-members";
 import { useMyAgency } from "@/hooks/use-my-agency";
 import { useCustomColumns } from "@/hooks/use-custom-columns";
-import { useUploadCreativeVersion } from "@/hooks/use-upload-creative-version";
+import { useUploadCreativeVersion, useUploadCarouselVersion, type SlideSource } from "@/hooks/use-upload-creative-version";
+import { CarouselSlots } from "./CarouselSlots";
 import { useSaveCopyFields } from "@/hooks/use-save-copy-fields";
 import { useRefreshWiifmNote } from "@/hooks/use-refresh-wiifm-note";
 import { useDeletePostVersion } from "@/hooks/use-delete-post-version";
@@ -26,7 +27,18 @@ import { useFormatDirections } from "@/hooks/use-format-directions";
 import { useAgencyKnowledge } from "@/hooks/use-agency-knowledge";
 import { useKnowledgeEntries } from "@/hooks/use-knowledge-entries";
 import { useRepeatIssueCount } from "@/hooks/use-repeat-issues";
-import { FORMAT_CATEGORIES, formatsByCategory, formatsLabel, copyFieldsFor, postFormats, COPY_FIELD_LABELS } from "@/lib/formats";
+import {
+  FORMAT_CATEGORIES,
+  formatsByCategory,
+  formatsLabel,
+  copyFieldsFor,
+  postFormats,
+  carouselMaxSlides,
+  aspectRatioCss,
+  CAROUSEL_MIN_SLIDES,
+  COPY_FIELD_LABELS,
+} from "@/lib/formats";
+import { slideFields, tidySlideText } from "@/lib/slide-text";
 import { FormatPicker } from "./FormatPicker";
 import { validateUploadFile, ACCEPTED_FILE_EXTENSIONS } from "@/lib/upload-validation";
 import {
@@ -446,6 +458,14 @@ export function CreativeModal(props: CreativeModalProps) {
     isCreate ? [formatsByCategory(FORMAT_CATEGORIES[0])[0]?.id ?? ""] : postFormats(props.creative),
   );
   const format = formats[0];
+  // Carousels (phase31): a Slides count appears when any chosen format is
+  // one, capped at the tightest of their limits. Text on Image then shows
+  // one field per slide.
+  const carouselMax = carouselMaxSlides(formats);
+  const [slideCountChoice, setSlideCountChoice] = useState<number>(
+    isCreate ? CAROUSEL_MIN_SLIDES : (props.creative.slide_count ?? CAROUSEL_MIN_SLIDES),
+  );
+  const slideCount = carouselMax ? Math.min(Math.max(slideCountChoice, CAROUSEL_MIN_SLIDES), carouselMax) : null;
   // Brief-time warning (docs/frank-data-intelligence.pdf, "Where it
   // surfaces — At the brief") — only meaningful while still choosing a
   // format for a new brief; an existing creative's format is fixed, so
@@ -525,7 +545,8 @@ export function CreativeModal(props: CreativeModalProps) {
         leadUserId: leadUserId || null,
         concept,
         referenceUrl,
-        slideText,
+        slideCount,
+        slideText: slideFields(slideText, slideCount),
         cx,
         scheduledAt,
         destination: delivery === "continuous" ? destination.trim() : null,
@@ -536,7 +557,7 @@ export function CreativeModal(props: CreativeModalProps) {
       // only a non-empty result actually became a real copy_versions row
       // there, and this is the baseline every later save on this same
       // row diffs against (see below).
-      const persisted = slideText.map((s) => s.trim());
+      const persisted = tidySlideText(slideFields(slideText, slideCount));
       setSavedSlideText(persisted);
       setSavedCopyVersionNo(persisted.filter(Boolean).length > 0 ? 1 : 0);
       props.onCreated?.(scheduledAt, delivery === "continuous" ? dueOn || null : null);
@@ -553,11 +574,13 @@ export function CreativeModal(props: CreativeModalProps) {
       leadUserId: leadUserId || null,
       concept,
       referenceUrl,
+      slideCount,
       scheduledAt,
       destination: delivery === "continuous" ? destination.trim() : null,
       dueOn: delivery === "continuous" ? dueOn || null : null,
     });
-    const cleaned = slideText.map((s) => s.trim());
+    // A carousel cut from 5 slides to 3 keeps only the first 3 slides' text.
+    const cleaned = tidySlideText(slideFields(slideText, slideCount));
     // Edit mode's own baseline (initialSlideText/latestCopyVersion) comes
     // from props and already stays current across saves, since the
     // parent's query for it shares the same key useSaveSlideText
@@ -658,6 +681,22 @@ export function CreativeModal(props: CreativeModalProps) {
   const [draftError, setDraftError] = useState<string | null>(null);
 
   const uploadCreative = useUploadCreativeVersion(creativeId ?? "", agencyId ?? "", latestCreativeVersionNo);
+  const uploadCarousel = useUploadCarouselVersion(creativeId ?? "", agencyId ?? "", latestCreativeVersionNo);
+  const [carouselPending, setCarouselPending] = useState(false);
+
+  // A carousel's whole set of slides, saved as the next version.
+  async function handleSaveCarousel(slides: SlideSource[]) {
+    const targetVersionNo = nextCreativeVersionNo;
+    setCreativeSaveNote(null);
+    try {
+      const versionId = await uploadCarousel.mutateAsync(slides);
+      if (!isCreate) props.onCreativeVersionCreated(versionId);
+      setViewingCreativeVersionNo(targetVersionNo);
+      setCreativeSaveNote(`Saved as version ${targetVersionNo}.`);
+    } catch {
+      // Surfaced via uploadCarousel.error / uploadError below.
+    }
+  }
   const saveCopy = useSaveCopyFields(creativeId ?? "");
   const refreshWiifmNote = useRefreshWiifmNote(creativeId ?? "");
 
@@ -724,7 +763,7 @@ export function CreativeModal(props: CreativeModalProps) {
   // agency actually touched (a file picked, and/or copy fields, are each
   // independent — you don't have to choose one to work on at a time).
   const includesCopy = copyFieldSpecs.length > 0;
-  const uploadSaving = uploadCreative.isPending || saveCopy.isPending;
+  const uploadSaving = uploadCreative.isPending || uploadCarousel.isPending || saveCopy.isPending;
 
   // Whether Copy/Creative each have something a save would actually
   // persist right now — Copy's own dedicated Save button and Creative's
@@ -742,7 +781,7 @@ export function CreativeModal(props: CreativeModalProps) {
     includesCopy &&
     hasAnyCopyContent &&
     !(!!latestCopyVersion && fieldsEqual(mergedCopyFields, latestCopyVersion.fields ?? {}));
-  const pendingCreativeChange = !!file;
+  const pendingCreativeChange = !!file || (!!slideCount && carouselPending);
 
   // What Check WIIFM/Check Brand actually check — the fields as they
   // stand right now in the editable draft, not the last saved version.
@@ -899,6 +938,7 @@ export function CreativeModal(props: CreativeModalProps) {
   const uploadError =
     fileError ||
     (uploadCreative.error ? errorMessage(uploadCreative.error, "Couldn't upload") : null) ||
+    (uploadCarousel.error ? errorMessage(uploadCarousel.error, "Couldn't save the slides") : null) ||
     (saveCopy.error ? errorMessage(saveCopy.error, "Couldn't save") : null);
 
   // Edit mode: project name up top, the post's own name and format
@@ -1027,6 +1067,25 @@ export function CreativeModal(props: CreativeModalProps) {
             </label>
             <FormatPicker id="nbFmt" value={formats} onChange={setFormats} />
           </div>
+
+          {carouselMax && (
+            <div className="field">
+              <label htmlFor="nbSlides">
+                Slides <span className="hint">how many slides this carousel has</span>
+              </label>
+              <select
+                id="nbSlides"
+                value={slideCount ?? CAROUSEL_MIN_SLIDES}
+                onChange={(e) => setSlideCountChoice(Number(e.target.value))}
+              >
+                {Array.from({ length: carouselMax - CAROUSEL_MIN_SLIDES + 1 }, (_, i) => i + CAROUSEL_MIN_SLIDES).map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {isCreate && repeatIssue && (
             <div className="note">
@@ -1159,8 +1218,9 @@ export function CreativeModal(props: CreativeModalProps) {
           </p>
           <ListEditor
             itemLabel={(i) => `Slide ${i + 1}`}
-            values={slideText}
+            values={slideFields(slideText, slideCount)}
             onChange={setSlideText}
+            fixed={!!slideCount}
             bare
           />
 
@@ -1203,6 +1263,21 @@ export function CreativeModal(props: CreativeModalProps) {
                 </div>
               )}
 
+              {slideCount ? (
+                <CarouselSlots
+                  slideCount={slideCount}
+                  latest={creativeVersions[0] ?? null}
+                  readOnlyVersion={isViewingLatestCreative ? null : viewedCreativeVersion}
+                  aspectRatio={aspectRatioCss(format)}
+                  nextVersionNo={nextCreativeVersionNo}
+                  saving={uploadCarousel.isPending}
+                  saveNote={creativeSaveNote}
+                  onSave={handleSaveCarousel}
+                  onPendingChange={setCarouselPending}
+                  onError={setFileError}
+                />
+              ) : (
+              <>
               <input
                 ref={inputRef}
                 type="file"
@@ -1288,6 +1363,8 @@ export function CreativeModal(props: CreativeModalProps) {
                     </p>
                   )}
                 </>
+              )}
+              </>
               )}
             </div>
 

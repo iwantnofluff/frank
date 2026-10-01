@@ -366,6 +366,7 @@ export const test = base.extend<{ frank: Frank }>({
       ["shared_links", () => admin.from("shared_links").delete().eq("agency_id", agency.id)],
       ["comments", () => admin.from("comments").delete().eq("agency_id", agency.id)],
       ["copy_versions", () => admin.from("copy_versions").delete().eq("agency_id", agency.id)],
+      ["creative_version_slides", () => admin.from("creative_version_slides").delete().eq("agency_id", agency.id)],
       ["creative_versions", () => admin.from("creative_versions").delete().eq("agency_id", agency.id)],
       ["creatives", () => admin.from("creatives").delete().eq("agency_id", agency.id)],
       ["custom_columns", () => admin.from("custom_columns").delete().eq("agency_id", agency.id)],

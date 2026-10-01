@@ -7,6 +7,9 @@ export interface PinAnchor {
   x: number; // 0-1, normalised so it survives resizing
   y: number;
   n: number;
+  // Which carousel slide it sits on (its position, 1-based). Absent on
+  // anything placed before carousels, which reads as slide 1.
+  slide?: number;
 }
 
 export interface RegionAnchor {
@@ -16,6 +19,7 @@ export interface RegionAnchor {
   w: number;
   h: number;
   n: number;
+  slide?: number; // as PinAnchor.slide
 }
 
 export interface HighlightAnchor {

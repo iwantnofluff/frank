@@ -9,6 +9,7 @@ export interface BriefFields {
   leadUserId: string | null;
   concept: string;
   referenceUrl: string;
+  slideCount: number | null; // carousels only
   // Exactly one side is meaningful, matching the project's own delivery
   // mode (fixed at the project level, never edited here) — the caller
   // decides which, same convention as useCreateCreative.
@@ -44,6 +45,7 @@ export function useUpdateBrief(creativeId: string) {
           lead_user_id: fields.leadUserId,
           concept: fields.concept.trim() || null,
           reference_url: fields.referenceUrl.trim() || null,
+          slide_count: fields.slideCount,
           scheduled_at: fields.scheduledAt,
           destination: fields.destination,
           due_on: fields.dueOn,

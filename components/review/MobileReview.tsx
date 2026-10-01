@@ -2,7 +2,7 @@
 
 import type { ReviewController } from "@/hooks/use-review-controller";
 import { formatsLabel, postFormats } from "@/lib/formats";
-import { NoArtwork } from "@/components/creative-review/NoArtwork";
+import { ReviewMedia } from "./ReviewMedia";
 import { GuestComposer } from "./GuestComposer";
 
 export function MobileReview({
@@ -15,9 +15,6 @@ export function MobileReview({
   logoUrl: string | null;
 }) {
   const { creatives, active, activeIndex, goTo } = controller;
-  // Already signed server-side (see /api/shared-review) — a public visitor
-  // has no session to sign a Storage URL with themselves.
-  const signedUrl = active?.asset?.signed_url ?? null;
 
   return (
     <div className="phone">
@@ -99,18 +96,7 @@ export function MobileReview({
                   <div className="dots">•••</div>
                 </div>
                 <div className="ig-media">
-                  {signedUrl ? (
-                    active.asset?.mime_type.startsWith("video/") ? (
-                      <video src={signedUrl} controls style={{ width: "100%" }} />
-                    ) : (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={signedUrl} alt={active.name} style={{ width: "100%" }} />
-                    )
-                  ) : !active.asset ? (
-                    <NoArtwork format={active.format} note="The agency hasn't uploaded the artwork for this post yet." />
-                  ) : (
-                    <div className="ig-noasset">No preview available</div>
-                  )}
+                  <ReviewMedia active={active} />
                 </div>
                 <div className="ig-acts">
                   <svg viewBox="0 0 24 24">
