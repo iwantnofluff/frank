@@ -54,5 +54,13 @@ export default async function AppLayout({
 
   const userInitials = initials(profile?.name, user.email ?? "?");
 
-  return <AppShell userInitials={userInitials}>{children}</AppShell>;
+  return (
+    <AppShell
+      userInitials={userInitials}
+      userName={profile?.name ?? null}
+      userEmail={user.email ?? ""}
+    >
+      {children}
+    </AppShell>
+  );
 }

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useIsStaff } from "@/hooks/use-is-staff";
+import { AccountMenu } from "./AccountMenu";
 import {
   AnalyticsIcon,
   CalendarIcon,
@@ -32,7 +33,15 @@ const CLIENT_CONTEXT_NAV_ITEMS = [
   { href: "/analytics", label: "Analytics", icon: AnalyticsIcon },
 ] as const;
 
-export function NavRail({ userInitials }: { userInitials: string }) {
+export function NavRail({
+  userInitials,
+  userName,
+  userEmail,
+}: {
+  userInitials: string;
+  userName: string | null;
+  userEmail: string;
+}) {
   const pathname = usePathname();
   const { isStaff, isPending: isStaffPending } = useIsStaff();
   // Client knowledge lives in the rail only once a client is selected — it
@@ -124,9 +133,7 @@ export function NavRail({ userInitials }: { userInitials: string }) {
         </Link>
       )}
       <div className="spacer" />
-      <div className="avatar" title="Your account">
-        {userInitials}
-      </div>
+      <AccountMenu initials={userInitials} name={userName} email={userEmail} />
     </nav>
   );
 }

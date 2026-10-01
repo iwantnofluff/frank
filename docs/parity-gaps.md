@@ -1445,3 +1445,11 @@ Delivery kind itself (Content Planner vs Other Content) isn't offered: the datab
 Not a product change. Every calendar spec reached its March 2027 test data by clicking Next exactly six times from whatever month it opened on — written in September, so on 1 October all 21 started landing on April and failing ("0 scheduled posts in this view"). They now call a shared `goToMonth(page, "March 2027")` fixture helper that clicks until the month header actually reads that month. The plain `project-calendar.png` screenshot opens on the current month too, so its month label and the empty state's sentence naming the month are masked rather than re-baselined every month.
 
 **Verified**: both calendar specs 22/22 on their own (the hover-preview timing test, which also failed in a loaded full run, passed 3/3 alone). `project-calendar.png` regenerated after confirming its diff was only the month name; `dashboard.png` regenerated after confirming its diff was only the Last Activity date.
+
+## A way to sign out
+
+There wasn't one anywhere in the app — the prototype's avatar (`#me`) only jumped to Settings. Clicking the avatar at the foot of the rail now opens a small account menu beside it (the same `.colpop`/`.cpr` shell the row menus use, placed with `useViewportFit`'s "beside" side): your name, your email, and Sign out. Signing out ends the Supabase session, clears every cached query so nothing from that session is shown to whoever signs in next, and lands on `/login`. The avatar is now a real `<button>` labelled "Your account", with the browser's button chrome reset in `globals.css`.
+
+Also: Next.js's own development indicator (the "N" button) defaults to the bottom-left corner, directly on top of the avatar, which made it unclickable in `next dev`. Moved to bottom-right in `next.config.ts` (`devIndicators.position`). Production never shows that indicator.
+
+**Verified**: typecheck and lint clean. New `sign-out.spec.ts`: the menu names the signed-in person and their email, closes on Escape, and Sign out lands on `/login` — and going back to `/dashboard` afterwards is sent to sign in again, so the session really ended. Looked at the open menu: beside the avatar, fully on screen.
