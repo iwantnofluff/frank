@@ -1356,6 +1356,52 @@ body.lightrail .avatar {
   border-radius: 50%;
   background: var(--amber);
 }
+/* A version tab's delete X (CreativeModal's VersionTab): hidden until the
+   tab is hovered or focused, then a small rounded square sitting flush in
+   the tab's top-right corner (matching its 5px corner), with its own hover. */
+.vtabwrap {
+  position: relative;
+  display: inline-flex;
+}
+/* The tab keeps its hover look while the pointer is on its X. */
+.vtabwrap:hover .vtab {
+  color: var(--ink);
+  background: rgba(0, 0, 0, 0.03);
+}
+.vtabwrap:hover .vtab[aria-selected="true"] {
+  color: var(--action);
+}
+.vtab-x {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 13px;
+  height: 13px;
+  border-radius: 2px 5px 2px 2px;
+  display: none;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--muted);
+  cursor: pointer;
+}
+.vtabwrap:hover .vtab-x,
+.vtabwrap:focus-within .vtab-x {
+  display: grid;
+}
+.vtab-x:hover,
+.vtab-x:focus-visible {
+  background: var(--rose);
+  color: #fff;
+  outline: none;
+}
+.vtab-x svg {
+  width: 11px;
+  height: 11px;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  fill: none;
+  stroke-linecap: round;
+}
 .vdots {
   width: 19px;
   height: 19px;

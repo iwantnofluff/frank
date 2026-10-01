@@ -2,6 +2,7 @@
 
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { ListEditor } from "@/components/ui/ListEditor";
 import { DateTimePicker } from "@/components/ui/DateTimePicker";
 import { CxCell } from "@/components/project/CxCell";
@@ -17,6 +18,8 @@ import { useCustomColumns } from "@/hooks/use-custom-columns";
 import { useUploadCreativeVersion } from "@/hooks/use-upload-creative-version";
 import { useSaveCopyFields } from "@/hooks/use-save-copy-fields";
 import { useRefreshWiifmNote } from "@/hooks/use-refresh-wiifm-note";
+import { useDeletePostVersion } from "@/hooks/use-delete-post-version";
+import { useComments } from "@/hooks/use-comments";
 import { useAssetSignedUrl } from "@/hooks/use-asset-signed-url";
 import { useAgencyAiSettings } from "@/hooks/use-agency-ai-settings";
 import { useFormatDirections } from "@/hooks/use-format-directions";
@@ -602,14 +605,53 @@ export function CreativeModal(props: CreativeModalProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
 
-  // Copy version tabs (browse-an-old-version, Rework) were removed —
-  // direct instruction, "too cluttered." Only the current draft shows now;
-  // older versions still exist in the database (nothing here deletes
-  // them), there's just no in-modal way to browse or rework them.
+  // The editable draft always builds on the latest copy version.
   const [draftFields, setDraftFields] = useState<Record<string, string>>(latestCopyVersion?.fields ?? {});
 
+  // Version tabs, for the artwork and (by direct instruction, the same way)
+  // the copy: older versions open read only; the latest is where new work
+  // happens. A tab whose version has just been deleted falls back to the
+  // latest rather than pointing at nothing.
   const [viewingCreativeVersionNo, setViewingCreativeVersionNo] = useState(latestCreativeVersionNo);
-  const isViewingLatestCreative = creativeVersions.length === 0 || viewingCreativeVersionNo === latestCreativeVersionNo;
+  const viewedCreativeVersion =
+    creativeVersions.find((v) => v.version_no === viewingCreativeVersionNo) ?? creativeVersions[0] ?? null;
+  const isViewingLatestCreative = !viewedCreativeVersion || viewedCreativeVersion.id === creativeVersions[0]?.id;
+  const [viewingCopyVersionNo, setViewingCopyVersionNo] = useState(latestCopyVersion?.version_no ?? 0);
+  const viewedCopyVersion = copyVersions.find((v) => v.version_no === viewingCopyVersionNo) ?? latestCopyVersion;
+  const isViewingLatestCopy = !viewedCopyVersion || viewedCopyVersion.id === latestCopyVersion?.id;
+
+  // Delete Version (phase30): only a version with no comments on it.
+  const deleteVersion = useDeletePostVersion(creativeId ?? "");
+  const { data: postComments } = useComments(creativeId ?? "");
+  const [deleteTarget, setDeleteTarget] = useState<{ kind: "creative" | "copy"; id: string; versionNo: number } | null>(
+    null,
+  );
+  const deleteTargetComments = deleteTarget
+    ? (postComments ?? []).filter((c) =>
+        deleteTarget.kind === "creative" ? c.creative_version_id === deleteTarget.id : c.copy_version_id === deleteTarget.id,
+      ).length
+    : 0;
+
+  async function confirmDeleteVersion() {
+    if (!deleteTarget) return;
+    const { kind, id } = deleteTarget;
+    await deleteVersion.mutateAsync({ kind, versionId: id });
+    if (kind === "copy") {
+      const remaining = copyVersions.filter((v) => v.id !== id);
+      // Deleting the latest: the draft goes back to building on the one
+      // before it, rather than carrying the deleted text as unsaved edits.
+      if (id === latestCopyVersion?.id) {
+        setDraftFields(remaining[0]?.fields ?? {});
+        setCopySaveNote(null);
+      }
+      setViewingCopyVersionNo(remaining[0]?.version_no ?? 0);
+    } else {
+      const remaining = creativeVersions.filter((v) => v.id !== id);
+      setViewingCreativeVersionNo(remaining[0]?.version_no ?? 0);
+      setCreativeSaveNote(null);
+    }
+    setDeleteTarget(null);
+  }
 
   const [draftOptions, setDraftOptions] = useState<DraftOption[] | null>(null);
   const [drafting, setDrafting] = useState(false);
@@ -822,6 +864,7 @@ export function CreativeModal(props: CreativeModalProps) {
     try {
       const saved = await saveCopyIfChanged();
       setCopySaveNote(saved ? `Saved as version ${targetVersionNo}.` : "No changes to save.");
+      if (saved) setViewingCopyVersionNo(targetVersionNo);
     } catch {
       // Surfaced via saveCopy.error / uploadError below already.
     }
@@ -878,6 +921,7 @@ export function CreativeModal(props: CreativeModalProps) {
     : `${props.creative.projects?.name ?? "Untitled Project"} — ${props.creative.name}`;
 
   return (
+    <>
     <Modal
       title={title}
       ariaLabel={titleAriaLabel}
@@ -1148,16 +1192,13 @@ export function CreativeModal(props: CreativeModalProps) {
             {creativeVersions.length > 0 && (
                 <div className="viewbar" style={{ marginBottom: 10 }}>
                   {[...creativeVersions].reverse().map((v) => (
-                    <button
+                    <VersionTab
                       key={v.version_no}
-                      type="button"
-                      role="tab"
-                      className="vtab"
-                      aria-selected={viewingCreativeVersionNo === v.version_no}
-                      onClick={() => setViewingCreativeVersionNo(v.version_no)}
-                    >
-                      V{v.version_no}
-                    </button>
+                      versionNo={v.version_no}
+                      selected={viewedCreativeVersion?.id === v.id}
+                      onSelect={() => setViewingCreativeVersionNo(v.version_no)}
+                      onDelete={() => setDeleteTarget({ kind: "creative", id: v.id, versionNo: v.version_no })}
+                    />
                   ))}
                 </div>
               )}
@@ -1174,9 +1215,7 @@ export function CreativeModal(props: CreativeModalProps) {
                 }}
               />
               {!isViewingLatestCreative ? (
-                <CreativeVersionPreview
-                  version={creativeVersions.find((v) => v.version_no === viewingCreativeVersionNo)!}
-                />
+                <CreativeVersionPreview version={viewedCreativeVersion!} />
               ) : creativeVersions.length > 0 && !file ? (
                 <>
                   <CreativeVersionPreview version={creativeVersions[0]} />
@@ -1261,7 +1300,35 @@ export function CreativeModal(props: CreativeModalProps) {
             </p>
           )}
 
-          {includesCopy && (
+          {includesCopy && copyVersions.length > 0 && (
+            <div className="viewbar" style={{ marginBottom: 10 }}>
+              {[...copyVersions].reverse().map((v) => (
+                <VersionTab
+                  key={v.version_no}
+                  versionNo={v.version_no}
+                  selected={viewedCopyVersion?.id === v.id}
+                  onSelect={() => setViewingCopyVersionNo(v.version_no)}
+                  onDelete={() => setDeleteTarget({ kind: "copy", id: v.id, versionNo: v.version_no })}
+                />
+              ))}
+            </div>
+          )}
+
+          {includesCopy && !isViewingLatestCopy && viewedCopyVersion && (
+            <>
+              <p className="sub" style={{ marginBottom: 10 }}>
+                An earlier version, read only. New copy builds on the latest, V{latestCopyVersion?.version_no}.
+              </p>
+              {copyFieldSpecs.map((spec) => (
+                <div className="field" key={spec.key}>
+                  <label>{spec.label}</label>
+                  <p className="fd-d">{viewedCopyVersion.fields?.[spec.key] || "—"}</p>
+                </div>
+              ))}
+            </>
+          )}
+
+          {includesCopy && isViewingLatestCopy && (
             <>
               <div className="field">
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
@@ -1408,6 +1475,61 @@ export function CreativeModal(props: CreativeModalProps) {
           ))}
         </div>
       )}
+
     </Modal>
+    {deleteTarget && (
+      <ConfirmDialog
+        title={`Delete ${deleteTarget.kind === "creative" ? "Creative" : "Copy"} Version ${deleteTarget.versionNo}?`}
+        message={
+          deleteTargetComments > 0
+            ? `this version has ${deleteTargetComments} comment${deleteTargetComments === 1 ? "" : "s"}, so it can't be deleted. Only a version nobody has commented on can be.`
+            : `Version ${deleteTarget.versionNo} of the ${deleteTarget.kind === "creative" ? "artwork" : "copy"} will be gone for good. The other versions keep their numbers. This can't be undone.`
+        }
+        confirmLabel="Delete Version"
+        pendingLabel="Deleting…"
+        isPending={deleteVersion.isPending}
+        error={deleteVersion.error}
+        errorFallback="Couldn't delete this version"
+        onConfirm={deleteTargetComments > 0 ? undefined : () => confirmDeleteVersion().catch(() => {})}
+        onClose={() => {
+          setDeleteTarget(null);
+          deleteVersion.reset();
+        }}
+      />
+    )}
+    </>
+  );
+}
+
+// A version tab with a small X at its top right on hover (or keyboard
+// focus) — the X has its own hover — that asks to delete the version.
+function VersionTab({
+  versionNo,
+  selected,
+  onSelect,
+  onDelete,
+}: {
+  versionNo: number;
+  selected: boolean;
+  onSelect: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <span className="vtabwrap">
+      <button type="button" role="tab" className="vtab" aria-selected={selected} onClick={onSelect}>
+        V{versionNo}
+      </button>
+      <button
+        type="button"
+        className="vtab-x"
+        title={`Delete Version ${versionNo}`}
+        aria-label={`Delete Version ${versionNo}`}
+        onClick={onDelete}
+      >
+        <svg viewBox="0 0 24 24">
+          <path d="M18 6L6 18M6 6l12 12" />
+        </svg>
+      </button>
+    </span>
   );
 }
