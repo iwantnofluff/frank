@@ -369,12 +369,15 @@ export function CommentsPanel({
   onToolModeChange,
   canAnnotate,
   videoMoment = null,
+  videoSlide = null,
   creativeVersionId = null,
 }: {
   creativeId: string;
   // A video paused at this moment (phase34); new comments attach to it, and
   // to the version being watched.
   videoMoment?: number | null;
+  // The carousel slide that video is, so the comment stays on it.
+  videoSlide?: number | null;
   creativeVersionId?: string | null;
   highlightedCommentId?: string | null;
   onHighlight?: (commentId: string | null) => void;
@@ -542,7 +545,16 @@ export function CommentsPanel({
             body,
             parentId: null,
             visibility,
-            ...(at != null ? { creativeVersionId, anchor: { type: "time" as const, t: Math.round(at * 100) / 100 } } : {}),
+            ...(at != null
+              ? {
+                  creativeVersionId,
+                  anchor: {
+                    type: "time" as const,
+                    t: Math.round(at * 100) / 100,
+                    ...(videoSlide !== null ? { slide: videoSlide } : {}),
+                  },
+                }
+              : {}),
           })
         }
       />

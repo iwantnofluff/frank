@@ -10,10 +10,12 @@ export function MobileReview({
   controller,
   agencyName,
   logoUrl,
+  shown,
 }: {
   controller: ReviewController;
   agencyName: string;
   logoUrl: string | null;
+  shown: boolean; // the layout on screen (phone or desktop)
 }) {
   const { creatives, active, activeIndex, goTo } = controller;
 
@@ -97,7 +99,7 @@ export function MobileReview({
                   <div className="dots">•••</div>
                 </div>
                 <div className="ig-media">
-                  <ReviewMedia active={active} controller={controller} />
+                  <ReviewMedia active={active} controller={controller} shown={shown} />
                 </div>
                 <div className="ig-acts">
                   <svg viewBox="0 0 24 24">

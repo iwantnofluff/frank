@@ -24,6 +24,8 @@ export function useSubmitSharedComment(token: string, passcode: string | null) {
       guestEmail: string;
       // A moment in the video, in seconds (phase34).
       atSeconds?: number | null;
+      // Which carousel slide, when the video is one of several (phase35).
+      slide?: number | null;
     }): Promise<ActionResult> => {
       const supabase = createClient();
       const { data, error } = await supabase.rpc("submit_shared_comment", {
@@ -36,6 +38,7 @@ export function useSubmitSharedComment(token: string, passcode: string | null) {
         // Only sent when there is one, so a comment without a moment is the
         // same call as before.
         ...(input.atSeconds != null ? { p_at_seconds: Math.round(input.atSeconds * 100) / 100 } : {}),
+        ...(input.atSeconds != null && input.slide != null ? { p_slide: input.slide } : {}),
       });
       if (error) throw error;
       return data as ActionResult;

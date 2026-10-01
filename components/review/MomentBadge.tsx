@@ -20,7 +20,7 @@ export function MomentBadge({
       type="button"
       className="anchor time-a"
       aria-label={`Go to ${formatVideoTime(t)}`}
-      onClick={() => controller.selectComment(comment.id, t)}
+      onClick={() => controller.selectComment(comment.id, t, (comment.anchor as { slide?: number } | null)?.slide)}
     >
       <svg viewBox="0 0 24 24">
         <circle cx="12" cy="12" r="9" />

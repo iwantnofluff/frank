@@ -19,9 +19,11 @@ export function useReviewController(token: string) {
   // A video (phase34): the paused moment, whether the next comment is
   // attached to it, the comment picked, and a request to jump to a moment.
   const [videoMoment, setVideoMoment] = useState<number | null>(null);
+  // The carousel slide that video is, if it's one of several.
+  const [videoSlide, setVideoSlide] = useState<number | null>(null);
   const [attachMoment, setAttachMoment] = useState(true);
   const [highlightedCommentId, setHighlightedCommentId] = useState<string | null>(null);
-  const [videoSeek, setVideoSeek] = useState<{ t: number; nonce: number } | null>(null);
+  const [videoSeek, setVideoSeek] = useState<{ t: number; nonce: number; slide?: number } | null>(null);
 
   const { data, isLoading, isError } = useSharedReview(token, passcode);
   const identity = useGuestIdentityStore();
@@ -51,15 +53,16 @@ export function useReviewController(token: string) {
       guestName: name,
       guestEmail: email,
       atSeconds: videoMoment !== null && attachMoment ? videoMoment : null,
+      slide: videoMoment !== null && attachMoment ? videoSlide : null,
     });
     if (result.status === "ok") setCommentDraft("");
     return result;
   }
 
   // A comment picked in the list goes to its moment in the video.
-  function selectComment(id: string, t: number | null) {
+  function selectComment(id: string, t: number | null, slide?: number) {
     setHighlightedCommentId(id);
-    if (t !== null) setVideoSeek({ t, nonce: Date.now() });
+    if (t !== null) setVideoSeek({ t, nonce: Date.now(), slide });
   }
 
   async function approve(name: string, email: string) {
@@ -108,6 +111,7 @@ export function useReviewController(token: string) {
     identity,
     videoMoment,
     setVideoMoment,
+    setVideoSlide,
     attachMoment,
     setAttachMoment,
     highlightedCommentId,

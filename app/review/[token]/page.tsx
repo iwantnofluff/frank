@@ -131,8 +131,16 @@ export default function SharedReviewPage({
           </button>
         </div>
       </div>
-      <MobileReview controller={controller} agencyName={agencyName} logoUrl={branding?.logo_url ?? null} />
+      {/* Both layouts are drawn and one is shown; only the shown one's video
+          reports its paused moment, or the hidden one's 0:00 would win. */}
+      <MobileReview
+        controller={controller}
+        agencyName={agencyName}
+        logoUrl={branding?.logo_url ?? null}
+        shown={view === "phone"}
+      />
       <DesktopReview
+        shown={view === "desktop"}
         controller={controller}
         agencyName={agencyName}
         linkUrl={linkUrl}

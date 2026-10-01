@@ -30,6 +30,7 @@ export interface RegionAnchor {
 export interface TimeAnchor {
   type: "time";
   t: number;
+  slide?: number; // a carousel's video slide, as PinAnchor.slide
 }
 
 export interface HighlightAnchor {

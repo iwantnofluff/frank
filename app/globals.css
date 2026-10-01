@@ -5444,6 +5444,9 @@ button.avatar {
   gap: 4px;
   pointer-events: none;
 }
+.car-dots.over-video {
+  bottom: 52px;
+}
 .car-dots i {
   width: 6px;
   height: 6px;

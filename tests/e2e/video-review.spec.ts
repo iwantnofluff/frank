@@ -175,3 +175,84 @@ test("on the review link, a guest can comment at a moment and jump back to it", 
   expect(Math.abs((await videoTime(page, scope)) - at)).toBeLessThan(0.05);
   await expect(page.locator(`${scope} .vmark`)).toHaveCount(1);
 });
+
+// A 2-slide carousel: slide 1 an image, slide 2 the recorded video.
+async function seedMixedCarousel(page: Page, frank: Frank) {
+  const video = await recordVideo(page);
+  const png = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkaPhfDwAEhgGAj4c+ZQAAAABJRU5ErkJggg==",
+    "base64",
+  );
+  await admin.from("creatives").update({ formats: ["ig_carousel"], slide_count: 2 }).eq("id", frank.creativeId);
+  const { data: staffUser } = await admin.from("users").select("id").eq("email", frank.staffEmail).single();
+  const files = [
+    { key: `${frank.agencyId}/${frank.creativeId}/mixed-1.png`, body: png, mime: "image/png", name: "one.png" },
+    { key: `${frank.agencyId}/${frank.creativeId}/mixed-2.mp4`, body: video, mime: "video/mp4", name: "two.mp4" },
+  ];
+  const ids: string[] = [];
+  for (const f of files) {
+    await admin.storage.from("assets").upload(f.key, f.body, { contentType: f.mime, upsert: true });
+    const { data } = await admin
+      .from("assets")
+      .insert({ agency_id: frank.agencyId, storage_key: f.key, filename: f.name, mime_type: f.mime, bytes: f.body.length, created_by: staffUser!.id })
+      .select("id")
+      .single();
+    ids.push(data!.id);
+  }
+  const { data: version } = await admin
+    .from("creative_versions")
+    .insert({ creative_id: frank.creativeId, version_no: 1, asset_id: ids[0], created_by: staffUser!.id })
+    .select("id")
+    .single();
+  await admin.from("creative_version_slides").insert(ids.map((asset_id, i) => ({ creative_version_id: version!.id, position: i + 1, asset_id })));
+}
+
+test("a carousel's video slide has its own timeline, and its comments stay on that slide", async ({ page, frank }) => {
+  test.setTimeout(90_000);
+  await seedMixedCarousel(page, frank);
+  await frank.loginAsStaff(page);
+  await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
+  const media = page.locator(".ig-media");
+  await expect(media.locator(".car-count")).toHaveText("1 / 2");
+  await expect(media.locator(".vplayer")).toHaveCount(0);
+
+  await media.getByRole("button", { name: "Next slide" }).click();
+  await expect(media.locator(".vtime")).toContainText(/\/ 0:0[23]/, { timeout: 15_000 });
+  // The dots sit above the video's controls.
+  await expect(media.locator(".car-dots.over-video")).toHaveCount(1);
+  await clickTimelineAt(page, ".ig-media", 0.5);
+  await page.getByPlaceholder("Add a comment…").last().fill("On the video slide");
+  // Public, so the client sees it (and its marker) on the review link.
+  await page.locator("aside .composer .intog input").last().uncheck();
+  await page.getByRole("button", { name: "Post", exact: true }).last().click();
+  await expect(page.locator(".cmt", { hasText: "On the video slide" })).toContainText("0:01");
+  const { data: row } = await admin.from("comments").select("anchor").eq("creative_id", frank.creativeId).eq("body", "On the video slide").single();
+  expect((row!.anchor as { type: string; slide: number }).type).toBe("time");
+  expect((row!.anchor as { slide: number }).slide).toBe(2);
+  await expect(media.locator(".vmark")).toHaveCount(1);
+
+  // From slide 1, picking that comment goes to slide 2 and its moment.
+  await media.getByRole("button", { name: "Previous slide" }).click();
+  await expect(media.locator(".car-count")).toHaveText("1 / 2");
+  await page.locator(".cmt", { hasText: "On the video slide" }).click();
+  await expect(media.locator(".car-count")).toHaveText("2 / 2");
+  await expect.poll(async () => Math.abs((await videoTime(page, ".ig-media")) - 1.5)).toBeLessThan(0.4);
+
+  // A guest on the review link: same slide, own timeline.
+  const token = await frank.createSharedLink();
+  await page.goto(`${APP_URL}/review/${token}`);
+  const scope = ".phone .ig-media";
+  await expect(page.locator(`${scope} .car-count`)).toHaveText("1 / 2", { timeout: 15_000 });
+  await page.locator(scope).getByRole("button", { name: "Next slide" }).click();
+  await expect(page.locator(`${scope} .vtime`)).toContainText(/\/ 0:0[23]/, { timeout: 15_000 });
+  await expect(page.locator(`${scope} .vmark`)).toHaveCount(1);
+  await clickTimelineAt(page, scope, 0.25);
+  const phone = page.locator(".phone");
+  await phone.getByPlaceholder("Your name").fill("Guest Viewer");
+  await phone.getByPlaceholder("Your email").fill("guest@example.invalid");
+  await phone.getByPlaceholder("Add a comment…").fill("Guest on slide two");
+  await phone.getByRole("button", { name: "Post", exact: true }).click();
+  await expect(phone.locator(".m-cmt", { hasText: "Guest on slide two" })).toBeVisible({ timeout: 15_000 });
+  const { data: guest } = await admin.from("comments").select("anchor").eq("creative_id", frank.creativeId).eq("body", "Guest on slide two").single();
+  expect((guest!.anchor as { slide: number }).slide).toBe(2);
+});

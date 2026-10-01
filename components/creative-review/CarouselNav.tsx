@@ -7,10 +7,13 @@ export function CarouselNav({
   index,
   count,
   onChange,
+  overVideo = false,
 }: {
   index: number;
   count: number;
   onChange: (index: number) => void;
+  // A video slide: the dots sit above its controls, not on them.
+  overVideo?: boolean;
 }) {
   if (count < 2) return null;
   return (
@@ -46,7 +49,7 @@ export function CarouselNav({
       <span className="car-count" aria-live="polite">
         {index + 1} / {count}
       </span>
-      <div className="car-dots" aria-hidden="true">
+      <div className={`car-dots${overVideo ? " over-video" : ""}`} aria-hidden="true">
         {Array.from({ length: count }, (_, i) => (
           <i key={i} className={i === index ? "on" : ""} />
         ))}

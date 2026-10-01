@@ -11,7 +11,17 @@ import { slideFrames } from "@/lib/slide-frames";
 
 // The image area of a post on the review link (phone and desktop): the
 // artwork, a carousel's slides with arrows, or "No artwork yet".
-export function ReviewMedia({ active, controller }: { active: SharedCreative; controller: ReviewController }) {
+export function ReviewMedia({
+  active,
+  controller,
+  shown,
+}: {
+  active: SharedCreative;
+  controller: ReviewController;
+  // Whether this layout is the one on screen — only it reports the paused
+  // moment and slide (both layouts are drawn).
+  shown: boolean;
+}) {
   const slides = active.slides?.length
     ? active.slides
     : active.asset
@@ -26,6 +36,14 @@ export function ReviewMedia({ active, controller }: { active: SharedCreative; co
     setIndex(0);
     setDir(null);
   }
+  // A comment picked on another of a carousel's video slides goes to it.
+  const seek = controller.videoSeek;
+  const [seekFor, setSeekFor] = useState<number | null>(null);
+  if (seek && seek.nonce !== seekFor) {
+    setSeekFor(seek.nonce);
+    if (seek.slide && seek.slide - 1 !== index) setIndex(seek.slide - 1);
+  }
+
   // One place per slide, so an empty slide still counts (lib/slide-frames).
   const frames = slideFrames(slides, active.slide_count);
   const at = Math.min(index, Math.max(frames.length - 1, 0));
@@ -52,7 +70,7 @@ export function ReviewMedia({ active, controller }: { active: SharedCreative; co
   return (
     <>
       {!slide ? (
-        <NoArtwork format={active.format} note={`Slide ${at + 1} has no image yet.`} />
+        <NoArtwork format={active.format} note={`Slide ${at + 1} has no artwork yet.`} />
       ) : !slide.signed_url ? (
         <div className="ig-noasset">No preview available</div>
       ) : slide.mime_type.startsWith("video/") ? (
@@ -61,14 +79,23 @@ export function ReviewMedia({ active, controller }: { active: SharedCreative; co
         <VideoPlayer
           key={`${active.id}:${slide.position}`}
           src={stableSrc!}
+          // Only this slide's comments, when it's one video of several.
           markers={active.comments.flatMap((c) => {
             const t = commentTime(c.anchor);
-            return t === null ? [] : [{ commentId: c.id, t, kind: c.anchor?.type === "time" ? "time" : "pin" } as TimelineMarker];
+            if (t === null || ((c.anchor as { slide?: number } | null)?.slide ?? 1) !== slide.position) return [];
+            return [{ commentId: c.id, t, kind: c.anchor?.type === "time" ? "time" : "pin" } as TimelineMarker];
           })}
           highlightedCommentId={controller.highlightedCommentId}
           onMarker={controller.setHighlightedCommentId}
           seek={controller.videoSeek}
-          onMoment={controller.setVideoMoment}
+          onMoment={
+            shown
+              ? (t) => {
+                  controller.setVideoMoment(t);
+                  controller.setVideoSlide(frames.length > 1 ? slide.position : null);
+                }
+              : undefined
+          }
         />
       ) : (
         // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
@@ -86,7 +113,9 @@ export function ReviewMedia({ active, controller }: { active: SharedCreative; co
         onChange={(i) => {
           setDir(i > at ? "next" : "prev");
           setIndex(i);
+          controller.setVideoMoment(null);
         }}
+        overVideo={!!slide?.mime_type.startsWith("video/")}
       />
     </>
   );

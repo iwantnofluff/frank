@@ -231,8 +231,10 @@ test("every slide can be removed and saved, leaving the post with no artwork", a
 
   await page.getByRole("button", { name: "Save and Close" }).click();
   await expect(page.locator(".scrim")).toHaveCount(0);
+  // Still a 3-slide carousel, now with nothing on any slide.
   await expect(page.locator(".awaiting", { hasText: "No artwork yet" })).toBeVisible();
-  await expect(page.locator(".car-count")).toHaveCount(0);
+  await expect(page.locator(".ig-media .car-count")).toHaveText("1 / 3");
+  await expect(page.locator(".ig-media")).toContainText("Slide 1 has no artwork yet.");
 
   // The review link agrees, rather than falling back to V1.
   const token = await frank.createSharedLink();
@@ -262,7 +264,7 @@ test("a signed-in client sees every slide, not just the first", async ({ page, f
   await expect(media.locator("img")).toBeVisible();
 });
 
-test("an empty slide still counts: arrows show, and it says it has no image yet", async ({ page, frank }) => {
+test("an empty slide still counts: arrows show, and it says it has no artwork yet", async ({ page, frank }) => {
   const versionId = await seedCarousel(frank);
   // Keep only slide 2 of a 2-slide carousel (the case found on live).
   await admin.from("creatives").update({ slide_count: 2 }).eq("id", frank.creativeId);
@@ -271,7 +273,7 @@ test("an empty slide still counts: arrows show, and it says it has no image yet"
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
   const media = page.locator(".ig-media");
   await expect(media.locator(".car-count")).toHaveText("1 / 2");
-  await expect(media).toContainText("Slide 1 has no image yet.");
+  await expect(media).toContainText("Slide 1 has no artwork yet.");
   await media.getByRole("button", { name: "Next slide" }).click();
   await expect(media.locator(".car-count")).toHaveText("2 / 2");
   await expect(media.locator("img")).toBeVisible();
@@ -280,7 +282,7 @@ test("an empty slide still counts: arrows show, and it says it has no image yet"
   await page.goto(`${APP_URL}/review/${token}`);
   const phone = page.locator(".phone .ig-media");
   await expect(phone.locator(".car-count")).toHaveText("1 / 2", { timeout: 15_000 });
-  await expect(phone).toContainText("Slide 1 has no image yet.");
+  await expect(phone).toContainText("Slide 1 has no artwork yet.");
 });
 
 test("extra images fill earlier empty slides, and any that don't fit are named", async ({ page, frank }) => {
@@ -397,4 +399,24 @@ test("the database refuses to remove artwork for a client", async ({ frank }) =>
   const { error } = await client.rpc("delete_creative_artwork", { p_creative_id: frank.creativeId });
   expect(error?.message).toContain("not permitted");
   expect((await admin.from("creative_versions").select("id").eq("creative_id", frank.creativeId)).data).toHaveLength(1);
+});
+
+test("a carousel with nothing uploaded still moves between its empty slides", async ({ page, frank }) => {
+  await admin.from("creatives").update({ formats: ["ig_carousel"], slide_count: 2 }).eq("id", frank.creativeId);
+  await frank.loginAsStaff(page);
+  await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
+  const media = page.locator(".ig-media");
+  await expect(media.locator(".car-count")).toHaveText("1 / 2");
+  await expect(media).toContainText("Slide 1 has no artwork yet.");
+  await media.getByRole("button", { name: "Next slide" }).click();
+  await expect(media.locator(".car-count")).toHaveText("2 / 2");
+  await expect(media).toContainText("Slide 2 has no artwork yet.");
+
+  const token = await frank.createSharedLink();
+  await page.goto(`${APP_URL}/review/${token}`);
+  const phone = page.locator(".phone .ig-media");
+  await expect(phone.locator(".car-count")).toHaveText("1 / 2", { timeout: 15_000 });
+  await phone.getByRole("button", { name: "Next slide" }).click();
+  await expect(phone.locator(".car-count")).toHaveText("2 / 2");
+  await expect(phone).toContainText("Slide 2 has no artwork yet.");
 });

@@ -16,6 +16,7 @@ import { slideFrames } from "@/lib/slide-frames";
 import {
   commentTime,
   isHighlightAnchor,
+  isTimeAnchor,
   isPinAnchor,
   isRegionAnchor,
   type HighlightAnchor,
@@ -119,12 +120,18 @@ export default function CreativeReviewPage({
   function goToSlide(i: number) {
     setSlideDir(i > frameIndex ? "next" : "prev");
     setSlideIndex(i);
+    setVideoMoment(null);
   }
   const [slideFor, setSlideFor] = useState(activeCreativeVersion?.id);
   if (slideFor !== activeCreativeVersion?.id) {
     setSlideFor(activeCreativeVersion?.id);
-    setSlideIndex(0);
-    setSlideDir(null);
+    // A different version starts at its first slide — but not the first
+    // version arriving: a carousel's slides show (empty) before it loads,
+    // and one already moved to stays put.
+    if (slideFor !== undefined) {
+      setSlideIndex(0);
+      setSlideDir(null);
+    }
   }
   const frameIndex = Math.min(slideIndex, Math.max(frames.length - 1, 0));
   const currentSlide = frames[frameIndex] ?? null;
@@ -145,9 +152,13 @@ export default function CreativeReviewPage({
     const anchor = (allComments ?? []).find((c) => c.id === commentId)?.anchor;
     const at = commentTime(anchor);
     if (at !== null) setVideoSeek({ t: at, nonce: Date.now() });
-    if (anchor && (isPinAnchor(anchor) || isRegionAnchor(anchor))) {
+    // Any anchor can sit on a slide: a pin, a box, or a moment in a video.
+    if (anchor && (isPinAnchor(anchor) || isRegionAnchor(anchor) || isTimeAnchor(anchor))) {
       const i = (anchor.slide ?? 1) - 1;
-      if (i < frames.length) setSlideIndex(i);
+      if (i < frames.length && i !== frameIndex) {
+        setSlideIndex(i);
+        setVideoMoment(null);
+      }
     }
   }
 
@@ -206,7 +217,14 @@ export default function CreativeReviewPage({
   const isVideo = currentSlide?.asset.mime_type.startsWith("video/");
   // Every comment on this version made at a moment, as timeline markers.
   const videoMarkers: TimelineMarker[] = (allComments ?? [])
-    .filter((c) => !c.parent_id && activeCreativeVersion && c.creative_version_id === activeCreativeVersion.id)
+    .filter(
+      (c) =>
+        !c.parent_id &&
+        activeCreativeVersion &&
+        c.creative_version_id === activeCreativeVersion.id &&
+        // A carousel's video slide has its own timeline.
+        ((c.anchor as { slide?: number } | null)?.slide ?? 1) === slidePosition,
+    )
     .flatMap((c) => {
       const t = commentTime(c.anchor);
       if (t === null) return [];
@@ -346,7 +364,7 @@ export default function CreativeReviewPage({
                 artwork's place saying so — it can be read and commented on
                 the same. Only a post with neither gets the empty state. */}
             {activeSection === "content" &&
-              (slides.length === 0 && !activeCopyVersion ? (
+              (frames.length === 0 && !activeCopyVersion ? (
               <div className="awaiting">
                 <svg viewBox="0 0 24 24">
                   <rect x="3" y="4" width="18" height="16" rx="2" />
@@ -392,7 +410,7 @@ export default function CreativeReviewPage({
                 </div>
                 <div className="ig-media">
                   {/* No version yet, one saved with every slide removed, or a
-                      carousel slide that has no image yet. */}
+                      carousel slide with nothing on it yet. */}
                   {!currentSlide ? (
                     <NoArtwork
                       format={creative.format}
@@ -400,7 +418,7 @@ export default function CreativeReviewPage({
                         membershipLoading
                           ? undefined
                           : frames.length > 1
-                            ? `Slide ${slidePosition} has no image yet.`
+                            ? `Slide ${slidePosition} has no artwork yet.`
                             : isStaff
                               ? "The copy is in. Add the artwork once it has been made."
                               : "The agency hasn't uploaded the artwork for this post yet."
@@ -423,6 +441,8 @@ export default function CreativeReviewPage({
                     </div>
                   ) : isVideo ? (
                     <VideoPlayer
+                      // Each video slide is its own player, from 0:00.
+                      key={slidePosition}
                       src={signedUrl}
                       markers={videoMarkers}
                       highlightedCommentId={highlightedCommentId}
@@ -447,7 +467,11 @@ export default function CreativeReviewPage({
                               parentId: null,
                               visibility,
                               creativeVersionId: activeCreativeVersion!.id,
-                              anchor: { ...anchor, t: Math.round(t * 100) / 100 },
+                              anchor: {
+                                ...anchor,
+                                t: Math.round(t * 100) / 100,
+                                ...(frames.length > 1 ? { slide: slidePosition } : {}),
+                              },
                             });
                             setToolMode(null);
                           }}
@@ -487,7 +511,7 @@ export default function CreativeReviewPage({
                       />
                     </>
                   )}
-                  <CarouselNav index={frameIndex} count={frames.length} onChange={goToSlide} />
+                  <CarouselNav index={frameIndex} count={frames.length} onChange={goToSlide} overVideo={!!isVideo} />
                 </div>
                 <div className="ig-acts">
                   <svg viewBox="0 0 24 24">
@@ -566,6 +590,7 @@ export default function CreativeReviewPage({
         onToolModeChange={setToolMode}
         canAnnotate={!!currentSlide}
         videoMoment={isVideo ? videoMoment : null}
+        videoSlide={isVideo && frames.length > 1 ? slidePosition : null}
         creativeVersionId={activeCreativeVersion?.id ?? null}
       />
 
