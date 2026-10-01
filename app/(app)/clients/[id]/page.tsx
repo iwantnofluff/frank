@@ -12,7 +12,7 @@ import { useProjectFolders, type ProjectFolderRow } from "@/hooks/use-project-fo
 import { useDeleteProjectFolder } from "@/hooks/use-delete-project-folder";
 import { KBadge } from "@/components/project/KBadge";
 import { NewProjectModal } from "@/components/project/NewProjectModal";
-import { RenameProjectModal } from "@/components/project/RenameProjectModal";
+import { EditProjectModal } from "@/components/project/EditProjectModal";
 import { FolderModal } from "@/components/project/FolderModal";
 import { MoveToFolderModal } from "@/components/project/MoveToFolderModal";
 import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
@@ -75,7 +75,7 @@ export default function ClientWorkspacePage({
   const [query, setQuery] = useState("");
   const [archiveFilter, setArchiveFilter] = useState<ArchiveFilter>("active");
   const [newProjectOpen, setNewProjectOpen] = useState(false);
-  const [renameProjectTarget, setRenameProjectTarget] = useState<ProjectListRow | null>(null);
+  const [editProjectTarget, setEditProjectTarget] = useState<ProjectListRow | null>(null);
   const [folderModal, setFolderModal] = useState<
     { mode: "create" } | { mode: "rename"; folder: ProjectFolderRow } | null
   >(null);
@@ -158,7 +158,7 @@ export default function ClientWorkspacePage({
             <RowActionsMenu
               title="Project options"
               items={[
-                { label: "Rename", onClick: () => setRenameProjectTarget(p) },
+                { label: "Edit", onClick: () => setEditProjectTarget(p) },
                 { label: "Move to folder", onClick: () => setMoveTarget(p) },
                 {
                   label: p.archived_at ? "Unarchive" : "Archive",
@@ -389,12 +389,14 @@ export default function ClientWorkspacePage({
         <NewProjectModal clientId={id} onClose={() => setNewProjectOpen(false)} />
       )}
 
-      {renameProjectTarget && (
-        <RenameProjectModal
-          projectId={renameProjectTarget.id}
+      {editProjectTarget && (
+        <EditProjectModal
+          projectId={editProjectTarget.id}
           clientId={id}
-          currentName={renameProjectTarget.name}
-          onClose={() => setRenameProjectTarget(null)}
+          currentName={editProjectTarget.name}
+          currentType={editProjectTarget.type}
+          delivery={editProjectTarget.delivery}
+          onClose={() => setEditProjectTarget(null)}
         />
       )}
 

@@ -70,7 +70,7 @@ test("New Client and Edit Client share the same modal, including industry and Cl
   await expect(page.locator('.brow input[placeholder="Name"]').nth(1)).toHaveValue("Priya Client");
 });
 
-test("rename and archive/unarchive a project from the client workspace", async ({
+test("edit (name and type) and archive/unarchive a project from the client workspace", async ({
   page,
   frank,
 }) => {
@@ -80,10 +80,31 @@ test("rename and archive/unarchive a project from the client workspace", async (
 
   const row = page.locator(".crow", { hasText: "E2E Test Project" });
   await row.locator(".vdots").click();
-  await page.click('.colpop button:has-text("Rename")');
-  await page.fill("#rpName", "E2E Renamed Project");
-  await page.click('button:has-text("Save")');
-  await expect(page.locator(".crow", { hasText: "E2E Renamed Project" })).toBeVisible();
+  await page.click('.colpop button:has-text("Edit")');
+  const modal = page.getByRole("dialog", { name: "Edit Project" });
+  // The fixture project has no type: it shows as "—" rather than silently
+  // becoming the first option, and only Content Planner types are offered.
+  await expect(modal.getByLabel("Type")).toHaveValue("");
+  await expect(modal.getByLabel("Type").locator("option")).toHaveText([
+    "—",
+    "Social Media",
+    "Paid Campaign",
+    "Launch",
+    "Other",
+  ]);
+  await modal.getByLabel("Project name").fill("E2E Renamed Project");
+  await modal.getByLabel("Type").selectOption("Paid Campaign");
+  await modal.getByRole("button", { name: "Save" }).click();
+  await expect(modal).toHaveCount(0);
+  await expect(page.locator(".crow", { hasText: "E2E Renamed Project" })).toContainText(
+    "Paid Campaign",
+  );
+
+  await page.locator(".crow", { hasText: "E2E Renamed Project" }).locator(".vdots").click();
+  await page.click('.colpop button:has-text("Edit")');
+  await expect(modal.getByLabel("Type")).toHaveValue("Paid Campaign");
+  await expect(modal.getByLabel("Type").locator("option")).toHaveCount(4);
+  await modal.getByRole("button", { name: "Cancel" }).click();
 
   const renamedRow = page.locator(".crow", { hasText: "E2E Renamed Project" });
   await renamedRow.locator(".vdots").click();

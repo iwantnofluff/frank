@@ -7,29 +7,31 @@ import { createClient } from "@/lib/supabase/client";
 // the mutate-time payload rather than being baked into the hook call.
 // clientId travels alongside it purely to invalidate the list query it
 // lives under (use-create-project.ts's own invalidation shape).
-export function useRenameProject() {
+export function useUpdateProject() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({
       projectId,
       name,
+      type,
     }: {
       projectId: string;
       clientId: string;
       name: string;
+      type: string | null;
     }) => {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("projects")
-        .update({ name: name.trim() })
+        .update({ name: name.trim(), type })
         .eq("id", projectId)
         .select("id")
         .maybeSingle();
 
       if (error) throw error;
       if (!data) {
-        throw new Error("You don't have permission to rename this project.");
+        throw new Error("You don't have permission to edit this project.");
       }
     },
     onSuccess: (_data, { projectId, clientId }) => {
