@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { agencyHeader, tenantFromHost } from "@/lib/tenant";
 
 // Routes that stay reachable without a session — the shared client review
 // link (spec section 26) is opened by people who never get an account, and
@@ -14,6 +15,9 @@ import { NextResponse, type NextRequest } from "next/server";
 const PUBLIC_PATH_PREFIXES = [
   "/login",
   "/review",
+  "/welcome",
+  "/no-workspace",
+  "/not-a-member",
   "/invite",
   "/access-removed",
   // The face detector's runtime and model (static files in public/). The
@@ -34,11 +38,21 @@ function isPublicPath(pathname: string) {
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
+  const tenant = tenantFromHost(request.headers.get("host"));
+
+  // beingfrank.app itself is a holding page (decided directly), whatever
+  // the path — and so is admin.beingfrank.app until the platform admin
+  // area exists. Nothing there needs a session.
+  if (tenant.kind === "root" || tenant.kind === "admin") {
+    return NextResponse.rewrite(new URL("/welcome", request.url));
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      // Narrowed to this address's agency, like every other client.
+      global: { headers: agencyHeader(tenant) },
       cookies: {
         getAll() {
           return request.cookies.getAll();
@@ -63,6 +77,32 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
+
+  // Shows another page at this address (or, for the app's own requests, a
+  // plain refusal), keeping any session cookies just refreshed.
+  function showInstead(page: string, status: number) {
+    const response = pathname.startsWith("/api/")
+      ? NextResponse.json({ error: page === "/no-workspace" ? "No such workspace" : "Not a member of this workspace" }, { status })
+      : NextResponse.rewrite(new URL(page, request.url), { status });
+    supabaseResponse.cookies.getAll().forEach((c) => response.cookies.set(c));
+    return response;
+  }
+
+  // agencyname.beingfrank.app: the workspace has to exist…
+  if (tenant.kind === "agency" && pathname !== "/no-workspace") {
+    const { data: workspace } = await supabase.rpc("workspace_for_subdomain", { p_subdomain: tenant.subdomain });
+    if (!workspace || (Array.isArray(workspace) && workspace.length === 0)) {
+      return showInstead("/no-workspace", 404);
+    }
+    // …and someone signed in has to belong to it. Their memberships are
+    // already narrowed to this agency, so none means they're not in it.
+    if (user && !isPublicPath(pathname)) {
+      const { data: mine } = await supabase.rpc("current_agency_ids");
+      if (!mine || (Array.isArray(mine) && mine.length === 0)) {
+        return showInstead("/not-a-member", 403);
+      }
+    }
+  }
 
   if (!user && !isPublicPath(pathname)) {
     const url = request.nextUrl.clone();

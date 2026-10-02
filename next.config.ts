@@ -5,6 +5,9 @@ const nextConfig: NextConfig = {
   // the account avatar, bottom-right the quick-add row's Save bar. Off —
   // compile and runtime errors still surface (per Next's own docs).
   devIndicators: false,
+  // Local agency addresses (nofluff.frank.localhost:3000 — lib/tenant.ts)
+  // talking to the dev server.
+  allowedDevOrigins: ["frank.localhost", "*.frank.localhost"],
 };
 
 export default nextConfig;
