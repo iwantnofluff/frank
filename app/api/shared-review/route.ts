@@ -65,6 +65,16 @@ export async function POST(request: Request) {
   let serviceRole: ReturnType<typeof createServiceRoleClient> | null = null;
   try {
     serviceRole = createServiceRoleClient();
+    // A paused agency's review links stop working (phase37) — on every
+    // address, including ones the proxy doesn't gate (the old vercel.app).
+    const { data: link } = await serviceRole
+      .from("shared_links")
+      .select("agencies(suspended_at)")
+      .eq("token", token)
+      .maybeSingle();
+    if ((link?.agencies as unknown as { suspended_at: string | null } | null)?.suspended_at) {
+      return NextResponse.json({ status: "not_found" });
+    }
   } catch {
     // Key not configured — degrade to "no preview" rather than a hard
     // failure of the whole page. Every prior phase has treated a missing

@@ -120,7 +120,9 @@ export const test = base.extend<{ frank: Frank }>({
 
     const { data: agency, error: agencyError } = await admin
       .from("agencies")
-      .insert({ name: "E2E Test Agency" })
+      // Roomy limits (phase37 enforces them), so specs that add members or
+      // clients don't trip over a plan's defaults.
+      .insert({ name: "E2E Test Agency", seat_limit: 50, client_limit: 50 })
       .select("id")
       .single();
     if (agencyError) throw agencyError;

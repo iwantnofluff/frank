@@ -18,6 +18,10 @@ const PUBLIC_PATH_PREFIXES = [
   "/welcome",
   "/no-workspace",
   "/not-a-member",
+  "/workspace-paused",
+  "/forgot-password",
+  "/reset-password",
+  "/api/auth/forgot-password",
   "/invite",
   "/access-removed",
   // The face detector's runtime and model (static files in public/). The
@@ -40,11 +44,24 @@ export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
   const tenant = tenantFromHost(request.headers.get("host"));
 
+  const path = request.nextUrl.pathname;
+  const isAdminPath = path === "/admin" || path.startsWith("/admin/") || path.startsWith("/api/admin/");
+
   // beingfrank.app itself is a holding page (decided directly), whatever
-  // the path — and so is admin.beingfrank.app until the platform admin
-  // area exists. Nothing there needs a session.
-  if (tenant.kind === "root" || tenant.kind === "admin") {
+  // the path. Nothing there needs a session.
+  if (tenant.kind === "root") {
     return NextResponse.rewrite(new URL("/welcome", request.url));
+  }
+  // admin.beingfrank.app is the platform admin area (phase37) and nothing
+  // else: its sign-in, password reset, and /admin. Anywhere else goes to
+  // /admin, which needs a session like any page.
+  if (tenant.kind === "admin") {
+    const allowed =
+      isAdminPath || ["/login", "/forgot-password", "/reset-password", "/api/auth/forgot-password"].includes(path);
+    if (!allowed) return NextResponse.redirect(new URL("/admin", request.url));
+  } else if (isAdminPath) {
+    // The admin area only exists at its own address.
+    return new NextResponse("Not found", { status: 404 });
   }
 
   const supabase = createServerClient(
@@ -82,7 +99,17 @@ export async function updateSession(request: NextRequest) {
   // plain refusal), keeping any session cookies just refreshed.
   function showInstead(page: string, status: number) {
     const response = pathname.startsWith("/api/")
-      ? NextResponse.json({ error: page === "/no-workspace" ? "No such workspace" : "Not a member of this workspace" }, { status })
+      ? NextResponse.json(
+          {
+            error:
+              page === "/no-workspace"
+                ? "No such workspace"
+                : page === "/workspace-paused"
+                  ? "This workspace is paused"
+                  : "Not a member of this workspace",
+          },
+          { status },
+        )
       : NextResponse.rewrite(new URL(page, request.url), { status });
     supabaseResponse.cookies.getAll().forEach((c) => response.cookies.set(c));
     return response;
@@ -91,8 +118,14 @@ export async function updateSession(request: NextRequest) {
   // agencyname.beingfrank.app: the workspace has to exist…
   if (tenant.kind === "agency" && pathname !== "/no-workspace") {
     const { data: workspace } = await supabase.rpc("workspace_for_subdomain", { p_subdomain: tenant.subdomain });
-    if (!workspace || (Array.isArray(workspace) && workspace.length === 0)) {
+    const found = (workspace as { name: string; suspended: boolean }[] | null)?.[0];
+    if (!found) {
       return showInstead("/no-workspace", 404);
+    }
+    // Suspended from the admin area (phase37): nobody gets in, and its
+    // review links stop working too.
+    if (found.suspended && pathname !== "/workspace-paused") {
+      return showInstead("/workspace-paused", 403);
     }
     // …and someone signed in has to belong to it. Their memberships are
     // already narrowed to this agency, so none means they're not in it.
@@ -113,7 +146,7 @@ export async function updateSession(request: NextRequest) {
 
   if (user && pathname === "/login") {
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    url.pathname = tenant.kind === "admin" ? "/admin" : "/dashboard";
     url.search = "";
     return NextResponse.redirect(url);
   }

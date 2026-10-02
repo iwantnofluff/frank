@@ -8,6 +8,7 @@ import { useClientContacts } from "@/hooks/use-client-contacts";
 import { useSetClientContacts } from "@/hooks/use-set-client-contacts";
 import { useSaveClientLogo } from "@/hooks/use-client-logo";
 import { useAvatarUrls } from "@/hooks/use-avatar-urls";
+import { useMyAgency } from "@/hooks/use-my-agency";
 import { PhotoCropModal } from "@/components/profile/PhotoCropModal";
 import { AVATAR_TYPES, validateAvatarSource } from "@/lib/upload-avatar";
 import { errorMessage } from "@/lib/errors";
@@ -49,6 +50,8 @@ type ClientModalProps =
     };
 
 export function ClientModal(props: ClientModalProps) {
+  // The agency's plan limit (phase37), which the database enforces.
+  const clientLimit = useMyAgency().data?.clientLimit ?? 10;
   const isCreate = props.mode === "create";
   const createClient = useCreateClient();
   const updateClient = useUpdateClient();
@@ -166,7 +169,9 @@ export function ClientModal(props: ClientModalProps) {
       footer={
         <>
           {isCreate ? (
-            <span className="grow">{props.activeClientCount} of 10 clients used</span>
+            <span className="grow">
+              {props.activeClientCount} of {clientLimit} clients used
+            </span>
           ) : (
             <span className="grow" />
           )}

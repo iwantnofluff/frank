@@ -13,11 +13,11 @@ export function useMyAgency() {
 
   return useQuery({
     queryKey: ["my-agency", user?.id],
-    queryFn: async (): Promise<{ agencyId: string; name: string } | null> => {
+    queryFn: async (): Promise<{ agencyId: string; name: string; clientLimit: number } | null> => {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("memberships")
-        .select("agency_id, client_id, agencies(name)")
+        .select("agency_id, client_id, agencies(name, client_limit)")
         .eq("user_id", user!.id)
         .is("removed_at", null)
         .not("accepted_at", "is", null)
@@ -28,9 +28,14 @@ export function useMyAgency() {
 
       const row = data[0] as unknown as {
         agency_id: string;
-        agencies: { name: string } | null;
+        agencies: { name: string; client_limit: number } | null;
       };
-      return { agencyId: row.agency_id, name: row.agencies?.name ?? "Agency" };
+      return {
+        agencyId: row.agency_id,
+        name: row.agencies?.name ?? "Agency",
+        // The agency's plan limit (phase37), enforced by the database.
+        clientLimit: row.agencies?.client_limit ?? 10,
+      };
     },
     enabled: !!user?.id,
   });

@@ -120,3 +120,16 @@ test("in the database, the agency header only ever narrows", async ({ frank }) =
     await agencies.cleanup();
   }
 });
+
+test("an agency's sign-in page names the agency", async ({ page, frank }) => {
+  const agencies = await twoAgencies(frank);
+  try {
+    await page.goto(at(agencies.mine, "/login"));
+    await expect(page.getByRole("heading", { name: "Hey, sign in to E2E Test Agency" })).toBeVisible();
+    await expect(page.getByText("E2E Test Agency's Frank workspace.")).toBeVisible();
+    await page.goto("http://localhost:3000/login");
+    await expect(page.getByRole("heading", { name: "Hey, sign in to Frank" })).toBeVisible();
+  } finally {
+    await agencies.cleanup();
+  }
+});

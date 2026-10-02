@@ -4,7 +4,16 @@ import { useState, type SubmitEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-export function LoginForm() {
+// On an agency's own address the page names it (workspaceName); elsewhere
+// it's plain Frank.
+export function LoginForm({
+  workspaceName = null,
+  adminArea = false,
+}: {
+  workspaceName?: string | null;
+  // admin.beingfrank.app (phase37).
+  adminArea?: boolean;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
@@ -36,8 +45,16 @@ export function LoginForm() {
   return (
     <form className="authcard" onSubmit={handleSubmit}>
       <div className="mark authmark">F</div>
-      <h1 className="h1">Hey, sign in to Frank</h1>
-      <p className="sub">Use the account your agency invited you with.</p>
+      <h1 className="h1">
+        {adminArea ? "Frank Admin" : workspaceName ? `Hey, sign in to ${workspaceName}` : "Hey, sign in to Frank"}
+      </h1>
+      <p className="sub">
+        {adminArea
+          ? "For Frank's platform admins only."
+          : workspaceName
+            ? `${workspaceName}'s Frank workspace. Use the account they invited you with.`
+            : "Use the account your agency invited you with."}
+      </p>
 
       <label className="authfield">
         <span>Email</span>
@@ -68,6 +85,9 @@ export function LoginForm() {
       <button className="btn primary" type="submit" disabled={loading}>
         {loading ? "Signing in…" : "Sign in"}
       </button>
+      <a className="authlink" href="/forgot-password">
+        Forgot password?
+      </a>
     </form>
   );
 }

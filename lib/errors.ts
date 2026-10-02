@@ -12,14 +12,28 @@
 // Checking by shape (does it have a string `message`?) instead of by
 // class fixes all of them at once.
 export function errorMessage(error: unknown, fallback: string): string {
-  if (error instanceof Error) return error.message;
-  if (
+  let message: string | null = null;
+  if (error instanceof Error) message = error.message;
+  else if (
     error &&
     typeof error === "object" &&
     "message" in error &&
     typeof (error as { message: unknown }).message === "string"
   ) {
-    return (error as { message: string }).message;
+    message = (error as { message: string }).message;
   }
-  return fallback;
+  return message ? friendlyLimit(message) : fallback;
+}
+
+// The database's own limit refusals (phase37), in words a person can act on.
+function friendlyLimit(message: string): string {
+  const clients = message.match(/client limit reached \((\d+)\)/);
+  if (clients) {
+    return `This agency's plan allows ${clients[1]} active clients. Archive one, or ask Frank to raise the limit.`;
+  }
+  const members = message.match(/member limit reached \((\d+)\)/);
+  if (members) {
+    return `This agency's plan allows ${members[1]} team members, counting invites not yet accepted. Remove someone, or ask Frank to raise the limit.`;
+  }
+  return message;
 }
