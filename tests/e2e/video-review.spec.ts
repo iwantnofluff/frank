@@ -256,3 +256,86 @@ test("a carousel's video slide has its own timeline, and its comments stay on th
   const { data: guest } = await admin.from("comments").select("anchor").eq("creative_id", frank.creativeId).eq("body", "Guest on slide two").single();
   expect((guest!.anchor as { slide: number }).slide).toBe(2);
 });
+
+// A heavier recording than recordVideo: full Reel size, a high bitrate
+// and a sound track, like a phone export.
+async function recordHeavyVideo(page: Page): Promise<Buffer> {
+  await page.goto(`${APP_URL}/login`);
+  const b64 = await page.evaluate(async () => {
+    const c = document.createElement("canvas");
+    c.width = 1080;
+    c.height = 1920;
+    const g = c.getContext("2d")!;
+    const audio = new AudioContext();
+    const tone = audio.createOscillator();
+    const dest = audio.createMediaStreamDestination();
+    tone.connect(dest);
+    tone.start();
+    const stream = new MediaStream([...c.captureStream(30).getVideoTracks(), ...dest.stream.getAudioTracks()]);
+    // H.264 and AAC, like a phone or editing-app export.
+    const rec = new MediaRecorder(stream, { mimeType: "video/mp4;codecs=avc1,mp4a.40.2", videoBitsPerSecond: 12_000_000 });
+    const chunks: Blob[] = [];
+    rec.ondataavailable = (e) => chunks.push(e.data);
+    rec.start();
+    const t0 = performance.now();
+    await new Promise<void>((done) => {
+      function frame() {
+        const s = (performance.now() - t0) / 1000;
+        // Noise-like detail, so the encoder has real work (and bytes) to do.
+        for (let i = 0; i < 400; i++) {
+          g.fillStyle = `hsl(${(i * 37 + s * 200) % 360} 70% ${30 + (i % 40)}%)`;
+          g.fillRect((i * 97 + s * 300) % 1080, (i * 53) % 1920, 60, 60);
+        }
+        if (s < 4) requestAnimationFrame(frame);
+        else done();
+      }
+      frame();
+    });
+    rec.stop();
+    await new Promise((r) => (rec.onstop = r));
+    tone.stop();
+    const buf = await new Blob(chunks).arrayBuffer();
+    let bin = "";
+    new Uint8Array(buf).forEach((b) => (bin += String.fromCharCode(b)));
+    return btoa(bin);
+  });
+  return Buffer.from(b64, "base64");
+}
+
+test("a video is compressed to a 720p review copy before it's uploaded", async ({ page, frank }) => {
+  test.setTimeout(120_000);
+  const heavy = await recordHeavyVideo(page);
+  await admin.from("creatives").update({ formats: ["ig_reel"], slide_count: null }).eq("id", frank.creativeId);
+  await frank.loginAsStaff(page);
+  await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
+  await page.getByRole("button", { name: "Upload Artwork" }).click();
+  await page.locator('.mtabbody input[type="file"]').first().setInputFiles({ name: "phone-export.mp4", mimeType: "video/mp4", buffer: heavy });
+  const save = page.getByRole("button", { name: /^Save Version 1$/ }).first();
+  await save.click();
+  // The uploader shows each stage: compressing, then uploading with its size.
+  await expect(page.getByRole("progressbar", { name: "Compressing video" })).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator(".upbar")).toContainText(/Compressing video\s*\d+%/);
+  await expect(page.getByRole("progressbar", { name: "Uploading" })).toBeVisible({ timeout: 60_000 });
+  await expect(page.locator(".upbar")).toContainText(/Uploading\s*\d+% · [\d.]+MB of [\d.]+MB/);
+  await expect(page.getByText("Saved as version 1.")).toBeVisible({ timeout: 90_000 });
+
+  const { data: v } = await admin
+    .from("creative_versions")
+    .select("asset:assets(storage_key, bytes, mime_type, filename)")
+    .eq("creative_id", frank.creativeId)
+    .single();
+  const asset = v!.asset as unknown as { storage_key: string; bytes: number; mime_type: string; filename: string };
+  expect(asset.mime_type).toBe("video/mp4");
+  // This recording is close to random noise, an encoder's worst case; a
+  // real 15-second, 28.2MB Reel came out at 1.73MB.
+  expect(asset.bytes).toBeLessThan(heavy.length * 0.6);
+
+  // What's stored really is a 720 × 1280 H.264 video with its sound.
+  const { data: blob } = await admin.storage.from("assets").download(asset.storage_key);
+  const mb = await import("mediabunny");
+  const input = new mb.Input({ source: new mb.BufferSource(Buffer.from(await blob!.arrayBuffer())), formats: mb.ALL_FORMATS });
+  const video = (await input.getPrimaryVideoTrack())!;
+  expect([video.displayWidth, video.displayHeight]).toEqual([720, 1280]);
+  expect(video.codec).toBe("avc");
+  expect((await input.getPrimaryAudioTrack())?.codec).toBe("aac");
+});

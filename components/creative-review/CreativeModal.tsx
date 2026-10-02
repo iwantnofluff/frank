@@ -15,7 +15,13 @@ import { useSaveSlideText } from "@/hooks/use-save-slide-text";
 import { useTeamMembers } from "@/hooks/use-team-members";
 import { useMyAgency } from "@/hooks/use-my-agency";
 import { useCustomColumns } from "@/hooks/use-custom-columns";
-import { useUploadCreativeVersion, useUploadCarouselVersion, type SlideSource } from "@/hooks/use-upload-creative-version";
+import {
+  useUploadCreativeVersion,
+  useUploadCarouselVersion,
+  type SlideSource,
+  type UploadProgress,
+} from "@/hooks/use-upload-creative-version";
+import { UploadProgressBar } from "./UploadProgressBar";
 import { CarouselSlots } from "./CarouselSlots";
 import { useSaveCopyFields } from "@/hooks/use-save-copy-fields";
 import { useRefreshWiifmNote } from "@/hooks/use-refresh-wiifm-note";
@@ -717,8 +723,12 @@ export function CreativeModal(props: CreativeModalProps) {
   const [drafting, setDrafting] = useState(false);
   const [draftError, setDraftError] = useState<string | null>(null);
 
-  const uploadCreative = useUploadCreativeVersion(creativeId ?? "", agencyId ?? "", latestCreativeVersionNo);
-  const uploadCarousel = useUploadCarouselVersion(creativeId ?? "", agencyId ?? "", latestCreativeVersionNo);
+  // Where a save has got to (compressing a video, uploading), shown by the
+  // uploader under the artwork.
+  const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
+  const uploadCreative = useUploadCreativeVersion(creativeId ?? "", agencyId ?? "", latestCreativeVersionNo, setUploadProgress);
+  const uploadCarousel = useUploadCarouselVersion(creativeId ?? "", agencyId ?? "", latestCreativeVersionNo, setUploadProgress);
+  const savingLabel = "Saving…";
   const [carouselPending, setCarouselPending] = useState(false);
 
   // A carousel's whole set of slides, saved as the next version.
@@ -732,6 +742,8 @@ export function CreativeModal(props: CreativeModalProps) {
       setCreativeSaveNote(`Saved as version ${targetVersionNo}.`);
     } catch {
       // Surfaced via uploadCarousel.error / uploadError below.
+    } finally {
+      setUploadProgress(null);
     }
   }
   const saveCopy = useSaveCopyFields(creativeId ?? "");
@@ -969,6 +981,8 @@ export function CreativeModal(props: CreativeModalProps) {
       setCreativeSaveNote(`Saved as version ${targetVersionNo}.`);
     } catch {
       // Surfaced via uploadCreative.error / uploadError below already.
+    } finally {
+      setUploadProgress(null);
     }
   }
 
@@ -1308,6 +1322,7 @@ export function CreativeModal(props: CreativeModalProps) {
                   aspectRatio={aspectRatioCss(format)}
                   nextVersionNo={nextCreativeVersionNo}
                   saving={uploadCarousel.isPending}
+                  savingLabel={savingLabel}
                   saveNote={creativeSaveNote}
                   onSave={handleSaveCarousel}
                   onPendingChange={setCarouselPending}
@@ -1373,7 +1388,7 @@ export function CreativeModal(props: CreativeModalProps) {
                     ) : (
                       <>
                         <b>Drop a file, or browse</b>
-                        <span>JPG, PNG, WebP, GIF up to 25MB — MP4, MOV up to 50MB</span>
+                        <span>JPG, PNG, WebP, GIF up to 25MB — MP4, MOV are compressed to 720p</span>
                       </>
                     )}
                   </div>
@@ -1386,7 +1401,7 @@ export function CreativeModal(props: CreativeModalProps) {
                         disabled={uploadCreative.isPending}
                         onClick={handleSaveCreativeOnly}
                       >
-                        {uploadCreative.isPending ? "Saving…" : `Save Version ${nextCreativeVersionNo}`}
+                        {uploadCreative.isPending ? savingLabel : `Save Version ${nextCreativeVersionNo}`}
                       </button>
                     </div>
                   )}
@@ -1404,6 +1419,10 @@ export function CreativeModal(props: CreativeModalProps) {
               </>
               )}
             </div>
+
+          {uploadProgress && (uploadCreative.isPending || uploadCarousel.isPending) && (
+            <UploadProgressBar progress={uploadProgress} />
+          )}
 
           <div className="msection-h">Copy</div>
           <p className="msection-d">The caption and on-post text, matched to what the chosen formats need.</p>

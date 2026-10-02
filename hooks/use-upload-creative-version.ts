@@ -2,7 +2,37 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
-import { validateUploadFile } from "@/lib/upload-validation";
+import { validateUploadFile, MAX_STORED_VIDEO_BYTES } from "@/lib/upload-validation";
+import { compressVideo } from "@/lib/compress-video";
+import { uploadWithProgress } from "@/lib/upload-with-progress";
+
+// Where a save has got to, for the progress bar: which file of how many,
+// and whether it's being compressed (videos) or uploaded.
+export interface UploadProgress {
+  stage: "compressing" | "uploading";
+  fraction: number; // 0–1 through this stage of this file
+  file: number; // 1-based
+  files: number;
+  loaded?: number; // bytes, while uploading
+  total?: number;
+}
+type OnProgress = (p: UploadProgress | null) => void;
+
+// A video is compressed to a 720p review copy before it's stored (decided
+// directly — only that copy is kept). Where the browser can't compress,
+// the original goes up as long as it fits the 50MB storage limit.
+async function prepareForUpload(file: File, onProgress?: (fraction: number) => void): Promise<File> {
+  if (!file.type.startsWith("video/")) return file;
+  const result = await compressVideo(file, onProgress);
+  if (result.file.size > MAX_STORED_VIDEO_BYTES) {
+    throw new Error(
+      result.kind === "unchanged" && result.reason === "unsupported"
+        ? "This browser can't compress video, and the file is over 50MB. Try Chrome or Edge, or export a lighter file."
+        : "This video is still over 50MB after compressing. Try a shorter or lighter export.",
+    );
+  }
+  return result.file;
+}
 
 function probeImageDimensions(file: File): Promise<{ width: number; height: number } | null> {
   if (!file.type.startsWith("image/") || file.type === "image/gif") {
@@ -28,14 +58,19 @@ function probeImageDimensions(file: File): Promise<{ width: number; height: numb
 type Supabase = ReturnType<typeof createClient>;
 
 // Puts one file in storage and records it as an asset; returns the asset id.
-async function uploadAsset(supabase: Supabase, agencyId: string, creativeId: string, userId: string, file: File) {
+async function uploadAsset(
+  supabase: Supabase,
+  agencyId: string,
+  creativeId: string,
+  userId: string,
+  file: File,
+  onUploaded?: (loaded: number, total: number) => void,
+) {
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const path = `${agencyId}/${creativeId}/${crypto.randomUUID()}-${safeName}`;
 
-  const { error: uploadError } = await supabase.storage
-    .from("assets")
-    .upload(path, file, { contentType: file.type });
-  if (uploadError) throw uploadError;
+  // Same request supabase.storage.upload() makes, but with progress.
+  await uploadWithProgress(path, file, onUploaded);
 
   const dimensions = await probeImageDimensions(file);
 
@@ -66,6 +101,7 @@ export function useUploadCreativeVersion(
   creativeId: string,
   agencyId: string,
   latestVersionNo: number,
+  onProgress?: OnProgress,
 ) {
   const queryClient = useQueryClient();
 
@@ -80,7 +116,12 @@ export function useUploadCreativeVersion(
       } = await supabase.auth.getUser();
       if (!user) throw new Error("Not signed in");
 
-      const assetId = await uploadAsset(supabase, agencyId, creativeId, user.id, file);
+      const ready = await prepareForUpload(file, (fraction) =>
+        onProgress?.({ stage: "compressing", fraction, file: 1, files: 1 }),
+      );
+      const assetId = await uploadAsset(supabase, agencyId, creativeId, user.id, ready, (loaded, total) =>
+        onProgress?.({ stage: "uploading", fraction: loaded / total, file: 1, files: 1, loaded, total }),
+      );
 
       const { data: version, error: versionError } = await supabase
         .from("creative_versions")
@@ -120,7 +161,12 @@ export type SlideSource = { file: File } | { assetId: string } | null;
 // everything that shows one image per version keeps working. Every slot
 // empty saves a version with no images (phase32): the post goes back to
 // "No artwork yet", with the earlier versions still in its history.
-export function useUploadCarouselVersion(creativeId: string, agencyId: string, latestVersionNo: number) {
+export function useUploadCarouselVersion(
+  creativeId: string,
+  agencyId: string,
+  latestVersionNo: number,
+  onProgress?: OnProgress,
+) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -139,9 +185,23 @@ export function useUploadCarouselVersion(creativeId: string, agencyId: string, l
       if (!user) throw new Error("Not signed in");
 
       const placed: { position: number; assetId: string }[] = [];
+      // Only new files are uploaded; slides carried over aren't counted.
+      const files = slides.filter((s) => s && "file" in s).length;
+      let n = 0;
       for (const [i, s] of slides.entries()) {
         if (!s) continue;
-        const assetId = "file" in s ? await uploadAsset(supabase, agencyId, creativeId, user.id, s.file) : s.assetId;
+        let assetId: string;
+        if ("file" in s) {
+          const file = ++n;
+          const ready = await prepareForUpload(s.file, (fraction) =>
+            onProgress?.({ stage: "compressing", fraction, file, files }),
+          );
+          assetId = await uploadAsset(supabase, agencyId, creativeId, user.id, ready, (loaded, total) =>
+            onProgress?.({ stage: "uploading", fraction: loaded / total, file, files, loaded, total }),
+          );
+        } else {
+          assetId = s.assetId;
+        }
         placed.push({ position: i + 1, assetId });
       }
 

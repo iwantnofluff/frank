@@ -35,6 +35,7 @@ export function CarouselSlots({
   aspectRatio,
   nextVersionNo,
   saving,
+  savingLabel = "Saving…",
   saveNote,
   onSave,
   onPendingChange,
@@ -48,6 +49,7 @@ export function CarouselSlots({
   aspectRatio: string;
   nextVersionNo: number;
   saving: boolean;
+  savingLabel?: string;
   saveNote: string | null;
   onSave: (slides: SlideSource[]) => void;
   onPendingChange: (pending: boolean) => void;
@@ -236,7 +238,7 @@ export function CarouselSlots({
           disabled={!pending || saving}
           onClick={() => onSave(shown.map((s) => (!s ? null : s.kind === "file" ? { file: s.file } : { assetId: s.asset.id })))}
         >
-          {saving ? "Saving…" : `Save Version ${nextVersionNo}`}
+          {saving ? savingLabel : `Save Version ${nextVersionNo}`}
         </button>
         {pending && (
           <button type="button" className="btn sm" disabled={saving} onClick={() => setSlots(baseline)}>
