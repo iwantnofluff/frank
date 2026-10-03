@@ -68,7 +68,9 @@ export default function PlansPage() {
   const seatsUsed = (team ?? []).filter((m) => !m.removed_at).length;
 
   const live = !!billing?.paddle_subscription_id && billing.status !== "canceled";
-  const byCard = billingConfigured() && (agency?.plan === "free" || live);
+  // Decided directly (revised 3 Oct 2026): every agency changes plan by card
+  // once payments are set up, including one on a plan Frank set by hand.
+  const byCard = billingConfigured();
   const paidInterval: Interval | null = live ? (billing?.billing_interval ?? "monthly") : null;
   const interval: Interval = picked ?? paidInterval ?? "monthly";
   const waiting = live && (!!billing?.scheduled_plan || !!billing?.cancel_at);
@@ -94,16 +96,20 @@ export default function PlansPage() {
         : { label: `Choose ${plan.name}`, request: true, run: () => setChoosing({ plan, via: "request" }) };
     }
     if (!live) {
-      return isCurrentTier
-        ? { label: "Current plan", current: true }
-        : {
-            label: `Choose ${plan.name}`,
-            run: () =>
-              checkout.mutate(
-                { plan: plan.id, interval },
-                { onSuccess: (result) => result === "paid" && setAwaiting(plan.name) },
-              ),
-          };
+      if (isCurrentTier) return { label: "Current plan", current: true };
+      // A plan Frank set by hand has no subscription to cancel: moving to
+      // Free is arranged with Frank.
+      if (plan.id === "free") {
+        return { label: "Choose Free", request: true, run: () => setChoosing({ plan, via: "request" }) };
+      }
+      return {
+        label: `Choose ${plan.name}`,
+        run: () =>
+          checkout.mutate(
+            { plan: plan.id, interval },
+            { onSuccess: (result) => result === "paid" && setAwaiting(plan.name) },
+          ),
+      };
     }
     if (plan.id === "free") return { label: "Choose Free", run: () => openChange(plan) };
     const kind = classifyChange({ plan: current!.id, interval: paidInterval! }, { plan: plan.id, interval }).kind;
@@ -276,9 +282,6 @@ export default function PlansPage() {
           </span>
         )}
         {!canChange && <span className="sub">Only Admins and Owners can change the plan.</span>}
-        {canChange && billingConfigured() && !byCard && current?.id !== "free" && (
-          <span className="sub">Your plan is arranged with Frank. Ask to change it below.</span>
-        )}
       </div>
       {checkout.error && <p className="autherr">{errorMessage(checkout.error, "Couldn't start the checkout")}</p>}
 

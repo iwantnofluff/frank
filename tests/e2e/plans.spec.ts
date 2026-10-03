@@ -34,7 +34,7 @@ async function staffRole(frank: Frank, role: string) {
   await admin.from("memberships").update({ role }).eq("agency_id", frank.agencyId).eq("user_id", id);
 }
 
-test("an Admin asks for another plan, and the platform admin applies it", async ({ page, browser, frank }) => {
+test("an Admin asks Frank for Enterprise, and the platform admin applies it", async ({ page, browser, frank }) => {
   test.setTimeout(120_000);
   // No admin override, so the plan's own limits show (phase42).
   await admin.from("agencies").update({ extra_clients: 0, extra_seats: 0 }).eq("id", frank.agencyId);
@@ -51,22 +51,27 @@ test("an Admin asks for another plan, and the platform admin applies it", async 
   await expect(card(page, "Growth")).toContainText("$119");
   await expect(card(page, "Growth")).toContainText("billed yearly");
 
-  await card(page, "Growth").getByRole("button", { name: "Choose Growth" }).click();
-  const dialog = page.getByRole("dialog", { name: "Move to Growth?" });
-  await expect(dialog).toContainText("E2E, this asks Frank to move E2E Test Agency to Growth, at $119 a month, billed yearly.");
+  // Paid plans are bought by card, even from a plan Frank set by hand
+  // (decided directly, revised 3 Oct 2026): Growth is a checkout, not a
+  // request. Enterprise is still a conversation.
+  await expect(page.getByText("Your plan is arranged with Frank")).toHaveCount(0);
+  await card(page, "Enterprise").getByRole("button", { name: "Talk to us" }).click();
+  const dialog = page.getByRole("dialog", { name: "Move to Enterprise?" });
+  await expect(dialog).toContainText("E2E, this asks Frank to move E2E Test Agency to Enterprise.");
   await dialog.getByRole("button", { name: "Send Request" }).click();
   await expect(dialog).toHaveCount(0);
-  await expect(page.locator(".note")).toContainText(/You.ve asked to move to Growth, billed annual/);
-  await expect(card(page, "Growth")).toContainText("Requested");
-  // One request at a time.
-  await expect(card(page, "Agency").getByRole("button", { name: "Choose Agency" })).toBeDisabled();
+  await expect(page.locator(".note")).toContainText(/You.ve asked to move to Enterprise, billed annual/);
+  await expect(card(page, "Enterprise")).toContainText("Requested");
+  // One request at a time; buying by card isn't a request, so stays open.
+  await expect(card(page, "Free").getByRole("button", { name: "Choose Free" })).toBeDisabled();
+  await expect(card(page, "Growth").getByRole("button", { name: "Choose Growth" })).toBeEnabled();
 
   const { data: req } = await admin
     .from("plan_requests")
     .select("requested_plan, billing_interval, handled_at")
     .eq("agency_id", frank.agencyId)
     .single();
-  expect(req).toEqual({ requested_plan: "growth", billing_interval: "annual", handled_at: null });
+  expect(req).toEqual({ requested_plan: "enterprise", billing_interval: "annual", handled_at: null });
 
   // The platform admin sees it, and applies it.
   const pa = await makePlatformAdmin();
@@ -79,7 +84,7 @@ test("an Admin asks for another plan, and the platform admin applies it", async 
     await ap.click('button[type="submit"]');
     await ap.waitForURL(`${ADMIN}/admin`, { timeout: 20_000 });
     const row = ap.locator(".admintbl tr", { has: ap.locator(`a[href="/admin/agencies/${frank.agencyId}"]`) });
-    await expect(row).toContainText("Wants Growth");
+    await expect(row).toContainText("Wants Enterprise");
     await row.getByRole("link", { name: "E2E Test Agency" }).click();
     await ap.locator(".panel", { hasText: "Plan request" }).getByRole("button", { name: "Apply" }).click();
     await expect(ap.locator(".panel", { hasText: "Plan request" })).toHaveCount(0, { timeout: 20_000 });
@@ -89,9 +94,9 @@ test("an Admin asks for another plan, and the platform admin applies it", async 
   }
 
   const { data: agency } = await admin.from("agencies").select("plan, client_limit, seat_limit").eq("id", frank.agencyId).single();
-  expect(agency).toEqual({ plan: "growth", client_limit: 10, seat_limit: 15 });
+  expect(agency).toEqual({ plan: "enterprise", client_limit: null, seat_limit: null });
   await page.reload();
-  await expect(card(page, "Growth")).toContainText("Active");
+  await expect(card(page, "Enterprise")).toContainText("Active");
   await expect(page.locator(".note")).toHaveCount(0);
 });
 

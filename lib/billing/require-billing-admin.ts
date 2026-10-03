@@ -33,9 +33,6 @@ export async function requireBillingAdmin(agencyId: string | undefined) {
 // Paying through Paddle now: a live subscription.
 export const hasLiveSubscription = (b: BillingRow | null) => !!b?.paddle_subscription_id && b.status !== "canceled";
 
-// Whether the agency pays by card at all (decided directly): on Free, or
-// already paying through Paddle. A paid plan Frank set by hand stays Frank's.
-export const paysByCard = (plan: string, b: BillingRow | null) => plan === "free" || hasLiveSubscription(b);
 
 // Would the agency fit the plan's limits? A downgrade or cancellation that
 // wouldn't is refused, saying what to change first (decided directly).

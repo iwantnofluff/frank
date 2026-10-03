@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
-import { hasLiveSubscription, paysByCard, requireBillingAdmin } from "@/lib/billing/require-billing-admin";
+import { hasLiveSubscription, requireBillingAdmin } from "@/lib/billing/require-billing-admin";
 import { paddle, PaddleError } from "@/lib/billing/paddle";
 import { priceFor, type Interval } from "@/lib/billing/prices";
 import { planById } from "@/lib/plans";
 
-// Starting to pay (phase39): an agency on Free picks a paid plan. Frank
-// makes the Paddle transaction here, naming the agency, so the browser
-// can't say whose plan it is; Paddle's checkout then takes the card, and
-// the webhook moves the plan once it's paid.
+// Starting to pay (phase39): an agency not yet paying by card — on Free, or
+// on a plan Frank set by hand (decided directly, revised 3 Oct 2026) — picks
+// a paid plan. Frank makes the Paddle transaction here, naming the agency,
+// so the browser can't say whose plan it is; Paddle's checkout then takes
+// the card, and the webhook moves the plan once it's paid.
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as { agencyId?: string; plan?: string; interval?: string };
   const auth = await requireBillingAdmin(body.agencyId);
@@ -20,9 +21,6 @@ export async function POST(request: Request) {
   if (!tier || !priceId) return NextResponse.json({ error: "Choose a paid plan" }, { status: 400 });
   if (hasLiveSubscription(billing)) {
     return NextResponse.json({ error: "Your agency already pays through Paddle — change the plan instead." }, { status: 409 });
-  }
-  if (!paysByCard(agency.plan, billing)) {
-    return NextResponse.json({ error: "Your plan is managed by Frank. Ask Frank to change it." }, { status: 409 });
   }
 
   try {
