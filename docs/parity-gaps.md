@@ -1992,3 +1992,5 @@ Direct instruction:
 - **Sign out everywhere else:** a second session can't renew itself, while this one still works.
 
 `admin.spec.ts` and `plans.spec.ts` moved to the read-only plan: no plan control, the route answers 403, and the columns are counted with Plan in place. Looked at the agencies table, an agency's page, Notifications and Password & Security.
+
+Direct instruction, after trying it on staging: an agency's page goes back to Agencies with the menu's own arrow button, not a "← Agencies" text link, level with the arrow above Dashboard. **Verified**: measured both arrows' tops in the browser, and they're equal; the arrow goes back to Agencies.

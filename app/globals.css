@@ -5842,6 +5842,11 @@ button.avatar {
 .adminform {
   max-width: 560px;
 }
+/* An agency's page: back to Agencies with the menu's arrow, level with the
+   menu's own (measured: 26px above where the page's content starts). */
+.adminback {
+  margin: -26px 0 14px -6px;
+}
 .subfield {
   display: flex;
   align-items: center;
