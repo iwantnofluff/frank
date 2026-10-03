@@ -1086,6 +1086,25 @@ body.lightrail .avatar {
   margin: auto 0;
   max-width: 420px;
 }
+/* "Frank" and its one line, close together (direct instruction). */
+.welcomehead {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.welcomehead .sub {
+  margin: 0;
+}
+/* Sign Up / Sign In: on the left, with room above and below (direct
+   instruction). .filters sits on the right everywhere else. */
+.filters.signtabs {
+  margin: 8px 0;
+  justify-content: flex-start;
+  margin-left: 0;
+}
+.signdone .sub {
+  margin: 0;
+}
 .signform,
 .signdone {
   display: flex;

@@ -1931,7 +1931,7 @@ Direct instruction: on staging only, the admin table can delete an agency, so th
   - the accounts of its people who aren't in another agency (platform admins are never deleted), which is what frees their emails
 - **Paddle:** a live sandbox subscription is cancelled first.
 
-The staging admin account is `admin@nofluff.in`. Live's stays `raj+admin@nofluff.in`.
+Both admin accounts (staging and live) sign in as `raj+admin@nofluff.in`, which Gmail delivers to raj@nofluff.in. `admin@nofluff.in` was tried and dropped: it isn't a mailbox of Raj's, so Resend's emails to it bounced and were suppressed.
 
 **Verified**: typecheck and lint clean.
 - **The function, against staging's database:** a throwaway agency with an owner, a client and an uploaded file was deleted with nothing left (agency, file and user row gone). The same email could be used again at once, and the platform admin was untouched.
@@ -1958,3 +1958,12 @@ Then, with a separate Paddle setup key (notification settings, kept apart from F
 - **The fix:** it now finds the agency first and ignores anything that isn't one of its own.
 
 **Verified**: `billing.spec.ts` has a new test: three such events (no agency, a malformed reference, an unknown agency, all with a price Frank doesn't know) each get 200. The webhook test still passes.
+
+## Sign-up page polish
+
+Direct instruction, after trying it on staging:
+- The pills read Sign Up / Sign In, sit on the left with space above and below, and are hidden once someone has signed up (only "check your email" is left).
+- The one-line description sits closer to "Frank".
+- The confirmation's trial line is a paragraph of its own, saying what to do with the trial ("Invite your team, add a client and send your first post for approval, with no card needed").
+
+**Verified**: typecheck and lint clean. Looked at both states, the form and "Check your email" (with the sign-up answer faked in the browser, so nothing was created). The sign-up test now also checks the pills are gone after signing up, and passes. `tenancy.spec.ts` 6/6.

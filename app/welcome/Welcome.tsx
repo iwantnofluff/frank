@@ -26,25 +26,37 @@ function agencyUrl(subdomain: string, path: string) {
 
 export function Welcome() {
   const [mode, setMode] = useState<"signup" | "signin" | "forgot">("signup");
+  // Once signed up, there's only "check your email" left: no switching.
+  const [signedUp, setSignedUp] = useState(false);
   return (
     <div className="authcard">
       <div className="mark authmark">F</div>
-      <h1 className="h1">Frank</h1>
-      <p className="sub">Content review and approval for agencies: briefs, artwork and copy, approved by your clients in one place.</p>
-      <div className="filters" role="group" aria-label="Sign up or sign in">
-        <button type="button" className="chip" aria-pressed={mode === "signup"} onClick={() => setMode("signup")}>
-          Start Free Trial
-        </button>
-        <button type="button" className="chip" aria-pressed={mode !== "signup"} onClick={() => setMode("signin")}>
-          Sign In
-        </button>
+      <div className="welcomehead">
+        <h1 className="h1">Frank</h1>
+        <p className="sub">Content review and approval for agencies: briefs, artwork and copy, approved by your clients in one place.</p>
       </div>
-      {mode === "signup" ? <SignUp /> : mode === "signin" ? <SignIn onForgot={() => setMode("forgot")} /> : <Forgot />}
+      {!signedUp && (
+        <div className="filters signtabs" role="group" aria-label="Sign up or sign in">
+          <button type="button" className="chip" aria-pressed={mode === "signup"} onClick={() => setMode("signup")}>
+            Sign Up
+          </button>
+          <button type="button" className="chip" aria-pressed={mode !== "signup"} onClick={() => setMode("signin")}>
+            Sign In
+          </button>
+        </div>
+      )}
+      {mode === "signup" ? (
+        <SignUp onDone={() => setSignedUp(true)} />
+      ) : mode === "signin" ? (
+        <SignIn onForgot={() => setMode("forgot")} />
+      ) : (
+        <Forgot />
+      )}
     </div>
   );
 }
 
-function SignUp() {
+function SignUp({ onDone }: { onDone: () => void }) {
   const signUp = useSignUp();
   const [agencyName, setAgencyName] = useState("");
   const [typedAddress, setAddress] = useState<string | null>(null);
@@ -70,7 +82,11 @@ function SignUp() {
         <b>Check your email</b>
         <p className="sub">
           We sent a link to {email}. Open it to confirm your email and go to your workspace at{" "}
-          <b>{signUp.data.address}</b>. Your 30-day free trial has started.
+          <b>{signUp.data.address}</b>.
+        </p>
+        <p className="sub">
+          Your 30-day free trial has started. Invite your team, add a client and send your first post for approval, with
+          no card needed.
         </p>
       </div>
     );
@@ -86,7 +102,7 @@ function SignUp() {
           return;
         }
         setProblem(null);
-        signUp.mutate({ agencyName, subdomain, firstName, lastName, email, password });
+        signUp.mutate({ agencyName, subdomain, firstName, lastName, email, password }, { onSuccess: onDone });
       }}
     >
       <label className="authfield">

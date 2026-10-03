@@ -37,7 +37,7 @@ test("an agency signs itself up at beingfrank.app, confirms, works through its t
   try {
     const page = await ctx.newPage();
     await page.goto(`${ROOT}/`);
-    await expect(page.getByRole("button", { name: "Start Free Trial" }).first()).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("button", { name: "Sign Up" })).toHaveAttribute("aria-pressed", "true");
     await page.getByLabel("Agency name").fill("E2E Signup Agency");
     // The address follows the name until it's typed over, and says if it's free.
     await expect(page.getByLabel("Your address")).toHaveValue("e2e-signup-agency");
@@ -51,6 +51,8 @@ test("an agency signs itself up at beingfrank.app, confirms, works through its t
     await page.getByLabel("Password").fill(password);
     await page.locator("form").getByRole("button", { name: "Start Free Trial" }).click();
     await expect(page.getByText("Check your email")).toBeVisible({ timeout: 20_000 });
+    // Nothing to switch to once signed up.
+    await expect(page.getByRole("button", { name: "Sign In" })).toHaveCount(0);
     await expect(page.locator(".signdone")).toContainText(`${sub}.frank.localhost:3000`);
 
     const { data: agency } = await admin
