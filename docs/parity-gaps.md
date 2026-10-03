@@ -1967,3 +1967,28 @@ Direct instruction, after trying it on staging:
 - The confirmation's trial line is a paragraph of its own, saying what to do with the trial ("Invite your team, add a client and send your first post for approval, with no card needed").
 
 **Verified**: typecheck and lint clean. Looked at both states, the form and "Check your email" (with the sign-up answer faked in the browser, so nothing was created). The sign-up test now also checks the pills are gone after signing up, and passes. `tenancy.spec.ts` 6/6.
+
+## Admin area: a menu, its own Settings, and no plan control
+
+Direct instruction:
+- **Layout:** the admin area has the app's collapsing Settings menu (`SettingsNav`, now taking its sections as a prop): Dashboard → Agencies; Settings → Notifications and Password & Security. A path now matches the longest page address, so `/admin` doesn't claim `/admin/settings/…`.
+- **Header:** the bar's "F" lines up with its title. `.mark`'s own bottom margin, the rail's, had pushed it up.
+- **Agencies table:** has a Plan column (with Free's trial and "By card"), and a whole row opens its agency.
+- **The plan is the agency's alone.** The agency page shows it read-only, the route refuses a plan (403), and New Agency no longer picks one (a new agency is on Free with its trial, as sign-ups are). Applying a request the agency made, such as Enterprise, stays.
+- **The address note** on the agency page is gone.
+
+**Notifications:** switch each kind of admin email off: new sign-ups, plan changes, requests to Frank, billing problems. The choices live on the admin's own account (Supabase `app_metadata`, written only by the service role), so there's no migration, which keeps this inside the local-staging-live flow. Every admin email names its kind (`emailPlatformAdmins(admin, kind, …)`).
+
+**Password & Security:**
+- **Password:** change it after giving the current one, checked on a throwaway client that's signed out again.
+- **Sign-in email:** a link goes to the new address, and only following it changes the email, and then tells the old address. Supabase's own email change wants both addresses to confirm, through its rate-limited mailer ("secure email change" is on, on both projects), so Frank signs its own one-hour link with a server-only key (`lib/admin/email-change-token.ts`).
+- **Sign out everywhere else.**
+
+**Verified**: typecheck and lint clean. Unit tests 113, adding the email-change link: it reads back for an hour, and a changed address, a changed signature or junk is refused. New `admin-settings.spec.ts` (5):
+- **Menu:** the right page marked current, collapsing, and a click on a row's Members cell opens the agency. The Plan column reads Starter.
+- **Notifications:** a switch turned off stays off after reloading, and is stored as `{ plan_changes: false }`.
+- **Password:** a wrong current one is refused, then the new one signs in and the old one doesn't.
+- **Email:** a wrong password is refused, and nothing changes until the link. A link made for another account is refused. The right one changes the account and the users row, and the new email signs in.
+- **Sign out everywhere else:** a second session can't renew itself, while this one still works.
+
+`admin.spec.ts` and `plans.spec.ts` moved to the read-only plan: no plan control, the route answers 403, and the columns are counted with Plan in place. Looked at the agencies table, an agency's page, Notifications and Password & Security.

@@ -37,6 +37,7 @@ export async function POST(request: Request) {
     if (result.outcome === "conflict") {
       await emailPlatformAdmins(
         admin,
+        "billing_problems",
         "An agency has two Paddle subscriptions",
         `Agency ${result.agencyId} already pays through Paddle, and subscription ${sub.id} was started for it too. Frank kept the first; cancel or refund the second in Paddle.`,
       );
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
       const name = agency?.name ?? "An agency";
       const was = planById(result.previousPlan)?.name ?? result.previousPlan;
       const now = planById(result.plan)?.name ?? result.plan;
-      await emailPlatformAdmins(admin, `${name} moved from ${was} to ${now}`, `${name} is now on ${now} (was ${was}), through Paddle.`);
+      await emailPlatformAdmins(admin, "plan_changes", `${name} moved from ${was} to ${now}`, `${name} is now on ${now} (was ${was}), through Paddle.`);
     }
   }
 

@@ -95,6 +95,6 @@ export async function POST(request: Request) {
     await undo();
     return fail("We couldn't send the confirmation email. Check the address and try again.", 502);
   }
-  await emailPlatformAdmins(admin, `${agencyName} signed up`, `${agencyName} signed up at ${origin.replace(/^https?:\/\//, "")}, on Free, by ${firstName} ${lastName} (${email}).`);
+  await emailPlatformAdmins(admin, "signups", `${agencyName} signed up`, `${agencyName} signed up at ${origin.replace(/^https?:\/\//, "")}, on Free, by ${firstName} ${lastName} (${email}).`);
   return NextResponse.json({ address: origin.replace(/^https?:\/\//, "") }, { status: 201 });
 }

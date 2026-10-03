@@ -5733,10 +5733,17 @@ button.avatar {
 }
 /* The platform admin area (admin.beingfrank.app, phase37). */
 .adminwrap {
-  min-height: 100vh;
-  overflow-y: auto;
   height: 100vh;
+  display: flex;
+  flex-direction: column;
   background: var(--canvas);
+}
+/* The admin area's menu and page (direct instruction: Settings' layout),
+   filling what's under the bar; each side scrolls on its own. */
+.adminsetwrap {
+  flex: 1;
+  min-height: 0;
+  height: auto;
 }
 .adminbar {
   display: flex;
@@ -5764,6 +5771,8 @@ button.avatar {
   color: #fff;
 }
 .adminbar-t .mark {
+  /* .mark's own bottom margin (the rail's) pushed it above the title. */
+  margin: 0;
   width: 28px;
   height: 28px;
   border-radius: 7px;
@@ -5801,6 +5810,26 @@ button.avatar {
   padding: 10px 12px;
   border-bottom: 1px solid var(--line);
   vertical-align: top;
+}
+/* A form in a panel, in the admin area's Settings. */
+.adminpanel {
+  margin-bottom: 16px;
+}
+.adminpanel-b {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 15px;
+  max-width: 420px;
+}
+.adminpanel-b .sub {
+  margin: 0;
+}
+.admintbl-row {
+  cursor: pointer;
+}
+.admintbl-row:hover td {
+  background: var(--canvas);
 }
 .admintbl td .tdim {
   display: block;

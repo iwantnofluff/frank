@@ -3,17 +3,14 @@ import { requirePlatformAdmin } from "@/lib/admin/require-platform-admin";
 import { deleteAgency } from "@/lib/admin/delete-agency";
 import { paddle } from "@/lib/billing/paddle";
 
-// The plan_tier values (phase0).
-const PLANS = ["free", "starter", "growth", "agency", "enterprise"];
+// The admin override's columns (phase42).
 const EXTRAS = ["extra_seats", "extra_clients", "extra_ai_requests", "extra_storage_bytes"] as const;
 
 // One agency, from the admin area (decided directly, phase42):
-// - its plan, only while it isn't paying by card (Paddle and its Owner own
-//   that one); the database applies the plan's limits (apply_plan_limits);
 // - the admin override: extra members, clients, AI requests and storage on
 //   top of the plan;
 // - pausing it (phase37).
-// Not its address: that's the Owner's, in Settings → Account URL.
+// Not its plan (the agency's to choose) or its address (its Owner's).
 export async function PATCH(request: Request, ctx: { params: Promise<{ id: string }> }) {
   const auth = await requirePlatformAdmin();
   if ("error" in auth) return auth.error;
@@ -28,20 +25,10 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
   }
 
   const update: Record<string, unknown> = {};
+  // The plan is the agency's to choose (decided directly, 3 Oct 2026), by
+  // card or by asking Frank (applying a request is /api/admin/plan-requests).
   if (body.plan !== undefined) {
-    if (!PLANS.includes(body.plan)) return NextResponse.json({ error: "Unknown plan" }, { status: 400 });
-    const { data: billing } = await admin
-      .from("agency_billing")
-      .select("paddle_subscription_id, status")
-      .eq("agency_id", id)
-      .maybeSingle();
-    if (billing?.paddle_subscription_id && billing.status !== "canceled") {
-      return NextResponse.json(
-        { error: "This agency pays by card, so its plan is its Owner's to change. Add to its limits with the override instead." },
-        { status: 409 },
-      );
-    }
-    update.plan = body.plan;
+    return NextResponse.json({ error: "The plan is the agency's to choose." }, { status: 403 });
   }
   for (const key of EXTRAS) {
     if (body[key] === undefined) continue;

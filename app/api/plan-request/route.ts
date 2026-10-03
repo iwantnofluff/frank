@@ -45,6 +45,7 @@ export async function POST(request: Request) {
   const from = planById(agency?.plan)?.name ?? agency?.plan ?? "their plan";
   await emailPlatformAdmins(
     admin,
+    "requests",
     `${agency?.name ?? "An agency"} asked to move to ${tier.name}`,
     `${who?.name ?? who?.email} at ${agency?.name} asked to move from ${from} to ${tier.name}, billed ${interval}.\n\nApply or decline it in Frank Admin.`,
   );

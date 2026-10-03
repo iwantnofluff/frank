@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { SignOutButton } from "./SignOutButton";
+import { AdminNav } from "./AdminNav";
 
 // admin.beingfrank.app (phase37): only for accounts on platform_admins,
 // checked here for the pages and again by every /api/admin call.
@@ -36,7 +37,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <span className="sub">{user!.email}</span>
         <SignOutButton small />
       </header>
-      <main className="pad">{children}</main>
+      <div className="setwrap adminsetwrap">
+        <AdminNav />
+        <div className="review-sep" aria-hidden="true" />
+        <main className="setmain">
+          <div className="pad">{children}</div>
+        </main>
+      </div>
     </div>
   );
 }

@@ -3,7 +3,6 @@ import { requirePlatformAdmin } from "@/lib/admin/require-platform-admin";
 import { createInviteToken } from "@/lib/invites/token";
 import { INVITE_TTL_MS } from "@/lib/invites/constants";
 import { inviteEmail } from "@/lib/email/invite-email";
-import { planById } from "@/lib/plans";
 import { addressError } from "@/lib/address";
 import { sendEmail } from "@/lib/email/send-email";
 import { agencyOrigin } from "@/lib/admin/agency-origin";
@@ -83,7 +82,7 @@ export async function POST(request: Request) {
   if ("error" in auth) return auth.error;
   const { admin, user } = auth;
 
-  let body: { name?: string; subdomain?: string; ownerEmail?: string; plan?: string };
+  let body: { name?: string; subdomain?: string; ownerEmail?: string };
   try {
     body = await request.json();
   } catch {
@@ -95,14 +94,11 @@ export async function POST(request: Request) {
   if (!name || !subdomain || !email) {
     return NextResponse.json({ error: "Name, address and the owner's email are all needed." }, { status: 400 });
   }
-  // Decided directly: the admin picks the plan, Free unless they say
-  // otherwise. Free's 30-day trial starts now (the column's default).
-  const tier = planById(body.plan ?? "free");
-  if (!tier) return NextResponse.json({ error: "Unknown plan" }, { status: 400 });
-
+  // Free, with its trial (the database's defaults): the plan is the
+  // agency's to choose (decided directly, 3 Oct 2026).
   const { data: agency, error: agencyError } = await admin
     .from("agencies")
-    .insert({ name, subdomain, plan: tier.id })
+    .insert({ name, subdomain })
     .select("id")
     .single();
   if (agencyError || !agency) {

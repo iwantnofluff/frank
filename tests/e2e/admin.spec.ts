@@ -64,9 +64,11 @@ test("the admin area lists every agency with its usage, for platform admins only
     await page.waitForURL(`${ADMIN}/admin`, { timeout: 20_000 });
     const row = page.locator(".admintbl tr", { has: page.locator(`a[href="/admin/agencies/${frank.agencyId}"]`) });
     await expect(row).toContainText("E2E Test Agency");
-    // 1 team member and 1 client, each of the fixture's 50.
-    await expect(row.locator("td").nth(2)).toHaveText("1 / 50");
+    // Agency, Plan, Primary Owner, then 1 team member and 1 client, each of
+    // the fixture's 50.
+    await expect(row.locator("td").nth(1)).toContainText("Starter");
     await expect(row.locator("td").nth(3)).toHaveText("1 / 50");
+    await expect(row.locator("td").nth(4)).toHaveText("1 / 50");
     await expect(row).toContainText("Active");
   } finally {
     await pa.cleanup();
@@ -139,8 +141,13 @@ test("limits come from the plan plus the admin override, are enforced, and pausi
     const members = page.locator(".srow", { hasText: "Team members" });
     await expect(members).toContainText("5 on Starter, plus 45 added");
     await expect(members).toContainText("50");
-    // The address is the Owner's, not the admin's.
+    // The address is the Owner's and the plan the agency's: neither is the
+    // admin's to change, and the page doesn't explain the address any more.
     await expect(page.locator("#agAddress")).toHaveCount(0);
+    await expect(page.locator("#agPlan")).toHaveCount(0);
+    await expect(page.getByText("Account URL")).toHaveCount(0);
+    const refused = await page.request.patch(`${ADMIN}/api/admin/agencies/${frank.agencyId}`, { data: { plan: "agency" } });
+    expect(refused.status()).toBe(403);
 
     // No override, then Free: the plan's own limits, fixed.
     for (const id of ["#agXSeats", "#agXClients"]) await page.fill(id, "0");
@@ -148,8 +155,9 @@ test("limits come from the plan plus the admin override, are enforced, and pausi
     // The list reloads after a change (every agency's usage, so not instant).
     await expect(page.getByText("Saved.")).toBeVisible({ timeout: 20_000 });
     await expect(members).toContainText("5 on Starter");
-    await page.selectOption("#agPlan", "free");
-    await page.getByRole("button", { name: "Save Plan" }).click();
+    // Free (the agency's choice, made here directly): its limits, fixed.
+    await admin.from("agencies").update({ plan: "free" }).eq("id", frank.agencyId);
+    await page.reload();
     await expect(page.locator(".srow", { hasText: "Active clients" })).toContainText("1 on Free", { timeout: 20_000 });
     const { data: limits } = await admin.from("agencies").select("plan, client_limit, seat_limit").eq("id", frank.agencyId).single();
     expect(limits).toEqual({ plan: "free", client_limit: 1, seat_limit: 2 });
@@ -173,9 +181,6 @@ test("limits come from the plan plus the admin override, are enforced, and pausi
     });
     await page.reload();
     await expect(page.getByText("paid by card through Paddle")).toBeVisible({ timeout: 20_000 });
-    await expect(page.locator("#agPlan")).toHaveCount(0);
-    const refused = await page.request.patch(`${ADMIN}/api/admin/agencies/${frank.agencyId}`, { data: { plan: "agency" } });
-    expect(refused.status()).toBe(409);
     await admin.from("agency_billing").delete().eq("agency_id", frank.agencyId);
     await admin.from("agencies").update({ plan: "starter", extra_clients: 47, extra_seats: 45 }).eq("id", frank.agencyId);
     await page.reload();

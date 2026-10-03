@@ -53,7 +53,7 @@ export function useAdminAgencies() {
 export function useCreateAgency() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: { name: string; subdomain: string; ownerEmail: string; plan: string }) =>
+    mutationFn: (input: { name: string; subdomain: string; ownerEmail: string }) =>
       call<{ agencyId: string; warning?: string }>("/api/admin/agencies", { method: "POST", body: JSON.stringify(input) }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["admin-agencies"] });
@@ -66,7 +66,6 @@ export function useUpdateAgency(id: string) {
   return useMutation({
     mutationFn: (
       input: Partial<{
-        plan: string;
         // The admin override, on top of the plan (phase42).
         extra_seats: number;
         extra_clients: number;

@@ -8,12 +8,11 @@ import {
   useUpdateAgency,
   type AdminAgency,
 } from "@/hooks/use-admin-agencies";
-import { AI_REQUESTS_PER_MONTH, formatBytes, limitLabel, planById } from "@/lib/plans";
+import { AI_REQUESTS_PER_MONTH, formatBytes, isReadOnly, limitLabel, planById } from "@/lib/plans";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { errorMessage } from "@/lib/errors";
 import { ROOT_DOMAIN } from "@/lib/tenant";
 
-const PLANS = ["free", "starter", "growth", "agency", "enterprise"];
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 // One agency: its limits, and pausing it.
@@ -30,10 +29,7 @@ const GB = 1024 ** 3;
 
 function AgencyForm({ agency }: { agency: AdminAgency }) {
   const update = useUpdateAgency(agency.id);
-  const changePlan = useUpdateAgency(agency.id);
   const handle = useHandlePlanRequest();
-  const [plan, setPlan] = useState(agency.plan);
-  const [planSaved, setPlanSaved] = useState(false);
   // The override (phase42): added to the plan's limits.
   const [seats, setSeats] = useState(String(agency.extra_seats));
   const [clients, setClients] = useState(String(agency.extra_clients));
@@ -54,7 +50,6 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
         {agency.subdomain ? `${agency.subdomain}.${ROOT_DOMAIN}` : "No address"} ·{" "}
         {agency.suspended_at ? "Paused" : "Active"} · joined {new Date(agency.created_at).toLocaleDateString()}
       </p>
-      <p className="msection-d">The address is the agency&rsquo;s Owner&rsquo;s to change, in Settings → Account URL.</p>
 
       {agency.pending_request && (
         <div className="panel" style={{ marginTop: 16 }}>
@@ -97,50 +92,17 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
       )}
 
       <div className="msection-h">Plan</div>
-      {agency.pays_by_card ? (
-        <p className="msection-d">
-          {tier?.name ?? agency.plan}, paid by card through Paddle. Its Owner changes it in Settings → Your Plan; add to its
-          limits with the override below.
-        </p>
-      ) : (
-        <>
-          <p className="msection-d">Not paying by card, so its plan is set here (or by applying a request).</p>
-          <div className="field">
-            <label htmlFor="agPlan">Plan</label>
-            <select
-              id="agPlan"
-              value={plan}
-              onChange={(e) => {
-                setPlan(e.target.value);
-                setPlanSaved(false);
-              }}
-            >
-              {PLANS.map((p) => (
-                <option key={p} value={p}>
-                  {p[0].toUpperCase() + p.slice(1)}
-                </option>
-              ))}
-            </select>
-          </div>
-          {changePlan.error && <p className="autherr">{errorMessage(changePlan.error, "Couldn't change the plan")}</p>}
-          <div className="confirm-acts" style={{ justifyContent: "flex-start", alignItems: "center", marginTop: 0 }}>
-            <button
-              type="button"
-              className="btn"
-              disabled={changePlan.isPending || plan === agency.plan}
-              onClick={() =>
-                changePlan
-                  .mutateAsync({ plan })
-                  .then(() => setPlanSaved(true))
-                  .catch(() => {})
-              }
-            >
-              {changePlan.isPending ? "Saving…" : "Save Plan"}
-            </button>
-            {planSaved && <span className="bsaved">Saved.</span>}
-          </div>
-        </>
-      )}
+      <p className="msection-d">
+        {tier?.name ?? agency.plan}
+        {agency.pays_by_card
+          ? ", paid by card through Paddle."
+          : agency.plan === "free"
+            ? isReadOnly(agency.plan, agency.trial_ends_at)
+              ? ", trial ended: read-only until it chooses a plan."
+              : `, trial ends ${new Date(agency.trial_ends_at!).toLocaleDateString()}.`
+            : "."}{" "}
+        The plan is the agency&rsquo;s to choose, in its Settings → Your Plan. Add to its limits with the override below.
+      </p>
 
       <div className="msection-h">Limits</div>
       <p className="msection-d">

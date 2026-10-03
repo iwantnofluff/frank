@@ -77,10 +77,15 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
 
 export const FIRST_SETTINGS_PAGE = SETTINGS_SECTIONS[0].pages[0].href;
 
-export function settingsPageFor(pathname: string) {
-  for (const section of SETTINGS_SECTIONS) {
-    const page = section.pages.find((p) => pathname === p.href || pathname.startsWith(`${p.href}/`));
-    if (page) return { section, page };
+// The page a path is on: the longest address that matches, so /admin
+// (Agencies) doesn't swallow /admin/settings/... in the admin area's menu.
+export function settingsPageFor(pathname: string, sections: SettingsSection[] = SETTINGS_SECTIONS) {
+  let best: { section: SettingsSection; page: SettingsPage } | null = null;
+  for (const section of sections) {
+    for (const page of section.pages) {
+      const hit = pathname === page.href || pathname.startsWith(`${page.href}/`);
+      if (hit && (!best || page.href.length > best.page.href.length)) best = { section, page };
+    }
   }
-  return null;
+  return best;
 }

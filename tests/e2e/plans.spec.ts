@@ -118,7 +118,7 @@ test("a User sees the plans but can't ask for one, and the database agrees", asy
   expect(error?.code).toBe("42501");
 });
 
-test("the admin area can decline a request, and a plan it sets brings that plan's limits", async ({ page, frank }) => {
+test("the admin area can decline a request, and shows a plan's limits fixed", async ({ page, frank }) => {
   test.setTimeout(90_000);
   await admin.from("agencies").update({ extra_clients: 0, extra_seats: 0 }).eq("id", frank.agencyId);
   const staffId = (await admin.from("users").select("id").eq("email", frank.staffEmail).single()).data!.id;
@@ -138,16 +138,19 @@ test("the admin area can decline a request, and a plan it sets brings that plan'
     expect(req!.outcome).toBe("declined");
     expect((await admin.from("agencies").select("plan").eq("id", frank.agencyId).single()).data!.plan).toBe("starter");
 
-    // Agency, set here (not paying by card): its limits, unlimited members.
-    await page.selectOption("#agPlan", "agency");
-    await page.getByRole("button", { name: "Save Plan" }).click();
-    await expect(page.getByText("Saved.")).toBeVisible({ timeout: 20_000 });
+    // Agency (the agency's choice, made here directly): its limits, shown
+    // fixed, with unlimited members; there's no plan control for the admin.
+    await expect(page.locator("#agPlan")).toHaveCount(0);
+    await admin.from("agencies").update({ plan: "agency" }).eq("id", frank.agencyId);
+    await page.reload();
     await expect(page.locator(".srow", { hasText: "Team members" })).toContainText("Unlimited on Agency", { timeout: 20_000 });
     const { data: agency } = await admin.from("agencies").select("plan, seat_limit, client_limit").eq("id", frank.agencyId).single();
     expect(agency).toEqual({ plan: "agency", seat_limit: null, client_limit: 25 });
     await page.goto(`${ADMIN}/admin`);
     const row = page.locator(".admintbl tr", { has: page.locator(`a[href="/admin/agencies/${frank.agencyId}"]`) });
-    await expect(row.locator("td").nth(2)).toHaveText("1 / Unlimited");
+    // Agency, Plan, Primary Owner, Members.
+    await expect(row.locator("td").nth(1)).toContainText("Agency");
+    await expect(row.locator("td").nth(3)).toHaveText("1 / Unlimited");
   } finally {
     await pa.cleanup();
   }

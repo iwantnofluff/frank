@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAdminAgencies, useDeleteAgency, type AdminAgency } from "@/hooks/use-admin-agencies";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { errorMessage } from "@/lib/errors";
@@ -12,6 +13,7 @@ import { ROOT_DOMAIN } from "@/lib/tenant";
 // Every agency, with its usage against its limits.
 export default function AdminAgenciesPage() {
   const { data: agencies, isLoading, error } = useAdminAgencies();
+  const router = useRouter();
   const remove = useDeleteAgency();
   const [deleting, setDeleting] = useState<AdminAgency | null>(null);
   const [deleted, setDeleted] = useState<string | null>(null);
@@ -35,6 +37,7 @@ export default function AdminAgenciesPage() {
           <thead>
             <tr>
               <th>Agency</th>
+              <th>Plan</th>
               <th>Primary Owner</th>
               <th>Members</th>
               <th>Clients</th>
@@ -48,19 +51,25 @@ export default function AdminAgenciesPage() {
           </thead>
           <tbody>
             {agencies.map((a) => (
-              <tr key={a.id}>
+              // The whole row opens the agency (direct instruction); the link
+              // in it stays for the keyboard and a new tab.
+              <tr key={a.id} className="admintbl-row" onClick={() => router.push(`/admin/agencies/${a.id}`)}>
                 <td>
-                  <Link href={`/admin/agencies/${a.id}`} className="admintbl-name">
+                  <Link href={`/admin/agencies/${a.id}`} className="admintbl-name" onClick={(e) => e.stopPropagation()}>
                     {a.name}
                   </Link>
                   <span className="tdim">{a.subdomain ? `${a.subdomain}.${ROOT_DOMAIN}` : "No address"}</span>
-                  <span className="tdim">
-                    {planById(a.plan)?.name ?? a.plan} plan
-                    {a.plan === "free" &&
-                      (isReadOnly(a.plan, a.trial_ends_at)
-                        ? ", trial ended (read-only)"
-                        : `, trial ends ${new Date(a.trial_ends_at!).toLocaleDateString()}`)}
-                  </span>
+                </td>
+                <td>
+                  {planById(a.plan)?.name ?? a.plan}
+                  {a.pays_by_card && <span className="tdim">By card</span>}
+                  {a.plan === "free" && (
+                    <span className="tdim">
+                      {isReadOnly(a.plan, a.trial_ends_at)
+                        ? "Trial ended, read-only"
+                        : `Trial ends ${new Date(a.trial_ends_at!).toLocaleDateString()}`}
+                    </span>
+                  )}
                 </td>
                 <td>
                   {a.owner ? (
@@ -96,7 +105,14 @@ export default function AdminAgenciesPage() {
                 <td className="tdim">{new Date(a.created_at).toLocaleDateString()}</td>
                 {canDelete && (
                   <td>
-                    <button type="button" className="btn sm danger" onClick={() => setDeleting(a)}>
+                    <button
+                      type="button"
+                      className="btn sm danger"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleting(a);
+                      }}
+                    >
                       Delete
                     </button>
                   </td>

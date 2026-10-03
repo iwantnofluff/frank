@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { SETTINGS_SECTIONS, settingsPageFor } from "@/lib/settings-nav";
+import { SETTINGS_SECTIONS, settingsPageFor, type SettingsSection } from "@/lib/settings-nav";
 
 function Chevron({ d }: { d: string }) {
   return (
@@ -17,8 +17,18 @@ function Chevron({ d }: { d: string }) {
 // like monday's, one at a time; the one you're in opens by itself. The whole panel
 // collapses to a strip with the same toggle as the review page's
 // (ReviewNav's .reviewnav-toggle).
-export function SettingsNav({ pathname }: { pathname: string }) {
-  const current = settingsPageFor(pathname);
+// The admin area (admin.beingfrank.app) uses the same menu with its own
+// sections (lib/admin/admin-nav.ts).
+export function SettingsNav({
+  pathname,
+  sections = SETTINGS_SECTIONS,
+  label = "Settings sections",
+}: {
+  pathname: string;
+  sections?: SettingsSection[];
+  label?: string;
+}) {
+  const current = settingsPageFor(pathname, sections);
   const [collapsed, setCollapsed] = useState(false);
   const [open, setOpen] = useState<string | null>(current?.section.key ?? null);
   // Arriving in another section (a link, the back button) opens it instead.
@@ -29,7 +39,7 @@ export function SettingsNav({ pathname }: { pathname: string }) {
   }
 
   return (
-    <nav className={`setnav${collapsed ? " collapsed" : ""}`} aria-label="Settings sections">
+    <nav className={`setnav${collapsed ? " collapsed" : ""}`} aria-label={label}>
       <button
         type="button"
         className="reviewnav-toggle"
@@ -41,7 +51,7 @@ export function SettingsNav({ pathname }: { pathname: string }) {
       </button>
       {!collapsed && (
         <div className="setnav-list">
-          {SETTINGS_SECTIONS.map((section) => {
+          {sections.map((section) => {
             const isOpen = open === section.key;
             return (
               <div key={section.key} className="setnav-sec">
