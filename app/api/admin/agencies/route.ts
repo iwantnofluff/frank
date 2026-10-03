@@ -18,7 +18,7 @@ export async function GET() {
   monthStart.setUTCDate(1);
   monthStart.setUTCHours(0, 0, 0, 0);
 
-  const [agencies, staff, clients, posts, assets, ai, owners] = await Promise.all([
+  const [agencies, staff, clients, posts, assets, ai, owners, requests] = await Promise.all([
     admin
       .from("agencies")
       .select("id, name, subdomain, plan, seat_limit, client_limit, ai_monthly_request_cap, created_at, suspended_at, archived_at")
@@ -31,6 +31,11 @@ export async function GET() {
     // Not embedded: memberships point at users twice (the member, and who
     // invited them), which leaves an embed ambiguous — it came back empty.
     admin.from("memberships").select("agency_id, user_id").eq("role", "primary_owner").is("removed_at", null),
+    admin
+      .from("plan_requests")
+      .select("id, agency_id, requested_plan, billing_interval, created_at")
+      .is("handled_at", null)
+      .order("created_at", { ascending: false }),
   ]);
   const ownerIds = [...new Set((owners.data ?? []).map((o) => o.user_id as string))];
   const { data: ownerUsers } = ownerIds.length
@@ -51,6 +56,10 @@ export async function GET() {
         posts: count(posts.data, a.id),
         storage_bytes: (assets.data ?? []).filter((x) => x.agency_id === a.id).reduce((n, x) => n + (x.bytes ?? 0), 0),
         ai_this_month: count(ai.data, a.id),
+        pending_request: (() => {
+          const r = (requests.data ?? []).find((x) => x.agency_id === a.id);
+          return r ? { id: r.id, plan: r.requested_plan, interval: r.billing_interval, created_at: r.created_at } : null;
+        })(),
       };
     });
   return NextResponse.json({ agencies: rows });

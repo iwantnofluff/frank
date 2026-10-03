@@ -10,10 +10,12 @@ export interface AdminAgency {
   name: string;
   subdomain: string | null;
   plan: string;
-  seat_limit: number;
-  client_limit: number;
+  seat_limit: number | null; // null: unlimited
+  client_limit: number | null;
   ai_monthly_request_cap: number;
   created_at: string;
+  // A plan change the agency has asked for, not yet applied (phase38).
+  pending_request: { id: string; plan: string; interval: string; created_at: string } | null;
   suspended_at: string | null;
   owner: { name: string; email: string } | null;
   members: number;
@@ -54,13 +56,25 @@ export function useUpdateAgency(id: string) {
     mutationFn: (
       input: Partial<{
         plan: string;
-        seat_limit: number;
-        client_limit: number;
+        seat_limit: number | null;
+        client_limit: number | null;
         ai_monthly_request_cap: number;
         suspended: boolean;
         subdomain: string;
       }>,
     ) => call<{ ok: true }>(`/api/admin/agencies/${id}`, { method: "PATCH", body: JSON.stringify(input) }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["admin-agencies"] });
+    },
+  });
+}
+
+// Applies or declines an agency's plan request (phase38).
+export function useHandlePlanRequest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, outcome }: { id: string; outcome: "applied" | "declined" }) =>
+      call<{ ok: true }>(`/api/admin/plan-requests/${id}`, { method: "PATCH", body: JSON.stringify({ outcome }) }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["admin-agencies"] });
     },

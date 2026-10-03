@@ -1731,3 +1731,55 @@ Direct instruction: Settings laid out like monday's admin area, with the review 
 Direct instruction: Customisation's Colour Presets and Interface Colours merged into one page, **Brand Colours** (`/settings/customisation/brand-colours`): the presets on top, then Interface Colours and Status Colours, with one Save that keeps the theme and the saved presets together; picking a preset fills in every colour below it. Customisation is now Logo and Brand Colours. The two old addresses redirect to it.
 
 **Verified**: typecheck and lint clean. The Branding tests now run on the one page (applying and saving Forest, a hex edit saved, a preset made from it, Reset and delete, the read-only view); `settings.spec.ts` checks the old Colour Presets address lands on Brand Colours with both panels. Branding and settings specs 9/10 — the miss `settings-team.png`, its documented flake (the masked email column's width varies with the random test email). Looked at the page after picking Forest.
+
+## Your Plan: the spec's tiers, with requests until payments connect
+
+Direct instruction: a Your Plan section above Billing, showing the tiers with the current one active and letting the agency choose another. The tiers are the spec's (v11 §5) — Free ($0, 30-day trial), Starter ($49), Growth ($149), Agency ($349), Enterprise (custom); annual 20% off — in `lib/plans.ts`, with their client and team member limits. Decided directly: payments will go through Paddle (a merchant of record, for selling worldwide from India); until that's connected, choosing a plan sends Frank a request (phase38 `plan_requests`, made by the agency's Admins and Owners, enforced in the database) and emails the platform admins, who Apply or Decline it in the admin area — applying moves the agency to that plan and its limits.
+
+**Settings → Your Plan → Plans**: the current plan with active clients and team members against its limits; Monthly / Annual; a card per tier (clients, team members, storage, highlights) with the current one outlined and Active, Choose (or Talk to us, for Enterprise) asking for confirmation in the agency's words, and a pending request shown, its card marked Requested — one at a time. Users see the plans read-only.
+
+**Unlimited** (phase38): Agency and Enterprise have unlimited team members, Enterprise unlimited clients, so `seat_limit` and `client_limit` may be null and the limit checks skip it; shown as "Unlimited", an empty box in the admin area. Picking a plan there fills in its limits. No Fluff was corrected to Agency's: 25 clients, unlimited team members. New Client says "N active clients" when there's no limit.
+
+**Not done yet**: Paddle — checkout, the payment webhook that will be the only thing to change a plan, the billing portal behind Invoices and Payment Methods, downgrades at the end of the cycle and blocked over the new limits; sign-up choosing a plan; storage limits and the free trial's 30 days enforced; read-only after a trial or cancellation.
+
+**Verified**: typecheck, lint and unit tests clean; phase38 checked through the service role (the table, No Fluff's limits). New `plans.spec.ts` (3): an Admin sees Starter active, the annual price, asks for Growth billed yearly in the agency's words, sees it pending and can't make a second, the request is stored; the platform admin sees "Wants Growth", applies it, and the agency is on Growth with 10 clients and 15 members, shown Active; a User can't choose, and the database refuses their insert; the admin area declines a request (plan unchanged), and picking Agency fills in unlimited members and 25 clients, saved as null and shown "1 / Unlimited". Looked at the page (all five plans in one row). Full suite: 113 passed, none failed (22.6 minutes, slowed by the day's Supabase latency).
+
+## Paying through Paddle
+
+Direct instruction: connect Your Plan to Paddle, so an agency can pay for a plan, or change it, by card. Decided directly:
+- An upgrade charges the prorated difference straight away.
+- A downgrade, or moving to Free (cancelling), waits for the end of the period paid for. It's refused while the agency has more active clients or team members than the smaller plan allows, and the message says what to archive or remove first.
+- A cancelled plan drops to Free.
+- Only agencies on Free, or already paying through Paddle, pay by card. A paid plan Frank set by hand (No Fluff's Agency) and Enterprise still go through the ask-Frank request (phase38).
+- The live site offers checkout while Paddle is in Sandbox (the test card, no money moves), marked "Test mode" on the Plans page, because Paddle's notifications can only reach the live site.
+
+phase39 adds `agency_billing` (Paddle's side of an agency's plan, readable by its Admins and Owners, written only by the service role) and `paddle_events` (each notification applied once). `agencies.plan` and its limits stay what the agency can use.
+- **Webhook:** `/api/billing/paddle-webhook` is the only thing that moves a plan after a payment. It's public, refuses anything without a valid Paddle signature less than five minutes old, ignores a notification older than the last one applied, and emails the platform admins when a plan changes (also during test runs, like plan requests do).
+- **Checkout:** Frank makes the Paddle transaction on the server, naming the agency, so the browser can't say whose plan it pays for. Paddle.js loads from Paddle's CDN on first use and is not a dependency.
+- **Downgrades:** Paddle has no "change at renewal" mode, so a downgrade switches the subscription's price with no charge or credit, and Frank keeps the agency on the plan it paid for until the period ends (`nextBillingState`, `lib/billing/rules.ts`).
+- **Billing pages:** Overview, Invoices and Payment Methods are built. They open Paddle's customer portal for invoices and the card.
+
+Not done, deliberately:
+- **Yearly to monthly:** Paddle only changes billing frequency straight away, which would cut short a year already paid for, so that one change goes through the ask-Frank request.
+- **Invoice Settings** stays Coming soon. Paddle collects billing details at checkout and in its portal's Account page.
+- **Live prices:** `lib/billing/prices.ts` holds only the sandbox prices. Live gets its own catalog, price IDs, API key, client-side token, webhook secret and domain approval when the account switches. Before then, the sandbox rows in `agency_billing` need clearing.
+- **Two subscriptions:** a second subscription for an agency already paying isn't taken over. Frank keeps the first and emails the platform admins.
+- **Plan changes from the admin area** for an agency paying through Paddle are overwritten by Paddle's next notification.
+- **Finance role:** billing is Admins' and Owners' (`is_agency_admin`), as the spec says. The Finance role doesn't get it.
+- **Phone width:** at phone width the Settings menu covers the whole page. That predates this work and affects every Settings page.
+
+**Verified**: typecheck and lint clean. Unit tests (106) include new ones for the change rules, the plan state Paddle's notifications lead to, every sandbox price, and the signature check (forged, altered, wrong secret, expired). phase39 checked through the service role (both tables exist; signed out sees no `paddle_events`). New `billing.spec.ts` (4):
+- Signed notifications move a Free agency to Growth with its limits. A forged one is refused. A retried one is applied once. A cheaper price during the period waits, and a late older notification can't undo it. Renewal applies Starter with its limits. A scheduled cancel waits, then drops to Free.
+- A Free agency sees Choose Growth and the test-mode card.
+- A paying agency sees its renewal, Switch to Yearly and the billing pages, and a waiting downgrade shows "Keep Growth" and holds the other plans.
+- A User sees no billing, and all four billing routes refuse them.
+
+Checked by hand against the real Paddle sandbox in a throwaway spec (deleted):
+- Paid for Growth with the test card through Paddle's checkout over the Plans page (priced for India, inc. GST). The resulting subscription, handed to the local webhook signed as Paddle signs it, moved the agency to Growth with 10 clients and 15 members.
+- Upgraded to Agency: "costs $200.00 today… then $349.00 a month, from Nov 3", paid.
+- Downgraded to Starter: "you'll keep Agency until Nov 3… Nothing is charged today". The agency stayed on Agency, then Keep Agency undid it.
+- Moved to Free and undid it the same way. Paddle's own record agreed afterwards (Agency price, nothing scheduled).
+- Paddle's portal opened in a new tab, showing both payments. The sandbox subscription was cancelled after.
+- Looked at the Plans page, the change dialogs and Billing Overview.
+
+Full suite: 135 passed, 9 failed (11.2 minutes). Seven of the failures were unrelated to this work (three Supabase "fetch failed" connection drops, four timeouts), and all seven passed when rerun on their own. The other two were the Settings screenshots `settings-knowledge.png` and `settings-team.png`. Their diffs showed only the Your Plan section added to the Settings menu (from the Your Plan work, above), plus the team roster's known masked-email width shift, so both baselines were updated. `settings-team.png` then failed once more on that email width alone, its documented flake. `npm run build` clean.

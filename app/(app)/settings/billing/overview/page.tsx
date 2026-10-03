@@ -1,11 +1,13 @@
-import { ComingSoon } from "@/components/settings/ComingSoon";
+import { BillingPage } from "@/components/settings/BillingPage";
 
 export default function BillingOverviewPage() {
   return (
-    <ComingSoon
+    <BillingPage
+      overview
       title="Billing Overview"
-      description="Your plan, what it includes, and what's next to pay."
-      what={["Your plan and its limits.", "Your next payment and when it's due.", "Changing or cancelling your plan."]}
+      description="Your plan, and what's next to pay."
+      portalLabel="Billing details"
+      portalNote="Invoices, the card on file, and cancelling, at Paddle"
     />
   );
 }

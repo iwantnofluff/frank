@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useAdminAgencies } from "@/hooks/use-admin-agencies";
 import { errorMessage } from "@/lib/errors";
+import { limitLabel, planById } from "@/lib/plans";
 
 const mb = (b: number) => (b < 1048576 ? `${Math.round(b / 1024)}KB` : `${(b / 1048576).toFixed(1)}MB`);
 
@@ -45,6 +46,7 @@ export default function AdminAgenciesPage() {
                     {a.name}
                   </Link>
                   <span className="tdim">{a.subdomain ? `${a.subdomain}.beingfrank.app` : "No address"}</span>
+                  <span className="tdim">{planById(a.plan)?.name ?? a.plan} plan</span>
                 </td>
                 <td>
                   {a.owner ? (
@@ -57,10 +59,10 @@ export default function AdminAgenciesPage() {
                   )}
                 </td>
                 <td>
-                  {a.members} / {a.seat_limit}
+                  {a.members} / {limitLabel(a.seat_limit)}
                 </td>
                 <td>
-                  {a.clients} / {a.client_limit}
+                  {a.clients} / {limitLabel(a.client_limit)}
                 </td>
                 <td>{a.posts}</td>
                 <td>{mb(a.storage_bytes)}</td>
@@ -69,6 +71,11 @@ export default function AdminAgenciesPage() {
                 </td>
                 <td>
                   <span className={`tag ${a.suspended_at ? "rose" : "green"}`}>{a.suspended_at ? "Paused" : "Active"}</span>
+                  {a.pending_request && (
+                    <span className="tdim" style={{ marginTop: 4 }}>
+                      Wants {planById(a.pending_request.plan)?.name ?? a.pending_request.plan}
+                    </span>
+                  )}
                 </td>
                 <td className="tdim">{new Date(a.created_at).toLocaleDateString()}</td>
               </tr>

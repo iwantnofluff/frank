@@ -32,6 +32,8 @@ const PUBLIC_PATH_PREFIXES = [
   "/api/shared-review",
   "/api/invite",
   "/api/ai/classify-comment",
+  // Paddle's notifications (phase39): no session, checked by signature.
+  "/api/billing/paddle-webhook",
 ];
 
 function isPublicPath(pathname: string) {

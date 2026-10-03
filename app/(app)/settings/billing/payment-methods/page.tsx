@@ -1,11 +1,12 @@
-import { ComingSoon } from "@/components/settings/ComingSoon";
+import { BillingPage } from "@/components/settings/BillingPage";
 
 export default function PaymentMethodsPage() {
   return (
-    <ComingSoon
+    <BillingPage
       title="Payment Methods"
       description="How your agency pays for Frank."
-      what={["The card on file.", "Changing the card."]}
+      portalLabel="Card on file"
+      portalNote="Kept by Paddle, who takes Frank's payments. Change it there."
     />
   );
 }

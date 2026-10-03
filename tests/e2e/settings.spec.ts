@@ -76,9 +76,9 @@ test("settings — the left menu: sections open one at a time, pages have their 
   // Opening another section closes the first.
   await nav.getByRole("button", { name: "Billing" }).click();
   await expect(nav.getByRole("link", { name: "Account Name" })).toHaveCount(0);
-  await expect(nav.getByRole("link", { name: /^Invoices/ })).toContainText("Soon");
-  await nav.getByRole("link", { name: /^Invoices/ }).click();
-  await page.waitForURL(/\/settings\/billing\/invoices$/);
+  await expect(nav.getByRole("link", { name: /^Invoice Settings/ })).toContainText("Soon");
+  await nav.getByRole("link", { name: /^Invoice Settings/ }).click();
+  await page.waitForURL(/\/settings\/billing\/invoice-settings$/);
   await expect(page.getByRole("heading", { name: "Coming soon" })).toHaveCount(0);
   await expect(page.locator(".panel-h", { hasText: "Coming soon" })).toBeVisible();
 

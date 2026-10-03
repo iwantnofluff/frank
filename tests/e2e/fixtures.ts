@@ -390,6 +390,10 @@ export const test = base.extend<{ frank: Frank }>({
       // names the table instead of surfacing as a memberships FK error.
       ["invites", () => admin.from("invites").delete().eq("agency_id", agency.id)],
       ["staff_client_access", () => admin.from("staff_client_access").delete().eq("agency_id", agency.id)],
+      // Points at users (requested_by); also goes with its agency (cascade).
+      ["plan_requests", () => admin.from("plan_requests").delete().eq("agency_id", agency.id)],
+      // Paddle's side of a plan (phase39); also goes with its agency (cascade).
+      ["agency_billing", () => admin.from("agency_billing").delete().eq("agency_id", agency.id)],
       ["memberships", () => admin.from("memberships").delete().eq("agency_id", agency.id)],
       // References both agencies and users (created_by) — must run before
       // both deletes below, the same reason format_directions/

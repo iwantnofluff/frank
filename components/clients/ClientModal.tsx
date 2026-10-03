@@ -51,7 +51,7 @@ type ClientModalProps =
 
 export function ClientModal(props: ClientModalProps) {
   // The agency's plan limit (phase37), which the database enforces.
-  const clientLimit = useMyAgency().data?.clientLimit ?? 10;
+  const clientLimit = useMyAgency().data?.clientLimit ?? null;
   const isCreate = props.mode === "create";
   const createClient = useCreateClient();
   const updateClient = useUpdateClient();
@@ -170,7 +170,9 @@ export function ClientModal(props: ClientModalProps) {
         <>
           {isCreate ? (
             <span className="grow">
-              {props.activeClientCount} of {clientLimit} clients used
+              {clientLimit === null
+                ? `${props.activeClientCount} active client${props.activeClientCount === 1 ? "" : "s"}`
+                : `${props.activeClientCount} of ${clientLimit} clients used`}
             </span>
           ) : (
             <span className="grow" />

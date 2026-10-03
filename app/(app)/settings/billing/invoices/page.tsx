@@ -1,11 +1,12 @@
-import { ComingSoon } from "@/components/settings/ComingSoon";
+import { BillingPage } from "@/components/settings/BillingPage";
 
 export default function InvoicesPage() {
   return (
-    <ComingSoon
+    <BillingPage
       title="Invoices"
       description="Every invoice for your agency."
-      what={["Each invoice's date, amount and what it was for.", "Whether it's paid.", "A download of each one."]}
+      portalLabel="Invoices"
+      portalNote="Kept by Paddle, who takes Frank's payments. Download any of them there."
     />
   );
 }

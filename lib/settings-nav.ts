@@ -51,13 +51,18 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     pages: [{ href: "/settings/connections/apis", label: "APIs", soon: true }],
   },
   {
+    key: "plan",
+    label: "Your Plan",
+    pages: [{ href: "/settings/plan/plans", label: "Plans" }],
+  },
+  {
     key: "billing",
     label: "Billing",
     pages: [
-      { href: "/settings/billing/overview", label: "Overview", soon: true },
+      { href: "/settings/billing/overview", label: "Overview" },
       { href: "/settings/billing/invoice-settings", label: "Invoice Settings", soon: true },
-      { href: "/settings/billing/invoices", label: "Invoices", soon: true },
-      { href: "/settings/billing/payment-methods", label: "Payment Methods", soon: true },
+      { href: "/settings/billing/invoices", label: "Invoices" },
+      { href: "/settings/billing/payment-methods", label: "Payment Methods" },
     ],
   },
   {

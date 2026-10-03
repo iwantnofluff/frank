@@ -21,6 +21,7 @@ export function ConfirmDialog({
   errorFallback = "Something went wrong",
   onConfirm,
   onClose,
+  tone = "danger",
 }: {
   title: string;
   message: string;
@@ -33,6 +34,8 @@ export function ConfirmDialog({
   errorFallback?: string;
   onConfirm?: () => void;
   onClose: () => void;
+  // "primary" for a confirmation that isn't destructive (choosing a plan).
+  tone?: "danger" | "primary";
 }) {
   const firstName = useMyFirstName();
   return (
@@ -51,7 +54,7 @@ export function ConfirmDialog({
           {onConfirm ? "Cancel" : "Close"}
         </button>
         {onConfirm && (
-          <button type="button" className="btn danger" disabled={isPending} onClick={onConfirm}>
+          <button type="button" className={`btn ${tone}`} disabled={isPending} onClick={onConfirm}>
             {isPending ? (pendingLabel ?? confirmLabel) : confirmLabel}
           </button>
         )}

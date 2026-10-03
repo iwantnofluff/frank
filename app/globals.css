@@ -5807,3 +5807,77 @@ button.avatar {
   line-height: 1.6;
   color: var(--muted);
 }
+/* Settings → Your Plan → Plans. */
+.planbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 18px 0 12px;
+}
+.planbar .sub {
+  margin: 0;
+}
+.plansave {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--green);
+}
+/* Billing Overview's plan, with its Change button beside it (phase39). */
+.planval {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.plangrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.plancard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.plancard.current {
+  border-color: var(--action);
+  box-shadow: 0 0 0 2px var(--action-soft);
+}
+.plancard-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 15px;
+}
+.planprice {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.planprice span {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+  letter-spacing: 0;
+}
+.planlist {
+  flex: 1;
+  margin: 0;
+  padding-left: 16px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.plancard .btn {
+  width: 100%;
+  justify-content: center;
+  white-space: nowrap;
+  padding-left: 6px;
+  padding-right: 6px;
+}
