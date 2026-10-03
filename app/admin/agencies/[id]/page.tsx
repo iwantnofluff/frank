@@ -26,6 +26,9 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
   const [clients, setClients] = useState(String(agency.client_limit));
   const [ai, setAi] = useState(String(agency.ai_monthly_request_cap));
   const [saved, setSaved] = useState(false);
+  const [address, setAddress] = useState(agency.subdomain ?? "");
+  const [addressSaved, setAddressSaved] = useState(false);
+  const changeAddress = useUpdateAgency(agency.id);
   const [confirmPause, setConfirmPause] = useState(false);
 
   return (
@@ -38,6 +41,44 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
         {agency.subdomain ? `${agency.subdomain}.beingfrank.app` : "No address"} ·{" "}
         {agency.suspended_at ? "Paused" : "Active"} · joined {new Date(agency.created_at).toLocaleDateString()}
       </p>
+
+      <div className="msection-h">Address</div>
+      <p className="msection-d">
+        Where the agency signs in. Invites and review links already sent use the old address, which stops working once
+        it changes.
+      </p>
+      <div className="field">
+        <label htmlFor="agAddress">Address</label>
+        <div className="subfield">
+          <input
+            id="agAddress"
+            className="bin one"
+            value={address}
+            onChange={(e) => {
+              setAddress(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""));
+              setAddressSaved(false);
+            }}
+          />
+          <span>.beingfrank.app</span>
+        </div>
+      </div>
+      {changeAddress.error && <p className="autherr">{errorMessage(changeAddress.error, "Couldn't change the address")}</p>}
+      <div className="confirm-acts" style={{ justifyContent: "flex-start", alignItems: "center", marginTop: 0 }}>
+        <button
+          type="button"
+          className="btn"
+          disabled={changeAddress.isPending || !address || address === agency.subdomain}
+          onClick={() =>
+            changeAddress
+              .mutateAsync({ subdomain: address })
+              .then(() => setAddressSaved(true))
+              .catch(() => {})
+          }
+        >
+          {changeAddress.isPending ? "Changing…" : "Change Address"}
+        </button>
+        {addressSaved && <span className="bsaved">Changed.</span>}
+      </div>
 
       <div className="msection-h">Limits</div>
       <p className="msection-d">

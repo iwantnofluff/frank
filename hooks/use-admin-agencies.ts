@@ -52,7 +52,14 @@ export function useUpdateAgency(id: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (
-      input: Partial<{ plan: string; seat_limit: number; client_limit: number; ai_monthly_request_cap: number; suspended: boolean }>,
+      input: Partial<{
+        plan: string;
+        seat_limit: number;
+        client_limit: number;
+        ai_monthly_request_cap: number;
+        suspended: boolean;
+        subdomain: string;
+      }>,
     ) => call<{ ok: true }>(`/api/admin/agencies/${id}`, { method: "PATCH", body: JSON.stringify(input) }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["admin-agencies"] });

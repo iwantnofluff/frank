@@ -13,11 +13,11 @@ export function useMyAgency() {
 
   return useQuery({
     queryKey: ["my-agency", user?.id],
-    queryFn: async (): Promise<{ agencyId: string; name: string; clientLimit: number } | null> => {
+    queryFn: async (): Promise<{ agencyId: string; name: string; clientLimit: number; subdomain: string | null } | null> => {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("memberships")
-        .select("agency_id, client_id, agencies(name, client_limit)")
+        .select("agency_id, client_id, agencies(name, client_limit, subdomain)")
         .eq("user_id", user!.id)
         .is("removed_at", null)
         .not("accepted_at", "is", null)
@@ -28,13 +28,15 @@ export function useMyAgency() {
 
       const row = data[0] as unknown as {
         agency_id: string;
-        agencies: { name: string; client_limit: number } | null;
+        agencies: { name: string; client_limit: number; subdomain: string | null } | null;
       };
       return {
         agencyId: row.agency_id,
         name: row.agencies?.name ?? "Agency",
         // The agency's plan limit (phase37), enforced by the database.
         clientLimit: row.agencies?.client_limit ?? 10,
+        // Its address, agencyname.beingfrank.app (phase36).
+        subdomain: row.agencies?.subdomain ?? null,
       };
     },
     enabled: !!user?.id,

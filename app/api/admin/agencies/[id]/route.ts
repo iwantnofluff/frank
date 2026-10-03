@@ -17,6 +17,8 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
     client_limit?: number;
     ai_monthly_request_cap?: number;
     suspended?: boolean;
+    // Its address (decided directly: changed by Frank, from here).
+    subdomain?: string;
   };
   try {
     body = await request.json();
@@ -36,11 +38,19 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
       update[key] = n;
     }
   }
+  if (body.subdomain !== undefined) update.subdomain = body.subdomain.trim().toLowerCase();
   if (body.suspended !== undefined) update.suspended_at = body.suspended ? new Date().toISOString() : null;
   if (Object.keys(update).length === 0) return NextResponse.json({ error: "Nothing to change" }, { status: 400 });
 
   const { data, error } = await admin.from("agencies").update(update).eq("id", id).select("id").maybeSingle();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    const friendly = error.message.includes("agencies_subdomain_format")
+      ? "That address isn't allowed: use 2–32 lower-case letters, numbers or hyphens, and not a reserved name like www or admin."
+      : error.message.includes("duplicate") || error.message.includes("unique")
+        ? "Another agency already has that address."
+        : error.message;
+    return NextResponse.json({ error: friendly }, { status: error.message.includes("agencies_") || error.message.includes("unique") ? 400 : 500 });
+  }
   if (!data) return NextResponse.json({ error: "Agency not found" }, { status: 404 });
   return NextResponse.json({ ok: true });
 }

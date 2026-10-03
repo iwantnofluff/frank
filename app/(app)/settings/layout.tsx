@@ -1,18 +1,13 @@
 "use client";
 
 import { useEffect } from "react";
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useIsStaff } from "@/hooks/use-is-staff";
+import { SettingsNav } from "@/components/settings/SettingsNav";
 
-const TABS = [
-  { href: "/settings/brand", label: "Branding" },
-  { href: "/settings/team", label: "Team" },
-  { href: "/settings/knowledge", label: "Knowledge" },
-];
-
-// Each tab's page owns its own .pad + heading, same as every other page in
-// the app — this layout only injects the tab strip above it.
+// Settings is a left menu of sections and pages (lib/settings-nav.ts,
+// SettingsNav) beside the page you're on — which owns its own .pad and
+// heading, same as every other page in the app.
 //
 // Also the one guard point for every /settings/* route (this layout wraps
 // all of them, including the /settings index redirect): NavRail hides the
@@ -40,20 +35,10 @@ export default function SettingsLayout({
   if (isPending || !isStaff) return null;
 
   return (
-    <>
-      <div className="settingsnav">
-        {TABS.map((tab) => (
-          <Link
-            key={tab.href}
-            href={tab.href}
-            className="settingsnav-item"
-            aria-current={pathname.startsWith(tab.href)}
-          >
-            {tab.label}
-          </Link>
-        ))}
-      </div>
-      {children}
-    </>
+    <div className="setwrap">
+      <SettingsNav pathname={pathname} />
+      <div className="review-sep" aria-hidden="true" />
+      <div className="setmain">{children}</div>
+    </div>
   );
 }

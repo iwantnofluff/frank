@@ -249,7 +249,7 @@ test("inviting someone who was deactivated points to Reactivate instead", async 
   );
 });
 
-test("an Owner edits a User's clients and role; the Clients column and By Client view follow", async ({
+test("an Owner edits a User's clients and role; the Clients column and Clients page follow", async ({
   page,
   frank,
 }) => {
@@ -286,11 +286,11 @@ test("an Owner edits a User's clients and role; the Clients column and By Client
     .eq("membership_id", member.membershipId);
   expect(grants).toEqual([{ client_id: second!.id }]);
 
-  await page.getByRole("button", { name: "By Client" }).click();
+  await page.getByRole("navigation", { name: "Settings sections" }).getByRole("link", { name: "Clients" }).click();
   await expect(page.locator(".crow", { hasText: "Second Client" })).toContainText("Edit Me");
   await expect(page.locator(".crow", { hasText: "E2E Test Client" })).toContainText("No Users");
   await expect(page.locator(".vdots")).toHaveCount(0);
-  await page.getByRole("button", { name: "By Person" }).click();
+  await page.getByRole("navigation", { name: "Settings sections" }).getByRole("link", { name: "Users" }).click();
 
   await openMenu(page, "Edit Me");
   await page.getByRole("button", { name: "Edit", exact: true }).click();
@@ -315,6 +315,6 @@ test("an Admin sees who has which clients, but can't change it", async ({ page, 
   await expect(page.locator(".crow", { hasText: member.email })).toContainText("E2E Test Client");
   await expect(page.getByRole("button", { name: "Invite Member" })).toHaveCount(0);
   await expect(page.locator(".vdots")).toHaveCount(0);
-  await page.getByRole("button", { name: "By Client" }).click();
+  await page.getByRole("navigation", { name: "Settings sections" }).getByRole("link", { name: "Clients" }).click();
   await expect(page.locator(".crow", { hasText: "E2E Test Client" })).toContainText("Read Only");
 });
