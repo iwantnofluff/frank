@@ -58,7 +58,11 @@ export async function updateSession(request: NextRequest) {
   // their own address to sign in (decided directly, phase42), whatever the
   // path; plus the routes that page calls. Nothing there needs a session.
   if (tenant.kind === "root") {
-    if (path.startsWith("/api/signup") || path === "/api/find-workspaces") return NextResponse.next();
+    // Paddle's notifications too: staging.beingfrank.app has no agency of its
+    // own to send them to.
+    if (path.startsWith("/api/signup") || path === "/api/find-workspaces" || path === "/api/billing/paddle-webhook") {
+      return NextResponse.next();
+    }
     return NextResponse.rewrite(new URL("/welcome", request.url));
   }
   // admin.beingfrank.app is the platform admin area (phase37) and nothing

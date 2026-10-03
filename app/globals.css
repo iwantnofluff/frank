@@ -5893,7 +5893,8 @@ button.avatar {
   display: flex;
   align-items: center;
   gap: 14px;
-  margin: 18px 0 12px;
+  /* 20px above the plan cards (direct instruction). */
+  margin: 18px 0 20px;
 }
 .planbar .sub {
   margin: 0;
@@ -5911,7 +5912,9 @@ button.avatar {
 }
 .plangrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  /* auto-fit, not auto-fill: the five plans share the whole width rather
+     than leaving room for columns that don't exist (direct instruction). */
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
   gap: 12px;
   margin-bottom: 24px;
 }

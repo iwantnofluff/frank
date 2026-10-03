@@ -1936,3 +1936,19 @@ The staging admin account is `admin@nofluff.in`. Live's stays `raj+admin@nofluff
 **Verified**: typecheck and lint clean.
 - **The function, against staging's database:** a throwaway agency with an owner, a client and an uploaded file was deleted with nothing left (agency, file and user row gone). The same email could be used again at once, and the platform admin was untouched.
 - **Locally,** where the setting is off: a platform admin sees no Delete button, and the route answers 403 with the agency untouched.
+
+## Paddle on staging, and the Plans page's layout
+
+Found testing on staging: a payment went through, but the Plans page sat on "Setting up Starter" for good. Paddle's notification went to the only destination it had, the live site, which doesn't know staging's agencies and so ignored it.
+- **The fix:** staging gets its own Paddle notification destination, with its own secret (`PADDLE_WEBHOOK_SECRET` for the `staging` branch in Vercel).
+- **Its address:** `staging.beingfrank.app/api/billing/paddle-webhook`, so the bare domain now lets Paddle's notifications through (it only passed sign-up's routes before).
+- **Getting past Vercel's login:** a Vercel "Protection Bypass for Automation" key, in the address Paddle calls. Staging stays private otherwise. The key is `VERCEL_BYPASS_SECRET` in `.env.local`, which also lets automated checks reach staging.
+- **Both destinations get every sandbox event.** Each site ignores agencies it doesn't have.
+- **If the notification never comes:** after a minute the Plans page says the payment was received but the plan isn't set up yet, to refresh in a few minutes or contact Frank, and that nothing will be charged twice.
+
+Direct instruction: the five plan cards take the full width (`auto-fit`, not `auto-fill`, which left room for columns that don't exist), with 20px above them.
+
+**Verified**:
+- The bypass key: without it staging answers 302 to Vercel's login; with it, the request reaches the app, in a header or in the address.
+- Looked at the Plans page at 1600px: five cards across the full width.
+- `billing.spec.ts` and `tenancy.spec.ts`: 10/10.

@@ -50,8 +50,18 @@ export default function PlansPage() {
   const { data: stored } = useStorageUsed(agencyId);
   const { data: pending } = usePendingPlanRequest(agencyId);
   const request = useRequestPlan(agencyId);
-  // Waiting for Paddle's notification after paying.
+  // Waiting for Paddle's notification after paying; `slow` once it's taken
+  // over a minute, so the page says so rather than waiting forever.
   const [awaiting, setAwaiting] = useState<string | null>(null);
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    if (!awaiting) return;
+    const t = setTimeout(() => setSlow(true), 60_000);
+    return () => {
+      clearTimeout(t);
+      setSlow(false);
+    };
+  }, [awaiting]);
   const { data: billing } = useBilling(agencyId, !!awaiting);
   const checkout = useStartCheckout(agencyId);
   const preview = usePreviewChange(agencyId);
@@ -249,7 +259,11 @@ export default function PlansPage() {
             <circle cx="12" cy="12" r="9" />
             <path d="M8 12l3 3 5-6" />
           </svg>
-          <div>Payment received. Setting up {awaiting} — this usually takes a few seconds.</div>
+          <div>
+            {slow
+              ? `Payment received, but ${awaiting} isn't set up yet. Refresh this page in a few minutes; if it still hasn't changed, contact Frank. You won't be charged twice.`
+              : `Payment received. Setting up ${awaiting} — this usually takes a few seconds.`}
+          </div>
         </div>
       )}
 
