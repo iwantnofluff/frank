@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useAdminAgencies } from "@/hooks/use-admin-agencies";
 import { errorMessage } from "@/lib/errors";
 import { formatBytes, isReadOnly, limitLabel, planById } from "@/lib/plans";
+import { ROOT_DOMAIN } from "@/lib/tenant";
 
 
 // Every agency, with its usage against its limits.
@@ -44,7 +45,7 @@ export default function AdminAgenciesPage() {
                   <Link href={`/admin/agencies/${a.id}`} className="admintbl-name">
                     {a.name}
                   </Link>
-                  <span className="tdim">{a.subdomain ? `${a.subdomain}.beingfrank.app` : "No address"}</span>
+                  <span className="tdim">{a.subdomain ? `${a.subdomain}.${ROOT_DOMAIN}` : "No address"}</span>
                   <span className="tdim">
                     {planById(a.plan)?.name ?? a.plan} plan
                     {a.plan === "free" &&

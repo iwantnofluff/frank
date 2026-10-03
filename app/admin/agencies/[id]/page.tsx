@@ -11,6 +11,7 @@ import {
 import { AI_REQUESTS_PER_MONTH, formatBytes, limitLabel, planById } from "@/lib/plans";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { errorMessage } from "@/lib/errors";
+import { ROOT_DOMAIN } from "@/lib/tenant";
 
 const PLANS = ["free", "starter", "growth", "agency", "enterprise"];
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
@@ -50,7 +51,7 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
       </Link>
       <h1 className="h1">{agency.name}</h1>
       <p className="sub">
-        {agency.subdomain ? `${agency.subdomain}.beingfrank.app` : "No address"} ·{" "}
+        {agency.subdomain ? `${agency.subdomain}.${ROOT_DOMAIN}` : "No address"} ·{" "}
         {agency.suspended_at ? "Paused" : "Active"} · joined {new Date(agency.created_at).toLocaleDateString()}
       </p>
       <p className="msection-d">The address is the agency&rsquo;s Owner&rsquo;s to change, in Settings → Account URL.</p>

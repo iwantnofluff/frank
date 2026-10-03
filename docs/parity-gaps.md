@@ -1905,3 +1905,17 @@ Full suite: 144 passed, 5 failed (12.1 minutes), all accounted for:
 - **The branding logo test** passed when rerun on its own.
 - **`settings-team.png`:** its documented flake.
 `npm run build` clean.
+
+## Every agency upgrades by card
+
+Revised, by direct instruction: any agency moving to a paid plan gets Paddle's checkout on the Plans page, including one on a plan Frank set by hand. That replaces "Free ones, plus existing payers" from the Paddle entry above.
+- **Still requests to Frank:** Enterprise ("Talk to us"), switching a yearly plan to monthly, and a hand-set paid plan choosing Free (no subscription to cancel).
+- **Found on the live site:** Raj Test 2, on Free, got the ask-Frank request rather than checkout. The page shows it only when Paddle's browser token isn't in the build, so `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN` was missing from Vercel's Production build. That's fixed in Vercel's settings (variables starting `NEXT_PUBLIC_` are fixed in at build time, so they need a redeploy), not in code.
+
+Also: `staging` is a reserved address (phase43) and the sign-up check refuses it, and the admin area's address labels use the configured root domain. Both are for a hosted staging copy at `staging.beingfrank.app`.
+
+**Verified**: typecheck and lint clean.
+- phase43 on staging: an agency called "staging" is refused.
+- `plans.spec.ts`: the request test now asks for Enterprise. The hand-set-plan note is gone, Free is the one request still blocked by a pending one, and Growth stays open (a checkout). Applying gives Enterprise with unlimited clients and members.
+- `plans.spec.ts` and `billing.spec.ts`: 7/7.
+- By hand: an agency on hand-set Starter clicking Choose Growth gets Paddle's checkout (Frank Growth, $149, test mode).

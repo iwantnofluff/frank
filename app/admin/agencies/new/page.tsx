@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCreateAgency } from "@/hooks/use-admin-agencies";
 import { errorMessage } from "@/lib/errors";
 import { PLANS } from "@/lib/plans";
+import { ROOT_DOMAIN } from "@/lib/tenant";
 
 // A new agency at its own address, with its Primary Owner invited there.
 export default function NewAgencyPage() {
@@ -46,7 +47,7 @@ export default function NewAgencyPage() {
             value={subdomain}
             onChange={(e) => setSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
           />
-          <span>.beingfrank.app</span>
+          <span>.{ROOT_DOMAIN}</span>
         </div>
       </div>
       <div className="field">

@@ -7,6 +7,8 @@ const FORMAT = /^[a-z0-9]([a-z0-9-]{0,30}[a-z0-9])$/;
 const RESERVED = [
   "www", "app", "admin", "api", "mail", "email", "help", "support", "status",
   "blog", "docs", "login", "signup", "billing", "static", "assets", "cdn", "frank",
+  // Frank's hosted staging copy (phase43).
+  "staging",
 ];
 
 export async function addressProblem(admin: SupabaseClient, subdomain: string): Promise<string | null> {

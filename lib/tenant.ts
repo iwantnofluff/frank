@@ -15,7 +15,11 @@ export type Tenant =
   | { kind: "agency"; subdomain: string }
   | { kind: "legacy" };
 
-const ROOT_DOMAINS = [process.env.NEXT_PUBLIC_ROOT_DOMAIN || "beingfrank.app", "frank.localhost"];
+// The domain agencies live under: beingfrank.app live, and
+// staging.beingfrank.app on the hosted staging copy (NEXT_PUBLIC_ROOT_DOMAIN).
+export const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "beingfrank.app";
+
+const ROOT_DOMAINS = [ROOT_DOMAIN, "frank.localhost"];
 
 export function tenantFromHost(host: string | null | undefined): Tenant {
   const hostname = (host ?? "").split(":")[0].toLowerCase();
