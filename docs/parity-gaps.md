@@ -1783,3 +1783,15 @@ Checked by hand against the real Paddle sandbox in a throwaway spec (deleted):
 - Looked at the Plans page, the change dialogs and Billing Overview.
 
 Full suite: 135 passed, 9 failed (11.2 minutes). Seven of the failures were unrelated to this work (three Supabase "fetch failed" connection drops, four timeouts), and all seven passed when rerun on their own. The other two were the Settings screenshots `settings-knowledge.png` and `settings-team.png`. Their diffs showed only the Your Plan section added to the Settings menu (from the Your Plan work, above), plus the team roster's known masked-email width shift, so both baselines were updated. `settings-team.png` then failed once more on that email width alone, its documented flake. `npm run build` clean.
+
+## Staging, and production's assets bucket made private
+
+Direct instruction: replay the whole migration chain onto a new, empty staging project (frank-staging, `jjzzlfmjhkegwdrlxpsc`). All 40 files (phase0 to phase39) ran in order with no errors, including phase0_baseline's first ever replay.
+- **How:** the Supabase CLI's `db push`, from timestamp-named copies in a scratch folder. It only picks up timestamp-named files, and would sort `phase10` before `phase6`. phase26b runs after phase26, since it replaces phase26's `title_case()`.
+- **Keys:** staging's are in `.env.staging` (git-ignored). The CLI is linked to staging (`supabase/.temp`, tracked but left out of commits).
+
+Comparing the two found production's `assets` bucket public, although phase8 creates it private and the app only ever reads it through signed links. Anyone with a file's address could open it signed out (checked: a real image, 200). phase40 makes it private and writes down production's 14 allowed file types, so both databases match.
+
+Still different, and not fixed: staging's sign-in site URL (`http://localhost:3000`) and redirect list (empty). Production's are beingfrank.app, `*.beingfrank.app` and the old vercel.app address.
+
+**Verified**: on staging, `check-seed-sql-completeness.mjs` passes, and all 290 columns and functions match production by name, type and parameters. After phase40 on production, the same file refuses a signed-out fetch (400), a signed link still serves it (200), and the bucket reads private with 14 types.
