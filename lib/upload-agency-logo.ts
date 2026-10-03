@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { assertCanUpload } from "@/lib/upload-guard";
 
 // Same shape as uploadClientLogo, pointing agency_settings.logo_asset_id at
 // the new file instead. Path is {agency_id}/agency-logo/... — the bucket
@@ -13,6 +14,7 @@ export async function setAgencyLogo(agencyId: string, file: File | null) {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) throw new Error("Not signed in");
+    await assertCanUpload(agencyId, file.size);
     const ext = file.type === "image/png" ? "png" : "jpg";
     const path = `${agencyId}/agency-logo/${crypto.randomUUID()}.${ext}`;
     const { error: uploadError } = await supabase.storage

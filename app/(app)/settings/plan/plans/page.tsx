@@ -5,6 +5,7 @@ import { useMyAgency } from "@/hooks/use-my-agency";
 import { useMyMembership } from "@/hooks/use-my-membership";
 import { useClients } from "@/hooks/use-clients";
 import { useTeamMembers } from "@/hooks/use-team-members";
+import { useStorageUsed } from "@/hooks/use-storage-used";
 import { usePendingPlanRequest, useRequestPlan } from "@/hooks/use-plan";
 import {
   useBilling,
@@ -16,7 +17,7 @@ import {
 } from "@/hooks/use-billing";
 import { SettingsHead } from "@/components/settings/SettingsHead";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { PLANS, limitLabel, planById, type Plan } from "@/lib/plans";
+import { PLANS, formatBytes, isReadOnly, limitLabel, planById, type Plan } from "@/lib/plans";
 import { seesAllClients } from "@/lib/roles";
 import { billingConfigured, PADDLE_TEST_MODE } from "@/lib/billing/paddle-js";
 import { classifyChange } from "@/lib/billing/rules";
@@ -46,6 +47,7 @@ export default function PlansPage() {
   const { data: me } = useMyMembership(agencyId);
   const { data: clients } = useClients();
   const { data: team } = useTeamMembers(agencyId);
+  const { data: stored } = useStorageUsed(agencyId);
   const { data: pending } = usePendingPlanRequest(agencyId);
   const request = useRequestPlan(agencyId);
   // Waiting for Paddle's notification after paying.
@@ -171,6 +173,28 @@ export default function PlansPage() {
               {seatsUsed} of {limitLabel(agency?.seatLimit)}
             </span>
           </div>
+          <div className="srow">
+            <span className="sl">
+              <b>Storage</b>
+              <span>Every file uploaded, across all clients</span>
+            </span>
+            <span>
+              {formatBytes(stored ?? 0)} of {formatBytes(agency?.storageLimit)}
+            </span>
+          </div>
+          {current.id === "free" && (
+            <div className="srow">
+              <span className="sl">
+                <b>Free trial</b>
+                <span>
+                  {isReadOnly(agency?.plan, agency?.trialEndsAt)
+                    ? "Ended: Frank is read-only until you choose a plan"
+                    : "Everything works until then; after it, Frank is read-only until you choose a plan"}
+                </span>
+              </span>
+              <span>{agency?.trialEndsAt ? `${isReadOnly(agency.plan, agency.trialEndsAt) ? "Ended" : "Ends"} ${day(agency.trialEndsAt)}` : "Ended"}</span>
+            </div>
+          )}
           {live && !waiting && (
             <div className="srow">
               <span className="sl">

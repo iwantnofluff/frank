@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { validateUploadFile, MAX_STORED_VIDEO_BYTES } from "@/lib/upload-validation";
 import { compressVideo } from "@/lib/compress-video";
 import { uploadWithProgress } from "@/lib/upload-with-progress";
+import { assertCanUpload } from "@/lib/upload-guard";
 
 // Where a save has got to, for the progress bar: which file of how many,
 // and whether it's being compressed (videos) or uploaded.
@@ -68,6 +69,7 @@ async function uploadAsset(
 ) {
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const path = `${agencyId}/${creativeId}/${crypto.randomUUID()}-${safeName}`;
+  await assertCanUpload(agencyId, file.size);
 
   // Same request supabase.storage.upload() makes, but with progress.
   await uploadWithProgress(path, file, onUploaded);

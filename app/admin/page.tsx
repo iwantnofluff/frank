@@ -3,9 +3,8 @@
 import Link from "next/link";
 import { useAdminAgencies } from "@/hooks/use-admin-agencies";
 import { errorMessage } from "@/lib/errors";
-import { limitLabel, planById } from "@/lib/plans";
+import { formatBytes, isReadOnly, limitLabel, planById } from "@/lib/plans";
 
-const mb = (b: number) => (b < 1048576 ? `${Math.round(b / 1024)}KB` : `${(b / 1048576).toFixed(1)}MB`);
 
 // Every agency, with its usage against its limits.
 export default function AdminAgenciesPage() {
@@ -46,7 +45,13 @@ export default function AdminAgenciesPage() {
                     {a.name}
                   </Link>
                   <span className="tdim">{a.subdomain ? `${a.subdomain}.beingfrank.app` : "No address"}</span>
-                  <span className="tdim">{planById(a.plan)?.name ?? a.plan} plan</span>
+                  <span className="tdim">
+                    {planById(a.plan)?.name ?? a.plan} plan
+                    {a.plan === "free" &&
+                      (isReadOnly(a.plan, a.trial_ends_at)
+                        ? ", trial ended (read-only)"
+                        : `, trial ends ${new Date(a.trial_ends_at!).toLocaleDateString()}`)}
+                  </span>
                 </td>
                 <td>
                   {a.owner ? (
@@ -65,7 +70,9 @@ export default function AdminAgenciesPage() {
                   {a.clients} / {limitLabel(a.client_limit)}
                 </td>
                 <td>{a.posts}</td>
-                <td>{mb(a.storage_bytes)}</td>
+                <td>
+                  {formatBytes(a.storage_bytes)} / {formatBytes(a.storage_limit_bytes)}
+                </td>
                 <td>
                   {a.ai_this_month} / {a.ai_monthly_request_cap}
                 </td>

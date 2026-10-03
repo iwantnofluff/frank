@@ -581,6 +581,33 @@ body.lightrail .avatar {
   background: var(--canvas);
   border-radius: 8px 0 0 0;
 }
+/* Free's trial over: the whole app is read-only (phase41). Sits between
+   the topbar and the page, on the rail, like the page's own top edge. */
+.robanner {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  padding: 8px 14px;
+  border-radius: 8px 0 0 8px;
+  /* --amber-bg is see-through (lib/theme.ts); over the page colour, not
+     the rail, so it reads as the light warning it is elsewhere. */
+  background: linear-gradient(var(--amber-bg), var(--amber-bg)), var(--canvas);
+  color: var(--amber);
+  font-size: 13px;
+}
+.robanner svg {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  flex-shrink: 0;
+}
+.robanner .btn {
+  margin-left: auto;
+}
 .view.on {
   display: flex;
   flex-direction: column;
@@ -1047,6 +1074,54 @@ body.lightrail .avatar {
 }
 .authcard .btn.primary {
   margin-top: 4px;
+}
+/* beingfrank.app: sign up and sign in (phase42). Taller than a sign-in
+   card, so the page scrolls rather than clipping it. */
+.authwrap.scroll {
+  align-items: flex-start;
+  overflow-y: auto;
+  padding: 40px 16px;
+}
+.authwrap.scroll > .authcard {
+  margin: auto 0;
+  max-width: 420px;
+}
+.signform,
+.signdone {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.signform .frow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.authfield .subfield input {
+  flex: 1;
+  min-width: 0;
+}
+.addr-ok,
+.addr-bad {
+  font-size: 12.5px;
+  font-weight: 400;
+}
+.addr-ok {
+  color: var(--green);
+}
+.addr-bad {
+  color: var(--rose);
+}
+.signsmall {
+  font-size: 12.5px;
+  margin: 0;
+}
+.authlink.linkish {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
 }
 
 .pname {
@@ -3792,6 +3867,12 @@ textarea.cxin {
   stroke-width: 2;
   flex-shrink: 0;
   margin-top: 1px;
+}
+/* A link inside a note or a page's short description (e.g. "See the
+   plans"), so it reads as one. */
+.note a,
+.sub a {
+  color: var(--action);
 }
 .note.warn {
   background: var(--amber-bg);

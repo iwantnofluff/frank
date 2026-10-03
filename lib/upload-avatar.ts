@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { assertCanUpload } from "@/lib/upload-guard";
 
 export const AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"];
 export const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
@@ -32,6 +33,7 @@ export async function uploadAvatar(agencyId: string, file: File): Promise<string
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not signed in");
+  await assertCanUpload(agencyId, file.size);
 
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const path = `${agencyId}/avatars/${user.id}/${crypto.randomUUID()}-${safeName}`;

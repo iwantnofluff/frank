@@ -48,14 +48,16 @@ async function twoAgencies(frank: Frank) {
   };
 }
 
-test("beingfrank.app is a holding page, at any path, with no sign-in", async ({ page }) => {
+// beingfrank.app is where agencies sign up and find their address (phase42;
+// it was a holding page before), at any path, with no sign-in of its own.
+test("beingfrank.app is sign-up and find-your-address, at any path, with no sign-in", async ({ page }) => {
   for (const path of ["/", "/dashboard", "/login"]) {
     await page.goto(at(null, path));
-    await expect(page.getByText("Content review and approval for agencies. Coming soon.")).toBeVisible();
-    await expect(page.locator('input[type="password"]')).toHaveCount(0);
+    await expect(page.getByLabel("Agency name")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Sign In" })).toBeVisible();
   }
   await page.goto(at("www", "/"));
-  await expect(page.getByText("Coming soon.", { exact: false })).toBeVisible();
+  await expect(page.getByLabel("Agency name")).toBeVisible();
 });
 
 test("an address that isn't an agency says so", async ({ page }) => {

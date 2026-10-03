@@ -124,12 +124,15 @@ export function BrandForm({
   agencyName,
   settings,
   canEdit,
+  locked = false,
 }: {
   part: BrandPart;
   agencyId: string;
   agencyName: string;
   settings: AgencySettingsRow | null;
   canEdit: boolean;
+  // Not on this plan (phase41): the page says so, not the role note.
+  locked?: boolean;
 }) {
   const savedTheme = normaliseTheme(settings?.theme);
   const savedPresets = settings?.custom_presets ?? {};
@@ -150,10 +153,12 @@ export function BrandForm({
   const setDraft = useThemeDraft((s) => s.setDraft);
 
   // Edits preview across the whole app while on this page; leaving it
-  // without saving puts the saved theme back.
+  // without saving puts the saved theme back. Only for someone who can edit:
+  // anyone else sees what AgencyTheme applies, which on a plan without
+  // branding (phase41) is Frank's own look, not the saved one.
   useEffect(() => {
-    setDraft(theme);
-  }, [theme, setDraft]);
+    setDraft(canEdit ? theme : null);
+  }, [theme, setDraft, canEdit]);
   useEffect(() => () => setDraft(null), [setDraft]);
 
   const dirty =
@@ -182,7 +187,7 @@ export function BrandForm({
 
   return (
     <>
-      {!canEdit && (
+      {!canEdit && !locked && (
         <p className="sub" style={{ marginTop: 0 }}>
           Only Admins, Owners and the Primary Owner can change this.
         </p>

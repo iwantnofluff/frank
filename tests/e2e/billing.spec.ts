@@ -64,7 +64,8 @@ test.afterEach(async ({ frank }) => {
 
 test("the webhook: paying, a downgrade waiting for renewal, and cancelling", async ({ frank }) => {
   test.setTimeout(60_000);
-  await admin.from("agencies").update({ plan: "free", client_limit: 1, seat_limit: 2 }).eq("id", frank.agencyId);
+  // No override, so the plan's own limits show (phase42 works them out).
+  await admin.from("agencies").update({ plan: "free", extra_clients: 0, extra_seats: 0 }).eq("id", frank.agencyId);
 
   // Not signed by Paddle: refused, nothing changes.
   const forged = await notify(frank, "subscription.created", { price: PRICE.growthMonthly }, { signature: "ts=1;h1=00" });
@@ -78,11 +79,13 @@ test("the webhook: paying, a downgrade waiting for renewal, and cancelling", asy
   expect(await agencyNow(frank)).toEqual({ plan: "growth", client_limit: 10, seat_limit: 15 });
   expect(await billingNow(frank)).toMatchObject({ status: "active", billing_interval: "monthly", paddle_customer_id: "ctm_e2e" });
 
-  // Paddle retries a notification it's not sure arrived: applied once.
-  await admin.from("agencies").update({ client_limit: 12 }).eq("id", frank.agencyId);
+  // Paddle retries a notification it's not sure arrived: applied once (were
+  // it applied again, it would put Growth back).
+  await admin.from("agencies").update({ plan: "starter" }).eq("id", frank.agencyId);
   const again = await notify(frank, "subscription.created", { price: PRICE.growthMonthly }, { eventId: "evt_e2e_first", at });
   expect(await again.json()).toMatchObject({ duplicate: true });
-  expect((await agencyNow(frank))!.client_limit).toBe(12);
+  expect((await agencyNow(frank))!.plan).toBe("starter");
+  await admin.from("agencies").update({ plan: "growth" }).eq("id", frank.agencyId);
 
   // Moved to Starter during October: Growth stays until the period ends.
   await notify(frank, "subscription.updated", { price: PRICE.starterMonthly });
@@ -108,7 +111,7 @@ test("the webhook: paying, a downgrade waiting for renewal, and cancelling", asy
 });
 
 async function seedPaying(frank: Frank, over: Record<string, unknown> = {}) {
-  await admin.from("agencies").update({ plan: "growth", client_limit: 10, seat_limit: 15 }).eq("id", frank.agencyId);
+  await admin.from("agencies").update({ plan: "growth" }).eq("id", frank.agencyId);
   const { error } = await admin.from("agency_billing").insert({
     agency_id: frank.agencyId,
     paddle_customer_id: "ctm_e2e",
@@ -123,7 +126,7 @@ async function seedPaying(frank: Frank, over: Record<string, unknown> = {}) {
 }
 
 test("an agency on Free chooses a plan by card, in test mode", async ({ page, frank }) => {
-  await admin.from("agencies").update({ plan: "free", client_limit: 1, seat_limit: 2 }).eq("id", frank.agencyId);
+  await admin.from("agencies").update({ plan: "free" }).eq("id", frank.agencyId);
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/settings/plan/plans`);
   await expect(card(page, "Free").getByRole("button", { name: "Current plan" })).toBeDisabled();

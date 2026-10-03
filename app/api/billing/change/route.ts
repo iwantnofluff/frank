@@ -47,7 +47,7 @@ export async function POST(request: Request) {
 
   try {
     if (tier.id === "free") {
-      const blocked = await overLimits(admin, agency.id, { clients: tier.clients, seats: tier.seats, name: tier.name });
+      const blocked = await overLimits(admin, agency.id, { clients: tier.clients, seats: tier.seats, storageBytes: tier.storageBytes, name: tier.name });
       if (blocked) return NextResponse.json({ error: blocked }, { status: 409 });
       if (body.preview) return NextResponse.json({ kind: "cancel", effectiveAt: endsAt });
       const sub = await paddle<PaddleSubscription>("POST", `/subscriptions/${subId}/cancel`, {
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Moving a yearly plan to monthly is arranged by Frank." }, { status: 409 });
     }
     if (change.kind === "downgrade") {
-      const blocked = await overLimits(admin, agency.id, { clients: tier.clients, seats: tier.seats, name: tier.name });
+      const blocked = await overLimits(admin, agency.id, { clients: tier.clients, seats: tier.seats, storageBytes: tier.storageBytes, name: tier.name });
       if (blocked) return NextResponse.json({ error: blocked }, { status: 409 });
     }
     const update = {

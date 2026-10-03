@@ -6,6 +6,7 @@ import { inviteEmail } from "@/lib/email/invite-email";
 import { createInviteToken } from "@/lib/invites/token";
 import { INVITE_TTL_MS } from "@/lib/invites/constants";
 import { INVITABLE_ROLES, ROLE_LABELS, type InvitableRole } from "@/lib/roles";
+import { isReadOnly } from "@/lib/plans";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -45,9 +46,15 @@ export async function POST(request: Request) {
   if (!allowed) return fail("Only an Owner or the Primary Owner can invite people", 403);
 
   const [{ data: agency }, { data: inviter }] = await Promise.all([
-    supabase.from("agencies").select("name").eq("id", agencyId).single(),
+    supabase.from("agencies").select("name, plan, trial_ends_at").eq("id", agencyId).single(),
     supabase.from("users").select("name").eq("id", caller.id).single(),
   ]);
+
+  // Free's trial over (phase41): read-only. The membership below is written
+  // as the service role, which the database doesn't hold to it, so ask here.
+  if (agency && isReadOnly(agency.plan, agency.trial_ends_at)) {
+    return fail("Your agency's free trial has ended, so Frank is read-only. Choose a plan in Settings → Your Plan to carry on.", 403);
+  }
 
   const admin = createServiceRoleClient();
   const { data: existingUser } = await admin

@@ -16,6 +16,13 @@ async function waitForVar(page: Page, name: string, value: string) {
   await expect.poll(() => cssVar(page, name), { timeout: 10_000 }).toBe(value);
 }
 
+// Logo and colours are a Growth-and-up feature (phase41); these specs are
+// about how branding behaves, so the fixture agency is on Growth.
+// plan-enforcement.spec.ts covers what lower plans see.
+test.beforeEach(async ({ frank }) => {
+  await admin.from("agencies").update({ plan: "growth" }).eq("id", frank.agencyId);
+});
+
 test("a preset previews live, reverts if not saved, and applies everywhere once saved", async ({
   page,
   browser,

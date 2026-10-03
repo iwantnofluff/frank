@@ -1795,3 +1795,113 @@ Comparing the two found production's `assets` bucket public, although phase8 cre
 Still different, and not fixed: staging's sign-in site URL (`http://localhost:3000`) and redirect list (empty). Production's are beingfrank.app, `*.beingfrank.app` and the old vercel.app address.
 
 **Verified**: on staging, `check-seed-sql-completeness.mjs` passes, and all 290 columns and functions match production by name, type and parameters. After phase40 on production, the same file refuses a signed-out fetch (400), a signed link still serves it (200), and the bucket reads private with 14 types.
+
+## What a plan allows, enforced
+
+Decided directly, from the spec's plan table (v11 §5). phase41 adds all of it:
+- **New agencies:** the admin picks the plan, Free by default, with Free's limits (1 client, 2 team members, 500 MB) and a 30-day trial. The database's own defaults are Free's too.
+- **Read-only:** Free after its trial is read-only until the agency moves to a paid plan. A paid plan that's cancelled drops to Free after its period, and so is read-only too, as the spec says on cancellation. This replaces the earlier "drops to Free and keeps working" for cancelling.
+  - **In the database:** a trigger on every content table refuses changes from people (signed in, or through a review link) while `agency_read_only()`. Frank's own service-role access (Paddle's webhook, the admin area, clean-up) isn't held to it.
+  - **In the code:** the invite route and `runAiTask` write as the service role, so they check it themselves.
+  - **In the app:** a banner on every page says why, with Choose a Plan for Admins and Owners. Paying stays possible.
+- **Storage by plan:** `storage_limit_bytes` is set with the plan like the other limits. A trigger on `storage.objects` refuses an upload that would go over, counting the files actually stored.
+  - **Why there:** Storage tests permission as the person, then writes the stored file's row as `supabase_storage_admin`, with the size it measured. That second write is where the limit is checked (found by logging Storage's writes on staging; an earlier version checked the wrong one, and let uploads through).
+  - **Messages:** Storage reports a refusal only as "database error", so every uploader asks first (`lib/upload-guard.ts`) and says how much room is left.
+  - **Elsewhere:** the Plans page shows usage, and the admin list shows usage against the limit. Downgrades and cancelling are refused while over the smaller plan's storage.
+- **Branding by plan:** logo and colours apply from Growth (the spec's partial white-label), to the app, the rail logo and review links. Below that, Frank's own look is used, and Customisation says so with the editors locked. Saved branding isn't deleted.
+- **Account URL:** Owners on Agency or Enterprise can change the address (the spec's custom subdomain). The old address is kept in `agency_previous_subdomains`, redirects to the new one with its path (so links already sent work), and can't be taken by another agency. The admin area's address changes go the same way. Sessions belong to an address, so everyone signs in again at the new one.
+
+Not done, deliberately:
+- **Storage extras:** the spec's 90%-full warning banner, and paid storage add-ons.
+- **Other spec limits:** projects per client, creative and copy versions, client contacts per client and activity log retention aren't enforced.
+- **Unbuilt features:** analytics (client and agency level), scheduled reports and the "Powered by" footer don't exist, and the Plans page still lists them.
+- **After expiry:** the spec's 90-day data retention, with reminder emails, then deletion.
+- **Admin overrides:** the admin area can't set an agency's trial end or storage limit by hand. Both come from the plan.
+- **What read-only leaves open:** team memberships (removing someone, accepting an invite already sent). Read-only stops new invites, not existing ones.
+- **Locked editors:** they look the same as editable ones. This was already so for Users.
+
+**Verified**: typecheck and lint clean. Unit tests 110, adding the read-only rule, white-label by tier, each plan's limits and byte formatting. phase41 was applied to staging first, and checked there as a real signed-in owner:
+- A new agency defaults to Free, 1/2/500 MB, with a 30-day trial. A second client is refused.
+- After the trial, the database refuses a rename, an upload and saving branding, while the service role still writes. Upgrading lifts it.
+- At a 3 KB limit, a second 2 KB upload is refused and leaves no file.
+- The old address resolves to the new one, another agency can't take it, and a signed-in person can't call the address function or read the storage figure signed out.
+
+Then on production, through the service role (No Fluff: Agency, 75 GB, 110 MB stored). New `plan-enforcement.spec.ts` (5):
+- **New agency, end to end:** the admin creates it (Free by default), the owner accepts on the new address and lands on its dashboard, adds a client and hits Free's limit. The trial ends: banner, Plans shows "Ended", the database refuses a rename and Choose Starter still works. The upgrade lifts it at once.
+- **Read-only:** the invite route refuses with the reason, and the database refuses a file.
+- **Storage:** the Plans page shows it. A too-big file on Reference Material is refused with how much room is left, and nothing is stored. The database refuses one sent directly.
+- **Branding:** on Starter, Frank's colours with the editors locked, and review links carry no branding. On Growth, the agency's.
+  - This test caught a real bug: the Brand Colours page previewed the saved colours across the app even for someone who couldn't edit them, so a Starter agency saw its colours there. It now only previews for editors.
+- **Account URL:** Starter is told it comes with Agency. An Admin on Agency can't change it, and the route refuses them. An Owner gets "isn't allowed" for `admin`, then changes it. The old address answers 308 to the new one, with the path. Another agency can't take it.
+
+`branding.spec.ts` runs on Growth, and the fixture agency is pinned to Starter with Starter's storage. Looked at:
+- the Plans page (storage and trial rows)
+- the banner for staff and for a client member (made legible: on the rail, the theme's see-through amber read as dark)
+- locked Customisation
+- Account URL, locked, editable and confirming
+
+Full suite: 129 passed, 20 failed (11.5 minutes). 13 of the failures were Supabase "fetch failed" connection drops, and the rest timeouts on the same slow run. All 19 non-screenshot failures passed when rerun on their own (their whole files: 23 passed). The 20th was `settings-team.png`, its documented flake. `npm run build` clean.
+
+## Agencies sign themselves up; limits are the plan's, plus an admin override
+
+Direct instruction: agencies sign up themselves, which is how Frank gets its agencies, and sign in from the same place. Decided directly:
+- `beingfrank.app` is Start Free Trial and Sign In, replacing the holding page.
+- A workspace opens only once the email is confirmed.
+- The address is the Owner's, not the admin's.
+- An agency's limits are its plan's, shown fixed, with a separate admin override.
+- The admin changes a plan only for an agency not paying by card.
+
+**Sign-up** (`/api/signup`, the form at `beingfrank.app`):
+- **The form:** agency name, an address offered from the name and checked as typed (allowed, free, never another agency's), first and last name, email and password.
+- **What it creates:** the agency on Free with its trial, the person as Primary Owner, and the account.
+- **Confirmation:** the account can't sign in until confirmed. Supabase makes the confirmation token without sending anything (`generateLink`), and Frank emails it through Resend, as with invites and resets, because Supabase's own mailer allows a few emails an hour. The link opens `/confirm` on the new address, which confirms and signs in there.
+- **Token type:** `/confirm` verifies as `email`, which accepts the sign-up token or a sign-in link made for the same address later. Checked on staging, along with an unconfirmed account being refused at sign-in ("Email not confirmed", now explained on the sign-in page).
+- **On failure:** anything half made is undone, so the address and the email are free again.
+- **Signing in:** asks for the account URL, follows an address that has since changed, and goes to that agency's own sign-in. "Forgot your address?" emails every workspace address the person belongs to, with the same answer whether or not the email has an account.
+
+**Limits** (phase42): `plan_limits()` holds each plan's limits (the same table as `lib/plans.ts`), and a trigger on `agencies` works out every limit as the plan's plus `extra_*`, whenever either changes. So Paddle's webhook, applying a request and sign-up only set the plan, and the override survives a plan change.
+- **AI requests:** the spec gives no allowance per plan, so it's 300 on every plan, plus the override.
+- **Existing agencies:** whatever an agency had above its plan became an override, so nothing shrank. No Fluff has none.
+
+**Admin agency page:**
+- The address is shown, not editable.
+- The plan can be set only while the agency isn't paying by card, and the route refuses otherwise.
+- The limits read "5 on Starter, plus 45 added".
+- An Admin Override box takes extra team members, clients, AI requests a month and storage (GB).
+
+Not done, deliberately:
+- **Unconfirmed sign-ups** keep their address until someone removes them. There's no expiry, and no "resend the confirmation email" yet (a sign-in link for the same address would work, as above).
+- **Abuse protection:** the sign-up and address-check routes have no rate limit or captcha.
+- **One agency per email:** signing up again with an email that already uses Frank is refused. The app assumes one agency per person (`useMyAgency`).
+- **Emails:** the platform admins are emailed on every sign-up, including the test suite's.
+- **Holding page:** its contact email (hello@beingfrank.app, which has no inbox) is gone with it.
+
+**Verified**: typecheck and lint clean. Unit tests 111, adding `storageProblem`. phase42 was applied to staging first:
+- In a rolled-back probe, Growth gave 10/15/25 GB/300.
+- +3 members and +1 GB gave 18 and 26 GB.
+- Moving to Agency kept the +3, with members unlimited.
+
+On production, through the service role: No Fluff unchanged with no overrides, and Debug Agency RPC's 10 clients became Starter's 3 plus 7.
+
+The new-agency test in `plan-enforcement.spec.ts` is now the real self-serve flow at `frank.localhost`:
+1. The address follows the name, `nofluff` shows taken, and a fresh one shows Available.
+2. Sign up, then "Check your email" naming the address.
+3. In the database: Free, 1/2/500 MB, a 30-day trial, and a Primary Owner named "Sign Up" (title-cased).
+4. Signing in before confirming says to confirm.
+5. The confirmation link opens the dashboard on the new address.
+6. Signing in from `beingfrank.app` says "no Frank workspace" for an unknown address and goes to the right sign-in page for this one. Forgot-your-address answers.
+7. Then the trial, read-only and upgrade, as before.
+
+The admin test now covers limits from the plan plus the override: "5 on Starter, plus 45 added", no address field, the override set to 0, then Free at 1/2, enforced, then +1 client gives 2. A card-paying agency hides the plan control, and the route refuses with 409.
+
+Billing, plans, branding and the fixture moved from hand-set limits to plans and overrides. The storage test now checks usage counting a real upload, since a plan's limit can't be set to a few KB any more; the refusal itself was checked on staging, and the message is unit-tested.
+
+Looked at the sign-up page (with Available), sign-in, the phone-width sign-up, and the admin page with fixed limits and the override.
+
+Full suite: 144 passed, 5 failed (12.1 minutes), all accounted for:
+- **The admin limits test** waited 5 seconds for "Saved." while the admin list reloaded under load. It now allows 20 seconds, as the other admin tests do, and passes.
+- **`tenancy.spec.ts`** still expected the holding page. It now expects sign-up and find-your-address, and passes.
+- **`login.png`:** its diff was only the new sign-in wording wrapping onto a second line, so the baseline was updated.
+- **The branding logo test** passed when rerun on its own.
+- **`settings-team.png`:** its documented flake.
+`npm run build` clean.

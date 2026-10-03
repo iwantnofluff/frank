@@ -10,6 +10,7 @@ import { useAgencySettings } from "@/hooks/use-agency-settings";
 import { useAvatarUrls } from "@/hooks/use-avatar-urls";
 import { AccountMenu } from "./AccountMenu";
 import { CalendarIcon, ClientsIcon, KnowledgeIcon, ProjectsIcon, SettingsIcon } from "./icons";
+import { brandingAllowed } from "@/lib/plans";
 
 function RailLink({
   href,
@@ -76,7 +77,9 @@ export function NavRail({
   const { data: agency } = useMyAgency();
   const { data: settings } = useAgencySettings(agency?.agencyId);
   const { data: logoUrls } = useAvatarUrls([settings?.logo_asset_id]);
-  const logoUrl = settings?.logo_asset_id ? logoUrls?.[settings.logo_asset_id] : undefined;
+  // Growth and up (phase41); below that, the "F" whatever was saved.
+  const logoUrl =
+    settings?.logo_asset_id && brandingAllowed(agency?.plan) ? logoUrls?.[settings.logo_asset_id] : undefined;
 
   return (
     <nav className="rail" aria-label="Main">

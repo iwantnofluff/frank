@@ -37,3 +37,10 @@ export function tenantFromHost(host: string | null | undefined): Tenant {
 export function agencyHeader(tenant: Tenant): Record<string, string> {
   return tenant.kind === "agency" ? { "x-frank-agency": tenant.subdomain } : {};
 }
+
+// The same address with another agency's name in front: where an old
+// address redirects to (phase41), and where an Owner lands after changing
+// it. Keeps the root domain and port as they were.
+export function hostWithSubdomain(host: string, from: string, to: string): string {
+  return host.toLowerCase().startsWith(`${from.toLowerCase()}.`) ? `${to}${host.slice(from.length)}` : host;
+}

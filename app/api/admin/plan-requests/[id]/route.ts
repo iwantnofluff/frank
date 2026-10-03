@@ -32,7 +32,7 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
     const tier = planById(req.requested_plan)!;
     const { error } = await admin
       .from("agencies")
-      .update({ plan: tier.id, client_limit: tier.clients, seat_limit: tier.seats })
+      .update({ plan: tier.id })
       .eq("id", req.agency_id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   }

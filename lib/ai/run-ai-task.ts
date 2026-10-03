@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { generateDraft } from "./generate-draft";
 import type { Attachment } from "./attachment";
+import { isReadOnly } from "@/lib/plans";
 
 export interface AiTaskResult {
   ok: boolean;
@@ -32,11 +33,19 @@ export async function runAiTask(
 ): Promise<AiTaskResult> {
   const { data: agency, error: agencyError } = await supabase
     .from("agencies")
-    .select("ai_default_model, ai_monthly_request_cap")
+    .select("ai_default_model, ai_monthly_request_cap, plan, trial_ends_at")
     .eq("id", agencyId)
     .single();
   if (agencyError || !agency) {
     return { ok: false, status: 500, error: "Couldn't load this agency" };
+  }
+  // Free's trial over (phase41): read-only, so nothing new is drafted.
+  if (isReadOnly(agency.plan, agency.trial_ends_at)) {
+    return {
+      ok: false,
+      status: 403,
+      error: "Your agency's free trial has ended, so Frank is read-only. Choose a plan in Settings → Your Plan to carry on.",
+    };
   }
 
   const { count, error: countError } = await supabase

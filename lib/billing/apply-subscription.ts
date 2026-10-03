@@ -1,5 +1,4 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { planById } from "@/lib/plans";
 import { planForPrice } from "./prices";
 import { nextBillingState, type BillingRow, type PaddleSubscription } from "./rules";
 
@@ -64,12 +63,11 @@ export async function applySubscription(
 
   const planChanged = next.plan !== agency.plan;
   if (planChanged) {
-    // A new plan brings its limits (as the admin area does); the same plan
-    // leaves any limit Frank set by hand alone.
-    const tier = planById(next.plan)!;
+    // The database applies the plan's limits, plus any admin override
+    // (apply_plan_limits, phase42).
     const { data: updated, error } = await admin
       .from("agencies")
-      .update({ plan: next.plan, client_limit: tier.clients, seat_limit: tier.seats })
+      .update({ plan: next.plan })
       .eq("id", agencyId)
       .select("id");
     if (error) throw error;

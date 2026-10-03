@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import type { BillingRow } from "./rules";
+import { formatBytes } from "@/lib/plans";
 
 // Every billing route starts here (phase39): the signed-in person has to be
 // an Admin or Owner of the agency (the spec: billing is managed by the
@@ -41,9 +42,9 @@ export const paysByCard = (plan: string, b: BillingRow | null) => plan === "free
 export async function overLimits(
   admin: ReturnType<typeof createServiceRoleClient>,
   agencyId: string,
-  limits: { clients: number | null; seats: number | null; name: string },
+  limits: { clients: number | null; seats: number | null; storageBytes: number | null; name: string },
 ): Promise<string | null> {
-  const [{ count: clients }, { count: seats }] = await Promise.all([
+  const [{ count: clients }, { count: seats }, { data: stored }] = await Promise.all([
     admin.from("clients").select("id", { count: "exact", head: true }).eq("agency_id", agencyId).is("archived_at", null),
     admin
       .from("memberships")
@@ -51,6 +52,7 @@ export async function overLimits(
       .eq("agency_id", agencyId)
       .is("client_id", null)
       .is("removed_at", null),
+    admin.rpc("agency_storage_used", { check_agency_id: agencyId }),
   ]);
   const problems: string[] = [];
   if (limits.clients !== null && (clients ?? 0) > limits.clients) {
@@ -59,6 +61,10 @@ export async function overLimits(
   if (limits.seats !== null && (seats ?? 0) > limits.seats) {
     problems.push(`remove ${(seats ?? 0) - limits.seats} of your ${seats} team members (invites count)`);
   }
+  const used = typeof stored === "number" ? stored : 0;
+  if (limits.storageBytes !== null && used > limits.storageBytes) {
+    problems.push(`delete ${formatBytes(used - limits.storageBytes)} of your ${formatBytes(used)} of files`);
+  }
   if (!problems.length) return null;
-  return `${limits.name} allows ${limits.clients ?? "unlimited"} active clients and ${limits.seats ?? "unlimited"} team members. First ${problems.join(", and ")}.`;
+  return `${limits.name} allows ${limits.clients ?? "unlimited"} active clients, ${limits.seats ?? "unlimited"} team members and ${formatBytes(limits.storageBytes)} of storage. First ${problems.join(", and ")}.`;
 }

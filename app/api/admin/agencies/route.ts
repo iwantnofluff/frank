@@ -3,6 +3,8 @@ import { requirePlatformAdmin } from "@/lib/admin/require-platform-admin";
 import { createInviteToken } from "@/lib/invites/token";
 import { INVITE_TTL_MS } from "@/lib/invites/constants";
 import { inviteEmail } from "@/lib/email/invite-email";
+import { planById } from "@/lib/plans";
+import { addressError } from "@/lib/address";
 import { sendEmail } from "@/lib/email/send-email";
 import { agencyOrigin } from "@/lib/admin/agency-origin";
 
@@ -18,15 +20,14 @@ export async function GET() {
   monthStart.setUTCDate(1);
   monthStart.setUTCHours(0, 0, 0, 0);
 
-  const [agencies, staff, clients, posts, assets, ai, owners, requests] = await Promise.all([
+  const [agencies, staff, clients, posts, ai, owners, requests, billing] = await Promise.all([
     admin
       .from("agencies")
-      .select("id, name, subdomain, plan, seat_limit, client_limit, ai_monthly_request_cap, created_at, suspended_at, archived_at")
+      .select("id, name, subdomain, plan, seat_limit, client_limit, storage_limit_bytes, trial_ends_at, ai_monthly_request_cap, extra_seats, extra_clients, extra_ai_requests, extra_storage_bytes, created_at, suspended_at, archived_at")
       .order("created_at"),
     admin.from("memberships").select("agency_id").is("client_id", null).is("removed_at", null),
     admin.from("clients").select("agency_id").is("archived_at", null),
     admin.from("creatives").select("agency_id").is("archived_at", null),
-    admin.from("assets").select("agency_id, bytes"),
     admin.from("ai_usage_events").select("agency_id").gte("created_at", monthStart.toISOString()),
     // Not embedded: memberships point at users twice (the member, and who
     // invited them), which leaves an embed ambiguous — it came back empty.
@@ -36,6 +37,7 @@ export async function GET() {
       .select("id, agency_id, requested_plan, billing_interval, created_at")
       .is("handled_at", null)
       .order("created_at", { ascending: false }),
+    admin.from("agency_billing").select("agency_id, paddle_subscription_id, status"),
   ]);
   const ownerIds = [...new Set((owners.data ?? []).map((o) => o.user_id as string))];
   const { data: ownerUsers } = ownerIds.length
@@ -43,9 +45,14 @@ export async function GET() {
     : { data: [] as { id: string; name: string; email: string }[] };
   if (agencies.error) return NextResponse.json({ error: agencies.error.message }, { status: 500 });
 
-  const rows = (agencies.data ?? [])
-    .filter((a) => !a.archived_at)
-    .map((a) => {
+  // What each agency has stored, as its storage limit counts it (phase41):
+  // the files themselves, not what the assets table says about them.
+  const live = (agencies.data ?? []).filter((a) => !a.archived_at);
+  const stored = await Promise.all(
+    live.map((a) => admin.rpc("agency_storage_used", { check_agency_id: a.id }).then((r) => Number(r.data ?? 0))),
+  );
+  const rows = live
+    .map((a, i) => {
       const ownerId = (owners.data ?? []).find((o) => o.agency_id === a.id)?.user_id;
       const owner = (ownerUsers ?? []).find((u) => u.id === ownerId) ?? null;
       return {
@@ -54,7 +61,10 @@ export async function GET() {
         members: count(staff.data, a.id),
         clients: count(clients.data, a.id),
         posts: count(posts.data, a.id),
-        storage_bytes: (assets.data ?? []).filter((x) => x.agency_id === a.id).reduce((n, x) => n + (x.bytes ?? 0), 0),
+        storage_bytes: stored[i],
+        pays_by_card: (billing.data ?? []).some(
+          (b) => b.agency_id === a.id && !!b.paddle_subscription_id && b.status !== "canceled",
+        ),
         ai_this_month: count(ai.data, a.id),
         pending_request: (() => {
           const r = (requests.data ?? []).find((x) => x.agency_id === a.id);
@@ -71,7 +81,7 @@ export async function POST(request: Request) {
   if ("error" in auth) return auth.error;
   const { admin, user } = auth;
 
-  let body: { name?: string; subdomain?: string; ownerEmail?: string };
+  let body: { name?: string; subdomain?: string; ownerEmail?: string; plan?: string };
   try {
     body = await request.json();
   } catch {
@@ -83,20 +93,19 @@ export async function POST(request: Request) {
   if (!name || !subdomain || !email) {
     return NextResponse.json({ error: "Name, address and the owner's email are all needed." }, { status: 400 });
   }
+  // Decided directly: the admin picks the plan, Free unless they say
+  // otherwise. Free's 30-day trial starts now (the column's default).
+  const tier = planById(body.plan ?? "free");
+  if (!tier) return NextResponse.json({ error: "Unknown plan" }, { status: 400 });
 
   const { data: agency, error: agencyError } = await admin
     .from("agencies")
-    .insert({ name, subdomain })
+    .insert({ name, subdomain, plan: tier.id })
     .select("id")
     .single();
   if (agencyError || !agency) {
     const msg = agencyError?.message ?? "";
-    const friendly = msg.includes("agencies_subdomain_format")
-      ? "That address isn't allowed: use 2–32 lower-case letters, numbers or hyphens, and not a reserved name like www or admin."
-      : msg.includes("duplicate") || msg.includes("unique")
-        ? "Another agency already has that address."
-        : msg || "Couldn't create the agency";
-    return NextResponse.json({ error: friendly }, { status: 400 });
+    return NextResponse.json({ error: addressError(msg) ?? (msg || "Couldn't create the agency") }, { status: 400 });
   }
 
   // Undo the agency if the owner can't be set up, rather than leave one

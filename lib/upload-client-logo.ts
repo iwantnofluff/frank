@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { assertCanUpload } from "@/lib/upload-guard";
 
 // Same shape as uploadAvatar: file, then its assets row, then point the
 // client at it. Path is {agency_id}/client-logos/{client_id}/... — the
@@ -9,6 +10,7 @@ export async function uploadClientLogo(agencyId: string, clientId: string, file:
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not signed in");
+  await assertCanUpload(agencyId, file.size);
 
   const ext = file.type === "image/png" ? "png" : "jpg";
   const path = `${agencyId}/client-logos/${clientId}/${crypto.randomUUID()}.${ext}`;

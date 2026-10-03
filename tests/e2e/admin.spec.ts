@@ -128,28 +128,57 @@ test("an admin creates an agency, and its Primary Owner is invited to its own ad
   }
 });
 
-test("limits set in the admin area are enforced, and pausing locks the agency", async ({ page, frank }) => {
+test("limits come from the plan plus the admin override, are enforced, and pausing locks the agency", async ({ page, frank }) => {
   test.setTimeout(120_000);
   const pa = await makePlatformAdmin();
   try {
     await signInAt(page, ADMIN, pa.email, PASSWORD);
     await page.waitForURL(`${ADMIN}/admin`, { timeout: 20_000 });
     await page.goto(`${ADMIN}/admin/agencies/${frank.agencyId}`);
-    await page.fill("#agClients", "1");
-    await page.fill("#agSeats", "1");
-    await page.getByRole("button", { name: "Save Limits" }).click();
-    await expect(page.getByText("Saved.")).toBeVisible();
+    // The fixture: Starter (3 clients, 5 members) with roomy extras on top.
+    const members = page.locator(".srow", { hasText: "Team members" });
+    await expect(members).toContainText("5 on Starter, plus 45 added");
+    await expect(members).toContainText("50");
+    // The address is the Owner's, not the admin's.
+    await expect(page.locator("#agAddress")).toHaveCount(0);
 
-    // The fixture already has 1 client and 1 team member, so neither can grow.
+    // No override, then Free: the plan's own limits, fixed.
+    for (const id of ["#agXSeats", "#agXClients"]) await page.fill(id, "0");
+    await page.getByRole("button", { name: "Save Override" }).click();
+    // The list reloads after a change (every agency's usage, so not instant).
+    await expect(page.getByText("Saved.")).toBeVisible({ timeout: 20_000 });
+    await expect(members).toContainText("5 on Starter");
+    await page.selectOption("#agPlan", "free");
+    await page.getByRole("button", { name: "Save Plan" }).click();
+    await expect(page.locator(".srow", { hasText: "Active clients" })).toContainText("1 on Free", { timeout: 20_000 });
+    const { data: limits } = await admin.from("agencies").select("plan, client_limit, seat_limit").eq("id", frank.agencyId).single();
+    expect(limits).toEqual({ plan: "free", client_limit: 1, seat_limit: 2 });
+
+    // The fixture already has its 1 client, so it can't grow.
     const staff = await staffSession(frank);
     const { error: clientError } = await staff.from("clients").insert({ agency_id: frank.agencyId, name: "One Too Many E2E" });
     expect(clientError?.message).toContain("client limit reached (1)");
-    const { error: seatError } = await admin.from("memberships").insert({
+    // An extra client from the override lets it.
+    await page.fill("#agXClients", "1");
+    await page.getByRole("button", { name: "Save Override" }).click();
+    await expect(page.locator(".srow", { hasText: "Active clients" })).toContainText("1 on Free, plus 1 added", { timeout: 20_000 });
+    expect((await admin.from("agencies").select("client_limit").eq("id", frank.agencyId).single()).data!.client_limit).toBe(2);
+
+    // An agency paying by card: its plan isn't the admin's to change.
+    await admin.from("agency_billing").insert({
       agency_id: frank.agencyId,
-      user_id: (await admin.from("users").select("id").eq("email", frank.clientEmail).single()).data!.id,
-      role: "user",
+      paddle_customer_id: "ctm_e2e",
+      paddle_subscription_id: `sub_e2e_admin_${frank.agencyId}`,
+      status: "active",
     });
-    expect(seatError?.message).toContain("member limit reached (1)");
+    await page.reload();
+    await expect(page.getByText("paid by card through Paddle")).toBeVisible({ timeout: 20_000 });
+    await expect(page.locator("#agPlan")).toHaveCount(0);
+    const refused = await page.request.patch(`${ADMIN}/api/admin/agencies/${frank.agencyId}`, { data: { plan: "agency" } });
+    expect(refused.status()).toBe(409);
+    await admin.from("agency_billing").delete().eq("agency_id", frank.agencyId);
+    await admin.from("agencies").update({ plan: "starter", extra_clients: 47, extra_seats: 45 }).eq("id", frank.agencyId);
+    await page.reload();
 
     // Pause: nobody in the agency sees anything, and its review links stop.
     const token = await frank.createSharedLink();
@@ -170,7 +199,8 @@ test("limits set in the admin area are enforced, and pausing locks the agency", 
     await expect(page.getByRole("button", { name: "Pause Agency" })).toBeVisible();
     expect((await staff.from("clients").select("id").eq("agency_id", frank.agencyId)).data!.length).toBe(1);
   } finally {
-    await admin.from("agencies").update({ suspended_at: null, seat_limit: 50, client_limit: 50 }).eq("id", frank.agencyId);
+    await admin.from("agency_billing").delete().eq("agency_id", frank.agencyId);
+    await admin.from("agencies").update({ suspended_at: null, plan: "starter", extra_clients: 47, extra_seats: 45 }).eq("id", frank.agencyId);
     await pa.cleanup();
   }
 });

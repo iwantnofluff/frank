@@ -120,9 +120,12 @@ export const test = base.extend<{ frank: Frank }>({
 
     const { data: agency, error: agencyError } = await admin
       .from("agencies")
-      // Roomy limits (phase37 enforces them), so specs that add members or
-      // clients don't trip over a plan's defaults.
-      .insert({ name: "E2E Test Agency", seat_limit: 50, client_limit: 50 })
+      // Starter, as every agency was before phase41 made new ones Free: a
+      // paid plan, so never read-only. Roomy limits (phase37 enforces
+      // them), so specs that add members or clients don't trip over the
+      // plan's: Starter's 3 clients and 5 members, plus an admin override
+      // (phase42) taking both to 50.
+      .insert({ name: "E2E Test Agency", plan: "starter", extra_clients: 47, extra_seats: 45 })
       .select("id")
       .single();
     if (agencyError) throw agencyError;

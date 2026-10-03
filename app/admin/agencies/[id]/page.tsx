@@ -8,7 +8,7 @@ import {
   useUpdateAgency,
   type AdminAgency,
 } from "@/hooks/use-admin-agencies";
-import { planById } from "@/lib/plans";
+import { AI_REQUESTS_PER_MONTH, formatBytes, limitLabel, planById } from "@/lib/plans";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { errorMessage } from "@/lib/errors";
 
@@ -25,20 +25,23 @@ export default function AdminAgencyPage({ params }: { params: Promise<{ id: stri
   return <AgencyForm key={agency.id} agency={agency} />;
 }
 
+const GB = 1024 ** 3;
+
 function AgencyForm({ agency }: { agency: AdminAgency }) {
   const update = useUpdateAgency(agency.id);
-  const [plan, setPlan] = useState(agency.plan);
-  // An empty box is unlimited.
-  const [seats, setSeats] = useState(agency.seat_limit === null ? "" : String(agency.seat_limit));
-  const [clients, setClients] = useState(agency.client_limit === null ? "" : String(agency.client_limit));
+  const changePlan = useUpdateAgency(agency.id);
   const handle = useHandlePlanRequest();
-  const limitOrNull = (v: string) => (v.trim() === "" ? null : Number(v));
-  const [ai, setAi] = useState(String(agency.ai_monthly_request_cap));
+  const [plan, setPlan] = useState(agency.plan);
+  const [planSaved, setPlanSaved] = useState(false);
+  // The override (phase42): added to the plan's limits.
+  const [seats, setSeats] = useState(String(agency.extra_seats));
+  const [clients, setClients] = useState(String(agency.extra_clients));
+  const [ai, setAi] = useState(String(agency.extra_ai_requests));
+  const [storageGb, setStorageGb] = useState(String(+(agency.extra_storage_bytes / GB).toFixed(2)));
   const [saved, setSaved] = useState(false);
-  const [address, setAddress] = useState(agency.subdomain ?? "");
-  const [addressSaved, setAddressSaved] = useState(false);
-  const changeAddress = useUpdateAgency(agency.id);
   const [confirmPause, setConfirmPause] = useState(false);
+  const tier = planById(agency.plan);
+  const whole = (v: string) => (v.trim() === "" ? 0 : Number(v));
 
   return (
     <div className="adminform">
@@ -50,6 +53,7 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
         {agency.subdomain ? `${agency.subdomain}.beingfrank.app` : "No address"} ·{" "}
         {agency.suspended_at ? "Paused" : "Active"} · joined {new Date(agency.created_at).toLocaleDateString()}
       </p>
+      <p className="msection-d">The address is the agency&rsquo;s Owner&rsquo;s to change, in Settings → Account URL.</p>
 
       {agency.pending_request && (
         <div className="panel" style={{ marginTop: 16 }}>
@@ -91,88 +95,103 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
         </div>
       )}
 
-      <div className="msection-h">Address</div>
-      <p className="msection-d">
-        Where the agency signs in. Invites and review links already sent use the old address, which stops working once
-        it changes.
-      </p>
-      <div className="field">
-        <label htmlFor="agAddress">Address</label>
-        <div className="subfield">
-          <input
-            id="agAddress"
-            className="bin one"
-            value={address}
-            onChange={(e) => {
-              setAddress(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""));
-              setAddressSaved(false);
-            }}
-          />
-          <span>.beingfrank.app</span>
-        </div>
-      </div>
-      {changeAddress.error && <p className="autherr">{errorMessage(changeAddress.error, "Couldn't change the address")}</p>}
-      <div className="confirm-acts" style={{ justifyContent: "flex-start", alignItems: "center", marginTop: 0 }}>
-        <button
-          type="button"
-          className="btn"
-          disabled={changeAddress.isPending || !address || address === agency.subdomain}
-          onClick={() =>
-            changeAddress
-              .mutateAsync({ subdomain: address })
-              .then(() => setAddressSaved(true))
-              .catch(() => {})
-          }
-        >
-          {changeAddress.isPending ? "Changing…" : "Change Address"}
-        </button>
-        {addressSaved && <span className="bsaved">Changed.</span>}
-      </div>
+      <div className="msection-h">Plan</div>
+      {agency.pays_by_card ? (
+        <p className="msection-d">
+          {tier?.name ?? agency.plan}, paid by card through Paddle. Its Owner changes it in Settings → Your Plan; add to its
+          limits with the override below.
+        </p>
+      ) : (
+        <>
+          <p className="msection-d">Not paying by card, so its plan is set here (or by applying a request).</p>
+          <div className="field">
+            <label htmlFor="agPlan">Plan</label>
+            <select
+              id="agPlan"
+              value={plan}
+              onChange={(e) => {
+                setPlan(e.target.value);
+                setPlanSaved(false);
+              }}
+            >
+              {PLANS.map((p) => (
+                <option key={p} value={p}>
+                  {p[0].toUpperCase() + p.slice(1)}
+                </option>
+              ))}
+            </select>
+          </div>
+          {changePlan.error && <p className="autherr">{errorMessage(changePlan.error, "Couldn't change the plan")}</p>}
+          <div className="confirm-acts" style={{ justifyContent: "flex-start", alignItems: "center", marginTop: 0 }}>
+            <button
+              type="button"
+              className="btn"
+              disabled={changePlan.isPending || plan === agency.plan}
+              onClick={() =>
+                changePlan
+                  .mutateAsync({ plan })
+                  .then(() => setPlanSaved(true))
+                  .catch(() => {})
+              }
+            >
+              {changePlan.isPending ? "Saving…" : "Save Plan"}
+            </button>
+            {planSaved && <span className="bsaved">Saved.</span>}
+          </div>
+        </>
+      )}
 
       <div className="msection-h">Limits</div>
       <p className="msection-d">
-        On {planById(agency.plan)?.name ?? agency.plan}. Using {plural(agency.members, "team member")},{" "}
-        {plural(agency.clients, "client")} and{" "}
+        {tier?.name ?? agency.plan}&rsquo;s, plus the override. Using {plural(agency.members, "team member")},{" "}
+        {plural(agency.clients, "client")}, {formatBytes(agency.storage_bytes)} and{" "}
         {plural(agency.ai_this_month, "AI request")} this month.
       </p>
-      <div className="field">
-        <label htmlFor="agPlan">Plan</label>
-        <select
-          id="agPlan"
-          value={plan}
-          onChange={(e) => {
-            // A plan brings its own limits; adjust after, if needed.
-            setPlan(e.target.value);
-            const tier = planById(e.target.value);
-            if (tier) {
-              setSeats(tier.seats === null ? "" : String(tier.seats));
-              setClients(tier.clients === null ? "" : String(tier.clients));
-            }
-          }}
-        >
-          {PLANS.map((p) => (
-            <option key={p} value={p}>
-              {p[0].toUpperCase() + p.slice(1)}
-            </option>
-          ))}
-        </select>
+      <div className="panel">
+        {[
+          ["Team members", tier?.seats ?? null, agency.extra_seats, agency.seat_limit, limitLabel],
+          ["Active clients", tier?.clients ?? null, agency.extra_clients, agency.client_limit, limitLabel],
+          ["AI requests a month", AI_REQUESTS_PER_MONTH, agency.extra_ai_requests, agency.ai_monthly_request_cap, limitLabel],
+          ["Storage", tier?.storageBytes ?? null, agency.extra_storage_bytes, agency.storage_limit_bytes, formatBytes],
+        ].map(([label, base, extra, total, show]) => {
+          const fmt = show as (n: number | null) => string;
+          return (
+            <div className="srow" key={label as string}>
+              <span className="sl">
+                <b>{label as string}</b>
+                <span>
+                  {fmt(base as number | null)} on {tier?.name ?? agency.plan}
+                  {(extra as number) > 0 ? `, plus ${fmt(extra as number)} added` : ""}
+                </span>
+              </span>
+              <span>{fmt(total as number | null)}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="msection-h">Admin Override</div>
+      <p className="msection-d">Added on top of the plan&rsquo;s limits, and kept when the plan changes. 0 adds nothing.</p>
+      <div className="frow">
+        <div className="field">
+          <label htmlFor="agXSeats">Extra Team Members</label>
+          <input id="agXSeats" className="bin one" inputMode="numeric" value={seats} onChange={(e) => setSeats(e.target.value)} />
+        </div>
+        <div className="field">
+          <label htmlFor="agXClients">Extra Clients</label>
+          <input id="agXClients" className="bin one" inputMode="numeric" value={clients} onChange={(e) => setClients(e.target.value)} />
+        </div>
       </div>
       <div className="frow">
         <div className="field">
-          <label htmlFor="agSeats">
-            Team Members <span className="hint">empty is unlimited</span>
-          </label>
-          <input id="agSeats" className="bin one" inputMode="numeric" value={seats} onChange={(e) => setSeats(e.target.value)} />
+          <label htmlFor="agXAi">Extra AI Requests a Month</label>
+          <input id="agXAi" className="bin one" inputMode="numeric" value={ai} onChange={(e) => setAi(e.target.value)} />
         </div>
         <div className="field">
-          <label htmlFor="agClients">
-            Clients <span className="hint">empty is unlimited</span>
+          <label htmlFor="agXStorage">
+            Extra Storage <span className="hint">GB</span>
           </label>
-          <input id="agClients" className="bin one" inputMode="numeric" value={clients} onChange={(e) => setClients(e.target.value)} />
-        </div>
-        <div className="field">
-          <label htmlFor="agAi">AI Requests a Month</label>
-          <input id="agAi" className="bin one" inputMode="numeric" value={ai} onChange={(e) => setAi(e.target.value)} />
+          <input id="agXStorage" className="bin one" inputMode="decimal" value={storageGb} onChange={(e) => setStorageGb(e.target.value)} />
         </div>
       </div>
       {update.error && <p className="autherr">{errorMessage(update.error, "Couldn't save")}</p>}
@@ -185,16 +204,16 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
             setSaved(false);
             await update
               .mutateAsync({
-                plan,
-                seat_limit: limitOrNull(seats),
-                client_limit: limitOrNull(clients),
-                ai_monthly_request_cap: Number(ai),
+                extra_seats: whole(seats),
+                extra_clients: whole(clients),
+                extra_ai_requests: whole(ai),
+                extra_storage_bytes: Math.round(Number(storageGb || 0) * GB),
               })
               .then(() => setSaved(true))
               .catch(() => {});
           }}
         >
-          {update.isPending ? "Saving…" : "Save Limits"}
+          {update.isPending ? "Saving…" : "Save Override"}
         </button>
         {saved && <span className="bsaved">Saved.</span>}
       </div>

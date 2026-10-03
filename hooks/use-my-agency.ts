@@ -20,11 +20,13 @@ export function useMyAgency() {
       seatLimit: number | null;
       plan: string;
       subdomain: string | null;
+      trialEndsAt: string | null;
+      storageLimit: number | null;
     } | null> => {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("memberships")
-        .select("agency_id, client_id, agencies(name, client_limit, seat_limit, plan, subdomain)")
+        .select("agency_id, client_id, agencies(name, client_limit, seat_limit, plan, subdomain, trial_ends_at, storage_limit_bytes)")
         .eq("user_id", user!.id)
         .is("removed_at", null)
         .not("accepted_at", "is", null)
@@ -41,6 +43,8 @@ export function useMyAgency() {
           seat_limit: number | null;
           plan: string;
           subdomain: string | null;
+          trial_ends_at: string | null;
+          storage_limit_bytes: number | null;
         } | null;
       };
       return {
@@ -53,6 +57,10 @@ export function useMyAgency() {
         plan: row.agencies?.plan ?? "free",
         // Its address, agencyname.beingfrank.app (phase36).
         subdomain: row.agencies?.subdomain ?? null,
+        // Free's 30-day trial, and the plan's storage (phase41). null
+        // storage is unlimited.
+        trialEndsAt: row.agencies?.trial_ends_at ?? null,
+        storageLimit: row.agencies?.storage_limit_bytes ?? null,
       };
     },
     enabled: !!user?.id,

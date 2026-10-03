@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAnonServerClient } from "@/lib/supabase/anon-server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { brandingAllowed } from "@/lib/plans";
 
 interface RpcCreative {
   id: string;
@@ -209,7 +210,12 @@ export async function POST(request: Request) {
       .select("agency_id")
       .eq("token", token)
       .maybeSingle();
-    if (link) {
+    // Logo and colours are a Growth-and-up feature (the spec's white-label
+    // row; phase41): below that, review links keep Frank's own look.
+    const { data: owner } = link
+      ? await serviceRole.from("agencies").select("plan").eq("id", link.agency_id).maybeSingle()
+      : { data: null };
+    if (link && brandingAllowed(owner?.plan)) {
       const { data: settings } = await serviceRole
         .from("agency_settings")
         .select("theme, logo_asset_id")

@@ -34,7 +34,12 @@ export function LoginForm({
 
     if (error) {
       setLoading(false);
-      setError(error.message);
+      // Signed up on beingfrank.app but not confirmed yet (phase42).
+      setError(
+        error.message.toLowerCase().includes("not confirmed")
+          ? "Confirm your email first: open the link we sent when you signed up."
+          : error.message,
+      );
       return;
     }
 
@@ -52,8 +57,8 @@ export function LoginForm({
         {adminArea
           ? "For Frank's platform admins only."
           : workspaceName
-            ? `${workspaceName}'s Frank workspace. Use the account they invited you with.`
-            : "Use the account your agency invited you with."}
+            ? `${workspaceName}'s Frank workspace.`
+            : "Use the account you signed up or were invited with."}
       </p>
 
       <label className="authfield">

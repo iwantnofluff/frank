@@ -29,11 +29,28 @@ export function errorMessage(error: unknown, fallback: string): string {
 function friendlyLimit(message: string): string {
   const clients = message.match(/client limit reached \((\d+)\)/);
   if (clients) {
-    return `This agency's plan allows ${clients[1]} active clients. Archive one, or ask Frank to raise the limit.`;
+    return `This agency's plan allows ${clients[1]} active clients. Archive one, or move to a bigger plan in Settings → Your Plan.`;
   }
   const members = message.match(/member limit reached \((\d+)\)/);
   if (members) {
-    return `This agency's plan allows ${members[1]} team members, counting invites not yet accepted. Remove someone, or ask Frank to raise the limit.`;
+    return `This agency's plan allows ${members[1]} team members, counting invites not yet accepted. Remove someone, or move to a bigger plan in Settings → Your Plan.`;
+  }
+  // Free's trial over (phase41): nothing changes until a paid plan.
+  if (message.includes("agency is read-only")) {
+    return "Your agency's free trial has ended, so Frank is read-only. Choose a plan in Settings → Your Plan to carry on.";
+  }
+  const storage = message.match(/storage limit reached \((\d+)\)/);
+  if (storage) {
+    return `This agency's plan includes ${formatGb(Number(storage[1]))} of storage, and it's full. Delete files you no longer need, or move to a bigger plan.`;
+  }
+  // Storage reports a database refusal without its words; the upload
+  // check (lib/upload-guard.ts) normally says why before it gets here.
+  if (message.includes("database error, code: P0001")) {
+    return "The upload was refused: your agency's storage is full, or its free trial has ended.";
   }
   return message;
+}
+
+function formatGb(bytes: number) {
+  return bytes >= 1024 ** 3 ? `${+(bytes / 1024 ** 3).toFixed(1)} GB` : `${Math.round(bytes / 1024 ** 2)} MB`;
 }

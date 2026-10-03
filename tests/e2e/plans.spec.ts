@@ -36,6 +36,8 @@ async function staffRole(frank: Frank, role: string) {
 
 test("an Admin asks for another plan, and the platform admin applies it", async ({ page, browser, frank }) => {
   test.setTimeout(120_000);
+  // No admin override, so the plan's own limits show (phase42).
+  await admin.from("agencies").update({ extra_clients: 0, extra_seats: 0 }).eq("id", frank.agencyId);
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/settings/plan`);
   await page.waitForURL(/\/settings\/plan\/plans$/);
@@ -111,8 +113,9 @@ test("a User sees the plans but can't ask for one, and the database agrees", asy
   expect(error?.code).toBe("42501");
 });
 
-test("the admin area can decline a request, and an empty limit is unlimited", async ({ page, frank }) => {
+test("the admin area can decline a request, and a plan it sets brings that plan's limits", async ({ page, frank }) => {
   test.setTimeout(90_000);
+  await admin.from("agencies").update({ extra_clients: 0, extra_seats: 0 }).eq("id", frank.agencyId);
   const staffId = (await admin.from("users").select("id").eq("email", frank.staffEmail).single()).data!.id;
   await admin.from("plan_requests").insert({ agency_id: frank.agencyId, requested_plan: "agency", requested_by: staffId });
   const pa = await makePlatformAdmin();
@@ -130,12 +133,11 @@ test("the admin area can decline a request, and an empty limit is unlimited", as
     expect(req!.outcome).toBe("declined");
     expect((await admin.from("agencies").select("plan").eq("id", frank.agencyId).single()).data!.plan).toBe("starter");
 
-    // Picking Agency fills in its limits: unlimited members (an empty box).
+    // Agency, set here (not paying by card): its limits, unlimited members.
     await page.selectOption("#agPlan", "agency");
-    await expect(page.locator("#agSeats")).toHaveValue("");
-    await expect(page.locator("#agClients")).toHaveValue("25");
-    await page.getByRole("button", { name: "Save Limits" }).click();
-    await expect(page.getByText("Saved.")).toBeVisible();
+    await page.getByRole("button", { name: "Save Plan" }).click();
+    await expect(page.getByText("Saved.")).toBeVisible({ timeout: 20_000 });
+    await expect(page.locator(".srow", { hasText: "Team members" })).toContainText("Unlimited on Agency", { timeout: 20_000 });
     const { data: agency } = await admin.from("agencies").select("plan, seat_limit, client_limit").eq("id", frank.agencyId).single();
     expect(agency).toEqual({ plan: "agency", seat_limit: null, client_limit: 25 });
     await page.goto(`${ADMIN}/admin`);

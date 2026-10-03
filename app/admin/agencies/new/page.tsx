@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCreateAgency } from "@/hooks/use-admin-agencies";
 import { errorMessage } from "@/lib/errors";
+import { PLANS } from "@/lib/plans";
 
 // A new agency at its own address, with its Primary Owner invited there.
 export default function NewAgencyPage() {
@@ -12,6 +13,8 @@ export default function NewAgencyPage() {
   const [name, setName] = useState("");
   const [subdomain, setSubdomain] = useState("");
   const [ownerEmail, setOwnerEmail] = useState("");
+  // Decided directly: Free by default, so the agency can upgrade by card.
+  const [plan, setPlan] = useState("free");
   const [warning, setWarning] = useState<string | null>(null);
 
   return (
@@ -19,7 +22,7 @@ export default function NewAgencyPage() {
       className="adminform"
       onSubmit={async (e) => {
         e.preventDefault();
-        const result = await create.mutateAsync({ name, subdomain, ownerEmail }).catch(() => null);
+        const result = await create.mutateAsync({ name, subdomain, ownerEmail, plan }).catch(() => null);
         if (!result) return;
         if (result.warning) setWarning(result.warning);
         else router.push(`/admin/agencies/${result.agencyId}`);
@@ -49,6 +52,18 @@ export default function NewAgencyPage() {
       <div className="field">
         <label htmlFor="agOwner">Primary Owner&rsquo;s Email</label>
         <input id="agOwner" type="email" className="bin one" required value={ownerEmail} onChange={(e) => setOwnerEmail(e.target.value)} />
+      </div>
+      <div className="field">
+        <label htmlFor="agNewPlan">
+          Plan <span className="hint">Free starts a 30-day trial; the owner can then pay for a plan themselves</span>
+        </label>
+        <select id="agNewPlan" className="bin one" value={plan} onChange={(e) => setPlan(e.target.value)}>
+          {PLANS.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
       </div>
       {create.error && <p className="autherr">{errorMessage(create.error, "Couldn't create the agency")}</p>}
       {warning && <p className="autherr">{warning}</p>}

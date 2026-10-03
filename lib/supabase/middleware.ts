@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { agencyHeader, tenantFromHost } from "@/lib/tenant";
+import { agencyHeader, hostWithSubdomain, tenantFromHost } from "@/lib/tenant";
 
 // Routes that stay reachable without a session — the shared client review
 // link (spec section 26) is opened by people who never get an account, and
@@ -34,6 +34,11 @@ const PUBLIC_PATH_PREFIXES = [
   "/api/ai/classify-comment",
   // Paddle's notifications (phase39): no session, checked by signature.
   "/api/billing/paddle-webhook",
+  // Sign-up (phase42): the form on beingfrank.app, and the confirmation
+  // link that opens the new agency's address.
+  "/api/signup",
+  "/api/find-workspaces",
+  "/confirm",
 ];
 
 function isPublicPath(pathname: string) {
@@ -49,9 +54,11 @@ export async function updateSession(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isAdminPath = path === "/admin" || path.startsWith("/admin/") || path.startsWith("/api/admin/");
 
-  // beingfrank.app itself is a holding page (decided directly), whatever
-  // the path. Nothing there needs a session.
+  // beingfrank.app itself is where agencies sign up, and find their way to
+  // their own address to sign in (decided directly, phase42), whatever the
+  // path; plus the routes that page calls. Nothing there needs a session.
   if (tenant.kind === "root") {
+    if (path.startsWith("/api/signup") || path === "/api/find-workspaces") return NextResponse.next();
     return NextResponse.rewrite(new URL("/welcome", request.url));
   }
   // admin.beingfrank.app is the platform admin area (phase37) and nothing
@@ -122,6 +129,14 @@ export async function updateSession(request: NextRequest) {
     const { data: workspace } = await supabase.rpc("workspace_for_subdomain", { p_subdomain: tenant.subdomain });
     const found = (workspace as { name: string; suspended: boolean }[] | null)?.[0];
     if (!found) {
+      // An address the agency used to have (phase41): the same page at its
+      // new one, so links already sent keep working.
+      const { data: moved } = await supabase.rpc("current_subdomain_for", { p_subdomain: tenant.subdomain });
+      if (typeof moved === "string" && moved) {
+        const to = new URL(request.url);
+        to.host = hostWithSubdomain(request.headers.get("host") ?? to.host, tenant.subdomain, moved);
+        return NextResponse.redirect(to, 308);
+      }
       return showInstead("/no-workspace", 404);
     }
     // Suspended from the admin area (phase37): nobody gets in, and its

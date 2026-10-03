@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { validateKnowledgeFile } from "@/lib/knowledge-file-validation";
+import { assertCanUpload } from "@/lib/upload-guard";
 
 // Shared by both agency- and client-level knowledge file uploads (the two
 // new mutations in use-agency-knowledge-mutations.ts and
@@ -17,6 +18,7 @@ export async function uploadKnowledgeAsset(agencyId: string, file: File): Promis
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not signed in");
+  await assertCanUpload(agencyId, file.size);
 
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const path = `${agencyId}/knowledge/${crypto.randomUUID()}-${safeName}`;

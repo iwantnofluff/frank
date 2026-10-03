@@ -12,6 +12,15 @@ export interface AdminAgency {
   plan: string;
   seat_limit: number | null; // null: unlimited
   client_limit: number | null;
+  storage_limit_bytes: number | null; // null: unlimited (phase41)
+  trial_ends_at: string | null; // Free's 30-day trial
+  // The admin override, added to the plan's limits (phase42).
+  extra_seats: number;
+  extra_clients: number;
+  extra_ai_requests: number;
+  extra_storage_bytes: number;
+  // Paying through Paddle: the plan is its Owner's, not the admin's.
+  pays_by_card: boolean;
   ai_monthly_request_cap: number;
   created_at: string;
   // A plan change the agency has asked for, not yet applied (phase38).
@@ -42,7 +51,7 @@ export function useAdminAgencies() {
 export function useCreateAgency() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: { name: string; subdomain: string; ownerEmail: string }) =>
+    mutationFn: (input: { name: string; subdomain: string; ownerEmail: string; plan: string }) =>
       call<{ agencyId: string; warning?: string }>("/api/admin/agencies", { method: "POST", body: JSON.stringify(input) }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["admin-agencies"] });
@@ -56,11 +65,12 @@ export function useUpdateAgency(id: string) {
     mutationFn: (
       input: Partial<{
         plan: string;
-        seat_limit: number | null;
-        client_limit: number | null;
-        ai_monthly_request_cap: number;
+        // The admin override, on top of the plan (phase42).
+        extra_seats: number;
+        extra_clients: number;
+        extra_ai_requests: number;
+        extra_storage_bytes: number;
         suspended: boolean;
-        subdomain: string;
       }>,
     ) => call<{ ok: true }>(`/api/admin/agencies/${id}`, { method: "PATCH", body: JSON.stringify(input) }),
     onSuccess: async () => {
