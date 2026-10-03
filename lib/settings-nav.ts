@@ -26,8 +26,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     label: "Customisation",
     pages: [
       { href: "/settings/customisation/logo", label: "Logo" },
-      { href: "/settings/customisation/colour-presets", label: "Colour Presets" },
-      { href: "/settings/customisation/interface-colours", label: "Interface Colours" },
+      { href: "/settings/customisation/brand-colours", label: "Brand Colours" },
     ],
   },
   {

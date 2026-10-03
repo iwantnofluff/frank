@@ -114,9 +114,9 @@ function Swatch({
 
 // What used to be the single Branding page, now shown one part at a time
 // across Settings → General and Customisation (direct instruction). Each
-// page saves only its own part: the name, the presets (with the theme a
-// preset sets), or the colours. The logo saves on its own, as before.
-export type BrandPart = "name" | "logo" | "presets" | "colours";
+// page saves only its own part: the name, or the brand colours (the presets
+// and every colour, together). The logo saves on its own, as before.
+export type BrandPart = "name" | "logo" | "colours";
 
 export function BrandForm({
   part,
@@ -159,11 +159,9 @@ export function BrandForm({
   const dirty =
     part === "name"
       ? name.trim() !== agencyName
-      : part === "presets"
+      : part === "colours"
         ? !sameColours(theme, savedTheme) || !sameColours(presets, savedPresets)
-        : part === "colours"
-          ? !sameColours(theme, savedTheme)
-          : false;
+        : false;
   const active = matchPreset(theme, { ...BUILT_IN_PRESETS, ...presets });
 
   function setColour(k: ThemeKey, v: string) {
@@ -281,7 +279,7 @@ export function BrandForm({
 
       )}
 
-      {part === "presets" && (
+      {part === "colours" && (
       <div className="panel">
         <div className="panel-h">
           <b>Colour Presets</b>
@@ -368,9 +366,6 @@ export function BrandForm({
       <div className="panel">
         <div className="panel-h">
           <b>Interface Colours</b>
-          <span className="sync">
-            {dirty ? <span className="unsaved">Unsaved changes</span> : "Applies instantly across the app"}
-          </span>
         </div>
         {INTERFACE_COLOURS.map(([k, label, desc]) => (
           <Swatch key={k} k={k} label={label} desc={desc} value={theme[k]} disabled={!canEdit} onChange={setColour} />
@@ -399,9 +394,7 @@ export function BrandForm({
               save.mutate(
                 part === "name"
                   ? { agencyName: name }
-                  : part === "presets"
-                    ? { theme, customPresets: presets }
-                    : { theme },
+                  : { theme, customPresets: presets },
               )
             }
           >

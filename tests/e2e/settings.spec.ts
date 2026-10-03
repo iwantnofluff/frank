@@ -82,6 +82,13 @@ test("settings — the left menu: sections open one at a time, pages have their 
   await expect(page.getByRole("heading", { name: "Coming soon" })).toHaveCount(0);
   await expect(page.locator(".panel-h", { hasText: "Coming soon" })).toBeVisible();
 
+  // Colour Presets and Interface Colours are one page now.
+  await page.goto("/settings/customisation/colour-presets");
+  await page.waitForURL(/\/settings\/customisation\/brand-colours$/);
+  await expect(page.getByRole("heading", { name: "Brand Colours" })).toBeVisible();
+  await expect(page.locator(".panel-h", { hasText: "Colour Presets" })).toBeVisible();
+  await expect(page.locator(".panel-h", { hasText: "Interface Colours" })).toBeVisible();
+
   // Old addresses still land somewhere sensible.
   await page.goto("/settings/team");
   await page.waitForURL(/\/settings\/team\/users$/);

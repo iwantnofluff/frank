@@ -1,11 +1,6 @@
-import { BrandPartPage } from "@/components/settings/BrandPartPage";
+import { redirect } from "next/navigation";
 
-export default function ColourPresetsPage() {
-  return (
-    <BrandPartPage
-      part="presets"
-      title="Colour Presets"
-      description="Pick a ready-made look, or save your own colours as a preset."
-    />
-  );
+// Merged into Brand Colours.
+export default function OldColoursPage() {
+  redirect("/settings/customisation/brand-colours");
 }

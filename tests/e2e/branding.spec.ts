@@ -23,7 +23,7 @@ test("a preset previews live, reverts if not saved, and applies everywhere once 
 }) => {
   test.setTimeout(90_000);
   await frank.loginAsStaff(page);
-  await page.goto(`${APP_URL}/settings/customisation/colour-presets`);
+  await page.goto(`${APP_URL}/settings/customisation/brand-colours`);
   const forest = page.getByRole("button", { name: "Forest" });
   await expect(page.getByRole("button", { name: "No Fluff" })).toHaveAttribute("aria-pressed", "true");
 
@@ -37,7 +37,7 @@ test("a preset previews live, reverts if not saved, and applies everywhere once 
   await page.waitForURL(`${APP_URL}/dashboard`);
   await waitForVar(page, "--action", "#007BFF");
 
-  await page.goto(`${APP_URL}/settings/customisation/colour-presets`);
+  await page.goto(`${APP_URL}/settings/customisation/brand-colours`);
   await forest.click();
   await page.getByRole("button", { name: "Save Changes" }).click();
   await expect(page.getByRole("status")).toHaveText("Saved");
@@ -66,8 +66,8 @@ test("a preset previews live, reverts if not saved, and applies everywhere once 
 test("hex edits, saved presets and Reset to Default", async ({ page, frank }) => {
   test.setTimeout(60_000);
   await frank.loginAsStaff(page);
-  // Colours are edited on Interface Colours…
-  await page.goto(`${APP_URL}/settings/customisation/interface-colours`);
+  // Colours are edited on Brand Colours…
+  await page.goto(`${APP_URL}/settings/customisation/brand-colours`);
   const hex = page.getByLabel("Primary Action hex");
   await hex.fill("not a colour");
   await hex.blur();
@@ -78,8 +78,8 @@ test("hex edits, saved presets and Reset to Default", async ({ page, frank }) =>
   await page.getByRole("button", { name: "Save Changes" }).click();
   await expect(page.getByRole("status")).toHaveText("Saved");
 
-  // …and kept as a preset on Colour Presets.
-  await page.goto(`${APP_URL}/settings/customisation/colour-presets`);
+  // …and kept as a preset on the same page.
+  await page.goto(`${APP_URL}/settings/customisation/brand-colours`);
   await expect(page.getByRole("button", { name: "No Fluff" })).toHaveAttribute("aria-pressed", "false");
   await page.getByRole("button", { name: "Save current as preset" }).click();
   const dialog = page.getByRole("dialog", { name: "Save Colour Preset" });
@@ -181,7 +181,7 @@ test("a User can see the agency's look but not change it", async ({ page, frank 
   const staffId = (await admin.from("users").select("id").eq("email", frank.staffEmail).single()).data!.id;
   await admin.from("memberships").update({ role: "user" }).eq("agency_id", frank.agencyId).eq("user_id", staffId);
   await frank.loginAsStaff(page);
-  await page.goto(`${APP_URL}/settings/customisation/colour-presets`);
+  await page.goto(`${APP_URL}/settings/customisation/brand-colours`);
   await expect(page.getByText("Only Admins, Owners and the Primary Owner can change this.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Save Changes" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Forest" })).toBeDisabled();
