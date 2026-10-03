@@ -2,6 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { planForPrice } from "./prices";
 import { nextBillingState, type BillingRow, type PaddleSubscription } from "./rules";
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export type ApplyResult =
   | { outcome: "applied"; agencyId: string; plan: string; planChanged: boolean; previousPlan: string }
   | { outcome: "stale" | "ignored"; agencyId: string | null }
@@ -18,11 +20,12 @@ export async function applySubscription(
   sub: PaddleSubscription,
   eventAt: string | null,
 ): Promise<ApplyResult> {
-  const subscribed = planForPrice(sub.items[0]?.price.id ?? "");
-  if (!subscribed) throw new Error(`Paddle subscription ${sub.id} is on a price Frank doesn't know`);
-
-  // Which agency: the one Frank's checkout named, else whoever has it.
-  let agencyId = typeof sub.custom_data?.agency_id === "string" ? sub.custom_data.agency_id : null;
+  // Which agency: the one Frank's checkout named, else whoever has it. Only
+  // then does anything else matter: an event for no agency of this site's
+  // (Paddle's own test events; staging's, arriving here, or the other way
+  // round) is set aside rather than failed, or Paddle would keep retrying it.
+  const named = sub.custom_data?.agency_id;
+  let agencyId = typeof named === "string" && UUID.test(named) ? named : null;
   if (!agencyId) {
     const { data } = await admin
       .from("agency_billing")
@@ -41,6 +44,9 @@ export async function applySubscription(
   if (prevError) throw prevError;
   if (!agency) return { outcome: "ignored", agencyId: null };
   const prev = prevRow as BillingRow | null;
+
+  const subscribed = planForPrice(sub.items[0]?.price.id ?? "");
+  if (!subscribed) throw new Error(`Paddle subscription ${sub.id} is on a price Frank doesn't know`);
 
   if (prev?.paddle_subscription_id && prev.paddle_subscription_id !== sub.id) {
     // An older subscription ending doesn't touch the newer one.

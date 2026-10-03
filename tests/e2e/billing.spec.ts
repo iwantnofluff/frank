@@ -110,6 +110,34 @@ test("the webhook: paying, a downgrade waiting for renewal, and cancelling", asy
   expect((await billingNow(frank))!.status).toBe("canceled");
 });
 
+test("the webhook sets aside an event for no agency of its own, rather than failing", async () => {
+  // Paddle's test events, and the other site's (staging and live share the
+  // sandbox): no agency here, and a price Frank doesn't know.
+  for (const custom_data of [null, { agency_id: "not-a-uuid" }, { agency_id: "00000000-0000-4000-8000-000000000000" }]) {
+    const body = JSON.stringify({
+      event_id: `evt_e2e_${Date.now()}_${n++}`,
+      event_type: "subscription.created",
+      occurred_at: new Date().toISOString(),
+      data: {
+        id: "sub_e2e_nobody",
+        status: "active",
+        customer_id: "ctm_e2e",
+        items: [{ price: { id: "pri_not_franks" } }],
+        current_billing_period: OCT,
+        scheduled_change: null,
+        custom_data,
+      },
+    });
+    const ts = Math.floor(Date.now() / 1000);
+    const res = await fetch(`${APP_URL}/api/billing/paddle-webhook`, {
+      method: "POST",
+      headers: { "Paddle-Signature": `ts=${ts};h1=${createHmac("sha256", SECRET).update(`${ts}:${body}`).digest("hex")}` },
+      body,
+    });
+    expect(res.status, JSON.stringify(custom_data)).toBe(200);
+  }
+});
+
 async function seedPaying(frank: Frank, over: Record<string, unknown> = {}) {
   await admin.from("agencies").update({ plan: "growth" }).eq("id", frank.agencyId);
   const { error } = await admin.from("agency_billing").insert({

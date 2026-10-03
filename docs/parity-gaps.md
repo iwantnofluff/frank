@@ -1952,3 +1952,9 @@ Direct instruction: the five plan cards take the full width (`auto-fit`, not `au
 - The bypass key: without it staging answers 302 to Vercel's login; with it, the request reaches the app, in a header or in the address.
 - Looked at the Plans page at 1600px: five cards across the full width.
 - `billing.spec.ts` and `tenancy.spec.ts`: 10/10.
+
+Then, with a separate Paddle setup key (notification settings, kept apart from Frank's own key), the "Frank staging" destination was created through Paddle's API. The bypass key is in its address, and its secret went straight into the `staging` branch's settings. Live's destination is unchanged.
+- **What Paddle's own test event found:** staging answered it with a 500. The webhook checked the price before the agency, so an event for no agency of the site's own (Paddle's test events, or the other site's, since both share the sandbox) failed instead of being set aside, and Paddle would keep retrying it. An agency reference that isn't an ID would also have failed on the database.
+- **The fix:** it now finds the agency first and ignores anything that isn't one of its own.
+
+**Verified**: `billing.spec.ts` has a new test: three such events (no agency, a malformed reference, an unknown agency, all with a price Frank doesn't know) each get 200. The webhook test still passes.
