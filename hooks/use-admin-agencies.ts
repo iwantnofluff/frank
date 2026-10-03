@@ -21,6 +21,8 @@ export interface AdminAgency {
   extra_storage_bytes: number;
   // Paying through Paddle: the plan is its Owner's, not the admin's.
   pays_by_card: boolean;
+  // Deleting outright: staging only (ALLOW_AGENCY_DELETE).
+  can_delete: boolean;
   ai_monthly_request_cap: number;
   created_at: string;
   // A plan change the agency has asked for, not yet applied (phase38).
@@ -85,6 +87,19 @@ export function useHandlePlanRequest() {
   return useMutation({
     mutationFn: ({ id, outcome }: { id: string; outcome: "applied" | "declined" }) =>
       call<{ ok: true }>(`/api/admin/plan-requests/${id}`, { method: "PATCH", body: JSON.stringify({ outcome }) }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["admin-agencies"] });
+    },
+  });
+}
+
+// Staging only: an agency and everything in it, and its people's accounts
+// unless they're elsewhere, so the same agency and email can sign up again.
+export function useDeleteAgency() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      call<{ files: number; accounts: string[] }>(`/api/admin/agencies/${id}`, { method: "DELETE" }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["admin-agencies"] });
     },

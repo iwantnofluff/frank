@@ -72,7 +72,9 @@ export async function GET() {
         })(),
       };
     });
-  return NextResponse.json({ agencies: rows });
+  // Deleting outright is staging's alone (ALLOW_AGENCY_DELETE).
+  const canDelete = process.env.ALLOW_AGENCY_DELETE === "true";
+  return NextResponse.json({ agencies: rows.map((r) => ({ ...r, can_delete: canDelete })) });
 }
 
 // A new agency, with its Primary Owner invited to its own address.

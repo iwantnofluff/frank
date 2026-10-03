@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { useAdminAgencies } from "@/hooks/use-admin-agencies";
+import { useAdminAgencies, useDeleteAgency, type AdminAgency } from "@/hooks/use-admin-agencies";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { errorMessage } from "@/lib/errors";
 import { formatBytes, isReadOnly, limitLabel, planById } from "@/lib/plans";
 import { ROOT_DOMAIN } from "@/lib/tenant";
@@ -10,6 +12,10 @@ import { ROOT_DOMAIN } from "@/lib/tenant";
 // Every agency, with its usage against its limits.
 export default function AdminAgenciesPage() {
   const { data: agencies, isLoading, error } = useAdminAgencies();
+  const remove = useDeleteAgency();
+  const [deleting, setDeleting] = useState<AdminAgency | null>(null);
+  const [deleted, setDeleted] = useState<string | null>(null);
+  const canDelete = !!agencies?.some((a) => a.can_delete);
   return (
     <>
       <div className="adminhead">
@@ -22,6 +28,7 @@ export default function AdminAgenciesPage() {
         </Link>
       </div>
       {isLoading && <p className="sub">Loading…</p>}
+      {deleted && <p className="bsaved">{deleted}</p>}
       {error && <p className="autherr">{errorMessage(error, "Couldn't load the agencies")}</p>}
       {agencies && (
         <table className="admintbl">
@@ -36,6 +43,7 @@ export default function AdminAgenciesPage() {
               <th>AI this month</th>
               <th>Status</th>
               <th>Joined</th>
+              {canDelete && <th aria-label="Delete" />}
             </tr>
           </thead>
           <tbody>
@@ -86,10 +94,43 @@ export default function AdminAgenciesPage() {
                   )}
                 </td>
                 <td className="tdim">{new Date(a.created_at).toLocaleDateString()}</td>
+                {canDelete && (
+                  <td>
+                    <button type="button" className="btn sm danger" onClick={() => setDeleting(a)}>
+                      Delete
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
         </table>
+      )}
+      {deleting && (
+        <ConfirmDialog
+          title={`Delete ${deleting.name}?`}
+          message={`this deletes ${deleting.name}, every client, post and file in it, and the accounts of its people who aren't in another agency, so their emails can sign up again. Staging only; it can't be undone.`}
+          confirmLabel="Delete Agency"
+          pendingLabel="Deleting…"
+          isPending={remove.isPending}
+          error={remove.error}
+          errorFallback="Couldn't delete the agency"
+          onConfirm={() =>
+            remove
+              .mutateAsync(deleting.id)
+              .then((r) => {
+                setDeleted(
+                  `Deleted ${deleting.name}${r.accounts.length ? `, and the accounts of ${r.accounts.join(", ")}` : ""}.`,
+                );
+                setDeleting(null);
+              })
+              .catch(() => {})
+          }
+          onClose={() => {
+            setDeleting(null);
+            remove.reset();
+          }}
+        />
       )}
     </>
   );

@@ -1919,3 +1919,20 @@ Also: `staging` is a reserved address (phase43) and the sign-up check refuses it
 - `plans.spec.ts`: the request test now asks for Enterprise. The hand-set-plan note is gone, Free is the one request still blocked by a pending one, and Growth stays open (a checkout). Applying gives Enterprise with unlimited clients and members.
 - `plans.spec.ts` and `billing.spec.ts`: 7/7.
 - By hand: an agency on hand-set Starter clicking Choose Growth gets Paddle's checkout (Frank Growth, $149, test mode).
+
+## Staging: deleting an agency outright
+
+Direct instruction: on staging only, the admin table can delete an agency, so the same agency and email can be signed up again while testing.
+- **The switch:** `ALLOW_AGENCY_DELETE=true`, set for the `staging` branch alone in Vercel. Without it, the button isn't shown and `DELETE /api/admin/agencies/[id]` refuses (403). Live keeps pausing as its only way to stop an agency.
+- **What it deletes** (`lib/admin/delete-agency.ts`):
+  - every row, in the e2e teardown's foreign-key order
+  - the agency's files in Storage
+  - the agency itself
+  - the accounts of its people who aren't in another agency (platform admins are never deleted), which is what frees their emails
+- **Paddle:** a live sandbox subscription is cancelled first.
+
+The staging admin account is `admin@nofluff.in`. Live's stays `raj+admin@nofluff.in`.
+
+**Verified**: typecheck and lint clean.
+- **The function, against staging's database:** a throwaway agency with an owner, a client and an uploaded file was deleted with nothing left (agency, file and user row gone). The same email could be used again at once, and the platform admin was untouched.
+- **Locally,** where the setting is off: a platform admin sees no Delete button, and the route answers 403 with the agency untouched.

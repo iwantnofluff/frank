@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { requirePlatformAdmin } from "@/lib/admin/require-platform-admin";
+import { deleteAgency } from "@/lib/admin/delete-agency";
+import { paddle } from "@/lib/billing/paddle";
 
 // The plan_tier values (phase0).
 const PLANS = ["free", "starter", "growth", "agency", "enterprise"];
@@ -54,4 +56,38 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!data) return NextResponse.json({ error: "Agency not found" }, { status: 404 });
   return NextResponse.json({ ok: true });
+}
+
+// Deleting an agency outright: staging only (decided directly), where
+// ALLOW_AGENCY_DELETE is set, so the same agency and email can be signed up
+// again while testing. Live keeps pausing as its only way to stop one.
+export async function DELETE(_request: Request, ctx: { params: Promise<{ id: string }> }) {
+  if (process.env.ALLOW_AGENCY_DELETE !== "true") {
+    return NextResponse.json({ error: "Agencies can't be deleted here." }, { status: 403 });
+  }
+  const auth = await requirePlatformAdmin();
+  if ("error" in auth) return auth.error;
+  const { admin } = auth;
+  const { id } = await ctx.params;
+
+  // A Paddle (sandbox) subscription would otherwise keep renewing for an
+  // agency that's gone.
+  const { data: billing } = await admin
+    .from("agency_billing")
+    .select("paddle_subscription_id, status")
+    .eq("agency_id", id)
+    .maybeSingle();
+  if (billing?.paddle_subscription_id && billing.status !== "canceled") {
+    try {
+      await paddle("POST", `/subscriptions/${billing.paddle_subscription_id}/cancel`, { effective_from: "immediately" });
+    } catch {
+      // Already cancelled at Paddle, or not found: nothing left to stop.
+    }
+  }
+  try {
+    const result = await deleteAgency(admin, id);
+    return NextResponse.json(result);
+  } catch (e) {
+    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+  }
 }
