@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReviewController } from "@/hooks/use-review-controller";
+import { ReviewViewSwitch, SharedFeedGrid } from "./SharedFeedGrid";
 import { formatsLabel, postFormats } from "@/lib/formats";
 import { ReviewMedia } from "./ReviewMedia";
 import { MomentBadge } from "./MomentBadge";
@@ -41,7 +42,9 @@ export function MobileReview({
           </span>
         </div>
 
-        {creatives.length > 1 && (
+        <ReviewViewSwitch controller={controller} />
+
+        {controller.view === "post" && creatives.length > 1 && (
           <div className="m-nav">
             <button
               className="m-arrow"
@@ -74,6 +77,9 @@ export function MobileReview({
         )}
 
         <div className="m-scroll">
+          {controller.view === "feed" ? (
+            <SharedFeedGrid controller={controller} />
+          ) : (
           <div className="m-body">
             {!active ? (
               <div className="m-empty">
@@ -142,9 +148,10 @@ export function MobileReview({
               </div>
             ))}
           </div>
+          )}
         </div>
 
-        {active && <GuestComposer controller={controller} variant="mobile" />}
+        {active && controller.view === "post" && <GuestComposer controller={controller} variant="mobile" />}
       </div>
     </div>
   );

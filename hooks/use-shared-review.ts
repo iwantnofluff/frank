@@ -87,3 +87,20 @@ export function useSharedReview(token: string, passcode: string | null) {
     retry: false,
   });
 }
+
+// The review link's client's live Instagram feed (phase54), if connected.
+export function useSharedInstagramFeed(token: string, passcode: string | null, enabled: boolean) {
+  return useQuery({
+    queryKey: ["shared-instagram", token, passcode],
+    queryFn: async (): Promise<import("@/lib/instagram/store").FeedResult> => {
+      const res = await fetch("/api/shared-review/instagram", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, passcode }),
+      });
+      return res.json();
+    },
+    enabled,
+    staleTime: 5 * 60_000,
+  });
+}

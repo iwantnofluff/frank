@@ -39,6 +39,13 @@ const PUBLIC_PATH_PREFIXES = [
   "/api/signup",
   "/api/find-workspaces",
   "/confirm",
+  // A client connecting their own Instagram through the agency's link
+  // (phase54): the page, and the sign-in it starts. The start route checks
+  // a session itself when there's no link.
+  "/connect",
+  "/api/connections/instagram/start",
+  "/api/connections/instagram/status",
+  "/api/connections/instagram/link-info",
 ];
 
 function isPublicPath(pathname: string) {
@@ -60,7 +67,14 @@ export async function updateSession(request: NextRequest) {
   if (tenant.kind === "root") {
     // Paddle's notifications too: staging.beingfrank.app has no agency of its
     // own to send them to.
-    if (path.startsWith("/api/signup") || path === "/api/find-workspaces" || path === "/api/billing/paddle-webhook") {
+    // And Instagram's sign-in coming back (phase54): Meta takes one fixed
+    // address per environment, so it lands here and moves on to the agency.
+    if (
+      path.startsWith("/api/signup") ||
+      path === "/api/find-workspaces" ||
+      path === "/api/billing/paddle-webhook" ||
+      path === "/api/connections/instagram/callback"
+    ) {
       return NextResponse.next();
     }
     return NextResponse.rewrite(new URL("/welcome", request.url));

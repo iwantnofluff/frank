@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { useCreatives, type CreativeListRow } from "@/hooks/use-creatives";
 import { FeedTileArt, EmptyTileArt } from "@/components/creative-review/FeedTileArt";
 import { FeedCaptionPopover } from "@/components/creative-review/FeedCaptionPopover";
+import { useClientInstagramFeed } from "@/hooks/use-instagram";
 
 const GRID_SLOTS = 9;
 
@@ -25,11 +26,14 @@ const GRID_SLOTS = 9;
 // chrome (not real buttons) rather than dead buttons that do nothing.
 export function FeedPreviewGrid({
   projectId,
+  clientId,
   activeCreativeId,
   brandName,
   onSelect,
 }: {
   projectId: string;
+  // Its client's connected Instagram (phase54): the real header and posts.
+  clientId: string | null;
   activeCreativeId: string;
   brandName: string;
   onSelect: (creativeId: string) => void;
@@ -38,6 +42,12 @@ export function FeedPreviewGrid({
   // Deleted (archived_at) posts never show here — useCreatives now
   // returns them too, for the project page's own Active/Archived toggle.
   const creatives = useMemo(() => (allCreatives ?? []).filter((c) => !c.archived_at), [allCreatives]);
+  // The client's real feed, once connected (phase54): the planned posts
+  // first, then the real ones after them, the way the grid will read once
+  // these go live.
+  const { data: live } = useClientInstagramFeed(clientId);
+  const feed = live?.status === "ok" ? live.feed : null;
+  const livePosts = feed?.posts ?? [];
 
   // Same hover-preview pattern as ProjectCalendarTable's own creative
   // rows: a short delay before showing (so a pointer passing over several
@@ -66,10 +76,21 @@ export function FeedPreviewGrid({
     <div className="feedcard">
       <div className="fp-h">
         <span className="fp-av">
-          <i />
+          {feed?.profile.pictureUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- Instagram's own short-lived image URL
+            <img src={feed.profile.pictureUrl} alt="" />
+          ) : (
+            <i />
+          )}
         </span>
         <span className="fp-t">
-          <b>{brandName}</b>
+          <b>{feed ? feed.profile.username : brandName}</b>
+          {feed && (
+            <span className="fp-counts">
+              {feed.profile.posts != null && `${feed.profile.posts.toLocaleString()} posts`}
+              {feed.profile.followers != null && ` · ${feed.profile.followers.toLocaleString()} followers`}
+            </span>
+          )}
         </span>
       </div>
       <div className="fp-tabs" role="tablist" aria-label="Profile sections">
@@ -128,17 +149,45 @@ export function FeedPreviewGrid({
               </button>
             );
           })}
+          {/* The client's real posts, after the planned ones (phase54).
+              Each opens on Instagram. */}
+          {livePosts.map((p) => (
+            <a
+              key={p.id}
+              className="feedgrid-tile feedgrid-live"
+              href={p.permalink}
+              target="_blank"
+              rel="noreferrer"
+              title={p.caption ?? "Live on Instagram"}
+            >
+              {p.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element -- Instagram's own short-lived image URL
+                <img src={p.imageUrl} alt={p.caption ?? ""} loading="lazy" />
+              ) : (
+                <EmptyTileArt />
+              )}
+            </a>
+          ))}
           {/* Pad up to a fixed 9 slots — real empty tiles, not just blank
               space, per direct instruction. Never rendered when there are
               already 9+ real creatives; overflow scrolls instead. */}
           {Array.from({
-            length: Math.max(0, GRID_SLOTS - creatives.length),
+            length: Math.max(0, GRID_SLOTS - creatives.length - livePosts.length),
           }).map((_, i) => (
             <div key={`empty-${i}`} className="feedgrid-tile-empty">
               <EmptyTileArt />
             </div>
           ))}
         </div>
+      )}
+      {live && live.status !== "ok" && (
+        <p className="fp-note">
+          {live.status === "not_connected"
+            ? `Connect ${brandName}'s Instagram in Settings → Connections to show its real posts here.`
+            : live.status === "needs_reconnect"
+              ? `@${live.username} needs reconnecting in Settings → Connections to show its real posts.`
+              : `Instagram didn't answer, so the real posts aren't showing: ${live.message}`}
+        </p>
       )}
     </div>
     {hover && (

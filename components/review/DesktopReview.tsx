@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReviewController } from "@/hooks/use-review-controller";
+import { ReviewViewSwitch, SharedFeedGrid } from "./SharedFeedGrid";
 import { formatsLabel, postFormats } from "@/lib/formats";
 import { ReviewMedia } from "./ReviewMedia";
 import { MomentBadge } from "./MomentBadge";
@@ -47,6 +48,7 @@ export function DesktopReview({
               <span>{creatives.length} shared</span>
             </div>
           </div>
+          <ReviewViewSwitch controller={controller} />
           <div className="dk-items">
             {creatives.map((c, i) => (
               <button
@@ -65,7 +67,9 @@ export function DesktopReview({
         </div>
 
         <div className="dk-main">
-          {!active ? (
+          {controller.view === "feed" ? (
+            <SharedFeedGrid controller={controller} />
+          ) : !active ? (
             <div className="m-empty">
               <b>Nothing to review</b>
               <p>There&rsquo;s nothing in scope for this link right now.</p>

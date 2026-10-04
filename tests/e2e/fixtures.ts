@@ -426,6 +426,10 @@ export const test = base.extend<{ frank: Frank }>({
       // By agency_id, not just the fixture's own client.id — new-client.spec.ts
       // creates extra clients through the real New Client modal, same reasoning
       // as shared_links above.
+      // phase54: a client's Instagram connection and connect links (the
+      // token row cascades with its connection).
+      ["instagram_connect_links", () => admin.from("instagram_connect_links").delete().eq("agency_id", agency.id)],
+      ["instagram_connections", () => admin.from("instagram_connections").delete().eq("agency_id", agency.id)],
       ["clients", () => admin.from("clients").delete().eq("agency_id", agency.id)],
       // After clients (clients.logo_asset_id references assets) and after
       // every other table above that references assets (creative_versions,

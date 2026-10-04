@@ -50,7 +50,8 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
   {
     key: "connections",
     label: "Connections",
-    pages: [{ href: "/settings/connections/apis", label: "APIs", soon: true }],
+    // A client's Instagram, for the live feed (phase54).
+    pages: [{ href: "/settings/connections/instagram", label: "Instagram" }],
   },
   {
     key: "plan",

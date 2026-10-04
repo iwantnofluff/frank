@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useSharedReview, type SharedCreative, type SharedReviewContact } from "./use-shared-review";
+import {
+  useSharedInstagramFeed,
+  useSharedReview,
+  type SharedCreative,
+  type SharedReviewContact,
+} from "./use-shared-review";
 import {
   useSubmitSharedComment,
   useSubmitSharedApproval,
@@ -26,6 +31,11 @@ export function useReviewController(token: string) {
   const [videoSeek, setVideoSeek] = useState<{ t: number; nonce: number; slide?: number } | null>(null);
 
   const { data, isLoading, isError } = useSharedReview(token, passcode);
+  // The client's real Instagram, if connected (phase54): a Feed view beside
+  // the post, showing the shared posts among the real ones.
+  const { data: instagram } = useSharedInstagramFeed(token, passcode, data?.status === "ok");
+  const liveFeed = instagram?.status === "ok" ? instagram.feed : null;
+  const [view, setView] = useState<"post" | "feed">("post");
   const identity = useGuestIdentityStore();
   const submitComment = useSubmitSharedComment(token, passcode);
   const submitApproval = useSubmitSharedApproval(token, passcode);
@@ -89,6 +99,9 @@ export function useReviewController(token: string) {
   }
 
   return {
+    liveFeed,
+    view,
+    setView,
     data,
     isLoading,
     isError,

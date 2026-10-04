@@ -6390,3 +6390,99 @@ a.profproject:hover .pp-t b {
   gap: 8px;
   color: var(--muted);
 }
+/* Settings → Connections → Instagram (phase54). */
+.srow.igrow {
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.igacts {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.iglink {
+  display: flex !important;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.iglink input {
+  flex: 1;
+  min-width: 220px;
+  font-size: 12px;
+}
+.iglink .hint {
+  flex-basis: 100%;
+}
+/* The Feed Preview with the client's real Instagram (phase54). */
+.fp-av img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  border: 1.5px solid var(--surface);
+}
+.fp-counts {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+}
+.feedgrid-live {
+  display: block;
+  overflow: hidden;
+}
+.feedgrid-live img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.fp-note {
+  font-size: 12.5px;
+  color: var(--muted);
+  padding: 10px 12px 12px;
+}
+/* A review link's Post / Feed switch and Feed view (phase54). */
+.seg2.reviewviews {
+  display: flex;
+  margin: 6px 14px 4px;
+}
+.seg2.reviewviews button {
+  flex: 1;
+}
+.sharedfeed {
+  margin: 10px;
+}
+.sharedfeed-planned {
+  display: block;
+  background: var(--canvas);
+}
+.sharedfeed-planned img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.sharedfeed-name {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 8px;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+}
+.sharedfeed-badge {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 99px;
+  background: var(--action);
+  color: #fff;
+}

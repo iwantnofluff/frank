@@ -555,6 +555,7 @@ export default function CreativeReviewPage({
             {activeSection === "feed" && (
               <FeedPreviewGrid
                 projectId={creative.project_id}
+                clientId={creative.projects?.client_id ?? null}
                 activeCreativeId={creative.id}
                 brandName={clientName}
                 onSelect={selectFeedCreative}

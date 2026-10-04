@@ -2209,3 +2209,36 @@ Reported directly: on live, Approve took a moment to show "Approved", and a seco
 - **In the database (phase53):** `submit_shared_approval` only changes a post that isn't already approved, and adds the comment only then. A repeat answers "ok" with `already_approved`, and adds nothing. Two clicks at the same instant can't both pass: the second waits on the first's row lock, then finds the post approved.
 
 **Verified**: phase53 was rehearsed on staging (rolled back), then applied. New test in `shared-review-public.spec.ts`: a double-click shows "Approved" within a second, the stage reaches Approved, a further call straight to the database answers `already_approved`, and there's exactly one approval comment. The existing approve test now waits for the saved stage, since "Approved" shows before the save finishes. 7 of 7.
+
+## A client's live Instagram in the Feed Preview
+
+Decided directly: each client can have its Instagram connected, so the Feed Preview shows the planned posts among the real ones. Both the agency and the client see it. Owners and Admins connect it themselves, or send the client a link to connect it without sharing their password. The work starts now while Meta's approval goes on in parallel. Scheduling and publishing are on hold. This is the prototype's deferred live Instagram grid (`#feedPanel`).
+- **Meta's terms:** Instagram API with Instagram Login, scope `instagram_business_basic` (read only). Only Business or Creator accounts can be connected; a personal account is told so. Reading accounts Frank doesn't own needs Advanced Access, which requires Meta's Business Verification and App Review. Until then, only accounts added as testers on Frank's Meta app connect. The user creates the Meta app and applies.
+- **phase54:** `instagram_connections` (the account: username, picture, counts, who connected it and when, and whether it needs reconnecting), readable by staff who can see the client, and disconnected by Owners and Admins. `instagram_tokens` holds the token, encrypted with AES-256-GCM under `INSTAGRAM_TOKEN_KEY`, with RLS on and no policies, so only the server reads it. `instagram_connect_links` are one-use, 7-day links for a client.
+- **The sign-in:** `/api/connections/instagram/start` (an Owner or Admin signed in, or a valid link) sends people to Instagram with a signed state saying which client, who, and where to return, valid for 15 minutes. Meta takes one fixed callback address per environment (no wildcards), so `/api/connections/instagram/callback` sits at the root address (`beingfrank.app`, `staging.beingfrank.app`). It checks the state, exchanges the code for a 60-day token, refuses personal accounts, saves the connection, marks a link used, and returns to the agency's address. Only https callbacks are accepted, so the sign-in is tested on staging, not locally.
+- **Tokens and limits:** a token within a week of expiry, and at least a day old, is renewed when the feed is read. A token Instagram rejects (code 190) marks the connection "Needs reconnecting". The feed is cached for 10 minutes per client (Instagram allows 200 calls an hour per account).
+- **Settings → Connections → Instagram** (replacing the "Coming soon" APIs page): each client's account, with Connect, Reconnect, Send Link and Disconnect for Owners and Admins. It says so when Frank's Meta app isn't set up on that environment.
+- **The Feed Preview:** the real profile header (picture, username, post and follower counts), the planned posts, then the latest real posts (a video by its cover), each opening on Instagram. Without a connection it keeps the "Live Post" placeholders and says how to connect.
+- **Review links:** once the client's account works, a Post / Feed switch shows the link's shared posts (marked "For review", opening the post) among the real ones. It's loaded after the page, so it never slows the review, and it's checked by the same RPC as the link and passcode. A guest never sees a broken connection; the switch just isn't there.
+- **The client's link** (`/connect/instagram/[token]`) says which agency is asking and why, that Frank never sees their password and can't post, then sends them to Instagram.
+
+Gaps:
+- **Not tried against Instagram itself yet.** That needs Frank's Meta app ID and secret (`INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`) and a tester account. The endpoints follow Meta's Business Login documentation.
+- **Clients can connect only after Meta approves Frank** (Advanced Access).
+- **The live grid shows Instagram's latest 12 posts.**
+- **Reels and Tagged** stay plain chrome, as before.
+
+**Verified**: phase54 was rehearsed on staging (rolled back), then applied. `INSTAGRAM_TOKEN_KEY` was generated for each environment and set in Vercel for live and staging, without being printed. Unit tests: token encryption (unreadable stored, a fresh IV each time, wrong key refused) and the signed state (round trip; tampering, another key and age refused). New `instagram-connections.spec.ts` (5), with seeded connections:
+- **The Connections page:** it lists the account with followers and who connected it, says Meta isn't set up locally (no Connect), and an Owner disconnects it, taking its token with it.
+- **The Feed Preview:** it says how to connect, or that the account needs reconnecting.
+- **The connect link:** an Owner's link names the client and agency and leads to Instagram's sign-in, then reads "used". A User can't make one (403).
+- **Security:** a forged callback state is refused (400). Staff read the connection but never a token, and a Client reads neither.
+- **Review links:** no Feed switch without a working connection, and the route answers "not connected" for a made-up link and for one needing reconnecting.
+
+Looked at the Connections page.
+
+Follow-up, with Frank's Meta app now set up (its ID and secret are in Vercel for live and staging):
+- **The callback address** is now worked out from the address the request came in on: an agency's address minus its agency name (`nofluff.staging.beingfrank.app` gives `staging.beingfrank.app`), or the root's own. It used to come from `NEXT_PUBLIC_ROOT_DOMAIN`, which isn't set locally, so locally it pointed at the live site.
+- **The test** now follows an Owner's Reconnect without contacting Instagram. It reaches Instagram's sign-in with Frank's app ID, the read-only scope, the request's own callback address and a signed state.
+
+Full suite before this: 173 passed, 5 failed. `settings-team.png` was its known flake, and the other four files passed on rerun (plan enforcement, calendar hover, team invite, team manage). `instagram-connections.spec.ts`: 5 of 5. `npm run build` clean.
