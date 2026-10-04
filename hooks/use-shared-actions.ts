@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { classifyComment } from "@/lib/ai/classify-comment-client";
+import type { SharedReviewResult as SharedReviewData } from "./use-shared-review";
 
 interface ActionResult {
   status: string;
@@ -72,10 +73,36 @@ export function useSubmitSharedApproval(token: string, passcode: string | null) 
       if (error) throw error;
       return data as ActionResult;
     },
-    onSuccess: (result) => {
+    // Approved on screen the moment it's clicked (direct instruction): the
+    // cached post is marked approved before the call, so the button can't
+    // read "Approve" again while the page catches up, and is put back if
+    // the approval doesn't go through. The database also counts it once
+    // (phase53).
+    onMutate: async (input) => {
+      const key = ["shared-review", token, passcode];
+      await queryClient.cancelQueries({ queryKey: key });
+      const before = queryClient.getQueryData<SharedReviewData>(key);
+      queryClient.setQueryData<SharedReviewData>(key, (old) =>
+        old && old.status === "ok"
+          ? {
+              ...old,
+              creatives: old.creatives.map((c) =>
+                c.id === input.creativeId ? { ...c, approved_at: new Date().toISOString(), exception: null } : c,
+              ),
+            }
+          : old,
+      );
+      return { before };
+    },
+    onError: (_error, _input, context) => {
+      if (context?.before) queryClient.setQueryData(["shared-review", token, passcode], context.before);
+    },
+    onSuccess: (result, _input, context) => {
       if (result.status === "ok") {
         queryClient.invalidateQueries({ queryKey: ["shared-review", token] });
         if (result.comment_id) classifyComment(result.comment_id);
+      } else if (context?.before) {
+        queryClient.setQueryData(["shared-review", token, passcode], context.before);
       }
     },
   });

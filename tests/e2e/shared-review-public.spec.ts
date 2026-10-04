@@ -1,3 +1,4 @@
+import { createClient } from "@supabase/supabase-js";
 import { test, expect } from "./fixtures";
 
 // No session at all — a real share-link visitor. Exercises .phonewrap/
@@ -130,8 +131,8 @@ test("shared review — no Make Changes button; Close is always present; Approve
   await approveBtn.click();
   await expect(page.locator('button:has-text("Approved")').first()).toBeVisible();
 
-  const { stage } = await frank.getCreativeStatus();
-  expect(stage).toBe(4);
+  // "Approved" shows before the save finishes; the stage follows.
+  await expect.poll(async () => (await frank.getCreativeStatus()).stage).toBe(4);
 });
 
 test("shared review — desktop (toggled)", async ({ page, frank }) => {
@@ -152,4 +153,43 @@ test("shared review — desktop (toggled)", async ({ page, frank }) => {
   await expect(page).toHaveScreenshot("shared-review-desktop.png", {
     mask: [page.locator(".br-url")],
   });
+});
+
+// Reported directly: a slow Approve, clicked twice, left two "Approved via
+// shared review link." comments. Now it shows Approved at once, and the
+// database counts it once however it's called (phase53).
+test("shared review — Approve shows at once and counts once, even clicked twice", async ({ page, frank }) => {
+  const token = await frank.createSharedLink({ canApprove: true });
+  await page.goto(`/review/${token}`);
+  await page.waitForSelector(".m-top");
+  await page.locator('input[placeholder="Your name"]').first().fill("Double Clicker");
+  await page.locator('input[placeholder="Your email"]').first().fill("double@example.com");
+  const approveBtn = page.locator('button:has-text("Approve")').first();
+  await approveBtn.dblclick();
+  // Before the page has reloaded the post.
+  await expect(page.locator('button:has-text("Approved")').first()).toBeVisible({ timeout: 1_000 });
+  await expect.poll(async () => (await frank.getCreativeStatus()).stage).toBe(4);
+
+  // Straight at the database again: approved already, nothing added.
+  const anon = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    auth: { persistSession: false },
+  });
+  const again = await anon.rpc("submit_shared_approval", {
+    p_token: token,
+    p_passcode: null,
+    p_creative_id: frank.creativeId,
+    p_guest_name: "Double Clicker",
+    p_guest_email: "double@example.com",
+  });
+  expect(again.data).toEqual({ status: "ok", already_approved: true });
+
+  const service = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { persistSession: false },
+  });
+  const { data: approvals } = await service
+    .from("comments")
+    .select("id")
+    .eq("creative_id", frank.creativeId)
+    .eq("body", "Approved via shared review link.");
+  expect(approvals).toHaveLength(1);
 });

@@ -2201,3 +2201,11 @@ Gaps:
 Found and fixed by the test: saving a conversation sent two rows with different columns, so the database read the missing drafts as null rather than empty, which would have failed every reply. The route now sends every column. Real Claude replies, checked by hand in a throwaway spec against a seeded concept: three distinct drafts (caption and alt text) and a follow-up "make it shorter and warmer", all parsed into drafts. `copy-only-post.spec.ts` now expects the empty post. `creative-review.spec.ts` baselines updated after looking at both diffs (the button's new name; the post frame in place of the empty box). Looked at the chat window and the empty post.
 
 Full suite: 168 passed, 4 failed. `settings-team.png` was its known masked-email flake. The admin pause test, a calendar hover preview and a video timeline test failed on timing, and their files passed on rerun (19 of 19). The pause step's wait was lengthened, because the window closes only after the agencies list reloads. `npm run build` clean.
+
+## Approving through a review link counts once, and shows at once
+
+Reported directly: on live, Approve took a moment to show "Approved", and a second click added a second "Approved via shared review link." comment. The approval saved, then the button read "Approve" again until the page had reloaded the post (signed image links and all).
+- **On screen:** the post is marked approved in the page's own data the moment Approve is clicked, and put back if the approval fails or is refused. A second click while one is in flight is ignored.
+- **In the database (phase53):** `submit_shared_approval` only changes a post that isn't already approved, and adds the comment only then. A repeat answers "ok" with `already_approved`, and adds nothing. Two clicks at the same instant can't both pass: the second waits on the first's row lock, then finds the post approved.
+
+**Verified**: phase53 was rehearsed on staging (rolled back), then applied. New test in `shared-review-public.spec.ts`: a double-click shows "Approved" within a second, the stage reaches Approved, a further call straight to the database answers `already_approved`, and there's exactly one approval comment. The existing approve test now waits for the saved stage, since "Approved" shows before the save finishes. 7 of 7.

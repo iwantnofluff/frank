@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { ReviewController } from "@/hooks/use-review-controller";
 import { formatVideoTime } from "@/lib/annotations";
 
@@ -66,15 +66,26 @@ export function GuestComposer({
     }
   }
 
+  // One approval at a time: a second click before the screen updates is
+  // ignored (the database also counts it once, phase53).
+  const approvingNow = useRef(false);
   async function handleApprove() {
+    if (approvingNow.current) return;
     setError(null);
     if (!name.trim() || !email.trim()) {
       setError("Enter your name and email first.");
       return;
     }
-    const result = await approve(name.trim(), email.trim());
-    if (result && result.status !== "ok") {
-      setError(describeStatus(result.status));
+    approvingNow.current = true;
+    try {
+      const result = await approve(name.trim(), email.trim());
+      if (result && result.status !== "ok") {
+        setError(describeStatus(result.status));
+      }
+    } catch {
+      setError("Couldn't approve it. Try again.");
+    } finally {
+      approvingNow.current = false;
     }
   }
 
@@ -207,7 +218,7 @@ export function GuestComposer({
               disabled={approveDisabled}
               onClick={handleApprove}
             >
-              {alreadyApproved ? "Approved" : approving ? "Approving…" : "Approve"}
+              {alreadyApproved ? "Approved" : "Approve"}
             </button>
           )}
         </div>
