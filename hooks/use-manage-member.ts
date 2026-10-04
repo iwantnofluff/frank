@@ -143,3 +143,23 @@ export function useUpdateMember(agencyId: string) {
     },
   });
 }
+
+// An Owner lets an Admin invite people, or stops them (phase44). Only an
+// Owner can change it: memberships_update is an Owner's.
+export function useSetCanInvite(agencyId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ membershipId, canInvite }: { membershipId: string; canInvite: boolean }) => {
+      const { data, error } = await createClient()
+        .from("memberships")
+        .update({ can_invite: canInvite })
+        .eq("id", membershipId)
+        .select("id");
+      if (error) throw error;
+      assertAffected(data);
+    },
+    onSettled: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["team-members", agencyId] });
+    },
+  });
+}

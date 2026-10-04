@@ -11,7 +11,7 @@ import { useAvatarUrls } from "@/hooks/use-avatar-urls";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import { initials } from "@/lib/initials";
 import { avatarColour } from "@/lib/avatar-colour";
-import { useRemoveMember, useRevokeInvite, useSetMemberActive } from "@/hooks/use-manage-member";
+import { useRemoveMember, useRevokeInvite, useSetCanInvite, useSetMemberActive } from "@/hooks/use-manage-member";
 import { InviteMemberModal } from "@/components/team/InviteMemberModal";
 import { EditMemberModal } from "@/components/team/EditMemberModal";
 import { RemoveMemberConfirm } from "@/components/team/RemoveMemberConfirm";
@@ -20,6 +20,7 @@ import { errorMessage } from "@/lib/errors";
 import {
   ROLE_LABELS,
   isOwnerOrAbove,
+  rolesICanInvite,
   seesAllClients,
   type InvitableRole,
 } from "@/lib/roles";
@@ -47,6 +48,8 @@ export function TeamSettings({ view }: { view: View }) {
   const { data: myMembership } = useMyMembership(agencyId);
   const isStaff = myMembership?.client_id === null;
   const canManage = isStaff && isOwnerOrAbove(myMembership?.role);
+  // Who may invite, and as what (phase44): Owners, and Admins they've let.
+  const inviteRoles = rolesICanInvite(myMembership);
   // Client grants are only readable by Admin and above (RLS), so the Clients
   // column and client view are only offered to them.
   const canSeeAccess = isStaff && seesAllClients(myMembership?.role);
@@ -58,6 +61,7 @@ export function TeamSettings({ view }: { view: View }) {
   const setActive = useSetMemberActive(agencyId ?? "");
   const remove = useRemoveMember(agencyId ?? "");
   const revoke = useRevokeInvite(agencyId ?? "");
+  const setCanInvite = useSetCanInvite(agencyId ?? "");
 
   const [inviting, setInviting] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -100,8 +104,30 @@ export function TeamSettings({ view }: { view: View }) {
         { label: "Remove from Team", tone: "danger" as const, onClick: () => setRemoveTarget(m) },
       ];
     }
+    // An Owner lets an active Admin invite people, or stops them.
+    const inviteSwitch =
+      m.role === "admin"
+        ? [
+            {
+              label: m.can_invite ? "Stop Them Inviting People" : "Let Them Invite People",
+              onClick: () =>
+                setCanInvite.mutate(
+                  { membershipId: m.id, canInvite: !m.can_invite },
+                  {
+                    onSuccess: () =>
+                      setNotice(
+                        m.can_invite
+                          ? `${displayName(m)} can no longer invite people`
+                          : `${displayName(m)} can now invite Admins, Users and Clients`,
+                      ),
+                  },
+                ),
+            },
+          ]
+        : [];
     return [
       edit,
+      ...inviteSwitch,
       {
         label: "Deactivate",
         onClick: () =>
@@ -124,7 +150,7 @@ export function TeamSettings({ view }: { view: View }) {
     return names.join(", ");
   }
 
-  const actionError = setActive.error ?? revoke.error ?? (removeTarget ? null : remove.error);
+  const actionError = setActive.error ?? revoke.error ?? setCanInvite.error ?? (removeTarget ? null : remove.error);
   const peopleColumns = canSeeAccess ? PEOPLE_COLUMNS_WITH_CLIENTS : PEOPLE_COLUMNS;
   // Restricted Users only — everyone above them sees every client anyway.
   const restrictedMembers = (members ?? []).filter((m) => m.role === "user" && !m.removed_at);
@@ -146,7 +172,7 @@ export function TeamSettings({ view }: { view: View }) {
             : `${activeClients.length} client${activeClients.length === 1 ? "" : "s"}`}
         </span>
         <div className="filters">
-          {canManage && agency && view === "people" && (
+          {inviteRoles.length > 0 && agency && view === "people" && (
             <button type="button" className="btn sm" onClick={() => setInviting(true)}>
               Invite Member
             </button>
@@ -203,6 +229,11 @@ export function TeamSettings({ view }: { view: View }) {
                 {canSeeAccess && <div style={{ fontSize: 14 }}>{clientsCell(m)}</div>}
                 <div>
                   <span className="tag blue">{ROLE_LABELS[m.role] ?? m.role}</span>
+                  {m.role === "admin" && m.can_invite && (
+                    <span className="tag" style={{ marginLeft: 6 }}>
+                      Can invite
+                    </span>
+                  )}
                 </div>
                 <div>
                   <span className={`tag ${status.tone}`}>{status.label}</span>
@@ -282,11 +313,10 @@ export function TeamSettings({ view }: { view: View }) {
       {inviting && agency && (
         <InviteMemberModal
           agencyId={agency.agencyId}
+          roles={inviteRoles}
           onClose={() => setInviting(false)}
-          onSent={(email) => {
-            setNotice(`Invite sent to ${email}`);
-            setInviting(false);
-          }}
+          // The modal stays open on its links; the list notes it meanwhile.
+          onSent={(email) => setNotice(`Invite sent to ${email}`)}
         />
       )}
 

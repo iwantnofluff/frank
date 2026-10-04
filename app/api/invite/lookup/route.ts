@@ -14,6 +14,9 @@ export async function POST(request: Request) {
     email: result.email,
     agencyName: result.agencyName,
     role: result.role,
+    clientName: result.clientName,
+    firstName: result.firstName,
+    lastName: result.lastName,
     needsPassword: result.needsPassword,
   });
 }

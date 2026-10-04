@@ -37,3 +37,33 @@ const ROLE_RANK: Record<AgencyRole, number> = {
 export function byRoleSeniority(a: AgencyRole, b: AgencyRole) {
   return ROLE_RANK[a] - ROLE_RANK[b];
 }
+
+// Who can be invited (phase44): the agency's roles, plus Client — someone at
+// one client (a membership tied to it), who sees that client's work and its
+// public comments only, and doesn't use a team place.
+export type InviteRole = InvitableRole | "client";
+
+export const INVITE_ROLE_LABELS: Record<InviteRole, string> = {
+  owner: "Owner",
+  admin: "Admin",
+  user: "User",
+  client: "Client",
+};
+
+export const INVITE_ROLE_HINTS: Record<InviteRole, string> = {
+  owner: "Everything an Admin can do, plus inviting people and choosing their roles.",
+  admin: "Sees every client and manages agency settings.",
+  user: "Sees only the clients they're given.",
+  client: "Someone at the client. Sees this client's work and public comments only, like a review link, and doesn't use a team place.",
+};
+
+// The roles this person may give (decided directly, 4 Oct 2026): an Owner
+// any but Primary Owner; an Admin whose Owner switched on "Can invite
+// people", anything below Owner; anyone else, none. can_invite_people()
+// and the memberships policies enforce the same.
+export function rolesICanInvite(me: { role: AgencyRole; client_id: string | null; can_invite?: boolean } | null | undefined): InviteRole[] {
+  if (!me || me.client_id) return [];
+  if (isOwnerOrAbove(me.role)) return ["owner", "admin", "user", "client"];
+  if (me.role === "admin" && me.can_invite) return ["admin", "user", "client"];
+  return [];
+}

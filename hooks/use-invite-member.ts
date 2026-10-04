@@ -1,20 +1,32 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { InvitableRole } from "@/lib/roles";
+import type { InviteRole } from "@/lib/roles";
 
 export interface InviteMemberInput {
   agencyId: string;
   email: string;
-  role: InvitableRole;
+  firstName?: string;
+  lastName?: string;
+  role: InviteRole;
+  // A User's clients, or a Client's one client.
   clientIds: string[];
+}
+
+// The invite, and its link to share directly (phase44). emailError: the
+// invite exists but its email didn't send — the link still works.
+export interface SentInvite {
+  email: string;
+  name: string;
+  url: string;
+  emailError?: string;
 }
 
 export function useInviteMember() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (input: InviteMemberInput) => {
+    mutationFn: async (input: InviteMemberInput): Promise<SentInvite> => {
       const res = await fetch("/api/team/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -22,10 +34,9 @@ export function useInviteMember() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Couldn't send the invite");
-      return data.membershipId as string;
+      const name = [input.firstName, input.lastName].filter(Boolean).join(" ");
+      return { email: input.email, name: name || input.email, url: data.url, emailError: data.emailError };
     },
-    // Settled, not success: a 502 means the invite exists but its email
-    // didn't send, and the Team list still has to show the new "Invited" row.
     onSettled: async (_data, _error, input) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["team-members", input.agencyId] }),

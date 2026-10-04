@@ -5,7 +5,7 @@ import { sendEmail } from "@/lib/email/send-email";
 import { inviteEmail } from "@/lib/email/invite-email";
 import { createInviteToken } from "@/lib/invites/token";
 import { INVITE_TTL_MS } from "@/lib/invites/constants";
-import { INVITABLE_ROLES, ROLE_LABELS, type InvitableRole } from "@/lib/roles";
+import { INVITABLE_ROLES, ROLE_LABELS, type InvitableRole, type InviteRole } from "@/lib/roles";
 import { isReadOnly } from "@/lib/plans";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -19,7 +19,14 @@ function fail(error: string, status: number) {
 // call. The service-role client is used only for what no caller's session
 // can do: look a user up by email across agencies, and create the account.
 export async function POST(request: Request) {
-  let body: { agencyId?: string; email?: string; role?: string; clientIds?: string[] };
+  let body: {
+    agencyId?: string;
+    email?: string;
+    firstName?: string;
+    lastName?: string;
+    role?: string;
+    clientIds?: string[];
+  };
   try {
     body = await request.json();
   } catch {
@@ -28,11 +35,17 @@ export async function POST(request: Request) {
 
   const agencyId = body.agencyId;
   const email = body.email?.trim().toLowerCase() ?? "";
-  const role = body.role as InvitableRole;
+  const firstName = body.firstName?.trim() ?? "";
+  const lastName = body.lastName?.trim() ?? "";
+  const asked = body.role as InviteRole;
+  // A Client (phase44) is a User tied to one client.
+  const isClient = asked === "client";
+  const role: InvitableRole = isClient ? "user" : (asked as InvitableRole);
   const clientIds = role === "user" ? (body.clientIds ?? []) : [];
   if (!agencyId) return fail("Invalid request", 400);
   if (!EMAIL_RE.test(email)) return fail("Enter a valid email", 400);
-  if (!INVITABLE_ROLES.includes(role)) return fail("Choose a role", 400);
+  if (!isClient && !INVITABLE_ROLES.includes(role)) return fail("Choose a role", 400);
+  if (isClient && clientIds.length !== 1) return fail("Choose the client they're from", 400);
 
   const supabase = await createClient();
   const {
@@ -40,15 +53,23 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
   if (!caller) return fail("Not signed in", 401);
 
-  const { data: allowed } = await supabase.rpc("is_agency_owner_or_above", {
-    check_agency_id: agencyId,
-  });
-  if (!allowed) return fail("Only an Owner or the Primary Owner can invite people", 403);
+  // An Owner, or an Admin an Owner has let invite (phase44) — who can't
+  // invite an Owner. The memberships policies hold the same line.
+  const [{ data: canInvite }, { data: isOwner }] = await Promise.all([
+    supabase.rpc("can_invite_people", { check_agency_id: agencyId }),
+    supabase.rpc("is_agency_owner_or_above", { check_agency_id: agencyId }),
+  ]);
+  if (!canInvite) return fail("You can't invite people to this agency. Ask an Owner.", 403);
+  if (role === "owner" && !isOwner) return fail("Only an Owner can invite an Owner", 403);
 
-  const [{ data: agency }, { data: inviter }] = await Promise.all([
+  const [{ data: agency }, { data: inviter }, { data: client }] = await Promise.all([
     supabase.from("agencies").select("name, plan, trial_ends_at").eq("id", agencyId).single(),
     supabase.from("users").select("name").eq("id", caller.id).single(),
+    isClient
+      ? supabase.from("clients").select("id, name").eq("id", clientIds[0]).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
+  if (isClient && !client) return fail("Choose the client they're from", 400);
 
   // Free's trial over (phase41): read-only. The membership below is written
   // as the service role, which the database doesn't hold to it, so ask here.
@@ -68,27 +89,26 @@ export async function POST(request: Request) {
   let membershipId: string | undefined;
 
   if (userId) {
-    const { data: deactivated } = await admin
-      .from("memberships")
-      .select("id")
-      .eq("agency_id", agencyId)
-      .eq("user_id", userId)
-      .is("client_id", null)
+    // Staff memberships, or this client's one for a Client.
+    let deactivatedQuery = admin.from("memberships").select("id").eq("agency_id", agencyId).eq("user_id", userId);
+    deactivatedQuery = isClient ? deactivatedQuery.eq("client_id", clientIds[0]) : deactivatedQuery.is("client_id", null);
+    const { data: deactivated } = await deactivatedQuery
       .not("removed_at", "is", null)
       .is("removed_permanently_at", null)
       .limit(1);
     if (deactivated?.length) {
       return fail(`${email} was deactivated — reactivate them from the Team list instead`, 409);
     }
-    const { data: existing } = await admin
+    let existingQuery = admin
       .from("memberships")
       .select("id, role, accepted_at")
       .eq("agency_id", agencyId)
-      .eq("user_id", userId)
-      .is("client_id", null)
-      .is("removed_at", null)
-      .maybeSingle();
-    if (existing?.accepted_at) return fail(`${email} is already on the team`, 409);
+      .eq("user_id", userId);
+    existingQuery = isClient ? existingQuery.eq("client_id", clientIds[0]) : existingQuery.is("client_id", null);
+    const { data: existing } = await existingQuery.is("removed_at", null).maybeSingle();
+    if (existing?.accepted_at) {
+      return fail(isClient ? `${email} is already a Client on ${client!.name}` : `${email} is already on the team`, 409);
+    }
     if (existing && existing.role !== role) {
       return fail(
         `${email} already has a pending invite as ${ROLE_LABELS[existing.role as InvitableRole]}`,
@@ -115,7 +135,15 @@ export async function POST(request: Request) {
     createdUser = true;
     const { error: userError } = await admin
       .from("users")
-      .insert({ id: userId, email, name: email.split("@")[0] });
+      // The names the inviter gave pre-fill the invite page; the person can
+      // still change them there. users_normalise_profile title-cases them.
+      .insert({
+        id: userId,
+        email,
+        name: firstName || lastName ? `${firstName} ${lastName}`.trim() : email.split("@")[0],
+        first_name: firstName || null,
+        last_name: lastName || null,
+      });
     if (userError) {
       await admin.auth.admin.deleteUser(userId);
       return fail(userError.message, 500);
@@ -135,6 +163,7 @@ export async function POST(request: Request) {
         agency_id: agencyId,
         user_id: userId,
         role,
+        client_id: isClient ? clientIds[0] : null,
         invited_by: caller.id,
         invited_at: new Date().toISOString(),
         accepted_at: null,
@@ -147,7 +176,7 @@ export async function POST(request: Request) {
     }
     membershipId = membership.id;
 
-    if (clientIds.length > 0) {
+    if (!isClient && clientIds.length > 0) {
       const { error: accessError } = await supabase
         .from("staff_client_access")
         .insert(clientIds.map((client_id) => ({ membership_id: membershipId, client_id })));
@@ -172,20 +201,16 @@ export async function POST(request: Request) {
   const message = inviteEmail({
     agencyName: agency?.name ?? "your agency",
     inviterName: inviter?.name ?? "Your team",
-    roleLabel: ROLE_LABELS[role],
+    roleLabel: isClient ? `a reviewer for ${client!.name}` : ROLE_LABELS[role],
     url,
   });
+  // The link is returned either way, so the inviter can share it directly
+  // (decided directly) — including when the email didn't send.
   try {
     await sendEmail({ to: email, ...message });
   } catch (e) {
-    return NextResponse.json(
-      {
-        error: `The invite was created, but the email didn't send. ${(e as Error).message}`,
-        membershipId,
-      },
-      { status: 502 },
-    );
+    return NextResponse.json({ membershipId, url, emailError: (e as Error).message }, { status: 201 });
   }
 
-  return NextResponse.json({ membershipId });
+  return NextResponse.json({ membershipId, url }, { status: 201 });
 }

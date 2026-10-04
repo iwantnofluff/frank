@@ -5,7 +5,17 @@ import type { AgencyRole } from "@/lib/roles";
 
 export type InviteStatus =
   | { status: "not_found" | "expired" | "accepted" }
-  | { status: "ok"; email: string; agencyName: string; role: AgencyRole; needsPassword: boolean };
+  | {
+      status: "ok";
+      email: string;
+      agencyName: string;
+      role: AgencyRole;
+      // A Client invite (phase44): the client they're from.
+      clientName: string | null;
+      firstName: string | null;
+      lastName: string | null;
+      needsPassword: boolean;
+    };
 
 export function useInvite(token: string) {
   return useQuery({

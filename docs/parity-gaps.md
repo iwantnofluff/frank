@@ -1994,3 +1994,48 @@ Direct instruction:
 `admin.spec.ts` and `plans.spec.ts` moved to the read-only plan: no plan control, the route answers 403, and the columns are counted with Plan in place. Looked at the agencies table, an agency's page, Notifications and Password & Security.
 
 Direct instruction, after trying it on staging: an agency's page goes back to Agencies with the menu's own arrow button, not a "← Agencies" text link, level with the arrow above Dashboard. **Verified**: measured both arrows' tops in the browser, and they're equal; the arrow goes back to Agencies.
+
+## Local works on staging's database
+
+Decided directly (4 Oct 2026): `.env.local` now points at the staging database, and the live values are kept in `.env.live-backup` (never loaded by Next). So local development and the e2e suite stop touching live data, and a new migration is tested on staging before it goes near live. That means a migration is applied to staging during local work. Migrations stay additive, so the staging site's older code keeps working until "push to staging".
+
+## Inviting people to a client, and Admins who may invite
+
+Direct instruction:
+- **Where:** New Client and Edit Client have an Invite People section: first name, last name, email and role, one row per person.
+- **Roles:** Owner, Admin, User, or Client. A User gets this client; Owners and Admins see every client; a Client is from it.
+- **Team places:** the section says how many are left on the plan. Clients don't use one.
+- **After saving,** the form shows each person's invite link with Copy ("You can also share the invite links below"). An invite that fails is listed, and the client stays saved.
+- **Team → Users' Invite Member** asks for first and last name too, offers Client (with which client they're from), and shows the link after sending.
+- **The names carry through** to the invitee's form, which starts filled in.
+
+Decided directly:
+- Invites are for the agency's own team, plus Client.
+- Access stays per client.
+- **The Admin switch:** an Owner switches "Can invite people" on for an individual Admin, from the row's menu ("Let Them Invite People"). That Admin can invite Admins, Users and Clients, never an Owner, and can't switch it on for anyone.
+- Google sign-in is for later.
+
+**A Client** is a membership tied to one client (role user, `client_id` set), as client-side people already were. They see that client's work and its public comments only, as a review link does, and don't count as a team member. The invite says "invited to review {client}'s work".
+
+phase44 adds `memberships.can_invite` and `can_invite_people()`. The memberships, staff_client_access and invites policies let such an Admin add only Admins and Users (a Client is a User), unaccepted, without the switch, invited by themselves; give access only to their own new invitees; and see or replace only their own invite links. Changing anyone afterwards stays an Owner's.
+
+The invite route returns the link (and still returns it when the email fails, so it can be shared).
+
+Not done, deliberately:
+- **Contacts per client:** the spec's limit (2/3/5/unlimited) isn't enforced for Clients.
+- **Seeing client-side people:** Clients aren't listed in Team → Users, which lists the agency's staff, so there's no screen yet to see or remove them.
+- **Two similar lists:** the New Client form's older "Client Team" list (names and emails for review links, no accounts) now sits beside Client invites.
+- **Google sign-in, and one person in several agencies,** come separately.
+
+**Verified**: typecheck and lint clean. Unit tests 114, adding who may invite whom. phase44 was rehearsed on staging in a rolled-back transaction, then applied. New `client-invites.spec.ts` (2):
+- **From New Client:** an Owner, offered Owner/Admin/User/Client and told the places left, creates a client with a User and a Client and gets both links. The User has access to the new client; the Client's membership is tied to it, with their names stored title-cased. The Client follows the link shown, sees "invited to review…" with their names filled in, finishes, and lands without Settings, as a client-side person.
+- **The Admin switch:** an Owner switches an Admin on (the row says "Can invite"). That Admin is offered Admin/User/Client only and invites a Client. The route refuses them an Owner (403), the database refuses a direct Owner insert (42501), they can't switch themselves (no rows changed), and the Owner switches them off again.
+
+`team-invite.spec.ts` covers the names and the "Invite Sent" link. The team specs pass. Looked at the New Client form with invite rows, the links after creating, and the invite form with Client.
+
+Full suite (the first run against staging's database, which is in Tokyo, so further away than live's): 130 passed, 27 failed (16.1 minutes), nearly all timeouts. Every file with a failure was rerun on its own: 65 of 68 passed. The other three:
+- **The Admin-switch test:** it read the database before the switch-off had saved. It now waits for the confirmation, and passes.
+- **`dashboard.png`:** the date had rolled over (Last Activity showed Oct 4), so the baseline was updated after looking at the diff.
+- **`settings-team.png`:** its masked-email flake.
+
+Full runs against staging are slower and more prone to timeouts than they were against live; fewer workers may be worth it. `npm run build` clean.

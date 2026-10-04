@@ -5825,6 +5825,44 @@ button.avatar {
 .adminpanel-b .sub {
   margin: 0;
 }
+/* Invite links after inviting (phase44): name and email, the link, Copy. */
+/* One person to invite from the client form: first, last, email, role. */
+.invrow {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.5fr 104px;
+  gap: 8px;
+}
+.invitelinks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.invitelinks .sub {
+  margin: 0;
+}
+.invitelink {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+.invitelink .sl {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 13px;
+}
+.invitelink .sl span {
+  color: var(--muted);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.invitelink input {
+  font-size: 12px;
+  color: var(--muted);
+}
 .admintbl-row {
   cursor: pointer;
 }

@@ -8,6 +8,8 @@ import type { AgencyRole } from "@/lib/roles";
 export interface MyMembership {
   role: AgencyRole;
   client_id: string | null;
+  // An Admin an Owner has let invite people (phase44).
+  can_invite: boolean;
 }
 
 // client_id null = agency staff. client_id set = a client-side reviewer
@@ -21,7 +23,7 @@ export function useMyMembership(agencyId: string | undefined) {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("memberships")
-        .select("role, client_id")
+        .select("role, client_id, can_invite")
         .eq("agency_id", agencyId!)
         .eq("user_id", user!.id)
         .is("removed_at", null)

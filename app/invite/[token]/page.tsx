@@ -42,6 +42,15 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
     designation: "",
     bio: "",
   });
+  // The names the inviter gave (phase44) start the form, once it's loaded;
+  // they can still be changed.
+  const [prefilled, setPrefilled] = useState(false);
+  if (!prefilled && invite?.status === "ok") {
+    setPrefilled(true);
+    if (invite.firstName || invite.lastName) {
+      setProfile((p) => ({ ...p, first_name: invite.firstName ?? "", last_name: invite.lastName ?? "" }));
+    }
+  }
   const [photo, setPhoto] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [password, setPassword] = useState("");
@@ -146,7 +155,9 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
         <div className="mark authmark">F</div>
         <h1 className="h1">Join {invite.agencyName} on Frank</h1>
         <p className="sub">
-          You&rsquo;ve been invited as {ROLE_LABELS[invite.role]}.{" "}
+          {invite.clientName
+            ? `You've been invited to review ${invite.clientName}'s work.`
+            : `You've been invited as ${ROLE_LABELS[invite.role]}.`}{" "}
           {invite.needsPassword
             ? "Tell your team who you are, then choose a password."
             : `You already have a Frank account as ${invite.email} — accept, then sign in as usual.`}

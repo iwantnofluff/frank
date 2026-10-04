@@ -64,6 +64,9 @@ test("an Owner invites a User with access to one client, and re-sending replaces
   const email = `e2e-invitee-${Date.now()}@example.invalid`;
   await page.getByRole("button", { name: "Invite Member" }).click();
   const modal = page.getByRole("dialog", { name: "Invite Team Member" });
+  // Names are asked now (phase44), and start the invitee's form.
+  await modal.getByLabel("First Name").fill("Invited");
+  await modal.getByLabel("Last Name").fill("Person");
   await modal.getByLabel("Email Address").fill(email);
   await modal.getByLabel("Role").selectOption("user");
   await modal.getByRole("checkbox", { name: "E2E Test Client" }).click();
@@ -73,7 +76,11 @@ test("an Owner invites a User with access to one client, and re-sending replaces
   );
   await modal.getByRole("button", { name: "Send Invite" }).click();
 
-  await expect(modal).toHaveCount(0);
+  // The link, to share directly (phase44), then Done.
+  const sentDialog = page.getByRole("dialog", { name: "Invite Sent" });
+  await expect(sentDialog).toContainText("You can also share the invite link below");
+  await expect(sentDialog.getByRole("textbox", { name: `Invite link for ${email}` })).toHaveValue(/\/invite\//);
+  await sentDialog.getByRole("button", { name: "Done" }).click();
   await expect(page.getByRole("status")).toHaveText(`Invite sent to ${email}`);
   const row = page.locator(".crow", { hasText: email });
   await expect(row).toContainText("User");
@@ -105,10 +112,12 @@ test("an Owner invites a User with access to one client, and re-sending replaces
   expect(hoursLeft).toBeLessThanOrEqual(48);
 
   await page.getByRole("button", { name: "Invite Member" }).click();
+  await modal.getByLabel("First Name").fill("Invited");
+  await modal.getByLabel("Last Name").fill("Person");
   await modal.getByLabel("Email Address").fill(email);
   await modal.getByLabel("Role").selectOption("user");
   await modal.getByRole("button", { name: "Send Invite" }).click();
-  await expect(modal).toHaveCount(0);
+  await page.getByRole("dialog", { name: "Invite Sent" }).getByRole("button", { name: "Done" }).click();
 
   const { data: secondInvites } = await admin
     .from("invites")
@@ -119,7 +128,7 @@ test("an Owner invites a User with access to one client, and re-sending replaces
   await expect(page.locator(".crow", { hasText: email })).toHaveCount(1);
 });
 
-test("an Admin can't invite — no button, and the route refuses them", async ({ page, frank }) => {
+test("an Admin can't invite unless an Owner lets them — no button, and the route refuses them", async ({ page, frank }) => {
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/settings/team`);
   await expect(page.locator(".crow", { hasText: frank.staffEmail })).toBeVisible();
