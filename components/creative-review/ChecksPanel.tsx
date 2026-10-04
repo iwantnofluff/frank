@@ -1,6 +1,8 @@
 "use client";
 
 import type { CreativeRow } from "@/hooks/use-creative";
+import { useRefreshWiifmNote } from "@/hooks/use-refresh-wiifm-note";
+import { errorMessage } from "@/lib/errors";
 import type { CopyVersionRow } from "@/hooks/use-copy-versions";
 import { copyFieldsFor, formatsLabel, postFormats, COPY_FIELD_LABELS } from "@/lib/formats";
 
@@ -12,10 +14,14 @@ import { copyFieldsFor, formatsLabel, postFormats, COPY_FIELD_LABELS } from "@/l
 export function ChecksPanel({
   creative,
   latestCopyVersion,
+  isStaff,
 }: {
   creative: CreativeRow;
   latestCopyVersion: CopyVersionRow | null;
+  // Staff can write a missing WIIFM direction from here.
+  isStaff: boolean;
 }) {
+  const refresh = useRefreshWiifmNote(creative.id);
   const copyFieldSpecs = copyFieldsFor(postFormats(creative)).map((key) => ({
     key,
     label: COPY_FIELD_LABELS[key] ?? key,
@@ -55,6 +61,24 @@ export function ChecksPanel({
               {note}
             </p>
           ))
+        ) : refresh.isPending ? (
+          <p className="fd-d">Writing it…</p>
+        ) : latestCopyVersion ? (
+          // Copy is saved but the note wasn't written (the AI wasn't
+          // reachable then, say).
+          <>
+            <p className="fd-d">
+              The copy is saved, but its WIIFM direction hasn&rsquo;t been written.{" "}
+              {isStaff && (
+                <button type="button" className="badd" onClick={() => refresh.mutate(creative.agency_id)}>
+                  Write It Now
+                </button>
+              )}
+            </p>
+            {refresh.isError && (
+              <p className="autherr">{errorMessage(refresh.error, "Couldn't write the WIIFM direction")}</p>
+            )}
+          </>
         ) : (
           <p className="fd-d">No WIIFM direction yet — save some copy to generate one.</p>
         )}

@@ -377,6 +377,10 @@ export const test = base.extend<{ frank: Frank }>({
       ["copy_versions", () => admin.from("copy_versions").delete().eq("agency_id", agency.id)],
       ["creative_version_slides", () => admin.from("creative_version_slides").delete().eq("agency_id", agency.id)],
       ["creative_versions", () => admin.from("creative_versions").delete().eq("agency_id", agency.id)],
+      // phase52: Claude conversations about a post's copy (cascade with it,
+      // swept by name so a failure says so).
+      ["copy_chat_messages", () => admin.from("copy_chat_messages").delete().eq("agency_id", agency.id)],
+      ["copy_chats", () => admin.from("copy_chats").delete().eq("agency_id", agency.id)],
       ["creatives", () => admin.from("creatives").delete().eq("agency_id", agency.id)],
       ["custom_columns", () => admin.from("custom_columns").delete().eq("agency_id", agency.id)],
       // References projects and memberships (phase46). Both cascade to it,

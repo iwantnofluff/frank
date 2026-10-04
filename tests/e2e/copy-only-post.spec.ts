@@ -7,9 +7,11 @@ test("a copy-only post shows as a post for staff, clients and a review link", as
   test.setTimeout(90_000);
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
-  // Neither copy nor artwork: the plain empty state, no post.
-  await expect(page.locator(".awaiting", { hasText: "No artwork yet" })).toBeVisible();
-  await expect(page.locator(".postbox")).toHaveCount(0);
+  // Neither copy nor artwork: still the post (direct instruction), each
+  // part saying what's missing.
+  await expect(page.locator(".postbox .ig-noart")).toContainText("Add the artwork once it has been made.");
+  await expect(page.locator(".ig-cap")).toContainText("No copy yet.");
+  await expect(page.locator(".ig-cap").getByRole("button", { name: "Write Copy" })).toBeVisible();
 
   await frank.createCopyVersion(frank.creativeId, 1, { caption: "Copy only, no artwork yet." });
   await page.reload();

@@ -25,13 +25,13 @@ import { UploadProgressBar } from "./UploadProgressBar";
 import { CarouselSlots } from "./CarouselSlots";
 import { useSaveCopyFields } from "@/hooks/use-save-copy-fields";
 import { useRefreshWiifmNote } from "@/hooks/use-refresh-wiifm-note";
+import { CopyChat } from "@/components/creative-review/CopyChat";
 import { useDeletePostVersion } from "@/hooks/use-delete-post-version";
 import { useClearArtwork } from "@/hooks/use-clear-artwork";
 import { artworkChangeReasons } from "@/lib/format-change";
 import { useComments } from "@/hooks/use-comments";
 import { useAssetSignedUrl } from "@/hooks/use-asset-signed-url";
 import { useAgencyAiSettings } from "@/hooks/use-agency-ai-settings";
-import { useFormatDirections } from "@/hooks/use-format-directions";
 import { useAgencyKnowledge } from "@/hooks/use-agency-knowledge";
 import { useKnowledgeEntries } from "@/hooks/use-knowledge-entries";
 import { useRepeatIssueCount } from "@/hooks/use-repeat-issues";
@@ -49,12 +49,7 @@ import {
 import { slideFields, tidySlideText } from "@/lib/slide-text";
 import { FormatPicker } from "./FormatPicker";
 import { validateUploadFile, ACCEPTED_FILE_EXTENSIONS } from "@/lib/upload-validation";
-import {
-  buildCaptionPrompt,
-  parseDraftOptions,
-  type CopyFieldSpec,
-  type DraftOption,
-} from "@/lib/ai/build-caption-prompt";
+import type { CopyChatField as CopyFieldSpec } from "@/lib/ai/copy-chat";
 import { buildCheckPrompt, parseCheckFindings, type CheckFinding } from "@/lib/ai/build-check-prompt";
 import { KNOWLEDGE_SECTIONS } from "@/lib/knowledge-sections";
 import { modelById } from "@/lib/ai/models";
@@ -404,8 +399,6 @@ function CreativeVersionPreview({ version }: { version: CreativeVersionRow }) {
   );
 }
 
-const OPTION_COUNT = 3;
-
 // <input type="date">/<input type="time"> need "YYYY-MM-DD"/"HH:MM" in the
 // browser's own local time, not the ISO string's UTC digits — reading the
 // UTC fields directly would silently shift a piece scheduled at, say,
@@ -719,9 +712,8 @@ export function CreativeModal(props: CreativeModalProps) {
     setDeleteTarget(null);
   }
 
-  const [draftOptions, setDraftOptions] = useState<DraftOption[] | null>(null);
-  const [drafting, setDrafting] = useState(false);
-  const [draftError, setDraftError] = useState<string | null>(null);
+  // "Write with Claude" (phase52), over this window.
+  const [chatOpen, setChatOpen] = useState(false);
 
   // Where a save has got to (compressing a video, uploading), shown by the
   // uploader under the artwork.
@@ -755,7 +747,6 @@ export function CreativeModal(props: CreativeModalProps) {
   const approachNotes = isCreate ? [] : (props.creative.approach_notes ?? []);
 
   const { data: aiSettings } = useAgencyAiSettings(agencyId);
-  const { data: formatDirections } = useFormatDirections(agencyId);
   const { data: agencyKnowledge, isLoading: agencyKnowledgeLoading } = useAgencyKnowledge(agencyId);
   const { data: clientKnowledge, isLoading: clientKnowledgeLoading } = useKnowledgeEntries(clientId ?? "");
   const modelLabel = aiSettings
@@ -848,56 +839,6 @@ export function CreativeModal(props: CreativeModalProps) {
     setFileError(null);
     setFile(f);
     setCreativeSaveNote(null);
-  }
-
-  async function runDraft() {
-    if (!agencyId || !clientId || copyFieldSpecs.length === 0) return;
-    setDraftError(null);
-    setDrafting(true);
-    setDraftOptions(null);
-    try {
-      // Each chosen format's own direction, named, so the draft can serve
-      // all of them at once.
-      const directions = formats
-        .map((id) => {
-          const text = formatDirections?.find((d) => d.format_id === id)?.direction_text;
-          return text ? (formats.length > 1 ? `${formatsLabel([id])}: ${text}` : text) : null;
-        })
-        .filter(Boolean);
-      const direction = directions.length ? directions.join("\n\n") : null;
-      const clientNotes = (clientKnowledge ?? [])
-        .filter((e) => e.kind === "text" && e.body)
-        .map((e) => e.body as string);
-
-      const prompt = buildCaptionPrompt({
-        concept,
-        approachNotes,
-        formatLabel: formatsLabel(formats),
-        formatDirection: direction,
-        agencyNotes,
-        clientNotes,
-        optionCount: OPTION_COUNT,
-        fields: copyFieldSpecs,
-      });
-
-      const res = await fetch("/api/ai/draft", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ agencyId, prompt }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Couldn't draft from the brief");
-      setDraftOptions(parseDraftOptions(data.text, copyFieldSpecs));
-    } catch (err) {
-      setDraftError(errorMessage(err, "Couldn't draft from the brief"));
-    } finally {
-      setDrafting(false);
-    }
-  }
-
-  function applyDraftOption(option: DraftOption) {
-    setDraftFields(option.fields);
-    setDraftOptions(null);
   }
 
   // Shared by the footer's Save (closes the modal after) and the inline
@@ -1468,42 +1409,16 @@ export function CreativeModal(props: CreativeModalProps) {
                   <button
                     type="button"
                     className="btn sm primary"
-                    disabled={drafting || !modelLabel}
-                    onClick={runDraft}
+                    disabled={!modelLabel || !creativeId}
+                    title={creativeId ? undefined : "Save the brief first"}
+                    onClick={() => setChatOpen(true)}
                   >
                     <svg className="aicon" viewBox="0 0 24 24">
                       <path d="M12 3l1.8 6.2L20 11l-6.2 1.8L12 19l-1.8-6.2L4 11l6.2-1.8L12 3z" />
                     </svg>
-                    {drafting ? "Drafting…" : modelLabel ? `Draft with ${modelLabel}` : "Draft"}
+                    {modelLabel ? `Write with ${modelLabel}` : "Write with AI"}
                   </button>
-                  {draftError && <span className="berr">{draftError}</span>}
                 </div>
-
-                {draftOptions && (
-                  <div style={{ marginBottom: 8 }}>
-                    {draftOptions.map((opt, i) => (
-                      <div className="draftopt" key={i}>
-                        <div className="draftopt-h">
-                          <b>{opt.principle}</b>
-                        </div>
-                        {copyFieldSpecs.map(
-                          (spec) =>
-                            opt.fields[spec.key] && (
-                              <p key={spec.key}>
-                                <b>{spec.label}: </b>
-                                {opt.fields[spec.key]}
-                              </p>
-                            ),
-                        )}
-                        <div className="draftopt-acts">
-                          <button type="button" className="btn sm primary" onClick={() => applyDraftOption(opt)}>
-                            Use this
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
 
               {copyFieldSpecs.map((spec) => (
@@ -1587,6 +1502,15 @@ export function CreativeModal(props: CreativeModalProps) {
                 </p>
               ))}
             </div>
+          ) : latestCopyVersion && agencyId ? (
+            // Copy is saved but the note wasn't written (the AI wasn't
+            // reachable then, say): write it now.
+            <p className="msection-empty">
+              The copy is saved, but its WIIFM direction hasn&rsquo;t been written.{" "}
+              <button type="button" className="badd" onClick={() => refreshWiifmNote.mutate(agencyId)}>
+                Write It Now
+              </button>
+            </p>
           ) : (
             <p className="msection-empty">No WIIFM direction yet — save some copy to generate one.</p>
           )}
@@ -1645,6 +1569,19 @@ export function CreativeModal(props: CreativeModalProps) {
           setDeleteTarget(null);
           deleteVersion.reset();
         }}
+      />
+    )}
+    {chatOpen && creativeId && (
+      <CopyChat
+        creativeId={creativeId}
+        modelName={modelLabel ?? "Claude"}
+        fields={copyFieldSpecs}
+        currentFields={draftFields}
+        onUse={(fields) => {
+          setDraftFields((prev) => ({ ...prev, ...fields }));
+          setCopySaveNote(null);
+        }}
+        onClose={() => setChatOpen(false)}
       />
     )}
     </>

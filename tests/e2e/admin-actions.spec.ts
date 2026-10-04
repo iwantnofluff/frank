@@ -150,12 +150,13 @@ test("the admin extends an ended trial and pauses with a reason; the agency's Ow
     const pause = page.getByRole("dialog", { name: "Pause E2E Test Agency?" });
     await pause.getByLabel(/Reason/).fill("Testing the pause");
     await pause.getByRole("button", { name: "Pause Agency" }).click();
-    await expect(pause).toHaveCount(0);
+    // Closes once the agencies list has reloaded: not instant against staging.
+    await expect(pause).toHaveCount(0, { timeout: 20_000 });
     await page.getByRole("button", { name: "Reactivate" }).click();
     const unpause = page.getByRole("dialog", { name: "Reactivate E2E Test Agency?" });
     await unpause.getByLabel(/Reason/).fill("Done testing");
     await unpause.getByRole("button", { name: "Reactivate" }).click();
-    await expect(unpause).toHaveCount(0);
+    await expect(unpause).toHaveCount(0, { timeout: 20_000 });
     expect((await admin.from("agencies").select("suspended_at").eq("id", frank.agencyId).single()).data!.suspended_at).toBeNull();
     expect((await log(frank)).map((a) => a.action)).toEqual([
       "Extended the free trial",

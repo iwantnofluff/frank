@@ -6,8 +6,14 @@
 // knowledge upload would need real extraction or a vision call, neither
 // of which exists yet, so those kinds still contribute nothing (same as
 // before this feature, not a regression from it).
+//
+// Images too, since "Write with Claude" (phase52): Claude reads them as
+// image blocks. Other providers ignore attachments.
+export const IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"] as const;
+export type ImageType = (typeof IMAGE_TYPES)[number];
+
 export interface Attachment {
   base64: string;
-  mediaType: "application/pdf";
+  mediaType: "application/pdf" | ImageType;
   title: string;
 }

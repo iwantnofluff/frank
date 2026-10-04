@@ -6264,3 +6264,129 @@ a.profproject:hover .pp-t b {
 .admindone {
   margin-bottom: 16px;
 }
+/* "Write with Claude" (phase52): earlier conversations and how to start on
+   the left, the conversation on the right. */
+.cchat {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 20px;
+  min-height: 420px;
+}
+@media (max-width: 760px) {
+  .cchat {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.cchat-side {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cchat-note {
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.cchat-head {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 8px;
+}
+.cchat-past {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  padding: 7px 9px;
+  border-radius: var(--r);
+  font-size: 13px;
+}
+.cchat-past span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.cchat-past:hover,
+.cchat-past[aria-pressed="true"] {
+  background: var(--canvas);
+}
+.cchat-main {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.cchat-empty {
+  margin: auto;
+  max-width: 320px;
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+.cchat-msg {
+  max-width: 92%;
+  padding: 10px 13px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.cchat-msg.user {
+  align-self: flex-end;
+  background: var(--action-soft);
+}
+.cchat-msg.assistant {
+  align-self: flex-start;
+  background: var(--canvas);
+}
+.cchat-msg.pending {
+  color: var(--muted);
+}
+.cchat-who {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+.cchat-body {
+  white-space: pre-wrap;
+}
+.cchat-draft {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+}
+.cchat-draft-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.cchat-field span {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.cchat-field p {
+  white-space: pre-wrap;
+  margin: 1px 0 6px;
+}
+.cchat-input {
+  flex: 1;
+  resize: none;
+  font: inherit;
+  font-size: 14px;
+  padding: 8px 10px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r);
+}
+/* The review page's copy, before there is any (direct instruction). */
+.ig-nocopy {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--muted);
+}

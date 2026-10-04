@@ -32,13 +32,16 @@ export async function generate(
 
   // Attachments (PDFs) go first, the text prompt last — Anthropic's own
   // guidance for document + instruction ordering in a single message.
+  // Images as image blocks (phase52), each preceded by its title so the
+  // prompt can refer to it.
   const content: Anthropic.Messages.ContentBlockParam[] = [
-    ...attachments.map(
-      (a): Anthropic.Messages.DocumentBlockParam => ({
-        type: "document",
-        title: a.title,
-        source: { type: "base64", media_type: a.mediaType, data: a.base64 },
-      }),
+    ...attachments.flatMap((a): Anthropic.Messages.ContentBlockParam[] =>
+      a.mediaType === "application/pdf"
+        ? [{ type: "document", title: a.title, source: { type: "base64", media_type: a.mediaType, data: a.base64 } }]
+        : [
+            { type: "text", text: `Attached image: ${a.title}` },
+            { type: "image", source: { type: "base64", media_type: a.mediaType, data: a.base64 } },
+          ],
     ),
     { type: "text", text: prompt },
   ];
@@ -47,7 +50,8 @@ export async function generate(
   for (let attempt = 0; attempt <= REFUSAL_RETRIES; attempt++) {
     message = await client.messages.create({
       model,
-      max_tokens: 1024,
+      // Room for a conversational reply with up to three drafts (phase52).
+      max_tokens: 2048,
       messages: [{ role: "user", content }],
     });
     if (message.stop_reason !== "refusal") break;

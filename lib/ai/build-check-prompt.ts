@@ -22,7 +22,7 @@ export interface CheckPromptInput {
 
 const FINDING_SEPARATOR = /\n-{3,}\n/;
 
-// "Check WIIFM"/"Check Brand" — same shape as build-caption-prompt.ts:
+// "Check WIIFM"/"Check Brand" — same shape as copy-chat.ts:
 // pure and unit-testable, the actual data-fetching (which knowledge counts
 // as "text", which section a client note belongs to) stays in the
 // component that calls this. The two checks differ only in what they're

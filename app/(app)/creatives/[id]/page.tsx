@@ -360,37 +360,10 @@ export default function CreativeReviewPage({
                 leadName={leadName}
               />
             )}
-            {/* With copy but no artwork it still shows as a post, the
-                artwork's place saying so — it can be read and commented on
-                the same. Only a post with neither gets the empty state. */}
-            {activeSection === "content" &&
-              (frames.length === 0 && !activeCopyVersion ? (
-              <div className="awaiting">
-                <svg viewBox="0 0 24 24">
-                  <rect x="3" y="4" width="18" height="16" rx="2" />
-                  <path d="M3 15l5-5 4 4 3-3 6 6" />
-                  <circle cx="9" cy="9" r="1.4" />
-                </svg>
-                <b>No artwork yet</b>
-                <span>
-                  {membershipLoading
-                    ? " "
-                    : isStaff
-                      ? "The brief is written. Add the artwork once it has been made."
-                      : "The agency hasn't uploaded anything for this piece yet."}
-                </span>
-                {isStaff && (
-                  <button
-                    type="button"
-                    className="btn primary sm"
-                    style={{ marginTop: 10 }}
-                    onClick={() => setCreativeModalTab("upload")}
-                  >
-                    Upload Artwork
-                  </button>
-                )}
-              </div>
-            ) : (
+            {/* Always the post, even before anything's made (direct
+                instruction): the artwork's place and the copy's each say
+                what's missing, so it reads like the post it will be. */}
+            {activeSection === "content" && (
                 <div className="postbox">
               <div className="cmeta">
                 <div className="ct">{creative.name}</div>
@@ -420,7 +393,9 @@ export default function CreativeReviewPage({
                           : frames.length > 1
                             ? `Slide ${slidePosition} has no artwork yet.`
                             : isStaff
-                              ? "The copy is in. Add the artwork once it has been made."
+                              ? activeCopyVersion
+                                ? "The copy is in. Add the artwork once it has been made."
+                                : "Add the artwork once it has been made."
                               : "The agency hasn't uploaded the artwork for this post yet."
                       }
                     >
@@ -546,10 +521,17 @@ export default function CreativeReviewPage({
                       }}
                     />
                   ) : (
-                    <span>
+                    <span className="ig-nocopy">
                       {copyVersions?.length
                         ? "No caption on this copy version."
-                        : "No copy uploaded yet."}
+                        : isStaff
+                          ? "No copy yet."
+                          : "The agency hasn't written the copy for this post yet."}
+                      {isStaff && !copyVersions?.length && (
+                        <button type="button" className="badd" onClick={() => setCreativeModalTab("upload")}>
+                          Write Copy
+                        </button>
+                      )}
                     </span>
                   )}
                 </div>
@@ -562,11 +544,12 @@ export default function CreativeReviewPage({
                 </div>
               </div>
             </div>
-              ))}
+            )}
             {activeSection === "checks" && (
               <ChecksPanel
                 creative={creative}
                 latestCopyVersion={copyVersions?.[0] ?? null}
+                isStaff={isStaff}
               />
             )}
             {activeSection === "feed" && (
