@@ -2179,3 +2179,5 @@ Gaps:
 - **Removing a suppression** (so someone can get emails again) is done in Resend's dashboard. It's a change to the shared sending account, not something to do from here.
 
 **Verified**: read-only calls first confirmed the Resend and Paddle keys can read (staging and live share one Resend account; live is still on Paddle's sandbox). With the real staging subscription, the transactions query returns its completed payment. `admin-overview.spec.ts` now also opens the agency: Billing shows "Payment failed, billed monthly" from our record. The test's made-up subscription ID gets Paddle's own "Invalid request", which is shown as Paddle not answering. Email shows no problems, because test addresses are never sent to. Looked at the Billing panel.
+
+Full suite after the three admin steps: 168 passed, 2 failed. `admin.spec.ts`'s pausing test still paused without a reason, which the new window requires; it now gives one for pausing and reactivating. A carousel test failed on timing and passed on rerun. Both files: 15 of 15.

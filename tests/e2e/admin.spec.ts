@@ -190,7 +190,10 @@ test("limits come from the plan plus the admin override, are enforced, and pausi
     // Pause: nobody in the agency sees anything, and its review links stop.
     const token = await frank.createSharedLink();
     await page.getByRole("button", { name: "Pause Agency" }).click();
-    await page.getByRole("dialog", { name: /^Pause / }).getByRole("button", { name: "Pause Agency" }).click();
+    // Pausing asks why, and logs it for the agency (phase51).
+    const pause = page.getByRole("dialog", { name: /^Pause / });
+    await pause.getByLabel(/Reason/).fill("Checking that pausing locks the agency");
+    await pause.getByRole("button", { name: "Pause Agency" }).click();
     await expect(page.getByRole("button", { name: "Reactivate" })).toBeVisible();
     expect((await staff.from("clients").select("id").eq("agency_id", frank.agencyId)).data).toEqual([]);
     const review = await (await page.request.post(`${APP_URL}/api/shared-review`, { data: { token } })).json();
@@ -203,6 +206,9 @@ test("limits come from the plan plus the admin override, are enforced, and pausi
     // Reactivate: everything is back.
     await page.goto(`${ADMIN}/admin/agencies/${frank.agencyId}`);
     await page.getByRole("button", { name: "Reactivate" }).click();
+    const reactivate = page.getByRole("dialog", { name: /^Reactivate / });
+    await reactivate.getByLabel(/Reason/).fill("Done checking");
+    await reactivate.getByRole("button", { name: "Reactivate" }).click();
     await expect(page.getByRole("button", { name: "Pause Agency" })).toBeVisible();
     expect((await staff.from("clients").select("id").eq("agency_id", frank.agencyId)).data!.length).toBe(1);
   } finally {
