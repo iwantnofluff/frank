@@ -2076,3 +2076,17 @@ Specs that used the old three-dot menus were moved to the profiles. Looked at bo
 Decided directly: on the Project Profile, a User sees the delivery, type, due date and description read-only, with Done instead of Cancel and Save. phase47 holds the same line in the database. A trigger refuses any change to a project's name, type, description, delivery or due date unless the person is an Owner or Admin. Users can still move a project to a folder or client, or archive it, as before, because those aren't details. The service role, with no signed-in person, passes, as for other rules that depend on who's calling.
 
 **Verified**: phase47 was rehearsed on staging (rolled back), then applied. In `project-access.spec.ts`, signed in as a real User, the profile shows the details as text, with no fields or Save. A direct rename through their own session is refused (42501), while archiving through it still works. Owners and Admins still edit and save (`manage-clients-projects.spec.ts`). 10 of 10 across both files. Looked at the User's window. Typecheck and lint clean; `npm run build` clean.
+
+## Client details edited in place, and a project's delivery fixed
+
+Decided directly:
+- **The Client Profile edits its own details.** Owners and Admins get an "Edit" link beside Details, which turns the image, name, industry and description into fields with Save and Cancel, in the same window. The separate Edit Client window is gone; New Client stays, with its invite rows. Those rows no longer offer projects, because a new client has none. Projects are chosen when inviting from a Client Profile's Invite People, or from Team. A User sees the details read-only. phase48 holds the same line in the database: only Owners and Admins can change a client's name, industry, description or image. Users can still archive a client, as before. The detail fields are shared between New Client and the profile (`ClientDetailsFields.tsx`).
+- **A project's delivery never changes once it's made**, with or without posts, because switching brings too many complications. The Project Profile shows it as text. phase48 refuses the change for everyone, including Owners.
+
+**Verified**: phase48 was rehearsed on staging (rolled back), then applied. Specs updated and added:
+- An Admin renames a client and changes its industry in place, and adds and removes its image, through the profile.
+- An Owner invites a User from a Client Profile, with that client ticked already, onto one of two projects.
+- Signed in as a real User, there's no Edit link, and a direct rename is refused (42501).
+- An Admin's direct delivery change on a project with no posts is refused (42501).
+
+`project-access`, `manage-clients-projects`, `client-profile` and `client-invites`: 16 of 16. Looked at the profile reading and editing, and at the Project Profile with Delivery as text.

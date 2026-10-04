@@ -25,38 +25,32 @@ async function projectsOf(frank: Frank, email: string) {
   return (data ?? []).map((r) => r.project_id as string).sort();
 }
 
-test("inviting from Edit Client puts a User on just the projects chosen", async ({ page, frank }) => {
+test("inviting from a Client Profile puts a User on just the projects chosen", async ({ page, frank }) => {
   test.setTimeout(90_000);
   const second = await frank.createContinuousProject();
   await setStaffRole(frank, "owner");
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/dashboard`);
   await page.getByRole("button", { name: "Open E2E Test Client's profile" }).click();
-  await page.getByRole("dialog", { name: "E2E Test Client" }).getByRole("button", { name: "Edit Client" }).click();
-  const modal = page.getByRole("dialog", { name: "Edit Client" });
+  await page.getByRole("dialog", { name: "E2E Test Client" }).getByRole("button", { name: "+ Invite People" }).click();
+  const modal = page.getByRole("dialog", { name: "Invite Team Member" });
 
   const email = `e2e-proj-user-${Date.now()}@example.invalid`;
-  await modal.getByRole("button", { name: "+ Invite someone" }).click();
-  const row = modal.locator(".invrow").last();
-  await row.getByLabel("First name").fill("Pia");
-  await row.getByLabel("Last name").fill("Project");
-  await row.getByLabel("Email").fill(email);
-  await row.getByRole("button", { name: "Projects: All projects" }).click();
+  await modal.getByLabel("First Name").fill("Pia");
+  await modal.getByLabel("Last Name").fill("Project");
+  await modal.getByLabel("Email Address").fill(email);
+  // A User, with this client ticked already.
+  await expect(modal.getByRole("checkbox", { name: "E2E Test Client" })).toHaveAttribute("aria-checked", "true");
+  await modal.getByRole("button", { name: "Projects: All projects" }).click();
   const picker = page.getByRole("dialog", { name: "Projects" });
   await picker.getByRole("checkbox", { name: "All projects" }).click();
   await picker.getByRole("checkbox", { name: /E2E Continuous Project/ }).click();
-  await expect(row.getByRole("button", { name: /^Projects: E2E Continuous Project/ })).toBeVisible();
-  await page.screenshot({ path: `${process.env.SHOT_DIR ?? "test-results"}/invite-projects.png` });
+  await expect(modal.getByRole("button", { name: /^Projects: E2E Continuous Project/ })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(modal).toBeVisible();
 
-  // An Admin sees every project: nothing to choose.
-  await row.getByLabel("Role").selectOption("admin");
-  await expect(row).toContainText("Sees every project");
-  await row.getByLabel("Role").selectOption("user");
-
-  await modal.getByRole("button", { name: "Save" }).click();
-  await expect(page.getByRole("dialog", { name: "Client Saved" })).toContainText("Invite sent", { timeout: 20_000 });
+  await modal.getByRole("button", { name: "Send Invite" }).click();
+  await expect(page.getByRole("dialog", { name: "Invite Sent" })).toBeVisible({ timeout: 20_000 });
   expect(await projectsOf(frank, email)).toEqual([second]);
 });
 
@@ -197,4 +191,41 @@ test("a client's profile lists its people with their projects, and an Owner chan
   const invite = page.getByRole("dialog", { name: "Invite Team Member" });
   await invite.getByLabel("Role").selectOption("client");
   await expect(invite.getByLabel("Their Client")).toHaveValue(frank.clientId);
+});
+
+test("a User sees a client's details read-only; nobody changes a project's delivery", async ({ browser, frank }) => {
+  test.setTimeout(90_000);
+  const user = await seedUser(frank);
+  const ctx = await browser.newContext();
+  try {
+    const up = await ctx.newPage();
+    await up.goto(`${APP_URL}/login`);
+    await up.fill('input[type="email"]', user.email);
+    await up.fill('input[type="password"]', user.password);
+    await up.click('button[type="submit"]');
+    await up.waitForURL(`${APP_URL}/dashboard`, { timeout: 20_000 });
+    await up.getByRole("button", { name: "Open E2E Test Client's profile" }).click();
+    const profile = up.getByRole("dialog", { name: "E2E Test Client" });
+    await expect(profile.locator(".profclient")).toBeVisible();
+    await expect(profile.getByRole("button", { name: "Edit", exact: true })).toHaveCount(0);
+  } finally {
+    await ctx.close();
+  }
+
+  // The database agrees (phase48): a User can't rename the client…
+  const c = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    auth: { persistSession: false },
+  });
+  await c.auth.signInWithPassword({ email: user.email, password: user.password });
+  const renamed = await c.from("clients").update({ name: "Renamed By User" }).eq("id", frank.clientId).select("id");
+  expect(renamed.error?.code).toBe("42501");
+
+  // …and an Admin can't switch a project's delivery, posts or not.
+  const empty = await frank.createContinuousProject();
+  const s = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    auth: { persistSession: false },
+  });
+  await s.auth.signInWithPassword({ email: frank.staffEmail, password: frank.staffPassword });
+  const delivery = await s.from("projects").update({ delivery: "scheduled" }).eq("id", empty).select("id");
+  expect(delivery.error?.code).toBe("42501");
 });

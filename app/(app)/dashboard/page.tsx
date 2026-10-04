@@ -64,12 +64,12 @@ export default function DashboardPage() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("active");
   const [newClientOpen, setNewClientOpen] = useState(false);
-  const [editTarget, setEditTarget] = useState<ClientRow | null>(null);
   const [profileTarget, setProfileTarget] = useState<ClientRow | null>(null);
   const [inviteTo, setInviteTo] = useState<string | null>(null);
   const { data: me } = useMyMembership(agency?.agencyId);
-  // Owners and Admins choose who's on each project (phase46).
-  const canManagePeople = !!me && !me.client_id && seesAllClients(me.role);
+  // Owners and Admins change a client's details and who's on each project
+  // (phase46, phase48).
+  const isAdmin = !!me && !me.client_id && seesAllClients(me.role);
   const inviteRoles = rolesICanInvite(me);
   // Fails closed like every other isStaff gate in this app: hidden while
   // still resolving, not shown by default.
@@ -264,24 +264,19 @@ export default function DashboardPage() {
 
       {newClientOpen && agency && (
         <ClientModal
-          mode="create"
           agencyId={agency.agencyId}
           activeClientCount={activeCount}
           onClose={() => setNewClientOpen(false)}
         />
       )}
 
-      {profileTarget && (
+      {profileTarget && agency && (
         <ClientProfileModal
+          agencyId={agency.agencyId}
           // Fresh from the list, so an edit shows straight away.
           client={clients?.find((c) => c.id === profileTarget.id) ?? profileTarget}
-          logoUrl={profileTarget.logo_asset_id ? (logoUrls?.[profileTarget.logo_asset_id] ?? null) : null}
-          canManagePeople={canManagePeople}
+          isAdmin={isAdmin}
           canInvite={inviteRoles.length > 0}
-          onEdit={() => {
-            setEditTarget(clients?.find((c) => c.id === profileTarget.id) ?? profileTarget);
-            setProfileTarget(null);
-          }}
           onInvite={() => setInviteTo(profileTarget.id)}
           onArchive={() => {
             archiveClient.mutate({ clientId: profileTarget.id, archived: !profileTarget.archived_at });
@@ -301,18 +296,6 @@ export default function DashboardPage() {
         />
       )}
 
-      {editTarget && agency && (
-        <ClientModal
-          mode="edit"
-          agencyId={agency.agencyId}
-          clientId={editTarget.id}
-          currentName={editTarget.name}
-          currentIndustry={editTarget.industry}
-          currentLogoAssetId={editTarget.logo_asset_id}
-          currentDescription={editTarget.description}
-          onClose={() => setEditTarget(null)}
-        />
-      )}
     </div>
   );
 }

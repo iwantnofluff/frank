@@ -6,10 +6,9 @@ import { createClient } from "@/lib/supabase/client";
 export interface ProjectPatch {
   name?: string;
   type?: string | null;
-  // Project Profile (phase46). Delivery can't change once a project has
-  // posts; the database refuses (projects_delivery_immutable).
+  // Project Profile (phase46). Delivery isn't here: it never changes once
+  // a project is made (phase48).
   description?: string | null;
-  delivery?: "scheduled" | "continuous";
   due_on?: string | null;
 }
 
@@ -27,7 +26,6 @@ export function useUpdateProject() {
       name,
       type,
       description,
-      delivery,
       due_on,
     }: ProjectPatch & {
       projectId: string;
@@ -37,7 +35,7 @@ export function useUpdateProject() {
       // Fields left undefined drop out of the request body.
       const { data, error } = await supabase
         .from("projects")
-        .update({ name: name?.trim(), type, description, delivery, due_on })
+        .update({ name: name?.trim(), type, description, due_on })
         .eq("id", projectId)
         .select("id")
         .maybeSingle();

@@ -11,9 +11,15 @@ test("rename and archive/unarchive a client from the dashboard", async ({ page, 
   await page.waitForSelector(".crow:not(.head)");
 
   await page.getByRole("button", { name: "Open E2E Test Client's profile" }).click();
-  await page.getByRole("dialog", { name: "E2E Test Client" }).getByRole("button", { name: "Edit Client" }).click();
+  const profile = page.getByRole("dialog", { name: "E2E Test Client" });
+  await profile.getByRole("button", { name: "Edit", exact: true }).click();
   await page.fill("#cName", "E2E Renamed Client");
-  await page.click('button:has-text("Save")');
+  await profile.getByRole("button", { name: "Save" }).click();
+  // Saved in place: the profile shows the new name, then closes.
+  await expect(page.getByRole("dialog", { name: "E2E Renamed Client" }).locator(".profclient")).toContainText(
+    "E2E Renamed Client",
+  );
+  await page.getByRole("dialog", { name: "E2E Renamed Client" }).getByRole("button", { name: "Done" }).click();
   await expect(page.locator(".crow", { hasText: "E2E Renamed Client" })).toBeVisible();
 
   await page.getByRole("button", { name: "Open E2E Renamed Client's profile" }).click();
@@ -30,7 +36,7 @@ test("rename and archive/unarchive a client from the dashboard", async ({ page, 
   await expect(page.locator(".crow", { hasText: "E2E Renamed Client" })).toBeVisible();
 });
 
-test("New Client and Edit Client share the same modal, including industry; no separate Client Team list", async ({
+test("New Client takes an industry, and the Client Profile edits it in place; no separate Client Team list", async ({
   page,
   frank,
 }) => {
@@ -48,12 +54,14 @@ test("New Client and Edit Client share the same modal, including industry; no se
   await expect(page.locator(".crow", { hasText: "Client Modal E2E" })).toBeVisible();
 
   await page.getByRole("button", { name: "Open Client Modal E2E's profile" }).click();
-  await page.getByRole("dialog", { name: "Client Modal E2E" }).getByRole("button", { name: "Edit Client" }).click();
-  await expect(page.locator('input[value="Client Modal E2E"]')).toBeVisible();
-  await expect(page.locator("#cInd")).toHaveValue("D2C beauty");
+  const profile = page.getByRole("dialog", { name: "Client Modal E2E" });
+  await expect(profile.locator(".profclient")).toContainText("D2C beauty");
+  await profile.getByRole("button", { name: "Edit", exact: true }).click();
+  await expect(profile.locator("#cName")).toHaveValue("Client Modal E2E");
+  await expect(profile.locator("#cInd")).toHaveValue("D2C beauty");
   await page.fill("#cInd", "Skincare");
-  await page.click('button:has-text("Save")');
-  await expect(page.locator(".scrim")).toHaveCount(0);
+  await profile.getByRole("button", { name: "Save" }).click();
+  await expect(profile.locator(".profclient")).toContainText("Skincare");
 });
 
 test("edit (name, type and details) and archive/unarchive a project from its profile", async ({

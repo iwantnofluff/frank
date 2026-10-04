@@ -58,20 +58,14 @@ export function ProjectProfileModal({
   const updateProject = useUpdateProject();
   const [name, setName] = useState(project.name);
   const [type, setType] = useState(project.type ?? "");
-  const [delivery, setDelivery] = useState(project.delivery);
   const [dueOn, setDueOn] = useState(project.due_on ?? "");
   const [description, setDescription] = useState(project.description ?? "");
   const [nameError, setNameError] = useState<string | null>(null);
 
-  const options = PROJECT_TYPE_OPTS[delivery];
-  const keepsUnlistedType = !!project.type && project.delivery === delivery && !options.includes(project.type);
-  // The database refuses a delivery change once there are posts.
-  const hasPosts = (stats?.total ?? 0) > 0;
-
-  function changeDelivery(next: "scheduled" | "continuous") {
-    setDelivery(next);
-    setType(next === project.delivery ? (project.type ?? "") : PROJECT_TYPE_OPTS[next][0]);
-  }
+  // Delivery is fixed once a project is made (phase48), so only its own
+  // types are offered.
+  const options = PROJECT_TYPE_OPTS[project.delivery];
+  const keepsUnlistedType = !!project.type && !options.includes(project.type);
 
   async function save() {
     if (!name.trim()) return setNameError("Give it a name first.");
@@ -81,7 +75,6 @@ export function ProjectProfileModal({
       clientId,
       name,
       type: type || null,
-      delivery: delivery === project.delivery ? undefined : delivery,
       due_on: dueOn || null,
       description: description.trim() || null,
     });
@@ -152,16 +145,10 @@ export function ProjectProfileModal({
               </div>
               <div className="frow">
                 <div className="field">
-                  <label htmlFor="ppDelivery">Delivery</label>
-                  <select
-                    id="ppDelivery"
-                    value={delivery}
-                    disabled={hasPosts}
-                    onChange={(e) => changeDelivery(e.target.value as "scheduled" | "continuous")}
-                  >
-                    <option value="scheduled">{DELIVERY_LABELS.scheduled}</option>
-                    <option value="continuous">{DELIVERY_LABELS.continuous}</option>
-                  </select>
+                  <label>Delivery</label>
+                  <p className="profstatic" title="Fixed once a project is made">
+                    {DELIVERY_LABELS[project.delivery]}
+                  </p>
                 </div>
                 <div className="field">
                   <label htmlFor="ppType">Type</label>
@@ -176,11 +163,6 @@ export function ProjectProfileModal({
                   </select>
                 </div>
               </div>
-              {hasPosts && (
-                <p className="msection-d" style={{ marginTop: -4 }}>
-                  Delivery can&rsquo;t change once a project has posts.
-                </p>
-              )}
               <div className="field">
                 <label htmlFor="ppDue">
                   Due date <span className="hint">optional</span>

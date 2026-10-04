@@ -5836,23 +5836,10 @@ button.avatar {
   grid-template-columns: 1fr 1fr 1.5fr 104px;
   gap: 8px;
 }
-/* Editing a client with projects (phase46): name and email, then role and
-   projects beneath. */
-.invrow.two {
-  grid-template-columns: 1fr 1fr 1.5fr;
-}
-.invrow.two > :nth-child(5) {
-  grid-column: 2 / 4;
-}
 .projpick {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-.invall {
-  align-self: center;
-  font-size: 13px;
-  color: var(--muted);
 }
 .invitelinks {
   display: flex;
@@ -6194,4 +6181,22 @@ a.profproject:hover .pp-t b {
 }
 .profdl dd {
   margin: 0;
+}
+.profstatic {
+  min-height: 35px;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: var(--muted);
+}
+.msection-h.profhead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.profactions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 4px;
 }

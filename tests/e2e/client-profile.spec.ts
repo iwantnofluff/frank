@@ -25,10 +25,20 @@ async function picture(page: Page, width: number, height: number) {
   return { name: `logo-${width}x${height}.png`, mimeType: "image/png", buffer: Buffer.from(b64, "base64") };
 }
 
+// The Client Profile, with its details turned into fields (phase48).
 async function openEditClient(page: Page) {
   await page.getByRole("button", { name: "Open E2E Test Client's profile" }).click();
-  await page.getByRole("dialog", { name: "E2E Test Client" }).getByRole("button", { name: "Edit Client" }).click();
-  return page.getByRole("dialog", { name: "Edit Client" });
+  const profile = page.getByRole("dialog", { name: "E2E Test Client" });
+  await profile.getByRole("button", { name: "Edit", exact: true }).click();
+  return profile;
+}
+
+// Saved in place: the fields go, then the profile is closed.
+async function saveAndClose(modal: ReturnType<Page["getByRole"]>) {
+  await modal.getByRole("button", { name: "Save" }).click();
+  await expect(modal.locator("#cName")).toHaveCount(0);
+  await modal.getByRole("button", { name: "Done" }).click();
+  await expect(modal).toHaveCount(0);
 }
 
 test("a client gets a square profile image and a description", async ({ page, frank }) => {
@@ -60,8 +70,7 @@ test("a client gets a square profile image and a description", async ({ page, fr
     await cropper.getByRole("button", { name: "Use image" }).click();
     await expect(cropper).toHaveCount(0);
     await expect(modal.locator(".logo.clogo img")).toBeVisible();
-    await modal.getByRole("button", { name: "Save" }).click();
-    await expect(modal).toHaveCount(0);
+    await saveAndClose(modal);
 
     const { data: c } = await admin
       .from("clients")
@@ -90,8 +99,7 @@ test("a client gets a square profile image and a description", async ({ page, fr
     await page.goto(`${APP_URL}/dashboard`);
     modal = await openEditClient(page);
     await modal.getByRole("button", { name: "Remove" }).click();
-    await modal.getByRole("button", { name: "Save" }).click();
-    await expect(modal).toHaveCount(0);
+    await saveAndClose(modal);
     await expect(page.locator(".crow", { hasText: "E2E Test Client" }).locator(".logo img")).toHaveCount(0);
     const { data: after } = await admin.from("clients").select("logo_asset_id").eq("id", frank.clientId).single();
     expect(after!.logo_asset_id).toBeNull();
