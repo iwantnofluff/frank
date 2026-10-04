@@ -19,6 +19,8 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     pages: [
       { href: "/settings/general/account-name", label: "Account Name" },
       { href: "/settings/general/account-url", label: "Account URL" },
+      // What Frank's support has done in the account (phase51), for Owners.
+      { href: "/settings/general/support-activity", label: "Support Activity" },
     ],
   },
   {

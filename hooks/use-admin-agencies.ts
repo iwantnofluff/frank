@@ -72,10 +72,15 @@ export function useUpdateAgency(id: string) {
         extra_ai_requests: number;
         extra_storage_bytes: number;
         suspended: boolean;
+        // Pausing and unpausing need one; it's logged (phase51).
+        reason: string;
       }>,
     ) => call<{ ok: true }>(`/api/admin/agencies/${id}`, { method: "PATCH", body: JSON.stringify(input) }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["admin-agencies"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["admin-agencies"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-actions", id] }),
+      ]);
     },
   });
 }

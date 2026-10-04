@@ -6250,3 +6250,17 @@ a.profproject:hover .pp-t b {
   color: var(--muted);
   text-align: right;
 }
+/* The admin area's action buttons (phase51). */
+.adminactions {
+  display: flex;
+  gap: 8px;
+  margin: 4px 0 16px;
+}
+.adminactions.inpanel {
+  margin: 0;
+  padding: 10px 15px;
+  border-top: 1px solid var(--line);
+}
+.admindone {
+  margin-bottom: 16px;
+}

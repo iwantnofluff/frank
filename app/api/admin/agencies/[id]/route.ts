@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requirePlatformAdmin } from "@/lib/admin/require-platform-admin";
 import { deleteAgency } from "@/lib/admin/delete-agency";
 import { paddle } from "@/lib/billing/paddle";
+import { REASON_REQUIRED, logAction, reasonFrom } from "@/lib/admin/actions";
 
 // The admin override's columns (phase42).
 const EXTRAS = ["extra_seats", "extra_clients", "extra_ai_requests", "extra_storage_bytes"] as const;
@@ -14,10 +15,10 @@ const EXTRAS = ["extra_seats", "extra_clients", "extra_ai_requests", "extra_stor
 export async function PATCH(request: Request, ctx: { params: Promise<{ id: string }> }) {
   const auth = await requirePlatformAdmin();
   if ("error" in auth) return auth.error;
-  const { admin } = auth;
+  const { admin, user } = auth;
   const { id } = await ctx.params;
 
-  let body: Partial<Record<(typeof EXTRAS)[number], number>> & { plan?: string; suspended?: boolean };
+  let body: Partial<Record<(typeof EXTRAS)[number], number>> & { plan?: string; suspended?: boolean; reason?: string };
   try {
     body = await request.json();
   } catch {
@@ -36,12 +37,28 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
     if (!Number.isInteger(n) || n < 0) return NextResponse.json({ error: "Extras are whole numbers, 0 or more." }, { status: 400 });
     update[key] = n;
   }
-  if (body.suspended !== undefined) update.suspended_at = body.suspended ? new Date().toISOString() : null;
+  // Pausing and unpausing are logged for the agency to see (phase51).
+  const reason = reasonFrom(body);
+  if (body.suspended !== undefined) {
+    if (!reason) return NextResponse.json({ error: REASON_REQUIRED }, { status: 400 });
+    update.suspended_at = body.suspended ? new Date().toISOString() : null;
+  }
   if (Object.keys(update).length === 0) return NextResponse.json({ error: "Nothing to change" }, { status: 400 });
 
   const { data, error } = await admin.from("agencies").update(update).eq("id", id).select("id").maybeSingle();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!data) return NextResponse.json({ error: "Agency not found" }, { status: 404 });
+  if (body.suspended !== undefined) {
+    try {
+      await logAction(admin, user, {
+        agencyId: id,
+        action: body.suspended ? "Paused the agency" : "Unpaused the agency",
+        reason: reason!,
+      });
+    } catch (e) {
+      return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+    }
+  }
   return NextResponse.json({ ok: true });
 }
 

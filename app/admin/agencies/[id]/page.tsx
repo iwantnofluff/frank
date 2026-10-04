@@ -2,14 +2,10 @@
 
 import { use, useState } from "react";
 import Link from "next/link";
-import {
-  useAdminAgencies,
-  useHandlePlanRequest,
-  useUpdateAgency,
-  type AdminAgency,
-} from "@/hooks/use-admin-agencies";
+import { useAdminAgencies, useHandlePlanRequest, useUpdateAgency, type AdminAgency } from "@/hooks/use-admin-agencies";
 import { AI_REQUESTS_PER_MONTH, formatBytes, isReadOnly, limitLabel, planById } from "@/lib/plans";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { AdminActionModal } from "@/components/admin/AdminActionModal";
+import { useAdminAction, useAgencyActions } from "@/hooks/use-admin-actions";
 import { PeopleTable } from "@/components/admin/PeopleTable";
 import { useAdminUsers } from "@/hooks/use-admin-users";
 import { roleRank } from "@/lib/roles";
@@ -39,7 +35,10 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
   const [ai, setAi] = useState(String(agency.extra_ai_requests));
   const [storageGb, setStorageGb] = useState(String(+(agency.extra_storage_bytes / GB).toFixed(2)));
   const [saved, setSaved] = useState(false);
-  const [confirmPause, setConfirmPause] = useState(false);
+  const [pausing, setPausing] = useState<"pause" | "unpause" | null>(null);
+  const [extending, setExtending] = useState(false);
+  const [days, setDays] = useState("14");
+  const extend = useAdminAction<{ trialEndsAt: string }>();
   const tier = planById(agency.plan);
   const whole = (v: string) => (v.trim() === "" ? 0 : Number(v));
 
@@ -47,7 +46,12 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
     <div className="adminform">
       {/* The menu's own arrow (direct instruction), level with the one above
           Dashboard. */}
-      <Link href="/admin/agencies" className="reviewnav-toggle adminback" aria-label="Back to agencies" title="Back to agencies">
+      <Link
+        href="/admin/agencies"
+        className="reviewnav-toggle adminback"
+        aria-label="Back to agencies"
+        title="Back to agencies"
+      >
         <svg viewBox="0 0 24 24">
           <path d="M15 18l-6-6 6-6" />
         </svg>
@@ -71,8 +75,8 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
                 {agency.pending_request.interval}
               </b>
               <span>
-                Currently {planById(agency.plan)?.name ?? agency.plan}. Applying it moves the agency to that plan and its
-                limits.
+                Currently {planById(agency.plan)?.name ?? agency.plan}. Applying it moves the agency to that plan and
+                its limits.
               </span>
             </span>
             <span style={{ display: "flex", gap: 8 }}>
@@ -94,7 +98,11 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
               </button>
             </span>
           </div>
-          {handle.error && <p className="autherr" style={{ padding: "0 15px 12px" }}>{errorMessage(handle.error, "Couldn't do that")}</p>}
+          {handle.error && (
+            <p className="autherr" style={{ padding: "0 15px 12px" }}>
+              {errorMessage(handle.error, "Couldn't do that")}
+            </p>
+          )}
         </div>
       )}
 
@@ -108,8 +116,48 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
               ? ", trial ended: read-only until it chooses a plan."
               : `, trial ends ${new Date(agency.trial_ends_at!).toLocaleDateString()}.`
             : "."}{" "}
-        The plan is the agency&rsquo;s to choose, in its Settings → Your Plan. Add to its limits with the override below.
+        The plan is the agency&rsquo;s to choose, in its Settings → Your Plan. Add to its limits with the override
+        below.
       </p>
+      {agency.plan === "free" && (
+        <div className="adminactions">
+          <button
+            type="button"
+            className="btn sm"
+            onClick={() => {
+              extend.reset();
+              setExtending(true);
+            }}
+          >
+            Extend Trial
+          </button>
+        </div>
+      )}
+      {extending && (
+        <AdminActionModal
+          title="Extend the Free Trial"
+          message={
+            isReadOnly(agency.plan, agency.trial_ends_at)
+              ? `${agency.name}'s trial is over, so it's read-only. Extending it counts from today and lifts that.`
+              : `${agency.name}'s trial ends ${new Date(agency.trial_ends_at!).toLocaleDateString()}. Extending it adds to that.`
+          }
+          confirmLabel="Extend Trial"
+          isPending={extend.isPending}
+          error={extend.error}
+          onConfirm={(reason) =>
+            extend.mutate(
+              { url: `/api/admin/agencies/${agency.id}/extend-trial`, body: { days: Number(days), reason } },
+              { onSuccess: () => setExtending(false) },
+            )
+          }
+          onClose={() => setExtending(false)}
+        >
+          <div className="field">
+            <label htmlFor="adDays">Days to add</label>
+            <input id="adDays" type="number" min={1} max={90} value={days} onChange={(e) => setDays(e.target.value)} />
+          </div>
+        </AdminActionModal>
+      )}
 
       <div className="msection-h">Limits</div>
       <p className="msection-d">
@@ -121,7 +169,13 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
         {[
           ["Team members", tier?.seats ?? null, agency.extra_seats, agency.seat_limit, limitLabel],
           ["Active clients", tier?.clients ?? null, agency.extra_clients, agency.client_limit, limitLabel],
-          ["AI requests a month", AI_REQUESTS_PER_MONTH, agency.extra_ai_requests, agency.ai_monthly_request_cap, limitLabel],
+          [
+            "AI requests a month",
+            AI_REQUESTS_PER_MONTH,
+            agency.extra_ai_requests,
+            agency.ai_monthly_request_cap,
+            limitLabel,
+          ],
           ["Storage", tier?.storageBytes ?? null, agency.extra_storage_bytes, agency.storage_limit_bytes, formatBytes],
         ].map(([label, base, extra, total, show]) => {
           const fmt = show as (n: number | null) => string;
@@ -143,27 +197,53 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
       <AgencyPeople agencyId={agency.id} />
 
       <div className="msection-h">Admin Override</div>
-      <p className="msection-d">Added on top of the plan&rsquo;s limits, and kept when the plan changes. 0 adds nothing.</p>
+      <p className="msection-d">
+        Added on top of the plan&rsquo;s limits, and kept when the plan changes. 0 adds nothing.
+      </p>
       <div className="frow">
         <div className="field">
           <label htmlFor="agXSeats">Extra Team Members</label>
-          <input id="agXSeats" className="bin one" inputMode="numeric" value={seats} onChange={(e) => setSeats(e.target.value)} />
+          <input
+            id="agXSeats"
+            className="bin one"
+            inputMode="numeric"
+            value={seats}
+            onChange={(e) => setSeats(e.target.value)}
+          />
         </div>
         <div className="field">
           <label htmlFor="agXClients">Extra Clients</label>
-          <input id="agXClients" className="bin one" inputMode="numeric" value={clients} onChange={(e) => setClients(e.target.value)} />
+          <input
+            id="agXClients"
+            className="bin one"
+            inputMode="numeric"
+            value={clients}
+            onChange={(e) => setClients(e.target.value)}
+          />
         </div>
       </div>
       <div className="frow">
         <div className="field">
           <label htmlFor="agXAi">Extra AI Requests a Month</label>
-          <input id="agXAi" className="bin one" inputMode="numeric" value={ai} onChange={(e) => setAi(e.target.value)} />
+          <input
+            id="agXAi"
+            className="bin one"
+            inputMode="numeric"
+            value={ai}
+            onChange={(e) => setAi(e.target.value)}
+          />
         </div>
         <div className="field">
           <label htmlFor="agXStorage">
             Extra Storage <span className="hint">GB</span>
           </label>
-          <input id="agXStorage" className="bin one" inputMode="decimal" value={storageGb} onChange={(e) => setStorageGb(e.target.value)} />
+          <input
+            id="agXStorage"
+            className="bin one"
+            inputMode="decimal"
+            value={storageGb}
+            onChange={(e) => setStorageGb(e.target.value)}
+          />
         </div>
       </div>
       {update.error && <p className="autherr">{errorMessage(update.error, "Couldn't save")}</p>}
@@ -197,26 +277,36 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
           : "Nobody at the agency, or its clients, can sign in or open review links until it's turned back on. Nothing is deleted."}
       </p>
       {agency.suspended_at ? (
-        <button type="button" className="btn" disabled={update.isPending} onClick={() => update.mutate({ suspended: false })}>
+        <button type="button" className="btn" onClick={() => setPausing("unpause")}>
           Reactivate
         </button>
       ) : (
-        <button type="button" className="btn danger" onClick={() => setConfirmPause(true)}>
+        <button type="button" className="btn danger" onClick={() => setPausing("pause")}>
           Pause Agency
         </button>
       )}
-      {confirmPause && (
-        <ConfirmDialog
-          title={`Pause ${agency.name}?`}
-          message={`nobody at ${agency.name} or its clients will be able to sign in or open review links until you reactivate it. Nothing is deleted.`}
-          confirmLabel="Pause Agency"
-          pendingLabel="Pausing…"
+      {pausing && (
+        <AdminActionModal
+          title={pausing === "pause" ? `Pause ${agency.name}?` : `Reactivate ${agency.name}?`}
+          message={
+            pausing === "pause"
+              ? `Nobody at ${agency.name} or its clients will be able to sign in or open review links until you reactivate it. Nothing is deleted.`
+              : `Everyone at ${agency.name} can sign in again, and its review links open.`
+          }
+          confirmLabel={pausing === "pause" ? "Pause Agency" : "Reactivate"}
           isPending={update.isPending}
           error={update.error}
-          onConfirm={() => update.mutateAsync({ suspended: true }).then(() => setConfirmPause(false)).catch(() => {})}
-          onClose={() => setConfirmPause(false)}
+          onConfirm={(reason) =>
+            update
+              .mutateAsync({ suspended: pausing === "pause", reason })
+              .then(() => setPausing(null))
+              .catch(() => {})
+          }
+          onClose={() => setPausing(null)}
         />
       )}
+
+      <SupportLog agencyId={agency.id} />
     </div>
   );
 }
@@ -238,7 +328,9 @@ function AgencyPeople({ agencyId }: { agencyId: string }) {
     <>
       <div className="msection-h">People</div>
       <p className="msection-d">
-        {people ? `${here.length === 1 ? "1 person" : `${here.length} people`} here, team and clients.` : "Everyone in the agency."}
+        {people
+          ? `${here.length === 1 ? "1 person" : `${here.length} people`} here, team and clients.`
+          : "Everyone in the agency."}
       </p>
       {isLoading && <p className="sub">Loading…</p>}
       {error && <p className="autherr">{errorMessage(error, "Couldn't load the people")}</p>}
@@ -246,6 +338,48 @@ function AgencyPeople({ agencyId }: { agencyId: string }) {
         <div className="adminpeople">
           <PeopleTable people={here} agencyId={agencyId} />
         </div>
+      )}
+    </>
+  );
+}
+
+// What the admin area has done here (phase51), newest first. The agency's
+// Owners see the same in their Settings.
+function SupportLog({ agencyId }: { agencyId: string }) {
+  const { data: actions, isLoading, error } = useAgencyActions(agencyId);
+  return (
+    <>
+      <div className="msection-h">Support Log</div>
+      <p className="msection-d">What Frank has done in this agency, and why. Its Owners see this too.</p>
+      {isLoading && <p className="sub">Loading…</p>}
+      {error && <p className="autherr">{errorMessage(error, "Couldn't load the log")}</p>}
+      {actions && actions.length === 0 && <p className="msection-d">Nothing yet.</p>}
+      {actions && actions.length > 0 && (
+        <section className="panel" aria-label="Support log">
+          {actions.map((a) => (
+            <div className="srow" key={a.id}>
+              <span className="sl">
+                <b>
+                  {a.action}
+                  {a.target ? `: ${a.target}` : ""}
+                </b>
+                <span>
+                  {a.detail ? `${a.detail.replace(/\.$/, "")}. ` : ""}Why: {a.reason}
+                </span>
+              </span>
+              <span className="srow-note">
+                {a.actor_name}
+                <br />
+                {new Date(a.created_at).toLocaleString(undefined, {
+                  day: "numeric",
+                  month: "short",
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}
+              </span>
+            </div>
+          ))}
+        </section>
       )}
     </>
   );

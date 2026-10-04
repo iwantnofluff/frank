@@ -2148,3 +2148,21 @@ Gaps:
 - **Plan-change history starts at phase50.**
 
 **Verified**: phase50 was rehearsed on staging (rolled back), then applied. New `admin-overview.spec.ts`: the fixture agency moved Starter → Free on a trial ending in 3 days shows under Trials ending and Downgrades. Moved to Growth by card with a failed payment and storage at 90%, it shows under Upgrades, Failed payments, Revenue (Growth) and Near a limit, and no longer under Trials ending. A row opens the agency, and its back arrow returns to the list at its new address. `plans.spec.ts` now also checks that a pending Enterprise request shows under Plan requests. The admin specs pass (15 of 15). Looked at the page.
+
+## Support actions, logged for the agency
+
+Decided directly: the admin area can act inside an agency, always with a reason. Every action is recorded, and the agency's Owners can read the record.
+- **On a person's page:** Send Password Reset (to the address of the agency you choose, if they're in several), and for each agency Resend Invite (a new link to the agency's address replaces the old one, shown to copy) and Change Role (Owner, Admin or User). The Primary Owner's role changes only by transferring ownership, and a Client's type is changed by the agency in its Client Profile.
+- **On an agency's page:** Extend Trial (1 to 90 days, from its end, or from today if it's over, which lifts read-only). Pausing and reactivating now ask for a reason too.
+- **The log:** phase51's `admin_actions` records who, what, to whom, detail, why, and when. Only the admin API writes it. The agency's page shows it as Support Log. Its Owners read it in Settings → General → Support Activity; RLS lets only Owners and the Primary Owner read it. An action that can't be logged reports an error rather than passing silently.
+
+Gaps:
+- **Changing someone to User** leaves them with no clients until the agency gives them some. The log says so.
+- **The admin override** (extra team places, clients, storage, AI) isn't logged. It's the admin's own setting, and doesn't act on anyone in the agency.
+- **The reset and invite emails** don't say that Frank's support sent them.
+
+**Verified**: phase51 was rehearsed on staging (rolled back), then applied. New `admin-actions.spec.ts` (2), with real sessions:
+- **On people:** an action needs a reason (the button stays off without one). Resending an invite for an agency with no address is refused, with nothing done or logged. With an address, it makes a new link that replaces the old one. A role change from Admin to User (offered Owner or User) is applied. A password reset is sent to the agency chosen. All three are logged with the admin's name and reason, and the agency's Support Log shows them.
+- **On the agency:** pausing without a reason is refused by the API (400). A trial that ended two days ago is extended 14 days from today. Pausing and reactivating are logged. The agency's Owner sees all three, newest first, in Support Activity. As an Admin they see "Only Owners can see this", and a direct read of the table returns nothing.
+
+Looked at the Support Log and the Owner's page.
