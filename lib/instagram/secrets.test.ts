@@ -16,7 +16,7 @@ test("a token is unreadable stored, and comes back with the key", () => {
 });
 
 test("state round-trips, and refuses tampering, another key, or age", () => {
-  const state = { clientId: "c1", userId: "u1", returnOrigin: "https://nofluff.beingfrank.app", returnPath: "/settings", expiresAt: 2_000 };
+  const state = { clientId: "c1", userId: "u1", returnOrigin: "https://nofluff.beingfrank.app", returnPath: "/settings", redirectUri: "https://beingfrank.app/api/connections/instagram/callback", expiresAt: 2_000 };
   const signed = signState(state, KEY);
   assert.deepEqual(verifyState(signed, KEY, 1_000), state);
   assert.equal(verifyState(signed, OTHER, 1_000), null);

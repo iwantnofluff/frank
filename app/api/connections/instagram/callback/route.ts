@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { exchangeCode, fetchProfile } from "@/lib/instagram/api";
 import { verifyState } from "@/lib/instagram/secrets";
-import { callbackUrl, saveConnection } from "@/lib/instagram/store";
+import { saveConnection } from "@/lib/instagram/store";
 import { ROOT_DOMAIN } from "@/lib/tenant";
 
 // Where Instagram sends people back (phase54), at the environment's root
@@ -14,6 +14,10 @@ export async function GET(request: Request) {
   const state = verifyState(url.searchParams.get("state"));
   // A state that doesn't check out has nowhere trustworthy to return to.
   if (!state) return new NextResponse("This Instagram sign-in has expired. Start again from Frank.", { status: 400 });
+  // It names this very route, wherever it's served.
+  if (new URL(state.redirectUri).pathname !== "/api/connections/instagram/callback") {
+    return new NextResponse("Unexpected callback address", { status: 400 });
+  }
   const origin = new URL(state.returnOrigin);
   const host = origin.hostname;
   const root = ROOT_DOMAIN.split(":")[0];
@@ -43,7 +47,8 @@ export async function GET(request: Request) {
       }
     }
 
-    const { token, expiresAt } = await exchangeCode(code, callbackUrl(request));
+    // Exactly the address the sign-in started with (Instagram compares them).
+    const { token, expiresAt } = await exchangeCode(code, state.redirectUri);
     const profile = await fetchProfile(token);
     if (profile.account_type && !["BUSINESS", "MEDIA_CREATOR"].includes(profile.account_type)) {
       return back("not_professional");

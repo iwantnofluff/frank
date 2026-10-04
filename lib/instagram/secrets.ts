@@ -37,6 +37,9 @@ export interface ConnectState {
   // The agency address to come back to, and the page there.
   returnOrigin: string;
   returnPath: string;
+  // The callback address sent to Instagram when starting: finishing must
+  // send exactly the same one, so it's carried rather than worked out again.
+  redirectUri: string;
   expiresAt: number;
 }
 

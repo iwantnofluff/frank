@@ -2252,3 +2252,9 @@ Full suite before this: 173 passed, 5 failed. `settings-team.png` was its known 
 - **Every Instagram route builds addresses from the Host header,** as the admin area does. `request.url` can read `localhost` in development.
 
 **Verified**: phase55 was rehearsed on staging (rolled back), then applied. A unit test checks that a signed request is read only with the app secret. A new test in `instagram-connections.spec.ts` sends Meta-style signed requests to the root address: one signed with anything else is refused (400) and removes nothing; deauthorize removes the account; data deletion removes it and returns a code whose page shows it. 6 of 6. `npm run build` clean.
+
+## Connecting the right account, and the same callback address both ways
+
+Tried on staging: Instagram answered "Error validating verification code. Please make sure your redirect_uri is identical…". Frank worked the callback address out separately when starting the sign-in (from the agency's address) and when finishing it (from the root's), and on staging the two disagreed. Now it's worked out once at the start, carried in the signed state, and sent unchanged when finishing. The callback also checks the carried address names its own route. Instagram's sign-in is asked with `force_reauth`, so it always asks which account to use. Before, it offered whichever account the browser was signed into (nofluff.in, for the client NuHabit). Each client has its own connection.
+
+**Verified**: unit tests 3 of 3 (state carries the address). `instagram-connections.spec.ts` 6 of 6, now also checking `force_reauth=true` in the sign-in address. To try for real on staging.

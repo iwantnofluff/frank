@@ -53,13 +53,15 @@ export async function GET(request: Request) {
     if (asked && asked.startsWith("/") && !asked.startsWith("//")) returnPath = asked;
   }
 
+  const redirectUri = callbackUrl(request);
   const state = signState({
     clientId,
     userId,
     linkId,
     returnOrigin: origin,
     returnPath,
+    redirectUri,
     expiresAt: Date.now() + 15 * 60_000,
   });
-  return NextResponse.redirect(authorizeUrl(callbackUrl(request), state));
+  return NextResponse.redirect(authorizeUrl(redirectUri, state));
 }

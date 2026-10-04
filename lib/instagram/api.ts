@@ -44,6 +44,9 @@ export function authorizeUrl(redirectUri: string, state: string): string {
     response_type: "code",
     scope: "instagram_business_basic",
     state,
+    // Always ask who's signing in, rather than connecting whichever account
+    // the browser happens to be signed into: each client has its own.
+    force_reauth: "true",
   });
   return `https://www.instagram.com/oauth/authorize?${q}`;
 }
