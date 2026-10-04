@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Modal } from "@/components/ui/Modal";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import { ProjectPicker } from "@/components/team/ProjectPicker";
+import { usePersonActions } from "@/components/team/PersonActions";
+import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
 import { useProjects } from "@/hooks/use-projects";
 import { useProjectCreativeStats } from "@/hooks/use-project-creative-stats";
 import { useClientPeople, useSetPersonProjects, type ClientPerson } from "@/hooks/use-project-access";
@@ -145,6 +147,7 @@ export function ClientProfileModal({
 
         <div>
           <ClientPeople
+            agencyId={agencyId}
             clientId={client.id}
             clientName={client.name}
             groups={[{ name: "Projects", projects: live }]}
@@ -159,6 +162,7 @@ export function ClientProfileModal({
 }
 
 function ClientPeople({
+  agencyId,
   clientId,
   clientName,
   groups,
@@ -166,6 +170,7 @@ function ClientPeople({
   canInvite,
   onInvite,
 }: {
+  agencyId: string;
   clientId: string;
   clientName: string;
   groups: { name: string; projects: { id: string; name: string }[] }[];
@@ -177,6 +182,7 @@ function ClientPeople({
   const setProjects = useSetPersonProjects();
   const { data: photos } = useAvatarUrls((people ?? []).map((p) => p.avatarAssetId));
   const liveIds = groups[0].projects.map((p) => p.id);
+  const actions = usePersonActions(agencyId, clientId);
 
   // Only live projects are offered; archived ones they're on stay as they are.
   function change(p: ClientPerson, next: string[] | null) {
@@ -218,6 +224,7 @@ function ClientPeople({
                       </div>
                       <span className="tag blue">{p.kind === "client" ? "Client" : "User"}</span>
                       {!p.accepted && <span className="tag grey">Invited</span>}
+                      <RowActionsMenu title={`Options for ${p.name}`} items={actions.itemsFor(p)} />
                     </div>
                     {liveIds.length > 0 && (
                       <div className="pp-proj">
@@ -232,6 +239,7 @@ function ClientPeople({
                 );
               })}
             </div>
+            {actions.outcome}
             {setProjects.error && (
               <p className="autherr">{errorMessage(setProjects.error, "Couldn't change their projects")}</p>
             )}

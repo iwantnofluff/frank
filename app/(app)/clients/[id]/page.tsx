@@ -427,6 +427,7 @@ export default function ClientWorkspacePage({
           clientName={client?.name ?? "this client"}
           stats={projectStats?.[profileTarget.id]}
           isAdmin={isAdmin}
+          agencyId={agency?.agencyId ?? ""}
           onMoveToFolder={() => {
             setMoveTarget(profileTarget);
             setProfileTarget(null);

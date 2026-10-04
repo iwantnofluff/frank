@@ -6,13 +6,14 @@ import { ClientChecklist } from "@/components/team/ClientChecklist";
 import { useClients } from "@/hooks/use-clients";
 import { useUpdateMember } from "@/hooks/use-manage-member";
 import { errorMessage } from "@/lib/errors";
-import { INVITABLE_ROLES, ROLE_HINTS, ROLE_LABELS, type InvitableRole } from "@/lib/roles";
+import { ROLE_HINTS, ROLE_LABELS, type InvitableRole } from "@/lib/roles";
 
 export function EditMemberModal({
   agencyId,
   membershipId,
   name,
   role: currentRole,
+  roles,
   currentClientIds,
   onClose,
   onSaved,
@@ -21,6 +22,8 @@ export function EditMemberModal({
   membershipId: string;
   name: string;
   role: InvitableRole;
+  // The roles below the editor's own (phase49).
+  roles: InvitableRole[];
   currentClientIds: string[];
   onClose: () => void;
   onSaved: () => void;
@@ -74,7 +77,7 @@ export function EditMemberModal({
       <div className="field">
         <label htmlFor="edRole">Role</label>
         <select id="edRole" value={role} onChange={(e) => setRole(e.target.value as InvitableRole)}>
-          {INVITABLE_ROLES.map((r) => (
+          {roles.map((r) => (
             <option key={r} value={r}>
               {ROLE_LABELS[r]}
             </option>

@@ -13,13 +13,17 @@ import { initials } from "@/lib/initials";
 import { avatarColour } from "@/lib/avatar-colour";
 import { useRemoveMember, useRevokeInvite, useSetCanInvite, useSetMemberActive } from "@/hooks/use-manage-member";
 import { InviteMemberModal } from "@/components/team/InviteMemberModal";
+import { InviteLinks } from "@/components/team/InviteLinks";
+import { useResendInvite, type SentInvite } from "@/hooks/use-invite-member";
 import { EditMemberModal } from "@/components/team/EditMemberModal";
 import { RemoveMemberConfirm } from "@/components/team/RemoveMemberConfirm";
 import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
 import { errorMessage } from "@/lib/errors";
 import {
   ROLE_LABELS,
+  canManageMember,
   isOwnerOrAbove,
+  rolesBelow,
   rolesICanInvite,
   seesAllClients,
   type InvitableRole,
@@ -47,7 +51,10 @@ export function TeamSettings({ view }: { view: View }) {
   const agencyId = agency?.agencyId;
   const { data: myMembership } = useMyMembership(agencyId);
   const isStaff = myMembership?.client_id === null;
-  const canManage = isStaff && isOwnerOrAbove(myMembership?.role);
+  // Everyone acts on the people below them (phase49). Deactivating,
+  // removing and the "Can invite" switch stay an Owner's.
+  const isOwner = isStaff && isOwnerOrAbove(myMembership?.role);
+  const editRoles = rolesBelow(myMembership);
   // Who may invite, and as what (phase44): Owners, and Admins they've let.
   const inviteRoles = rolesICanInvite(myMembership);
   // Client grants are only readable by Admin and above (RLS), so the Clients
@@ -61,6 +68,8 @@ export function TeamSettings({ view }: { view: View }) {
   const setActive = useSetMemberActive(agencyId ?? "");
   const remove = useRemoveMember(agencyId ?? "");
   const revoke = useRevokeInvite(agencyId ?? "");
+  const resend = useResendInvite();
+  const [resent, setResent] = useState<SentInvite | null>(null);
   const setCanInvite = useSetCanInvite(agencyId ?? "");
 
   const [inviting, setInviting] = useState(false);
@@ -78,11 +87,24 @@ export function TeamSettings({ view }: { view: View }) {
   }
 
   function actionsFor(m: TeamMemberRow) {
-    if (!canManage || m.role === "primary_owner" || m.user_id === me?.id) return null;
+    if (!myMembership || m.user_id === me?.id || !canManageMember(myMembership, m)) return null;
     const edit = { label: "Edit", onClick: () => setEditTarget(m) };
     if (!m.accepted_at && !m.removed_at) {
       return [
         edit,
+        {
+          label: "Resend Invite",
+          onClick: () =>
+            resend.mutate(
+              { membershipId: m.id, email: m.user?.email ?? "", name: displayName(m) },
+              {
+                onSuccess: (sent) => {
+                  setResent(sent);
+                  setNotice(`Invite resent to ${m.user?.email}`);
+                },
+              },
+            ),
+        },
         {
           label: "Revoke Invite",
           tone: "danger" as const,
@@ -91,6 +113,7 @@ export function TeamSettings({ view }: { view: View }) {
         },
       ];
     }
+    if (!isOwner) return [edit];
     if (m.removed_at) {
       return [
         {
@@ -150,7 +173,8 @@ export function TeamSettings({ view }: { view: View }) {
     return names.join(", ");
   }
 
-  const actionError = setActive.error ?? revoke.error ?? setCanInvite.error ?? (removeTarget ? null : remove.error);
+  const actionError =
+    setActive.error ?? revoke.error ?? resend.error ?? setCanInvite.error ?? (removeTarget ? null : remove.error);
   const peopleColumns = canSeeAccess ? PEOPLE_COLUMNS_WITH_CLIENTS : PEOPLE_COLUMNS;
   // Restricted Users only — everyone above them sees every client anyway.
   const restrictedMembers = (members ?? []).filter((m) => m.role === "user" && !m.removed_at);
@@ -309,6 +333,11 @@ export function TeamSettings({ view }: { view: View }) {
           {notice}
         </p>
       )}
+      {resent && (
+        <div style={{ marginTop: 12, maxWidth: 560 }}>
+          <InviteLinks sent={[resent]} />
+        </div>
+      )}
 
       {inviting && agency && (
         <InviteMemberModal
@@ -326,6 +355,7 @@ export function TeamSettings({ view }: { view: View }) {
           membershipId={editTarget.id}
           name={displayName(editTarget)}
           role={editTarget.role as InvitableRole}
+          roles={editRoles}
           currentClientIds={grantsFor(editTarget.id)}
           onClose={() => setEditTarget(null)}
           onSaved={() => {

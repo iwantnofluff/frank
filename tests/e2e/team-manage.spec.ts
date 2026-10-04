@@ -210,11 +210,13 @@ test("revoking a pending invite removes it and kills the link", async ({ page, f
   }
 });
 
-test("nobody gets a menu on the Primary Owner or themselves, and Admins get none at all", async ({
+test("everyone gets a menu only on the people below them (phase49)", async ({
   page,
   frank,
 }) => {
   const po = await seedMember(frank, { role: "primary_owner", name: "The Primary" });
+  await seedMember(frank, { role: "owner", name: "Fellow Owner" });
+  await seedMember(frank, { role: "admin", name: "Some Admin" });
   await seedMember(frank, { role: "user", name: "Some User" });
 
   await setStaffRole(frank, "owner");
@@ -223,12 +225,25 @@ test("nobody gets a menu on the Primary Owner or themselves, and Admins get none
   await expect(page.locator(".crow", { hasText: po.email })).toContainText("Primary Owner");
   await expect(page.getByRole("button", { name: "Options for The Primary" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Options for E2E Staff" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Options for Fellow Owner" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Options for Some User" })).toBeVisible();
+  // An Owner gives Admin or User, never Owner.
+  await openMenu(page, "Some Admin");
+  await page.getByRole("button", { name: "Edit", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "Edit Some Admin" }).getByLabel("Role").locator("option")).toHaveText([
+    "Admin",
+    "User",
+  ]);
+  await page.getByRole("dialog", { name: "Edit Some Admin" }).getByRole("button", { name: "Cancel" }).click();
 
+  // An Admin: Users only, and only Edit for an active one.
   await setStaffRole(frank, "admin");
   await page.reload();
   await expect(page.locator(".crow", { hasText: po.email })).toBeVisible();
-  await expect(page.locator(".vdots")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Options for Some Admin" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Options for Fellow Owner" })).toHaveCount(0);
+  await openMenu(page, "Some User");
+  await expect(page.locator(".colpop .cpr")).toHaveText(["Edit"]);
 });
 
 test("inviting someone who was deactivated points to Reactivate instead", async ({ page, frank }) => {
@@ -307,14 +322,25 @@ test("an Owner edits a User's clients and role; the Clients column and Clients p
   expect(after).toHaveLength(0);
 });
 
-test("an Admin sees who has which clients, but can't change it", async ({ page, frank }) => {
+// Since phase49 an Admin manages the Users below them: their clients, not
+// their role (User is the only one below Admin).
+test("an Admin sees who has which clients, and changes a User's", async ({ page, frank }) => {
   const member = await seedMember(frank, { role: "user", name: "Read Only" });
   await admin.from("staff_client_access").insert({ membership_id: member.membershipId, client_id: frank.clientId });
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/settings/team`);
   await expect(page.locator(".crow", { hasText: member.email })).toContainText("E2E Test Client");
   await expect(page.getByRole("button", { name: "Invite Member" })).toHaveCount(0);
-  await expect(page.locator(".vdots")).toHaveCount(0);
+  await openMenu(page, "Read Only");
+  await page.getByRole("button", { name: "Edit", exact: true }).click();
+  const modal = page.getByRole("dialog", { name: "Edit Read Only" });
+  await expect(modal.getByLabel("Role").locator("option")).toHaveText(["User"]);
+  await modal.getByRole("checkbox", { name: "E2E Test Client" }).click();
+  await modal.getByRole("button", { name: "Save" }).click();
+  await expect(modal).toHaveCount(0);
+  await expect(page.locator(".crow", { hasText: member.email })).toContainText("No clients");
+  await admin.from("staff_client_access").insert({ membership_id: member.membershipId, client_id: frank.clientId });
+  await page.reload();
   await page.getByRole("navigation", { name: "Settings sections" }).getByRole("link", { name: "Clients" }).click();
   await expect(page.locator(".crow", { hasText: "E2E Test Client" })).toContainText("Read Only");
 });

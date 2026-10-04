@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
+import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
+import { usePersonActions } from "@/components/team/PersonActions";
 import { useUpdateProject } from "@/hooks/use-update-project";
 import { useClientPeople, useSetProjectAccess } from "@/hooks/use-project-access";
 import { useAvatarUrls } from "@/hooks/use-avatar-urls";
@@ -38,6 +40,7 @@ export function ProjectProfileModal({
   clientName,
   stats,
   isAdmin,
+  agencyId,
   onMoveToFolder,
   onMoveToClient,
   onArchive,
@@ -50,6 +53,7 @@ export function ProjectProfileModal({
   // Owners and Admins: they change the details (projects_details_admin_only)
   // and the people (project_access policies).
   isAdmin: boolean;
+  agencyId: string;
   onMoveToFolder: () => void;
   onMoveToClient: () => void;
   onArchive: () => void;
@@ -216,7 +220,13 @@ export function ProjectProfileModal({
             Latest approval: <b>{formatDay(stats?.latestApprovedAt ?? null)}</b>
           </p>
 
-          <ProjectPeople projectId={project.id} clientId={clientId} clientName={clientName} canManage={isAdmin} />
+          <ProjectPeople
+            agencyId={agencyId}
+            projectId={project.id}
+            clientId={clientId}
+            clientName={clientName}
+            canManage={isAdmin}
+          />
         </div>
       </div>
     </Modal>
@@ -224,11 +234,13 @@ export function ProjectProfileModal({
 }
 
 function ProjectPeople({
+  agencyId,
   projectId,
   clientId,
   clientName,
   canManage,
 }: {
+  agencyId: string;
   projectId: string;
   clientId: string;
   clientName: string;
@@ -236,6 +248,7 @@ function ProjectPeople({
 }) {
   const { data: people, isPending, error } = useClientPeople(clientId, canManage);
   const setAccess = useSetProjectAccess();
+  const actions = usePersonActions(agencyId, clientId);
   const { data: photos } = useAvatarUrls((people ?? []).map((p) => p.avatarAssetId));
   const on = (people ?? []).filter((p) => p.projectIds.includes(projectId));
   const off = (people ?? []).filter((p) => !p.projectIds.includes(projectId));
@@ -276,6 +289,7 @@ function ProjectPeople({
                   </div>
                   <span className="tag blue">{p.kind === "client" ? "Client" : "User"}</span>
                   {!p.accepted && <span className="tag grey">Invited</span>}
+                  <RowActionsMenu title={`Options for ${p.name}`} items={actions.itemsFor(p)} />
                   <button
                     type="button"
                     className="brx"
@@ -324,6 +338,7 @@ function ProjectPeople({
                 <p className="msection-d">Invite Users or Clients to {clientName} from Edit Client to add them here.</p>
               )
             )}
+            {actions.outcome}
             {setAccess.error && (
               <p className="autherr">{errorMessage(setAccess.error, "Couldn't change who's on this project")}</p>
             )}

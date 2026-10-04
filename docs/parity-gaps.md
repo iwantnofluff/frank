@@ -2096,3 +2096,26 @@ Decided directly:
 Direct instruction: the Project Profile's heading reads client then project, e.g. "NuHabit - Social Media Content Planner", like the review page.
 
 **Verified**: looked at the window. `project-access`, `manage-clients-projects` and `client-profile`: 13 of 13.
+
+## Everyone manages the people below them
+
+Decided directly:
+- **The order:** the Primary Owner manages Owners, Admins, Users and Clients; Owners manage Admins, Users and Clients; Admins manage Users and Clients. Nobody manages their equal or anyone above them. This replaces "only Owners change people", and an Owner can no longer change another Owner.
+- **Changing someone's type includes switching between User and Client.** They keep their projects: a User made a Client of this client stays on the same projects, comes off their client access, and goes onto the review link's names. A Client made a User gets their client back as access, on the same projects, and comes off the names. Someone on none of the client's projects when made a Client gets all of them, as a new Client would.
+- **Resending and removing pending invites** follow the same line, for Admins too, whether or not they have "Can invite". Resending makes a new link (shown to share) and stops the old one.
+- **Where:** a "…" menu on each person in the Client and Project Profiles' People (Make Client or Make User, Resend Invite, Remove Invite). On Settings → Team, Edit offers only the roles below yours. Admins get Edit for Users (their clients), and Resend and Revoke on pending User invites. Deactivating, removing someone who has joined, and the "Can invite" switch stay with Owners and above.
+- **More space** around each person's projects picker in People.
+
+phase49 adds `role_rank()`, `my_rank()` and `can_manage_member()`, and redraws the memberships, staff_client_access and invites policies on them. `change_member_type()` makes the switch in one step, and the review-link names trigger now follows a client change. Resending goes through `/api/team/invite/resend`, as the caller.
+
+Gaps:
+- **The database lets an Admin deactivate a User below them** (it's an update to that row). The app offers it only to Owners.
+- **Clients don't appear on Settings → Team.** Switching someone to or from Client happens in the profiles.
+
+**Verified**: phase49 was rehearsed on staging (rolled back), then applied. One fix was found by the tests: making a User a Client put them on every project, because removing their access took them off their projects first. The function now restores them, and was re-applied on staging. The file holds the fixed version. New `people-below.spec.ts` (2):
+- **The switch, resend and remove:** an Admin without "Can invite" switches an invited User to Client and back. The database matches each time (membership, client access, projects unchanged, review-link name), the invite is resent with a new link that replaces the old one, then it's removed.
+- **The database line,** with real sessions: an Admin can't change a fellow Admin, make a User an Admin, remove a pending Admin invite, or remove an active User. An Owner can't change a fellow Owner or make anyone an Owner, but can make an Admin a User.
+
+`team-manage.spec.ts`: menus only on people below you, an Owner offered Admin or User only, and an Admin offered Edit only, changing a User's clients. Unit tests for the order. Looked at People with the menu open.
+
+Full suite: 163 passed, 2 failed. `settings-team.png` was its known masked-email flake (the diff shows no menu change), and the admin forgot-password test passed on rerun. `npm run build` clean. phase49 was then run on production and checked there: its functions respond, and a type change without a signed-in caller is refused.

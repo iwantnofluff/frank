@@ -49,3 +49,19 @@ export function useInviteMember() {
     },
   });
 }
+
+// A pending invite sent again (phase49): a new link replaces the old one.
+export function useResendInvite() {
+  return useMutation({
+    mutationFn: async ({ membershipId, email, name }: { membershipId: string; email: string; name: string }): Promise<SentInvite> => {
+      const res = await fetch("/api/team/invite/resend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ membershipId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Couldn't resend the invite");
+      return { email, name, url: data.url, emailError: data.emailError };
+    },
+  });
+}

@@ -67,3 +67,25 @@ export function rolesICanInvite(me: { role: AgencyRole; client_id: string | null
   if (me.role === "admin" && me.can_invite) return ["admin", "user", "client"];
   return [];
 }
+
+// Who manages whom (phase49): everyone acts only on people below them —
+// the Primary Owner on Owners and down, an Owner on Admins and down, an
+// Admin on Users and Clients. A Client ranks as a User. The database's
+// role_rank()/can_manage_member() hold the same line.
+export function roleRank(role: AgencyRole): number {
+  return role === "primary_owner" ? 0 : role === "owner" ? 1 : role === "admin" ? 2 : 3;
+}
+
+export function canManageMember(
+  me: { role: AgencyRole; client_id: string | null } | null | undefined,
+  target: { role: AgencyRole },
+) {
+  if (!me || me.client_id || roleRank(me.role) > 2) return false;
+  return roleRank(target.role) > roleRank(me.role);
+}
+
+// The team roles this person can give: those below their own.
+export function rolesBelow(me: { role: AgencyRole; client_id: string | null } | null | undefined): InvitableRole[] {
+  if (!me || me.client_id) return [];
+  return INVITABLE_ROLES.filter((r) => roleRank(r) > roleRank(me.role));
+}

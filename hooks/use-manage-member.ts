@@ -79,7 +79,43 @@ export function useRevokeInvite(agencyId: string) {
       assertAffected(data);
     },
     onSettled: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["team-members", agencyId] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["team-members", agencyId] }),
+        queryClient.invalidateQueries({ queryKey: ["project-access"] }),
+      ]);
+    },
+  });
+}
+
+// Someone's type changed by a person above them (phase49): Owner, Admin,
+// User, or Client of a client. The database checks the line and keeps
+// their clients, projects and review-link name in step (change_member_type).
+export function useChangeMemberType(agencyId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      membershipId,
+      type,
+      clientId,
+    }: {
+      membershipId: string;
+      type: "owner" | "admin" | "user" | "client";
+      clientId?: string;
+    }) => {
+      const supabase = createClient();
+      const { error } = await supabase.rpc("change_member_type", {
+        p_membership_id: membershipId,
+        p_type: type,
+        p_client_id: clientId ?? null,
+      });
+      if (error) throw error;
+    },
+    onSettled: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["team-members", agencyId] }),
+        queryClient.invalidateQueries({ queryKey: ["staff-client-access", agencyId] }),
+        queryClient.invalidateQueries({ queryKey: ["project-access"] }),
+      ]);
     },
   });
 }
