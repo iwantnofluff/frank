@@ -37,6 +37,12 @@ async function call<T>(url: string, init?: RequestInit): Promise<T> {
   return json;
 }
 
+function formData(fields: Record<string, string>): FormData {
+  const fd = new FormData();
+  for (const [k, v] of Object.entries(fields)) fd.append(k, v);
+  return fd;
+}
+
 export function authorizeUrl(redirectUri: string, state: string): string {
   const q = new URLSearchParams({
     client_id: appCredentials().id,
@@ -44,9 +50,10 @@ export function authorizeUrl(redirectUri: string, state: string): string {
     response_type: "code",
     scope: "instagram_business_basic",
     state,
-    // Always ask who's signing in, rather than connecting whichever account
-    // the browser happens to be signed into: each client has its own.
-    force_reauth: "true",
+    // No force_reauth: routing through Instagram's login pages made it
+    // refuse the code exchange ("redirect_uri is identical…"). Instagram
+    // connects the account the browser is signed into, which the
+    // Connections page says.
   });
   return `https://www.instagram.com/oauth/authorize?${q}`;
 }
@@ -56,16 +63,8 @@ export async function exchangeCode(code: string, redirectUri: string): Promise<{
   const { id, secret } = appCredentials();
   const short = await call<{ data?: { access_token: string }[]; access_token?: string }>(
     "https://api.instagram.com/oauth/access_token",
-    {
-      method: "POST",
-      body: new URLSearchParams({
-        client_id: id,
-        client_secret: secret,
-        grant_type: "authorization_code",
-        redirect_uri: redirectUri,
-        code,
-      }),
-    },
+    // Multipart form data, as Meta's own examples send it (curl -F).
+    { method: "POST", body: formData({ client_id: id, client_secret: secret, grant_type: "authorization_code", redirect_uri: redirectUri, code }) },
   );
   const shortToken = short.data?.[0]?.access_token ?? short.access_token;
   if (!shortToken) throw new InstagramError("Instagram didn't return a token");

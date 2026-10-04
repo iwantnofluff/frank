@@ -6486,3 +6486,7 @@ a.profproject:hover .pp-t b {
   background: var(--action);
   color: #fff;
 }
+.igtip {
+  margin: -6px 0 14px;
+  font-size: 13px;
+}

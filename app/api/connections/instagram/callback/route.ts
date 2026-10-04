@@ -65,6 +65,8 @@ export async function GET(request: Request) {
     }
     return back("connected");
   } catch (e) {
+    // In the server log for diagnosis: never the code or a token.
+    console.error("Instagram connect failed", { clientId: state.clientId, redirectUri: state.redirectUri, error: (e as Error).message });
     return back("failed", (e as Error).message);
   }
 }

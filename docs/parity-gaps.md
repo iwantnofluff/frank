@@ -2258,3 +2258,10 @@ Full suite before this: 173 passed, 5 failed. `settings-team.png` was its known 
 Tried on staging: Instagram answered "Error validating verification code. Please make sure your redirect_uri is identical…". Frank worked the callback address out separately when starting the sign-in (from the agency's address) and when finishing it (from the root's), and on staging the two disagreed. Now it's worked out once at the start, carried in the signed state, and sent unchanged when finishing. The callback also checks the carried address names its own route. Instagram's sign-in is asked with `force_reauth`, so it always asks which account to use. Before, it offered whichever account the browser was signed into (nofluff.in, for the client NuHabit). Each client has its own connection.
 
 **Verified**: unit tests 3 of 3 (state carries the address). `instagram-connections.spec.ts` 6 of 6, now also checking `force_reauth=true` in the sign-in address. To try for real on staging.
+
+Follow-up after a second staging try, which failed the same way although Frank now sends the identical callback address both times. Checked: the root address runs the new code, and the address in the sign-in is the registered staging one. A project that hit this exact error fixed it by dropping `force_reauth` and sending the code exchange as multipart form data. So:
+- **No `force_reauth`.** Both failed attempts went through Instagram's login pages, which is when Instagram reported the mismatch. The Connections page now says that Connect uses the Instagram account the browser is signed into, to sign into the client's account first or use Send Link, and to check the username shown after connecting.
+- **The code exchange is sent as multipart form data,** as Meta's examples do. Instagram was checked to accept it.
+- **Failures are written to the server log,** with the step and Instagram's message (never the code or a token).
+
+`instagram-connections.spec.ts` 6 of 6 (now checking there's no `force_reauth`). This is the best explanation so far, not a confirmed one; staging will tell.

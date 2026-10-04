@@ -64,8 +64,8 @@ test("the Connections page lists each client's account; an Owner disconnects one
     // on an agency address it is the environment's root.
     expect(to.searchParams.get("redirect_uri")).toBe(`${APP_URL}/api/connections/instagram/callback`);
     expect(to.searchParams.get("state")).toMatch(/^[\w-]+\.[\w-]+$/);
-    // Instagram asks who's signing in every time.
-    expect(to.searchParams.get("force_reauth")).toBe("true");
+    // Not through Instagram's login pages (that broke the code exchange).
+    expect(to.searchParams.get("force_reauth")).toBeNull();
   } else {
     await expect(page.getByText(/Instagram isn.t set up on Frank here yet/)).toBeVisible();
     await expect(row.getByRole("link", { name: /Connect|Reconnect/ })).toHaveCount(0);

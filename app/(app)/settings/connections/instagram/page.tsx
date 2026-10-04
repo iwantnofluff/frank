@@ -84,6 +84,13 @@ export default function InstagramConnectionsPage({
           <div>Instagram isn&rsquo;t set up on Frank here yet, so accounts can&rsquo;t be connected.</div>
         </div>
       )}
+      {configured && isAdmin && (
+        <p className="sub igtip">
+          Connect uses the Instagram account this browser is signed into at instagram.com. Sign into the client&rsquo;s
+          account there first, or use Send Link so they connect it themselves. After connecting, check the username
+          shown is the right one.
+        </p>
+      )}
       {outcome && (
         <p className={outcome.error ? "autherr" : "bsaved"} role="status" style={{ marginBottom: 12 }}>
           {outcome.text}
