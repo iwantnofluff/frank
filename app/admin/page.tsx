@@ -154,6 +154,11 @@ export default function AdminOverviewPage() {
               <p className="msection-d">
                 {nothingToSee ? "Nothing right now." : "Agencies worth a message or a check."}
               </p>
+              {o.emailError && (
+                <p className="autherr">
+                  Resend didn&rsquo;t answer, so email problems aren&rsquo;t shown: {o.emailError}
+                </p>
+              )}
               {att && (
                 <>
                   <Group
@@ -161,6 +166,12 @@ export default function AdminOverviewPage() {
                     hint="Waiting for you on the agency's page"
                     items={att.planRequests}
                     note={(a) => `Wants ${a.plan}, billed ${a.interval}`}
+                  />
+                  <Group
+                    title="Emails not arriving"
+                    hint="Resend has stopped sending to these"
+                    items={att.emailProblems}
+                    note={(a) => a.emails.join(", ")}
                   />
                   <Group
                     title="Failed payments"

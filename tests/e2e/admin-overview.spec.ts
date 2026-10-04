@@ -83,6 +83,15 @@ test("the overview reports plan changes, a trial ending, a failed payment and a 
     // A row opens the agency.
     await group(page, "Failed payments").getByRole("link", { name: "E2E Test Agency" }).click();
     await page.waitForURL(`${ADMIN}/admin/agencies/${frank.agencyId}`, { timeout: 20_000 });
+    // Its billing, from our record (Paddle has no such test subscription, so
+    // its payments are either none or Paddle's own answer, shown as such).
+    const billing = page.getByRole("region", { name: "Billing" });
+    await expect(billing).toContainText("Payment failed, billed monthly");
+    await expect(billing.locator(".srow", { hasText: "Recent payments" })).toContainText(/None yet|Paddle didn.t answer/);
+    await expect(page.getByRole("link", { name: "Open Paddle" })).toHaveAttribute("href", /paddle\.com/);
+    // Its people's email: test addresses are never sent to, so nothing bounced.
+    await expect(page.getByText("No bounces or failures for anyone here.")).toBeVisible({ timeout: 20_000 });
+    await billing.screenshot({ path: `${process.env.SHOT_DIR ?? "test-results"}/admin-agency-billing.png`, animations: "disabled" });
     // Its back arrow returns to the agencies list, now at its own address.
     await page.getByRole("link", { name: "Back to agencies" }).click();
     await page.waitForURL(`${ADMIN}/admin/agencies`);

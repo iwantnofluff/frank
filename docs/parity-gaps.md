@@ -2166,3 +2166,16 @@ Gaps:
 - **On the agency:** pausing without a reason is refused by the API (400). A trial that ended two days ago is extended 14 days from today. Pausing and reactivating are logged. The agency's Owner sees all three, newest first, in Support Activity. As an Admin they see "Only Owners can see this", and a direct read of the table returns nothing.
 
 Looked at the Support Log and the Owner's page.
+
+## Billing and email on each agency's admin page
+
+Decided directly: each agency's admin page shows how its billing stands and whether Frank's emails reach its people. All read-only, with no new tables.
+- **Billing:** the subscription's status (Payment failed for Paddle's `past_due`) and interval, when it renews or cancels, any downgrade waiting for the period end, and the last five payments from Paddle's transactions (date, amount, status). Paddle documents no link to a single subscription, so the page links to Paddle's dashboard (sandbox or live) and shows the subscription ID to search for. If Paddle doesn't answer, the page says so rather than showing nothing.
+- **Email:** addresses of the agency's people that Resend has suppressed (bounced, marked as spam, or by hand), and recent emails to them that bounced, failed, were delayed or weren't sent. The Overview's Needs a look gains "Emails not arriving" from the suppressions. If Resend can't be read, both pages say so.
+
+Gaps:
+- **Recent emails cover Frank's last 100 sent,** not each person's whole history. Resend's list has no filter by recipient.
+- **Suppressions are read up to 1,000.** Fine for now.
+- **Removing a suppression** (so someone can get emails again) is done in Resend's dashboard. It's a change to the shared sending account, not something to do from here.
+
+**Verified**: read-only calls first confirmed the Resend and Paddle keys can read (staging and live share one Resend account; live is still on Paddle's sandbox). With the real staging subscription, the transactions query returns its completed payment. `admin-overview.spec.ts` now also opens the agency: Billing shows "Payment failed, billed monthly" from our record. The test's made-up subscription ID gets Paddle's own "Invalid request", which is shown as Paddle not answering. Email shows no problems, because test addresses are never sent to. Looked at the Billing panel.

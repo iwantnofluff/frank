@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { PLANS, isReadOnly, planById } from "@/lib/plans";
 import { planRank } from "@/lib/billing/rules";
 import { all, lastSignIns } from "@/lib/admin/people";
+import { listSuppressions } from "@/lib/email/resend-api";
 
 // The platform admin's overview (decided directly, 4 Oct 2026): how Frank
 // is doing, and which agencies need a look. Read with the service role,
@@ -45,7 +46,11 @@ export interface AdminOverview {
     cancelling: (AgencyRef & { cancelAt: string | null })[];
     nearLimits: (AgencyRef & { limits: string[] })[];
     quiet: (AgencyRef & { lastActive: string | null })[];
+    // People whose address Resend has stopped sending to (bounced, spam).
+    emailProblems: (AgencyRef & { emails: string[] })[];
   };
+  // Resend couldn't be read: emailProblems is empty for that reason.
+  emailError: string | null;
 }
 
 type Row = Record<string, unknown>;
@@ -56,49 +61,72 @@ export async function loadOverview(admin: SupabaseClient, now = Date.now()): Pro
   monthStart.setUTCHours(0, 0, 0, 0);
   const quietSince = new Date(now - QUIET_DAYS * DAY).toISOString();
 
-  const [agencies, billing, members, clients, ai, posts, comments, changes, firstChange, signIns, requests] = await Promise.all([
-    all<Row>((f, t) =>
-      admin
-        .from("agencies")
-        .select(
-          "id, name, subdomain, plan, trial_ends_at, created_at, suspended_at, seat_limit, client_limit, storage_limit_bytes, storage_bytes_used, ai_monthly_request_cap",
-        )
-        .is("archived_at", null)
-        .range(f, t),
-    ),
-    all<Row>((f, t) =>
-      admin.from("agency_billing").select("agency_id, paddle_subscription_id, status, billing_interval, cancel_at").range(f, t),
-    ),
-    all<Row>((f, t) =>
-      admin.from("memberships").select("agency_id, user_id, client_id").is("removed_at", null).range(f, t),
-    ),
-    all<Row>((f, t) => admin.from("clients").select("agency_id").is("archived_at", null).range(f, t)),
-    all<Row>((f, t) =>
-      admin.from("ai_usage_events").select("agency_id").gte("created_at", monthStart.toISOString()).range(f, t),
-    ),
-    all<Row>((f, t) => admin.from("creatives").select("agency_id, created_at").gte("created_at", quietSince).range(f, t)),
-    all<Row>((f, t) => admin.from("comments").select("agency_id, created_at").gte("created_at", quietSince).range(f, t)),
-    all<Row>((f, t) =>
-      admin
-        .from("plan_changes")
-        .select("agency_id, from_plan, to_plan, changed_at")
-        .gte("changed_at", monthStart.toISOString())
-        .order("changed_at", { ascending: false })
-        .range(f, t),
-    ),
-    admin.from("plan_changes").select("changed_at").order("changed_at").limit(1).maybeSingle(),
-    lastSignIns(admin),
-    all<Row>((f, t) =>
-      admin
-        .from("plan_requests")
-        .select("agency_id, requested_plan, billing_interval, created_at")
-        .is("handled_at", null)
-        .order("created_at")
-        .range(f, t),
-    ),
-  ]);
+  const [agencies, billing, members, clients, ai, posts, comments, changes, firstChange, signIns, requests] =
+    await Promise.all([
+      all<Row>((f, t) =>
+        admin
+          .from("agencies")
+          .select(
+            "id, name, subdomain, plan, trial_ends_at, created_at, suspended_at, seat_limit, client_limit, storage_limit_bytes, storage_bytes_used, ai_monthly_request_cap",
+          )
+          .is("archived_at", null)
+          .range(f, t),
+      ),
+      all<Row>((f, t) =>
+        admin
+          .from("agency_billing")
+          .select("agency_id, paddle_subscription_id, status, billing_interval, cancel_at")
+          .range(f, t),
+      ),
+      all<Row>((f, t) =>
+        admin.from("memberships").select("agency_id, user_id, client_id").is("removed_at", null).range(f, t),
+      ),
+      all<Row>((f, t) => admin.from("clients").select("agency_id").is("archived_at", null).range(f, t)),
+      all<Row>((f, t) =>
+        admin.from("ai_usage_events").select("agency_id").gte("created_at", monthStart.toISOString()).range(f, t),
+      ),
+      all<Row>((f, t) =>
+        admin.from("creatives").select("agency_id, created_at").gte("created_at", quietSince).range(f, t),
+      ),
+      all<Row>((f, t) =>
+        admin.from("comments").select("agency_id, created_at").gte("created_at", quietSince).range(f, t),
+      ),
+      all<Row>((f, t) =>
+        admin
+          .from("plan_changes")
+          .select("agency_id, from_plan, to_plan, changed_at")
+          .gte("changed_at", monthStart.toISOString())
+          .order("changed_at", { ascending: false })
+          .range(f, t),
+      ),
+      admin.from("plan_changes").select("changed_at").order("changed_at").limit(1).maybeSingle(),
+      lastSignIns(admin),
+      all<Row>((f, t) =>
+        admin
+          .from("plan_requests")
+          .select("agency_id, requested_plan, billing_interval, created_at")
+          .is("handled_at", null)
+          .order("created_at")
+          .range(f, t),
+      ),
+    ]);
 
-  const ref = (a: Row): AgencyRef => ({ id: a.id as string, name: a.name as string, subdomain: a.subdomain as string | null });
+  let emailError: string | null = null;
+  const suppressed = await listSuppressions().catch((e: Error) => {
+    emailError = e.message;
+    return [];
+  });
+  const userEmails = suppressed.length
+    ? await all<Row>((f, t) => admin.from("users").select("id, email").range(f, t))
+    : [];
+  const blocked = new Set(suppressed.map((s) => s.email.toLowerCase()));
+  const emailOf = new Map(userEmails.map((u) => [u.id as string, (u.email as string).toLowerCase()]));
+
+  const ref = (a: Row): AgencyRef => ({
+    id: a.id as string,
+    name: a.name as string,
+    subdomain: a.subdomain as string | null,
+  });
   const byId = new Map(agencies.map((a) => [a.id as string, a]));
   const billingOf = new Map(billing.map((b) => [b.agency_id as string, b]));
   const count = (rows: Row[], id: string) => rows.filter((r) => r.agency_id === id).length;
@@ -124,7 +152,11 @@ export async function loadOverview(admin: SupabaseClient, now = Date.now()): Pro
     row.mrr += price;
     byPlan.set(plan.id, row);
   }
-  const planRows = PLANS.filter((p) => byPlan.has(p.id)).map((p) => ({ plan: p.id, name: p.name, ...byPlan.get(p.id)! }));
+  const planRows = PLANS.filter((p) => byPlan.has(p.id)).map((p) => ({
+    plan: p.id,
+    name: p.name,
+    ...byPlan.get(p.id)!,
+  }));
 
   // Activity: a post or comment in the last fortnight, or a member signing in.
   const lastActive = new Map<string, string>();
@@ -149,6 +181,7 @@ export async function loadOverview(admin: SupabaseClient, now = Date.now()): Pro
     cancelling: [],
     nearLimits: [],
     quiet: [],
+    emailProblems: [],
   };
   let onTrial = 0;
   let readOnly = 0;
@@ -161,7 +194,8 @@ export async function loadOverview(admin: SupabaseClient, now = Date.now()): Pro
         attention.readOnly.push({ ...ref(a), endedAt: trialEnds });
       } else {
         onTrial += 1;
-        if (trialEnds && new Date(trialEnds).getTime() - now <= 7 * DAY) attention.trialsEnding.push({ ...ref(a), endsAt: trialEnds });
+        if (trialEnds && new Date(trialEnds).getTime() - now <= 7 * DAY)
+          attention.trialsEnding.push({ ...ref(a), endsAt: trialEnds });
       }
     }
     const b = billingOf.get(id);
@@ -172,13 +206,29 @@ export async function loadOverview(admin: SupabaseClient, now = Date.now()): Pro
 
     const limits: string[] = [];
     const near = (label: string, used: number, limit: unknown, show = (n: number) => String(n)) => {
-      if (typeof limit === "number" && limit > 0 && used / limit >= NEAR) limits.push(`${label} ${show(used)} of ${show(limit)}`);
+      if (typeof limit === "number" && limit > 0 && used / limit >= NEAR)
+        limits.push(`${label} ${show(used)} of ${show(limit)}`);
     };
     near("Team", members.filter((m) => m.agency_id === id && !m.client_id).length, a.seat_limit);
     near("Clients", count(clients, id), a.client_limit);
-    near("Storage", (a.storage_bytes_used as number) ?? 0, a.storage_limit_bytes, (n) => `${(n / 1024 ** 3).toFixed(1)} GB`);
+    near(
+      "Storage",
+      (a.storage_bytes_used as number) ?? 0,
+      a.storage_limit_bytes,
+      (n) => `${(n / 1024 ** 3).toFixed(1)} GB`,
+    );
     near("AI requests", count(ai, id), a.ai_monthly_request_cap);
     if (limits.length) attention.nearLimits.push({ ...ref(a), limits });
+
+    const bounced = [
+      ...new Set(
+        members
+          .filter((m) => m.agency_id === id)
+          .map((m) => emailOf.get(m.user_id as string))
+          .filter((e): e is string => !!e && blocked.has(e)),
+      ),
+    ];
+    if (bounced.length) attention.emailProblems.push({ ...ref(a), emails: bounced });
 
     // Quiet: nothing in a fortnight, and old enough to have started.
     const active = lastActive.get(id) ?? null;
@@ -221,5 +271,6 @@ export async function loadOverview(admin: SupabaseClient, now = Date.now()): Pro
       downgrades,
     },
     attention,
+    emailError,
   };
 }

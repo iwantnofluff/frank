@@ -43,3 +43,16 @@ export function useAdminAction<T = { ok: true }>() {
     },
   });
 }
+
+export interface AgencyHealth {
+  billing: import("@/lib/admin/agency-health").AgencyBilling | null;
+  email: { problems: import("@/lib/admin/agency-health").EmailProblem[]; error: string | null };
+}
+
+// One agency's billing and email problems (read-only).
+export function useAgencyHealth(agencyId: string) {
+  return useQuery({
+    queryKey: ["admin-health", agencyId],
+    queryFn: () => call<AgencyHealth>(`/api/admin/agencies/${agencyId}/health`),
+  });
+}

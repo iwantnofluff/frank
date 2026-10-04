@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useAdminAgencies, useHandlePlanRequest, useUpdateAgency, type AdminAgency } from "@/hooks/use-admin-agencies";
 import { AI_REQUESTS_PER_MONTH, formatBytes, isReadOnly, limitLabel, planById } from "@/lib/plans";
 import { AdminActionModal } from "@/components/admin/AdminActionModal";
-import { useAdminAction, useAgencyActions } from "@/hooks/use-admin-actions";
+import { useAdminAction, useAgencyActions, useAgencyHealth } from "@/hooks/use-admin-actions";
 import { PeopleTable } from "@/components/admin/PeopleTable";
 import { useAdminUsers } from "@/hooks/use-admin-users";
 import { roleRank } from "@/lib/roles";
@@ -194,6 +194,8 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
         })}
       </div>
 
+      <AgencyHealthSections agencyId={agency.id} />
+
       <AgencyPeople agencyId={agency.id} />
 
       <div className="msection-h">Admin Override</div>
@@ -380,6 +382,120 @@ function SupportLog({ agencyId }: { agencyId: string }) {
             </div>
           ))}
         </section>
+      )}
+    </>
+  );
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  active: "Active",
+  trialing: "Trialing",
+  past_due: "Payment failed",
+  paused: "Paused",
+  canceled: "Canceled",
+};
+const when = (v: string | null) =>
+  v ? new Date(v).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : "—";
+
+// Billing (our record and Paddle's recent payments) and email problems
+// (Resend), read-only.
+function AgencyHealthSections({ agencyId }: { agencyId: string }) {
+  const { data, isLoading, error } = useAgencyHealth(agencyId);
+  const b = data?.billing;
+  return (
+    <>
+      <div className="msection-h">Billing</div>
+      {isLoading && <p className="sub">Loading…</p>}
+      {error && <p className="autherr">{errorMessage(error, "Couldn't load billing")}</p>}
+      {data && !b && <p className="msection-d">Not paying through Paddle.</p>}
+      {b && (
+        <>
+          <p className="msection-d">
+            From Paddle.{" "}
+            <a href={b.dashboardUrl} target="_blank" rel="noreferrer">
+              Open Paddle
+            </a>
+            {b.subscriptionId ? ` and search for ${b.subscriptionId}.` : "."}
+          </p>
+          <section className="panel" aria-label="Billing">
+            <div className="srow">
+              <span className="sl">
+                <b>Subscription</b>
+              </span>
+              <span className="srow-v">
+                {b.subscriptionId ? (STATUS_LABEL[b.status ?? ""] ?? b.status ?? "—") : "None"}
+                {b.interval ? `, billed ${b.interval === "annual" ? "yearly" : "monthly"}` : ""}
+              </span>
+            </div>
+            <div className="srow">
+              <span className="sl">
+                <b>{b.cancelAt ? "Cancels" : "Renews"}</b>
+              </span>
+              <span className="srow-v">{when(b.cancelAt ?? b.renewsAt)}</span>
+            </div>
+            {b.scheduledPlan && (
+              <div className="srow">
+                <span className="sl">
+                  <b>Moving to</b>
+                </span>
+                <span className="srow-v">
+                  {planById(b.scheduledPlan)?.name ?? b.scheduledPlan} on {when(b.renewsAt)}
+                </span>
+              </div>
+            )}
+            <div className="srow">
+              <span className="sl">
+                <b>Recent payments</b>
+              </span>
+              <span className="srow-v">
+                {b.paymentsError ? (
+                  <span className="autherr">Paddle didn&rsquo;t answer: {b.paymentsError}</span>
+                ) : b.payments.length === 0 ? (
+                  "None yet"
+                ) : (
+                  <span className="adminlist">
+                    {b.payments.map((p) => (
+                      <span key={p.id}>
+                        {when(p.at)} · {p.amount ?? "—"} · {p.status.replace("_", " ")}
+                      </span>
+                    ))}
+                  </span>
+                )}
+              </span>
+            </div>
+          </section>
+        </>
+      )}
+
+      <div className="msection-h">Email</div>
+      {data?.email.error ? (
+        <p className="autherr">Resend didn&rsquo;t answer: {data.email.error}</p>
+      ) : (
+        data && (
+          <>
+            <p className="msection-d">
+              {data.email.problems.length
+                ? "Addresses of people here that Frank's emails aren't reaching. Invites and resets to them won't arrive."
+                : "No bounces or failures for anyone here."}
+            </p>
+            {data.email.problems.length > 0 && (
+              <section className="panel" aria-label="Email problems">
+                {data.email.problems.map((p, i) => (
+                  <div className="srow" key={`${p.email}-${i}`}>
+                    <span className="sl">
+                      <b>{p.email}</b>
+                      <span>
+                        {p.problem}
+                        {p.subject ? `: "${p.subject}"` : ""}
+                      </span>
+                    </span>
+                    <span className="srow-note">{when(p.at)}</span>
+                  </div>
+                ))}
+              </section>
+            )}
+          </>
+        )
       )}
     </>
   );
