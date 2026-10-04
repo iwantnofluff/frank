@@ -51,7 +51,7 @@ export interface AdminPersonDetail extends AdminPerson {
 type Row = Record<string, unknown>;
 
 // PostgREST returns at most 1,000 rows a request; read every page.
-async function all<T extends Row>(
+export async function all<T extends Row>(
   page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
 ): Promise<T[]> {
   const out: T[] = [];
@@ -63,7 +63,7 @@ async function all<T extends Row>(
   }
 }
 
-async function lastSignIns(admin: SupabaseClient) {
+export async function lastSignIns(admin: SupabaseClient) {
   const seen = new Map<string, string | null>();
   for (let page = 1; ; page++) {
     const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 });

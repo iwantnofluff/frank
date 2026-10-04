@@ -47,7 +47,7 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
     <div className="adminform">
       {/* The menu's own arrow (direct instruction), level with the one above
           Dashboard. */}
-      <Link href="/admin" className="reviewnav-toggle adminback" aria-label="Back to agencies" title="Back to agencies">
+      <Link href="/admin/agencies" className="reviewnav-toggle adminback" aria-label="Back to agencies" title="Back to agencies">
         <svg viewBox="0 0 24 24">
           <path d="M15 18l-6-6 6-6" />
         </svg>

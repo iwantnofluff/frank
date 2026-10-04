@@ -447,6 +447,9 @@ export const test = base.extend<{ frank: Frank }>({
       // surfaced before real classify-comment-triggered AI calls existed:
       // no earlier spec logged a row here.
       ["ai_usage_events", () => admin.from("ai_usage_events").delete().eq("agency_id", agency.id)],
+      // phase50: written by a trigger whenever a spec changes the plan.
+      // Cascades with the agency, but swept by name so a failure says so.
+      ["plan_changes", () => admin.from("plan_changes").delete().eq("agency_id", agency.id)],
       // Retried, not a single attempt: a comment posted near the end of a
       // test fires a background classify-comment call, and if the AI reply
       // lands mid-teardown, its ai_usage_events row appears *after* the

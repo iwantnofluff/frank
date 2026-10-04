@@ -83,6 +83,12 @@ test("an Admin asks Frank for Enterprise, and the platform admin applies it", as
     await ap.fill('input[type="password"]', PASSWORD);
     await ap.click('button[type="submit"]');
     await ap.waitForURL(`${ADMIN}/admin`, { timeout: 20_000 });
+    // The Overview flags it…
+    await expect(
+      ap.getByRole("region", { name: "Plan requests", exact: true }).locator(".srow", { hasText: "E2E Test Agency" }),
+    ).toContainText("Wants Enterprise");
+    // …and so does the agencies list.
+    await ap.goto(`${ADMIN}/admin/agencies`);
     const row = ap.locator(".admintbl tr", { has: ap.locator(`a[href="/admin/agencies/${frank.agencyId}"]`) });
     await expect(row).toContainText("Wants Enterprise");
     await row.getByRole("link", { name: "E2E Test Agency" }).click();
@@ -146,7 +152,7 @@ test("the admin area can decline a request, and shows a plan's limits fixed", as
     await expect(page.locator(".srow", { hasText: "Team members" })).toContainText("Unlimited on Agency", { timeout: 20_000 });
     const { data: agency } = await admin.from("agencies").select("plan, seat_limit, client_limit").eq("id", frank.agencyId).single();
     expect(agency).toEqual({ plan: "agency", seat_limit: null, client_limit: 25 });
-    await page.goto(`${ADMIN}/admin`);
+    await page.goto(`${ADMIN}/admin/agencies`);
     const row = page.locator(".admintbl tr", { has: page.locator(`a[href="/admin/agencies/${frank.agencyId}"]`) });
     // Agency, Plan, Primary Owner, Members.
     await expect(row.locator("td").nth(1)).toContainText("Agency");

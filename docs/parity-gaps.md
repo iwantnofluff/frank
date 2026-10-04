@@ -2134,3 +2134,17 @@ Read through `/api/admin/users`, behind `requirePlatformAdmin()` like the rest o
 - **Who can read it:** on an agency's own address `/api/admin/users` isn't there (404). On the admin address, someone who isn't a platform admin is sent to sign in, and gets no data.
 
 The admin specs pass (11 of 11). Looked at the list, a person's page and an agency's People. On staging this turned up two agencies both named No Fluff (`no-fluff` and `nofluff`), so addresses were added. It also turned up 11 leftover test accounts in no agency, which were removed.
+
+## The admin Overview
+
+Decided directly: the admin area opens on an Overview of how Frank is doing and which agencies need a look. The agencies list moved to `/admin/agencies` (Dashboard → Agencies).
+- **Headline numbers:** monthly revenue, paying agencies, agencies on a free trial, and sign-ups this week.
+- **Revenue:** by plan, from agencies paying through Paddle, at list price before tax and discounts. A yearly plan counts at its per-month price. Nothing is fetched from Paddle. Paid plans set by hand are listed separately and not counted.
+- **This month:** sign-ups, totals, read-only and paused agencies, and the month's upgrades and downgrades. Those come from phase50's `plan_changes`, which a trigger fills whenever any agency's plan changes. Nothing kept that history before, so it counts from when phase50 ran (shown on the page).
+- **Needs a look:** plan requests waiting for an answer, failed payments (Paddle `past_due`), trials ending within 7 days, agencies read-only after their trial, scheduled cancellations, anything at 80% or more of a limit (team, clients, storage, AI this month), and agencies gone quiet. Quiet means no post, comment or member sign-in in 14 days, for agencies older than 3 days. Each row opens the agency.
+
+Gaps:
+- **Revenue at list price only,** not the amounts Paddle actually charged after discounts, tax or currency. Exact figures would mean reading transactions from Paddle.
+- **Plan-change history starts at phase50.**
+
+**Verified**: phase50 was rehearsed on staging (rolled back), then applied. New `admin-overview.spec.ts`: the fixture agency moved Starter → Free on a trial ending in 3 days shows under Trials ending and Downgrades. Moved to Growth by card with a failed payment and storage at 90%, it shows under Upgrades, Failed payments, Revenue (Growth) and Near a limit, and no longer under Trials ending. A row opens the agency, and its back arrow returns to the list at its new address. `plans.spec.ts` now also checks that a pending Enterprise request shows under Plan requests. The admin specs pass (15 of 15). Looked at the page.

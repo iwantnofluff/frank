@@ -1,152 +1,208 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useAdminAgencies, useDeleteAgency, type AdminAgency } from "@/hooks/use-admin-agencies";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useAdminOverview } from "@/hooks/use-admin-overview";
+import type { AgencyRef } from "@/lib/admin/overview";
 import { errorMessage } from "@/lib/errors";
-import { formatBytes, isReadOnly, limitLabel, planById } from "@/lib/plans";
-import { ROOT_DOMAIN } from "@/lib/tenant";
 
+const day = (value: string | null) =>
+  value ? new Date(value).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : "never";
+const money = (n: number) => `$${n.toLocaleString()}`;
+const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
-// Every agency, with its usage against its limits.
-export default function AdminAgenciesPage() {
-  const { data: agencies, isLoading, error } = useAdminAgencies();
-  const router = useRouter();
-  const remove = useDeleteAgency();
-  const [deleting, setDeleting] = useState<AdminAgency | null>(null);
-  const [deleted, setDeleted] = useState<string | null>(null);
-  const canDelete = !!agencies?.some((a) => a.can_delete);
+// One agency in a list: its name and address, opening its page; a note on
+// the right.
+function AgencyRow({ agency, note }: { agency: AgencyRef; note: React.ReactNode }) {
+  return (
+    <div className="srow">
+      <span className="sl">
+        <Link href={`/admin/agencies/${agency.id}`} className="admintbl-name">
+          {agency.name}
+        </Link>
+        {agency.subdomain && <span>{agency.subdomain}</span>}
+      </span>
+      <span className="srow-note">{note}</span>
+    </div>
+  );
+}
+
+function Group<T extends AgencyRef>({
+  title,
+  hint,
+  items,
+  note,
+}: {
+  title: string;
+  hint: string;
+  items: T[];
+  note: (item: T) => React.ReactNode;
+}) {
+  if (!items.length) return null;
+  return (
+    <section className="panel" aria-label={title}>
+      <div className="panel-h">
+        <b>{title}</b>
+        <span className="sync">{hint}</span>
+      </div>
+      {items.map((a) => (
+        <AgencyRow key={a.id} agency={a} note={note(a)} />
+      ))}
+    </section>
+  );
+}
+
+// How Frank is doing, and which agencies need a look (decided directly,
+// 4 Oct 2026). The admin area's home.
+export default function AdminOverviewPage() {
+  const { data: o, isLoading, error } = useAdminOverview();
+  const att = o?.attention;
+  const nothingToSee = !!att && Object.values(att).every((list) => (list as unknown[]).length === 0);
+
   return (
     <>
       <div className="adminhead">
         <div>
-          <h1 className="h1">Agencies</h1>
-          <p className="sub">{agencies ? `${agencies.length} on Frank.` : " "}</p>
+          <h1 className="h1">Overview</h1>
+          <p className="sub">How Frank is doing, and who needs a look.</p>
         </div>
-        <Link className="btn primary" href="/admin/agencies/new">
-          New Agency
-        </Link>
       </div>
       {isLoading && <p className="sub">Loading…</p>}
-      {deleted && <p className="bsaved">{deleted}</p>}
-      {error && <p className="autherr">{errorMessage(error, "Couldn't load the agencies")}</p>}
-      {agencies && (
-        <table className="admintbl">
-          <thead>
-            <tr>
-              <th>Agency</th>
-              <th>Plan</th>
-              <th>Primary Owner</th>
-              <th>Members</th>
-              <th>Clients</th>
-              <th>Posts</th>
-              <th>Storage</th>
-              <th>AI this month</th>
-              <th>Status</th>
-              <th>Joined</th>
-              {canDelete && <th aria-label="Delete" />}
-            </tr>
-          </thead>
-          <tbody>
-            {agencies.map((a) => (
-              // The whole row opens the agency (direct instruction); the link
-              // in it stays for the keyboard and a new tab.
-              <tr key={a.id} className="admintbl-row" onClick={() => router.push(`/admin/agencies/${a.id}`)}>
-                <td>
-                  <Link href={`/admin/agencies/${a.id}`} className="admintbl-name" onClick={(e) => e.stopPropagation()}>
-                    {a.name}
-                  </Link>
-                  <span className="tdim">{a.subdomain ? `${a.subdomain}.${ROOT_DOMAIN}` : "No address"}</span>
-                </td>
-                <td>
-                  {planById(a.plan)?.name ?? a.plan}
-                  {a.pays_by_card && <span className="tdim">By card</span>}
-                  {a.plan === "free" && (
-                    <span className="tdim">
-                      {isReadOnly(a.plan, a.trial_ends_at)
-                        ? "Trial ended, read-only"
-                        : `Trial ends ${new Date(a.trial_ends_at!).toLocaleDateString()}`}
+      {error && <p className="autherr">{errorMessage(error, "Couldn't load the overview")}</p>}
+      {o && (
+        <>
+          <div className="stats adminstats">
+            <div className="stat">
+              <div className="n">{money(o.revenue.mrr)}</div>
+              <div className="l">Monthly revenue</div>
+            </div>
+            <div className="stat">
+              <div className="n">{o.counts.paying}</div>
+              <div className="l">Paying agencies</div>
+            </div>
+            <div className="stat">
+              <div className="n">{o.counts.onTrial}</div>
+              <div className="l">On a free trial</div>
+            </div>
+            <div className="stat">
+              <div className="n">{o.signups.week}</div>
+              <div className="l">Sign-ups this week</div>
+            </div>
+          </div>
+
+          <div className="admincols">
+            <div>
+              <div className="msection-h">Revenue</div>
+              <p className="msection-d">
+                Agencies paying by card, at list price before tax and discounts. A yearly plan counts at its monthly
+                rate.
+              </p>
+              <section className="panel" aria-label="Revenue by plan">
+                {o.revenue.byPlan.length === 0 && (
+                  <div className="srow">
+                    <span className="sl">
+                      <span>No one is paying by card yet.</span>
                     </span>
-                  )}
-                </td>
-                <td>
-                  {a.owner ? (
-                    <>
-                      {a.owner.name}
-                      <span className="tdim">{a.owner.email}</span>
-                    </>
-                  ) : (
-                    <span className="tdim">—</span>
-                  )}
-                </td>
-                <td>
-                  {a.members} / {limitLabel(a.seat_limit)}
-                </td>
-                <td>
-                  {a.clients} / {limitLabel(a.client_limit)}
-                </td>
-                <td>{a.posts}</td>
-                <td>
-                  {formatBytes(a.storage_bytes)} / {formatBytes(a.storage_limit_bytes)}
-                </td>
-                <td>
-                  {a.ai_this_month} / {a.ai_monthly_request_cap}
-                </td>
-                <td>
-                  <span className={`tag ${a.suspended_at ? "rose" : "green"}`}>{a.suspended_at ? "Paused" : "Active"}</span>
-                  {a.pending_request && (
-                    <span className="tdim" style={{ marginTop: 4 }}>
-                      Wants {planById(a.pending_request.plan)?.name ?? a.pending_request.plan}
-                    </span>
-                  )}
-                </td>
-                <td className="tdim">{new Date(a.created_at).toLocaleDateString()}</td>
-                {canDelete && (
-                  <td>
-                    <button
-                      type="button"
-                      className="btn sm danger"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDeleting(a);
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </td>
+                  </div>
                 )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-      {deleting && (
-        <ConfirmDialog
-          title={`Delete ${deleting.name}?`}
-          message={`this deletes ${deleting.name}, every client, post and file in it, and the accounts of its people who aren't in another agency, so their emails can sign up again. Staging only; it can't be undone.`}
-          confirmLabel="Delete Agency"
-          pendingLabel="Deleting…"
-          isPending={remove.isPending}
-          error={remove.error}
-          errorFallback="Couldn't delete the agency"
-          onConfirm={() =>
-            remove
-              .mutateAsync(deleting.id)
-              .then((r) => {
-                setDeleted(
-                  `Deleted ${deleting.name}${r.accounts.length ? `, and the accounts of ${r.accounts.join(", ")}` : ""}.`,
-                );
-                setDeleting(null);
-              })
-              .catch(() => {})
-          }
-          onClose={() => {
-            setDeleting(null);
-            remove.reset();
-          }}
-        />
+                {o.revenue.byPlan.map((r) => (
+                  <div className="srow" key={r.plan}>
+                    <span className="sl">
+                      <b>{r.name}</b>
+                      <span>{plural(r.agencies, "agency", "agencies")}</span>
+                    </span>
+                    <span className="srow-note">{money(r.mrr)} a month</span>
+                  </div>
+                ))}
+              </section>
+              {o.revenue.handSet.length > 0 && (
+                <Group
+                  title="Plans set by hand"
+                  hint="Not through Paddle, so not counted above"
+                  items={o.revenue.handSet}
+                  note={(a) => a.plan}
+                />
+              )}
+
+              <div className="msection-h">This month</div>
+              <p className="msection-d">
+                {plural(o.signups.month, "agency", "agencies")} signed up this month, {o.signups.week} this week.{" "}
+                {o.counts.agencies} in all, {o.counts.readOnly} read-only after their trial
+                {o.counts.paused ? `, ${o.counts.paused} paused` : ""}.
+                {o.changes.since
+                  ? ` Plan changes are counted from ${day(o.changes.since)}.`
+                  : " Plan changes are counted from the first one made."}
+              </p>
+              <Group
+                title="Upgrades"
+                hint={String(o.changes.upgrades.length)}
+                items={o.changes.upgrades}
+                note={(c) => `${c.from} → ${c.to} · ${day(c.at)}`}
+              />
+              <Group
+                title="Downgrades"
+                hint={String(o.changes.downgrades.length)}
+                items={o.changes.downgrades}
+                note={(c) => `${c.from} → ${c.to} · ${day(c.at)}`}
+              />
+              {o.changes.upgrades.length + o.changes.downgrades.length === 0 && (
+                <p className="msection-d">No plan changes this month.</p>
+              )}
+            </div>
+
+            <div>
+              <div className="msection-h">Needs a look</div>
+              <p className="msection-d">
+                {nothingToSee ? "Nothing right now." : "Agencies worth a message or a check."}
+              </p>
+              {att && (
+                <>
+                  <Group
+                    title="Plan requests"
+                    hint="Waiting for you on the agency's page"
+                    items={att.planRequests}
+                    note={(a) => `Wants ${a.plan}, billed ${a.interval}`}
+                  />
+                  <Group
+                    title="Failed payments"
+                    hint="Paddle is retrying"
+                    items={att.failedPayments}
+                    note={() => "Payment failed"}
+                  />
+                  <Group
+                    title="Trials ending"
+                    hint="In the next 7 days"
+                    items={att.trialsEnding}
+                    note={(a) => `Ends ${day(a.endsAt)}`}
+                  />
+                  <Group
+                    title="Read-only"
+                    hint="Trial over, no plan chosen"
+                    items={att.readOnly}
+                    note={(a) => `Since ${day(a.endedAt)}`}
+                  />
+                  <Group
+                    title="Cancelling"
+                    hint="Drops to Free at period end"
+                    items={att.cancelling}
+                    note={(a) => `On ${day(a.cancelAt)}`}
+                  />
+                  <Group
+                    title="Near a limit"
+                    hint="80% or more used"
+                    items={att.nearLimits}
+                    note={(a) => a.limits.join(", ")}
+                  />
+                  <Group
+                    title="Gone quiet"
+                    hint="No posts, comments or sign-ins in 14 days"
+                    items={att.quiet}
+                    note={(a) => (a.lastActive ? `Last active ${day(a.lastActive)}` : "Never active")}
+                  />
+                </>
+              )}
+            </div>
+          </div>
+        </>
       )}
     </>
   );

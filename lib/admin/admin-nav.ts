@@ -4,7 +4,9 @@ import type { SettingsSection } from "@/lib/settings-nav";
 // as the app's Settings (SettingsNav).
 export const ADMIN_SECTIONS: SettingsSection[] = [
   { key: "dashboard", label: "Dashboard", pages: [
-      { href: "/admin", label: "Agencies" },
+      // How Frank is doing, and who needs a look (decided directly).
+      { href: "/admin", label: "Overview" },
+      { href: "/admin/agencies", label: "Agencies" },
       // Everyone on Frank, view-only (decided directly, 4 Oct 2026).
       { href: "/admin/users", label: "Users" },
     ],

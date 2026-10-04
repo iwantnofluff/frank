@@ -57,7 +57,7 @@ export default function NewAgencyPage() {
       {create.error && <p className="autherr">{errorMessage(create.error, "Couldn't create the agency")}</p>}
       {warning && <p className="autherr">{warning}</p>}
       <div className="confirm-acts">
-        <button type="button" className="btn" onClick={() => router.push("/admin")}>
+        <button type="button" className="btn" onClick={() => router.push("/admin/agencies")}>
           Cancel
         </button>
         <button type="submit" className="btn primary" disabled={create.isPending}>

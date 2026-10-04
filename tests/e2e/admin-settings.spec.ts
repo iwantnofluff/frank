@@ -48,7 +48,8 @@ test("the admin menu, a whole row opening its agency, and the plan column", asyn
   try {
     await signIn(page, pa.email, PASSWORD);
     const nav = page.getByRole("navigation", { name: "Admin sections" });
-    await expect(nav.getByRole("link", { name: "Agencies" })).toHaveAttribute("aria-current", "true");
+    // Signing in opens the Overview, the admin area's home.
+    await expect(nav.getByRole("link", { name: "Overview" })).toHaveAttribute("aria-current", "true");
     await nav.getByRole("button", { name: "Settings", exact: true }).click();
     await nav.getByRole("link", { name: "Notifications" }).click();
     await page.waitForURL(`${ADMIN}/admin/settings/notifications`);
@@ -57,7 +58,7 @@ test("the admin menu, a whole row opening its agency, and the plan column", asyn
     await expect(nav.getByRole("button", { name: "Dashboard" })).toHaveCount(0);
     await nav.getByRole("button", { name: "Show settings menu" }).click();
 
-    await page.goto(`${ADMIN}/admin`);
+    await page.goto(`${ADMIN}/admin/agencies`);
     const row = page.locator(".admintbl tr", { has: page.locator(`a[href="/admin/agencies/${frank.agencyId}"]`) });
     await expect(row.locator("td").nth(1)).toContainText("Starter");
     // Anywhere on the row, not just the name.

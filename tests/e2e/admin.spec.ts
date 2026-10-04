@@ -62,6 +62,7 @@ test("the admin area lists every agency with its usage, for platform admins only
     await expect(page.getByRole("heading", { name: "Frank Admin" })).toBeVisible();
     await signInAt(page, ADMIN, pa.email, PASSWORD);
     await page.waitForURL(`${ADMIN}/admin`, { timeout: 20_000 });
+    await page.goto(`${ADMIN}/admin/agencies`);
     const row = page.locator(".admintbl tr", { has: page.locator(`a[href="/admin/agencies/${frank.agencyId}"]`) });
     await expect(row).toContainText("E2E Test Agency");
     // Agency, Plan, Primary Owner, then 1 team member and 1 client, each of
@@ -83,6 +84,7 @@ test("an admin creates an agency, and its Primary Owner is invited to its own ad
   try {
     await signInAt(page, ADMIN, pa.email, PASSWORD);
     await page.waitForURL(`${ADMIN}/admin`, { timeout: 20_000 });
+    await page.goto(`${ADMIN}/admin/agencies`);
     await page.getByRole("link", { name: "New Agency" }).click();
     await page.fill("#agName", "E2E Created Agency");
     // A reserved name is refused.
@@ -108,7 +110,7 @@ test("an admin creates an agency, and its Primary Owner is invited to its own ad
     expect(invites).toHaveLength(1);
 
     // The list names its Primary Owner.
-    await page.goto(`${ADMIN}/admin`);
+    await page.goto(`${ADMIN}/admin/agencies`);
     await expect(page.locator(".admintbl tr", { hasText: "E2E Created Agency" })).toContainText(ownerEmail);
 
     // Its address exists.
