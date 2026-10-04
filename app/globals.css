@@ -5881,6 +5881,16 @@ button.avatar {
   display: block;
   font-size: 12px;
 }
+/* The Users page (view-only): one line per agency a person is in. */
+.admintbl td .tline {
+  display: block;
+}
+.admintbl td .tline + .tline {
+  margin-top: 3px;
+}
+.tdim-inline {
+  color: var(--muted);
+}
 .admintbl-name {
   font-weight: 600;
   color: var(--ink);
@@ -6200,4 +6210,22 @@ a.profproject:hover .pp-t b {
   justify-content: flex-end;
   gap: 8px;
   margin-bottom: 4px;
+}
+/* A person's page in the admin area (view-only): label, then value. */
+.srow .srow-v {
+  flex: 2;
+  min-width: 0;
+  font-size: 14px;
+}
+.adminlist {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.adminpeople {
+  margin-bottom: 20px;
+  overflow-x: auto;
+}
+.admintbl td.tnowrap {
+  white-space: nowrap;
 }

@@ -10,6 +10,9 @@ import {
 } from "@/hooks/use-admin-agencies";
 import { AI_REQUESTS_PER_MONTH, formatBytes, isReadOnly, limitLabel, planById } from "@/lib/plans";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { PeopleTable } from "@/components/admin/PeopleTable";
+import { useAdminUsers } from "@/hooks/use-admin-users";
+import { roleRank } from "@/lib/roles";
 import { errorMessage } from "@/lib/errors";
 import { ROOT_DOMAIN } from "@/lib/tenant";
 
@@ -137,6 +140,8 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
         })}
       </div>
 
+      <AgencyPeople agencyId={agency.id} />
+
       <div className="msection-h">Admin Override</div>
       <p className="msection-d">Added on top of the plan&rsquo;s limits, and kept when the plan changes. 0 adds nothing.</p>
       <div className="frow">
@@ -213,5 +218,35 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
         />
       )}
     </div>
+  );
+}
+
+// Everyone in this agency, most senior first (view-only). Each opens their
+// page under Users.
+function AgencyPeople({ agencyId }: { agencyId: string }) {
+  const { data: people, isLoading, error } = useAdminUsers();
+  const here = (people ?? [])
+    .filter((p) => p.memberships.some((m) => m.agencyId === agencyId))
+    .map((p) => ({ p, m: p.memberships.find((m) => m.agencyId === agencyId)! }))
+    .sort(
+      (a, b) =>
+        (a.m.type === "client" ? 4 : roleRank(a.m.type)) - (b.m.type === "client" ? 4 : roleRank(b.m.type)) ||
+        a.p.name.localeCompare(b.p.name),
+    )
+    .map(({ p }) => p);
+  return (
+    <>
+      <div className="msection-h">People</div>
+      <p className="msection-d">
+        {people ? `${here.length === 1 ? "1 person" : `${here.length} people`} here, team and clients.` : "Everyone in the agency."}
+      </p>
+      {isLoading && <p className="sub">Loading…</p>}
+      {error && <p className="autherr">{errorMessage(error, "Couldn't load the people")}</p>}
+      {people && here.length > 0 && (
+        <div className="adminpeople">
+          <PeopleTable people={here} agencyId={agencyId} />
+        </div>
+      )}
+    </>
   );
 }

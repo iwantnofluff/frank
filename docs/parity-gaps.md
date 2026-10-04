@@ -2119,3 +2119,18 @@ Gaps:
 `team-manage.spec.ts`: menus only on people below you, an Owner offered Admin or User only, and an Admin offered Edit only, changing a User's clients. Unit tests for the order. Looked at People with the menu open.
 
 Full suite: 163 passed, 2 failed. `settings-team.png` was its known masked-email flake (the diff shows no menu change), and the admin forgot-password test passed on rerun. `npm run build` clean. phase49 was then run on production and checked there: its functions respond, and a type change without a signed-in caller is refused.
+
+## The admin area's Users
+
+Decided directly: the platform admin can see everyone on Frank. View-only for now; acting on a person (resending an invite, a password-reset link, deactivating) is left for later, once it's clear which are needed, and would be logged for the agency to see.
+- **Users** (Dashboard → Users): everyone, searchable by name, email or agency. Each row shows their agencies (with each agency's address, since two agencies can share a name) and role in each, any status other than Active, last sign-in, and when they joined. Platform admins are marked.
+- **A person's page:** their name, designation and email. For each agency they're in: role, status, when they were invited and by whom, when they joined, a pending invite link's sent and expiry dates, their clients, and their projects by client (archived ones marked). Owners and Admins show "All clients" and "All projects".
+- **People on each agency's page:** everyone there, most senior first and Clients last, with role, status, clients and last sign-in. Each row opens the person.
+
+Read through `/api/admin/users`, behind `requirePlatformAdmin()` like the rest of the admin API, with the service role. Last sign-in comes from Supabase Auth, because `users.last_seen_at` is never updated. No new tables.
+
+**Verified**: new `admin-users.spec.ts` (2):
+- **The pages:** a platform admin searches for an invited User, then opens their page: role, Invited, "by E2E Staff", the link's expiry, their client, and only the one project they're on. The agency's People lists the Admin, the User and the Client in that order.
+- **Who can read it:** on an agency's own address `/api/admin/users` isn't there (404). On the admin address, someone who isn't a platform admin is sent to sign in, and gets no data.
+
+The admin specs pass (11 of 11). Looked at the list, a person's page and an agency's People. On staging this turned up two agencies both named No Fluff (`no-fluff` and `nofluff`), so addresses were added. It also turned up 11 leftover test accounts in no agency, which were removed.
