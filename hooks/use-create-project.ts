@@ -20,18 +20,20 @@ export function useCreateProject() {
   return useMutation({
     mutationFn: async (input: CreateProjectInput) => {
       const supabase = createSupabaseClient();
-      const { data, error } = await supabase
-        .from("projects")
-        .insert({
-          client_id: input.clientId,
-          name: input.name,
-          type: input.type || null,
-          delivery: input.delivery,
-        })
-        .select()
-        .single();
-
+      // The id is chosen here and the row read back after (phase46): a User
+      // sees a project only once they're on it, which the database arranges
+      // as the insert finishes — too late for the insert to return it.
+      const id = crypto.randomUUID();
+      const { error } = await supabase.from("projects").insert({
+        id,
+        client_id: input.clientId,
+        name: input.name,
+        type: input.type || null,
+        delivery: input.delivery,
+      });
       if (error) throw error;
+      const { data, error: readError } = await supabase.from("projects").select().eq("id", id).single();
+      if (readError) throw readError;
       return data;
     },
     onSuccess: async (_data, variables) => {

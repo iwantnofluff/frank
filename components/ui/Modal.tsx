@@ -21,7 +21,8 @@ export function Modal({
   footer?: React.ReactNode;
   // Matches the prototype's .modal.sm (max-width:420px) — the default
   // width is meant for content-heavy forms like New Brief.
-  size?: "sm";
+  // lg: the Project and Client Profile windows (phase46).
+  size?: "sm" | "lg";
   // Per direct instruction, a window with a Cancel button doesn't also get
   // the corner X — every such caller passes this. Escape and clicking the
   // scrim still close it. Only a window with no Cancel (Share for Review,
@@ -45,7 +46,7 @@ export function Modal({
   return (
     <div className="scrim" ref={scrim} onClick={onClose}>
       <div
-        className={size === "sm" ? "modal sm" : "modal"}
+        className={size ? `modal ${size}` : "modal"}
         role="dialog"
         aria-modal="true"
         aria-label={ariaLabel ?? (typeof title === "string" ? title : undefined)}

@@ -11,6 +11,9 @@ export interface InviteMemberInput {
   role: InviteRole;
   // A User's clients, or a Client's one client.
   clientIds: string[];
+  // A User's or Client's projects among those clients' (phase46); null or
+  // left out, all of them.
+  projectIds?: string[] | null;
 }
 
 // The invite, and its link to share directly (phase44). emailError: the
@@ -41,6 +44,7 @@ export function useInviteMember() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["team-members", input.agencyId] }),
         queryClient.invalidateQueries({ queryKey: ["staff-client-access", input.agencyId] }),
+        queryClient.invalidateQueries({ queryKey: ["project-access"] }),
       ]);
     },
   });

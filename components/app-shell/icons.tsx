@@ -42,6 +42,16 @@ export function SettingsIcon() {
   );
 }
 
+// Opens a client's or project's profile (phase46). The prototype has no
+// such icon; drawn to match the rows' other line icons (docs/parity-gaps.md).
+export function ExpandIcon() {
+  return (
+    <svg viewBox="0 0 24 24">
+      <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+    </svg>
+  );
+}
+
 export function SearchIcon() {
   return (
     <svg viewBox="0 0 24 24">

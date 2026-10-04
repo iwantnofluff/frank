@@ -379,6 +379,9 @@ export const test = base.extend<{ frank: Frank }>({
       ["creative_versions", () => admin.from("creative_versions").delete().eq("agency_id", agency.id)],
       ["creatives", () => admin.from("creatives").delete().eq("agency_id", agency.id)],
       ["custom_columns", () => admin.from("custom_columns").delete().eq("agency_id", agency.id)],
+      // References projects and memberships (phase46). Both cascade to it,
+      // but swept by name so a failure here says so.
+      ["project_access", () => admin.from("project_access").delete().eq("agency_id", agency.id)],
       ["projects", () => admin.from("projects").delete().eq("agency_id", agency.id)],
       // No RLS delete policy exists for format_directions at all — even
       // staff can't remove one through the app — so a spec that adds one

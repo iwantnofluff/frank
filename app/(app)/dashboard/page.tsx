@@ -8,9 +8,12 @@ import { useAgencyCreativeStats } from "@/hooks/use-agency-creative-stats";
 import { useClientListStats } from "@/hooks/use-client-list-stats";
 import { useIsStaff } from "@/hooks/use-is-staff";
 import { useArchiveClient } from "@/hooks/use-archive-client";
-import { SearchIcon } from "@/components/app-shell/icons";
+import { ExpandIcon, SearchIcon } from "@/components/app-shell/icons";
 import { ClientModal } from "@/components/clients/ClientModal";
-import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
+import { ClientProfileModal } from "@/components/clients/ClientProfileModal";
+import { InviteMemberModal } from "@/components/team/InviteMemberModal";
+import { useMyMembership } from "@/hooks/use-my-membership";
+import { rolesICanInvite, seesAllClients } from "@/lib/roles";
 import { useAvatarUrls } from "@/hooks/use-avatar-urls";
 import { errorMessage } from "@/lib/errors";
 import { useCurrentUser } from "@/hooks/use-current-user";
@@ -62,6 +65,12 @@ export default function DashboardPage() {
   const [filter, setFilter] = useState<Filter>("active");
   const [newClientOpen, setNewClientOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<ClientRow | null>(null);
+  const [profileTarget, setProfileTarget] = useState<ClientRow | null>(null);
+  const [inviteTo, setInviteTo] = useState<string | null>(null);
+  const { data: me } = useMyMembership(agency?.agencyId);
+  // Owners and Admins choose who's on each project (phase46).
+  const canManagePeople = !!me && !me.client_id && seesAllClients(me.role);
+  const inviteRoles = rolesICanInvite(me);
   // Fails closed like every other isStaff gate in this app: hidden while
   // still resolving, not shown by default.
   const confirmedStaff = isStaff && !isStaffPending;
@@ -233,17 +242,19 @@ export default function DashboardPage() {
               </div>
               <div style={{ display: "flex", justifyContent: "flex-end" }}>
                 {confirmedStaff && (
-                  <RowActionsMenu
-                    title="Client options"
-                    items={[
-                      { label: "Edit", onClick: () => setEditTarget(c) },
-                      {
-                        label: c.archived_at ? "Unarchive" : "Archive",
-                        onClick: () =>
-                          archiveClient.mutate({ clientId: c.id, archived: !c.archived_at }),
-                      },
-                    ]}
-                  />
+                  <button
+                    type="button"
+                    className="vdots"
+                    title="Open client profile"
+                    aria-label={`Open ${c.name}'s profile`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setProfileTarget(c);
+                    }}
+                  >
+                    <ExpandIcon />
+                  </button>
                 )}
               </div>
             </Link>
@@ -257,6 +268,36 @@ export default function DashboardPage() {
           agencyId={agency.agencyId}
           activeClientCount={activeCount}
           onClose={() => setNewClientOpen(false)}
+        />
+      )}
+
+      {profileTarget && (
+        <ClientProfileModal
+          // Fresh from the list, so an edit shows straight away.
+          client={clients?.find((c) => c.id === profileTarget.id) ?? profileTarget}
+          logoUrl={profileTarget.logo_asset_id ? (logoUrls?.[profileTarget.logo_asset_id] ?? null) : null}
+          canManagePeople={canManagePeople}
+          canInvite={inviteRoles.length > 0}
+          onEdit={() => {
+            setEditTarget(clients?.find((c) => c.id === profileTarget.id) ?? profileTarget);
+            setProfileTarget(null);
+          }}
+          onInvite={() => setInviteTo(profileTarget.id)}
+          onArchive={() => {
+            archiveClient.mutate({ clientId: profileTarget.id, archived: !profileTarget.archived_at });
+            setProfileTarget(null);
+          }}
+          onClose={() => setProfileTarget(null)}
+        />
+      )}
+
+      {inviteTo && agency && (
+        <InviteMemberModal
+          agencyId={agency.agencyId}
+          roles={inviteRoles}
+          presetClientId={inviteTo}
+          onClose={() => setInviteTo(null)}
+          onSent={() => {}}
         />
       )}
 

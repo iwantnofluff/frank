@@ -12,12 +12,15 @@ import { useProjectFolders, type ProjectFolderRow } from "@/hooks/use-project-fo
 import { useDeleteProjectFolder } from "@/hooks/use-delete-project-folder";
 import { KBadge } from "@/components/project/KBadge";
 import { NewProjectModal } from "@/components/project/NewProjectModal";
-import { EditProjectModal } from "@/components/project/EditProjectModal";
+import { ProjectProfileModal } from "@/components/project/ProjectProfileModal";
 import { FolderModal } from "@/components/project/FolderModal";
 import { MoveToFolderModal } from "@/components/project/MoveToFolderModal";
 import { MoveToClientModal } from "@/components/project/MoveToClientModal";
 import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
-import { SearchIcon } from "@/components/app-shell/icons";
+import { useMyMembership } from "@/hooks/use-my-membership";
+import { useMyAgency } from "@/hooks/use-my-agency";
+import { seesAllClients } from "@/lib/roles";
+import { ExpandIcon, SearchIcon } from "@/components/app-shell/icons";
 
 type ArchiveFilter = "active" | "archived";
 
@@ -77,7 +80,7 @@ export default function ClientWorkspacePage({
   const [query, setQuery] = useState("");
   const [archiveFilter, setArchiveFilter] = useState<ArchiveFilter>("active");
   const [newProjectOpen, setNewProjectOpen] = useState(false);
-  const [editProjectTarget, setEditProjectTarget] = useState<ProjectListRow | null>(null);
+  const [profileTarget, setProfileTarget] = useState<ProjectListRow | null>(null);
   const [moveClientTarget, setMoveClientTarget] = useState<ProjectListRow | null>(null);
   const [movedNotice, setMovedNotice] = useState<string | null>(null);
   const [folderModal, setFolderModal] = useState<
@@ -97,6 +100,10 @@ export default function ClientWorkspacePage({
   // Fails closed like every other isStaff gate in this app: hidden while
   // still resolving, not shown by default.
   const confirmedStaff = isStaff && !isStaffPending;
+  // Owners and Admins choose who's on each project (phase46).
+  const { data: agency } = useMyAgency();
+  const { data: me } = useMyMembership(agency?.agencyId);
+  const canManagePeople = !!me && !me.client_id && seesAllClients(me.role);
   const isLoading = clientLoading || projectsLoading;
 
   // useProjects now returns archived projects too (so they can be seen and
@@ -174,23 +181,19 @@ export default function ClientWorkspacePage({
         <div className="ago">{formatDate(s?.latestApprovedAt ?? null)}</div>
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
           {confirmedStaff && (
-            <RowActionsMenu
-              title="Project options"
-              items={[
-                { label: "Edit", onClick: () => setEditProjectTarget(p) },
-                { label: "Move to folder", onClick: () => setMoveTarget(p) },
-                { label: "Move to client", onClick: () => setMoveClientTarget(p) },
-                {
-                  label: p.archived_at ? "Unarchive" : "Archive",
-                  onClick: () =>
-                    archiveProject.mutate({
-                      projectId: p.id,
-                      clientId: id,
-                      archived: !p.archived_at,
-                    }),
-                },
-              ]}
-            />
+            <button
+              type="button"
+              className="vdots"
+              title="Open project profile"
+              aria-label={`Open ${p.name}'s profile`}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setProfileTarget(p);
+              }}
+            >
+              <ExpandIcon />
+            </button>
           )}
         </div>
       </Link>
@@ -415,14 +418,27 @@ export default function ClientWorkspacePage({
         <NewProjectModal clientId={id} onClose={() => setNewProjectOpen(false)} />
       )}
 
-      {editProjectTarget && (
-        <EditProjectModal
-          projectId={editProjectTarget.id}
+      {profileTarget && (
+        <ProjectProfileModal
+          // Fresh from the list, so a save shows straight away.
+          project={projects?.find((p) => p.id === profileTarget.id) ?? profileTarget}
           clientId={id}
-          currentName={editProjectTarget.name}
-          currentType={editProjectTarget.type}
-          delivery={editProjectTarget.delivery}
-          onClose={() => setEditProjectTarget(null)}
+          clientName={client?.name ?? "this client"}
+          stats={projectStats?.[profileTarget.id]}
+          canManagePeople={canManagePeople}
+          onMoveToFolder={() => {
+            setMoveTarget(profileTarget);
+            setProfileTarget(null);
+          }}
+          onMoveToClient={() => {
+            setMoveClientTarget(profileTarget);
+            setProfileTarget(null);
+          }}
+          onArchive={() => {
+            archiveProject.mutate({ projectId: profileTarget.id, clientId: id, archived: !profileTarget.archived_at });
+            setProfileTarget(null);
+          }}
+          onClose={() => setProfileTarget(null)}
         />
       )}
 

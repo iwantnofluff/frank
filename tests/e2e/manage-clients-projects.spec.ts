@@ -10,24 +10,22 @@ test("rename and archive/unarchive a client from the dashboard", async ({ page, 
   await page.goto("/dashboard");
   await page.waitForSelector(".crow:not(.head)");
 
-  const row = page.locator(".crow", { hasText: "E2E Test Client" });
-  await row.locator(".vdots").click();
-  await page.click('.colpop button:has-text("Edit")');
+  await page.getByRole("button", { name: "Open E2E Test Client's profile" }).click();
+  await page.getByRole("dialog", { name: "E2E Test Client" }).getByRole("button", { name: "Edit Client" }).click();
   await page.fill("#cName", "E2E Renamed Client");
   await page.click('button:has-text("Save")');
   await expect(page.locator(".crow", { hasText: "E2E Renamed Client" })).toBeVisible();
 
-  const renamedRow = page.locator(".crow", { hasText: "E2E Renamed Client" });
-  await renamedRow.locator(".vdots").click();
-  await page.click('.colpop button:has-text("Archive")');
+  await page.getByRole("button", { name: "Open E2E Renamed Client's profile" }).click();
+  await page.getByRole("dialog", { name: "E2E Renamed Client" }).getByRole("button", { name: "Archive" }).click();
   await expect(page.locator(".crow", { hasText: "E2E Renamed Client" })).toHaveCount(0);
 
   await page.click('button.chip:has-text("Archived")');
   const archivedRow = page.locator(".crow", { hasText: "E2E Renamed Client" });
   await expect(archivedRow).toBeVisible();
 
-  await archivedRow.locator(".vdots").click();
-  await page.click('.colpop button:has-text("Unarchive")');
+  await page.getByRole("button", { name: "Open E2E Renamed Client's profile" }).click();
+  await page.getByRole("dialog", { name: "E2E Renamed Client" }).getByRole("button", { name: "Unarchive" }).click();
   await page.click('button.chip:has-text("Active")');
   await expect(page.locator(".crow", { hasText: "E2E Renamed Client" })).toBeVisible();
 });
@@ -49,9 +47,8 @@ test("New Client and Edit Client share the same modal, including industry; no se
   await expect(page.locator(".scrim")).toHaveCount(0);
   await expect(page.locator(".crow", { hasText: "Client Modal E2E" })).toBeVisible();
 
-  const row = page.locator(".crow", { hasText: "Client Modal E2E" });
-  await row.locator(".vdots").click();
-  await page.click('.colpop button:has-text("Edit")');
+  await page.getByRole("button", { name: "Open Client Modal E2E's profile" }).click();
+  await page.getByRole("dialog", { name: "Client Modal E2E" }).getByRole("button", { name: "Edit Client" }).click();
   await expect(page.locator('input[value="Client Modal E2E"]')).toBeVisible();
   await expect(page.locator("#cInd")).toHaveValue("D2C beauty");
   await page.fill("#cInd", "Skincare");
@@ -59,7 +56,7 @@ test("New Client and Edit Client share the same modal, including industry; no se
   await expect(page.locator(".scrim")).toHaveCount(0);
 });
 
-test("edit (name and type) and archive/unarchive a project from the client workspace", async ({
+test("edit (name, type and details) and archive/unarchive a project from its profile", async ({
   page,
   frank,
 }) => {
@@ -67,10 +64,8 @@ test("edit (name and type) and archive/unarchive a project from the client works
   await page.goto(`/clients/${frank.clientId}`);
   await page.waitForSelector(".crow:not(.head)");
 
-  const row = page.locator(".crow", { hasText: "E2E Test Project" });
-  await row.locator(".vdots").click();
-  await page.click('.colpop button:has-text("Edit")');
-  const modal = page.getByRole("dialog", { name: "Edit Project" });
+  await page.getByRole("button", { name: "Open E2E Test Project's profile" }).click();
+  const modal = page.getByRole("dialog", { name: "E2E Test Project" });
   // The fixture project has no type: it shows as "—" rather than silently
   // becoming the first option, and only Content Planner types are offered.
   await expect(modal.getByLabel("Type")).toHaveValue("");
@@ -83,17 +78,21 @@ test("edit (name and type) and archive/unarchive a project from the client works
   ]);
   await modal.getByLabel("Project name").fill("E2E Renamed Project");
   await modal.getByLabel("Type").selectOption("Paid Campaign");
+  await modal.getByLabel("Due date").fill("2026-12-15");
+  await modal.getByLabel("Description").fill("Festive season social");
   await modal.getByRole("button", { name: "Save" }).click();
   await expect(modal).toHaveCount(0);
   await expect(page.locator(".crow", { hasText: "E2E Renamed Project" })).toContainText(
     "Paid Campaign",
   );
 
-  await page.locator(".crow", { hasText: "E2E Renamed Project" }).locator(".vdots").click();
-  await page.click('.colpop button:has-text("Edit")');
-  await expect(modal.getByLabel("Type")).toHaveValue("Paid Campaign");
-  await expect(modal.getByLabel("Type").locator("option")).toHaveCount(4);
-  await modal.getByRole("button", { name: "Cancel" }).click();
+  await page.getByRole("button", { name: "Open E2E Renamed Project's profile" }).click();
+  const renamed = page.getByRole("dialog", { name: "E2E Renamed Project" });
+  await expect(renamed.getByLabel("Type")).toHaveValue("Paid Campaign");
+  await expect(renamed.getByLabel("Type").locator("option")).toHaveCount(4);
+  await expect(renamed.getByLabel("Due date")).toHaveValue("2026-12-15");
+  await expect(renamed.getByLabel("Description")).toHaveValue("Festive season social");
+  await renamed.getByRole("button", { name: "Cancel" }).click();
 
   // The project count lives in the chips now, not beside the title.
   const activeChip = page.locator("button.chip", { hasText: "Active" });
@@ -101,9 +100,8 @@ test("edit (name and type) and archive/unarchive a project from the client works
   await expect(activeChip).toHaveText("Active (1)");
   await expect(archivedChip).toHaveText("Archived (0)");
 
-  const renamedRow = page.locator(".crow", { hasText: "E2E Renamed Project" });
-  await renamedRow.locator(".vdots").click();
-  await page.click('.colpop button:has-text("Archive")');
+  await page.getByRole("button", { name: "Open E2E Renamed Project's profile" }).click();
+  await renamed.getByRole("button", { name: "Archive" }).click();
   await expect(page.locator(".crow", { hasText: "E2E Renamed Project" })).toHaveCount(0);
   await expect(activeChip).toHaveText("Active (0)");
   await expect(archivedChip).toHaveText("Archived (1)");
@@ -112,8 +110,8 @@ test("edit (name and type) and archive/unarchive a project from the client works
   const archivedRow = page.locator(".crow", { hasText: "E2E Renamed Project" });
   await expect(archivedRow).toBeVisible();
 
-  await archivedRow.locator(".vdots").click();
-  await page.click('.colpop button:has-text("Unarchive")');
+  await page.getByRole("button", { name: "Open E2E Renamed Project's profile" }).click();
+  await renamed.getByRole("button", { name: "Unarchive" }).click();
   await page.click('button.chip:has-text("Active")');
   await expect(page.locator(".crow", { hasText: "E2E Renamed Project" })).toBeVisible();
 });
@@ -128,23 +126,18 @@ test("the project's own detail page has no row actions menu next to its title", 
   await expect(page.locator(".vdots")).toHaveCount(0);
 });
 
-test("popover closes on outside click and Escape, and never navigates the row", async ({ page, frank }) => {
+test("a client's profile opens without navigating the row, and Escape closes it", async ({ page, frank }) => {
   await frank.loginAsStaff(page);
   await page.goto("/dashboard");
   await page.waitForSelector(".crow:not(.head)");
-  const row = page.locator(".crow:not(.head)").first();
 
-  await row.locator(".vdots").click();
-  await expect(page.locator(".colpop")).toBeVisible();
-  await page.mouse.click(5, 5);
-  await expect(page.locator(".colpop")).toHaveCount(0);
-
-  await row.locator(".vdots").click();
+  await page.getByRole("button", { name: "Open E2E Test Client's profile" }).click();
+  const profile = page.getByRole("dialog", { name: "E2E Test Client" });
+  await expect(profile).toContainText("E2E Test Project");
   await page.keyboard.press("Escape");
-  await expect(page.locator(".colpop")).toHaveCount(0);
+  await expect(profile).toHaveCount(0);
 
-  // The row itself is a <Link> — opening/using the menu must never
-  // navigate it away.
+  // The row itself is a <Link> — the button must never navigate it away.
   await expect(page).toHaveURL(/\/dashboard$/);
 });
 

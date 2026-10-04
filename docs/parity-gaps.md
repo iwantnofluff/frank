@@ -2049,3 +2049,24 @@ The e2e fixture's own Client person is taken off the list at setup, so specs sta
 **Verified**: phase45 was rehearsed on staging (rolled back), then applied. New spec: someone invited as Client appears on the review link by the name they were given, beside a name already listed, and drops off once removed. The client form test now checks there's no Client Team section and that Edit keeps the industry. `shared-review-public.spec.ts` and `client-invites.spec.ts`: 9/9, with the screenshots unchanged.
 
 A DNS outage on the Mac mid-run failed a batch at once (`ENOTFOUND` for the staging host). Once it was back, running with 2 workers passed everything; full runs against staging may want fewer workers.
+
+## Who's on which project, and a profile for each project and client
+
+Decided directly: Users and Clients see only the projects they're on, while Owners and Admins see every project. A new project starts with everyone on its client. phase46 adds `project_access` (one row per person per project) and moves every project-scoped rule from "the clients you're on" to "the projects you're on". Triggers keep it in step: a person given a client, a Client invited to one, and a new or moved project. Everyone existing was put on every project of their clients, so nobody lost anything. Projects also get a description (up to 1,000 characters).
+
+- **Inviting:** a User or Client can be put on chosen projects, from the Team invite form (a Projects picker once their client is chosen) and from Edit Client. The invite rows there go onto two lines (name and email, then role and projects) when the client has projects. A new client has none, so its rows stay on one line. The route trims the new person's projects through the inviter's own session, so the policy decides.
+- **Project Profile:** the project row's three dots are now an expand button, which opens a large window headed with the project's name. It holds the name, delivery, type, due date and description, saved together. It also shows posts by stage, the latest approval, and the people on it, with the row's old actions (Move to Folder, Move to Client, Archive). Owners and Admins add or take people off straight away. Users see the details but not the people, because only Owners and Admins can read others' project access. Delivery is locked once there are posts, as the database already enforces. The separate Edit Project window went.
+- **Client Profile:** the dashboard row's three dots are an expand button too. The window shows the client's details, posts by stage across its projects, its live projects with how many are approved, and each User and Client with a Projects picker that changes their projects straight away. Edit Client, Archive and Invite People (the Team invite form, with this client already chosen) are there.
+- **The expand icon** isn't in the prototype; it's drawn to match the rows' other line icons.
+
+Gaps:
+- **Archived projects** aren't offered in the pickers. Someone's access to an archived project stays as it was.
+- **A re-sent invite** keeps the projects from the first one.
+- **Users don't see who else is on a project.** That would need a narrower read policy.
+
+**Verified**: phase46 was rehearsed on staging (rolled back), then applied, and checked with real sessions for each role (16 of 16). Typecheck, lint and unit tests are clean. New `project-access.spec.ts` (4):
+- **Invites:** from Edit Client, a User put on one of two projects gets just that one. From Team, a Client put on one gets just that one. An Admin row reads "Sees every project".
+- **Project Profile:** an Owner takes a User off a project and puts them back, and the database matches each time. Signed in as that User, the project they were taken off isn't listed, and their own profile shows the details without the people.
+- **Client Profile:** it lists people with their projects. Changing one person's projects saves straight away, and Invite People opens with the client chosen.
+
+Specs that used the old three-dot menus were moved to the profiles. Looked at both windows on desktop and at phone width (no sideways scroll). Full suite: 156 passed, 6 failed. The client-workspace and dashboard baselines changed only by the new icon, which was confirmed in the diffs before updating them. Three others were timeouts or a failed test-account creation, and passed on rerun. `settings-team.png` is its known flake. `npm run build` clean.

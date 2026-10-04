@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { ClientChecklist } from "@/components/team/ClientChecklist";
 import { InviteLinks } from "@/components/team/InviteLinks";
+import { ProjectPicker } from "@/components/team/ProjectPicker";
+import { useProjectsOfClients } from "@/hooks/use-projects";
 import { useClients } from "@/hooks/use-clients";
 import { useInviteMember, type SentInvite } from "@/hooks/use-invite-member";
 import { errorMessage } from "@/lib/errors";
@@ -15,11 +17,14 @@ import { INVITE_ROLE_HINTS, INVITE_ROLE_LABELS, type InviteRole } from "@/lib/ro
 export function InviteMemberModal({
   agencyId,
   roles,
+  presetClientId,
   onClose,
   onSent,
 }: {
   agencyId: string;
   roles: InviteRole[];
+  // Opened from a Client Profile (phase46): that client, chosen already.
+  presetClientId?: string;
   onClose: () => void;
   onSent: (email: string) => void;
 }) {
@@ -30,8 +35,16 @@ export function InviteMemberModal({
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<InviteRole>(roles.includes("user") ? "user" : roles[0]);
-  const [clientIds, setClientIds] = useState<string[]>([]);
-  const [clientId, setClientId] = useState("");
+  const [clientIds, setClientIds] = useState<string[]>(presetClientId ? [presetClientId] : []);
+  const [clientId, setClientId] = useState(presetClientId ?? "");
+  // Their projects among their clients' (phase46); null, all of them.
+  const [projectIds, setProjectIds] = useState<string[] | null>(null);
+  const theirClients = role === "client" ? (clientId ? [clientId] : []) : role === "user" ? clientIds : [];
+  const { data: theirProjects } = useProjectsOfClients(theirClients);
+  const projectGroups = activeClients
+    .filter((c) => theirClients.includes(c.id))
+    .map((c) => ({ name: c.name, projects: (theirProjects ?? []).filter((p) => p.client_id === c.id) }))
+    .filter((g) => g.projects.length > 0);
   const [validation, setValidation] = useState<string | null>(null);
   const [sent, setSent] = useState<SentInvite | null>(null);
 
@@ -48,6 +61,11 @@ export function InviteMemberModal({
       lastName: lastName.trim(),
       role,
       clientIds: role === "client" ? [clientId] : role === "user" ? clientIds : [],
+      // Only what's still on offer, if their clients changed after choosing.
+      projectIds:
+        projectIds === null || !projectGroups.length
+          ? null
+          : projectIds.filter((id) => projectGroups.some((g) => g.projects.some((p) => p.id === id))),
     });
     setSent(result);
     onSent(trimmed);
@@ -147,6 +165,12 @@ export function InviteMemberModal({
               </option>
             ))}
           </select>
+        </div>
+      )}
+      {(role === "user" || role === "client") && projectGroups.length > 0 && (
+        <div className="field">
+          <label htmlFor="ivProjects">Projects</label>
+          <ProjectPicker id="ivProjects" groups={projectGroups} value={projectIds} onChange={setProjectIds} />
         </div>
       )}
       {validation && <p className="autherr">{validation}</p>}

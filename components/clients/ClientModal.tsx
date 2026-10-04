@@ -11,6 +11,8 @@ import { useMyMembership } from "@/hooks/use-my-membership";
 import { useTeamMembers } from "@/hooks/use-team-members";
 import { useInviteMember, type SentInvite } from "@/hooks/use-invite-member";
 import { InviteLinks } from "@/components/team/InviteLinks";
+import { ProjectPicker } from "@/components/team/ProjectPicker";
+import { useProjectsOfClients } from "@/hooks/use-projects";
 import { INVITE_ROLE_LABELS, rolesICanInvite, type InviteRole } from "@/lib/roles";
 import { PhotoCropModal } from "@/components/profile/PhotoCropModal";
 import { AVATAR_TYPES, validateAvatarSource } from "@/lib/upload-avatar";
@@ -30,6 +32,8 @@ interface InviteDraft {
   lastName: string;
   email: string;
   role: InviteRole;
+  // Their projects, for a User or Client (phase46); null, all of them.
+  projectIds: string[] | null;
 }
 
 // Replaces NewClientModal.tsx + RenameClientModal.tsx — the "..." row menu's
@@ -67,6 +71,9 @@ export function ClientModal(props: ClientModalProps) {
   const placesLeft =
     agency?.seatLimit == null ? null : Math.max(0, agency.seatLimit - (team ?? []).filter((m) => !m.removed_at).length);
   const inviteMember = useInviteMember();
+  // Editing a client: its projects to choose from. A new client has none.
+  const { data: clientProjects } = useProjectsOfClients(props.mode === "create" ? [] : [props.clientId]);
+  const projectGroups = clientProjects?.length ? [{ name: "Projects", projects: clientProjects }] : null;
   const [invites, setInvites] = useState<InviteDraft[]>([]);
   const [sent, setSent] = useState<SentInvite[] | null>(null);
   const [inviteErrors, setInviteErrors] = useState<string[]>([]);
@@ -135,6 +142,7 @@ export function ClientModal(props: ClientModalProps) {
             // A User gets this client; a Client is from it; Owners and
             // Admins see every client already.
             clientIds: v.role === "user" || v.role === "client" ? [clientId] : [],
+            projectIds: v.role === "user" || v.role === "client" ? v.projectIds : null,
           }),
         );
       } catch (e) {
@@ -348,7 +356,7 @@ export function ClientModal(props: ClientModalProps) {
           {invites.map((v, i) => (
             <div className="brow" key={i}>
               <div className="brow-h">
-                <div className="invrow">
+                <div className={projectGroups ? "invrow two" : "invrow"}>
                   <input
                     value={v.firstName}
                     onChange={(e) => updateInvite(i, { firstName: e.target.value })}
@@ -379,6 +387,16 @@ export function ClientModal(props: ClientModalProps) {
                       </option>
                     ))}
                   </select>
+                  {projectGroups &&
+                    (v.role === "user" || v.role === "client" ? (
+                      <ProjectPicker
+                        groups={projectGroups}
+                        value={v.projectIds}
+                        onChange={(projectIds) => updateInvite(i, { projectIds })}
+                      />
+                    ) : (
+                      <span className="invall">Sees every project</span>
+                    ))}
                 </div>
                 <button
                   type="button"
@@ -394,7 +412,7 @@ export function ClientModal(props: ClientModalProps) {
           <button
             type="button"
             className="badd"
-            onClick={() => setInvites((prev) => [...prev, { firstName: "", lastName: "", email: "", role: "user" }])}
+            onClick={() => setInvites((prev) => [...prev, { firstName: "", lastName: "", email: "", role: "user", projectIds: null }])}
           >
             + Invite someone
           </button>

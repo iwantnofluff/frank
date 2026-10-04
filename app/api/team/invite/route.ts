@@ -9,6 +9,7 @@ import { INVITABLE_ROLES, ROLE_LABELS, type InvitableRole, type InviteRole } fro
 import { isReadOnly } from "@/lib/plans";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function fail(error: string, status: number) {
   return NextResponse.json({ error }, { status });
@@ -26,6 +27,9 @@ export async function POST(request: Request) {
     lastName?: string;
     role?: string;
     clientIds?: string[];
+    // A User's or Client's projects (phase46); left out, every project of
+    // their clients.
+    projectIds?: string[] | null;
   };
   try {
     body = await request.json();
@@ -42,10 +46,12 @@ export async function POST(request: Request) {
   const isClient = asked === "client";
   const role: InvitableRole = isClient ? "user" : (asked as InvitableRole);
   const clientIds = role === "user" ? (body.clientIds ?? []) : [];
+  const projectIds = role === "user" && Array.isArray(body.projectIds) ? body.projectIds : null;
   if (!agencyId) return fail("Invalid request", 400);
   if (!EMAIL_RE.test(email)) return fail("Enter a valid email", 400);
   if (!isClient && !INVITABLE_ROLES.includes(role)) return fail("Choose a role", 400);
   if (isClient && clientIds.length !== 1) return fail("Choose the client they're from", 400);
+  if (projectIds?.some((id) => typeof id !== "string" || !UUID_RE.test(id))) return fail("Invalid request", 400);
 
   const supabase = await createClient();
   const {
@@ -184,6 +190,20 @@ export async function POST(request: Request) {
         await admin.from("memberships").delete().eq("id", membershipId);
         await undoCreatedUser();
         return fail(accessError.message, 500);
+      }
+    }
+
+    // The triggers just put them on every project of their clients; keep
+    // only the ones chosen. Through the caller's session, so the
+    // project_access policy decides.
+    if (projectIds) {
+      let trim = supabase.from("project_access").delete().eq("membership_id", membershipId);
+      if (projectIds.length) trim = trim.not("project_id", "in", `(${projectIds.join(",")})`);
+      const { error: trimError } = await trim;
+      if (trimError) {
+        await admin.from("memberships").delete().eq("id", membershipId);
+        await undoCreatedUser();
+        return fail(trimError.message, 500);
       }
     }
   }

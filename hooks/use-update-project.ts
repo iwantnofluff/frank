@@ -3,10 +3,21 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 
+export interface ProjectPatch {
+  name?: string;
+  type?: string | null;
+  // Project Profile (phase46). Delivery can't change once a project has
+  // posts; the database refuses (projects_delivery_immutable).
+  description?: string | null;
+  delivery?: "scheduled" | "continuous";
+  due_on?: string | null;
+}
+
 // One instance handles every row on the page — the target id travels in
 // the mutate-time payload rather than being baked into the hook call.
 // clientId travels alongside it purely to invalidate the list query it
-// lives under (use-create-project.ts's own invalidation shape).
+// lives under (use-create-project.ts's own invalidation shape). Only the
+// fields given are written.
 export function useUpdateProject() {
   const queryClient = useQueryClient();
 
@@ -15,16 +26,18 @@ export function useUpdateProject() {
       projectId,
       name,
       type,
-    }: {
+      description,
+      delivery,
+      due_on,
+    }: ProjectPatch & {
       projectId: string;
       clientId: string;
-      name: string;
-      type: string | null;
     }) => {
       const supabase = createClient();
+      // Fields left undefined drop out of the request body.
       const { data, error } = await supabase
         .from("projects")
-        .update({ name: name.trim(), type })
+        .update({ name: name?.trim(), type, description, delivery, due_on })
         .eq("id", projectId)
         .select("id")
         .maybeSingle();

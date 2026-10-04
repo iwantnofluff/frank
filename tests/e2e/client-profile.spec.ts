@@ -26,9 +26,8 @@ async function picture(page: Page, width: number, height: number) {
 }
 
 async function openEditClient(page: Page) {
-  const row = page.locator(".crow", { hasText: "E2E Test Client" });
-  await row.locator(".vdots").click();
-  await page.click('.colpop button:has-text("Edit")');
+  await page.getByRole("button", { name: "Open E2E Test Client's profile" }).click();
+  await page.getByRole("dialog", { name: "E2E Test Client" }).getByRole("button", { name: "Edit Client" }).click();
   return page.getByRole("dialog", { name: "Edit Client" });
 }
 
@@ -126,8 +125,8 @@ test("a project moves to another client, leaving its folder behind and its share
   await page.goto(`${APP_URL}/clients/${frank.clientId}`);
   const row = page.locator(".crow", { hasText: "E2E Test Project" });
   await expect(row).toContainText("Active");
-  await row.locator(".vdots").click();
-  await page.click('.colpop button:has-text("Move to client")');
+  await page.getByRole("button", { name: "Open E2E Test Project's profile" }).click();
+  await page.getByRole("dialog", { name: "E2E Test Project" }).getByRole("button", { name: "Move to Client" }).click();
   const modal = page.getByRole("dialog", { name: "Move E2E Test Project to another client" });
   await expect(modal.getByRole("radio")).toHaveCount(1);
   await modal.getByRole("radio", { name: "Second Client" }).click();
