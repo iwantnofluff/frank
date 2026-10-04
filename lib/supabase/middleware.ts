@@ -73,7 +73,12 @@ export async function updateSession(request: NextRequest) {
       path.startsWith("/api/signup") ||
       path === "/api/find-workspaces" ||
       path === "/api/billing/paddle-webhook" ||
-      path === "/api/connections/instagram/callback"
+      path === "/api/connections/instagram/callback" ||
+      // Meta's deauthorize and data deletion callbacks, and the page it
+      // shows someone after a deletion. Checked by signature.
+      path === "/api/connections/instagram/deauthorize" ||
+      path === "/api/connections/instagram/data-deletion" ||
+      path === "/instagram-data-deletion"
     ) {
       return NextResponse.next();
     }

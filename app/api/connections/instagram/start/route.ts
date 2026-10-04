@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { authorizeUrl, instagramConfigured } from "@/lib/instagram/api";
 import { signState } from "@/lib/instagram/secrets";
-import { callbackUrl } from "@/lib/instagram/store";
+import { callbackUrl, requestOrigin } from "@/lib/instagram/store";
 
 const SETTINGS = "/settings/connections/instagram";
 
@@ -14,8 +14,9 @@ const SETTINGS = "/settings/connections/instagram";
 // come back to travel in a signed state, checked again on the way back.
 export async function GET(request: Request) {
   const url = new URL(request.url);
+  const origin = requestOrigin(request);
   const back = (path: string, outcome: string) =>
-    NextResponse.redirect(new URL(`${path}${path.includes("?") ? "&" : "?"}instagram=${outcome}`, url.origin));
+    NextResponse.redirect(new URL(`${path}${path.includes("?") ? "&" : "?"}instagram=${outcome}`, origin));
   if (!instagramConfigured()) return back(SETTINGS, "not_configured");
 
   const clientIdParam = url.searchParams.get("clientId");
@@ -41,7 +42,7 @@ export async function GET(request: Request) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return NextResponse.redirect(new URL("/login", url.origin));
+    if (!user) return NextResponse.redirect(new URL("/login", origin));
     const { data: client } = await supabase.from("clients").select("id, agency_id").eq("id", clientIdParam ?? "").maybeSingle();
     if (!client) return back(SETTINGS, "not_allowed");
     const { data: isAdmin } = await supabase.rpc("is_agency_admin", { check_agency_id: client.agency_id });
@@ -56,9 +57,9 @@ export async function GET(request: Request) {
     clientId,
     userId,
     linkId,
-    returnOrigin: url.origin,
+    returnOrigin: origin,
     returnPath,
     expiresAt: Date.now() + 15 * 60_000,
   });
-  return NextResponse.redirect(authorizeUrl(callbackUrl(request.url), state));
+  return NextResponse.redirect(authorizeUrl(callbackUrl(request), state));
 }

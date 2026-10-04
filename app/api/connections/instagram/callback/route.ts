@@ -43,7 +43,7 @@ export async function GET(request: Request) {
       }
     }
 
-    const { token, expiresAt } = await exchangeCode(code, callbackUrl(request.url));
+    const { token, expiresAt } = await exchangeCode(code, callbackUrl(request));
     const profile = await fetchProfile(token);
     if (profile.account_type && !["BUSINESS", "MEDIA_CREATOR"].includes(profile.account_type)) {
       return back("not_professional");

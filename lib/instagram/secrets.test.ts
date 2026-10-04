@@ -27,3 +27,14 @@ test("state round-trips, and refuses tampering, another key, or age", () => {
   assert.equal(verifyState(`${payload}.`, KEY, 1_000), null);
   assert.equal(verifyState(null, KEY), null);
 });
+
+test("Meta's signed request is read only with the app secret", async () => {
+  const { parseSignedRequest } = await import("./secrets.ts");
+  const { createHmac } = await import("node:crypto");
+  const payload = Buffer.from(JSON.stringify({ algorithm: "HMAC-SHA256", user_id: "1784" })).toString("base64url");
+  const sig = createHmac("sha256", "app-secret").update(payload).digest("base64url");
+  assert.deepEqual(parseSignedRequest(`${sig}.${payload}`, "app-secret"), { algorithm: "HMAC-SHA256", user_id: "1784" });
+  assert.equal(parseSignedRequest(`${sig}.${payload}`, "another-secret"), null);
+  assert.equal(parseSignedRequest(`${sig}x.${payload}`, "app-secret"), null);
+  assert.equal(parseSignedRequest(null, "app-secret"), null);
+});

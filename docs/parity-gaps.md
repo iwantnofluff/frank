@@ -2242,3 +2242,13 @@ Follow-up, with Frank's Meta app now set up (its ID and secret are in Vercel for
 - **The test** now follows an Owner's Reconnect without contacting Instagram. It reaches Instagram's sign-in with Frank's app ID, the read-only scope, the request's own callback address and a signed state.
 
 Full suite before this: 173 passed, 5 failed. `settings-team.png` was its known flake, and the other four files passed on rerun (plan enforcement, calendar hover, team invite, team manage). `instagram-connections.spec.ts`: 5 of 5. `npm run build` clean.
+
+## Meta's deauthorize and data deletion callbacks, and the right app ID
+
+- **"Invalid platform app"** on staging: Frank had been given the Facebook app ID from the top of Meta's dashboard, not the Instagram app ID from "API setup with Instagram login". The Instagram pair (ID and secret) is now in both env files and in Vercel for live and staging, and staging was redeployed.
+- **The two fields Meta needs before App Review:** the Deauthorize callback URL (`/api/connections/instagram/deauthorize`) and the Data deletion request URL (`/api/connections/instagram/data-deletion`), at the root address. Each checks Meta's signed request (HMAC-SHA256 with the app secret) and removes the connection and its token. Data deletion answers with a confirmation code and a page (`/instagram-data-deletion`) saying what was deleted. Meta takes one address per field: the live ones.
+- **phase55** keeps both of an account's IDs (`ig_user_id`, and the app-scoped `ig_scoped_id`), since Meta may name the person by either.
+- **The feed checks its connection before its cache,** so a disconnected or removed account disappears at once.
+- **Every Instagram route builds addresses from the Host header,** as the admin area does. `request.url` can read `localhost` in development.
+
+**Verified**: phase55 was rehearsed on staging (rolled back), then applied. A unit test checks that a signed request is read only with the app secret. A new test in `instagram-connections.spec.ts` sends Meta-style signed requests to the root address: one signed with anything else is refused (400) and removes nothing; deauthorize removes the account; data deletion removes it and returns a code whose page shows it. 6 of 6. `npm run build` clean.

@@ -6,15 +6,26 @@ import { fetchMedia, fetchProfile, isTokenGone, refreshToken, type InstagramMedi
 // Server-only, with the service role (phase54): the token table has no
 // policies, so nothing else can read it.
 
+// The address a request actually came in on, from its Host header (as the
+// admin area's agencyOrigin does): request.url can read localhost in
+// development, whatever address was used.
+export function requestOrigin(request: Request): string {
+  const url = new URL(request.url);
+  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? url.host;
+  const proto = request.headers.get("x-forwarded-proto") ?? url.protocol.replace(":", "");
+  return `${proto}://${host}`;
+}
+
 // Instagram sends people back to one fixed address per environment (Meta
 // accepts no wildcards): the environment's root (beingfrank.app,
 // staging.beingfrank.app, frank.localhost locally). Worked out from the
 // address the request came in on, an agency's (its first label dropped) or
 // the root's own, so each environment points at itself.
-export function callbackUrl(requestUrl: string): string {
-  const url = new URL(requestUrl);
-  const host = tenantFromHost(url.host).kind === "agency" ? url.host.split(".").slice(1).join(".") : url.host;
-  return `${url.protocol}//${host}/api/connections/instagram/callback`;
+export function callbackUrl(request: Request): string {
+  const origin = new URL(requestOrigin(request));
+  const host =
+    tenantFromHost(origin.host).kind === "agency" ? origin.host.split(".").slice(1).join(".") : origin.host;
+  return `${origin.protocol}//${host}/api/connections/instagram/callback`;
 }
 
 export async function saveConnection(
@@ -27,6 +38,7 @@ export async function saveConnection(
       {
         client_id: input.clientId,
         ig_user_id: input.profile.user_id,
+        ig_scoped_id: input.profile.id ?? null,
         username: input.profile.username,
         name: input.profile.name ?? null,
         profile_picture_url: input.profile.profile_picture_url ?? null,
@@ -105,9 +117,8 @@ export type FeedResult =
   | { status: "error"; message: string };
 
 export async function liveFeed(admin: SupabaseClient, clientId: string): Promise<FeedResult> {
-  const cached = feedCache.get(clientId);
-  if (cached && Date.now() - cached.at < CACHE_MS) return { status: "ok", feed: cached.feed };
-
+  // The connection first, so a disconnected or removed account stops
+  // showing at once rather than when its cache runs out.
   const { data: conn } = await admin
     .from("instagram_connections")
     .select("id, username, needs_reconnect_at")
@@ -115,6 +126,8 @@ export async function liveFeed(admin: SupabaseClient, clientId: string): Promise
     .maybeSingle();
   if (!conn) return { status: "not_connected" };
   if (conn.needs_reconnect_at) return { status: "needs_reconnect", username: conn.username as string };
+  const cached = feedCache.get(clientId);
+  if (cached && Date.now() - cached.at < CACHE_MS) return { status: "ok", feed: cached.feed };
 
   try {
     const token = await usableToken(admin, conn.id as string);
@@ -159,4 +172,18 @@ export async function liveFeed(admin: SupabaseClient, clientId: string): Promise
     }
     return { status: "error", message: (e as Error).message };
   }
+}
+
+// Everything Frank holds for an Instagram account (Meta's deauthorize and
+// data deletion callbacks name it by either of its IDs). The token goes
+// with its connection.
+export async function forgetInstagramUser(admin: SupabaseClient, userId: string): Promise<number> {
+  const { data, error } = await admin
+    .from("instagram_connections")
+    .delete()
+    .or(`ig_user_id.eq.${userId},ig_scoped_id.eq.${userId}`)
+    .select("client_id");
+  if (error) throw new Error(error.message);
+  for (const row of data ?? []) feedCache.delete(row.client_id as string);
+  return (data ?? []).length;
 }

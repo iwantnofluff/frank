@@ -88,6 +88,8 @@ export async function refreshToken(token: string): Promise<{ token: string; expi
 }
 
 export interface InstagramProfile {
+  // Scoped to Frank's app; user_id is the professional account's own.
+  id?: string;
   user_id: string;
   username: string;
   name?: string;
@@ -100,7 +102,7 @@ export interface InstagramProfile {
 export function fetchProfile(token: string): Promise<InstagramProfile> {
   return call<InstagramProfile>(
     `https://graph.instagram.com/me?${new URLSearchParams({
-      fields: "user_id,username,name,profile_picture_url,followers_count,media_count,account_type",
+      fields: "id,user_id,username,name,profile_picture_url,followers_count,media_count,account_type",
       access_token: token,
     })}`,
   );

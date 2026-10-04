@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { requestOrigin } from "@/lib/instagram/store";
 
 // A one-time link for the client to connect their own Instagram (phase54),
 // so they never share their password. An Owner or Admin makes it, through
@@ -20,5 +21,5 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
     expires_at: new Date(Date.now() + 7 * 24 * 3600_000).toISOString(),
   });
   if (error) return NextResponse.json({ error: "Only Owners and Admins can send a connect link" }, { status: 403 });
-  return NextResponse.json({ url: `${new URL(request.url).origin}/connect/instagram/${token}` });
+  return NextResponse.json({ url: `${requestOrigin(request)}/connect/instagram/${token}` });
 }

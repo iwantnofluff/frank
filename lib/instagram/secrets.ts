@@ -63,3 +63,24 @@ export function verifyState(value: string | null, raw?: string, now = Date.now()
     return null;
   }
 }
+
+// Meta's signed request (deauthorize and data deletion callbacks):
+// "signature.payload", both base64url, the signature HMAC-SHA256 of the
+// payload with the app secret. Returns the payload only if it checks out.
+export function parseSignedRequest(
+  signed: string | null,
+  appSecret = process.env.INSTAGRAM_APP_SECRET,
+): { user_id?: string; algorithm?: string; issued_at?: number } | null {
+  if (!signed || !appSecret) return null;
+  const [sig, payload] = signed.split(".");
+  if (!sig || !payload) return null;
+  const expected = createHmac("sha256", appSecret).update(payload).digest();
+  const given = Buffer.from(sig, "base64url");
+  if (expected.length !== given.length || !timingSafeEqual(expected, given)) return null;
+  try {
+    const data = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+    return data.algorithm && String(data.algorithm).toUpperCase() !== "HMAC-SHA256" ? null : data;
+  } catch {
+    return null;
+  }
+}

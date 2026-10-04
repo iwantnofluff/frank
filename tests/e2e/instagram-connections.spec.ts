@@ -176,3 +176,42 @@ test("a review link offers Feed only with a working connection, and never shows 
     await ctx.close();
   }
 });
+
+// Meta's callbacks, at the root address, as Meta sends them: a form with a
+// signed_request signed with the app secret.
+function signedRequest(userId: string, secret = process.env.INSTAGRAM_APP_SECRET!) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { createHmac } = require("node:crypto") as typeof import("node:crypto");
+  const payload = Buffer.from(JSON.stringify({ algorithm: "HMAC-SHA256", issued_at: 1, user_id: userId })).toString("base64url");
+  return `${createHmac("sha256", secret).update(payload).digest("base64url")}.${payload}`;
+}
+
+test("Meta's deauthorize and data deletion callbacks remove the account, and need Meta's signature", async ({ page, frank }) => {
+  test.skip(!process.env.INSTAGRAM_APP_SECRET, "needs Frank's Meta app secret");
+  const ROOT = "http://frank.localhost:3000";
+  await seedConnection(frank);
+  // Unsigned (or signed with anything else): refused, nothing removed.
+  const forged = await page.request.post(`${ROOT}/api/connections/instagram/deauthorize`, {
+    form: { signed_request: signedRequest("17841400000000000", "not-the-secret") },
+  });
+  expect(forged.status()).toBe(400);
+  expect((await admin.from("instagram_connections").select("id").eq("client_id", frank.clientId)).data).toHaveLength(1);
+
+  const deauth = await page.request.post(`${ROOT}/api/connections/instagram/deauthorize`, {
+    form: { signed_request: signedRequest("17841400000000000") },
+  });
+  expect(deauth.status()).toBe(200);
+  expect((await admin.from("instagram_connections").select("id").eq("client_id", frank.clientId)).data).toEqual([]);
+
+  // Data deletion: deleted, with a page and code for Meta to show.
+  await seedConnection(frank);
+  const del = await page.request.post(`${ROOT}/api/connections/instagram/data-deletion`, {
+    form: { signed_request: signedRequest("17841400000000000") },
+  });
+  const body = await del.json();
+  expect(body.confirmation_code).toMatch(/^[0-9a-f]{16}$/);
+  expect((await admin.from("instagram_connections").select("id").eq("client_id", frank.clientId)).data).toEqual([]);
+  await page.goto(body.url);
+  await expect(page.getByRole("heading", { name: "Your Instagram data is deleted" })).toBeVisible();
+  await expect(page.getByText(`Confirmation code: ${body.confirmation_code}.`)).toBeVisible();
+});
