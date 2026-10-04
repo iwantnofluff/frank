@@ -2090,3 +2090,9 @@ Decided directly:
 - An Admin's direct delivery change on a project with no posts is refused (42501).
 
 `project-access`, `manage-clients-projects`, `client-profile` and `client-invites`: 16 of 16. Looked at the profile reading and editing, and at the Project Profile with Delivery as text.
+
+## The Project Profile names its client
+
+Direct instruction: the Project Profile's heading reads client then project, e.g. "NuHabit - Social Media Content Planner", like the review page.
+
+**Verified**: looked at the window. `project-access`, `manage-clients-projects` and `client-profile`: 13 of 13.

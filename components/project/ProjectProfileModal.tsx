@@ -84,7 +84,8 @@ export function ProjectProfileModal({
   return (
     <Modal
       hideCloseButton
-      title={project.name}
+      // Client, then project, as the review page reads.
+      title={`${clientName} - ${project.name}`}
       size="lg"
       onClose={onClose}
       footer={
