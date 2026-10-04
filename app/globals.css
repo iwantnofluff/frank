@@ -6182,3 +6182,16 @@ a.profproject:hover .pp-t b {
 .profperson .pp-proj {
   margin-left: 38px;
 }
+.profdl {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 10px 14px;
+  font-size: 14px;
+  margin: 4px 0 0;
+}
+.profdl dt {
+  color: var(--muted);
+}
+.profdl dd {
+  margin: 0;
+}

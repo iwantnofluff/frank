@@ -2070,3 +2070,9 @@ Gaps:
 - **Client Profile:** it lists people with their projects. Changing one person's projects saves straight away, and Invite People opens with the client chosen.
 
 Specs that used the old three-dot menus were moved to the profiles. Looked at both windows on desktop and at phone width (no sideways scroll). Full suite: 156 passed, 6 failed. The client-workspace and dashboard baselines changed only by the new icon, which was confirmed in the diffs before updating them. Three others were timeouts or a failed test-account creation, and passed on rerun. `settings-team.png` is its known flake. `npm run build` clean.
+
+## Only Owners and Admins change a project's details
+
+Decided directly: on the Project Profile, a User sees the delivery, type, due date and description read-only, with Done instead of Cancel and Save. phase47 holds the same line in the database. A trigger refuses any change to a project's name, type, description, delivery or due date unless the person is an Owner or Admin. Users can still move a project to a folder or client, or archive it, as before, because those aren't details. The service role, with no signed-in person, passes, as for other rules that depend on who's calling.
+
+**Verified**: phase47 was rehearsed on staging (rolled back), then applied. In `project-access.spec.ts`, signed in as a real User, the profile shows the details as text, with no fields or Save. A direct rename through their own session is refused (42501), while archiving through it still works. Owners and Admins still edit and save (`manage-clients-projects.spec.ts`). 10 of 10 across both files. Looked at the User's window. Typecheck and lint clean; `npm run build` clean.

@@ -13,23 +13,31 @@ import { avatarColour } from "@/lib/avatar-colour";
 import { initials } from "@/lib/initials";
 import { errorMessage } from "@/lib/errors";
 
-const DELIVERY_LABELS = { scheduled: "Content Planner", continuous: "Other Content" } as const;
+const DELIVERY_LABELS = {
+  scheduled: "Content Planner",
+  continuous: "Other Content",
+} as const;
 const STAGES = ["Concept", "Internal Review", "Client Review", "Approved"];
 
 function formatDay(value: string | null) {
   if (!value) return "None yet";
-  return new Date(value).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  return new Date(value).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 // A project at a glance (phase46), opened from its row's expand button: its
-// details to edit, how its posts are getting on, who's on it, and the row's
-// other actions. Name and details save together; people change straight away.
+// details, how its posts are getting on, who's on it, and the row's other
+// actions. Owners and Admins edit the details (saved together) and the
+// people (straight away); a User sees both read-only (phase47).
 export function ProjectProfileModal({
   project,
   clientId,
   clientName,
   stats,
-  canManagePeople,
+  isAdmin,
   onMoveToFolder,
   onMoveToClient,
   onArchive,
@@ -39,8 +47,9 @@ export function ProjectProfileModal({
   clientId: string;
   clientName: string;
   stats: ProjectCreativeStats | undefined;
-  // Owners and Admins (project_access policies).
-  canManagePeople: boolean;
+  // Owners and Admins: they change the details (projects_details_admin_only)
+  // and the people (project_access policies).
+  isAdmin: boolean;
   onMoveToFolder: () => void;
   onMoveToClient: () => void;
   onArchive: () => void;
@@ -97,78 +106,116 @@ export function ProjectProfileModal({
             {project.archived_at ? "Unarchive" : "Archive"}
           </button>
           <span className="grow" />
-          <button type="button" className="btn" onClick={onClose}>
-            Cancel
-          </button>
-          <button type="button" className="btn primary" disabled={updateProject.isPending} onClick={() => save().catch(() => {})}>
-            {updateProject.isPending ? "Saving…" : "Save"}
-          </button>
+          {isAdmin ? (
+            <>
+              <button type="button" className="btn" onClick={onClose}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn primary"
+                disabled={updateProject.isPending}
+                onClick={() => save().catch(() => {})}
+              >
+                {updateProject.isPending ? "Saving…" : "Save"}
+              </button>
+            </>
+          ) : (
+            <button type="button" className="btn primary" onClick={onClose}>
+              Done
+            </button>
+          )}
         </>
       }
     >
       <div className="profgrid">
         <div>
           <div className="msection-h">Details</div>
-          <p className="msection-d">What this project is and when it&rsquo;s due.</p>
-          <div className="field">
-            <label htmlFor="ppName">Project name</label>
-            <input
-              id="ppName"
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                if (nameError) setNameError(null);
-              }}
-            />
-            {nameError && <p className="autherr">{nameError}</p>}
-          </div>
-          <div className="frow">
-            <div className="field">
-              <label htmlFor="ppDelivery">Delivery</label>
-              <select
-                id="ppDelivery"
-                value={delivery}
-                disabled={hasPosts}
-                onChange={(e) => changeDelivery(e.target.value as "scheduled" | "continuous")}
-              >
-                <option value="scheduled">{DELIVERY_LABELS.scheduled}</option>
-                <option value="continuous">{DELIVERY_LABELS.continuous}</option>
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="ppType">Type</label>
-              <select id="ppType" value={type} onChange={(e) => setType(e.target.value)}>
-                {!type && <option value="">—</option>}
-                {keepsUnlistedType && <option value={project.type!}>{project.type}</option>}
-                {options.map((o) => (
-                  <option key={o} value={o}>
-                    {o}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          {hasPosts && <p className="msection-d" style={{ marginTop: -4 }}>Delivery can&rsquo;t change once a project has posts.</p>}
-          <div className="field">
-            <label htmlFor="ppDue">
-              Due date <span className="hint">optional</span>
-            </label>
-            <input id="ppDue" type="date" value={dueOn} onChange={(e) => setDueOn(e.target.value)} />
-          </div>
-          <div className="field">
-            <label htmlFor="ppDesc">
-              Description <span className="hint">optional, {description.length}/1000</span>
-            </label>
-            <textarea
-              id="ppDesc"
-              rows={4}
-              maxLength={1000}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="What this project covers, and anything the team should know"
-            />
-          </div>
-          {updateProject.error && <p className="autherr">{errorMessage(updateProject.error, "Couldn't save the project")}</p>}
+          <p className="msection-d">
+            {isAdmin
+              ? "What this project is and when it’s due."
+              : "What this project is and when it’s due. Owners and Admins change these."}
+          </p>
+          {isAdmin ? (
+            <>
+              <div className="field">
+                <label htmlFor="ppName">Project name</label>
+                <input
+                  id="ppName"
+                  value={name}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    if (nameError) setNameError(null);
+                  }}
+                />
+                {nameError && <p className="autherr">{nameError}</p>}
+              </div>
+              <div className="frow">
+                <div className="field">
+                  <label htmlFor="ppDelivery">Delivery</label>
+                  <select
+                    id="ppDelivery"
+                    value={delivery}
+                    disabled={hasPosts}
+                    onChange={(e) => changeDelivery(e.target.value as "scheduled" | "continuous")}
+                  >
+                    <option value="scheduled">{DELIVERY_LABELS.scheduled}</option>
+                    <option value="continuous">{DELIVERY_LABELS.continuous}</option>
+                  </select>
+                </div>
+                <div className="field">
+                  <label htmlFor="ppType">Type</label>
+                  <select id="ppType" value={type} onChange={(e) => setType(e.target.value)}>
+                    {!type && <option value="">—</option>}
+                    {keepsUnlistedType && <option value={project.type!}>{project.type}</option>}
+                    {options.map((o) => (
+                      <option key={o} value={o}>
+                        {o}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              {hasPosts && (
+                <p className="msection-d" style={{ marginTop: -4 }}>
+                  Delivery can&rsquo;t change once a project has posts.
+                </p>
+              )}
+              <div className="field">
+                <label htmlFor="ppDue">
+                  Due date <span className="hint">optional</span>
+                </label>
+                <input id="ppDue" type="date" value={dueOn} onChange={(e) => setDueOn(e.target.value)} />
+              </div>
+              <div className="field">
+                <label htmlFor="ppDesc">
+                  Description <span className="hint">optional, {description.length}/1000</span>
+                </label>
+                <textarea
+                  id="ppDesc"
+                  rows={4}
+                  maxLength={1000}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="What this project covers, and anything the team should know"
+                />
+              </div>
+              {updateProject.error && (
+                <p className="autherr">{errorMessage(updateProject.error, "Couldn't save the project")}</p>
+              )}
+            </>
+          ) : (
+            <dl className="profdl">
+              <dt>Delivery</dt>
+              <dd>{DELIVERY_LABELS[project.delivery]}</dd>
+              <dt>Type</dt>
+              <dd>{project.type || "—"}</dd>
+              <dt>Due date</dt>
+              <dd>{project.due_on ? formatDay(`${project.due_on}T00:00`) : "None set"}</dd>
+              <dt>Description</dt>
+              <dd className="profdesc">{project.description || "No description yet."}</dd>
+            </dl>
+          )}
         </div>
 
         <div>
@@ -186,7 +233,7 @@ export function ProjectProfileModal({
             Latest approval: <b>{formatDay(stats?.latestApprovedAt ?? null)}</b>
           </p>
 
-          <ProjectPeople projectId={project.id} clientId={clientId} clientName={clientName} canManage={canManagePeople} />
+          <ProjectPeople projectId={project.id} clientId={clientId} clientName={clientName} canManage={isAdmin} />
         </div>
       </div>
     </Modal>
@@ -231,7 +278,12 @@ function ProjectPeople({
                 <div className="profperson" key={p.membershipId}>
                   <PersonAvatar
                     className="who"
-                    style={{ width: 28, height: 28, fontSize: 11, background: avatarColour(p.name) }}
+                    style={{
+                      width: 28,
+                      height: 28,
+                      fontSize: 11,
+                      background: avatarColour(p.name),
+                    }}
                     initials={initials(p.name, p.email)}
                     photoUrl={p.avatarAssetId ? photos?.[p.avatarAssetId] : null}
                   />
@@ -246,7 +298,14 @@ function ProjectPeople({
                     className="brx"
                     title={`Take ${p.name} off this project`}
                     disabled={setAccess.isPending}
-                    onClick={() => setAccess.mutate({ membershipId: p.membershipId, projectId, clientId, on: false })}
+                    onClick={() =>
+                      setAccess.mutate({
+                        membershipId: p.membershipId,
+                        projectId,
+                        clientId,
+                        on: false,
+                      })
+                    }
                   >
                     <svg viewBox="0 0 24 24">
                       <path d="M18 6L6 18M6 6l12 12" />
@@ -261,7 +320,13 @@ function ProjectPeople({
                 value=""
                 disabled={setAccess.isPending}
                 onChange={(e) => {
-                  if (e.target.value) setAccess.mutate({ membershipId: e.target.value, projectId, clientId, on: true });
+                  if (e.target.value)
+                    setAccess.mutate({
+                      membershipId: e.target.value,
+                      projectId,
+                      clientId,
+                      on: true,
+                    });
                 }}
               >
                 <option value="">+ Add someone from {clientName}</option>
@@ -276,7 +341,9 @@ function ProjectPeople({
                 <p className="msection-d">Invite Users or Clients to {clientName} from Edit Client to add them here.</p>
               )
             )}
-            {setAccess.error && <p className="autherr">{errorMessage(setAccess.error, "Couldn't change who's on this project")}</p>}
+            {setAccess.error && (
+              <p className="autherr">{errorMessage(setAccess.error, "Couldn't change who's on this project")}</p>
+            )}
           </>
         ))}
     </>

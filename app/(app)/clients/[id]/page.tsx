@@ -100,10 +100,11 @@ export default function ClientWorkspacePage({
   // Fails closed like every other isStaff gate in this app: hidden while
   // still resolving, not shown by default.
   const confirmedStaff = isStaff && !isStaffPending;
-  // Owners and Admins choose who's on each project (phase46).
+  // Owners and Admins change a project's details and who's on it
+  // (phase46, phase47).
   const { data: agency } = useMyAgency();
   const { data: me } = useMyMembership(agency?.agencyId);
-  const canManagePeople = !!me && !me.client_id && seesAllClients(me.role);
+  const isAdmin = !!me && !me.client_id && seesAllClients(me.role);
   const isLoading = clientLoading || projectsLoading;
 
   // useProjects now returns archived projects too (so they can be seen and
@@ -425,7 +426,7 @@ export default function ClientWorkspacePage({
           clientId={id}
           clientName={client?.name ?? "this client"}
           stats={projectStats?.[profileTarget.id]}
-          canManagePeople={canManagePeople}
+          isAdmin={isAdmin}
           onMoveToFolder={() => {
             setMoveTarget(profileTarget);
             setProfileTarget(null);

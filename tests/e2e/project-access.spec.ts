@@ -138,14 +138,30 @@ test("an Owner takes a User off a project from its profile, and the User no long
     await up.goto(`${APP_URL}/clients/${frank.clientId}`);
     await expect(up.locator(".crow", { hasText: "E2E Continuous Project" })).toBeVisible();
     await expect(up.locator(".crow", { hasText: "E2E Test Project" })).toHaveCount(0);
-    // A User can open a profile and edit details, but not choose people.
+    // A User sees a profile read-only (phase47): no fields, no Save, no people.
     await up.getByRole("button", { name: /^Open E2E Continuous Project/ }).click();
     const theirs = up.getByRole("dialog", { name: /E2E Continuous Project/ });
+    await expect(theirs).toContainText("Owners and Admins change these.");
+    await expect(theirs.locator(".profdl")).toContainText("Other Content");
+    await up.screenshot({ path: `${process.env.SHOT_DIR ?? "test-results"}/project-profile-user.png`, animations: "disabled" });
+    await expect(theirs.getByRole("textbox")).toHaveCount(0);
+    await expect(theirs.getByRole("button", { name: "Save" })).toHaveCount(0);
     await expect(theirs).toContainText("Owners and Admins choose who's on this project.");
     await expect(theirs.locator(".profperson")).toHaveCount(0);
   } finally {
     await ctx.close();
   }
+
+  // Nor straight at the database; archiving, not a detail, still works.
+  const c = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    auth: { persistSession: false },
+  });
+  await c.auth.signInWithPassword({ email: user.email, password: user.password });
+  const renamed = await c.from("projects").update({ name: "Renamed By User" }).eq("id", second).select("id");
+  expect(renamed.error?.code).toBe("42501");
+  const archived = await c.from("projects").update({ archived_at: new Date().toISOString() }).eq("id", second).select("id");
+  expect(archived.data).toHaveLength(1);
+  await admin.from("projects").update({ archived_at: null }).eq("id", second);
 
   // Back on.
   await modal.getByLabel("Add someone to this project").selectOption({ label: "Proj User (User)" });
