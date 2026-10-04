@@ -4,8 +4,6 @@ import { useRef, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { useCreateClient } from "@/hooks/use-create-client";
 import { useUpdateClient } from "@/hooks/use-update-client";
-import { useClientContacts } from "@/hooks/use-client-contacts";
-import { useSetClientContacts } from "@/hooks/use-set-client-contacts";
 import { useSaveClientLogo } from "@/hooks/use-client-logo";
 import { useAvatarUrls } from "@/hooks/use-avatar-urls";
 import { useMyAgency } from "@/hooks/use-my-agency";
@@ -24,11 +22,6 @@ function RemoveIcon() {
       <path d="M18 6L6 18M6 6l12 12" />
     </svg>
   );
-}
-
-interface ContactDraft {
-  name: string;
-  email: string;
 }
 
 // Someone to invite to this client (phase44).
@@ -80,7 +73,6 @@ export function ClientModal(props: ClientModalProps) {
   const isCreate = props.mode === "create";
   const createClient = useCreateClient();
   const updateClient = useUpdateClient();
-  const setContacts = useSetClientContacts();
   const saveLogo = useSaveClientLogo();
   const currentLogoId = isCreate ? null : props.currentLogoAssetId;
   const { data: logoUrls } = useAvatarUrls([currentLogoId]);
@@ -114,24 +106,11 @@ export function ClientModal(props: ClientModalProps) {
     setLogoPreview(null);
     setLogoRemoved(true);
   }
-  const { data: existingContacts } = useClientContacts(isCreate ? undefined : props.clientId);
 
   const [name, setName] = useState(isCreate ? "" : props.currentName);
   const [industry, setIndustry] = useState(isCreate ? "" : (props.currentIndustry ?? ""));
   const [description, setDescription] = useState(isCreate ? "" : (props.currentDescription ?? ""));
-  const [contacts, setContactsDraft] = useState<ContactDraft[]>([]);
   const [nameError, setNameError] = useState<string | null>(null);
-  const [seededContacts, setSeededContacts] = useState(false);
-
-  // Pre-fills once the edit modal's own current contacts arrive. Adjusting
-  // state directly during render (not inside an effect) — React's own
-  // documented pattern for "seed local state from a query result the first
-  // time it appears" — guarded so it only ever fires once per modal
-  // instance, which never outlives one open/close.
-  if (!isCreate && existingContacts && !seededContacts) {
-    setSeededContacts(true);
-    setContactsDraft(existingContacts.map((c) => ({ name: c.name, email: c.email })));
-  }
 
   function updateInvite(i: number, patch: Partial<InviteDraft>) {
     setInvites((prev) => prev.map((v, j) => (j === i ? { ...v, ...patch } : v)));
@@ -167,10 +146,6 @@ export function ClientModal(props: ClientModalProps) {
     return true;
   }
 
-  function updateContact(i: number, patch: Partial<ContactDraft>) {
-    setContactsDraft((prev) => prev.map((c, j) => (j === i ? { ...c, ...patch } : c)));
-  }
-
   async function handleSubmit() {
     if (!name.trim()) {
       setNameError("Give the client a name.");
@@ -192,9 +167,6 @@ export function ClientModal(props: ClientModalProps) {
         description,
       });
       savedClientId = created.id;
-      if (contacts.some((c) => c.name.trim() && c.email.trim())) {
-        await setContacts.mutateAsync({ clientId: created.id, agencyId: props.agencyId, contacts });
-      }
       if (logoFile) {
         await saveLogo.mutateAsync({ agencyId: props.agencyId, clientId: created.id, file: logoFile });
       }
@@ -205,7 +177,6 @@ export function ClientModal(props: ClientModalProps) {
         industry: industry.trim(),
         description,
       });
-      await setContacts.mutateAsync({ clientId: props.clientId, agencyId: props.agencyId, contacts });
       if (logoFile) {
         await saveLogo.mutateAsync({ agencyId: props.agencyId, clientId: props.clientId, file: logoFile });
       } else if (logoRemoved && currentLogoId) {
@@ -220,18 +191,15 @@ export function ClientModal(props: ClientModalProps) {
   const isPending =
     createClient.isPending ||
     updateClient.isPending ||
-    setContacts.isPending ||
     saveLogo.isPending ||
     inviteMember.isPending;
   const submitError = createClient.error
     ? errorMessage(createClient.error, "Couldn't create the client")
     : updateClient.error
       ? errorMessage(updateClient.error, "Couldn't save the client")
-      : setContacts.error
-        ? errorMessage(setContacts.error, "Couldn't save the Client Team list")
-        : saveLogo.error
-          ? errorMessage(saveLogo.error, "Couldn't save the client's image")
-          : null;
+      : saveLogo.error
+        ? errorMessage(saveLogo.error, "Couldn't save the client's image")
+        : null;
 
   if (sent) {
     return (
@@ -364,50 +332,6 @@ export function ClientModal(props: ClientModalProps) {
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Who they are and what we do for them"
         />
-      </div>
-
-      <div className="field">
-        <label>
-          Client Team <span className="hint">optional</span>
-        </label>
-        <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 8 }}>
-          People at this client who review and approve work. They&rsquo;ll pick their own name from
-          this list when commenting or approving on a shared link.
-        </div>
-        {contacts.map((c, i) => (
-          <div className="brow" key={i}>
-            <div className="brow-h">
-              <div className="frow" style={{ flex: 1 }}>
-                <input
-                  value={c.name}
-                  onChange={(e) => updateContact(i, { name: e.target.value })}
-                  placeholder="Name"
-                />
-                <input
-                  value={c.email}
-                  onChange={(e) => updateContact(i, { email: e.target.value })}
-                  placeholder="Email"
-                  type="email"
-                />
-              </div>
-              <button
-                type="button"
-                className="brx"
-                title="Remove"
-                onClick={() => setContactsDraft((prev) => prev.filter((_, j) => j !== i))}
-              >
-                <RemoveIcon />
-              </button>
-            </div>
-          </div>
-        ))}
-        <button
-          type="button"
-          className="badd"
-          onClick={() => setContactsDraft((prev) => [...prev, { name: "", email: "" }])}
-        >
-          + Add person
-        </button>
       </div>
 
       {inviteRoles.length > 0 && (

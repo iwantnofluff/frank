@@ -173,3 +173,45 @@ test("an Owner lets an Admin invite: Admins, Users and Clients, never an Owner â
   await expect(page.getByRole("status")).toHaveText("Second Admin can no longer invite people");
   expect((await admin.from("memberships").select("can_invite").eq("id", second.membershipId).single()).data!.can_invite).toBe(false);
 });
+
+// The Client Team list went from the client form (phase45): the people
+// invited as Client are who a review link offers, kept in step by the
+// database, and names already on the list stay.
+test("people invited as Client are who a review link offers, and drop off when removed", async ({ page, browser, frank }) => {
+  test.setTimeout(90_000);
+  await frank.createClientContact("Already Listed", "listed@example.com");
+  await setStaffRole(frank, "owner");
+  await frank.loginAsStaff(page);
+  const email = `e2e-reviewer-${Date.now()}@example.invalid`;
+  const res = await page.request.post(`${APP_URL}/api/team/invite`, {
+    data: { agencyId: frank.agencyId, email, firstName: "rita", lastName: "reviewer", role: "client", clientIds: [frank.clientId] },
+  });
+  expect(res.status()).toBe(201);
+
+  const token = await frank.createSharedLink();
+  const ctx = await browser.newContext();
+  try {
+    const guest = await ctx.newPage();
+    await guest.goto(`${APP_URL}/review/${token}`);
+    await guest.waitForSelector(".m-top");
+    // Invited, not yet accepted: already there, by the name they were given.
+    await expect(guest.locator("select").first().locator("option")).toHaveText([
+      "Who are you?",
+      "Already Listed",
+      "Rita Reviewer",
+      "Someone else",
+    ]);
+
+    // Removed: off the list.
+    await admin
+      .from("memberships")
+      .update({ removed_at: new Date().toISOString() })
+      .eq("agency_id", frank.agencyId)
+      .eq("user_id", await userIdOf(email));
+    await guest.reload();
+    await guest.waitForSelector(".m-top");
+    await expect(guest.locator("select").first().locator("option")).toHaveText(["Who are you?", "Already Listed", "Someone else"]);
+  } finally {
+    await ctx.close();
+  }
+});

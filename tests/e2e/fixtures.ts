@@ -146,6 +146,10 @@ export const test = base.extend<{ frank: Frank }>({
       { agency_id: agency.id, user_id: staffAuth.user.id, role: "admin" },
       { agency_id: agency.id, user_id: clientAuth.user.id, client_id: client.id, role: "user" },
     ]);
+    // A Client membership puts its person on the client's review-link list
+    // (phase45). Specs start with that list empty, as they always have, and
+    // add to it on purpose (createClientContact) or by inviting a Client.
+    await admin.from("client_contacts").delete().eq("client_id", client.id);
 
     const { data: project, error: projectError } = await admin
       .from("projects")

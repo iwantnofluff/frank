@@ -32,7 +32,7 @@ test("rename and archive/unarchive a client from the dashboard", async ({ page, 
   await expect(page.locator(".crow", { hasText: "E2E Renamed Client" })).toBeVisible();
 });
 
-test("New Client and Edit Client share the same modal, including industry and Client Team", async ({
+test("New Client and Edit Client share the same modal, including industry; no separate Client Team list", async ({
   page,
   frank,
 }) => {
@@ -41,33 +41,22 @@ test("New Client and Edit Client share the same modal, including industry and Cl
   await page.waitForSelector(".crow:not(.head)");
 
   await page.click('button:has-text("New Client")');
-  await page.fill("#cName", "Client Team Modal E2E");
+  // The Client Team list went (phase45): inviting someone as Client covers it.
+  await expect(page.getByText("Client Team")).toHaveCount(0);
+  await page.fill("#cName", "Client Modal E2E");
   await page.fill("#cInd", "D2C beauty");
-  await page.click('button:has-text("+ Add person")');
-  await page.fill('.brow input[placeholder="Name"]', "Jonathan Lead");
-  await page.fill('.brow input[placeholder="Email"]', "jonathan@example.com");
   await page.click('button:has-text("Create Client")');
   await expect(page.locator(".scrim")).toHaveCount(0);
-  await expect(page.locator(".crow", { hasText: "Client Team Modal E2E" })).toBeVisible();
+  await expect(page.locator(".crow", { hasText: "Client Modal E2E" })).toBeVisible();
 
-  const row = page.locator(".crow", { hasText: "Client Team Modal E2E" });
+  const row = page.locator(".crow", { hasText: "Client Modal E2E" });
   await row.locator(".vdots").click();
   await page.click('.colpop button:has-text("Edit")');
-  await expect(page.locator('input[value="Client Team Modal E2E"]')).toBeVisible();
+  await expect(page.locator('input[value="Client Modal E2E"]')).toBeVisible();
   await expect(page.locator("#cInd")).toHaveValue("D2C beauty");
-  await expect(page.locator('.brow input[placeholder="Name"]')).toHaveValue("Jonathan Lead");
-  await expect(page.locator('.brow input[placeholder="Email"]')).toHaveValue("jonathan@example.com");
-
-  await page.click('button:has-text("+ Add person")');
-  await page.locator('.brow input[placeholder="Name"]').nth(1).fill("Priya Client");
-  await page.locator('.brow input[placeholder="Email"]').nth(1).fill("priya@example.com");
+  await page.fill("#cInd", "Skincare");
   await page.click('button:has-text("Save")');
   await expect(page.locator(".scrim")).toHaveCount(0);
-
-  await row.locator(".vdots").click();
-  await page.click('.colpop button:has-text("Edit")');
-  await expect(page.locator('.brow input[placeholder="Name"]')).toHaveCount(2);
-  await expect(page.locator('.brow input[placeholder="Name"]').nth(1)).toHaveValue("Priya Client");
 });
 
 test("edit (name and type) and archive/unarchive a project from the client workspace", async ({

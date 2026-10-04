@@ -2039,3 +2039,13 @@ Full suite (the first run against staging's database, which is in Tokyo, so furt
 - **`settings-team.png`:** its masked-email flake.
 
 Full runs against staging are slower and more prone to timeouts than they were against live; fewer workers may be worth it. `npm run build` clean.
+
+## One list of a client's reviewers
+
+Direct instruction: the New Client form's "Client Team" list goes, because inviting someone as Client covers it. A review link still offers names to pick from ("Who are you?", with "Someone else" to type), and that list is now the people invited as Client. phase45 keeps `client_contacts` in step from Client memberships: added when invited (so they can pick their name before accepting), renamed when they accept, dropped when removed. Existing Clients were added once, and names already on the list stay. `get_shared_review` is unchanged. The client form's contact hooks were deleted.
+
+The e2e fixture's own Client person is taken off the list at setup, so specs start with it empty as before, and add names on purpose.
+
+**Verified**: phase45 was rehearsed on staging (rolled back), then applied. New spec: someone invited as Client appears on the review link by the name they were given, beside a name already listed, and drops off once removed. The client form test now checks there's no Client Team section and that Edit keeps the industry. `shared-review-public.spec.ts` and `client-invites.spec.ts`: 9/9, with the screenshots unchanged.
+
+A DNS outage on the Mac mid-run failed a batch at once (`ENOTFOUND` for the staging host). Once it was back, running with 2 workers passed everything; full runs against staging may want fewer workers.
