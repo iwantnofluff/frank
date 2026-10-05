@@ -2318,6 +2318,11 @@ body.lightrail .avatar {
   overflow-y: auto;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  /* Rows as tall as their tiles: with more than 3 rows, auto rows were
+     squeezed to fit the fixed height (5 rows of 102px under 171px tiles),
+     so the tiles overlapped and read as short and landscape. Scroll
+     instead. */
+  grid-auto-rows: max-content;
   /* Without this, a fixed container height taller than the actual content
      (fewer than 9 posts) lets the browser's default grid alignment spread
      the leftover space as extra row-gap between existing rows instead of
@@ -4005,6 +4010,11 @@ textarea.cxin {
   overflow-y: auto;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  /* Rows as tall as their tiles: with more than 3 rows, auto rows were
+     squeezed to fit the fixed height (5 rows of 102px under 171px tiles),
+     so the tiles overlapped and read as short and landscape. Scroll
+     instead. */
+  grid-auto-rows: max-content;
   /* See .feedgrid's own comment — same fixed-height-taller-than-content
      row-gap bug, same fix. */
   align-content: start;

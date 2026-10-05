@@ -2277,3 +2277,7 @@ The remaining cause was the app secret: Frank had the Facebook app's secret (App
 Direct instruction, after seeing nofluff.in's real posts in the Feed Preview: the tiles were cut and uneven. The real posts' images weren't pinned to their tile, so they sized themselves shorter than the planned ones, and every tile was 4:5, while Instagram's profile grid is now 3:4 portrait. Every tile (planned, real, and the empty placeholders) is now 3:4 in 3 columns, with each image filling its tile. The grid's fixed height is 516px (three rows of 128 × 171px tiles). The share window's picker grid, which matches the Feed Preview, changed the same way, as did the review link's Feed view.
 
 **Verified**: measured in a throwaway spec: all 9 tiles 128 × 171 in 3 columns. Looked at the grid. `instagram-connections`, `shared-review-public` and `creative-review` specs pass. To see on live with nofluff.in's real posts.
+
+Follow-up, seen on live with nofluff.in's 12 posts plus the planned one: the tiles were 3:4, but the grid squeezed its rows to fit its fixed height. With 5 rows it made each 102px under 171px tiles, so they overlapped and read as short and landscape. The earlier check had only 3 rows, which fit. Rows are now as tall as their tiles (`grid-auto-rows: max-content`), and the grid scrolls; the same applies to the share window's picker grid.
+
+**Verified** with 13 tiles: every tile 128 × 171, every row 171px, and no overlap when scrolled (looked at). `npm run build` clean.
