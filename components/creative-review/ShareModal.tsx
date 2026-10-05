@@ -35,7 +35,7 @@ const SCOPE_OPTIONS: {
 // instruction — reuses the identical FeedTileArt card (real artwork, or a
 // plain "No Creative" label when a post exists with nothing uploaded)
 // rather than this modal's own previous, visually different gradient tile
-// (hover-only title, no date, per-format aspect ratio). Fixed 4:5 for
+// (hover-only title, no date, per-format aspect ratio). Fixed 3:4 for
 // every tile now, matching Feed Preview exactly, not the creative's own
 // format — a deliberate loss of the per-format-accurate shape in exchange
 // for looking like the same grid.

@@ -2310,10 +2310,11 @@ body.lightrail .avatar {
 .feedgrid {
   /* Always exactly 9 posts' worth of height (3 rows), regardless of how
      many actually exist — 390px card minus its 1px border each side minus
-     2 column-gaps, /3 = 128px tile width; *5/4 for the 4:5 ratio = 160px
-     tile height; *3 rows + 2 row-gaps = 484px. Scrolls for more than 9,
+     2 column-gaps, /3 = 128px tile width; *4/3 for Instagram's 3:4 profile
+     grid (direct instruction: portrait, like the real profile) ≈ 171px
+     tile height; *3 rows + 2 row-gaps = 516px. Scrolls for more than 9,
      leaves blank space below for fewer. */
-  height: 484px;
+  height: 516px;
   overflow-y: auto;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -2327,7 +2328,7 @@ body.lightrail .avatar {
 }
 .feedgrid-tile {
   position: relative;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 3 / 4;
   overflow: hidden;
   border-radius: 0;
 }
@@ -2397,7 +2398,7 @@ body.lightrail .avatar {
 .feedgrid-tile-empty,
 .pktile-empty {
   position: relative;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 3 / 4;
   overflow: hidden;
   border-radius: 0;
   cursor: default;
@@ -3999,8 +4000,8 @@ textarea.cxin {
 }
 .pkgrid {
   /* Same fixed 9-post (3-row) height as .feedgrid, and for the same
-     reason — see its own comment for the 484px math. */
-  height: 484px;
+     reason — see its own comment for the 516px math (3:4 tiles). */
+  height: 516px;
   overflow-y: auto;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -4011,7 +4012,7 @@ textarea.cxin {
 }
 .pktile {
   position: relative;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 3 / 4;
   border-radius: 0;
   overflow: hidden;
   border: 2px solid transparent;
@@ -6433,7 +6434,11 @@ a.profproject:hover .pp-t b {
   display: block;
   overflow: hidden;
 }
-.feedgrid-live img {
+/* Pinned to the tile, so every image fills the same 3:4 shape. */
+.feedgrid-live img,
+.sharedfeed-planned img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -6459,12 +6464,7 @@ a.profproject:hover .pp-t b {
   display: block;
   background: var(--canvas);
 }
-.sharedfeed-planned img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
+
 .sharedfeed-name {
   position: absolute;
   inset: 0;

@@ -2271,3 +2271,9 @@ Follow-up after a second staging try, which failed the same way although Frank n
 The remaining cause was the app secret: Frank had the Facebook app's secret (App settings → Basic), not the Instagram app's (API setup with Instagram login). Instagram answered with its misleading "redirect_uri is identical…" message. Checked without revealing it: Facebook issued an app token with Frank's secret, which only its own app's secret allows. With the Instagram app secret in both env files and Vercel, and live and staging redeployed, No Fluff connected on live as @nofluff.in (1,615 followers, connected by Raj Rana). App domains (`beingfrank.app`, `staging.beingfrank.app`) were added in Meta's Basic settings for App Review.
 
 **Verified** on live, read-only: the token is stored encrypted (expires 4 Dec 2026, renewed automatically before then), both of the account's IDs are kept, and Frank reads its latest 12 posts, each with an image for the grid.
+
+## Feed tiles in 3:4, like Instagram's profile grid
+
+Direct instruction, after seeing nofluff.in's real posts in the Feed Preview: the tiles were cut and uneven. The real posts' images weren't pinned to their tile, so they sized themselves shorter than the planned ones, and every tile was 4:5, while Instagram's profile grid is now 3:4 portrait. Every tile (planned, real, and the empty placeholders) is now 3:4 in 3 columns, with each image filling its tile. The grid's fixed height is 516px (three rows of 128 × 171px tiles). The share window's picker grid, which matches the Feed Preview, changed the same way, as did the review link's Feed view.
+
+**Verified**: measured in a throwaway spec: all 9 tiles 128 × 171 in 3 columns. Looked at the grid. `instagram-connections`, `shared-review-public` and `creative-review` specs pass. To see on live with nofluff.in's real posts.
