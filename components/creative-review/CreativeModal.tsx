@@ -3,7 +3,6 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { ListEditor } from "@/components/ui/ListEditor";
 import { DateTimePicker } from "@/components/ui/DateTimePicker";
 import { CxCell } from "@/components/project/CxCell";
 import type { CreativeRow } from "@/hooks/use-creative";
@@ -18,7 +17,6 @@ import { useTeamMembers } from "@/hooks/use-team-members";
 import { useMyAgency } from "@/hooks/use-my-agency";
 import { useCustomColumns } from "@/hooks/use-custom-columns";
 import {
-  useUploadCreativeVersion,
   useUploadCarouselVersion,
   type SlideSource,
   type UploadProgress,
@@ -32,7 +30,6 @@ import { useDeletePostVersion } from "@/hooks/use-delete-post-version";
 import { useClearArtwork } from "@/hooks/use-clear-artwork";
 import { artworkChangeReasons } from "@/lib/format-change";
 import { useComments } from "@/hooks/use-comments";
-import { useAssetSignedUrl } from "@/hooks/use-asset-signed-url";
 import { useAgencyAiSettings } from "@/hooks/use-agency-ai-settings";
 import { useAgencyKnowledge } from "@/hooks/use-agency-knowledge";
 import { useKnowledgeEntries } from "@/hooks/use-knowledge-entries";
@@ -50,7 +47,6 @@ import {
 } from "@/lib/formats";
 import { slideFields, tidySlideText } from "@/lib/slide-text";
 import { FormatPicker } from "./FormatPicker";
-import { validateUploadFile, ACCEPTED_FILE_EXTENSIONS } from "@/lib/upload-validation";
 import {
   applySlideDraft,
   isSlideField,
@@ -371,41 +367,6 @@ function CheckSection({
   );
 }
 
-// A historical creative version — read only, no rework action. Unlike a
-// copy version there's no text to copy into a new draft; the only way to
-// supersede a file is to upload a genuinely new one (the latest tab's own
-// drop zone), so this just lets the agency look at or download what was
-// there before.
-function CreativeVersionPreview({ version }: { version: CreativeVersionRow }) {
-  const { data: signedUrl, isLoading } = useAssetSignedUrl(version.asset?.storage_key);
-  const isImage = version.asset?.mime_type.startsWith("image/");
-  const isVideo = version.asset?.mime_type.startsWith("video/");
-
-  return (
-    <div className="drop has-file" style={{ cursor: "default" }}>
-      {isLoading && <p className="sub">Loading…</p>}
-      {!isLoading && signedUrl && isImage && (
-        <img src={signedUrl} alt={version.asset?.filename ?? ""} style={{ maxWidth: "100%", borderRadius: "var(--r)" }} />
-      )}
-      {!isLoading && signedUrl && isVideo && (
-        <video src={signedUrl} controls style={{ maxWidth: "100%", borderRadius: "var(--r)" }} />
-      )}
-      <b>{version.asset?.filename ?? "No file"}</b>
-      <span>
-        Uploaded {new Date(version.created_at).toLocaleDateString()}
-        {signedUrl && (
-          <>
-            {" "}
-            ·{" "}
-            <a href={signedUrl} target="_blank" rel="noreferrer">
-              Open
-            </a>
-          </>
-        )}
-      </span>
-    </div>
-  );
-}
 
 // <input type="date">/<input type="time"> need "YYYY-MM-DD"/"HH:MM" in the
 // browser's own local time, not the ISO string's UTC digits — reading the
@@ -642,7 +603,6 @@ export function CreativeModal(props: CreativeModalProps) {
     }
     setFormatWarning(null);
     setViewingCreativeVersionNo(0);
-    setFile(null);
     await handleSaveBrief({ artworkCleared: true });
   }
 
@@ -663,12 +623,9 @@ export function CreativeModal(props: CreativeModalProps) {
   const briefPopulated = !!creativeId;
   const uploadPopulated = latestCreativeVersionNo > 0 || !!latestCopyVersion;
 
-  const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [copySaveNote, setCopySaveNote] = useState<string | null>(null);
   const [creativeSaveNote, setCreativeSaveNote] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [dragActive, setDragActive] = useState(false);
 
   // The editable draft always builds on the latest copy version.
   const [draftFields, setDraftFields] = useState<Record<string, string>>(latestCopyVersion?.fields ?? {});
@@ -724,7 +681,6 @@ export function CreativeModal(props: CreativeModalProps) {
   // Where a save has got to (compressing a video, uploading), shown by the
   // uploader under the artwork.
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
-  const uploadCreative = useUploadCreativeVersion(creativeId ?? "", agencyId ?? "", latestCreativeVersionNo, setUploadProgress);
   const uploadCarousel = useUploadCarouselVersion(creativeId ?? "", agencyId ?? "", latestCreativeVersionNo, setUploadProgress);
   const savingLabel = "Saving…";
   const [carouselPending, setCarouselPending] = useState(false);
@@ -821,7 +777,7 @@ export function CreativeModal(props: CreativeModalProps) {
   // agency actually touched (a file picked, and/or copy fields, are each
   // independent — you don't have to choose one to work on at a time).
   const includesCopy = copyFieldSpecs.length > 0;
-  const uploadSaving = uploadCreative.isPending || uploadCarousel.isPending || saveCopy.isPending;
+  const uploadSaving = uploadCarousel.isPending || saveCopy.isPending;
 
   // Whether Copy/Creative each have something a save would actually
   // persist right now — Copy's own dedicated Save button and Creative's
@@ -842,7 +798,7 @@ export function CreativeModal(props: CreativeModalProps) {
   // Text on Image, saved on its own (not a version).
   const draftSlideText = tidySlideText(slideFields(slideText, slideCount));
   const pendingSlideChange = JSON.stringify(draftSlideText) !== JSON.stringify(savedSlideText);
-  const pendingCreativeChange = !!file || (!!slideCount && carouselPending);
+  const pendingCreativeChange = carouselPending;
 
   // What Check WIIFM/Check Brand actually check — the fields as they
   // stand right now in the editable draft, not the last saved version.
@@ -851,16 +807,6 @@ export function CreativeModal(props: CreativeModalProps) {
     .filter((line): line is string => !!line)
     .join("\n");
 
-  function pickFile(f: File) {
-    const validation = validateUploadFile(f);
-    if (!validation.ok) {
-      setFileError(validation.message);
-      return;
-    }
-    setFileError(null);
-    setFile(f);
-    setCreativeSaveNote(null);
-  }
 
   // Shared by the footer's Save (closes the modal after) and the inline
   // "Save Copy" button under the copy fields (doesn't) — the actual save,
@@ -920,37 +866,9 @@ export function CreativeModal(props: CreativeModalProps) {
     }
   }
 
-  // Same idea, Creative side — the only other thing that creates a new
-  // version. Clears the picked file on success (nothing left pending to
-  // save, and creativeVersions now includes it once the mutation's own
-  // invalidateQueries resolves) rather than leaving it sitting picked.
-  async function handleSaveCreativeOnly() {
-    if (!file) return;
-    const targetVersionNo = nextCreativeVersionNo;
-    setCreativeSaveNote(null);
-    try {
-      const versionId = await uploadCreative.mutateAsync(file);
-      if (!isCreate) props.onCreativeVersionCreated(versionId);
-      setFile(null);
-      // viewingCreativeVersionNo was pinned at mount (0 for a creative
-      // with no artwork yet) and nothing else moves it — without this,
-      // going from zero versions to one while the modal stays open (only
-      // reachable through this button; every other save path used to
-      // close the modal, discarding this same stale state on unmount)
-      // left isViewingLatestCreative false and CreativeVersionPreview
-      // crashed looking up a version number that doesn't exist.
-      setViewingCreativeVersionNo(targetVersionNo);
-      setCreativeSaveNote(`Saved as version ${targetVersionNo}.`);
-    } catch {
-      // Surfaced via uploadCreative.error / uploadError below already.
-    } finally {
-      setUploadProgress(null);
-    }
-  }
 
   const uploadError =
     fileError ||
-    (uploadCreative.error ? errorMessage(uploadCreative.error, "Couldn't upload") : null) ||
     (uploadCarousel.error ? errorMessage(uploadCarousel.error, "Couldn't save the slides") : null) ||
     (saveCopy.error ? errorMessage(saveCopy.error, "Couldn't save") : null);
 
@@ -1295,119 +1213,51 @@ export function CreativeModal(props: CreativeModalProps) {
                 </div>
               )}
 
-              {slideCount ? (
-                <CarouselSlots
-                  slideCount={slideCount}
-                  latest={creativeVersions[0] ?? null}
-                  readOnlyVersion={isViewingLatestCreative ? null : viewedCreativeVersion}
-                  aspectRatio={aspectRatioCss(format)}
-                  nextVersionNo={nextCreativeVersionNo}
-                  saving={uploadCarousel.isPending}
-                  savingLabel={savingLabel}
-                  saveNote={creativeSaveNote}
-                  onSave={handleSaveCarousel}
-                  onPendingChange={setCarouselPending}
-                  onError={setFileError}
-                />
-              ) : (
-              <>
-              <input
-                ref={inputRef}
-                type="file"
-                accept={ACCEPTED_FILE_EXTENSIONS}
-                style={{ display: "none" }}
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) pickFile(f);
-                  e.target.value = "";
+              {/* One slot per slide, or one for a post that isn't a
+                  carousel: the same layout either way (direct instruction). */}
+              <CarouselSlots
+                slideCount={slideCount ?? 1}
+                latest={creativeVersions[0] ?? null}
+                readOnlyVersion={isViewingLatestCreative ? null : viewedCreativeVersion}
+                aspectRatio={aspectRatioCss(format)}
+                nextVersionNo={nextCreativeVersionNo}
+                saving={uploadCarousel.isPending}
+                savingLabel={savingLabel}
+                saveNote={creativeSaveNote}
+                onSave={handleSaveCarousel}
+                onPendingChange={setCarouselPending}
+                onError={setFileError}
+                slideText={slideFields(slideText, slideCount ?? 1)}
+                onSlideTextChange={(next) => {
+                  setSlideText(next);
+                  setSlideSaveNote(null);
                 }}
-              />
-              {!isViewingLatestCreative ? (
-                <CreativeVersionPreview version={viewedCreativeVersion!} />
-              ) : creativeVersions.length > 0 && !file ? (
-                <>
-                  <CreativeVersionPreview version={creativeVersions[0]} />
-                  <div style={{ marginTop: 10 }}>
+                actions={
+                  <>
                     <button
                       type="button"
-                      className="btn sm"
-                      onClick={() => inputRef.current?.click()}
+                      className="btn sm primary"
+                      disabled={!creativeId || !pendingSlideChange || saveSlideText.isPending}
+                      onClick={handleSaveSlideText}
                     >
-                      Upload New Version
+                      {saveSlideText.isPending ? "Saving…" : "Save Text on Image"}
                     </button>
-                  </div>
-                  {creativeSaveNote && (
-                    <p className="bsaved" style={{ marginTop: 10 }}>
-                      {creativeSaveNote}
-                    </p>
-                  )}
-                </>
-              ) : (
-                <>
-                  <div
-                    className={`drop${dragActive ? " over" : ""}${file ? " has-file" : ""}`}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setDragActive(true);
-                    }}
-                    onDragLeave={() => setDragActive(false)}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      setDragActive(false);
-                      const f = e.dataTransfer.files?.[0];
-                      if (f) pickFile(f);
-                    }}
-                    onClick={() => inputRef.current?.click()}
-                  >
-                    <svg viewBox="0 0 24 24">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                      <path d="M7 10l5-5 5 5" />
-                      <path d="M12 5v13" />
-                    </svg>
-                    {file ? (
-                      <b>{file.name}</b>
-                    ) : (
-                      <>
-                        <b>Drop a file, or browse</b>
-                        <span>JPG, PNG, WebP, GIF up to 25MB — MP4, MOV are compressed to 720p</span>
-                      </>
-                    )}
-                  </div>
-
-                  {file && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
-                      <button
-                        type="button"
-                        className="btn sm primary"
-                        disabled={uploadCreative.isPending}
-                        onClick={handleSaveCreativeOnly}
-                      >
-                        {uploadCreative.isPending ? savingLabel : `Save Version ${nextCreativeVersionNo}`}
-                      </button>
-                    </div>
-                  )}
-                  {/* Outside the {file && ...} block on purpose — saving
-                      clears `file` (there's nothing left picked once it's
-                      persisted), which would otherwise unmount this note
-                      in the same render before it ever became visible. */}
-                  {!file && creativeSaveNote && (
-                    <p className="bsaved" style={{ marginTop: 10 }}>
-                      {creativeSaveNote}
-                    </p>
-                  )}
-                </>
-              )}
-              </>
+                    {slideSaveNote && !pendingSlideChange && <span className="bsaved">{slideSaveNote}</span>}
+                  </>
+                }
+              />
+              {saveSlideText.error && (
+                <p className="autherr">{errorMessage(saveSlideText.error, "Couldn't save the Text on Image")}</p>
               )}
             </div>
 
-          {uploadProgress && (uploadCreative.isPending || uploadCarousel.isPending) && (
+          {uploadProgress && uploadCarousel.isPending && (
             <UploadProgressBar progress={uploadProgress} />
           )}
 
           <div className="msection-h">Copy</div>
           <p className="msection-d">
-            The caption and on-post text the chosen formats need, saved as versions. Text on Image is below, saved on its own.
+            The caption and on-post text the chosen formats need, saved as versions. Text on Image is under each image above.
           </p>
 
           {copyVersions.length > 0 && (
@@ -1503,37 +1353,6 @@ export function CreativeModal(props: CreativeModalProps) {
             </>
           )}
 
-          <div className="msection-h">Text on Image</div>
-          <p className="msection-d">
-            {slideCount ? "The words on each slide's artwork" : "The words on the artwork itself"}, kept with the post, not
-            as a copy version.
-          </p>
-          <ListEditor
-            itemLabel={(i) => `Slide ${i + 1}`}
-            values={slideFields(slideText, slideCount)}
-            onChange={(next) => {
-              setSlideText(next);
-              setSlideSaveNote(null);
-            }}
-            fixed={!!slideCount}
-            bare
-          />
-          <div className="field">
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <button
-                type="button"
-                className="btn sm primary"
-                disabled={!creativeId || !pendingSlideChange || saveSlideText.isPending}
-                onClick={handleSaveSlideText}
-              >
-                {saveSlideText.isPending ? "Saving…" : "Save Text on Image"}
-              </button>
-              {slideSaveNote && !pendingSlideChange && <span className="bsaved">{slideSaveNote}</span>}
-            </div>
-            {saveSlideText.error && (
-              <p className="autherr">{errorMessage(saveSlideText.error, "Couldn't save the Text on Image")}</p>
-            )}
-          </div>
 
           {uploadError && <p className="autherr">{uploadError}</p>}
         </div>

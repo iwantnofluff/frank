@@ -1,17 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useAssetSignedUrl } from "@/hooks/use-asset-signed-url";
 import { versionSlides, type CreativeVersionRow, type VersionAsset } from "@/hooks/use-creative-versions";
 import type { SlideSource } from "@/hooks/use-upload-creative-version";
 import { validateUploadFile, ACCEPTED_FILE_EXTENSIONS } from "@/lib/upload-validation";
 
-// A carousel's artwork in the Edit window: one slot per slide. Decided
-// directly: a version is the whole set, so the slots start as the latest
-// version's slides and Save Version saves all of them as the next version
-// — a replaced slide is uploaded, the rest are carried over as they are.
-// Files dropped together fill the empty slots in order; a slot dragged
-// onto another swaps the two.
+// A post's artwork in the Edit window: one slot per slide, and one slot
+// for a post that isn't a carousel (direct instruction: the same layout
+// for one image or many, up to three across). Decided directly: a version
+// is the whole set, so the slots start as the latest version's slides and
+// Save Version saves all of them as the next version — a replaced slide
+// is uploaded, the rest are carried over as they are. Files dropped
+// together fill the empty slots in order; a slot dragged onto another
+// swaps the two. Each slot has its Text on Image box under it (phase57:
+// on the post, saved on its own, not with the artwork).
 
 type Slot = { kind: "asset"; asset: VersionAsset } | { kind: "file"; file: File; url: string } | null;
 
@@ -40,6 +43,9 @@ export function CarouselSlots({
   onSave,
   onPendingChange,
   onError,
+  slideText,
+  onSlideTextChange,
+  actions,
 }: {
   slideCount: number;
   // The version new work builds on (null before any artwork).
@@ -54,7 +60,19 @@ export function CarouselSlots({
   onSave: (slides: SlideSource[]) => void;
   onPendingChange: (pending: boolean) => void;
   onError: (message: string | null) => void;
+  // Text on Image, one entry per slot, and where an edit goes.
+  slideText: string[];
+  onSlideTextChange: (next: string[]) => void;
+  // More buttons for the row under the slots (Save Text on Image).
+  actions?: ReactNode;
 }) {
+  const single = slideCount === 1;
+  const textLabel = (i: number) => (single ? "Text on Image" : `Text on Image, slide ${i + 1}`);
+  function setText(i: number, value: string) {
+    const next = Array.from({ length: slideCount }, (_, k) => slideText[k] ?? "");
+    next[i] = value;
+    onSlideTextChange(next);
+  }
   const baseline = useMemo(() => slotsFrom(latest, slideCount), [latest, slideCount]);
   const [slots, setSlots] = useState<Slot[]>(baseline);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -108,7 +126,9 @@ export function CarouselSlots({
     const left = files.length - placed;
     onError(
       left > 0
-        ? `This carousel has ${slideCount} slides, so ${left} file${left === 1 ? " wasn't" : "s weren't"} added. Raise the slide count on the Brief tab to add more.`
+        ? single
+          ? `This post has one image, so ${left} file${left === 1 ? " wasn't" : "s weren't"} added. Choose a carousel format on the Brief tab for more.`
+          : `This carousel has ${slideCount} slides, so ${left} file${left === 1 ? " wasn't" : "s weren't"} added. Raise the slide count on the Brief tab to add more.`
         : null,
     );
     setSlots(next);
@@ -126,9 +146,11 @@ export function CarouselSlots({
     return (
       <div className="cslots" aria-label="Slides">
         {view.map((s, i) => (
-          <div className="cslot" key={i} style={{ aspectRatio }}>
-            <SlotImage slot={s} />
-            <span className="cslot-n">{i + 1}</span>
+          <div className="cslot-cell" key={i}>
+            <div className="cslot" style={{ aspectRatio }}>
+              <SlotImage slot={s} />
+              {!single && <span className="cslot-n">{i + 1}</span>}
+            </div>
           </div>
         ))}
       </div>
@@ -151,8 +173,9 @@ export function CarouselSlots({
         }}
       />
       <p className="sub" style={{ marginBottom: 8 }}>
-        Drop several images to fill the slides in order, or add them one at a time. Drag a slide onto another to swap
-        them.
+        {single
+          ? "Drop an image or video on the slot, or click it to browse. JPG, PNG, WebP, GIF up to 25MB; MP4 and MOV are compressed to 720p."
+          : "Drop several images to fill the slides in order, or add them one at a time. Drag a slide onto another to swap them."}
       </p>
       <div
         className="cslots"
@@ -167,8 +190,8 @@ export function CarouselSlots({
         }}
       >
         {shown.map((s, i) => (
+          <div className="cslot-cell" key={i}>
           <div
-            key={i}
             className={`cslot${s ? " filled" : ""}`}
             style={{ aspectRatio }}
             draggable={!!s}
@@ -193,7 +216,7 @@ export function CarouselSlots({
               <button
                 type="button"
                 className="cslot-add"
-                aria-label={`Add slide ${i + 1}`}
+                aria-label={single ? "Add the artwork" : `Add slide ${i + 1}`}
                 onClick={() => {
                   fillFrom.current = i;
                   inputRef.current?.click();
@@ -202,12 +225,12 @@ export function CarouselSlots({
                 +
               </button>
             )}
-            <span className="cslot-n">{i + 1}</span>
+            {!single && <span className="cslot-n">{i + 1}</span>}
             {s && (
               <div className="cslot-acts">
                 <button
                   type="button"
-                  aria-label={`Replace slide ${i + 1}`}
+                  aria-label={single ? "Replace the artwork" : `Replace slide ${i + 1}`}
                   onClick={() => {
                     fillFrom.current = i;
                     inputRef.current?.click();
@@ -217,7 +240,7 @@ export function CarouselSlots({
                 </button>
                 <button
                   type="button"
-                  aria-label={`Remove slide ${i + 1}`}
+                  aria-label={single ? "Remove the artwork" : `Remove slide ${i + 1}`}
                   onClick={() => {
                     const next = [...shown];
                     next[i] = null;
@@ -228,6 +251,15 @@ export function CarouselSlots({
                 </button>
               </div>
             )}
+          </div>
+          <textarea
+            className="cslot-text"
+            rows={2}
+            aria-label={textLabel(i)}
+            placeholder="Text on Image"
+            value={slideText[i] ?? ""}
+            onChange={(e) => setText(i, e.target.value)}
+          />
           </div>
         ))}
       </div>
@@ -246,6 +278,7 @@ export function CarouselSlots({
           </button>
         )}
         {!pending && saveNote && <span className="bsaved">{saveNote}</span>}
+        {actions}
       </div>
     </>
   );

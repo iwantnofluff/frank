@@ -55,7 +55,7 @@ test("copy versions have tabs, and one without comments can be deleted", async (
 
   // The latest is open and editable; an older tab is read only.
   await expect(page.getByRole("tab", { name: "V2" })).toHaveAttribute("aria-selected", "true");
-  await expect(page.locator(".mtabbody textarea").first()).toHaveValue("Second caption");
+  await expect(page.locator(".mtabbody textarea.bin").first()).toHaveValue("Second caption");
   await page.getByRole("tab", { name: "V1" }).click();
   await expect(page.getByText("An earlier version, read only.")).toBeVisible();
   await expect(page.locator(".fd-d", { hasText: "First caption" })).toBeVisible();
@@ -78,11 +78,11 @@ test("copy versions have tabs, and one without comments can be deleted", async (
   await expect(confirm).toHaveCount(0);
   await expect(page.getByRole("tab", { name: "V2" })).toHaveCount(0);
   await expect(page.locator(".scrim")).toHaveCount(1);
-  await expect(page.locator(".mtabbody textarea").first()).toHaveValue("First caption");
+  await expect(page.locator(".mtabbody textarea.bin").first()).toHaveValue("First caption");
   expect((await copyVersions(frank.creativeId)).map((v) => v.version_no)).toEqual([1]);
 
   // Deleting the latest frees its number: the next save is V2 again.
-  await page.locator(".mtabbody textarea").first().fill("Third caption");
+  await page.locator(".mtabbody textarea.bin").first().fill("Third caption");
   await page.getByRole("button", { name: "Save Version 2" }).click();
   await expect(page.getByRole("tab", { name: /^V\d$/ })).toHaveText(["V1", "V2"]);
 });

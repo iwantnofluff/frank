@@ -5394,10 +5394,35 @@ button.avatar {
 }
 /* Carousel slides in the Edit window (CarouselSlots): one slot per slide,
    in the format's own shape. */
+/* Up to three across, for one image or many (direct instruction), each
+   with its Text on Image box underneath. */
 .cslots {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.cslot-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.cslot-text {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.4;
+  padding: 7px 9px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r);
+  background: var(--surface);
+  color: var(--ink);
+}
+.cslot-text:focus {
+  outline: none;
+  border-color: var(--action);
 }
 .cslot {
   position: relative;

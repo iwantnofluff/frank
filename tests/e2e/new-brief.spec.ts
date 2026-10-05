@@ -112,8 +112,9 @@ test("a post can have several formats, with all their copy fields, and closes wi
   }
 
   // Copy only, no artwork: saving the version and then Save and Close closes.
-  await page.locator(".mtabbody .field textarea").first().fill("Copy with no creative yet.");
-  await page.getByRole("button", { name: /^Save Version 1$/ }).click();
+  await page.locator(".mtabbody textarea.bin").first().fill("Copy with no creative yet.");
+  // The copy's own Save, after the artwork's.
+  await page.getByRole("button", { name: /^Save Version 1$/ }).last().click();
   await expect(page.getByText("Saved as version 1.")).toBeVisible();
   await page.getByRole("button", { name: "Save and Close" }).click();
   await expect(page.locator(".scrim")).toHaveCount(0);
