@@ -50,8 +50,11 @@ export async function generate(
   for (let attempt = 0; attempt <= REFUSAL_RETRIES; attempt++) {
     message = await client.messages.create({
       model,
-      // Room for a conversational reply with up to three drafts (phase52).
-      max_tokens: 2048,
+      // Room for a conversational reply with drafts that carry every
+      // field: a carousel for two formats is a caption, alt text and a
+      // line per slide in each draft, which ran past 2048 and cut the
+      // drafts off. Only what's written is billed.
+      max_tokens: 8192,
       messages: [{ role: "user", content }],
     });
     if (message.stop_reason !== "refusal") break;

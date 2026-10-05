@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Modal } from "@/components/ui/Modal";
 import { useCopyChats, useSendCopyChat, type CopyChat as Chat } from "@/hooks/use-copy-chats";
-import type { CopyChatField, CopyChatMode } from "@/lib/ai/copy-chat";
+import { cleanReplyBody, type CopyChatField, type CopyChatMode } from "@/lib/ai/copy-chat";
 import { errorMessage } from "@/lib/errors";
 
 const when = (iso: string) =>
@@ -156,7 +156,9 @@ export function CopyChat({
           {chat?.messages.map((m) => (
             <div key={m.id} className={`cchat-msg ${m.role}`}>
               <div className="cchat-who">{m.role === "user" ? "You" : "Claude"}</div>
-              <div className="cchat-body">{m.body}</div>
+              {/* Cleaned on show too: a reply saved before the parser kept
+                  cut-off drafts can still hold the raw JSON. */}
+              <div className="cchat-body">{m.role === "assistant" ? cleanReplyBody(m.body) : m.body}</div>
               {m.drafts.map((d, i) => (
                 <div className="cchat-draft" key={i}>
                   <div className="cchat-draft-h">

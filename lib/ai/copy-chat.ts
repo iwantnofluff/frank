@@ -106,7 +106,13 @@ export function buildCopyChatPrompt(
     context.fields.some((f) => isSlideField(f.key))
       ? "Text on Image is the words set on the artwork itself, separate from the caption: short and easy to read at a glance, never a repeat of the caption. For a carousel, each slide's text moves the story on to the next. Include it in every draft."
       : null,
-    `When you propose copy, end your reply with one JSON block, fenced as \`\`\`json, shaped {"drafts":[{"label":"a few words on the angle","fields":{...}}]}, where fields uses only these keys: ${fieldList}. Offer up to three drafts, each different. When you're only commenting or answering, leave the JSON out. Never mention the JSON in your prose.`,
+    context.formatLabel.includes(" + ")
+      ? `This post goes out as ${context.formatLabel}, and they share one set of fields: write one version of each field that works for all of them. Never split a field by platform ("IG: … LinkedIn: …").`
+      : null,
+    "Write your reply as plain text: no markdown, no asterisks, no headings. Keep it to a few sentences; the drafts carry the copy.",
+    `When you propose copy, end your reply with one JSON block, fenced as \`\`\`json, shaped {"drafts":[{"label":"a few words on the angle","fields":{...}}]}, where fields uses only these keys: ${fieldList}. ${
+      context.fields.length > 4 ? "Offer one or two drafts, each different." : "Offer up to three drafts, each different."
+    } When you're only commenting or answering, leave the JSON out. Never mention the JSON in your prose.`,
     "The conversation so far:",
     ...history.map((t) => `${t.role === "user" ? "Colleague" : "You"}: ${t.body}`),
     "You:",
@@ -114,31 +120,80 @@ export function buildCopyChatPrompt(
   return parts.filter(Boolean).join("\n\n");
 }
 
-const FENCE = /```json\s*([\s\S]*?)```/i;
+// The drafts block: from its opening fence to the closing one, or to the
+// end of the reply when Claude was cut off before closing it.
+const FENCE = /```json\s*([\s\S]*?)(?:```|$)/i;
+
+// The reply's prose as it should read: never the JSON (closed or not), and
+// no markdown emphasis, which shows as raw asterisks. Also used to show
+// messages saved before this, which can still hold a cut-off block.
+export function cleanReplyBody(text: string): string {
+  return text
+    .replace(FENCE, "")
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/^#{1,6}\s+/gm, "")
+    .trim();
+}
+
+// Every complete object in the drafts array, even when the reply was cut
+// off partway through a later one: a bracket count that skips strings.
+function completeDrafts(json: string): unknown[] {
+  const start = json.indexOf("[", json.indexOf('"drafts"'));
+  if (start < 0) return [];
+  const out: unknown[] = [];
+  let depth = 0;
+  let from = -1;
+  let inString = false;
+  for (let i = start + 1; i < json.length; i++) {
+    const ch = json[i];
+    if (inString) {
+      if (ch === "\\") i++;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') inString = true;
+    else if (ch === "{") {
+      if (depth === 0) from = i;
+      depth++;
+    } else if (ch === "}") {
+      depth--;
+      if (depth === 0 && from >= 0) {
+        try {
+          out.push(JSON.parse(json.slice(from, i + 1)));
+        } catch {
+          // Not a whole draft after all; skip it.
+        }
+        from = -1;
+      }
+    } else if (ch === "]" && depth === 0) break;
+  }
+  return out;
+}
 
 // The prose to show, and any drafts offered (only the keys this post's
-// formats use, and only non-empty ones).
+// formats use, and only non-empty ones). A block cut off partway keeps
+// the drafts that were finished.
 export function parseCopyChatReply(text: string, fields: CopyChatField[]): { body: string; drafts: CopyDraft[] } {
   const match = text.match(FENCE);
-  const body = text.replace(FENCE, "").trim();
-  if (!match) return { body: text.trim(), drafts: [] };
+  const body = cleanReplyBody(text);
+  if (!match) return { body, drafts: [] };
   const allowed = new Set(fields.map((f) => f.key));
+  let raw: unknown[];
   try {
-    const parsed = JSON.parse(match[1]) as { drafts?: { label?: unknown; fields?: Record<string, unknown> }[] };
-    const drafts = (parsed.drafts ?? [])
-      .map((d, i) => ({
-        label: typeof d.label === "string" && d.label.trim() ? d.label.trim() : `Draft ${i + 1}`,
-        fields: Object.fromEntries(
-          Object.entries(d.fields ?? {}).filter(
-            (entry): entry is [string, string] => allowed.has(entry[0]) && typeof entry[1] === "string" && !!entry[1].trim(),
-          ),
-        ),
-      }))
-      .filter((d) => Object.keys(d.fields).length > 0)
-      .slice(0, 3);
-    return { body: body || "Here are some options.", drafts };
+    raw = (JSON.parse(match[1]) as { drafts?: unknown[] }).drafts ?? [];
   } catch {
-    // Unreadable JSON: show the whole reply rather than lose it.
-    return { body: text.trim(), drafts: [] };
+    raw = completeDrafts(match[1]);
   }
+  const drafts = (raw as { label?: unknown; fields?: Record<string, unknown> }[])
+    .map((d, i) => ({
+      label: typeof d?.label === "string" && d.label.trim() ? d.label.trim() : `Draft ${i + 1}`,
+      fields: Object.fromEntries(
+        Object.entries(d?.fields ?? {}).filter(
+          (entry): entry is [string, string] => allowed.has(entry[0]) && typeof entry[1] === "string" && !!entry[1].trim(),
+        ),
+      ),
+    }))
+    .filter((d) => Object.keys(d.fields).length > 0)
+    .slice(0, 3);
+  return { body: body || "Here are some options.", drafts };
 }

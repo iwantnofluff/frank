@@ -2383,3 +2383,13 @@ Direct instruction, after an audit of what the window asks for against what each
 - Looked at both tables and the window.
 
 `continuous-calendar.spec.ts` now checks the new columns, Funnel and Notes for Designer persisting (each save awaited before the reload, which fixes the race that made the old "chips persist" test flaky), and Format, Text on Image and Copy coming from the post with history on hover. `project-calendar.spec.ts` checks the new names. The `project-calendar.png` baseline was updated after reading its diff: only "Columns 14/14" changed. Unit tests cover `copySummary`.
+
+## Write with Claude: long drafts come through whole
+
+Seen on live, from a seven-slide Instagram and LinkedIn carousel: Claude's reply showed its raw JSON and markdown asterisks, and no drafts. Three drafts of a caption, alt text and seven slides ran past the reply's 2,048-token limit, so the drafts block was cut off. An unreadable block was then shown whole, by design at the time.
+- **The reply limit is 8,192 tokens** (only what's written is billed). With more than four fields, Claude is asked for one or two drafts, not three.
+- **A block cut off partway keeps the drafts that were finished,** and the JSON is never shown, closed or not. Markdown emphasis and headings are stripped, and Claude is asked for plain text. Replies saved before this show cleaned too, without their lost drafts.
+- **A post with several formats** is told they share one set of fields, so it writes one caption that works for all of them, never "IG: … LinkedIn: …" in one field.
+- **Gap:** different formats can't have their own caption (the copy fields are one set per post). If LinkedIn and Instagram need different captions, that needs per-format copy, which isn't built.
+
+**Verified**: the reply that failed on live was cut off mid-way through its second draft (2,680 characters, no closing fence). A real Claude run on the same kind of post (Instagram Carousel and LinkedIn Carousel, seven slides) came back as plain prose with two drafts. Each had one caption with no platform split, alt text, and all seven Text on Image slides. Unit tests cover a cut-off reply (the finished draft kept, no JSON or asterisks shown), broken JSON never shown, and the several-formats instruction. `copy-chat.spec.ts` passes.

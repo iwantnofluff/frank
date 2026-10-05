@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import {
   applySlideDraft,
   buildCopyChatPrompt,
+  cleanReplyBody,
   openingMessage,
   parseCopyChatReply,
   slideTextAsFields,
@@ -61,10 +62,25 @@ test("drafts come out of the JSON block, limited to the post's own fields", () =
   assert.deepEqual(drafts, [{ label: "Playful", fields: { caption: "Dessert, but make it daily" } }]);
 });
 
-test("a reply with no drafts, or broken JSON, is shown whole", () => {
+test("a reply with no drafts reads whole; broken JSON is never shown", () => {
   assert.deepEqual(parseCopyChatReply("The hook is strong.", fields), { body: "The hook is strong.", drafts: [] });
   const broken = "Try this.\n```json\n{not json}\n```";
-  assert.deepEqual(parseCopyChatReply(broken, fields), { body: broken, drafts: [] });
+  assert.deepEqual(parseCopyChatReply(broken, fields), { body: "Try this.", drafts: [] });
+});
+
+test("a reply cut off mid-draft keeps the finished drafts, and no JSON or markdown shows", () => {
+  const cut =
+    'Here is **where I landed**.\n\n```json\n{"drafts":[{"label":"Mugshot","fields":{"caption":"We lined everyone up {and} read the \\"charges\\"."}},{"label":"Warmer","fields":{"caption":"IG: None of us would';
+  const reply = parseCopyChatReply(cut, fields);
+  assert.equal(reply.body, "Here is where I landed.");
+  assert.deepEqual(reply.drafts, [{ label: "Mugshot", fields: { caption: 'We lined everyone up {and} read the "charges".' } }]);
+  assert.equal(cleanReplyBody(cut), "Here is where I landed.");
+});
+
+test("a post with several formats is told to write one version of each field", () => {
+  const prompt = buildCopyChatPrompt({ ...context, formatLabel: "Instagram Carousel + LinkedIn Carousel (Document)" }, [], {});
+  assert.match(prompt, /write one version of each field that works for all of them/);
+  assert.match(prompt, /no markdown/);
 });
 
 test("Text on Image is one field per slide for a carousel, one otherwise", () => {
