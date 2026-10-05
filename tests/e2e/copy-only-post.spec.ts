@@ -9,13 +9,13 @@ test("a copy-only post shows as a post for staff, clients and a review link", as
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
   // Neither copy nor artwork: still the post (direct instruction), each
   // part saying what's missing.
-  await expect(page.locator(".postbox .ig-noart")).toContainText("Add the artwork once it has been made.");
+  await expect(page.locator(".phoneframe .ig-noart")).toContainText("Add the artwork once it has been made.");
   await expect(page.locator(".ig-cap")).toContainText("No copy yet.");
   await expect(page.locator(".ig-cap").getByRole("button", { name: "Write Copy" })).toBeVisible();
 
   await frank.createCopyVersion(frank.creativeId, 1, { caption: "Copy only, no artwork yet." });
   await page.reload();
-  const art = page.locator(".postbox .ig-noart");
+  const art = page.locator(".phoneframe .ig-noart");
   await expect(art).toContainText("No artwork yet");
   await expect(art.getByRole("button", { name: "Upload Artwork" })).toBeVisible();
   await expect(page.locator(".ig-cap")).toContainText("Copy only, no artwork yet.");
@@ -28,7 +28,7 @@ test("a copy-only post shows as a post for staff, clients and a review link", as
   const client = await clientContext.newPage();
   await frank.loginAsClient(client);
   await client.goto(`${APP_URL}/creatives/${frank.creativeId}`);
-  await expect(client.locator(".postbox .ig-noart")).toContainText("hasn't uploaded the artwork");
+  await expect(client.locator(".phoneframe .ig-noart")).toContainText("hasn't uploaded the artwork");
   await expect(client.locator(".ig-noart button")).toHaveCount(0);
   await expect(client.locator(".ig-cap")).toContainText("Copy only, no artwork yet.");
   await clientContext.close();

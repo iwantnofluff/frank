@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { useCreatives, type CreativeListRow } from "@/hooks/use-creatives";
 import { FeedTileArt, EmptyTileArt } from "@/components/creative-review/FeedTileArt";
 import { FeedCaptionPopover } from "@/components/creative-review/FeedCaptionPopover";
+import { PhoneFrame } from "./PhoneFrame";
 import { useClientInstagramFeed } from "@/hooks/use-instagram";
 import { LoadMore } from "@/components/creative-review/LoadMore";
 import { FeedProfile, FeedTabs, LiveTile, type FeedTab } from "@/components/creative-review/FeedChrome";
@@ -94,13 +95,8 @@ export function FeedPreviewGrid({
   return (
     <>
     {/* Inside a phone (direct instruction, from the user's iPhone
-        template): the outline, notch and side buttons drawn in CSS so they
-        stay crisp; the grid fills the screen and scrolls within it. */}
-    <div className="phoneframe">
-      <span className="pf-notch" aria-hidden="true" />
-      <span className="pf-btn pf-btn1" aria-hidden="true" />
-      <span className="pf-btn pf-btn2" aria-hidden="true" />
-      <div className="pf-screen">
+        template); the grid fills the screen and scrolls within it. */}
+    <PhoneFrame>
     <div className="feedcard">
       {openPost && feed && (
         <LivePostView
@@ -171,8 +167,7 @@ export function FeedPreviewGrid({
         </p>
       )}
     </div>
-      </div>
-    </div>
+    </PhoneFrame>
     {hover && (
       <FeedCaptionPopover
         creative={hover.creative}

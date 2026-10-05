@@ -11,7 +11,6 @@ import { useComments } from "@/hooks/use-comments";
 import { useCreateComment } from "@/hooks/use-create-comment";
 import { useMyMembership } from "@/hooks/use-my-membership";
 import { useTeamMembers } from "@/hooks/use-team-members";
-import { formatsLabel, postFormats } from "@/lib/formats";
 import { slideFrames } from "@/lib/slide-frames";
 import {
   commentTime,
@@ -27,6 +26,8 @@ import { BriefPanel } from "@/components/creative-review/BriefPanel";
 import { ChecksPanel } from "@/components/creative-review/ChecksPanel";
 import { ReviewNav, type ReviewSection } from "@/components/creative-review/ReviewNav";
 import { FeedPreviewGrid } from "@/components/creative-review/FeedPreviewGrid";
+import { PhoneFrame } from "@/components/creative-review/PhoneFrame";
+import { useClientInstagramFeed } from "@/hooks/use-instagram";
 import { CommentsPanel } from "@/components/creative-review/CommentsPanel";
 import { ShareModal } from "@/components/creative-review/ShareModal";
 import { AnnotationLayer, type ToolMode } from "@/components/creative-review/AnnotationLayer";
@@ -53,6 +54,12 @@ export default function CreativeReviewPage({
     isError: creativeError,
   } = useCreative(id);
   const { data: creativeVersions } = useCreativeVersions(id);
+  // The client's Instagram, once connected (phase54): the Content post
+  // shows its real picture and username, as the Feed Preview does (the
+  // same cached query).
+  const { data: igPages } = useClientInstagramFeed(creative?.projects?.client_id ?? null);
+  const igFirst = igPages?.pages[0];
+  const igProfile = igFirst?.status === "ok" ? igFirst.feed.profile : null;
   const { data: copyVersions } = useCopyVersions(id);
   const { data: membership, isLoading: membershipLoading } = useMyMembership(
     creative?.agency_id,
@@ -213,6 +220,7 @@ export default function CreativeReviewPage({
   }
 
   const clientName = creative.projects?.clients?.name ?? "This client";
+  const accountName = igProfile?.username ?? clientName;
   const caption = activeCopyVersion?.fields?.caption;
   const isVideo = currentSlide?.asset.mime_type.startsWith("video/");
   // Every comment on this version made at a moment, as timeline markers.
@@ -362,22 +370,38 @@ export default function CreativeReviewPage({
             )}
             {/* Always the post, even before anything's made (direct
                 instruction): the artwork's place and the copy's each say
-                what's missing, so it reads like the post it will be. */}
+                what's missing, so it reads like the post it will be. In
+                the same phone as the Feed Preview, laid out like a live
+                post opened there (direct instruction); the title and
+                format are in the header already. */}
             {activeSection === "content" && (
-                <div className="postbox">
-              <div className="cmeta">
-                <div className="ct">{creative.name}</div>
-                <div className="cs">
-                  <span>{formatsLabel(postFormats(creative))}</span>
-                </div>
+              <PhoneFrame>
+              <div className="lpv-bar">
+                <button
+                  type="button"
+                  className="lpv-back"
+                  aria-label="Back to the feed"
+                  onClick={() => setActiveSection("feed")}
+                >
+                  <svg viewBox="0 0 24 24">
+                    <path d="M15 18l-6-6 6-6" />
+                  </svg>
+                </button>
+                <b>Posts</b>
               </div>
+              <div className="pf-scroll">
               <div className="ig">
                 <div className="ig-h">
                   <div className="ig-av">
-                    <i />
+                    {igProfile?.pictureUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- Instagram's own short-lived image URL
+                      <img src={igProfile.pictureUrl} alt="" />
+                    ) : (
+                      <i />
+                    )}
                   </div>
                   <div>
-                    <b>{clientName}</b>
+                    <b>{accountName}</b>
                   </div>
                   <div className="dots">•••</div>
                 </div>
@@ -501,7 +525,7 @@ export default function CreativeReviewPage({
                   </svg>
                 </div>
                 <div className="ig-cap">
-                  <b>{clientName}</b>
+                  <b>{accountName}</b>
                   {caption ? (
                     <CaptionHighlighter
                       text={caption}
@@ -543,7 +567,8 @@ export default function CreativeReviewPage({
                       : null}
                 </div>
               </div>
-            </div>
+              </div>
+              </PhoneFrame>
             )}
             {activeSection === "checks" && (
               <ChecksPanel
