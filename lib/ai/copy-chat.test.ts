@@ -2,7 +2,15 @@
 // (or `npm run test:unit`).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { buildCopyChatPrompt, openingMessage, parseCopyChatReply, type CopyChatContext } from "./copy-chat.ts";
+import {
+  applySlideDraft,
+  buildCopyChatPrompt,
+  openingMessage,
+  parseCopyChatReply,
+  slideTextAsFields,
+  slideTextFields,
+  type CopyChatContext,
+} from "./copy-chat.ts";
 
 const fields = [
   { key: "caption", label: "Caption" },
@@ -57,4 +65,30 @@ test("a reply with no drafts, or broken JSON, is shown whole", () => {
   assert.deepEqual(parseCopyChatReply("The hook is strong.", fields), { body: "The hook is strong.", drafts: [] });
   const broken = "Try this.\n```json\n{not json}\n```";
   assert.deepEqual(parseCopyChatReply(broken, fields), { body: broken, drafts: [] });
+});
+
+test("Text on Image is one field per slide for a carousel, one otherwise", () => {
+  assert.deepEqual(slideTextFields(null), [{ key: "slide_1", label: "Text on Image" }]);
+  assert.deepEqual(
+    slideTextFields(3).map((f) => f.label),
+    ["Text on Image, Slide 1", "Text on Image, Slide 2", "Text on Image, Slide 3"],
+  );
+  assert.deepEqual(slideTextAsFields(["One", "", "Three"]), { slide_1: "One", slide_2: "", slide_3: "Three" });
+});
+
+test("a draft's slides land in place, and slides it leaves out are kept", () => {
+  assert.deepEqual(applySlideDraft(["a", "b", "c"], { caption: "x", slide_1: "One", slide_3: "Three" }), ["One", "b", "Three"]);
+  assert.deepEqual(applySlideDraft([], { slide_2: "Two" }), ["", "Two"]);
+});
+
+test("slide drafts come back through the reply, and the prompt explains them", () => {
+  const fields = [{ key: "caption", label: "Caption" }, ...slideTextFields(2)];
+  const reply = parseCopyChatReply(
+    'Here.\n```json\n{"drafts":[{"label":"A","fields":{"caption":"Hi","slide_1":"Hook","slide_2":"Payoff","slide_9":"no"}}]}\n```',
+    fields,
+  );
+  assert.deepEqual(reply.drafts[0].fields, { caption: "Hi", slide_1: "Hook", slide_2: "Payoff" });
+  const prompt = buildCopyChatPrompt({ ...context, fields }, [{ role: "user", body: "Draft" }], {});
+  assert.match(prompt, /Text on Image is the words set on the artwork itself/);
+  assert.match(prompt, /"slide_2" \(Text on Image, Slide 2\)/);
 });

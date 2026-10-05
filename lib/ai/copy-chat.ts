@@ -33,6 +33,38 @@ export interface CopyDraft {
 
 export type CopyChatMode = "draft" | "review";
 
+// Text on Image as chat fields (direct instruction): one per slide for a
+// carousel, one otherwise, alongside the formats' own copy fields.
+const SLIDE_PREFIX = "slide_";
+export function slideTextFields(slideCount: number | null): CopyChatField[] {
+  return Array.from({ length: slideCount ?? 1 }, (_, i) => ({
+    key: `${SLIDE_PREFIX}${i + 1}`,
+    label: slideCount ? `Text on Image, Slide ${i + 1}` : "Text on Image",
+  }));
+}
+
+export const isSlideField = (key: string) => key.startsWith(SLIDE_PREFIX);
+
+// The editor's slide text as chat fields.
+export function slideTextAsFields(slideText: string[]): Record<string, string> {
+  return Object.fromEntries(slideText.map((t, i) => [`${SLIDE_PREFIX}${i + 1}`, t]));
+}
+
+// A draft's slide fields laid over the editor's slide text, by position:
+// a slide the draft leaves out keeps what was there.
+export function applySlideDraft(slideText: string[], fields: Record<string, string>): string[] {
+  const next = [...slideText];
+  for (const [key, value] of Object.entries(fields)) {
+    if (!isSlideField(key)) continue;
+    const i = Number(key.slice(SLIDE_PREFIX.length)) - 1;
+    if (Number.isInteger(i) && i >= 0) {
+      while (next.length < i) next.push("");
+      next[i] = value;
+    }
+  }
+  return next;
+}
+
 // What the person asked when they started, in their own words, so the
 // conversation reads naturally afterwards.
 export function openingMessage(mode: CopyChatMode, currentFields: Record<string, string>, fields: CopyChatField[]): string {
@@ -71,6 +103,9 @@ export function buildCopyChatPrompt(
     notes("Client knowledge", context.clientNotes),
     context.fileTitles.length ? `Attached knowledge files: ${context.fileTitles.join(", ")}.` : null,
     current ? `The copy in the editor right now:\n${current}` : "The copy in the editor is empty.",
+    context.fields.some((f) => isSlideField(f.key))
+      ? "Text on Image is the words set on the artwork itself, separate from the caption: short and easy to read at a glance, never a repeat of the caption. For a carousel, each slide's text moves the story on to the next. Include it in every draft."
+      : null,
     `When you propose copy, end your reply with one JSON block, fenced as \`\`\`json, shaped {"drafts":[{"label":"a few words on the angle","fields":{...}}]}, where fields uses only these keys: ${fieldList}. Offer up to three drafts, each different. When you're only commenting or answering, leave the JSON out. Never mention the JSON in your prose.`,
     "The conversation so far:",
     ...history.map((t) => `${t.role === "user" ? "Colleague" : "You"}: ${t.body}`),

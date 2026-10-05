@@ -69,9 +69,9 @@ test("a carousel gets a slide count, and Text on Image one field per slide", asy
   await page.fill("#nbName", "Carousel Brief E2E");
   await page.fill("#nbDate", "2027-03-12");
 
-  // Not a carousel: no Slides, one open Text on Image field.
+  // Not a carousel: no Slides. Text on Image isn't on the Brief any more.
   await expect(page.locator("#nbSlides")).toHaveCount(0);
-  await expect(page.locator(".brow textarea")).toHaveCount(1);
+  await expect(page.locator(".brow textarea")).toHaveCount(0);
 
   await page.click("#nbFmt");
   const pop = page.getByRole("dialog", { name: "Formats" });
@@ -81,11 +81,6 @@ test("a carousel gets a slide count, and Text on Image one field per slide", asy
   // 2 to 20 for Instagram…
   await expect(page.locator("#nbSlides option")).toHaveCount(19);
   await page.selectOption("#nbSlides", "3");
-  await expect(page.locator(".brow textarea")).toHaveCount(3);
-  await expect(page.locator(".brow .brx")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "+ Add" })).toHaveCount(0);
-  // Slide 2 written, slide 1 left blank: positions are kept.
-  await page.locator(".brow textarea").nth(1).fill("Second slide words");
 
   // …held to 10 once Meta Carousel Ad is in the mix.
   await page.click("#nbFmt");
@@ -103,8 +98,22 @@ test("a carousel gets a slide count, and Text on Image one field per slide", asy
     .single();
   expect(c!.slide_count).toBe(3);
   expect(c!.formats).toEqual(["ig_carousel", "meta_carousel"]);
-  const { data: copy } = await admin.from("copy_versions").select("slide_text").eq("creative_id", c!.id).single();
+  // No copy written yet, so no copy version (direct instruction).
+  expect((await admin.from("copy_versions").select("id").eq("creative_id", c!.id)).data).toEqual([]);
+
+  // Text on Image sits with the caption on Content, one field per slide.
+  await page.getByRole("tab", { name: "Content" }).click();
+  await expect(page.locator(".brow textarea")).toHaveCount(3);
+  await expect(page.locator(".brow .brx")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "+ Add" })).toHaveCount(0);
+  // Slide 2 written, slide 1 left blank: positions are kept.
+  await page.locator(".brow textarea").nth(1).fill("Second slide words");
+  // The copy's own Save, after the artwork's.
+  await page.getByRole("button", { name: "Save Version 1" }).last().click();
+  await expect(page.getByText("Saved as version 1.")).toBeVisible();
+  const { data: copy } = await admin.from("copy_versions").select("slide_text, fields").eq("creative_id", c!.id).single();
   expect(copy!.slide_text).toEqual(["", "Second slide words"]);
+  expect(copy!.fields).toEqual({});
 });
 
 test("carousel artwork is saved as a set, and replacing one slide keeps the rest", async ({ page, frank }) => {

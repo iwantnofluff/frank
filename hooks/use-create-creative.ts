@@ -2,7 +2,6 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
-import { tidySlideText } from "@/lib/slide-text";
 
 export interface CreateCreativeInput {
   name: string;
@@ -12,7 +11,6 @@ export interface CreateCreativeInput {
   concept: string;
   referenceUrl: string;
   slideCount: number | null; // carousels only
-  slideText: string[];
   cx: Record<string, string | number | boolean | null>;
   // Exactly one side is meaningful, matching the project's delivery —
   // the caller decides which, this hook doesn't guess.
@@ -73,22 +71,9 @@ export function useCreateCreative(projectId: string) {
         .single();
       if (creativeError) throw creativeError;
 
-      // Caption isn't set at brief-creation time at all anymore (it lives
-      // in CreativeModal's Content tab, a separate moment) — only
-      // Text on Image, which is brief content, gets an initial version here.
-      // Per slide, so only trailing blanks go (lib/slide-text.ts).
-      const slideText = tidySlideText(input.slideText);
-      if (slideText.length > 0) {
-        const { error: copyError } = await supabase.from("copy_versions").insert({
-          creative_id: creative.id,
-          version_no: 1,
-          fields: {},
-          slide_text: slideText,
-          source: "in_app_edit",
-          created_by: user.id,
-        });
-        if (copyError) throw copyError;
-      }
+      // No copy version here (direct instruction): the caption and Text
+      // on Image are both written on the Content tab, and V1 is only made
+      // once some of it is.
 
       return creative.id as string;
     },

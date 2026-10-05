@@ -10,8 +10,9 @@ import type { CreativeRow } from "@/hooks/use-creative";
 import { useCopyVersions, type CopyVersionRow } from "@/hooks/use-copy-versions";
 import { useCreativeVersions, versionSlides, type CreativeVersionRow } from "@/hooks/use-creative-versions";
 import { useCreateCreative } from "@/hooks/use-create-creative";
+import { useUpdateCreativeCx } from "@/hooks/use-update-creative-cx";
+import { FUNNEL_COLUMN } from "@/components/project/ContinuousCalendarTable";
 import { useUpdateBrief } from "@/hooks/use-update-brief";
-import { useSaveSlideText } from "@/hooks/use-save-slide-text";
 import { useTeamMembers } from "@/hooks/use-team-members";
 import { useMyAgency } from "@/hooks/use-my-agency";
 import { useCustomColumns } from "@/hooks/use-custom-columns";
@@ -49,7 +50,13 @@ import {
 import { slideFields, tidySlideText } from "@/lib/slide-text";
 import { FormatPicker } from "./FormatPicker";
 import { validateUploadFile, ACCEPTED_FILE_EXTENSIONS } from "@/lib/upload-validation";
-import type { CopyChatField as CopyFieldSpec } from "@/lib/ai/copy-chat";
+import {
+  applySlideDraft,
+  isSlideField,
+  slideTextAsFields,
+  slideTextFields,
+  type CopyChatField as CopyFieldSpec,
+} from "@/lib/ai/copy-chat";
 import { buildCheckPrompt, parseCheckFindings, type CheckFinding } from "@/lib/ai/build-check-prompt";
 import { KNOWLEDGE_SECTIONS } from "@/lib/knowledge-sections";
 import { modelById } from "@/lib/ai/models";
@@ -479,9 +486,20 @@ export function CreativeModal(props: CreativeModalProps) {
   const [dueOn, setDueOn] = useState(isCreate ? "" : (props.creative.due_on ?? ""));
   const [concept, setConcept] = useState(isCreate ? "" : (props.creative.concept ?? ""));
   const [referenceUrl, setReferenceUrl] = useState(isCreate ? "" : (props.creative.reference_url ?? ""));
-  const initialSlideText = isCreate ? [] : (latestCopyVersion?.slide_text ?? []);
-  const [slideText, setSlideText] = useState<string[]>(initialSlideText);
+  // Text on Image, one entry per slide: written on the Content tab with
+  // the caption and saved in the same copy version (direct instruction).
+  const [slideText, setSlideText] = useState<string[]>(latestCopyVersion?.slide_text ?? []);
   const [cx, setCx] = useState<Record<string, string | number | boolean | null>>({});
+  // Continuous projects' Funnel and Notes for Designer (direct instruction:
+  // in the window as well as the table, both optional). Saved to the same
+  // cx keys the table writes.
+  const savedTableFields = {
+    funnel: isCreate ? "" : String(props.creative.cx?.funnel ?? ""),
+    designer_notes: isCreate ? "" : String(props.creative.cx?.designer_notes ?? ""),
+  };
+  const [funnel, setFunnel] = useState(savedTableFields.funnel);
+  const [designerNotes, setDesignerNotes] = useState(savedTableFields.designer_notes);
+  const [savedFields, setSavedFields] = useState(savedTableFields);
 
   const [nameError, setNameError] = useState<string | null>(null);
   const [dateError, setDateError] = useState<string | null>(null);
@@ -500,14 +518,7 @@ export function CreativeModal(props: CreativeModalProps) {
   const creativeId = isCreate ? createdCreativeId : props.creative.id;
 
   const updateBrief = useUpdateBrief(creativeId ?? "");
-  const saveSlideText = useSaveSlideText(creativeId ?? "");
-  // The slide text actually on record for this row, updated after every
-  // successful save — `initialSlideText` alone would stay frozen at `[]`
-  // once isCreate's own snapshot goes stale the moment a brief is created,
-  // making every later save re-diff against an empty baseline and re-cut
-  // a redundant copy_versions row even when nothing changed.
-  const [savedSlideText, setSavedSlideText] = useState<string[]>(initialSlideText);
-  const [savedCopyVersionNo, setSavedCopyVersionNo] = useState(latestCopyVersion?.version_no ?? 0);
+  const updateCx = useUpdateCreativeCx(projectId);
   const delivery = isCreate ? props.delivery : (props.creative.projects?.delivery ?? "scheduled");
 
   const [activeTab, setActiveTab] = useState<Tab>(
@@ -556,21 +567,21 @@ export function CreativeModal(props: CreativeModalProps) {
         concept,
         referenceUrl,
         slideCount,
-        slideText: slideFields(slideText, slideCount),
-        cx,
+        cx:
+          delivery === "continuous"
+            ? {
+                ...cx,
+                ...(funnel ? { funnel } : {}),
+                ...(designerNotes.trim() ? { designer_notes: designerNotes.trim() } : {}),
+              }
+            : cx,
         scheduledAt,
         destination: delivery === "continuous" ? destination.trim() : null,
         dueOn: delivery === "continuous" ? dueOn || null : null,
       });
       setCreatedCreativeId(newId);
       setSavedBrief({ formats, slideCount });
-      // Mirrors useCreateCreative's own trim-and-drop-blank-lines rule —
-      // only a non-empty result actually became a real copy_versions row
-      // there, and this is the baseline every later save on this same
-      // row diffs against (see below).
-      const persisted = tidySlideText(slideFields(slideText, slideCount));
-      setSavedSlideText(persisted);
-      setSavedCopyVersionNo(persisted.filter(Boolean).length > 0 ? 1 : 0);
+      setSavedFields({ funnel, designer_notes: designerNotes.trim() });
       props.onCreated?.(scheduledAt, delivery === "continuous" ? dueOn || null : null);
       return;
     }
@@ -603,25 +614,16 @@ export function CreativeModal(props: CreativeModalProps) {
       dueOn: delivery === "continuous" ? dueOn || null : null,
     });
     setSavedBrief({ formats, slideCount });
-    // A carousel cut from 5 slides to 3 keeps only the first 3 slides' text.
-    const cleaned = tidySlideText(slideFields(slideText, slideCount));
-    // Edit mode's own baseline (initialSlideText/latestCopyVersion) comes
-    // from props and already stays current across saves, since the
-    // parent's query for it shares the same key useSaveSlideText
-    // invalidates. A brief created this session has no such prop to lean
-    // on — copyVersions is fixed at `[]` for the modal's whole lifetime
-    // in create mode — so it tracks its own baseline locally instead.
-    const diffBaseline = isCreate ? savedSlideText : initialSlideText;
-    if (JSON.stringify(cleaned) !== JSON.stringify(diffBaseline)) {
-      const latest = isCreate
-        ? (latestCopyVersion ??
-          (savedCopyVersionNo > 0 ? { version_no: savedCopyVersionNo, fields: {} } : null))
-        : latestCopyVersion;
-      await saveSlideText.mutateAsync({ slideText: cleaned, latest });
-      if (isCreate) {
-        setSavedSlideText(cleaned);
-        setSavedCopyVersionNo((n) => n + 1);
+    // Funnel and Notes for Designer, each its own atomic write (as the
+    // table's), only when changed.
+    if (delivery === "continuous" && creativeId) {
+      const next = { funnel, designer_notes: designerNotes.trim() };
+      for (const key of ["funnel", "designer_notes"] as const) {
+        if (next[key] !== savedFields[key]) {
+          await updateCx.mutateAsync({ creativeId, key, value: next[key] || null });
+        }
       }
+      setSavedFields(next);
     }
     if (updatedNoteTimeout.current) clearTimeout(updatedNoteTimeout.current);
     setShowUpdatedNote(true);
@@ -642,10 +644,10 @@ export function CreativeModal(props: CreativeModalProps) {
 
   const briefSaving = isCreate
     ? createCreative.isPending
-    : updateBrief.isPending || saveSlideText.isPending;
+    : updateBrief.isPending || updateCx.isPending;
   const briefError = isCreate
     ? createCreative.error
-    : updateBrief.error || saveSlideText.error;
+    : updateBrief.error || updateCx.error;
 
   // ---- Content tab state ---------------------------------------
 
@@ -701,6 +703,7 @@ export function CreativeModal(props: CreativeModalProps) {
       // before it, rather than carrying the deleted text as unsaved edits.
       if (id === latestCopyVersion?.id) {
         setDraftFields(remaining[0]?.fields ?? {});
+        setSlideText(remaining[0]?.slide_text ?? []);
         setCopySaveNote(null);
       }
       setViewingCopyVersionNo(remaining[0]?.version_no ?? 0);
@@ -816,11 +819,15 @@ export function CreativeModal(props: CreativeModalProps) {
   // "pending" just because no copy_versions row exists — there's nothing
   // there to lose, and blocking Save and Close over it would trap the
   // agency into creating an empty version just to unlock closing.
-  const hasAnyCopyContent = Object.values(mergedCopyFields).some((v) => v?.trim());
+  // Text on Image counts as copy too: it's saved in the same version.
+  const draftSlideText = tidySlideText(slideFields(slideText, slideCount));
+  const slideTextChanged =
+    JSON.stringify(draftSlideText) !== JSON.stringify(tidySlideText(latestCopyVersion?.slide_text ?? []));
+  const hasAnyCopyContent =
+    Object.values(mergedCopyFields).some((v) => v?.trim()) || draftSlideText.some((t) => t.trim());
   const pendingCopyChange =
-    includesCopy &&
     hasAnyCopyContent &&
-    !(!!latestCopyVersion && fieldsEqual(mergedCopyFields, latestCopyVersion.fields ?? {}));
+    (!latestCopyVersion || !fieldsEqual(mergedCopyFields, latestCopyVersion.fields ?? {}) || slideTextChanged);
   const pendingCreativeChange = !!file || (!!slideCount && carouselPending);
 
   // What Check WIIFM/Check Brand actually check — the fields as they
@@ -851,6 +858,7 @@ export function CreativeModal(props: CreativeModalProps) {
 
     const versionId = await saveCopy.mutateAsync({
       fields: draftFields,
+      slideText: draftSlideText,
       latest: latestCopyVersion,
     });
     if (!isCreate) props.onCopyVersionCreated(versionId);
@@ -1039,7 +1047,7 @@ export function CreativeModal(props: CreativeModalProps) {
           <p className="msection-d">The basics — what this is, its format, when it&rsquo;s due, and who&rsquo;s leading it.</p>
 
           <div className="field">
-            <label htmlFor="nbName">What Is It Called?</label>
+            <label htmlFor="nbName">Post Name</label>
             <input
               id="nbName"
               className="bin one"
@@ -1147,7 +1155,7 @@ export function CreativeModal(props: CreativeModalProps) {
                 {destinationError && <p className="autherr">{destinationError}</p>}
               </div>
               <div className="field">
-                <label htmlFor="nbDue">Needed By</label>
+                <label htmlFor="nbDue">Live Date</label>
                 <input
                   id="nbDue"
                   className="bin one"
@@ -1204,17 +1212,36 @@ export function CreativeModal(props: CreativeModalProps) {
             />
           </div>
 
-          <div className="msection-h">Text on Image</div>
-          <p className="msection-d">
-            On-artwork text, one entry per slide — separate from the caption or on-post copy on the Content tab.
-          </p>
-          <ListEditor
-            itemLabel={(i) => `Slide ${i + 1}`}
-            values={slideFields(slideText, slideCount)}
-            onChange={setSlideText}
-            fixed={!!slideCount}
-            bare
-          />
+          {delivery === "continuous" && (
+            <>
+              <div className="field">
+                <label htmlFor="nbFunnel">
+                  Funnel <span className="bnote">optional</span>
+                </label>
+                <select id="nbFunnel" className="bin one" value={funnel} onChange={(e) => setFunnel(e.target.value)}>
+                  <option value="">Not set</option>
+                  {(FUNNEL_COLUMN.options ?? []).map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="field">
+                <label htmlFor="nbNotes">
+                  Notes for Designer <span className="bnote">optional</span>
+                </label>
+                <textarea
+                  id="nbNotes"
+                  className="bin"
+                  rows={3}
+                  value={designerNotes}
+                  onChange={(e) => setDesignerNotes(e.target.value)}
+                  placeholder="What the designer should know: sizes, references, things to avoid."
+                />
+              </div>
+            </>
+          )}
 
           {isCreate && customColumns && customColumns.length > 0 && (
             <div className="field">
@@ -1366,15 +1393,11 @@ export function CreativeModal(props: CreativeModalProps) {
           )}
 
           <div className="msection-h">Copy</div>
-          <p className="msection-d">The caption and on-post text, matched to what the chosen formats need.</p>
-          {!includesCopy && (
-            <p className="msection-empty">
-              {formats.length > 1 ? "These formats have" : `${formatsLabel(formats)} has`} no caption fields — text lives in Text on
-              Image only (Brief tab).
-            </p>
-          )}
+          <p className="msection-d">
+            The caption and on-post text the chosen formats need, and the Text on Image, saved together as one version.
+          </p>
 
-          {includesCopy && copyVersions.length > 0 && (
+          {copyVersions.length > 0 && (
             <div className="viewbar" style={{ marginBottom: 10 }}>
               {[...copyVersions].reverse().map((v) => (
                 <VersionTab
@@ -1388,7 +1411,7 @@ export function CreativeModal(props: CreativeModalProps) {
             </div>
           )}
 
-          {includesCopy && !isViewingLatestCopy && viewedCopyVersion && (
+          {!isViewingLatestCopy && viewedCopyVersion && (
             <>
               <p className="sub" style={{ marginBottom: 10 }}>
                 An earlier version, read only. New copy builds on the latest, V{latestCopyVersion?.version_no}.
@@ -1399,10 +1422,23 @@ export function CreativeModal(props: CreativeModalProps) {
                   <p className="fd-d">{viewedCopyVersion.fields?.[spec.key] || "—"}</p>
                 </div>
               ))}
+              <div className="field">
+                <label>Text on Image</label>
+                {(viewedCopyVersion.slide_text ?? []).some((t) => t.trim()) ? (
+                  (viewedCopyVersion.slide_text ?? []).map((t, i) => (
+                    <p className="fd-d" key={i}>
+                      {slideCount ? <b>{`Slide ${i + 1}: `}</b> : null}
+                      {t || "—"}
+                    </p>
+                  ))
+                ) : (
+                  <p className="fd-d">—</p>
+                )}
+              </div>
             </>
           )}
 
-          {includesCopy && isViewingLatestCopy && (
+          {isViewingLatestCopy && (
             <>
               <div className="field">
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
@@ -1420,6 +1456,13 @@ export function CreativeModal(props: CreativeModalProps) {
                   </button>
                 </div>
               </div>
+
+              {!includesCopy && (
+                <p className="msection-empty">
+                  {formats.length > 1 ? "These formats have" : `${formatsLabel(formats)} has`} no caption fields, only Text on
+                  Image.
+                </p>
+              )}
 
               {copyFieldSpecs.map((spec) => (
                 <div className="field" key={spec.key}>
@@ -1448,6 +1491,22 @@ export function CreativeModal(props: CreativeModalProps) {
               ))}
 
               <div className="field">
+                <label>
+                  Text on Image <span className="hint">{slideCount ? "one entry per slide" : "the words on the artwork itself"}</span>
+                </label>
+                <ListEditor
+                  itemLabel={(i) => `Slide ${i + 1}`}
+                  values={slideFields(slideText, slideCount)}
+                  onChange={(next) => {
+                    setSlideText(next);
+                    setCopySaveNote(null);
+                  }}
+                  fixed={!!slideCount}
+                  bare
+                />
+              </div>
+
+              <div className="field">
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <button type="button" className="btn sm primary" disabled={saveCopy.isPending} onClick={handleSaveCopyOnly}>
                     {saveCopy.isPending ? "Saving…" : `Save Version ${nextCopyVersionNo}`}
@@ -1470,12 +1529,27 @@ export function CreativeModal(props: CreativeModalProps) {
             {latestCopyVersion ? `Latest Copy Version ${latestCopyVersion.version_no}` : "Latest Copy Version"}
           </div>
           <p className="msection-d">The most recently saved copy — read only, edit it from the Content tab.</p>
-          {!includesCopy ? (
-            <p className="msection-empty">{formats.length > 1 ? "These formats have" : `${formatsLabel(formats)} has`} no caption fields.</p>
-          ) : !latestCopyVersion ? (
+          {!latestCopyVersion ? (
             <p className="msection-empty">No copy saved yet.</p>
           ) : (
-            copyFieldSpecs.map((spec) => {
+            [
+              ...copyFieldSpecs.map((spec) => ({ key: spec.key, label: spec.label })),
+              { key: "__slides", label: "Text on Image" },
+            ].map((spec) => {
+              if (spec.key === "__slides") {
+                const text = tidySlideText(latestCopyVersion.slide_text ?? []);
+                return text.some((t) => t.trim()) ? (
+                  <div className="field" key={spec.key}>
+                    <label>{spec.label}</label>
+                    {text.map((t, i) => (
+                      <p className="fd-d" key={i}>
+                        {slideCount ? <b>{`Slide ${i + 1}: `}</b> : null}
+                        {t || "—"}
+                      </p>
+                    ))}
+                  </div>
+                ) : null;
+              }
               const value = latestCopyVersion.fields?.[spec.key];
               return value ? (
                 <div className="field" key={spec.key}>
@@ -1575,10 +1649,13 @@ export function CreativeModal(props: CreativeModalProps) {
       <CopyChat
         creativeId={creativeId}
         modelName={modelLabel ?? "Claude"}
-        fields={copyFieldSpecs}
-        currentFields={draftFields}
+        fields={[...copyFieldSpecs, ...slideTextFields(slideCount)]}
+        currentFields={{ ...draftFields, ...slideTextAsFields(slideFields(slideText, slideCount)) }}
         onUse={(fields) => {
-          setDraftFields((prev) => ({ ...prev, ...fields }));
+          // The caption fields into the copy, the slides into Text on Image.
+          const copy = Object.fromEntries(Object.entries(fields).filter(([key]) => !isSlideField(key)));
+          setDraftFields((prev) => ({ ...prev, ...copy }));
+          setSlideText((prev) => applySlideDraft(slideFields(prev, slideCount), fields));
           setCopySaveNote(null);
         }}
         onClose={() => setChatOpen(false)}

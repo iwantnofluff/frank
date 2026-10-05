@@ -2177,6 +2177,16 @@ body.lightrail .avatar {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+/* The reference link under a concept, on one line (direct instruction:
+   the column is Concept and Reference in both tables). */
+.cc-ref {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .cc-n {
   display: inline-block;
   margin-top: 4px;

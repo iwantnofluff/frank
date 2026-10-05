@@ -2350,3 +2350,36 @@ Direct instruction, from a screenshot where the phone's bottom was cut off:
 - **The Content post uses the same layout** as a live post opened in the feed: the "Posts" bar (its back arrow goes to the Feed Preview), the account, the post, then the caption, all inside the phone and scrolling within it. The title and format line above the post are gone, as they're already in the header. With the client's Instagram connected, the post shows the account's real picture and username, as the feed does; otherwise the client's name, as before. The review link's own post view is unchanged.
 
 **Verified** in throwaway specs at 1440 × 900 and 1440 × 700, with a stand-in Instagram feed: the Content post in the phone with the real-account picture and username and no title line; the phone's bottom inside the canvas at 900 (scaled to 0.75); the caption at 14px; the back arrow opening the Feed Preview at the same size; a live post's caption at 14px. A pin dropped at 30% × 40% of uploaded artwork inside the scaled phone was saved at 0.297 × 0.398. Looked at each. `creative-review` baselines updated after reading their diffs (only the post's new place changed). `copy-only-post.spec.ts` now finds the post in the phone. `carousel`, `video-review` (pins placed by clicking), `copy-only-post` and `instagram-connections` specs pass.
+
+## Text on Image moves to Content, and Claude writes it
+
+Direct instruction, with the choice made by the user: the brief's Text on Image was saved as a copy version the moment a post was created, so V1 appeared with an empty caption (5 of the 9 copy versions on live were like this). "Write with Claude" also only wrote the caption fields.
+- **Text on Image is on the Content tab now,** below the caption fields, one entry per slide for a carousel. "Save Version N" saves the caption fields and the Text on Image together as one version. The brief is just the plan (name, format, slides, dates, lead, concept, reference), so creating or updating a post never makes a copy version. V1 only exists once some copy, caption or Text on Image, is written.
+- **Claude writes Text on Image too:** the chat's fields are the formats' copy fields plus one Text on Image field per slide (one for a post that isn't a carousel). The prompt says it's the words set on the artwork itself: short, not a repeat of the caption, and for a carousel each slide moves the story on. "Use This" fills the caption fields and every slide. "Review My Draft" reads the slides as well.
+- **Read-only views:** an earlier copy version and the Checks tab's latest version both show its Text on Image.
+- **Formats with no caption fields** (Instagram Story and so on) now have Write with Claude too, for their Text on Image.
+- **Gap:** cutting a carousel's slide count on the Brief no longer trims the saved Text on Image straight away (it was a new copy version before). The next copy save trims it to the new count; until then, the table and review page show the old version's slides.
+- `useSaveSlideText` is gone; nothing else wrote Text on Image.
+
+**Verified**: in a throwaway spec, creating a post and saving its brief again left no copy versions. A real Claude draft for a three-slide carousel came back with caption, alt text and three Text on Image slides ("Still dry at the bottom of the bag", "Comes apart. Rinses clean.", "Latched on the first try"). "Use This" filled all three slides and the caption, and one save made a single V1 holding both. Looked at the chat and the filled editor. `carousel.spec.ts` now checks that the brief makes no version, and that Content's three slide fields save as V1. Unit tests cover the slide fields, merging a draft's slides into place, and the prompt. `new-brief` and `copy-chat` specs pass.
+
+## The New Post window and both tables use the same fields and names
+
+Direct instruction, after an audit of what the window asks for against what each table shows, with the choices made by the user. The table names came from the real content-planner templates (and, before them, the prototype); they now match the window's own.
+- **Shared names:** Post Name (was "What Is It Called?" in the window, "Asset Name/Link" and "Creative Name" in the tables), Format (was "Post Type" and "Type"), Publish Date (was "Date"), Destination (was "Placement"), Live Date (the window said "Needed By"), Concept and Reference (was "Concept" and "Concept and Ref"), Text on Image (was "Image on Text"), Copy (was "Post Copy"), WIIFM Direction (was "Approach Notes"). Column keys are unchanged, so saved views keep their columns.
+- **Scheduled table:** a new Slides column. Concept and Reference now shows the reference link under the concept. Copy shows every copy field the post's formats use, labelled when there's more than a caption ("Caption: …", "Alt Text: …"), not just the caption.
+- **Continuous table:**
+  - New Slides, Lead and WIIFM Direction columns.
+  - Format shows the formats chosen in the window. The separate Static/Static Carousel/Video "Type" choice is no longer shown, though its values stay in `cx.type`.
+  - Text on Image and Copy are the real copy versions, latest first with older ones on hover, as on the scheduled table. The free-text V1 Copy and V2 Copy cells are gone, though what was typed in them stays in `cx.v1_copy` and `cx.v2_copy`.
+  - Notes for Designer is now its own text field (`cx.designer_notes`), editable in the table. It used to show the WIIFM direction, which has its own column now.
+- **New Post window, continuous projects:** optional Funnel and Notes for Designer on the Brief, when creating and when editing. They save to the same fields the table writes, each as its own atomic update.
+- **The New Post → Row draft** on the continuous table now takes Format and Lead, as the scheduled one does.
+- **Left as they were, by choice:** TG, Final Creative and Principles stay table-only. Client Feedback and Status are the table's own.
+
+**Verified** in throwaway specs:
+- A scheduled carousel showed Slides 3, its reference link under the concept, and Copy as "Caption: …" then "Alt Text: …" on their own lines.
+- A continuous post created through the window with MOF and a designer note saved `{"funnel":"mof","designer_notes":"Logo top left"}`. Edited to BOF with the note cleared, it saved `{"funnel":"bof","designer_notes":null}` and reopened with BOF.
+- Looked at both tables and the window.
+
+`continuous-calendar.spec.ts` now checks the new columns, Funnel and Notes for Designer persisting (each save awaited before the reload, which fixes the race that made the old "chips persist" test flaky), and Format, Text on Image and Copy coming from the post with history on hover. `project-calendar.spec.ts` checks the new names. The `project-calendar.png` baseline was updated after reading its diff: only "Columns 14/14" changed. Unit tests cover `copySummary`.

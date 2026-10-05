@@ -8,14 +8,15 @@ function viewSaveSplit(page: import("@playwright/test").Page) {
 
 // ContinuousCalendarTable — a copy of ProjectCalendarTable/project-calendar
 // .spec.ts's own coverage, scoped to what's genuinely new or different here:
-// the 13-field template, the cx-jsonb-backed built-ins (Funnel/Type/TG/
-// Final Creative/V1-V2 Copy/Principles), due_on-driven grouping in place of
+// the content-planner template with the New Post window's own names, the
+// cx-jsonb-backed built-ins (Funnel/TG/Final Creative/Notes for Designer/
+// Principles), the real copy versions, due_on-driven grouping in place of
 // scheduled_at, and calendar_views now being scoped per table_type. Drag-
 // resize/reorder/Columns-picker mechanics are verbatim-copied code already
 // covered by project-calendar.spec.ts, so get one combined check here
 // rather than the full matrix again.
 
-test("continuous calendar — matches the 13-field content-planner template", async ({ page, frank }) => {
+test("continuous calendar — the template's columns, named as in the New Post window", async ({ page, frank }) => {
   const projectId = await frank.createContinuousProject();
   await frank.createContinuousCreative(projectId, { dueOn: "2027-03-15" });
   await frank.loginAsStaff(page);
@@ -24,17 +25,18 @@ test("continuous calendar — matches the 13-field content-planner template", as
   await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
-  // 12 toggleable + the frozen Live Date column = 13.
-  await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 13/13");
+  // 15 toggleable + the frozen Live Date column = 16.
+  await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 16/16");
   for (const label of [
-    "Live Date", "Creative Name", "Placement", "Funnel", "TG", "Type", "Status",
-    "Concept and Ref", "Final Creative", "V1 Copy", "V2 Copy", "Notes for Designer", "Principles",
+    "Live Date", "Post Name", "Destination", "Funnel", "TG", "Format", "Slides", "Lead", "Status",
+    "Concept and Reference", "Final Creative", "Text on Image", "Copy", "Notes for Designer", "WIIFM Direction",
+    "Principles",
   ]) {
     await expect(page.locator("th", { hasText: new RegExp(`^${label}`) })).toHaveCount(1);
   }
 });
 
-test("continuous calendar — Funnel and Type chips persist", async ({ page, frank }) => {
+test("continuous calendar — Funnel and Notes for Designer persist", async ({ page, frank }) => {
   const projectId = await frank.createContinuousProject();
   await frank.createContinuousCreative(projectId, { name: "Chip Test Creative", dueOn: "2027-03-15" });
   await frank.loginAsStaff(page);
@@ -44,49 +46,48 @@ test("continuous calendar — Funnel and Type chips persist", async ({ page, fra
   await page.waitForSelector(".tbl");
 
   // Default column order's td indices: 0 the staff-only select-row
-  // checkbox, 1 Live Date, 2 Creative Name, 3 Placement, 4 Funnel, 5 TG,
-  // 6 Type.
+  // checkbox, 1 Live Date, 2 Post Name, 3 Destination, 4 Funnel, ...,
+  // 14 Notes for Designer.
   const row = page.locator("tr[data-row]", { hasText: "Chip Test Creative" });
   const cells = row.locator("td");
-  await cells.nth(4).locator("select").selectOption("tof");
-  await cells.nth(6).locator("select").selectOption("video");
+  // Each save lands before the reload (it used to race it).
+  const saved = () => page.waitForResponse((r) => r.url().includes("update_creative_cx") && r.ok());
+  await Promise.all([saved(), cells.nth(4).locator("select").selectOption("tof")]);
+  const notes = cells.nth(14).locator("input");
+  await notes.fill("Keep the logo top left");
+  await Promise.all([saved(), notes.blur()]);
   await page.reload();
   await page.waitForSelector(".tblwrap, .empty");
   await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
-  const reloadedRow = page.locator("tr[data-row]", { hasText: "Chip Test Creative" });
-  const reloadedCells = reloadedRow.locator("td");
+  const reloadedCells = page.locator("tr[data-row]", { hasText: "Chip Test Creative" }).locator("td");
   await expect(reloadedCells.nth(4).locator("select")).toHaveValue("tof");
   await expect(reloadedCells.nth(4)).toContainText("TOF");
-  await expect(reloadedCells.nth(6).locator("select")).toHaveValue("video");
-  await expect(reloadedCells.nth(6)).toContainText("Video");
+  await expect(reloadedCells.nth(14).locator("input")).toHaveValue("Keep the logo top left");
 });
 
-test("continuous calendar — V1/V2 Copy persist independently", async ({ page, frank }) => {
+test("continuous calendar — Format, Text on Image and Copy come from the post itself", async ({ page, frank }) => {
   const projectId = await frank.createContinuousProject();
-  await frank.createContinuousCreative(projectId, { name: "Copy Test Creative", dueOn: "2027-03-15" });
+  const id = await frank.createContinuousCreative(projectId, { name: "Copy Test Creative", dueOn: "2027-03-15" });
+  await frank.createCopyVersion(id, 1, { caption: "First caption", slideText: ["First words"] });
+  await frank.createCopyVersion(id, 2, { caption: "Second caption", slideText: ["Second words"] });
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
   await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
-  const row = page.locator("tr[data-row]", { hasText: "Copy Test Creative" });
-  const textareas = row.locator("textarea.cxin");
-  await textareas.nth(0).fill("First draft of the copy");
-  await textareas.nth(0).blur();
-  await textareas.nth(1).fill("Revised, alternative angle");
-  await textareas.nth(1).blur();
-  await page.waitForTimeout(200);
-
-  await page.reload();
-  await page.waitForSelector(".tblwrap, .empty");
-  await goToMonth(page, "March 2027");
-  await page.waitForSelector(".tbl");
-  const reloadedRow = page.locator("tr[data-row]", { hasText: "Copy Test Creative" });
-  const reloadedTextareas = reloadedRow.locator("textarea.cxin");
-  await expect(reloadedTextareas.nth(0)).toHaveValue("First draft of the copy");
-  await expect(reloadedTextareas.nth(1)).toHaveValue("Revised, alternative angle");
+  const cells = page.locator("tr[data-row]", { hasText: "Copy Test Creative" }).locator("td");
+  // 6 Format, 12 Text on Image, 13 Copy: the latest version, older on hover.
+  await expect(cells.nth(6)).toHaveText("Instagram Feed");
+  await expect(cells.nth(12)).toContainText("V2");
+  await expect(cells.nth(12)).toContainText("Second words");
+  await expect(cells.nth(13)).toContainText("Second caption");
+  await expect(cells.nth(13)).toContainText("+1 earlier");
+  await cells.nth(13).locator(".copyc").hover();
+  await expect(page.locator(".copypop")).toContainText("First caption");
+  // Nothing to type into: the copy is written in the post's own window.
+  await expect(cells.nth(13).locator("textarea")).toHaveCount(0);
 });
 
 test("continuous calendar — status filter narrows the visible rows", async ({ page, frank }) => {
@@ -149,6 +150,8 @@ test("continuous calendar — resizing a column marks the view dirty, Discard Ch
 
   await expect(viewSaveSplit(page)).toHaveCount(0);
   const statusTh = page.locator("th", { hasText: "Status" });
+  // Further right since Format, Slides and Lead joined: in view first.
+  await statusTh.scrollIntoViewIfNeeded();
   const originalWidth = (await statusTh.boundingBox())!.width;
   const gripBox = (await statusTh.locator(".grip").boundingBox())!;
   await page.mouse.move(gripBox.x + 3, gripBox.y + 5);
@@ -204,5 +207,6 @@ test("a real client-role session sees the continuous table read-only", async ({ 
   await expect(page.locator('button:has-text("New Post")')).toHaveCount(0);
   const row = page.locator("tr[data-row]", { hasText: "Client View Creative" });
   await expect(row.locator("select").first()).toBeDisabled();
-  await expect(row.locator("textarea.cxin").first()).toBeDisabled();
+  // Notes for Designer, a text field.
+  await expect(row.locator("input.cxin").first()).toBeDisabled();
 });

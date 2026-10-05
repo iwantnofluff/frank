@@ -36,8 +36,11 @@ export function useUpdateCreativeCx(projectId: string) {
         throw new Error("You don't have permission to edit this field.");
       }
     },
-    onSuccess: () => {
+    onSuccess: (_data, { creativeId }) => {
       queryClient.invalidateQueries({ queryKey: ["creatives", projectId] });
+      // The post itself too: the New Post window reads Funnel and Notes
+      // for Designer from it.
+      queryClient.invalidateQueries({ queryKey: ["creative", creativeId] });
     },
   });
 }

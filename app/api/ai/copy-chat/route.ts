@@ -6,6 +6,7 @@ import {
   buildCopyChatPrompt,
   openingMessage,
   parseCopyChatReply,
+  slideTextFields,
   type CopyChatMode,
   type CopyChatTurn,
 } from "@/lib/ai/copy-chat";
@@ -55,7 +56,7 @@ export async function POST(request: Request) {
 
   const { data: creative } = await supabase
     .from("creatives")
-    .select("id, agency_id, name, concept, approach_notes, format, formats, project:projects(client_id)")
+    .select("id, agency_id, name, concept, approach_notes, format, formats, slide_count, project:projects(client_id)")
     .eq("id", body.creativeId ?? "")
     .maybeSingle();
   if (!creative) return fail("Post not found", 404);
@@ -72,8 +73,11 @@ export async function POST(request: Request) {
   if (!membership || membership.client_id !== null) return fail("Staff access required", 403);
 
   const formats = postFormats(creative as { format: string; formats: string[] | null });
-  const fields = copyFieldsFor(formats).map((key) => ({ key, label: COPY_FIELD_LABELS[key] ?? key }));
-  if (!fields.length) return fail("This post's format has no copy fields", 400);
+  // The formats' copy fields, then the Text on Image (one per slide).
+  const fields = [
+    ...copyFieldsFor(formats).map((key) => ({ key, label: COPY_FIELD_LABELS[key] ?? key })),
+    ...slideTextFields((creative.slide_count as number | null) ?? null),
+  ];
 
   // The conversation: an existing one, or a new one's opening.
   let chatId = body.chatId ?? null;

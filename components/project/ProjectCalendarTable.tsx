@@ -17,7 +17,7 @@ import { SaveViewModal } from "@/components/project/SaveViewModal";
 import { PermanentDeleteConfirm } from "@/components/project/PermanentDeleteConfirm";
 import { bandOf, stageLabel, stageColor, exceptionLabel, type Band } from "@/lib/stage-labels";
 import { errorMessage } from "@/lib/errors";
-import { formatsLabel, postFormats } from "@/lib/formats";
+import { copySummary, formatsLabel, postFormats } from "@/lib/formats";
 import { getMonthWeeks, getWeekDays, isoWeekNumber, dateKey } from "@/lib/calendar-weeks";
 import { useCopyVersionsByCreative, type CopyVersionSummary } from "@/hooks/use-copy-versions-by-creative";
 import { useLatestFeedbackByCreative } from "@/hooks/use-latest-feedback-by-creative";
@@ -53,7 +53,7 @@ const STATUS_FILTERS: { value: "all" | Band; label: string }[] = [
 // below match their fixed widths) — not offered in the Columns picker.
 const FROZEN_COLUMNS = [
   { key: "week", label: "Week", sub: "No.", width: 66, stickyClass: "sk1", left: 0 },
-  { key: "date", label: "Date", sub: "Of post", width: 92, stickyClass: "sk2", left: 66 },
+  { key: "date", label: "Publish Date", sub: "Of post", width: 92, stickyClass: "sk2", left: 66 },
   { key: "day", label: "Day", sub: "Of week", width: 64, stickyClass: "sk3", left: 158 },
 ] as const;
 
@@ -63,22 +63,26 @@ const FROZEN_COLUMNS = [
 // by hand rather than through the `columns` array below.
 const CHECKBOX_COL_WIDTH = 36;
 
-// Matches the real content-planner template used on live client work
-// (Hapi Dental's Sep '26 planner, not frank-prototype.html's fictional
-// demo data) — labels, sub-labels and order all read off that sheet.
+// Order and sub-labels from the real content-planner template used on
+// live client work (Hapi Dental's Sep '26 planner). The names match the
+// New Post window's own (direct instruction), so a field reads the same
+// in both: Post Name, Format, Slides, Concept and Reference, Text on
+// Image, Copy, WIIFM Direction. Keys stay as they were, so saved views
+// keep their columns.
 const TOGGLABLE_COLUMNS = [
   { key: "time", label: "Time", sub: "Time of Post", width: 74 },
   { key: "status", label: "Status", sub: "Status of Post", width: 156 },
-  { key: "type", label: "Post Type", sub: "Suggested Type", width: 134 },
+  { key: "type", label: "Format", sub: "Where it goes out", width: 134 },
+  { key: "slides", label: "Slides", sub: "Carousels", width: 74 },
   { key: "lead", label: "Lead", sub: "POC in Team", width: 112 },
-  { key: "creative", label: "Asset Name/Link", sub: "Latest Post Visual", width: 196 },
-  { key: "concept", label: "Concept", sub: "Describe the Post or Add Ref Link", width: 236 },
+  { key: "creative", label: "Post Name", sub: "Latest Post Visual", width: 196 },
+  { key: "concept", label: "Concept and Reference", sub: "Describe the Post or Add Ref Link", width: 236 },
   // One column each, not three (1/2/3) — the cell shows the latest
   // copy_versions row; older ones show on hover instead of their own
   // columns (CopyVersionHistoryPopover), per explicit direction.
-  { key: "imageOnText", label: "Image on Text", sub: "Check WIIFM Approach", width: 220 },
-  { key: "postCopy", label: "Post Copy", sub: "Check WIIFM Approach", width: 220 },
-  { key: "approach", label: "Approach Notes", sub: "Explain the WIIFM Approach", width: 236 },
+  { key: "imageOnText", label: "Text on Image", sub: "Check WIIFM Approach", width: 220 },
+  { key: "postCopy", label: "Copy", sub: "Check WIIFM Approach", width: 220 },
+  { key: "approach", label: "WIIFM Direction", sub: "Explain the WIIFM Approach", width: 236 },
   { key: "clientFeedback", label: "Client Feedback", sub: "", width: 220 },
 ] as const;
 
@@ -464,13 +468,14 @@ export function ProjectCalendarTable({
 
   function versionRows(
     versions: CopyVersionSummary[] | undefined,
-    field: "caption" | "slideText",
+    field: "copy" | "slideText",
+    formatIds: string[],
   ): { versionNo: number; text: string }[] {
     if (!versions) return [];
     return versions
       .map((v) => ({
         versionNo: v.versionNo,
-        text: field === "caption" ? (v.caption ?? "") : v.slideText.filter(Boolean).join("\n"),
+        text: field === "copy" ? copySummary(v.fields, formatIds) : v.slideText.filter(Boolean).join("\n"),
       }))
       .filter((v) => v.text);
   }
@@ -838,7 +843,7 @@ export function ProjectCalendarTable({
           blocked={
             visibleOrderedKeys.includes("creative")
               ? null
-              : "Show the Asset Name column to name the post"
+              : "Show the Post Name column to name the post"
           }
           problem={draft.problem}
           saving={draft.saving}
@@ -1032,6 +1037,12 @@ export function ProjectCalendarTable({
                                   <span className="tdim">{formatsLabel(postFormats(c))}</span>
                                 </td>
                               );
+                            case "slides":
+                              return (
+                                <td key={key}>
+                                  {c.slide_count ? c.slide_count : <span className="tdim">—</span>}
+                                </td>
+                              );
                             case "lead":
                               return (
                                 <td key={key}>
@@ -1067,13 +1078,19 @@ export function ProjectCalendarTable({
                             case "concept":
                               return (
                                 <td key={key} className="cellw">
-                                  {c.concept ? (
+                                  {c.concept || c.reference_url ? (
                                     <span
                                       className="copyc"
-                                      onMouseEnter={(e) => handleTextEnter([c.concept as string], e.currentTarget)}
+                                      onMouseEnter={(e) =>
+                                        handleTextEnter(
+                                          [c.concept, c.reference_url].filter((t): t is string => !!t),
+                                          e.currentTarget,
+                                        )
+                                      }
                                       onMouseLeave={scheduleTextHide}
                                     >
-                                      <span className="cc-t">{c.concept}</span>
+                                      {c.concept && <span className="cc-t">{c.concept}</span>}
+                                      {c.reference_url && <span className="tdim cc-ref">{c.reference_url}</span>}
                                     </span>
                                   ) : (
                                     <span className="tdim">—</span>
@@ -1104,10 +1121,10 @@ export function ProjectCalendarTable({
                               );
                             case "imageOnText":
                             case "postCopy": {
-                              const field = key === "postCopy" ? "caption" : "slideText";
-                              const rows = versionRows(copyVersionsByCreative?.[c.id], field);
+                              const field = key === "postCopy" ? "copy" : "slideText";
+                              const rows = versionRows(copyVersionsByCreative?.[c.id], field, postFormats(c));
                               const latest = rows[0];
-                              const label = key === "postCopy" ? "Post Copy" : "Image on Text";
+                              const label = key === "postCopy" ? "Copy" : "Text on Image";
                               return (
                                 <td key={key} className="cellw">
                                   {latest ? (

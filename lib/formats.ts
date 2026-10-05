@@ -152,3 +152,13 @@ export function aspectRatioCss(id: string): string {
   const m = formatById(id)?.aspectRatio.match(/^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)$/);
   return m ? `${m[1]} / ${m[2]}` : "1 / 1";
 }
+
+// A copy version's text for the calendar tables' Copy column (direct
+// instruction: every copy field, not just the caption). Only the fields
+// the post's formats use, in their order. A caption on its own reads
+// plainly; with other fields, each is labelled ("Alt Text: …").
+export function copySummary(fields: Record<string, string>, formatIds: string[]): string {
+  const filled = copyFieldsFor(formatIds).filter((key) => fields[key]?.trim());
+  if (filled.length === 1 && filled[0] === "caption") return fields.caption.trim();
+  return filled.map((key) => `${COPY_FIELD_LABELS[key] ?? key}: ${fields[key].trim()}`).join("\n");
+}

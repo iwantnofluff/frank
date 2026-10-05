@@ -7,6 +7,8 @@ export interface CopyVersionSummary {
   versionNo: number;
   slideText: string[];
   caption: string | null;
+  // Every copy field, for the tables' Copy column (lib/formats.ts copySummary).
+  fields: Record<string, string>;
 }
 
 // One batch query for a whole project's creatives, not one per row — same
@@ -38,6 +40,7 @@ export function useCopyVersionsByCreative(creativeIds: string[]) {
           versionNo: row.version_no,
           slideText: row.slide_text ?? [],
           caption: fields.caption ?? null,
+          fields,
         });
       }
       return result;

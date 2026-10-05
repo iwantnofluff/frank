@@ -17,6 +17,9 @@ import { bandOf, stageLabel, stageColor, exceptionLabel, type Band } from "@/lib
 import { errorMessage } from "@/lib/errors";
 import { getMonthWeeks, getWeekDays, isoWeekNumber, dateKey } from "@/lib/calendar-weeks";
 import { useMyAgency } from "@/hooks/use-my-agency";
+import { useCopyVersionsByCreative } from "@/hooks/use-copy-versions-by-creative";
+import { VersionedTextCell } from "@/components/project/VersionedTextCell";
+import { copySummary, formatsLabel, postFormats } from "@/lib/formats";
 import { DraftEditBar, DraftField, useDraftPost } from "@/components/project/draft-post";
 import {
   useCalendarViews,
@@ -63,18 +66,31 @@ const CHECKBOX_COL_WIDTH = 36;
 // their own and read/write creatives.cx — the same jsonb blob genuine
 // per-project custom columns already use, just under fixed keys rather
 // than a real custom_columns row (see docs/parity-gaps.md).
+//
+// Names match the New Post window's own (direct instruction): Post Name,
+// Destination, Format, Slides, Lead, Concept and Reference, Text on Image,
+// Copy, WIIFM Direction. Format is the formats chosen in the window (the
+// old Static/Video "Type" choice is kept in cx.type, no longer shown).
+// Text on Image and Copy are the real copy versions, as on the scheduled
+// table; the old free-text V1/V2 Copy stay in cx.v1_copy/v2_copy, no
+// longer shown. Notes for Designer is its own text (cx.designer_notes),
+// also in the window; it used to show the WIIFM direction, which now has
+// its own column.
 const TOGGLABLE_COLUMNS = [
-  { key: "creative", label: "Creative Name", sub: "Concept title", width: 196 },
-  { key: "placement", label: "Placement", sub: "Ad slot", width: 140 },
+  { key: "creative", label: "Post Name", sub: "Concept title", width: 196 },
+  { key: "placement", label: "Destination", sub: "ASIN, URL or location", width: 140 },
   { key: "funnel", label: "Funnel", sub: "Funnel stage", width: 150 },
   { key: "tg", label: "TG", sub: "Target audience", width: 130 },
-  { key: "type", label: "Type", sub: "Creative format", width: 150 },
+  { key: "type", label: "Format", sub: "Where it goes out", width: 150 },
+  { key: "slides", label: "Slides", sub: "Carousels", width: 74 },
+  { key: "lead", label: "Lead", sub: "POC in Team", width: 112 },
   { key: "status", label: "Status", sub: "Workflow state", width: 156 },
-  { key: "conceptRef", label: "Concept and Ref", sub: "Visual brief", width: 260 },
+  { key: "conceptRef", label: "Concept and Reference", sub: "Visual brief", width: 260 },
   { key: "finalCreative", label: "Final Creative", sub: "Approved asset", width: 200 },
-  { key: "v1Copy", label: "V1 Copy", sub: "Draft copy", width: 220 },
-  { key: "v2Copy", label: "V2 Copy", sub: "Revised copy", width: 220 },
+  { key: "imageOnText", label: "Text on Image", sub: "On the artwork", width: 220 },
+  { key: "copy", label: "Copy", sub: "Latest version", width: 220 },
   { key: "notes", label: "Notes for Designer", sub: "Design feedback", width: 220 },
+  { key: "approach", label: "WIIFM Direction", sub: "What the reader gets", width: 236 },
   { key: "principles", label: "Principles", sub: "Psychological angle", width: 180 },
 ] as const;
 
@@ -89,19 +105,14 @@ const FUNNEL_OPTIONS = [
   { value: "mof", label: "MOF (Middle of Funnel)", colour: "#2BB65B" },
   { value: "bof", label: "BOF (Bottom of Funnel)", colour: "#FF8A00" },
 ];
-const TYPE_OPTIONS = [
-  { value: "static", label: "Static", colour: "#007BFF" },
-  { value: "static_carousel", label: "Static Carousel", colour: "#2BB65B" },
-  { value: "video", label: "Video", colour: "#FF8A00" },
-];
 
 // Fake CustomColumnRow-shaped objects, stable across renders — CxCell only
 // cares about the shape, not where it came from, so Funnel/Type/TG/Final
 // Creative/Principles get its existing dropdown-chip/text editing for free,
 // reading and writing through the same creatives.cx blob and the same
 // onCxSave callback the page already wires up for real custom columns.
-const FUNNEL_COLUMN: CustomColumnRow = { id: "funnel", key: "funnel", label: "Funnel", type: "status", options: FUNNEL_OPTIONS, position: 0 };
-const TYPE_COLUMN: CustomColumnRow = { id: "type", key: "type", label: "Type", type: "status", options: TYPE_OPTIONS, position: 0 };
+export const FUNNEL_COLUMN: CustomColumnRow = { id: "funnel", key: "funnel", label: "Funnel", type: "status", options: FUNNEL_OPTIONS, position: 0 };
+export const DESIGNER_NOTES_COLUMN: CustomColumnRow = { id: "designer_notes", key: "designer_notes", label: "Notes for Designer", type: "text", options: null, position: 0 };
 const TG_COLUMN: CustomColumnRow = { id: "tg", key: "tg", label: "TG", type: "text", options: null, position: 0 };
 const FINAL_CREATIVE_COLUMN: CustomColumnRow = { id: "final_creative", key: "final_creative", label: "Final Creative", type: "text", options: null, position: 0 };
 const PRINCIPLES_COLUMN: CustomColumnRow = { id: "principles", key: "principles", label: "Principles", type: "text", options: null, position: 0 };
@@ -135,34 +146,6 @@ function sameWidths(a: Record<string, number>, b: Record<string, number>): boole
   const bKeys = Object.keys(b).sort();
   if (!sameStringArray(aKeys, bKeys)) return false;
   return aKeys.every((k) => a[k] === b[k]);
-}
-
-// A small multi-line counterpart to CxCell's single-line text input, for
-// V1 Copy/V2 Copy specifically — not part of the shared custom-columns
-// type system (CustomColumnType has no "multi-line" variant), since these
-// two aren't real custom_columns rows either.
-function CopyTextarea({
-  value,
-  onSave,
-  readOnly,
-}: {
-  value: string;
-  onSave: (value: string | null) => void;
-  readOnly: boolean;
-}) {
-  const [draft, setDraft] = useState(value);
-  return (
-    <div onClick={(e) => e.stopPropagation()}>
-      <textarea
-        className="cxin"
-        rows={3}
-        value={draft}
-        disabled={readOnly}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={() => onSave(draft.trim() || null)}
-      />
-    </div>
-  );
 }
 
 // Copy of ProjectCalendarTable.tsx, built for continuous-delivery projects
@@ -452,6 +435,11 @@ export function ContinuousCalendarTable({
   }
 
   const hasAnyDue = creatives.some((c) => c.due_on);
+
+  // Every copy version, batched for the project: the Text on Image and
+  // Copy columns show the latest, older ones on hover.
+  const creativeIds = useMemo(() => creatives.map((c) => c.id), [creatives]);
+  const { data: copyVersionsByCreative } = useCopyVersionsByCreative(creativeIds);
 
   const filtered = useMemo(() => {
     return creatives
@@ -907,9 +895,13 @@ export function ContinuousCalendarTable({
                         ? "name"
                         : key === "placement"
                           ? "destination"
-                          : key === "conceptRef"
-                            ? "concept"
-                            : null;
+                          : key === "type"
+                            ? "format"
+                            : key === "lead"
+                              ? "lead"
+                              : key === "conceptRef"
+                                ? "concept"
+                                : null;
                     return (
                       <td key={key} className={key === "conceptRef" ? "cellw" : undefined}>
                         {field ? (
@@ -1017,12 +1009,28 @@ export function ContinuousCalendarTable({
                             case "type":
                               return (
                                 <td key={key}>
-                                  <CxCell
-                                    column={TYPE_COLUMN}
-                                    value={c.cx?.["type"] ?? null}
-                                    onSave={(value) => onCxSave(c.id, "type", value)}
-                                    readOnly={cxReadOnly}
-                                  />
+                                  <span className="tdim">{formatsLabel(postFormats(c))}</span>
+                                </td>
+                              );
+                            case "slides":
+                              return (
+                                <td key={key}>
+                                  {c.slide_count ? c.slide_count : <span className="tdim">—</span>}
+                                </td>
+                              );
+                            case "lead":
+                              return (
+                                <td key={key}>
+                                  {c.lead ? (
+                                    <span className="lead">
+                                      <i style={{ background: "#6B7280" }}>
+                                        {c.lead.name.slice(0, 1).toUpperCase()}
+                                      </i>
+                                      {c.lead.name}
+                                    </span>
+                                  ) : (
+                                    <span className="tdim">—</span>
+                                  )}
                                 </td>
                               );
                             case "status":
@@ -1064,21 +1072,36 @@ export function ContinuousCalendarTable({
                                   />
                                 </td>
                               );
-                            case "v1Copy":
-                            case "v2Copy": {
-                              const cxKey = key === "v1Copy" ? "v1_copy" : "v2_copy";
-                              const raw = c.cx?.[cxKey];
+                            case "imageOnText":
+                            case "copy": {
+                              const versions = copyVersionsByCreative?.[c.id] ?? [];
+                              const rows = versions
+                                .map((v) => ({
+                                  versionNo: v.versionNo,
+                                  text:
+                                    key === "copy"
+                                      ? copySummary(v.fields, postFormats(c))
+                                      : v.slideText.filter(Boolean).join("\n"),
+                                }))
+                                .filter((v) => v.text);
                               return (
                                 <td key={key} className="cellw">
-                                  <CopyTextarea
-                                    value={typeof raw === "string" ? raw : ""}
-                                    onSave={(value) => onCxSave(c.id, cxKey, value)}
-                                    readOnly={cxReadOnly}
-                                  />
+                                  <VersionedTextCell label={key === "copy" ? "Copy" : "Text on Image"} rows={rows} />
                                 </td>
                               );
                             }
                             case "notes":
+                              return (
+                                <td key={key} className="cellw">
+                                  <CxCell
+                                    column={DESIGNER_NOTES_COLUMN}
+                                    value={c.cx?.["designer_notes"] ?? null}
+                                    onSave={(value) => onCxSave(c.id, "designer_notes", value)}
+                                    readOnly={cxReadOnly}
+                                  />
+                                </td>
+                              );
+                            case "approach":
                               return (
                                 <td key={key} className="cellw">
                                   {c.approach_notes?.length ? (

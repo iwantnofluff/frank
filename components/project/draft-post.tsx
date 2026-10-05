@@ -74,7 +74,6 @@ export function useDraftPost({
         concept: values.concept,
         referenceUrl: "",
         slideCount: null,
-        slideText: [],
         cx: {},
         scheduledAt,
         destination: delivery === "continuous" ? values.destination.trim() : null,
