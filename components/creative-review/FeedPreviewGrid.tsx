@@ -49,7 +49,8 @@ export function FeedPreviewGrid({
   // first, then the real ones after them, the way the grid will read once
   // these go live.
   // A page at a time as the grid scrolls, to the account's first post.
-  const { data: pages, fetchNextPage, hasNextPage, isFetchingNextPage } = useClientInstagramFeed(clientId);
+  const { data: pages, fetchNextPage, hasNextPage, isFetchingNextPage, isPending: liveLoading } =
+    useClientInstagramFeed(clientId);
   const live = pages?.pages[0];
   const feed = live?.status === "ok" ? live.feed : null;
   // Posts, or just the Reels (a Reel-format plan, or a real Reel).
@@ -94,7 +95,7 @@ export function FeedPreviewGrid({
       <span className="pf-btn pf-btn2" aria-hidden="true" />
       <div className="pf-screen">
     <div className="feedcard">
-      <FeedProfile profile={feed?.profile ?? null} fallbackName={brandName} />
+      <FeedProfile profile={feed?.profile ?? null} fallbackName={brandName} loading={!!clientId && liveLoading} />
       <FeedTabs tab={tab} onTab={setTab} />
 
       {isLoading ? (
@@ -151,7 +152,7 @@ export function FeedPreviewGrid({
             length: tab === "reels" ? 0 : Math.max(0, GRID_SLOTS - creatives.length - livePosts.length),
           }).map((_, i) => (
             <div key={`empty-${i}`} className="feedgrid-tile-empty">
-              <EmptyTileArt />
+              <EmptyTileArt loading={!!clientId && liveLoading} />
             </div>
           ))}
           <LoadMore hasMore={!!hasNextPage} loading={isFetchingNextPage} onMore={() => fetchNextPage()} />

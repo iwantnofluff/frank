@@ -66,10 +66,14 @@ export function FeedTileArt({
 // where a real live post will show once that's connected, rather than
 // implying something is missing the way "No Creative" would for a slot
 // that was never meant to hold planned work in the first place.
-export function EmptyTileArt() {
+//
+// While the client's live feed is still on its way (phase54), the same
+// slot says so, gently pulsing, rather than "Live Post" (which reads as
+// nothing connected).
+export function EmptyTileArt({ loading = false }: { loading?: boolean }) {
   return (
-    <div className="pp-empty">
-      <span>Live Post</span>
+    <div className={loading ? "pp-empty loading" : "pp-empty"}>
+      <span>{loading ? "Loading live posts…" : "Live Post"}</span>
     </div>
   );
 }

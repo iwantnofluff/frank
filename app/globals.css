@@ -6649,3 +6649,26 @@ button.fp-tab[aria-selected="true"] {
 .feedgrid.reels .feedgrid-tile {
   aspect-ratio: 9 / 16;
 }
+/* While the live feed loads (phase54): the header says so, and the empty
+   slots pulse gently with "Loading live posts…". */
+.fp-loading {
+  font-size: 12px;
+  color: var(--muted);
+}
+.pp-empty.loading {
+  animation: feed-pulse 1.4s ease-in-out infinite;
+}
+@keyframes feed-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pp-empty.loading {
+    animation: none;
+  }
+}

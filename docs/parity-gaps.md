@@ -2310,3 +2310,9 @@ Direct questions and instruction, with real content in the feed:
 - **Both the Feed Preview and the review link's Feed view** use the same header and tabs (`FeedChrome.tsx`).
 
 **Verified**: read-only against nofluff.in on live: bio, website, following and name come back, and the latest 50 posts are labelled (25 Reels). In a throwaway spec with a stand-in feed (no access copied between environments): the header as described, Posts showing everything, and Reels showing just the 7 Reels of 14 at 110 × 195 (9:16). The phone measured 352 × 745 on screen. Looked at both tabs. `instagram-connections`, `shared-review-public` and `creative-review` specs pass. `npm run build` clean.
+
+## The feed says it's loading
+
+Direct instruction: on first load, the empty slots read "Live Post" and the header showed the plain client name until Instagram answered, which looked like nothing was connected. Until the live feed's first answer arrives, the empty slots read "Loading live posts…" with a gentle pulse (still for anyone who prefers reduced motion), and the header says "Loading Instagram profile…". If the client turns out not to be connected, it falls back to "Live Post" and the note about connecting.
+
+**Verified** in throwaway specs with Instagram's answer held back: the header's loading line and all 8 empty slots loading (looked at), then, once a "not connected" answer was let through, the slots back to "Live Post", the loading line gone, and the connect note shown. `instagram-connections.spec.ts` passes. `npm run build` clean.

@@ -7,7 +7,16 @@ export type FeedTab = "posts" | "reels";
 // The profile header above a feed grid. With the client's Instagram
 // connected (phase54), it reads like the real profile: picture, counts,
 // name, description and link. Without, the client's name, as before.
-export function FeedProfile({ profile, fallbackName }: { profile: LiveFeed["profile"] | null; fallbackName: string }) {
+export function FeedProfile({
+  profile,
+  fallbackName,
+  loading = false,
+}: {
+  profile: LiveFeed["profile"] | null;
+  fallbackName: string;
+  // The live feed is still on its way.
+  loading?: boolean;
+}) {
   if (!profile) {
     return (
       <div className="fp-h">
@@ -16,6 +25,7 @@ export function FeedProfile({ profile, fallbackName }: { profile: LiveFeed["prof
         </span>
         <span className="fp-t">
           <b>{fallbackName}</b>
+          {loading && <span className="fp-loading">Loading Instagram profile…</span>}
         </span>
       </div>
     );
