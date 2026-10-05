@@ -17,7 +17,7 @@ export function projectInitials(name: string) {
 
 function IconGlyph({ icon }: { icon: ProjectIcon }) {
   return (
-    <svg className="picon" viewBox="0 0 24 24" aria-hidden="true">
+    <svg className="picon" viewBox="0 0 1200 1200" aria-hidden="true">
       {icon.paths.map((d) => (
         <path key={d} d={d} />
       ))}

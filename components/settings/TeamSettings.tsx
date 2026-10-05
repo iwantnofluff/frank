@@ -238,19 +238,19 @@ export function TeamSettings({ view }: { view: View }) {
                 <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
                   <PersonAvatar
                     className="who"
-                    style={{ width: 32, height: 32, fontSize: 12, background: avatarColour(m.user?.name ?? "?") }}
+                    style={{ width: 32, height: 32, fontSize: 12.2, background: avatarColour(m.user?.name ?? "?") }}
                     initials={initials(m.user?.name, m.user?.email ?? "?")}
                     photoUrl={m.user?.avatar_asset_id ? photos?.[m.user.avatar_asset_id] : null}
                   />
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 14.5, fontWeight: 500 }}>{m.user?.name ?? "—"}</div>
+                    <div style={{ fontSize: 14.7, fontWeight: 500 }}>{m.user?.name ?? "—"}</div>
                     {m.user?.designation && (
-                      <div style={{ fontSize: 13, color: "var(--muted)" }}>{m.user.designation}</div>
+                      <div style={{ fontSize: 13.2, color: "var(--muted)" }}>{m.user.designation}</div>
                     )}
                   </div>
                 </div>
-                <div style={{ fontSize: 14, color: "var(--muted)" }}>{m.user?.email ?? "—"}</div>
-                {canSeeAccess && <div style={{ fontSize: 14 }}>{clientsCell(m)}</div>}
+                <div style={{ fontSize: 14.2, color: "var(--muted)" }}>{m.user?.email ?? "—"}</div>
+                {canSeeAccess && <div style={{ fontSize: 14.2 }}>{clientsCell(m)}</div>}
                 <div>
                   <span className="tag blue">{ROLE_LABELS[m.role] ?? m.role}</span>
                   {m.role === "admin" && m.can_invite && (
@@ -306,8 +306,8 @@ export function TeamSettings({ view }: { view: View }) {
                     key={c.id}
                     style={{ gridTemplateColumns: CLIENT_VIEW_COLUMNS, cursor: "default" }}
                   >
-                    <div style={{ fontSize: 14.5, fontWeight: 500 }}>{c.name}</div>
-                    <div style={{ fontSize: 14 }}>
+                    <div style={{ fontSize: 14.7, fontWeight: 500 }}>{c.name}</div>
+                    <div style={{ fontSize: 14.2 }}>
                       {withAccess.length === 0 ? (
                         <span style={{ color: "var(--muted)" }}>No Users</span>
                       ) : (

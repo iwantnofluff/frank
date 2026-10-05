@@ -46,6 +46,7 @@ import {
   COPY_FIELD_LABELS,
 } from "@/lib/formats";
 import { slideFields, tidySlideText } from "@/lib/slide-text";
+import { ListEditor } from "@/components/ui/ListEditor";
 import { linkHref, tidyReferences } from "@/lib/links";
 import { FormatPicker } from "./FormatPicker";
 import {
@@ -1055,19 +1056,33 @@ export function CreativeModal(props: CreativeModalProps) {
           )}
 
           {delivery === "scheduled" ? (
-            <div className="frow">
+            // Date and time side by side, without the browser's own pickers
+            // inside them; the one picker sits at the end of the row
+            // (direct instruction).
+            <div className="frow dtrow">
               <div className="field">
                 <label htmlFor="nbDate">Publish Date</label>
-                <div style={{ display: "flex", gap: 6 }}>
+                <input
+                  id="nbDate"
+                  className="bin one"
+                  type="date"
+                  value={date}
+                  onChange={(e) => {
+                    setDate(e.target.value);
+                    if (dateError) setDateError(null);
+                  }}
+                />
+                {dateError && <p className="autherr">{dateError}</p>}
+              </div>
+              <div className="field">
+                <label htmlFor="nbTime">Time</label>
+                <div className="dtrow-time">
                   <input
-                    id="nbDate"
+                    id="nbTime"
                     className="bin one"
-                    type="date"
-                    value={date}
-                    onChange={(e) => {
-                      setDate(e.target.value);
-                      if (dateError) setDateError(null);
-                    }}
+                    type="time"
+                    value={time}
+                    onChange={(e) => setTime(e.target.value)}
                   />
                   <DateTimePicker
                     date={date}
@@ -1079,17 +1094,6 @@ export function CreativeModal(props: CreativeModalProps) {
                     onChangeTime={setTime}
                   />
                 </div>
-                {dateError && <p className="autherr">{dateError}</p>}
-              </div>
-              <div className="field">
-                <label htmlFor="nbTime">Time</label>
-                <input
-                  id="nbTime"
-                  className="bin one"
-                  type="time"
-                  value={time}
-                  onChange={(e) => setTime(e.target.value)}
-                />
               </div>
             </div>
           ) : (
@@ -1278,37 +1282,49 @@ export function CreativeModal(props: CreativeModalProps) {
                 onSave={handleSaveCarousel}
                 onPendingChange={setCarouselPending}
                 onError={setFileError}
-                slideText={slideFields(slideText, slideCount ?? 1)}
-                onSlideTextChange={(next) => {
-                  setSlideText(next);
-                  setSlideSaveNote(null);
-                }}
-                actions={
-                  <>
-                    <button
-                      type="button"
-                      className="btn sm primary"
-                      disabled={!creativeId || !pendingSlideChange || saveSlideText.isPending}
-                      onClick={handleSaveSlideText}
-                    >
-                      {saveSlideText.isPending ? "Saving…" : "Save Text on Image"}
-                    </button>
-                    {slideSaveNote && !pendingSlideChange && <span className="bsaved">{slideSaveNote}</span>}
-                  </>
-                }
               />
-              {saveSlideText.error && (
-                <p className="autherr">{errorMessage(saveSlideText.error, "Couldn't save the Text on Image")}</p>
-              )}
             </div>
 
           {uploadProgress && uploadCarousel.isPending && (
             <UploadProgressBar progress={uploadProgress} />
           )}
 
+          {/* Its own section after the artwork (direct instruction), saved
+              on the post, not as a version (phase57). */}
+          <div className="msection-h">Text on Image</div>
+          <p className="msection-d">
+            {slideCount ? "The words on each slide's artwork, one entry per slide." : "The words on the artwork itself."}
+          </p>
+          <ListEditor
+            itemLabel={(i) => (slideCount ? `Slide ${i + 1}` : "Text on Image")}
+            values={slideFields(slideText, slideCount ?? 1)}
+            onChange={(next) => {
+              setSlideText(next);
+              setSlideSaveNote(null);
+            }}
+            fixed
+            bare
+          />
+          <div className="field">
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <button
+                type="button"
+                className="btn sm primary"
+                disabled={!creativeId || !pendingSlideChange || saveSlideText.isPending}
+                onClick={handleSaveSlideText}
+              >
+                {saveSlideText.isPending ? "Saving…" : "Save Text on Image"}
+              </button>
+              {slideSaveNote && !pendingSlideChange && <span className="bsaved">{slideSaveNote}</span>}
+            </div>
+            {saveSlideText.error && (
+              <p className="autherr">{errorMessage(saveSlideText.error, "Couldn't save the Text on Image")}</p>
+            )}
+          </div>
+
           <div className="msection-h">Copy</div>
           <p className="msection-d">
-            The caption and on-post text the chosen formats need, saved as versions. Text on Image is under each image above.
+            The caption and on-post text the chosen formats need, saved as versions.
           </p>
 
           {copyVersions.length > 0 && (

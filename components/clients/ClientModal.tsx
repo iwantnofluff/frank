@@ -173,7 +173,7 @@ export function ClientModal(props: { agencyId: string; activeClientCount: number
           <label>
             Invite People <span className="hint">optional</span>
           </label>
-          <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 8 }}>
+          <div style={{ fontSize: 12.7, color: "var(--muted)", marginBottom: 8 }}>
             They&rsquo;re emailed a link to join, and you&rsquo;ll get the links to share too. Owners and Admins see
             every client; a User gets this one; a Client is from it and sees only its public comments.
             {placesLeft !== null &&

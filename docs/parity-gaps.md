@@ -2440,3 +2440,27 @@ Direct instructions:
 - Looked at both states and the window.
 
 Specs naming the save buttons updated. The `creative-review.png` and `upload-artwork-modal.png` baselines were updated after looking at them.
+
+## Text on Image back in its own section, a steady section menu, slightly larger type, and project pictures in the Project Profile
+
+Direct instructions:
+- **Text on Image is one section again,** right after Creative and before Copy: one box per slide (or one for a single image), with "Save Text on Image" under them. The per-image boxes under each slot are gone. It still saves to the post, never as a copy version (phase57).
+- **The section menu's icons stay put** when it opens or closes. Each item is a fixed 36px tall, since a name's line box was taller than an icon alone. Measured: each icon at the same place (110,110 / 148 / 186 / 224) open and closed.
+- **Every font size is 0.2px larger:** all 279 px sizes in `app/globals.css`, the density token `--d-fs` (13 to 13.2, 14 to 14.2), and the 16 inline `fontSize` values in components. Recorded as a deliberate difference from the prototype's sizes.
+- **Project pictures in the Project Profile:** the emoticon (phase56) shows before "Client - Project" in its title, and Owners and Admins pick it there by clicking it, the same picker as on the project rows. It's saved through the same update, and the picker opens above the window.
+
+**Verified**: a throwaway spec opened a project's profile, chose "Cool" from the picture in its title (saved, with the window still open), and saved a carousel's second-slide Text on Image from the new section. The section menu's icon positions were measured open and closed. The 13 screenshot baselines were regenerated for the larger type. Each changed 1–5% of its pixels, spread through the text, plus the window's new Text on Image section. They were compared by pixel count, since no more images could be viewed in that session.
+
+## Project pictures are the supplied emoticons; Publish Date and Time on one row with one picker
+
+Direct instructions:
+- **Project pictures** are now the twelve supplied Noun Project emoticons: Bandage, Batman, Darth Vader, Yoda, Explorer, Pirate, Monocle, Dazed, Greedy, In Love, Love Fool and Lips Sealed. They replace the set drawn for Frank. The SVGs are kept as supplied in `project-details/project-icons/`, and `lib/project-icons.ts` is generated from them, so the path data is exactly theirs (137 paths, filled on a 1200 grid). They show in white at 78% of the tile. A project still holding one of the old names (one on staging, none on live) shows its initials until a new one is chosen.
+- **Licence, recorded as open:** the Noun Project requires a credit to each icon's designer ("Icon by … from the Noun Project") unless the icons are licensed. Three depict well-known characters (Batman, Darth Vader, Yoda). Both are for the user to settle; no credit is shown in the app yet.
+- **Publish Date and Time** sit 8px apart, without the browser's own picker inside either field (or inside the picker's own date and time boxes). Frank's date-and-time picker sits once, at the end of the row after Time, centred on the fields.
+
+**Verified** with measurements, since no more images could be viewed in this session:
+- **The 12 icons:** all well-formed SVG, with no number padded in copying. Each draws at full size in its frame (about 950–1070 of 1200 units); Yoda is 1072×752, as drawn.
+- **Picking one:** choosing Pirate in the picker saved `pirate`, and the row's tile drew it in white at 25px in its 32px tile.
+- **The fields:** 8px apart; the picker at the end of the row, centred on them.
+- **The browser's picker is hidden:** its hide rule is loaded and in effect, since the date field renders differently when the picker is forced back.
+- **The custom picker:** choosing the 15th filled the date.

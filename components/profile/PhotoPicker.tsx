@@ -33,7 +33,7 @@ export function PhotoPicker({
           className="avatar"
           initials={initials || "?"}
           photoUrl={photoUrl}
-          style={{ width: 64, height: 64, flexShrink: 0, margin: 0, fontSize: 20, background: "var(--line-2)", color: "var(--muted)" }}
+          style={{ width: 64, height: 64, flexShrink: 0, margin: 0, fontSize: 20.2, background: "var(--line-2)", color: "var(--muted)" }}
         />
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           <button type="button" className="btn sm" disabled={busy} onClick={() => input.current?.click()}>
@@ -44,7 +44,7 @@ export function PhotoPicker({
               Remove
             </button>
           )}
-          <span className="sub" style={{ margin: 0, fontSize: 12.5 }}>
+          <span className="sub" style={{ margin: 0, fontSize: 12.7 }}>
             JPG, PNG or WebP — we&rsquo;ll centre it on your face
           </span>
         </div>

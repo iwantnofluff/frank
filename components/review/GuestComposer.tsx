@@ -108,7 +108,7 @@ export function GuestComposer({
           {/* A plain link back to the real app — present, never required.
               This page stays fully anonymous either way: picking a name (or
               typing one) below is enough to comment or approve on its own. */}
-          <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 8 }}>
+          <div style={{ fontSize: 12.7, color: "var(--muted)", marginBottom: 8 }}>
             Have an account?{" "}
             <a href="/login" style={{ color: "var(--action)" }}>
               Log in

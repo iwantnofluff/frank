@@ -214,7 +214,7 @@ function ClientPeople({
                     <div className="pp-top">
                       <PersonAvatar
                         className="who"
-                        style={{ width: 28, height: 28, fontSize: 11, background: avatarColour(p.name) }}
+                        style={{ width: 28, height: 28, fontSize: 11.2, background: avatarColour(p.name) }}
                         initials={initials(p.name, p.email)}
                         photoUrl={p.avatarAssetId ? photos?.[p.avatarAssetId] : null}
                       />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAssetSignedUrl } from "@/hooks/use-asset-signed-url";
 import { versionSlides, type CreativeVersionRow, type VersionAsset } from "@/hooks/use-creative-versions";
 import type { SlideSource } from "@/hooks/use-upload-creative-version";
@@ -13,8 +13,8 @@ import { validateUploadFile, ACCEPTED_FILE_EXTENSIONS } from "@/lib/upload-valid
 // Save Version saves all of them as the next version — a replaced slide
 // is uploaded, the rest are carried over as they are. Files dropped
 // together fill the empty slots in order; a slot dragged onto another
-// swaps the two. Each slot has its Text on Image box under it (phase57:
-// on the post, saved on its own, not with the artwork).
+// swaps the two. Text on Image is its own section after the artwork
+// (direct instruction), not under each slot.
 
 type Slot = { kind: "asset"; asset: VersionAsset } | { kind: "file"; file: File; url: string } | null;
 
@@ -43,9 +43,6 @@ export function CarouselSlots({
   onSave,
   onPendingChange,
   onError,
-  slideText,
-  onSlideTextChange,
-  actions,
 }: {
   slideCount: number;
   // The version new work builds on (null before any artwork).
@@ -60,19 +57,8 @@ export function CarouselSlots({
   onSave: (slides: SlideSource[]) => void;
   onPendingChange: (pending: boolean) => void;
   onError: (message: string | null) => void;
-  // Text on Image, one entry per slot, and where an edit goes.
-  slideText: string[];
-  onSlideTextChange: (next: string[]) => void;
-  // More buttons for the row under the slots (Save Text on Image).
-  actions?: ReactNode;
 }) {
   const single = slideCount === 1;
-  const textLabel = (i: number) => (single ? "Text on Image" : `Text on Image, slide ${i + 1}`);
-  function setText(i: number, value: string) {
-    const next = Array.from({ length: slideCount }, (_, k) => slideText[k] ?? "");
-    next[i] = value;
-    onSlideTextChange(next);
-  }
   const baseline = useMemo(() => slotsFrom(latest, slideCount), [latest, slideCount]);
   const [slots, setSlots] = useState<Slot[]>(baseline);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -252,14 +238,6 @@ export function CarouselSlots({
               </div>
             )}
           </div>
-          <textarea
-            className="cslot-text"
-            rows={2}
-            aria-label={textLabel(i)}
-            placeholder="Text on Image"
-            value={slideText[i] ?? ""}
-            onChange={(e) => setText(i, e.target.value)}
-          />
           </div>
         ))}
       </div>
@@ -278,7 +256,6 @@ export function CarouselSlots({
           </button>
         )}
         {!pending && saveNote && <span className="bsaved">{saveNote}</span>}
-        {actions}
       </div>
     </>
   );

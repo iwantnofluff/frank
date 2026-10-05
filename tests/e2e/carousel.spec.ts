@@ -101,11 +101,11 @@ test("a carousel gets a slide count, and Text on Image one field per slide", asy
   // No copy written yet, so no copy version (direct instruction).
   expect((await admin.from("copy_versions").select("id").eq("creative_id", c!.id)).data).toEqual([]);
 
-  // Text on Image sits under each slide's artwork on Content.
+  // Text on Image is its own section after the artwork on Content.
   await page.getByRole("tab", { name: "Content" }).click();
-  await expect(page.locator(".cslot-text")).toHaveCount(3);
+  await expect(page.locator(".brow textarea")).toHaveCount(3);
   // Slide 2 written, slide 1 left blank: positions are kept.
-  await page.getByLabel("Text on Image, slide 2").fill("Second slide words");
+  await page.locator(".brow textarea").nth(1).fill("Second slide words");
   // Its own Save: on the post, never a copy version (phase57).
   await page.getByRole("button", { name: "Save Text on Image" }).click();
   await expect(page.getByRole("button", { name: "Save Text on Image" })).toBeDisabled();

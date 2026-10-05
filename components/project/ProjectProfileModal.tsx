@@ -6,6 +6,7 @@ import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
 import { usePersonActions } from "@/components/team/PersonActions";
 import { useUpdateProject } from "@/hooks/use-update-project";
+import { ProjectAvatar } from "@/components/project/ProjectAvatar";
 import { useClientPeople, useSetProjectAccess } from "@/hooks/use-project-access";
 import { useAvatarUrls } from "@/hooks/use-avatar-urls";
 import type { ProjectListRow } from "@/hooks/use-projects";
@@ -88,8 +89,22 @@ export function ProjectProfileModal({
   return (
     <Modal
       hideCloseButton
-      // Client, then project, as the review page reads.
-      title={`${clientName} - ${project.name}`}
+      // Client, then project, as the review page reads, after the project's
+      // picture (phase56): Owners and Admins pick its emoticon from it here
+      // as well as on the row (direct instruction).
+      title={
+        <span className="proftitle">
+          <ProjectAvatar
+            name={project.name}
+            colour={project.accent_colour}
+            icon={project.icon}
+            canPick={isAdmin}
+            onPick={(icon) => updateProject.mutate({ projectId: project.id, clientId, icon })}
+          />
+          {`${clientName} - ${project.name}`}
+        </span>
+      }
+      ariaLabel={`${clientName} - ${project.name}`}
       size="lg"
       onClose={onClose}
       footer={
@@ -277,7 +292,7 @@ function ProjectPeople({
                     style={{
                       width: 28,
                       height: 28,
-                      fontSize: 11,
+                      fontSize: 11.2,
                       background: avatarColour(p.name),
                     }}
                     initials={initials(p.name, p.email)}

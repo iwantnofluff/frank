@@ -86,12 +86,12 @@ export function AccountMenu({
           <div className="cp-b" style={{ padding: "4px 4px" }}>
             <div style={{ padding: "8px 8px 10px", borderBottom: "1px solid var(--line)", marginBottom: 4 }}>
               {(profile?.name ?? name) && (
-                <div style={{ fontSize: 14, fontWeight: 600 }}>{profile?.name ?? name}</div>
+                <div style={{ fontSize: 14.2, fontWeight: 600 }}>{profile?.name ?? name}</div>
               )}
               {profile?.designation && (
-                <div style={{ fontSize: 13, marginTop: 1 }}>{profile.designation}</div>
+                <div style={{ fontSize: 13.2, marginTop: 1 }}>{profile.designation}</div>
               )}
-              <div style={{ fontSize: 13, color: "var(--muted)", overflowWrap: "anywhere", marginTop: 2 }}>
+              <div style={{ fontSize: 13.2, color: "var(--muted)", overflowWrap: "anywhere", marginTop: 2 }}>
                 {email}
               </div>
             </div>
