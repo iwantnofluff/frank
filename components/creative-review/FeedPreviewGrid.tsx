@@ -5,6 +5,7 @@ import { useCreatives, type CreativeListRow } from "@/hooks/use-creatives";
 import { FeedTileArt, EmptyTileArt } from "@/components/creative-review/FeedTileArt";
 import { FeedCaptionPopover } from "@/components/creative-review/FeedCaptionPopover";
 import { useClientInstagramFeed } from "@/hooks/use-instagram";
+import { LoadMore } from "@/components/creative-review/LoadMore";
 
 const GRID_SLOTS = 9;
 
@@ -45,9 +46,14 @@ export function FeedPreviewGrid({
   // The client's real feed, once connected (phase54): the planned posts
   // first, then the real ones after them, the way the grid will read once
   // these go live.
-  const { data: live } = useClientInstagramFeed(clientId);
+  // A page at a time as the grid scrolls, to the account's first post.
+  const { data: pages, fetchNextPage, hasNextPage, isFetchingNextPage } = useClientInstagramFeed(clientId);
+  const live = pages?.pages[0];
   const feed = live?.status === "ok" ? live.feed : null;
-  const livePosts = feed?.posts ?? [];
+  const livePosts = useMemo(
+    () => (pages?.pages ?? []).flatMap((p) => (p.status === "ok" ? p.feed.posts : [])),
+    [pages],
+  );
 
   // Same hover-preview pattern as ProjectCalendarTable's own creative
   // rows: a short delay before showing (so a pointer passing over several
@@ -178,6 +184,7 @@ export function FeedPreviewGrid({
               <EmptyTileArt />
             </div>
           ))}
+          <LoadMore hasMore={!!hasNextPage} loading={isFetchingNextPage} onMore={() => fetchNextPage()} />
         </div>
       )}
       {live && live.status !== "ok" && (

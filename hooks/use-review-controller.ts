@@ -33,8 +33,21 @@ export function useReviewController(token: string) {
   const { data, isLoading, isError } = useSharedReview(token, passcode);
   // The client's real Instagram, if connected (phase54): a Feed view beside
   // the post, showing the shared posts among the real ones.
-  const { data: instagram } = useSharedInstagramFeed(token, passcode, data?.status === "ok");
-  const liveFeed = instagram?.status === "ok" ? instagram.feed : null;
+  const instagram = useSharedInstagramFeed(token, passcode, data?.status === "ok");
+  const firstPage = instagram.data?.pages[0];
+  // Every page loaded so far, as one feed (scrolling loads the next).
+  const liveFeed =
+    firstPage?.status === "ok"
+      ? {
+          ...firstPage.feed,
+          posts: instagram.data!.pages.flatMap((p) => (p.status === "ok" ? p.feed.posts : [])),
+        }
+      : null;
+  const liveMore = {
+    hasMore: !!instagram.hasNextPage,
+    loading: instagram.isFetchingNextPage,
+    onMore: () => void instagram.fetchNextPage(),
+  };
   const [view, setView] = useState<"post" | "feed">("post");
   const identity = useGuestIdentityStore();
   const submitComment = useSubmitSharedComment(token, passcode);
@@ -100,6 +113,7 @@ export function useReviewController(token: string) {
 
   return {
     liveFeed,
+    liveMore,
     view,
     setView,
     data,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import type { FeedResult } from "@/lib/instagram/store";
 
@@ -48,15 +48,20 @@ export function useInstagramConfigured() {
   });
 }
 
+// A client's live feed, a page at a time as the grid scrolls (Instagram's
+// own cursor), to the account's first post.
 export function useClientInstagramFeed(clientId: string | null | undefined) {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ["instagram-feed", clientId],
-    queryFn: async (): Promise<FeedResult> => {
-      const res = await fetch(`/api/clients/${clientId}/instagram`);
+    queryFn: async ({ pageParam }): Promise<FeedResult> => {
+      const q = pageParam ? `?after=${encodeURIComponent(pageParam)}` : "";
+      const res = await fetch(`/api/clients/${clientId}/instagram${q}`);
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Couldn't load the live feed");
       return data as FeedResult;
     },
+    initialPageParam: null as string | null,
+    getNextPageParam: (last) => (last.status === "ok" ? last.feed.next : null),
     enabled: !!clientId,
     staleTime: 5 * 60_000,
   });

@@ -10,7 +10,7 @@ import { liveFeed } from "@/lib/instagram/store";
 // feed read with the service role. Nothing about the account but its
 // public profile and posts is returned.
 export async function POST(request: Request) {
-  let body: { token?: string; passcode?: string | null };
+  let body: { token?: string; passcode?: string | null; after?: string | null };
   try {
     body = await request.json();
   } catch {
@@ -32,7 +32,9 @@ export async function POST(request: Request) {
     .maybeSingle();
   const clientId = (link as unknown as { project: { client_id: string } | null } | null)?.project?.client_id;
   if (!clientId) return NextResponse.json({ status: "not_connected" });
-  const result = await liveFeed(admin, clientId);
+  // A later page (Instagram's own cursor), as the grid scrolls.
+  const after = typeof body.after === "string" && /^[\w=-]{1,400}$/.test(body.after) ? body.after : null;
+  const result = await liveFeed(admin, clientId, after);
   // A guest only ever sees a working feed, or none.
   return NextResponse.json(result.status === "ok" ? result : { status: "not_connected" });
 }

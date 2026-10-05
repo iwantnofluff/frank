@@ -2281,3 +2281,9 @@ Direct instruction, after seeing nofluff.in's real posts in the Feed Preview: th
 Follow-up, seen on live with nofluff.in's 12 posts plus the planned one: the tiles were 3:4, but the grid squeezed its rows to fit its fixed height. With 5 rows it made each 102px under 171px tiles, so they overlapped and read as short and landscape. The earlier check had only 3 rows, which fit. Rows are now as tall as their tiles (`grid-auto-rows: max-content`), and the grid scrolls; the same applies to the share window's picker grid.
 
 **Verified** with 13 tiles: every tile 128 × 171, every row 171px, and no overlap when scrolled (looked at). `npm run build` clean.
+
+## The live feed scrolls to the account's first post
+
+Direct instruction, now the grid scrolls: show every post, not just the latest 12. The live feed now loads in pages of 30 with Instagram's own cursor, the next page fetched when the end of the grid comes into view (`LoadMore`), until the account's first post. Each page is one Instagram call and is cached for 10 minutes per client. The first page also refreshes the profile; later pages reuse the stored one. The same applies to the review link's Feed view. Disconnecting or removing an account clears all its cached pages.
+
+**Verified**: read-only against nofluff.in on live, paging with the cursor reached the end in 3 pages (63 posts) and stopped. `instagram-connections` and `shared-review-public` specs pass. `npm run build` clean. Scrolling itself is to see on live; tests can't reach Instagram.

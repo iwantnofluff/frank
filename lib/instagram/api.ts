@@ -120,13 +120,21 @@ export interface InstagramMedia {
   timestamp: string;
 }
 
-export async function fetchMedia(token: string, limit = 12): Promise<InstagramMedia[]> {
-  const r = await call<{ data: InstagramMedia[] }>(
-    `https://graph.instagram.com/me/media?${new URLSearchParams({
-      fields: "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp",
-      limit: String(limit),
-      access_token: token,
-    })}`,
+// One page of posts, newest first, and the cursor for the next (null at
+// the account's first post).
+export async function fetchMedia(
+  token: string,
+  limit = 30,
+  after?: string | null,
+): Promise<{ media: InstagramMedia[]; next: string | null }> {
+  const q = new URLSearchParams({
+    fields: "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp",
+    limit: String(limit),
+    access_token: token,
+  });
+  if (after) q.set("after", after);
+  const r = await call<{ data: InstagramMedia[]; paging?: { next?: string; cursors?: { after?: string } } }>(
+    `https://graph.instagram.com/me/media?${q}`,
   );
-  return r.data;
+  return { media: r.data, next: r.paging?.next && r.paging.cursors?.after ? r.paging.cursors.after : null };
 }

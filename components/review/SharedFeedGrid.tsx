@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReviewController } from "@/hooks/use-review-controller";
+import { LoadMore } from "@/components/creative-review/LoadMore";
 
 // A review link's Feed view (phase54): the client's real Instagram profile,
 // the posts shared in this link first, then their real posts, so they see
@@ -68,6 +69,7 @@ export function SharedFeedGrid({ controller }: { controller: ReviewController })
             )}
           </a>
         ))}
+        <LoadMore {...controller.liveMore} />
       </div>
     </div>
   );

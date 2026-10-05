@@ -61,7 +61,7 @@ export async function saveConnection(
     refreshed_at: new Date().toISOString(),
   });
   if (tokenError) throw new Error(tokenError.message);
-  feedCache.delete(input.clientId);
+  clearFeedCache(input.clientId);
   return conn.id as string;
 }
 
@@ -103,12 +103,16 @@ export interface LiveFeed {
     posts: number | null;
   };
   posts: { id: string; imageUrl: string | null; permalink: string; caption: string | null; kind: string; at: string }[];
+  // Where the next page starts; null once the account's first post is in.
+  next: string | null;
 }
 
-// Ten minutes per client: viewing the Feed Preview doesn't call Instagram
-// each time (it allows 200 calls an hour per account). Per server instance.
+// Ten minutes per page per client: scrolling the Feed Preview doesn't call
+// Instagram each time (it allows 200 calls an hour per account). Per
+// server instance.
 const feedCache = new Map<string, { at: number; feed: LiveFeed }>();
 const CACHE_MS = 10 * 60_000;
+const PAGE = 30;
 
 export type FeedResult =
   | { status: "ok"; feed: LiveFeed }
@@ -116,54 +120,70 @@ export type FeedResult =
   | { status: "needs_reconnect"; username: string }
   | { status: "error"; message: string };
 
-export async function liveFeed(admin: SupabaseClient, clientId: string): Promise<FeedResult> {
+const toPost = (m: InstagramMedia) => ({
+  id: m.id,
+  // A video's cover, not the video.
+  imageUrl: (m.media_type === "VIDEO" ? m.thumbnail_url : m.media_url) ?? null,
+  permalink: m.permalink,
+  caption: m.caption ?? null,
+  kind: m.media_type,
+  at: m.timestamp,
+});
+
+// The first page (after: none) with a fresh profile, or a later page with
+// the profile as last stored, so scrolling costs one Instagram call a page.
+export async function liveFeed(admin: SupabaseClient, clientId: string, after?: string | null): Promise<FeedResult> {
   // The connection first, so a disconnected or removed account stops
   // showing at once rather than when its cache runs out.
   const { data: conn } = await admin
     .from("instagram_connections")
-    .select("id, username, needs_reconnect_at")
+    .select("id, username, name, profile_picture_url, followers_count, media_count, needs_reconnect_at")
     .eq("client_id", clientId)
     .maybeSingle();
   if (!conn) return { status: "not_connected" };
   if (conn.needs_reconnect_at) return { status: "needs_reconnect", username: conn.username as string };
-  const cached = feedCache.get(clientId);
+  const cacheKey = `${clientId}:${after ?? ""}`;
+  const cached = feedCache.get(cacheKey);
   if (cached && Date.now() - cached.at < CACHE_MS) return { status: "ok", feed: cached.feed };
 
   try {
     const token = await usableToken(admin, conn.id as string);
     if (!token) return { status: "not_connected" };
-    const [profile, media] = await Promise.all([fetchProfile(token), fetchMedia(token)]);
-    // Keep the header's details current.
-    await admin
-      .from("instagram_connections")
-      .update({
-        username: profile.username,
-        name: profile.name ?? null,
-        profile_picture_url: profile.profile_picture_url ?? null,
-        followers_count: profile.followers_count ?? null,
-        media_count: profile.media_count ?? null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", conn.id);
-    const feed: LiveFeed = {
-      profile: {
-        username: profile.username,
-        name: profile.name ?? null,
-        pictureUrl: profile.profile_picture_url ?? null,
-        followers: profile.followers_count ?? null,
-        posts: profile.media_count ?? null,
-      },
-      posts: media.map((m: InstagramMedia) => ({
-        id: m.id,
-        // A video's cover, not the video.
-        imageUrl: (m.media_type === "VIDEO" ? m.thumbnail_url : m.media_url) ?? null,
-        permalink: m.permalink,
-        caption: m.caption ?? null,
-        kind: m.media_type,
-        at: m.timestamp,
-      })),
+    let profile: LiveFeed["profile"] = {
+      username: conn.username as string,
+      name: (conn.name as string | null) ?? null,
+      pictureUrl: (conn.profile_picture_url as string | null) ?? null,
+      followers: (conn.followers_count as number | null) ?? null,
+      posts: (conn.media_count as number | null) ?? null,
     };
-    feedCache.set(clientId, { at: Date.now(), feed });
+    let page: { media: InstagramMedia[]; next: string | null };
+    if (after) {
+      page = await fetchMedia(token, PAGE, after);
+    } else {
+      const [fresh, first] = await Promise.all([fetchProfile(token), fetchMedia(token, PAGE)]);
+      page = first;
+      profile = {
+        username: fresh.username,
+        name: fresh.name ?? null,
+        pictureUrl: fresh.profile_picture_url ?? null,
+        followers: fresh.followers_count ?? null,
+        posts: fresh.media_count ?? null,
+      };
+      // Keep the header's details current.
+      await admin
+        .from("instagram_connections")
+        .update({
+          username: fresh.username,
+          name: fresh.name ?? null,
+          profile_picture_url: fresh.profile_picture_url ?? null,
+          followers_count: fresh.followers_count ?? null,
+          media_count: fresh.media_count ?? null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", conn.id);
+    }
+    const feed: LiveFeed = { profile, posts: page.media.map(toPost), next: page.next };
+    feedCache.set(cacheKey, { at: Date.now(), feed });
     return { status: "ok", feed };
   } catch (e) {
     if (isTokenGone(e)) {
@@ -184,6 +204,10 @@ export async function forgetInstagramUser(admin: SupabaseClient, userId: string)
     .or(`ig_user_id.eq.${userId},ig_scoped_id.eq.${userId}`)
     .select("client_id");
   if (error) throw new Error(error.message);
-  for (const row of data ?? []) feedCache.delete(row.client_id as string);
+  for (const row of data ?? []) clearFeedCache(row.client_id as string);
   return (data ?? []).length;
+}
+
+function clearFeedCache(clientId: string) {
+  for (const key of feedCache.keys()) if (key.startsWith(`${clientId}:`)) feedCache.delete(key);
 }

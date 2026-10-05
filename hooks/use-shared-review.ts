@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 
 export interface SharedCreative {
   id: string;
@@ -89,17 +89,21 @@ export function useSharedReview(token: string, passcode: string | null) {
 }
 
 // The review link's client's live Instagram feed (phase54), if connected.
+// The review link's client's live Instagram feed (phase54), if connected,
+// a page at a time as the grid scrolls.
 export function useSharedInstagramFeed(token: string, passcode: string | null, enabled: boolean) {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ["shared-instagram", token, passcode],
-    queryFn: async (): Promise<import("@/lib/instagram/store").FeedResult> => {
+    queryFn: async ({ pageParam }): Promise<import("@/lib/instagram/store").FeedResult> => {
       const res = await fetch("/api/shared-review/instagram", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, passcode }),
+        body: JSON.stringify({ token, passcode, after: pageParam }),
       });
       return res.json();
     },
+    initialPageParam: null as string | null,
+    getNextPageParam: (last) => (last.status === "ok" ? last.feed.next : null),
     enabled,
     staleTime: 5 * 60_000,
   });

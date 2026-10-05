@@ -6500,3 +6500,12 @@ a.profproject:hover .pp-t b {
   margin: -6px 0 14px;
   font-size: 13px;
 }
+/* The end of a live feed grid: loads the next page when it's in view. */
+.feedmore {
+  grid-column: 1 / -1;
+  min-height: 24px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  color: var(--muted);
+}
