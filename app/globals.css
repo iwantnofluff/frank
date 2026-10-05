@@ -46,6 +46,13 @@
   --ease-std: cubic-bezier(0.4, 0, 0.2, 1);
   --dur-fast: 0.12s;
   --dur: 0.18s;
+  /* Opening and closing (direct instruction, Google's motion): opening
+     decelerates into place, closing accelerates away, faster. Only
+     opacity and transform move. */
+  --ease-open: cubic-bezier(0, 0, 0.2, 1);
+  --ease-close: cubic-bezier(0.4, 0, 1, 1);
+  --dur-open: 0.22s;
+  --dur-close: 0.17s;
 }
 
 * {
@@ -152,6 +159,51 @@ a {
 .colpop {
   animation: rise-in var(--dur-fast) var(--ease-out);
   transform-origin: top;
+}
+/* Hover (direct instruction): colour and background ease rather than
+   snap on the controls people hover most. Colour properties only, never
+   `all`, so nothing layout-related animates. */
+.chip,
+.cpr,
+.vtab,
+.vdots,
+.tool,
+.mtab,
+.badd,
+.seg2 button,
+.cchat-past,
+.reviewnav-toggle,
+.lpv-arrow,
+.cslot-add {
+  transition:
+    background-color var(--dur-fast) var(--ease-std),
+    color var(--dur-fast) var(--ease-std),
+    border-color var(--dur-fast) var(--ease-std),
+    box-shadow var(--dur-fast) var(--ease-std);
+}
+.modal {
+  animation-duration: var(--dur-open);
+  animation-timing-function: var(--ease-open);
+}
+/* A click menu that animates both ways (hooks/use-presence.ts): the base
+   is the closed state with the closing transition, .is-open the open state
+   with the opening one, so removing .is-open plays the close. Not
+   clickable until it's open, nor while it closes. */
+.colpop.motion {
+  animation: none;
+  opacity: 0;
+  transform: translateY(-4px) scale(0.98);
+  pointer-events: none;
+  transition:
+    opacity var(--dur-close) var(--ease-close),
+    transform var(--dur-close) var(--ease-close);
+}
+.colpop.motion.is-open {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+  transition-duration: var(--dur-open);
+  transition-timing-function: var(--ease-open);
 }
 /* Hover previews: opacity only. A preview that moves under the pointer
    feels jumpy, and project-calendar.spec.ts moves the mouse onto .evpop's
@@ -2177,15 +2229,56 @@ body.lightrail .avatar {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-/* The reference link under a concept, on one line (direct instruction:
-   the column is Concept and Reference in both tables). */
+/* The references under a concept, each on its own line and clickable
+   (phase58; the column is Concept and Reference in both tables). */
 .cc-ref {
   display: block;
   margin-top: 3px;
   font-size: 12px;
+  color: var(--muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+a.cc-ref,
+a.fd-ref {
+  color: var(--action);
+  text-decoration: none;
+}
+a.cc-ref:hover,
+a.fd-ref:hover {
+  text-decoration: underline;
+}
+.fd-refs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.fd-ref {
+  overflow-wrap: anywhere;
+}
+/* The New Post window's references: a box each, with Open and remove. */
+.refrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.refrow .bin {
+  flex: 1;
+}
+.refx {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.refx:hover {
+  color: var(--rose);
+  background: var(--canvas);
 }
 .cc-n {
   display: inline-block;
@@ -2214,7 +2307,9 @@ body.lightrail .avatar {
 
 .review {
   display: grid;
-  grid-template-columns: 220px 1px minmax(0, 1fr) 1px 363px;
+  /* The section menu is as wide as it needs: icons only, or icons and
+     names (ReviewNav). */
+  grid-template-columns: max-content 1px minmax(0, 1fr) 1px 363px;
   gap: 20px;
   min-height: 0;
   padding: 16px;
@@ -2223,15 +2318,7 @@ body.lightrail .avatar {
 }
 @media (min-width: 1700px) {
   .review {
-    grid-template-columns: 220px 1px minmax(0, 1fr) 1px 413px;
-  }
-}
-.review.navcollapsed {
-  grid-template-columns: 42px 1px minmax(0, 1fr) 1px 363px;
-}
-@media (min-width: 1700px) {
-  .review.navcollapsed {
-    grid-template-columns: 42px 1px minmax(0, 1fr) 1px 413px;
+    grid-template-columns: max-content 1px minmax(0, 1fr) 1px 413px;
   }
 }
 /* The two vertical rules between reviewnav/stage/comments. Plain grid
@@ -2472,17 +2559,48 @@ body.lightrail .avatar {
   gap: 2px;
 }
 .reviewnav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   width: 100%;
   text-align: left;
-  padding: 9px 12px;
+  padding: 9px 10px;
   border-radius: 8px;
   font-size: 13.5px;
   font-weight: 500;
   color: var(--muted);
+  white-space: nowrap;
+  transition:
+    background-color var(--dur-fast) var(--ease-std),
+    color var(--dur-fast) var(--ease-std);
+}
+/* Named: 20px past the longest name (direct instruction). */
+.reviewnav.named .reviewnav-item {
+  padding-right: 20px;
 }
 .reviewnav-item:hover {
   background: var(--surface);
   color: var(--ink);
+}
+.rn-ic {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  fill: currentColor;
+}
+/* A name eases in when the menu opens and out, faster, when it closes. */
+.rn-label {
+  opacity: 0;
+  transform: translateX(-6px);
+  transition:
+    opacity var(--dur-close) var(--ease-close),
+    transform var(--dur-close) var(--ease-close);
+}
+.rn-label.is-open {
+  opacity: 1;
+  transform: none;
+  transition-duration: var(--dur-open);
+  transition-timing-function: var(--ease-open);
 }
 .reviewnav-item[aria-current="true"] {
   background: var(--action-soft);
@@ -5412,8 +5530,9 @@ button.avatar {
   box-sizing: border-box;
   resize: vertical;
   font: inherit;
-  font-size: 13px;
-  line-height: 1.4;
+  /* The copy fields' own size (.bin), direct instruction. */
+  font-size: 13.5px;
+  line-height: 1.45;
   padding: 7px 9px;
   border: 1px solid var(--line-2);
   border-radius: var(--r);

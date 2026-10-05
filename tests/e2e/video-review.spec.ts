@@ -310,7 +310,7 @@ test("a video is compressed to a 720p review copy before it's uploaded", async (
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
   await page.getByRole("button", { name: "Upload Artwork" }).click();
   await page.locator('.mtabbody input[type="file"]').first().setInputFiles({ name: "phone-export.mp4", mimeType: "video/mp4", buffer: heavy });
-  const save = page.getByRole("button", { name: /^Save Version 1$/ }).first();
+  const save = page.getByRole("button", { name: "Save Creative V1" });
   await save.click();
   // The uploader shows each stage: compressing, then uploading with its size.
   await expect(page.getByRole("progressbar", { name: "Compressing video" })).toBeVisible({ timeout: 15_000 });

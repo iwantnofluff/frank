@@ -2,6 +2,7 @@
 
 import type { CreativeRow } from "@/hooks/use-creative";
 import { formatById, formatsLabel, postFormats } from "@/lib/formats";
+import { ReferenceLinks } from "@/components/project/ReferenceLinks";
 
 // Informational only, on this page — editing the brief now happens in
 // CreativeModal's Brief tab (the single entry point that replaced New
@@ -80,8 +81,14 @@ export function BriefPanel({
       </div>
 
       <div className="bsec">
-        <div className="bl">Reference link</div>
-        <p className="fd-d">{creative.reference_url || "—"}</p>
+        <div className="bl">References</div>
+        {creative.reference_urls?.length ? (
+          <p className="fd-d fd-refs">
+            <ReferenceLinks urls={creative.reference_urls} className="fd-ref" />
+          </p>
+        ) : (
+          <p className="fd-d">—</p>
+        )}
       </div>
 
       <div className="bsec">

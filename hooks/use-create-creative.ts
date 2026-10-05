@@ -9,7 +9,8 @@ export interface CreateCreativeInput {
   formats: string[];
   leadUserId: string | null;
   concept: string;
-  referenceUrl: string;
+  // Every reference link (phase58), already tidied.
+  referenceUrls: string[];
   slideCount: number | null; // carousels only
   cx: Record<string, string | number | boolean | null>;
   // Exactly one side is meaningful, matching the project's delivery —
@@ -55,7 +56,7 @@ export function useCreateCreative(projectId: string) {
           formats: input.formats,
           lead_user_id: input.leadUserId,
           concept: input.concept.trim() || null,
-          reference_url: input.referenceUrl.trim() || null,
+          reference_urls: input.referenceUrls,
           slide_count: input.slideCount,
           // approach_notes is left null here — system-generated from copy
           // once it exists (app/api/ai/wiifm-note), not settable at

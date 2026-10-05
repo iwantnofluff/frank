@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { usePresence } from "@/hooks/use-presence";
 import { useViewportFit } from "@/hooks/use-viewport-fit";
 import { useRouter } from "next/navigation";
 import type { CreativeListRow } from "@/hooks/use-creatives";
@@ -8,6 +9,7 @@ import type { CustomColumnRow } from "@/hooks/use-custom-columns";
 import { useArchiveCreatives } from "@/hooks/use-archive-creatives";
 import { useDeleteCreativesPermanently } from "@/hooks/use-delete-creatives-permanently";
 import { CxCell } from "@/components/project/CxCell";
+import { ReferenceLinks } from "@/components/project/ReferenceLinks";
 import { ContinuousCalendarGrid } from "@/components/project/ContinuousCalendarGrid";
 import { ColumnsPopover, type ToggleableColumn } from "@/components/project/ColumnsPopover";
 import { CreativePreviewPopover } from "@/components/project/CreativePreviewPopover";
@@ -258,8 +260,11 @@ export function ContinuousCalendarTable({
   const saveDropdownBtnRef = useRef<HTMLButtonElement>(null);
   const viewMenuRef = useRef<HTMLDivElement>(null);
   const saveDropdownRef = useRef<HTMLDivElement>(null);
-  useViewportFit(viewMenuRef, viewMenuAnchor, { side: "below", gap: 4 });
-  useViewportFit(saveDropdownRef, saveDropdownAnchor, { side: "below", align: "end", gap: 4 });
+  // Each menu opens and closes with motion (hooks/use-presence.ts).
+  const viewMenu = usePresence(viewMenuAnchor);
+  const saveDropdown = usePresence(saveDropdownAnchor);
+  useViewportFit(viewMenuRef, viewMenu.shown, { side: "below", gap: 4 });
+  useViewportFit(saveDropdownRef, saveDropdown.shown, { side: "below", align: "end", gap: 4 });
 
   // Subscribing to an external event source while these popovers are open
   // — not a derived-state effect, so setState here is fine.
@@ -344,6 +349,7 @@ export function ContinuousCalendarTable({
   }
 
   const [columnsPopoverAnchor, setColumnsPopoverAnchor] = useState<DOMRect | null>(null);
+  const columnsPop = usePresence(columnsPopoverAnchor);
   const columnsBtnRef = useRef<HTMLButtonElement>(null);
 
   // Column drag-to-reorder — plain mouse tracking + elementFromPoint hit
@@ -597,9 +603,9 @@ export function ContinuousCalendarTable({
         </span>
       </div>
 
-      {viewMenuAnchor && activeView && (
+      {viewMenu.shown && activeView && (
         <div
-          className="colpop on"
+          className={`colpop on motion${viewMenu.isOpen ? " is-open" : ""}`}
           ref={viewMenuRef}
           style={{ width: 180 }}
         >
@@ -707,9 +713,9 @@ export function ContinuousCalendarTable({
                 <path d="M6 9l6 6 6-6" />
               </svg>
             </button>
-            {saveDropdownAnchor && (
+            {saveDropdown.shown && (
               <div
-                className="colpop on"
+                className={`colpop on motion${saveDropdown.isOpen ? " is-open" : ""}`}
                 ref={saveDropdownRef}
                 style={{ width: 210 }}
               >
@@ -1051,10 +1057,10 @@ export function ContinuousCalendarTable({
                             case "conceptRef":
                               return (
                                 <td key={key} className="cellw">
-                                  {c.concept || c.reference_url ? (
+                                  {c.concept || c.reference_urls?.length ? (
                                     <>
                                       {c.concept && <div>{c.concept}</div>}
-                                      {c.reference_url && <div className="tdim">{c.reference_url}</div>}
+                                      <ReferenceLinks urls={c.reference_urls ?? []} />
                                     </>
                                   ) : (
                                     <span className="tdim">—</span>
@@ -1162,9 +1168,10 @@ export function ContinuousCalendarTable({
         ))}
       </div>
 
-      {columnsPopoverAnchor && (
+      {columnsPop.shown && (
         <ColumnsPopover
-          anchorRect={columnsPopoverAnchor}
+          anchorRect={columnsPop.shown}
+          isOpen={columnsPop.isOpen}
           columns={toggleableColumns}
           visibility={columnVisibility}
           frozenCount={FROZEN_COLUMNS.length}

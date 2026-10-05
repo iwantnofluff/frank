@@ -15,6 +15,7 @@ export interface ToggleableColumn {
 // they're frozen (see ProjectCalendarTable's FROZEN_COLUMNS) and always on.
 export function ColumnsPopover({
   anchorRect,
+  isOpen = true,
   columns,
   visibility,
   frozenCount,
@@ -23,6 +24,8 @@ export function ColumnsPopover({
   onClose,
 }: {
   anchorRect: DOMRect;
+  // Open, or animating closed (hooks/use-presence.ts).
+  isOpen?: boolean;
   columns: ToggleableColumn[];
   visibility: Record<string, boolean>;
   frozenCount: number;
@@ -57,7 +60,7 @@ export function ColumnsPopover({
   useViewportFit(ref, anchorRect, { side: "below", align: "end" });
 
   return (
-    <div className="colpop on" ref={ref}>
+    <div className={`colpop on motion${isOpen ? " is-open" : ""}`} ref={ref}>
       <div className="cp-h">
         <b>Display Columns</b>
       </div>

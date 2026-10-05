@@ -133,7 +133,7 @@ test("carousel artwork is saved as a set, and replacing one slide keeps the rest
       await picture(page, "#7c3aed", "three.png"),
     ]);
   await expect(page.locator(".cslot.filled")).toHaveCount(3);
-  await page.getByRole("button", { name: "Save Version 1" }).first().click();
+  await page.getByRole("button", { name: "Save Creative V1" }).click();
   await expect(page.getByText("Saved as version 1.")).toBeVisible({ timeout: 30_000 });
 
   const slidesOf = async (versionNo: number) => {
@@ -155,7 +155,7 @@ test("carousel artwork is saved as a set, and replacing one slide keeps the rest
   const chooser = page.waitForEvent("filechooser");
   await page.getByRole("button", { name: "Replace slide 2" }).click();
   await (await chooser).setFiles(await picture(page, "#1d4ed8", "two-b.png"));
-  await page.getByRole("button", { name: "Save Version 2" }).first().click();
+  await page.getByRole("button", { name: "Save Creative V2" }).click();
   await expect(page.getByText("Saved as version 2.")).toBeVisible({ timeout: 30_000 });
   const v2 = await slidesOf(2);
   expect(v2.slides[0].asset_id).toBe(v1.slides[0].asset_id);
@@ -225,7 +225,7 @@ test("every slide can be removed and saved, leaving the post with no artwork", a
     await page.getByRole("button", { name: `Remove slide ${n}` }).click();
   }
   await expect(page.locator(".cslot.filled")).toHaveCount(0);
-  await page.getByRole("button", { name: "Save Version 2" }).first().click();
+  await page.getByRole("button", { name: "Save Creative V2" }).click();
   await expect(page.getByText("Saved as version 2.")).toBeVisible({ timeout: 30_000 });
   // V1 is still there to go back to.
   await expect(page.getByRole("tab", { name: /^V\d$/ }).first()).toHaveText("V1");

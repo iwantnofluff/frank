@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePresence } from "@/hooks/use-presence";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
@@ -24,12 +25,14 @@ export function AccountMenu({
   const router = useRouter();
   const queryClient = useQueryClient();
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
+  // Opens and closes with motion (hooks/use-presence.ts).
+  const pop = usePresence(anchor);
   const [signingOut, setSigningOut] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const { data: profile } = useMyProfile();
   const { data: photos } = useAvatarUrls([profile?.avatar_asset_id]);
   const photoUrl = profile?.avatar_asset_id ? photos?.[profile.avatar_asset_id] : undefined;
-  useViewportFit(ref, anchor, { side: "beside", gap: 10 });
+  useViewportFit(ref, pop.shown, { side: "beside", gap: 10 });
 
   useEffect(() => {
     if (!anchor) return;
@@ -78,8 +81,8 @@ export function AccountMenu({
           initials
         )}
       </button>
-      {anchor && (
-        <div className="colpop on" ref={ref} role="menu" aria-label="Your account" style={{ width: 240 }}>
+      {pop.shown && (
+        <div className={`colpop on motion${pop.isOpen ? " is-open" : ""}`} ref={ref} role="menu" aria-label="Your account" style={{ width: 240 }}>
           <div className="cp-b" style={{ padding: "4px 4px" }}>
             <div style={{ padding: "8px 8px 10px", borderBottom: "1px solid var(--line)", marginBottom: 4 }}>
               {(profile?.name ?? name) && (

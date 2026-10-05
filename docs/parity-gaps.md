@@ -2414,3 +2414,29 @@ Direct instruction, from a carousel's slots: the same layout whether a post has 
 - Slot numbers show for carousels only. Messages say "image" rather than "slide" for a single post.
 
 **Verified**: in a throwaway spec, a single-image post showed one slot with its text box. An uploaded image saved as V1 (asset and one slide row) and showed on the post. Its Text on Image saved to the post. Switched to a five-slide carousel, it showed three slots and two, with slot 1 holding the saved image and its text. Looked at both. `carousel`, `version-delete`, `video-review` (a single video through the slot), `copy-only-post`, `new-brief` and `creative-review` specs pass. The tests point at the caption box and the copy's own Save, since the slot's box and Save now come first. The `upload-artwork-modal.png` baseline was updated after looking at it: the slot and its box in place of the drop zone.
+
+## Several references per post, each clickable (phase58)
+
+Direct instruction: references should be clickable, and a post should take more than one through "+ Add Reference".
+- **`creatives.reference_urls`** holds them in order. The migration made each post's single `reference_url` its first entry. That column stays as it was, no longer written.
+- **The New Post window:** "References", one box each, with "+ Add Reference" to add another, × to remove one (when there's more than one), and "Open" beside any box holding an address. Blank boxes and repeats are dropped on save.
+- **Clickable everywhere they show:** both tables' Concept and Reference column (one per line, opening in a new tab without also opening the post) and the review page's Brief section. An address typed without "https://" opens with it added; text that isn't an address shows as plain text.
+
+**Verified**: rehearsed on staging with a rollback, then applied. `new-brief.spec.ts` covers a post with two references (a blank third dropped): it saves both in order and links them with "https://" added where missing. Clicking one in the table opens a new tab and leaves the table where it was. The Brief section links them too. Looked at the window and the table. Unit tests cover the link and tidy rules.
+
+## Save buttons named for what they save, the section menu as icons, and motion both ways
+
+Direct instructions:
+- **"Save Creative V2" and "Save Copy V3"** in place of the two "Save Version N" buttons. The artwork's has more room above it (18px). Text on Image boxes use the copy fields' font size (13.5px). **Write with Claude** sits under the Caption field, or under the last copy field for formats with no caption.
+- **The review page's section menu** (Brief, Content, Checks, Feed Preview) shows the supplied icons (Brief.svg, Content.svg, Check.svg, Grid.svg, path data as given) on their own when closed, and icon and name when open. The column is as wide as it needs: the longest name plus 20px when open, the icons when closed. Its old fixed 220px and 42px widths are gone.
+- **Motion both ways, to the given spec:** opening is 220ms on cubic-bezier(0, 0, 0.2, 1), closing 170ms on cubic-bezier(0.4, 0, 1, 1). Only opacity and transform animate, through `.is-open` on an element whose base class holds the closing transition. `hooks/use-presence.ts` keeps a closing element on screen until its transition ends and adds `is-open` a frame after it appears. It's used by every click menu (row "…", New Post's menu, Columns, saved-view menus, account, formats, projects, date and time, project picture), which are also not clickable while closing, and by the section menu's names.
+- **Hover:** colour, background, border and shadow ease (120ms) on chips, menu rows, view tabs, tools, tabs and the section menu. Never `transition: all`.
+- **Gaps:** the section menu's column width snaps rather than animates, since the spec rules out animating width; its names ease in and out. Modals open on the new curve but still close at once, since each one is mounted by its caller and animating the close would mean changing every caller. Recorded for later.
+
+**Verified** with real timing (screenshots turn animation off):
+- New Post's menu opened from opacity 0 to 0.54 at 83ms and 0.99 at 249ms. On Escape it went from 0.57 at 84ms to 0.03 at 166ms, and was gone by 207ms.
+- The section names went from 0.24 at 43ms to 1 at 290ms when the menu reopened.
+- Closed, the menu is 36px; open, each item is 135px, which is the longest name's 79px plus icon, gap and 20px.
+- Looked at both states and the window.
+
+Specs naming the save buttons updated. The `creative-review.png` and `upload-artwork-modal.png` baselines were updated after looking at them.

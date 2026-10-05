@@ -8,7 +8,8 @@ export interface BriefFields {
   formats: string[]; // the first is the main format
   leadUserId: string | null;
   concept: string;
-  referenceUrl: string;
+  // Every reference link (phase58), already tidied.
+  referenceUrls: string[];
   slideCount: number | null; // carousels only
   // Exactly one side is meaningful, matching the project's own delivery
   // mode (fixed at the project level, never edited here) — the caller
@@ -44,7 +45,7 @@ export function useUpdateBrief(creativeId: string) {
           formats: fields.formats,
           lead_user_id: fields.leadUserId,
           concept: fields.concept.trim() || null,
-          reference_url: fields.referenceUrl.trim() || null,
+          reference_urls: fields.referenceUrls,
           slide_count: fields.slideCount,
           scheduled_at: fields.scheduledAt,
           destination: fields.destination,

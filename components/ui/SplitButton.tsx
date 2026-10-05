@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePresence } from "@/hooks/use-presence";
 import { useViewportFit } from "@/hooks/use-viewport-fit";
 
 // The prototype's .split button (#briefWrap: New Brief + a caret, "How to
@@ -18,8 +19,10 @@ export function SplitButton({
   items: { label: string; hint?: string; onClick: () => void }[];
 }) {
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
+  // Opens and closes with motion (hooks/use-presence.ts).
+  const pop = usePresence(anchor);
   const ref = useRef<HTMLDivElement>(null);
-  useViewportFit(ref, anchor, { side: "below", gap: 4, align: "end" });
+  useViewportFit(ref, pop.shown, { side: "below", gap: 4, align: "end" });
 
   useEffect(() => {
     if (!anchor) return;
@@ -58,8 +61,8 @@ export function SplitButton({
           <path d="M6 9l6 6 6-6" />
         </svg>
       </button>
-      {anchor && (
-        <div className="colpop on" ref={ref} role="menu" aria-label={menuLabel} style={{ width: 230 }}>
+      {pop.shown && (
+        <div className={`colpop on motion${pop.isOpen ? " is-open" : ""}`} ref={ref} role="menu" aria-label={menuLabel} style={{ width: 230 }}>
           <div className="cp-b" style={{ padding: "4px 4px" }}>
             {items.map((item) => (
               <button

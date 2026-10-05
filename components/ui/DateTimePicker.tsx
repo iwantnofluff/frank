@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePresence } from "@/hooks/use-presence";
 import { useViewportFit } from "@/hooks/use-viewport-fit";
 import { getMonthGridDays, dateKey } from "@/lib/calendar-weeks";
 
@@ -38,9 +39,11 @@ export function DateTimePicker({
   onChangeTime: (value: string) => void;
 }) {
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
+  // Opens and closes with motion (hooks/use-presence.ts).
+  const pop = usePresence(anchor);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const popRef = useRef<HTMLDivElement>(null);
-  useViewportFit(popRef, anchor, { side: "below", align: "end", gap: 4 });
+  useViewportFit(popRef, pop.shown, { side: "below", align: "end", gap: 4 });
 
   const viewBase = parseDateValue(date);
   const [viewYear, setViewYear] = useState(viewBase.getFullYear());
@@ -98,8 +101,8 @@ export function DateTimePicker({
           <path d="M3 10h18M8 3v4M16 3v4" />
         </svg>
       </button>
-      {anchor && (
-        <div className="colpop on dtp-pop" ref={popRef}>
+      {pop.shown && (
+        <div className={`colpop on dtp-pop motion${pop.isOpen ? " is-open" : ""}`} ref={popRef}>
           <div className="dtp-row">
             <button
               type="button"

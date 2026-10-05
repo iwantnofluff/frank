@@ -46,6 +46,7 @@ import {
   COPY_FIELD_LABELS,
 } from "@/lib/formats";
 import { slideFields, tidySlideText } from "@/lib/slide-text";
+import { linkHref, tidyReferences } from "@/lib/links";
 import { FormatPicker } from "./FormatPicker";
 import {
   applySlideDraft,
@@ -447,7 +448,11 @@ export function CreativeModal(props: CreativeModalProps) {
   const [destination, setDestination] = useState(isCreate ? "" : (props.creative.destination ?? ""));
   const [dueOn, setDueOn] = useState(isCreate ? "" : (props.creative.due_on ?? ""));
   const [concept, setConcept] = useState(isCreate ? "" : (props.creative.concept ?? ""));
-  const [referenceUrl, setReferenceUrl] = useState(isCreate ? "" : (props.creative.reference_url ?? ""));
+  // Every reference link (phase58), at least one box to type into.
+  const [referenceUrls, setReferenceUrls] = useState<string[]>(() => {
+    const saved = isCreate ? [] : (props.creative.reference_urls ?? []);
+    return saved.length ? saved : [""];
+  });
   // Text on Image, one entry per slide: on the post itself, not a copy
   // version (phase57, direct instruction), with its own Save on the
   // Content tab. savedSlideText is what's on record, for "unsaved".
@@ -530,7 +535,7 @@ export function CreativeModal(props: CreativeModalProps) {
         formats,
         leadUserId: leadUserId || null,
         concept,
-        referenceUrl,
+        referenceUrls: tidyReferences(referenceUrls),
         slideCount,
         cx:
           delivery === "continuous"
@@ -572,7 +577,7 @@ export function CreativeModal(props: CreativeModalProps) {
       formats,
       leadUserId: leadUserId || null,
       concept,
-      referenceUrl,
+      referenceUrls: tidyReferences(referenceUrls),
       slideCount,
       scheduledAt,
       destination: delivery === "continuous" ? destination.trim() : null,
@@ -867,6 +872,24 @@ export function CreativeModal(props: CreativeModalProps) {
   }
 
 
+  // "Write with Claude" (phase52): under the caption field.
+  const writeWithClaude = (
+    <div className="field">
+      <button
+        type="button"
+        className="btn sm primary"
+        disabled={!modelLabel || !creativeId}
+        title={creativeId ? undefined : "Save the brief first"}
+        onClick={() => setChatOpen(true)}
+      >
+        <svg className="aicon" viewBox="0 0 24 24">
+          <path d="M12 3l1.8 6.2L20 11l-6.2 1.8L12 19l-1.8-6.2L4 11l6.2-1.8L12 3z" />
+        </svg>
+        {modelLabel ? `Write with ${modelLabel}` : "Write with AI"}
+      </button>
+    </div>
+  );
+
   const uploadError =
     fileError ||
     (uploadCarousel.error ? errorMessage(uploadCarousel.error, "Couldn't save the slides") : null) ||
@@ -1132,15 +1155,43 @@ export function CreativeModal(props: CreativeModalProps) {
 
           <div className="field">
             <label htmlFor="nbRef">
-              Reference Link <span className="bnote">optional</span>
+              References <span className="bnote">optional</span>
             </label>
-            <input
-              id="nbRef"
-              className="bin one"
-              value={referenceUrl}
-              onChange={(e) => setReferenceUrl(e.target.value)}
-              placeholder="A post, article or page this is modelled on"
-            />
+            {referenceUrls.map((url, i) => {
+              const href = linkHref(url);
+              return (
+                <div className="refrow" key={i}>
+                  <input
+                    id={i === 0 ? "nbRef" : undefined}
+                    className="bin one"
+                    aria-label={`Reference ${i + 1}`}
+                    value={url}
+                    onChange={(e) =>
+                      setReferenceUrls((prev) => prev.map((u, k) => (k === i ? e.target.value : u)))
+                    }
+                    placeholder="A post, article or page this is modelled on"
+                  />
+                  {href && (
+                    <a className="btn sm" href={href} target="_blank" rel="noreferrer" aria-label={`Open reference ${i + 1}`}>
+                      Open
+                    </a>
+                  )}
+                  {referenceUrls.length > 1 && (
+                    <button
+                      type="button"
+                      className="refx"
+                      aria-label={`Remove reference ${i + 1}`}
+                      onClick={() => setReferenceUrls((prev) => prev.filter((_, k) => k !== i))}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+            <button type="button" className="badd" onClick={() => setReferenceUrls((prev) => [...prev, ""])}>
+              + Add Reference
+            </button>
           </div>
 
           {delivery === "continuous" && (
@@ -1290,23 +1341,6 @@ export function CreativeModal(props: CreativeModalProps) {
 
           {isViewingLatestCopy && (
             <>
-              <div className="field">
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                  <button
-                    type="button"
-                    className="btn sm primary"
-                    disabled={!modelLabel || !creativeId}
-                    title={creativeId ? undefined : "Save the brief first"}
-                    onClick={() => setChatOpen(true)}
-                  >
-                    <svg className="aicon" viewBox="0 0 24 24">
-                      <path d="M12 3l1.8 6.2L20 11l-6.2 1.8L12 19l-1.8-6.2L4 11l6.2-1.8L12 3z" />
-                    </svg>
-                    {modelLabel ? `Write with ${modelLabel}` : "Write with AI"}
-                  </button>
-                </div>
-              </div>
-
               {!includesCopy && (
                 <p className="msection-empty">
                   {formats.length > 1 ? "These formats have" : `${formatsLabel(formats)} has`} no caption fields, only Text on
@@ -1314,8 +1348,9 @@ export function CreativeModal(props: CreativeModalProps) {
                 </p>
               )}
 
-              {copyFieldSpecs.map((spec) => (
-                <div className="field" key={spec.key}>
+              {copyFieldSpecs.map((spec, i) => (
+                <Fragment key={spec.key}>
+                <div className="field">
                   <label>{spec.label}</label>
                   {LONG_COPY_FIELDS.has(spec.key) ? (
                     <textarea
@@ -1338,12 +1373,19 @@ export function CreativeModal(props: CreativeModalProps) {
                     />
                   )}
                 </div>
+                {/* Under the caption (direct instruction), or under the
+                    last field when the formats have no caption. */}
+                {(spec.key === "caption" ||
+                  (!copyFieldSpecs.some((f) => f.key === "caption") && i === copyFieldSpecs.length - 1)) &&
+                  writeWithClaude}
+                </Fragment>
               ))}
+              {!includesCopy && writeWithClaude}
 
               <div className="field">
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <button type="button" className="btn sm primary" disabled={saveCopy.isPending} onClick={handleSaveCopyOnly}>
-                    {saveCopy.isPending ? "Saving…" : `Save Version ${nextCopyVersionNo}`}
+                    {saveCopy.isPending ? "Saving…" : `Save Copy V${nextCopyVersionNo}`}
                   </button>
                   {copySaveNote && (
                     <span className={copySaveNote.startsWith("Saved") ? "bsaved" : "sub"}>{copySaveNote}</span>

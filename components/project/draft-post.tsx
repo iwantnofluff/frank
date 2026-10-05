@@ -72,7 +72,7 @@ export function useDraftPost({
         formats: [values.format],
         leadUserId: values.leadUserId || null,
         concept: values.concept,
-        referenceUrl: "",
+        referenceUrls: [],
         slideCount: null,
         cx: {},
         scheduledAt,

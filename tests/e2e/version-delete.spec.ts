@@ -83,7 +83,7 @@ test("copy versions have tabs, and one without comments can be deleted", async (
 
   // Deleting the latest frees its number: the next save is V2 again.
   await page.locator(".mtabbody textarea.bin").first().fill("Third caption");
-  await page.getByRole("button", { name: "Save Version 2" }).click();
+  await page.getByRole("button", { name: "Save Copy V2" }).click();
   await expect(page.getByRole("tab", { name: /^V\d$/ })).toHaveText(["V1", "V2"]);
 });
 
@@ -95,7 +95,7 @@ test("an artwork version can be deleted from its tab", async ({ page, frank }) =
   for (const n of [1, 2]) {
     await page.locator('.mtabbody input[type="file"]').setInputFiles(await picture(page));
     // The creative's own Save (the copy section has one with the same name).
-    await page.getByRole("button", { name: `Save Version ${n}` }).first().click();
+    await page.getByRole("button", { name: `Save Creative V${n}` }).click();
     await expect(page.getByText(`Saved as version ${n}.`)).toBeVisible({ timeout: 20_000 });
   }
   await page.getByRole("tab", { name: "V1" }).hover();

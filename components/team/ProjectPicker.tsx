@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePresence } from "@/hooks/use-presence";
 import { useViewportFit } from "@/hooks/use-viewport-fit";
 
 export interface ProjectGroup {
@@ -34,9 +35,11 @@ export function ProjectPicker({
   onChange: (next: string[] | null) => void;
 }) {
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
+  // Opens and closes with motion (hooks/use-presence.ts).
+  const pop = usePresence(anchor);
   const ref = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  useViewportFit(ref, anchor, { side: "below", gap: 4, align: "start" });
+  useViewportFit(ref, pop.shown, { side: "below", gap: 4, align: "start" });
 
   useEffect(() => {
     if (!anchor) return;
@@ -94,8 +97,8 @@ export function ProjectPicker({
       >
         {label}
       </button>
-      {anchor && (
-        <div className="colpop on fmtpop" ref={ref} role="dialog" aria-label="Projects" style={{ width: Math.max(anchor.width, 300) }}>
+      {pop.shown && (
+        <div className={`colpop on fmtpop motion${pop.isOpen ? " is-open" : ""}`} ref={ref} role="dialog" aria-label="Projects" style={{ width: Math.max(pop.shown.width, 300) }}>
           <div className="cp-h">
             <b>Projects</b>
             <span className="cs">{value === null ? "All" : `${value.length} chosen`}</span>

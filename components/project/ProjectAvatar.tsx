@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePresence } from "@/hooks/use-presence";
 import { useViewportFit } from "@/hooks/use-viewport-fit";
 import { PROJECT_ICONS, projectIcon, type ProjectIcon } from "@/lib/project-icons";
 
@@ -45,8 +46,10 @@ export function ProjectAvatar({
   onPick: (icon: string | null) => void;
 }) {
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
+  // Opens and closes with motion (hooks/use-presence.ts).
+  const pop = usePresence(anchor);
   const ref = useRef<HTMLDivElement>(null);
-  useViewportFit(ref, anchor, { side: "below", gap: 6 });
+  useViewportFit(ref, pop.shown, { side: "below", gap: 6 });
 
   useEffect(() => {
     if (!anchor) return;
@@ -99,9 +102,9 @@ export function ProjectAvatar({
       >
         {face}
       </button>
-      {anchor && (
+      {pop.shown && (
         <div
-          className="colpop on iconpick"
+          className={`colpop on iconpick motion${pop.isOpen ? " is-open" : ""}`}
           ref={ref}
           role="dialog"
           aria-label={`Picture for ${name}`}

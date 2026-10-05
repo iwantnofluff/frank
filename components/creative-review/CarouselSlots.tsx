@@ -263,14 +263,14 @@ export function CarouselSlots({
           </div>
         ))}
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 18 }}>
         <button
           type="button"
           className="btn sm primary"
           disabled={!pending || saving}
           onClick={() => onSave(shown.map((s) => (!s ? null : s.kind === "file" ? { file: s.file } : { assetId: s.asset.id })))}
         >
-          {saving ? savingLabel : `Save Version ${nextVersionNo}`}
+          {saving ? savingLabel : `Save Creative V${nextVersionNo}`}
         </button>
         {pending && (
           <button type="button" className="btn sm" disabled={saving} onClick={() => setSlots(baseline)}>

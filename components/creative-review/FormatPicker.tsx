@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePresence } from "@/hooks/use-presence";
 import { useViewportFit } from "@/hooks/use-viewport-fit";
 import { FORMAT_CATEGORIES, formatsByCategory, formatsLabel } from "@/lib/formats";
 
@@ -21,10 +22,12 @@ export function FormatPicker({
   onChange: (next: string[]) => void;
 }) {
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
+  // Opens and closes with motion (hooks/use-presence.ts).
+  const pop = usePresence(anchor);
   const [query, setQuery] = useState("");
   const ref = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  useViewportFit(ref, anchor, { side: "below", gap: 4, align: "start" });
+  useViewportFit(ref, pop.shown, { side: "below", gap: 4, align: "start" });
 
   useEffect(() => {
     if (!anchor) return;
@@ -75,8 +78,8 @@ export function FormatPicker({
       >
         {formatsLabel(value)}
       </button>
-      {anchor && (
-        <div className="colpop on fmtpop" ref={ref} role="dialog" aria-label="Formats" style={{ width: Math.max(anchor.width, 330) }}>
+      {pop.shown && (
+        <div className={`colpop on fmtpop motion${pop.isOpen ? " is-open" : ""}`} ref={ref} role="dialog" aria-label="Formats" style={{ width: Math.max(pop.shown.width, 330) }}>
           <div className="cp-h">
             <b>Formats</b>
             <span className="cs">{value.length} chosen</span>

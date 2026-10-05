@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures";
+import { test, expect, goToMonth } from "./fixtures";
 
 // This is the first code path in the app that creates a creatives row —
 // verified empirically against real staff/client sessions before the form
@@ -113,11 +113,54 @@ test("a post can have several formats, with all their copy fields, and closes wi
 
   // Copy only, no artwork: saving the version and then Save and Close closes.
   await page.locator(".mtabbody textarea.bin").first().fill("Copy with no creative yet.");
-  // The copy's own Save, after the artwork's.
-  await page.getByRole("button", { name: /^Save Version 1$/ }).last().click();
+  await page.getByRole("button", { name: "Save Copy V1" }).click();
   await expect(page.getByText("Saved as version 1.")).toBeVisible();
   await page.getByRole("button", { name: "Save and Close" }).click();
   await expect(page.locator(".scrim")).toHaveCount(0);
 
   await expect(page.locator("tr", { hasText: "Multi Format E2E" })).toContainText("Meta Feed Ad + Instagram Feed");
+});
+
+test("a post takes several references, each a link in the table and on its Brief", async ({ page, frank }) => {
+  test.setTimeout(60_000);
+  const { createClient } = await import("@supabase/supabase-js");
+  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  await frank.loginAsStaff(page);
+  await page.goto(`/projects/${frank.projectId}`);
+  await page.click('button:has-text("New Post")');
+  await page.fill("#nbName", "References E2E");
+  await page.fill("#nbDate", "2027-03-16");
+  await page.getByRole("textbox", { name: "Reference 1" }).fill("example.com/first");
+  await page.getByRole("button", { name: "+ Add Reference" }).click();
+  await page.getByRole("textbox", { name: "Reference 2" }).fill("https://example.com/second");
+  // A blank third one is dropped on save.
+  await page.getByRole("button", { name: "+ Add Reference" }).click();
+  await expect(page.getByRole("link", { name: "Open reference 1" })).toHaveAttribute("href", "https://example.com/first");
+  await page.click('button:has-text("Create Post")');
+  await expect(page.getByRole("tab", { name: "Content" })).toBeEnabled();
+  const { data: c } = await admin
+    .from("creatives")
+    .select("id, reference_urls")
+    .eq("project_id", frank.projectId)
+    .eq("name", "References E2E")
+    .single();
+  expect(c!.reference_urls).toEqual(["example.com/first", "https://example.com/second"]);
+
+  await page.click('button:has-text("Cancel")');
+  await goToMonth(page, "March 2027");
+  const row = page.locator("tr[data-row]", { hasText: "References E2E" });
+  const first = row.getByRole("link", { name: "example.com/first" });
+  await expect(first).toHaveAttribute("href", "https://example.com/first");
+  await expect(first).toHaveAttribute("target", "_blank");
+  await expect(row.getByRole("link", { name: "https://example.com/second" })).toBeVisible();
+  // Opening a reference doesn't open the post as well.
+  const [tab] = await Promise.all([page.context().waitForEvent("page"), first.click()]);
+  await tab.close();
+  expect(page.url()).toContain(`/projects/${frank.projectId}`);
+
+  await page.goto(`/creatives/${c!.id}`);
+  await page.getByRole("button", { name: "Brief", exact: true }).click();
+  await expect(page.getByRole("link", { name: "https://example.com/second" })).toHaveAttribute("href", "https://example.com/second");
 });

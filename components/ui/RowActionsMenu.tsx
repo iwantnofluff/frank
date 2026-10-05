@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePresence } from "@/hooks/use-presence";
 import { useViewportFit } from "@/hooks/use-viewport-fit";
 
 function DotsIcon() {
@@ -35,11 +36,13 @@ export function RowActionsMenu({
   title?: string;
 }) {
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
+  // Opens and closes with motion (hooks/use-presence.ts).
+  const pop = usePresence(anchor);
   const ref = useRef<HTMLDivElement>(null);
   // The trigger often sits at the right edge of a table, or near the bottom
   // of a long list — kept fully on-screen either way (flips above the
   // trigger when there's no room below).
-  useViewportFit(ref, anchor, { side: "below", gap: 4 });
+  useViewportFit(ref, pop.shown, { side: "below", gap: 4 });
 
   useEffect(() => {
     if (!anchor) return;
@@ -75,9 +78,9 @@ export function RowActionsMenu({
       >
         <DotsIcon />
       </button>
-      {anchor && (
+      {pop.shown && (
         <div
-          className="colpop on"
+          className={`colpop on motion${pop.isOpen ? " is-open" : ""}`}
           ref={ref}
           style={{ width: POPOVER_WIDTH }}
           onClick={(e) => {
