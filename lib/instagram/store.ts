@@ -100,9 +100,22 @@ export interface LiveFeed {
     name: string | null;
     pictureUrl: string | null;
     followers: number | null;
+    following: number | null;
     posts: number | null;
+    // The header's description and link, as on the profile.
+    bio: string | null;
+    website: string | null;
   };
-  posts: { id: string; imageUrl: string | null; permalink: string; caption: string | null; kind: string; at: string }[];
+  posts: {
+    id: string;
+    imageUrl: string | null;
+    permalink: string;
+    caption: string | null;
+    kind: string;
+    // For the Reels tab.
+    reel: boolean;
+    at: string;
+  }[];
   // Where the next page starts; null once the account's first post is in.
   next: string | null;
 }
@@ -127,6 +140,7 @@ const toPost = (m: InstagramMedia) => ({
   permalink: m.permalink,
   caption: m.caption ?? null,
   kind: m.media_type,
+  reel: m.media_product_type === "REELS",
   at: m.timestamp,
 });
 
@@ -154,7 +168,10 @@ export async function liveFeed(admin: SupabaseClient, clientId: string, after?: 
       name: (conn.name as string | null) ?? null,
       pictureUrl: (conn.profile_picture_url as string | null) ?? null,
       followers: (conn.followers_count as number | null) ?? null,
+      following: null,
       posts: (conn.media_count as number | null) ?? null,
+      bio: null,
+      website: null,
     };
     let page: { media: InstagramMedia[]; next: string | null };
     if (after) {
@@ -167,7 +184,10 @@ export async function liveFeed(admin: SupabaseClient, clientId: string, after?: 
         name: fresh.name ?? null,
         pictureUrl: fresh.profile_picture_url ?? null,
         followers: fresh.followers_count ?? null,
+        following: fresh.follows_count ?? null,
         posts: fresh.media_count ?? null,
+        bio: fresh.biography?.trim() || null,
+        website: fresh.website?.trim() || null,
       };
       // Keep the header's details current.
       await admin

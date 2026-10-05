@@ -2299,3 +2299,14 @@ Direct instruction, from the user's iPhone template (a PNG): the Feed Preview si
 Direct instruction: in the feed, posts still to be scheduled get a 1px red border (`--rose`, was a faint amber), so they stand out from the client's live posts, which keep none. This applies in the Feed Preview and the review link's Feed view. The post being viewed keeps its blue outline.
 
 **Verified**: the planned tiles' computed border is 1px solid red. Looked at it: red on the planned posts, blue on the current one, none on the live slots. `npm run build` clean.
+
+## The feed's header, Reels tab, and a smaller phone
+
+Direct questions and instruction, with real content in the feed:
+- **The header reads like the profile:** with the client's Instagram connected, it shows the username, then the picture beside the posts, followers and following counts, then the display name, the description (bio) and the website link. Frank's read-only permission covers these (`biography`, `website`, `follows_count`). Not connected, it's the client's name as before.
+- **Reels works:** each post's `media_product_type` says whether it's a Reel. The Reels tab shows the real Reels and any planned post in the Instagram Reel format, in tall 9:16 tiles, as on the profile's Reels tab.
+- **Saved and Tagged stay dimmed,** with a note on hover. Instagram never shares an account's saved posts. Tagged posts need a further permission (Instagram refused with the current one), which would need another App Review; recorded as a gap.
+- **The phone is 15% smaller,** contents and all (`zoom: 0.85`, which keeps layout and clicks in step), with 20px above it.
+- **Both the Feed Preview and the review link's Feed view** use the same header and tabs (`FeedChrome.tsx`).
+
+**Verified**: read-only against nofluff.in on live: bio, website, following and name come back, and the latest 50 posts are labelled (25 Reels). In a throwaway spec with a stand-in feed (no access copied between environments): the header as described, Posts showing everything, and Reels showing just the 7 Reels of 14 at 110 × 195 (9:16). The phone measured 352 × 745 on screen. Looked at both tabs. `instagram-connections`, `shared-review-public` and `creative-review` specs pass. `npm run build` clean.

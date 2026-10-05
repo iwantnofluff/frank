@@ -6435,11 +6435,6 @@ a.profproject:hover .pp-t b {
   display: block;
   border: 1.5px solid var(--surface);
 }
-.fp-counts {
-  display: block;
-  font-size: 12px;
-  color: var(--muted);
-}
 .feedgrid-live {
   display: block;
   overflow: hidden;
@@ -6517,6 +6512,11 @@ a.profproject:hover .pp-t b {
    the phone's height follows the template's proportions (about 2.1:1). */
 .phoneframe {
   position: relative;
+  /* 15% smaller on screen, contents and all, with 20px above it (direct
+     instruction: it read too big). zoom keeps layout and hit-testing in
+     step, unlike a transform. */
+  zoom: 0.85;
+  margin-top: 20px;
   width: 414px;
   height: 876px;
   border: 12px solid #000;
@@ -6575,4 +6575,77 @@ a.profproject:hover .pp-t b {
   height: auto;
   flex: 1;
   min-height: 0;
+}
+/* The profile header once the client's Instagram is connected (phase54),
+   laid out like the app's: username, then picture beside the counts, then
+   name, description and link. */
+.fp-h.fp-live {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+.fp-user {
+  font-size: 14px;
+  font-weight: 700;
+}
+.fp-top {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.fp-av.big {
+  width: 64px;
+  height: 64px;
+  padding: 2px;
+}
+.fp-stats {
+  flex: 1;
+  display: flex;
+  justify-content: space-around;
+}
+.fp-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 12px;
+}
+.fp-stat b {
+  font-size: 15px;
+  font-weight: 700;
+}
+.fp-about {
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+.fp-about b {
+  display: block;
+  font-weight: 600;
+}
+.fp-bio {
+  margin: 0;
+  white-space: pre-wrap;
+}
+.fp-about a {
+  color: #00376b;
+  font-weight: 600;
+  text-decoration: none;
+}
+/* Posts and Reels switch the grid; Saved and Tagged can't be shown. */
+button.fp-tab {
+  background: none;
+  border: none;
+  border-bottom: 1.5px solid transparent;
+  font: inherit;
+  cursor: pointer;
+}
+button.fp-tab[aria-selected="true"] {
+  border-bottom-color: var(--ink);
+}
+.fp-tab.off {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+/* Reels in their own tall shape, as on the profile's Reels tab. */
+.feedgrid.reels .feedgrid-tile {
+  aspect-ratio: 9 / 16;
 }

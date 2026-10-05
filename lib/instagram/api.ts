@@ -97,14 +97,18 @@ export interface InstagramProfile {
   name?: string;
   profile_picture_url?: string;
   followers_count?: number;
+  follows_count?: number;
   media_count?: number;
+  biography?: string;
+  website?: string;
   account_type?: string;
 }
 
 export function fetchProfile(token: string): Promise<InstagramProfile> {
   return call<InstagramProfile>(
     `https://graph.instagram.com/me?${new URLSearchParams({
-      fields: "id,user_id,username,name,profile_picture_url,followers_count,media_count,account_type",
+      fields:
+        "id,user_id,username,name,profile_picture_url,followers_count,follows_count,media_count,biography,website,account_type",
       access_token: token,
     })}`,
   );
@@ -114,6 +118,8 @@ export interface InstagramMedia {
   id: string;
   caption?: string;
   media_type: "IMAGE" | "VIDEO" | "CAROUSEL_ALBUM";
+  // "REELS" for a Reel, "FEED" for a regular post.
+  media_product_type?: string;
   media_url?: string;
   thumbnail_url?: string;
   permalink: string;
@@ -128,7 +134,7 @@ export async function fetchMedia(
   after?: string | null,
 ): Promise<{ media: InstagramMedia[]; next: string | null }> {
   const q = new URLSearchParams({
-    fields: "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp",
+    fields: "id,caption,media_type,media_product_type,media_url,thumbnail_url,permalink,timestamp",
     limit: String(limit),
     access_token: token,
   });

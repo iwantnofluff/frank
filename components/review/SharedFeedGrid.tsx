@@ -1,7 +1,10 @@
 "use client";
 
 import type { ReviewController } from "@/hooks/use-review-controller";
+import { useState } from "react";
 import { LoadMore } from "@/components/creative-review/LoadMore";
+import { FeedProfile, FeedTabs, type FeedTab } from "@/components/creative-review/FeedChrome";
+import { postFormats } from "@/lib/formats";
 
 // A review link's Feed view (phase54): the client's real Instagram profile,
 // the posts shared in this link first, then their real posts, so they see
@@ -10,28 +13,19 @@ import { LoadMore } from "@/components/creative-review/LoadMore";
 // Instagram is connected.
 export function SharedFeedGrid({ controller }: { controller: ReviewController }) {
   const { liveFeed, creatives, goTo, setView } = controller;
+  const [tab, setTab] = useState<FeedTab>("posts");
   if (!liveFeed) return null;
+  // Posts, or just the Reels (a Reel-format post shared here, or a real Reel).
+  const shared = creatives
+    .map((c, i) => ({ c, i }))
+    .filter(({ c }) => tab === "posts" || postFormats(c).includes("ig_reel"));
+  const live = tab === "reels" ? liveFeed.posts.filter((p) => p.reel) : liveFeed.posts;
   return (
     <div className="feedcard sharedfeed">
-      <div className="fp-h">
-        <span className="fp-av">
-          {liveFeed.profile.pictureUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element -- Instagram's own short-lived image URL
-            <img src={liveFeed.profile.pictureUrl} alt="" />
-          ) : (
-            <i />
-          )}
-        </span>
-        <span className="fp-t">
-          <b>{liveFeed.profile.username}</b>
-          <span className="fp-counts">
-            {liveFeed.profile.posts != null && `${liveFeed.profile.posts.toLocaleString()} posts`}
-            {liveFeed.profile.followers != null && ` · ${liveFeed.profile.followers.toLocaleString()} followers`}
-          </span>
-        </span>
-      </div>
-      <div className="feedgrid">
-        {creatives.map((c, i) => {
+      <FeedProfile profile={liveFeed.profile} fallbackName={liveFeed.profile.username} />
+      <FeedTabs tab={tab} onTab={setTab} />
+      <div className={tab === "reels" ? "feedgrid reels" : "feedgrid"}>
+        {shared.map(({ c, i }) => {
           const image = c.asset?.mime_type.startsWith("image/") ? c.asset.signed_url : null;
           return (
             <button
@@ -54,7 +48,7 @@ export function SharedFeedGrid({ controller }: { controller: ReviewController })
             </button>
           );
         })}
-        {liveFeed.posts.map((p) => (
+        {live.map((p) => (
           <a
             key={p.id}
             className="feedgrid-tile feedgrid-live"

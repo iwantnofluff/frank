@@ -6,6 +6,8 @@ import { FeedTileArt, EmptyTileArt } from "@/components/creative-review/FeedTile
 import { FeedCaptionPopover } from "@/components/creative-review/FeedCaptionPopover";
 import { useClientInstagramFeed } from "@/hooks/use-instagram";
 import { LoadMore } from "@/components/creative-review/LoadMore";
+import { FeedProfile, FeedTabs, type FeedTab } from "@/components/creative-review/FeedChrome";
+import { postFormats } from "@/lib/formats";
 
 const GRID_SLOTS = 9;
 
@@ -50,10 +52,14 @@ export function FeedPreviewGrid({
   const { data: pages, fetchNextPage, hasNextPage, isFetchingNextPage } = useClientInstagramFeed(clientId);
   const live = pages?.pages[0];
   const feed = live?.status === "ok" ? live.feed : null;
-  const livePosts = useMemo(
+  // Posts, or just the Reels (a Reel-format plan, or a real Reel).
+  const [tab, setTab] = useState<FeedTab>("posts");
+  const allLive = useMemo(
     () => (pages?.pages ?? []).flatMap((p) => (p.status === "ok" ? p.feed.posts : [])),
     [pages],
   );
+  const livePosts = tab === "reels" ? allLive.filter((p) => p.reel) : allLive;
+  const shown = tab === "reels" ? creatives.filter((c) => postFormats(c).includes("ig_reel")) : creatives;
 
   // Same hover-preview pattern as ProjectCalendarTable's own creative
   // rows: a short delay before showing (so a pointer passing over several
@@ -88,60 +94,16 @@ export function FeedPreviewGrid({
       <span className="pf-btn pf-btn2" aria-hidden="true" />
       <div className="pf-screen">
     <div className="feedcard">
-      <div className="fp-h">
-        <span className="fp-av">
-          {feed?.profile.pictureUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element -- Instagram's own short-lived image URL
-            <img src={feed.profile.pictureUrl} alt="" />
-          ) : (
-            <i />
-          )}
-        </span>
-        <span className="fp-t">
-          <b>{feed ? feed.profile.username : brandName}</b>
-          {feed && (
-            <span className="fp-counts">
-              {feed.profile.posts != null && `${feed.profile.posts.toLocaleString()} posts`}
-              {feed.profile.followers != null && ` · ${feed.profile.followers.toLocaleString()} followers`}
-            </span>
-          )}
-        </span>
-      </div>
-      <div className="fp-tabs" role="tablist" aria-label="Profile sections">
-        <div className="fp-tab" aria-selected="true" title="Posts">
-          <svg viewBox="0 0 24 24">
-            <rect x="3" y="3" width="18" height="18" rx="1.5" />
-            <path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
-          </svg>
-        </div>
-        <div className="fp-tab" aria-selected="false" title="Reels">
-          <svg viewBox="0 0 24 24">
-            <rect x="3" y="3" width="18" height="18" rx="4" />
-            <path d="M3 8h18M8.5 3l3 5M15 3l3 5" />
-            <path d="M11 12.5l4 2.2-4 2.2z" fill="currentColor" stroke="none" />
-          </svg>
-        </div>
-        <div className="fp-tab" aria-selected="false" title="Saved">
-          <svg viewBox="0 0 24 24">
-            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-          </svg>
-        </div>
-        <div className="fp-tab" aria-selected="false" title="Tagged">
-          <svg viewBox="0 0 24 24">
-            <rect x="3" y="3" width="18" height="18" rx="3" />
-            <circle cx="12" cy="10" r="3" />
-            <path d="M6.5 19a5.8 5.8 0 0 1 11 0" />
-          </svg>
-        </div>
-      </div>
+      <FeedProfile profile={feed?.profile ?? null} fallbackName={brandName} />
+      <FeedTabs tab={tab} onTab={setTab} />
 
       {isLoading ? (
         <div className="awaiting">
           <span>Loading feed…</span>
         </div>
       ) : (
-        <div className="feedgrid">
-          {creatives.map((c) => {
+        <div className={tab === "reels" ? "feedgrid reels" : "feedgrid"}>
+          {shown.map((c) => {
             const timeLabel = c.scheduled_at
               ? new Date(c.scheduled_at).toLocaleDateString(undefined, {
                   month: "short",
@@ -186,7 +148,7 @@ export function FeedPreviewGrid({
               space, per direct instruction. Never rendered when there are
               already 9+ real creatives; overflow scrolls instead. */}
           {Array.from({
-            length: Math.max(0, GRID_SLOTS - creatives.length - livePosts.length),
+            length: tab === "reels" ? 0 : Math.max(0, GRID_SLOTS - creatives.length - livePosts.length),
           }).map((_, i) => (
             <div key={`empty-${i}`} className="feedgrid-tile-empty">
               <EmptyTileArt />
