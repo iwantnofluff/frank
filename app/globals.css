@@ -6509,3 +6509,69 @@ a.profproject:hover .pp-t b {
   font-size: 12px;
   color: var(--muted);
 }
+/* The Feed Preview inside a phone (direct instruction, traced from the
+   user's iPhone template): a thick black outline with rounded corners, a
+   notch, and two buttons on the right. The screen is 390px wide, the
+   feed card's own width, so the grid's tiles keep their 128 x 171 size;
+   the phone's height follows the template's proportions (about 2.1:1). */
+.phoneframe {
+  position: relative;
+  width: 414px;
+  height: 876px;
+  border: 12px solid #000;
+  border-radius: 60px;
+  background: #fff;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+.pf-screen {
+  position: absolute;
+  inset: 0;
+  border-radius: 48px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding-top: 26px;
+  background: #fff;
+}
+.pf-notch {
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  width: 186px;
+  height: 20px;
+  transform: translateX(-50%);
+  background: #000;
+  border-radius: 0 0 14px 14px;
+  z-index: 2;
+}
+.pf-btn {
+  position: absolute;
+  right: -17px;
+  width: 5px;
+  background: #000;
+  border-radius: 0 3px 3px 0;
+}
+.pf-btn1 {
+  top: 106px;
+  height: 72px;
+}
+.pf-btn2 {
+  top: 192px;
+  height: 44px;
+}
+/* The feed card fills the screen; no card edge of its own. */
+.phoneframe .feedcard {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: none;
+  box-shadow: none;
+}
+.phoneframe .feedgrid {
+  height: auto;
+  flex: 1;
+  min-height: 0;
+}

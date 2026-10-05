@@ -2287,3 +2287,9 @@ Follow-up, seen on live with nofluff.in's 12 posts plus the planned one: the til
 Direct instruction, now the grid scrolls: show every post, not just the latest 12. The live feed now loads in pages of 30 with Instagram's own cursor, the next page fetched when the end of the grid comes into view (`LoadMore`), until the account's first post. Each page is one Instagram call and is cached for 10 minutes per client. The first page also refreshes the profile; later pages reuse the stored one. The same applies to the review link's Feed view. Disconnecting or removing an account clears all its cached pages.
 
 **Verified**: read-only against nofluff.in on live, paging with the cursor reached the end in 3 pages (63 posts) and stopped. `instagram-connections` and `shared-review-public` specs pass. `npm run build` clean. Scrolling itself is to see on live; tests can't reach Instagram.
+
+## The Feed Preview inside a phone
+
+Direct instruction, from the user's iPhone template (a PNG): the Feed Preview sits inside a phone's screen. The frame is drawn in CSS rather than overlaying the PNG, which has wide white margins and would blur at other sizes. It follows the template's look: a 12px black outline, rounded corners, a notch, and two buttons on the right. The screen is the feed card's own 390px width, so the 3:4 tiles keep their size. The phone's height follows the template's proportions (about 2.1:1, 876px). The grid fills the rest of the screen and scrolls within it, and the card has no edge of its own there. The review link's phone view already has its own phone, so it's unchanged.
+
+**Verified**: looked at it with 13 planned posts: the frame, notch and buttons as in the template, and full 3:4 tiles filling and scrolling within the screen.

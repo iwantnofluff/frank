@@ -79,6 +79,14 @@ export function FeedPreviewGrid({
 
   return (
     <>
+    {/* Inside a phone (direct instruction, from the user's iPhone
+        template): the outline, notch and side buttons drawn in CSS so they
+        stay crisp; the grid fills the screen and scrolls within it. */}
+    <div className="phoneframe">
+      <span className="pf-notch" aria-hidden="true" />
+      <span className="pf-btn pf-btn1" aria-hidden="true" />
+      <span className="pf-btn pf-btn2" aria-hidden="true" />
+      <div className="pf-screen">
     <div className="feedcard">
       <div className="fp-h">
         <span className="fp-av">
@@ -196,6 +204,8 @@ export function FeedPreviewGrid({
               : `Instagram didn't answer, so the real posts aren't showing: ${live.message}`}
         </p>
       )}
+    </div>
+      </div>
     </div>
     {hover && (
       <FeedCaptionPopover
