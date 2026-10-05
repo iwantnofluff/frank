@@ -2265,3 +2265,9 @@ Follow-up after a second staging try, which failed the same way although Frank n
 - **Failures are written to the server log,** with the step and Instagram's message (never the code or a token).
 
 `instagram-connections.spec.ts` 6 of 6 (now checking there's no `force_reauth`). This is the best explanation so far, not a confirmed one; staging will tell.
+
+## Instagram connects on live
+
+The remaining cause was the app secret: Frank had the Facebook app's secret (App settings → Basic), not the Instagram app's (API setup with Instagram login). Instagram answered with its misleading "redirect_uri is identical…" message. Checked without revealing it: Facebook issued an app token with Frank's secret, which only its own app's secret allows. With the Instagram app secret in both env files and Vercel, and live and staging redeployed, No Fluff connected on live as @nofluff.in (1,615 followers, connected by Raj Rana). App domains (`beingfrank.app`, `staging.beingfrank.app`) were added in Meta's Basic settings for App Review.
+
+**Verified** on live, read-only: the token is stored encrypted (expires 4 Dec 2026, renewed automatically before then), both of the account's IDs are kept, and Frank reads its latest 12 posts, each with an image for the grid.
