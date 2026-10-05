@@ -112,6 +112,8 @@ export function useReviewController(token: string) {
   }
 
   return {
+    // The link itself, for what the page loads later (a carousel's slides).
+    token,
     liveFeed,
     liveMore,
     view,

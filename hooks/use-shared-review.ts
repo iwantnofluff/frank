@@ -108,3 +108,22 @@ export function useSharedInstagramFeed(token: string, passcode: string | null, e
     staleTime: 5 * 60_000,
   });
 }
+
+// A live carousel's slides on a review link, fetched when it's opened.
+export function useSharedInstagramSlides(token: string, passcode: string | null, mediaId: string | null) {
+  return useQuery({
+    queryKey: ["shared-instagram-slides", token, passcode, mediaId],
+    queryFn: async (): Promise<import("@/lib/instagram/store").LiveSlide[]> => {
+      const res = await fetch("/api/shared-review/instagram/slides", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, passcode, media: mediaId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data.status !== "ok") throw new Error("Couldn't load this carousel");
+      return data.slides;
+    },
+    enabled: !!mediaId,
+    staleTime: 5 * 60_000,
+  });
+}

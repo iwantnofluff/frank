@@ -104,3 +104,37 @@ export function FeedTabs({ tab, onTab }: { tab: FeedTab; onTab: (tab: FeedTab) =
     </div>
   );
 }
+
+// One of the client's live posts in the grid (phase54). Opens it in the
+// post view; marked, as on Instagram, when it's a carousel or a video.
+export function LiveTile({ post, onOpen }: { post: LiveFeed["posts"][number]; onOpen: () => void }) {
+  return (
+    <button
+      type="button"
+      className="feedgrid-tile feedgrid-live"
+      title={post.caption ?? "Live on Instagram"}
+      aria-label={`Open ${post.carousel ? "carousel" : post.videoUrl ? "video" : "post"} from Instagram`}
+      onClick={onOpen}
+    >
+      {post.imageUrl && (
+        // eslint-disable-next-line @next/next/no-img-element -- Instagram's own short-lived image URL
+        <img src={post.imageUrl} alt={post.caption ?? ""} loading="lazy" />
+      )}
+      {(post.carousel || post.videoUrl) && (
+        <span className="feedgrid-kind" aria-hidden="true">
+          {post.carousel ? (
+            <svg viewBox="0 0 24 24">
+              <rect x="7" y="7" width="13" height="13" rx="2" />
+              <path d="M4 16V6a2 2 0 0 1 2-2h10" />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24">
+              <rect x="3" y="3" width="18" height="18" rx="4" />
+              <path d="M10 8.5l6 3.5-6 3.5z" fill="currentColor" stroke="none" />
+            </svg>
+          )}
+        </span>
+      )}
+    </button>
+  );
+}

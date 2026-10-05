@@ -2322,3 +2322,13 @@ Follow-up, seen on live: with the only planned post being the one open, nothing 
 - **The blue ring for the post being viewed** is a layer drawn above the artwork, just inside the edge, so the red border still shows around it.
 
 **Verified**: looked at the open planned tile closely: the red edge, the blue ring inside it, and the label all visible. Both planned tiles labelled among stand-in live posts. `instagram-connections` and `creative-review` specs pass. `npm run build` clean.
+
+## Live posts play, and carousels move, in the feed
+
+Direct question, then go-ahead: tapping a live post now opens it inside the phone, like Instagram's own post view, instead of a new tab. It shows the account, the post, then its caption and date, with Back to the grid (which keeps its place underneath) and an "Open on Instagram" link.
+- **Videos and Reels play there,** muted to start as on Instagram, with controls. Instagram gives the video file itself (`media_url`, an MP4) with Frank's current permission.
+- **Carousels** move between their slides with arrows, dots, a "2/3" counter, or a swipe. The slides (`/{media}/children`) are fetched only when a carousel is opened, one Instagram call, cached for 10 minutes. Staff get them through `/api/clients/[id]/instagram/slides`; a review link through `/api/shared-review/instagram/slides`, checked by the same RPC as the link and passcode.
+- **Grid tiles** carry Instagram's corner icons for carousels and videos.
+- **Both the Feed Preview and the review link's Feed view** have this. Planned posts still open in Frank as before.
+
+**Verified**: read-only against nofluff.in on live: a video's file is served as `video/mp4` (2 MB), and a carousel's 4 slides come back with the current permission. In a throwaway spec with a stand-in feed and a real recorded MP4: the corner icons on the carousel and the video. The carousel opened at 1/3 and moved to 2/3, and Back returned to the grid. The video played, muted. Looked at the grid and the open carousel. `instagram-connections`, `shared-review-public` and `creative-review` specs pass. `npm run build` clean.

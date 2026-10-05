@@ -112,3 +112,18 @@ export function useConnectLink(token: string) {
     }> => (await fetch(`/api/connections/instagram/link-info?token=${encodeURIComponent(token)}`)).json(),
   });
 }
+
+// A live carousel's slides, fetched when it's opened.
+export function useClientInstagramSlides(clientId: string | null | undefined, mediaId: string | null) {
+  return useQuery({
+    queryKey: ["instagram-slides", clientId, mediaId],
+    queryFn: async (): Promise<import("@/lib/instagram/store").LiveSlide[]> => {
+      const res = await fetch(`/api/clients/${clientId}/instagram/slides?media=${encodeURIComponent(mediaId!)}`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.status !== "ok") throw new Error(data.error ?? data.message ?? "Couldn't load this carousel");
+      return data.slides;
+    },
+    enabled: !!clientId && !!mediaId,
+    staleTime: 5 * 60_000,
+  });
+}

@@ -6,7 +6,10 @@ import { FeedTileArt, EmptyTileArt } from "@/components/creative-review/FeedTile
 import { FeedCaptionPopover } from "@/components/creative-review/FeedCaptionPopover";
 import { useClientInstagramFeed } from "@/hooks/use-instagram";
 import { LoadMore } from "@/components/creative-review/LoadMore";
-import { FeedProfile, FeedTabs, type FeedTab } from "@/components/creative-review/FeedChrome";
+import { FeedProfile, FeedTabs, LiveTile, type FeedTab } from "@/components/creative-review/FeedChrome";
+import { LivePostView } from "@/components/creative-review/LivePostView";
+import { useClientInstagramSlides } from "@/hooks/use-instagram";
+import type { LiveFeed } from "@/lib/instagram/store";
 import { postFormats } from "@/lib/formats";
 
 const GRID_SLOTS = 9;
@@ -55,6 +58,10 @@ export function FeedPreviewGrid({
   const feed = live?.status === "ok" ? live.feed : null;
   // Posts, or just the Reels (a Reel-format plan, or a real Reel).
   const [tab, setTab] = useState<FeedTab>("posts");
+  // A live post opened in the post view, over the grid (which keeps its
+  // place underneath for Back).
+  const [openPost, setOpenPost] = useState<LiveFeed["posts"][number] | null>(null);
+  const slides = useClientInstagramSlides(clientId, openPost?.carousel ? openPost.id : null);
   const allLive = useMemo(
     () => (pages?.pages ?? []).flatMap((p) => (p.status === "ok" ? p.feed.posts : [])),
     [pages],
@@ -95,6 +102,15 @@ export function FeedPreviewGrid({
       <span className="pf-btn pf-btn2" aria-hidden="true" />
       <div className="pf-screen">
     <div className="feedcard">
+      {openPost && feed && (
+        <LivePostView
+          post={openPost}
+          profile={feed.profile}
+          slides={slides.data}
+          slidesLoading={slides.isPending && !!openPost.carousel}
+          onBack={() => setOpenPost(null)}
+        />
+      )}
       <FeedProfile profile={feed?.profile ?? null} fallbackName={brandName} loading={!!clientId && liveLoading} />
       <FeedTabs tab={tab} onTab={setTab} />
 
@@ -128,23 +144,9 @@ export function FeedPreviewGrid({
             );
           })}
           {/* The client's real posts, after the planned ones (phase54).
-              Each opens on Instagram. */}
+              Each opens in the post view. */}
           {livePosts.map((p) => (
-            <a
-              key={p.id}
-              className="feedgrid-tile feedgrid-live"
-              href={p.permalink}
-              target="_blank"
-              rel="noreferrer"
-              title={p.caption ?? "Live on Instagram"}
-            >
-              {p.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element -- Instagram's own short-lived image URL
-                <img src={p.imageUrl} alt={p.caption ?? ""} loading="lazy" />
-              ) : (
-                <EmptyTileArt />
-              )}
-            </a>
+            <LiveTile key={p.id} post={p} onOpen={() => setOpenPost(p)} />
           ))}
           {/* Pad up to a fixed 9 slots — real empty tiles, not just blank
               space, per direct instruction. Never rendered when there are

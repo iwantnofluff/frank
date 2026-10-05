@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { tenantFromHost } from "@/lib/tenant";
 import { decryptToken, encryptToken } from "./secrets";
-import { fetchMedia, fetchProfile, isTokenGone, refreshToken, type InstagramMedia, type InstagramProfile } from "./api";
+import { fetchChildren, fetchMedia, fetchProfile, isTokenGone, refreshToken, type InstagramMedia, type InstagramProfile } from "./api";
 
 // Server-only, with the service role (phase54): the token table has no
 // policies, so nothing else can read it.
@@ -114,6 +114,10 @@ export interface LiveFeed {
     kind: string;
     // For the Reels tab.
     reel: boolean;
+    // A video's own file, to play in the post view; null for a picture.
+    videoUrl: string | null;
+    // A carousel's slides are fetched when it's opened (liveSlides).
+    carousel: boolean;
     at: string;
   }[];
   // Where the next page starts; null once the account's first post is in.
@@ -141,6 +145,8 @@ const toPost = (m: InstagramMedia) => ({
   caption: m.caption ?? null,
   kind: m.media_type,
   reel: m.media_product_type === "REELS",
+  videoUrl: m.media_type === "VIDEO" ? (m.media_url ?? null) : null,
+  carousel: m.media_type === "CAROUSEL_ALBUM",
   at: m.timestamp,
 });
 
@@ -230,4 +236,44 @@ export async function forgetInstagramUser(admin: SupabaseClient, userId: string)
 
 function clearFeedCache(clientId: string) {
   for (const key of feedCache.keys()) if (key.startsWith(`${clientId}:`)) feedCache.delete(key);
+}
+
+export interface LiveSlide {
+  id: string;
+  imageUrl: string | null;
+  videoUrl: string | null;
+}
+
+const slidesCache = new Map<string, { at: number; slides: LiveSlide[] }>();
+
+// A carousel's slides (phase54), when someone opens it: one Instagram call,
+// cached for 10 minutes. Instagram only answers for the connected
+// account's own posts.
+export async function liveSlides(
+  admin: SupabaseClient,
+  clientId: string,
+  mediaId: string,
+): Promise<{ status: "ok"; slides: LiveSlide[] } | { status: "not_connected" } | { status: "error"; message: string }> {
+  const { data: conn } = await admin
+    .from("instagram_connections")
+    .select("id, needs_reconnect_at")
+    .eq("client_id", clientId)
+    .maybeSingle();
+  if (!conn || conn.needs_reconnect_at) return { status: "not_connected" };
+  const key = `${clientId}:${mediaId}`;
+  const cached = slidesCache.get(key);
+  if (cached && Date.now() - cached.at < CACHE_MS) return { status: "ok", slides: cached.slides };
+  try {
+    const token = await usableToken(admin, conn.id as string);
+    if (!token) return { status: "not_connected" };
+    const slides = (await fetchChildren(token, mediaId)).map((c) => ({
+      id: c.id,
+      imageUrl: (c.media_type === "VIDEO" ? c.thumbnail_url : c.media_url) ?? null,
+      videoUrl: c.media_type === "VIDEO" ? (c.media_url ?? null) : null,
+    }));
+    slidesCache.set(key, { at: Date.now(), slides });
+    return { status: "ok", slides };
+  } catch (e) {
+    return { status: "error", message: (e as Error).message };
+  }
 }

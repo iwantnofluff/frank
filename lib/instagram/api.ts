@@ -144,3 +144,21 @@ export async function fetchMedia(
   );
   return { media: r.data, next: r.paging?.next && r.paging.cursors?.after ? r.paging.cursors.after : null };
 }
+
+export interface InstagramChild {
+  id: string;
+  media_type: "IMAGE" | "VIDEO";
+  media_url?: string;
+  thumbnail_url?: string;
+}
+
+// A carousel's slides, in order.
+export async function fetchChildren(token: string, mediaId: string): Promise<InstagramChild[]> {
+  const r = await call<{ data: InstagramChild[] }>(
+    `https://graph.instagram.com/${encodeURIComponent(mediaId)}/children?${new URLSearchParams({
+      fields: "id,media_type,media_url,thumbnail_url",
+      access_token: token,
+    })}`,
+  );
+  return r.data;
+}
