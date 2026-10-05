@@ -2293,3 +2293,9 @@ Direct instruction, now the grid scrolls: show every post, not just the latest 1
 Direct instruction, from the user's iPhone template (a PNG): the Feed Preview sits inside a phone's screen. The frame is drawn in CSS rather than overlaying the PNG, which has wide white margins and would blur at other sizes. It follows the template's look: a 12px black outline, rounded corners, a notch, and two buttons on the right. The screen is the feed card's own 390px width, so the 3:4 tiles keep their size. The phone's height follows the template's proportions (about 2.1:1, 876px). The grid fills the rest of the screen and scrolls within it, and the card has no edge of its own there. The review link's phone view already has its own phone, so it's unchanged.
 
 **Verified**: looked at it with 13 planned posts: the frame, notch and buttons as in the template, and full 3:4 tiles filling and scrolling within the screen.
+
+## Planned posts outlined in red in the feed
+
+Direct instruction: in the feed, posts still to be scheduled get a 1px red border (`--rose`, was a faint amber), so they stand out from the client's live posts, which keep none. This applies in the Feed Preview and the review link's Feed view. The post being viewed keeps its blue outline.
+
+**Verified**: the planned tiles' computed border is 1px solid red. Looked at it: red on the planned posts, blue on the current one, none on the live slots. `npm run build` clean.

@@ -2358,12 +2358,12 @@ body.lightrail .avatar {
 /* Not-live border — every post today, since nothing is actually published
    through this app yet (direct instruction: apply it now, ahead of a real
    "live" state existing, using creatives.published_at as the real signal
-   rather than a hardcoded true/false). A soft, light version of the
-   existing --amber warning hue, not the full-strength colour itself —
-   this is a status hint, not a warning. Empty slots (no creative at all)
-   never get it; there's no "post" there to be not-live. */
+   rather than a hardcoded true/false). Red, 1px (direct instruction,
+   was a faint amber), so planned work stands out from the client's real
+   live posts around it, which have none. Empty slots (no creative at
+   all) never get it; there's no "post" there to be not-live. */
 .feedgrid-tile.not-live {
-  border: 1px solid rgba(255, 138, 0, 0.35);
+  border: 1px solid var(--rose);
 }
 /* "No Creative" (a real post/brief, nothing uploaded) / "Live Post" (a
    padding slot beyond the real count, standing in for the client's actual
@@ -6473,6 +6473,7 @@ a.profproject:hover .pp-t b {
 .sharedfeed-planned {
   display: block;
   background: var(--canvas);
+  border: 1px solid var(--rose);
 }
 
 .sharedfeed-name {
