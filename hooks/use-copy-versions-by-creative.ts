@@ -5,7 +5,6 @@ import { createClient } from "@/lib/supabase/client";
 
 export interface CopyVersionSummary {
   versionNo: number;
-  slideText: string[];
   caption: string | null;
   // Every copy field, for the tables' Copy column (lib/formats.ts copySummary).
   fields: Record<string, string>;
@@ -28,7 +27,7 @@ export function useCopyVersionsByCreative(creativeIds: string[]) {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("copy_versions")
-        .select("creative_id, version_no, fields, slide_text")
+        .select("creative_id, version_no, fields")
         .in("creative_id", creativeIds)
         .order("version_no", { ascending: false });
       if (error) throw error;
@@ -38,7 +37,6 @@ export function useCopyVersionsByCreative(creativeIds: string[]) {
         const fields = (row.fields ?? {}) as Record<string, string>;
         (result[row.creative_id] ??= []).push({
           versionNo: row.version_no,
-          slideText: row.slide_text ?? [],
           caption: fields.caption ?? null,
           fields,
         });

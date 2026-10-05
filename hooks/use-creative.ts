@@ -19,6 +19,8 @@ export interface CreativeRow {
   concept: string | null;
   reference_url: string | null;
   slide_count: number | null; // carousels only (phase31)
+  // Text on Image, one entry per slide (phase57: on the post, not versions).
+  slide_text: string[];
   approach_notes: string[] | null;
   // The table's own fields (Funnel, Notes for Designer, custom columns).
   cx: Record<string, string | number | boolean | null> | null;
@@ -39,7 +41,7 @@ export function useCreative(creativeId: string) {
       const { data, error } = await supabase
         .from("creatives")
         .select(
-          "id, agency_id, project_id, name, format, stage, exception, lead_user_id, scheduled_at, formats, destination, due_on, concept, reference_url, slide_count, approach_notes, cx, projects(id, name, delivery, client_id, clients(name))",
+          "id, agency_id, project_id, name, format, stage, exception, lead_user_id, scheduled_at, formats, destination, due_on, concept, reference_url, slide_count, slide_text, approach_notes, cx, projects(id, name, delivery, client_id, clients(name))",
         )
         .eq("id", creativeId)
         .single();

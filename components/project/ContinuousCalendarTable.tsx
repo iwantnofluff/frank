@@ -1072,21 +1072,26 @@ export function ContinuousCalendarTable({
                                   />
                                 </td>
                               );
-                            case "imageOnText":
+                            case "imageOnText": {
+                              // On the post itself (phase57), not versioned.
+                              const lines = (c.slide_text ?? []).filter((t) => t.trim());
+                              return (
+                                <td key={key} className="cellw">
+                                  {lines.length ? (
+                                    lines.map((t, i) => <div key={i}>{t}</div>)
+                                  ) : (
+                                    <span className="tdim">—</span>
+                                  )}
+                                </td>
+                              );
+                            }
                             case "copy": {
-                              const versions = copyVersionsByCreative?.[c.id] ?? [];
-                              const rows = versions
-                                .map((v) => ({
-                                  versionNo: v.versionNo,
-                                  text:
-                                    key === "copy"
-                                      ? copySummary(v.fields, postFormats(c))
-                                      : v.slideText.filter(Boolean).join("\n"),
-                                }))
+                              const rows = (copyVersionsByCreative?.[c.id] ?? [])
+                                .map((v) => ({ versionNo: v.versionNo, text: copySummary(v.fields, postFormats(c)) }))
                                 .filter((v) => v.text);
                               return (
                                 <td key={key} className="cellw">
-                                  <VersionedTextCell label={key === "copy" ? "Copy" : "Text on Image"} rows={rows} />
+                                  <VersionedTextCell label="Copy" rows={rows} />
                                 </td>
                               );
                             }

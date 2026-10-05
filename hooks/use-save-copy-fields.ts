@@ -6,21 +6,18 @@ import type { CopyVersionRow } from "./use-copy-versions";
 
 // Every save creates a new copy version rather than updating one in place
 // (frank-schema.docx — "every copy upload... creates a new copy version").
-// The caption/headline/cta fields and the Text on Image are saved together
-// (direct instruction): both sit on the Content tab, so a version is only
-// made once some copy is written, never by the brief.
+// The caption/headline/cta fields only. Text on Image is on the post
+// itself, saved on its own (phase57, useSaveSlideText), so a version only
+// ever holds copy.
 export function useSaveCopyFields(creativeId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({
       fields,
-      slideText,
       latest,
     }: {
       fields: Record<string, string>;
-      // One entry per slide, trailing blanks tidied (lib/slide-text.ts).
-      slideText: string[];
       latest: CopyVersionRow | null;
     }) => {
       const supabase = createClient();
@@ -35,7 +32,6 @@ export function useSaveCopyFields(creativeId: string) {
           creative_id: creativeId,
           version_no: (latest?.version_no ?? 0) + 1,
           fields: { ...(latest?.fields ?? {}), ...fields },
-          slide_text: slideText,
           source: "upload",
           created_by: user.id,
         })

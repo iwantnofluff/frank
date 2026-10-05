@@ -10,6 +10,7 @@ import type { CreativeRow } from "@/hooks/use-creative";
 import { useCopyVersions, type CopyVersionRow } from "@/hooks/use-copy-versions";
 import { useCreativeVersions, versionSlides, type CreativeVersionRow } from "@/hooks/use-creative-versions";
 import { useCreateCreative } from "@/hooks/use-create-creative";
+import { useSaveSlideText } from "@/hooks/use-save-slide-text";
 import { useUpdateCreativeCx } from "@/hooks/use-update-creative-cx";
 import { FUNNEL_COLUMN } from "@/components/project/ContinuousCalendarTable";
 import { useUpdateBrief } from "@/hooks/use-update-brief";
@@ -486,9 +487,12 @@ export function CreativeModal(props: CreativeModalProps) {
   const [dueOn, setDueOn] = useState(isCreate ? "" : (props.creative.due_on ?? ""));
   const [concept, setConcept] = useState(isCreate ? "" : (props.creative.concept ?? ""));
   const [referenceUrl, setReferenceUrl] = useState(isCreate ? "" : (props.creative.reference_url ?? ""));
-  // Text on Image, one entry per slide: written on the Content tab with
-  // the caption and saved in the same copy version (direct instruction).
-  const [slideText, setSlideText] = useState<string[]>(latestCopyVersion?.slide_text ?? []);
+  // Text on Image, one entry per slide: on the post itself, not a copy
+  // version (phase57, direct instruction), with its own Save on the
+  // Content tab. savedSlideText is what's on record, for "unsaved".
+  const initialSlideText = isCreate ? [] : (props.creative.slide_text ?? []);
+  const [slideText, setSlideText] = useState<string[]>(initialSlideText);
+  const [savedSlideText, setSavedSlideText] = useState<string[]>(tidySlideText(initialSlideText));
   const [cx, setCx] = useState<Record<string, string | number | boolean | null>>({});
   // Continuous projects' Funnel and Notes for Designer (direct instruction:
   // in the window as well as the table, both optional). Saved to the same
@@ -703,7 +707,6 @@ export function CreativeModal(props: CreativeModalProps) {
       // before it, rather than carrying the deleted text as unsaved edits.
       if (id === latestCopyVersion?.id) {
         setDraftFields(remaining[0]?.fields ?? {});
-        setSlideText(remaining[0]?.slide_text ?? []);
         setCopySaveNote(null);
       }
       setViewingCopyVersionNo(remaining[0]?.version_no ?? 0);
@@ -742,6 +745,18 @@ export function CreativeModal(props: CreativeModalProps) {
     }
   }
   const saveCopy = useSaveCopyFields(creativeId ?? "");
+  const saveSlideText = useSaveSlideText(creativeId ?? "", projectId);
+  const [slideSaveNote, setSlideSaveNote] = useState<string | null>(null);
+  async function handleSaveSlideText() {
+    setSlideSaveNote(null);
+    try {
+      await saveSlideText.mutateAsync(draftSlideText);
+      setSavedSlideText(draftSlideText);
+      setSlideSaveNote("Saved.");
+    } catch {
+      // Shown via saveSlideText.error below.
+    }
+  }
   const refreshWiifmNote = useRefreshWiifmNote(creativeId ?? "");
 
   // Same "not available in create mode" shape as copyVersions/creativeVersions
@@ -819,15 +834,14 @@ export function CreativeModal(props: CreativeModalProps) {
   // "pending" just because no copy_versions row exists — there's nothing
   // there to lose, and blocking Save and Close over it would trap the
   // agency into creating an empty version just to unlock closing.
-  // Text on Image counts as copy too: it's saved in the same version.
-  const draftSlideText = tidySlideText(slideFields(slideText, slideCount));
-  const slideTextChanged =
-    JSON.stringify(draftSlideText) !== JSON.stringify(tidySlideText(latestCopyVersion?.slide_text ?? []));
-  const hasAnyCopyContent =
-    Object.values(mergedCopyFields).some((v) => v?.trim()) || draftSlideText.some((t) => t.trim());
+  const hasAnyCopyContent = Object.values(mergedCopyFields).some((v) => v?.trim());
   const pendingCopyChange =
+    includesCopy &&
     hasAnyCopyContent &&
-    (!latestCopyVersion || !fieldsEqual(mergedCopyFields, latestCopyVersion.fields ?? {}) || slideTextChanged);
+    !(!!latestCopyVersion && fieldsEqual(mergedCopyFields, latestCopyVersion.fields ?? {}));
+  // Text on Image, saved on its own (not a version).
+  const draftSlideText = tidySlideText(slideFields(slideText, slideCount));
+  const pendingSlideChange = JSON.stringify(draftSlideText) !== JSON.stringify(savedSlideText);
   const pendingCreativeChange = !!file || (!!slideCount && carouselPending);
 
   // What Check WIIFM/Check Brand actually check — the fields as they
@@ -858,7 +872,6 @@ export function CreativeModal(props: CreativeModalProps) {
 
     const versionId = await saveCopy.mutateAsync({
       fields: draftFields,
-      slideText: draftSlideText,
       latest: latestCopyVersion,
     });
     if (!isCreate) props.onCopyVersionCreated(versionId);
@@ -993,10 +1006,10 @@ export function CreativeModal(props: CreativeModalProps) {
             <button
               type="button"
               className="btn primary"
-              disabled={uploadSaving || !creativeId || pendingCopyChange || pendingCreativeChange}
+              disabled={uploadSaving || !creativeId || pendingCopyChange || pendingCreativeChange || pendingSlideChange}
               title={
-                pendingCopyChange || pendingCreativeChange
-                  ? "Save the copy and/or creative changes above first"
+                pendingCopyChange || pendingCreativeChange || pendingSlideChange
+                  ? "Save the copy, Text on Image or creative changes above first"
                   : undefined
               }
               onClick={handleSaveUpload}
@@ -1394,7 +1407,7 @@ export function CreativeModal(props: CreativeModalProps) {
 
           <div className="msection-h">Copy</div>
           <p className="msection-d">
-            The caption and on-post text the chosen formats need, and the Text on Image, saved together as one version.
+            The caption and on-post text the chosen formats need, saved as versions. Text on Image is below, saved on its own.
           </p>
 
           {copyVersions.length > 0 && (
@@ -1422,19 +1435,6 @@ export function CreativeModal(props: CreativeModalProps) {
                   <p className="fd-d">{viewedCopyVersion.fields?.[spec.key] || "—"}</p>
                 </div>
               ))}
-              <div className="field">
-                <label>Text on Image</label>
-                {(viewedCopyVersion.slide_text ?? []).some((t) => t.trim()) ? (
-                  (viewedCopyVersion.slide_text ?? []).map((t, i) => (
-                    <p className="fd-d" key={i}>
-                      {slideCount ? <b>{`Slide ${i + 1}: `}</b> : null}
-                      {t || "—"}
-                    </p>
-                  ))
-                ) : (
-                  <p className="fd-d">—</p>
-                )}
-              </div>
             </>
           )}
 
@@ -1491,22 +1491,6 @@ export function CreativeModal(props: CreativeModalProps) {
               ))}
 
               <div className="field">
-                <label>
-                  Text on Image <span className="hint">{slideCount ? "one entry per slide" : "the words on the artwork itself"}</span>
-                </label>
-                <ListEditor
-                  itemLabel={(i) => `Slide ${i + 1}`}
-                  values={slideFields(slideText, slideCount)}
-                  onChange={(next) => {
-                    setSlideText(next);
-                    setCopySaveNote(null);
-                  }}
-                  fixed={!!slideCount}
-                  bare
-                />
-              </div>
-
-              <div className="field">
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <button type="button" className="btn sm primary" disabled={saveCopy.isPending} onClick={handleSaveCopyOnly}>
                     {saveCopy.isPending ? "Saving…" : `Save Version ${nextCopyVersionNo}`}
@@ -1518,6 +1502,38 @@ export function CreativeModal(props: CreativeModalProps) {
               </div>
             </>
           )}
+
+          <div className="msection-h">Text on Image</div>
+          <p className="msection-d">
+            {slideCount ? "The words on each slide's artwork" : "The words on the artwork itself"}, kept with the post, not
+            as a copy version.
+          </p>
+          <ListEditor
+            itemLabel={(i) => `Slide ${i + 1}`}
+            values={slideFields(slideText, slideCount)}
+            onChange={(next) => {
+              setSlideText(next);
+              setSlideSaveNote(null);
+            }}
+            fixed={!!slideCount}
+            bare
+          />
+          <div className="field">
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <button
+                type="button"
+                className="btn sm primary"
+                disabled={!creativeId || !pendingSlideChange || saveSlideText.isPending}
+                onClick={handleSaveSlideText}
+              >
+                {saveSlideText.isPending ? "Saving…" : "Save Text on Image"}
+              </button>
+              {slideSaveNote && !pendingSlideChange && <span className="bsaved">{slideSaveNote}</span>}
+            </div>
+            {saveSlideText.error && (
+              <p className="autherr">{errorMessage(saveSlideText.error, "Couldn't save the Text on Image")}</p>
+            )}
+          </div>
 
           {uploadError && <p className="autherr">{uploadError}</p>}
         </div>
@@ -1537,7 +1553,7 @@ export function CreativeModal(props: CreativeModalProps) {
               { key: "__slides", label: "Text on Image" },
             ].map((spec) => {
               if (spec.key === "__slides") {
-                const text = tidySlideText(latestCopyVersion.slide_text ?? []);
+                const text = savedSlideText;
                 return text.some((t) => t.trim()) ? (
                   <div className="field" key={spec.key}>
                     <label>{spec.label}</label>

@@ -468,14 +468,13 @@ export function ProjectCalendarTable({
 
   function versionRows(
     versions: CopyVersionSummary[] | undefined,
-    field: "copy" | "slideText",
     formatIds: string[],
   ): { versionNo: number; text: string }[] {
     if (!versions) return [];
     return versions
       .map((v) => ({
         versionNo: v.versionNo,
-        text: field === "copy" ? copySummary(v.fields, formatIds) : v.slideText.filter(Boolean).join("\n"),
+        text: copySummary(v.fields, formatIds),
       }))
       .filter((v) => v.text);
   }
@@ -1119,12 +1118,29 @@ export function ProjectCalendarTable({
                                   )}
                                 </td>
                               );
-                            case "imageOnText":
+                            case "imageOnText": {
+                              // On the post itself (phase57), not versioned.
+                              const lines = (c.slide_text ?? []).filter((t) => t.trim());
+                              return (
+                                <td key={key} className="cellw">
+                                  {lines.length ? (
+                                    <span
+                                      className="copyc"
+                                      onMouseEnter={(e) => handleTextEnter(lines, e.currentTarget)}
+                                      onMouseLeave={scheduleTextHide}
+                                    >
+                                      <span className="cc-t">{lines.join(" · ")}</span>
+                                    </span>
+                                  ) : (
+                                    <span className="tdim">—</span>
+                                  )}
+                                </td>
+                              );
+                            }
                             case "postCopy": {
-                              const field = key === "postCopy" ? "copy" : "slideText";
-                              const rows = versionRows(copyVersionsByCreative?.[c.id], field, postFormats(c));
+                              const rows = versionRows(copyVersionsByCreative?.[c.id], postFormats(c));
                               const latest = rows[0];
-                              const label = key === "postCopy" ? "Copy" : "Text on Image";
+                              const label = "Copy";
                               return (
                                 <td key={key} className="cellw">
                                   {latest ? (

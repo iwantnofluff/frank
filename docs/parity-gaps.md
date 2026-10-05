@@ -2393,3 +2393,14 @@ Seen on live, from a seven-slide Instagram and LinkedIn carousel: Claude's reply
 - **Gap:** different formats can't have their own caption (the copy fields are one set per post). If LinkedIn and Instagram need different captions, that needs per-format copy, which isn't built.
 
 **Verified**: the reply that failed on live was cut off mid-way through its second draft (2,680 characters, no closing fence). A real Claude run on the same kind of post (Instagram Carousel and LinkedIn Carousel, seven slides) came back as plain prose with two drafts. Each had one caption with no platform split, alt text, and all seven Text on Image slides. Unit tests cover a cut-off reply (the finished draft kept, no JSON or asterisks shown), broken JSON never shown, and the several-formats instruction. `copy-chat.spec.ts` passes.
+
+## Text on Image is on the post, not in copy versions (phase57)
+
+Direct instruction, seen on live: a V1 with no caption still appeared, because saving Text on Image (moved to the Content tab earlier today) still made a copy version. Text on Image shouldn't be part of the versions at all.
+- **`creatives.slide_text`** holds Text on Image, one entry per slide. The migration copied each post's latest Text on Image there from its versions. Copy versions are the caption and the formats' copy fields only.
+- **Its own Save:** Text on Image stays on the Content tab, below the copy, with a "Save Text on Image" button. Save and Close waits for it the same way it waits for unsaved copy. Claude's "Use This" still fills it, ready to save.
+- **The empty versions are gone:** versions with no copy in them and no comments (5 on live, from Text on Image alone) were removed, and each post's versions renumbered from V1. A database trigger now refuses any copy version without some copy, whoever writes it.
+- **Shown from the post:** both tables' Text on Image column (no version history now, the full text on hover in the scheduled table), the review page's Brief section, and the Checks tab. The read-only view of an earlier copy version no longer lists it.
+- `copy_versions.slide_text` stays in the schema, no longer written or read. The copy-version history keeps only copy.
+
+**Verified**: rehearsed on staging with a rollback first: version numbers came out gapless. Applied to staging. On live, 5 copy-less versions had no comments. In a throwaway spec: typing Text on Image held Save and Close until "Save Text on Image" was pressed. It then showed "Saved.", made no copy version, and appeared on the post's Brief section. Looked at the section. `carousel.spec.ts` checks a carousel's three slide fields save to the post with no version, and that the database refuses a version with only blank copy. `continuous-calendar.spec.ts` checks the Text on Image column reads the post. The `upload-artwork-modal.png` baseline was updated after reading its diff: only the Copy description changed.

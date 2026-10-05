@@ -1,4 +1,9 @@
+import { createClient } from "@supabase/supabase-js";
 import { test, expect, goToMonth } from "./fixtures";
+
+const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
 
 // The saved-view Save button is a .split; so, now, is New Post's — this is
 // the one that saves the view.
@@ -69,8 +74,10 @@ test("continuous calendar — Funnel and Notes for Designer persist", async ({ p
 test("continuous calendar — Format, Text on Image and Copy come from the post itself", async ({ page, frank }) => {
   const projectId = await frank.createContinuousProject();
   const id = await frank.createContinuousCreative(projectId, { name: "Copy Test Creative", dueOn: "2027-03-15" });
-  await frank.createCopyVersion(id, 1, { caption: "First caption", slideText: ["First words"] });
-  await frank.createCopyVersion(id, 2, { caption: "Second caption", slideText: ["Second words"] });
+  await frank.createCopyVersion(id, 1, { caption: "First caption" });
+  await frank.createCopyVersion(id, 2, { caption: "Second caption" });
+  // Text on Image is on the post itself (phase57), not in the versions.
+  await admin.from("creatives").update({ slide_text: ["On the artwork"] }).eq("id", id);
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
@@ -78,10 +85,10 @@ test("continuous calendar — Format, Text on Image and Copy come from the post 
   await page.waitForSelector(".tbl");
 
   const cells = page.locator("tr[data-row]", { hasText: "Copy Test Creative" }).locator("td");
-  // 6 Format, 12 Text on Image, 13 Copy: the latest version, older on hover.
+  // 6 Format, 12 Text on Image (no versions), 13 Copy: the latest
+  // version, older on hover.
   await expect(cells.nth(6)).toHaveText("Instagram Feed");
-  await expect(cells.nth(12)).toContainText("V2");
-  await expect(cells.nth(12)).toContainText("Second words");
+  await expect(cells.nth(12)).toHaveText("On the artwork");
   await expect(cells.nth(13)).toContainText("Second caption");
   await expect(cells.nth(13)).toContainText("+1 earlier");
   await cells.nth(13).locator(".copyc").hover();

@@ -108,12 +108,15 @@ test("a carousel gets a slide count, and Text on Image one field per slide", asy
   await expect(page.getByRole("button", { name: "+ Add" })).toHaveCount(0);
   // Slide 2 written, slide 1 left blank: positions are kept.
   await page.locator(".brow textarea").nth(1).fill("Second slide words");
-  // The copy's own Save, after the artwork's.
-  await page.getByRole("button", { name: "Save Version 1" }).last().click();
-  await expect(page.getByText("Saved as version 1.")).toBeVisible();
-  const { data: copy } = await admin.from("copy_versions").select("slide_text, fields").eq("creative_id", c!.id).single();
-  expect(copy!.slide_text).toEqual(["", "Second slide words"]);
-  expect(copy!.fields).toEqual({});
+  // Its own Save: on the post, never a copy version (phase57).
+  await page.getByRole("button", { name: "Save Text on Image" }).click();
+  await expect(page.getByRole("button", { name: "Save Text on Image" })).toBeDisabled();
+  const { data: saved } = await admin.from("creatives").select("slide_text").eq("id", c!.id).single();
+  expect(saved!.slide_text).toEqual(["", "Second slide words"]);
+  expect((await admin.from("copy_versions").select("id").eq("creative_id", c!.id)).data).toEqual([]);
+  // Saving copy without any is refused by the database too.
+  const { error } = await admin.from("copy_versions").insert({ creative_id: c!.id, version_no: 1, fields: { caption: "  " }, source: "upload" });
+  expect(error?.message).toContain("needs some copy");
 });
 
 test("carousel artwork is saved as a set, and replacing one slide keeps the rest", async ({ page, frank }) => {

@@ -1,7 +1,6 @@
 "use client";
 
 import type { CreativeRow } from "@/hooks/use-creative";
-import type { CopyVersionRow } from "@/hooks/use-copy-versions";
 import { formatById, formatsLabel, postFormats } from "@/lib/formats";
 
 // Informational only, on this page — editing the brief now happens in
@@ -13,18 +12,17 @@ import { formatById, formatsLabel, postFormats } from "@/lib/formats";
 // page's own ReviewNav now, not a per-panel accordion.
 export function BriefPanel({
   creative,
-  latestCopyVersion,
   leadName,
 }: {
   creative: CreativeRow;
-  latestCopyVersion: CopyVersionRow | null;
   leadName: string | null;
 }) {
   const formats = postFormats(creative);
   // Each content type once, in the order its formats were chosen.
   const categories = [...new Set(formats.map((id) => formatById(id)?.category).filter(Boolean))];
   const delivery = creative.projects?.delivery ?? "scheduled";
-  const slideText = latestCopyVersion?.slide_text ?? [];
+  // On the post itself (phase57), not a copy version.
+  const slideText = creative.slide_text ?? [];
 
   return (
     <div className="brief open reviewpanel">

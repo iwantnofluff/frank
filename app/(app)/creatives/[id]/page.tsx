@@ -364,7 +364,6 @@ export default function CreativeReviewPage({
             {activeSection === "brief" && (
               <BriefPanel
                 creative={creative}
-                latestCopyVersion={copyVersions?.[0] ?? null}
                 leadName={leadName}
               />
             )}

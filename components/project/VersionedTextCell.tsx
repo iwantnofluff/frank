@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { CopyVersionHistoryPopover } from "@/components/project/CopyVersionHistoryPopover";
 
-// A table cell's latest copy version (Text on Image or Copy), with its
+// A table cell's latest copy version (the Copy column), with its
 // earlier versions on hover: the scheduled table's cell, for the
 // continuous table too (direct instruction: its V1/V2 Copy became the
 // real copy). Holds its own hover, so a table needs no wiring for it.

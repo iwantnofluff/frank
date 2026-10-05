@@ -85,7 +85,7 @@ export interface Frank {
   createCopyVersion(
     creativeId: string,
     versionNo: number,
-    fields: { caption?: string; slideText?: string[] },
+    fields: { caption: string },
   ): Promise<void>;
 }
 
@@ -327,8 +327,8 @@ export const test = base.extend<{ frank: Frank }>({
         const { error } = await admin.from("copy_versions").insert({
           creative_id: creativeId,
           version_no: versionNo,
-          fields: fields.caption ? { caption: fields.caption } : {},
-          slide_text: fields.slideText ?? [],
+          // A version is copy only (phase57); Text on Image is on the post.
+          fields: { caption: fields.caption },
           source: "in_app_edit",
           created_by: staffAuth.user.id,
         });
