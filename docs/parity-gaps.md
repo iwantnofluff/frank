@@ -2316,3 +2316,9 @@ Direct questions and instruction, with real content in the feed:
 Direct instruction: on first load, the empty slots read "Live Post" and the header showed the plain client name until Instagram answered, which looked like nothing was connected. Until the live feed's first answer arrives, the empty slots read "Loading live posts…" with a gentle pulse (still for anyone who prefers reduced motion), and the header says "Loading Instagram profile…". If the client turns out not to be connected, it falls back to "Live Post" and the note about connecting.
 
 **Verified** in throwaway specs with Instagram's answer held back: the header's loading line and all 8 empty slots loading (looked at), then, once a "not connected" answer was let through, the slots back to "Live Post", the loading line gone, and the connect note shown. `instagram-connections.spec.ts` passes. `npm run build` clean.
+
+Follow-up, seen on live: with the only planned post being the one open, nothing marked it as planned. The blue "viewing this" outline was drawn over the red border, and an outline sits under the tile's artwork anyway. Now:
+- **Every post still to be scheduled carries a small red "Planned" label** in its top corner.
+- **The blue ring for the post being viewed** is a layer drawn above the artwork, just inside the edge, so the red border still shows around it.
+
+**Verified**: looked at the open planned tile closely: the red edge, the blue ring inside it, and the label all visible. Both planned tiles labelled among stand-in live posts. `instagram-connections` and `creative-review` specs pass. `npm run build` clean.

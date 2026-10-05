@@ -2351,9 +2351,16 @@ body.lightrail .avatar {
   object-fit: cover;
   display: block;
 }
-.feedgrid-tile[aria-current="true"] {
-  outline: 2px solid var(--action);
-  outline-offset: -2px;
+/* The post being viewed: a blue ring drawn above the artwork (an outline
+   sits under it and was hidden), just inside the tile's edge, so a planned
+   post's red border still shows around it. */
+.feedgrid-tile[aria-current="true"]::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border: 2px solid var(--action);
+  z-index: 2;
+  pointer-events: none;
 }
 /* Not-live border — every post today, since nothing is actually published
    through this app yet (direct instruction: apply it now, ahead of a real
@@ -6671,4 +6678,19 @@ button.fp-tab[aria-selected="true"] {
   .pp-empty.loading {
     animation: none;
   }
+}
+/* A post still to be scheduled says so (direct instruction: the red edge
+   alone wasn't enough to tell planned from live). */
+.feedgrid-planned-tag {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 1;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 2px 6px;
+  border-radius: 99px;
+  background: var(--rose);
+  color: #fff;
 }

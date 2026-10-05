@@ -122,6 +122,7 @@ export function FeedPreviewGrid({
                 onMouseLeave={scheduleHide}
                 title={c.name}
               >
+                {!c.published_at && <span className="feedgrid-planned-tag">Planned</span>}
                 <FeedTileArt creative={c} timeLabel={timeLabel} />
               </button>
             );
