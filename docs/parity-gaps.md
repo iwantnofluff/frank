@@ -2332,3 +2332,12 @@ Direct question, then go-ahead: tapping a live post now opens it inside the phon
 - **Both the Feed Preview and the review link's Feed view** have this. Planned posts still open in Frank as before.
 
 **Verified**: read-only against nofluff.in on live: a video's file is served as `video/mp4` (2 MB), and a carousel's 4 slides come back with the current permission. In a throwaway spec with a stand-in feed and a real recorded MP4: the corner icons on the carousel and the video. The carousel opened at 1/3 and moved to 2/3, and Back returned to the grid. The video played, muted. Looked at the grid and the open carousel. `instagram-connections`, `shared-review-public` and `creative-review` specs pass. `npm run build` clean.
+
+## Projects can have an emoticon as their picture (phase56)
+
+Direct instruction, for projects only: a project can show an emoticon in place of its initials on the client workspace's project rows. The reference was the Noun Project's "Emoticons" collection, whose icons need a credit or a paid licence. The user chose an original set instead, drawn for Frank in the same outlined style: 42 faces (smile, wink, cool, nerd, angel, mischief, sleepy, crying, fuming, party and so on), drawn in white on the project's colour.
+- **Owners and Admins pick it** by clicking the project's tile on the row. A popover shows "Initials" first, then every face, with the current one ringed. Users see the picture but can't change it, the same as the other project details (phase47). The database guard now covers `icon` too.
+- **Stored as the icon's name** in `projects.icon` (null for initials). The drawings live in `lib/project-icons.ts`, so the set can change without touching rows; a name no longer in the set falls back to the initials.
+- **Shown on the project rows only,** as asked. The Project Profile, calendar and breadcrumbs don't show it; recorded here as a gap if it's wanted there later.
+
+**Verified** in a throwaway spec as an Admin: the picker opened from the tile without following the row's link, picking "Party" saved `party` and showed it on the row, the picker then marked Party as current, and "Initials" set it back to null. As a User on that project: the picture showed, there was no picker, and a direct update through a signed-in session was refused with "Only Owners and Admins can change a project's details" (the row unchanged). Looked at the picker and the row. Migration applied to staging after a rolled-back rehearsal.

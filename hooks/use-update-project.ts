@@ -10,6 +10,8 @@ export interface ProjectPatch {
   // a project is made (phase48).
   description?: string | null;
   due_on?: string | null;
+  // The project's picture (phase56); null goes back to the initials.
+  icon?: string | null;
 }
 
 // One instance handles every row on the page — the target id travels in
@@ -27,6 +29,7 @@ export function useUpdateProject() {
       type,
       description,
       due_on,
+      icon,
     }: ProjectPatch & {
       projectId: string;
       clientId: string;
@@ -35,7 +38,7 @@ export function useUpdateProject() {
       // Fields left undefined drop out of the request body.
       const { data, error } = await supabase
         .from("projects")
-        .update({ name: name?.trim(), type, description, due_on })
+        .update({ name: name?.trim(), type, description, due_on, icon })
         .eq("id", projectId)
         .select("id")
         .maybeSingle();

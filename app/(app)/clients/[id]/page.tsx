@@ -13,6 +13,8 @@ import { useDeleteProjectFolder } from "@/hooks/use-delete-project-folder";
 import { KBadge } from "@/components/project/KBadge";
 import { NewProjectModal } from "@/components/project/NewProjectModal";
 import { ProjectProfileModal } from "@/components/project/ProjectProfileModal";
+import { ProjectAvatar } from "@/components/project/ProjectAvatar";
+import { useUpdateProject } from "@/hooks/use-update-project";
 import { FolderModal } from "@/components/project/FolderModal";
 import { MoveToFolderModal } from "@/components/project/MoveToFolderModal";
 import { MoveToClientModal } from "@/components/project/MoveToClientModal";
@@ -33,16 +35,6 @@ type ArchiveFilter = "active" | "archived";
 // track absorbs any difference.
 // Status (128px) matches the dashboard's own Status column width.
 const PROJECT_ROW_COLUMNS = "1fr 74px 96px 90px 128px 92px 70px";
-
-function projectInitials(name: string) {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase();
-}
 
 function formatDate(value: string | null) {
   if (!value) return "—";
@@ -74,6 +66,7 @@ export default function ClientWorkspacePage({
   const { isStaff, isPending: isStaffPending } = useIsStaff();
   const previewMode = useUIStore((s) => s.previewMode);
   const archiveProject = useArchiveProject();
+  const setIcon = useUpdateProject();
   const { data: folders } = useProjectFolders(id);
   const deleteFolder = useDeleteProjectFolder();
 
@@ -159,9 +152,13 @@ export default function ClientWorkspacePage({
         key={p.id}
       >
         <div className="cname">
-          <div className="logo" style={{ background: p.accent_colour || "#6B7280" }}>
-            {projectInitials(p.name)}
-          </div>
+          <ProjectAvatar
+            name={p.name}
+            colour={p.accent_colour}
+            icon={p.icon}
+            canPick={isAdmin}
+            onPick={(icon) => setIcon.mutate({ projectId: p.id, clientId: id, icon })}
+          />
           <div className="t">
             <b>{p.name}</b>
             <span className="sub">
@@ -364,6 +361,11 @@ export default function ClientWorkspacePage({
         </div>
       )}
 
+      {setIcon.isError && (
+        <p className="autherr" role="alert">
+          Couldn&rsquo;t change the picture: {setIcon.error.message}
+        </p>
+      )}
       {!projectsError && showTable && (
         <div className="clients">
           <div className="crow head" style={{ gridTemplateColumns: PROJECT_ROW_COLUMNS }}>

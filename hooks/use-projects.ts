@@ -14,6 +14,8 @@ export interface ProjectListRow {
   folder_id: string | null;
   // Project Profile (phase46).
   description: string | null;
+  // An emoticon from lib/project-icons.ts, or null for the initials (phase56).
+  icon: string | null;
 }
 
 export function useProjects(clientId: string) {
@@ -27,7 +29,7 @@ export function useProjects(clientId: string) {
       // a one-way door with nothing to see or undo it.
       const { data, error } = await supabase
         .from("projects")
-        .select("id, name, type, delivery, accent_colour, due_on, archived_at, folder_id, description")
+        .select("id, name, type, delivery, accent_colour, due_on, archived_at, folder_id, description, icon")
         .eq("client_id", clientId)
         .order("position");
 
