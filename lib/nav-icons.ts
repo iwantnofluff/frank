@@ -40,3 +40,23 @@ export const NAV_ICONS = {
 } satisfies Record<string, string[]>;
 
 export type NavIconKey = keyof typeof NAV_ICONS;
+
+// Each icon's frame, fitted to its own drawing so it fills its box as much
+// as the review page's icons do (93.75% of the frame, centred; direct
+// instruction: the same size). Measured from the drawings' bounds.
+export const NAV_ICON_VIEWBOX: Record<NavIconKey, string> = {
+  buildings: "88 88 1024 1024",
+  suitcase: "68.4 56.4 1075.2 1075.2",
+  link: "17.2 5.2 1177.6 1177.6",
+};
+
+// Each icon's outline, so its lines draw as thick as the review page's
+// icons (direct instruction: one family): about 1.03px at 16px, measured
+// from the drawn pixels (2 × area / outline, so diagonal lines count the
+// same as straight ones). Each icon's own line is buildings 24 units,
+// suitcase and link 48, in its fitted frame.
+export const NAV_ICON_STROKE: Record<NavIconKey, number> = {
+  buildings: 41,
+  suitcase: 16.8,
+  link: 19,
+};

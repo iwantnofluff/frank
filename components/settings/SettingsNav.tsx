@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePresence } from "@/hooks/use-presence";
-import { NAV_ICONS } from "@/lib/nav-icons";
+import { NAV_ICONS, NAV_ICON_STROKE, NAV_ICON_VIEWBOX } from "@/lib/nav-icons";
 import { SETTINGS_SECTIONS, settingsPageFor, type SettingsSection } from "@/lib/settings-nav";
 
 function Chevron({ d }: { d: string }) {
@@ -154,7 +154,12 @@ function IconicNav({
                 title={collapsed ? section.label : undefined}
                 onClick={() => onToggle(section.key)}
               >
-                <svg className="rn-ic" viewBox="0 0 1200 1200" aria-hidden="true">
+                <svg
+                  className="rn-ic"
+                  viewBox={NAV_ICON_VIEWBOX[section.icon!]}
+                  style={{ strokeWidth: NAV_ICON_STROKE[section.icon!] }}
+                  aria-hidden="true"
+                >
                   {NAV_ICONS[section.icon!].map((d) => (
                     <path key={d} d={d} />
                   ))}
