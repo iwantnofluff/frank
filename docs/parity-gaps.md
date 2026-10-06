@@ -2591,3 +2591,18 @@ Direct instruction, for the Content Planner and Other Content tables:
 ## Wider WIIFM Direction and Copy columns
 
 Direct instruction, by default in both tables: WIIFM Direction is double its width (236px to 472px) and Copy half as wide again (220px to 330px). A saved view where someone has dragged one of these columns keeps that width. **Verified**: measured 330px and 472px in both the Content Planner and Other Content tables. Both tables' specs pass.
+
+## The table's post preview: in a phone, with the real artwork or "No artwork yet"
+
+Direct instruction, for the Content Planner and Other Content tables (and their calendar grids, which share the preview):
+- **No artwork yet:** hovering a post with no artwork shows the review page's own "No artwork yet" visual, in the format's shape, instead of a generated gradient that looked like artwork.
+- **Real artwork:** a post with artwork shows it, the latest version's first slide; a video shows its first frame.
+- **In a phone:** the preview sits in a small version of the Feed Preview's phone (a 9px black frame, rounded corners, a notch), with the stage strip under the notch.
+- The generated gradient (PlaceholderArt) is no longer used by the preview; the feed's own empty tiles keep their own art.
+
+**Verified** in a throwaway spec:
+- **Before artwork:** hovering the fixture's post showed "No artwork yet" in a phone (9px black frame, 38px corners, notch), its icon at its normal 26px.
+- **After artwork:** once artwork was uploaded through the post window, hovering showed the image (400px wide, loaded) and no "No artwork yet".
+
+`project-calendar` (including its hover-preview tests) and `continuous-calendar` specs pass.
+- **A fixed-height phone, scrolling under its stage strip** (direct instruction): the preview is always 560px tall, enough for the artwork and a few lines of copy. The stage strip stays fixed at the top, and everything below its divider (account line, artwork, actions, publishing note, caption) scrolls inside the phone; the preview stays open while the pointer is on it. **Verified** with a long caption: the phone measured 560px with 611px of content to scroll, and after scrolling 400px the stage strip hadn't moved and the preview was still open.

@@ -5,7 +5,10 @@ import { useCopyVersions } from "@/hooks/use-copy-versions";
 import { useViewportFit } from "@/hooks/use-viewport-fit";
 import { useComments } from "@/hooks/use-comments";
 import { stageColor, stageLabel, exceptionLabel } from "@/lib/stage-labels";
-import { formatsLabel, postFormats } from "@/lib/formats";
+import { aspectRatioCss, formatsLabel, postFormats } from "@/lib/formats";
+import { useCreativeVersions, versionSlides } from "@/hooks/use-creative-versions";
+import { useAssetSignedUrl } from "@/hooks/use-asset-signed-url";
+import { NoArtwork } from "@/components/creative-review/NoArtwork";
 import type { CreativeListRow } from "@/hooks/use-creatives";
 
 function relativeTime(iso: string): string {
@@ -19,49 +22,9 @@ function relativeTime(iso: string): string {
   return `${years} year${years === 1 ? "" : "s"} ago`;
 }
 
-export function hashString(s: string) {
-  let n = 0;
-  for (let i = 0; i < s.length; i++) n = (n * 31 + s.charCodeAt(i)) >>> 0;
-  return n;
-}
-
-// A decorative gradient standing in for the real artwork — this popover
-// never fetches creative_versions, so there's no real image to show. Ports
-// the spirit of the prototype's own art() (a generated placeholder, not a
-// real render) rather than its literal SVG, and drops the fabricated
-// like/view counts postHTML() shows alongside it — no schema backs those.
-// Exported: FeedPreviewGrid (creative-review) reuses it for the same
-// reason — a grid of sibling creatives with no real thumbnail to fetch.
-//
-// The title/time overlay is plain HTML, not SVG <text> — an SVG text
-// element doesn't inherit the page's font stack the way an ordinary DOM
-// node does, so it rendered in a generic fallback font at the wrong size
-// instead of the app's actual type (Inter, via the same CSS every other
-// creative name uses). The gradient rect stays SVG since it has no text.
-export function PlaceholderArt({ creative, timeLabel }: { creative: CreativeListRow; timeLabel: string }) {
-  const hue = hashString(creative.id) % 360;
-  const gradientId = `pg-${creative.id}`;
-  return (
-    <div className="pp-art">
-      <svg viewBox="0 0 306 230" width="306" height="230" preserveAspectRatio="xMidYMid slice">
-        <defs>
-          <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor={`hsl(${hue}, 55%, 24%)`} />
-            <stop offset="1" stopColor={`hsl(${hue}, 55%, 12%)`} />
-          </linearGradient>
-        </defs>
-        <rect width="306" height="230" fill={`url(#${gradientId})`} />
-      </svg>
-      <div className="pp-art-overlay">
-        <div className="pp-art-title">{creative.name}</div>
-        <div className="pp-art-time">{timeLabel}</div>
-      </div>
-    </div>
-  );
-}
-
 // Ports frank-prototype.html's #evpop/showPreview — hovering a creative
-// (in the calendar table or the calendar grid) shows this. Only real data:
+// (in the calendar table or the calendar grid) shows this, in a phone, with
+// its real artwork (or "no artwork yet"). Only real data:
 // name, stage/exception, real open-comment count, the real caption (latest
 // copy_versions row, fetched here on demand rather than for every visible
 // row), and a real "published X ago" once creatives.published_at is set.
@@ -82,19 +45,15 @@ export function CreativePreviewPopover({
   onMouseLeave?: () => void;
 }) {
   const { data: copyVersions } = useCopyVersions(creative.id);
+  const { data: versions, isPending: versionsPending } = useCreativeVersions(creative.id);
+  const art = versionSlides(versions?.[0])[0]?.asset ?? null;
+  const { data: artUrl } = useAssetSignedUrl(art?.storage_key);
   const { data: comments } = useComments(creative.id);
 
   const latestCopy = copyVersions?.[0];
   const caption = latestCopy?.fields?.caption;
   const openComments = comments?.filter((c) => !c.resolved_at).length ?? 0;
   const color = stageColor(creative.stage, creative.exception);
-  const timeLabel = creative.scheduled_at
-    ? new Date(creative.scheduled_at).toLocaleTimeString(undefined, {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      })
-    : "—";
 
   // Positioned from its real measured size, re-measured as the caption and
   // comments load in — a fixed 340px guess ran it off the bottom of the
@@ -103,7 +62,10 @@ export function CreativePreviewPopover({
   useViewportFit(ref, anchorRect, { side: "beside" });
 
   return (
-    <div ref={ref} className="evpop on" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
+    // In the phone (direct instruction): a small version of the Feed
+    // Preview's frame, the stage strip at the top of its screen.
+    <div ref={ref} className="evpop on phonepop" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
+      <span className="phonepop-notch" aria-hidden="true" />
       <div className="rv">
         <span className="rvt">{creative.name}</span>
         <span className="tag" style={{ background: `${color}1A`, color }}>
@@ -119,6 +81,9 @@ export function CreativePreviewPopover({
           </span>
         )}
       </div>
+      {/* Everything under the stage strip scrolls inside the phone, which
+          keeps a fixed height (direct instruction). */}
+      <div className="phonepop-scroll">
       <div className="pp-h">
         <span className="pp-av">
           <i />
@@ -129,7 +94,19 @@ export function CreativePreviewPopover({
         </div>
       </div>
       <div className="pp-media">
-        <PlaceholderArt creative={creative} timeLabel={timeLabel} />
+        {/* The post's latest artwork (its first slide), or the review
+            page's own "no artwork yet" while there isn't any (direct
+            instruction). */}
+        {art?.mime_type.startsWith("video/") && artUrl ? (
+          <video src={artUrl} muted playsInline preload="metadata" />
+        ) : art && artUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
+          <img src={artUrl} alt={creative.name} />
+        ) : art || versionsPending ? (
+          <div className="pp-loading" style={{ aspectRatio: aspectRatioCss(creative.format) }} />
+        ) : (
+          <NoArtwork format={creative.format} />
+        )}
       </div>
       <div className="pp-acts">
         <svg viewBox="0 0 24 24">
@@ -150,6 +127,7 @@ export function CreativePreviewPopover({
           {caption}
         </div>
       )}
+      </div>
     </div>
   );
 }

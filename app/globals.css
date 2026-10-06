@@ -2100,9 +2100,19 @@ body.lightrail .avatar {
   background: #000;
   position: relative;
 }
-.pp-media svg {
+.pp-media > svg,
+.pp-media > img,
+.pp-media > video {
   width: 100%;
   display: block;
+}
+/* The artwork loading: an empty frame in the format's shape. */
+.pp-loading {
+  background: #1b1d22;
+}
+/* No artwork yet: the review page's own visual, on its light ground. */
+.pp-media .ig-noart {
+  background: var(--canvas);
 }
 .pp-art {
   position: relative;
@@ -7495,5 +7505,44 @@ button.feedgrid-live {
 }
 .readmore:hover {
   text-decoration: underline;
+}
+
+/* The table's post preview in a phone (direct instruction): the Feed
+   Preview's frame, small. The stage strip sits under the notch. */
+.evpop.phonepop {
+  width: 318px;
+  border: 9px solid #000;
+  border-radius: 38px;
+  padding: 14px 0 0;
+  background: #fff;
+  /* A fixed height: room for the artwork and a few lines of copy; the
+     rest scrolls under the stage strip. */
+  height: 560px;
+  display: flex;
+  flex-direction: column;
+}
+.evpop.phonepop .rv {
+  flex-shrink: 0;
+}
+.phonepop-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: 16px;
+}
+.phonepop-notch {
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  width: 116px;
+  height: 14px;
+  transform: translateX(-50%);
+  background: #000;
+  border-radius: 0 0 10px 10px;
+  z-index: 2;
+}
+.evpop.phonepop .rv {
+  background: #fff;
 }
 
