@@ -7515,9 +7515,9 @@ button.feedgrid-live {
   border-radius: 38px;
   padding: 14px 0 0;
   background: #fff;
-  /* A fixed height: room for the artwork and a few lines of copy; the
-     rest scrolls under the stage strip. */
-  height: 560px;
+  /* A fixed height: room for the artwork and at least three lines of
+     copy (direct instruction); the rest scrolls under the stage strip. */
+  height: 660px;
   display: flex;
   flex-direction: column;
 }
@@ -7544,5 +7544,15 @@ button.feedgrid-live {
 }
 .evpop.phonepop .rv {
   background: #fff;
+}
+/* Tall formats (a Reel's 9:16) show at most 4:5 in the preview, as
+   Instagram's feed shows them, cropped to fill, so the copy stays in view. */
+.phonepop .pp-media > img,
+.phonepop .pp-media > video,
+.phonepop .pp-media > .ig-noart,
+.phonepop .pp-media > .pp-loading {
+  width: 100%;
+  max-height: 375px;
+  object-fit: cover;
 }
 

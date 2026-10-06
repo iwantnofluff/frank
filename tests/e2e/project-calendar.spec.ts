@@ -140,6 +140,10 @@ test("project calendar — hover preview holds open while the pointer moves onto
   await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
+  // Hover once the layout has settled: the staff-only select column
+  // arrives a moment after the table and shifts every column, which can
+  // slide the name out from under a pointer already on it.
+  await page.waitForSelector("td.skchk");
   const pname = page.locator(".pname").first();
   const box = (await pname.boundingBox())!;
   await page.mouse.move(box.x + 5, box.y + 5);
