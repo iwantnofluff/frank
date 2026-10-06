@@ -2572,3 +2572,18 @@ Direct instruction: typing a page's name opens it ("Clients" opens the clients l
 - "planner" listed the fixture's project with "E2E Test Client · Content Planner".
 - "knowledge" listed the client's Knowledge page and Settings' Reference Material, and choosing the first opened `/clients/[id]/settings/knowledge`.
 - A client-role session's "knowledge" found their Knowledge but no Settings pages.
+
+## Table cells: two lines, then Read more, one row at a time
+
+Direct instruction, for the Content Planner and Other Content tables:
+- **Long-text cells show two lines at most** (`--d-clamp` 2, in both densities): Concept and Reference, Text on Image, Copy, WIIFM Direction and Client Feedback.
+- **"Read more"** appears only when a cell's text runs past two lines (measured, and re-measured when a column is resized). It expands every long cell in that row at once, with line breaks kept, and closes any other expanded row. "Read less" closes it. Clicking either doesn't open the post. When collapsed, line breaks fold into spaces so blank lines don't use up the two lines.
+- **The full-text hover previews on those cells are gone** (FullTextPopover removed), since Read more replaces them. The Copy cell's earlier versions still open on hover, now from its "+N earlier" label alone, so reaching for Read more doesn't open them.
+
+**Verified** in a throwaway spec with long concepts and copy:
+- **Clamped:** each long cell measured 2 lines, with Read more.
+- **Expanding:** Read more in one cell expanded its row's two long cells (to 11 and 7 lines) and stayed on the table.
+- **Rows:** opening the second row closed the first; Read less closed it.
+- **Short text:** no Read more.
+
+`project-calendar` and `continuous-calendar` specs pass (their version-history hovers now point at "+1 earlier").

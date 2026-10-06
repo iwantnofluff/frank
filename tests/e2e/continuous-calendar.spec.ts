@@ -91,7 +91,7 @@ test("continuous calendar — Format, Text on Image and Copy come from the post 
   await expect(cells.nth(12)).toHaveText("On the artwork");
   await expect(cells.nth(13)).toContainText("Second caption");
   await expect(cells.nth(13)).toContainText("+1 earlier");
-  await cells.nth(13).locator(".copyc").hover();
+  await cells.nth(13).locator(".cc-n").hover();
   await expect(page.locator(".copypop")).toContainText("First caption");
   // Nothing to type into: the copy is written in the post's own window.
   await expect(cells.nth(13).locator("textarea")).toHaveCount(0);

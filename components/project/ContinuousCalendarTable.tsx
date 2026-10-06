@@ -10,6 +10,7 @@ import { useArchiveCreatives } from "@/hooks/use-archive-creatives";
 import { useDeleteCreativesPermanently } from "@/hooks/use-delete-creatives-permanently";
 import { CxCell } from "@/components/project/CxCell";
 import { ReferenceLinks } from "@/components/project/ReferenceLinks";
+import { ClampText } from "@/components/project/ClampText";
 import { ContinuousCalendarGrid } from "@/components/project/ContinuousCalendarGrid";
 import { ColumnsPopover, type ToggleableColumn } from "@/components/project/ColumnsPopover";
 import { CreativePreviewPopover } from "@/components/project/CreativePreviewPopover";
@@ -445,6 +446,10 @@ export function ContinuousCalendarTable({
   // Every copy version, batched for the project: the Text on Image and
   // Copy columns show the latest, older ones on hover.
   const creativeIds = useMemo(() => creatives.map((c) => c.id), [creatives]);
+  // The row whose long cells are expanded (direct instruction): one row at
+  // a time; Read more in any of its cells opens all of them.
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const toggleRow = (id: string) => setExpandedRow((r) => (r === id ? null : id));
   const { data: copyVersionsByCreative } = useCopyVersionsByCreative(creativeIds);
 
   const filtered = useMemo(() => {
@@ -1058,10 +1063,10 @@ export function ContinuousCalendarTable({
                               return (
                                 <td key={key} className="cellw">
                                   {c.concept || c.reference_urls?.length ? (
-                                    <>
-                                      {c.concept && <div>{c.concept}</div>}
+                                    <span className="copyc">
+                                      {c.concept && <ClampText expanded={expandedRow === c.id} onToggle={() => toggleRow(c.id)}>{c.concept}</ClampText>}
                                       <ReferenceLinks urls={c.reference_urls ?? []} />
-                                    </>
+                                    </span>
                                   ) : (
                                     <span className="tdim">—</span>
                                   )}
@@ -1084,7 +1089,9 @@ export function ContinuousCalendarTable({
                               return (
                                 <td key={key} className="cellw">
                                   {lines.length ? (
-                                    lines.map((t, i) => <div key={i}>{t}</div>)
+                                    <span className="copyc">
+                                      <ClampText expanded={expandedRow === c.id} onToggle={() => toggleRow(c.id)}>{lines.join("\n")}</ClampText>
+                                    </span>
                                   ) : (
                                     <span className="tdim">—</span>
                                   )}
@@ -1097,7 +1104,12 @@ export function ContinuousCalendarTable({
                                 .filter((v) => v.text);
                               return (
                                 <td key={key} className="cellw">
-                                  <VersionedTextCell label="Copy" rows={rows} />
+                                  <VersionedTextCell
+                                    label="Copy"
+                                    rows={rows}
+                                    expanded={expandedRow === c.id}
+                                    onToggle={() => toggleRow(c.id)}
+                                  />
                                 </td>
                               );
                             }
@@ -1116,7 +1128,11 @@ export function ContinuousCalendarTable({
                               return (
                                 <td key={key} className="cellw">
                                   {c.approach_notes?.length ? (
-                                    c.approach_notes.map((a, i) => <div key={i}>• {a}</div>)
+                                    <span className="copyc">
+                                      <ClampText expanded={expandedRow === c.id} onToggle={() => toggleRow(c.id)}>
+                                        {c.approach_notes.map((a) => `• ${a}`).join("\n")}
+                                      </ClampText>
+                                    </span>
                                   ) : (
                                     <span className="tdim">—</span>
                                   )}

@@ -189,11 +189,13 @@ test("project calendar — Post Copy cell shows the latest version, older ones o
   await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
-  const cell = page.locator("td:has(.copyc)").first();
+  // The Copy cell: the one with a version label.
+  const cell = page.locator("td:has(.cc-v)").first();
   await expect(cell.locator(".cc-t")).toHaveText("Second, revised caption");
   await expect(cell.locator(".cc-n")).toHaveText("+1 earlier");
 
-  await cell.locator(".copyc").hover();
+  // Earlier versions open from the "+1 earlier" label.
+  await cell.locator(".cc-n").hover();
   await page.waitForSelector(".copypop.on");
   const rows = page.locator(".copypop .cp-row");
   await expect(rows).toHaveCount(2);

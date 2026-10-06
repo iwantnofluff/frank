@@ -40,7 +40,9 @@
   --d-fs: 13.2px;
   --d-line: 1.45;
   --d-gap: 14px;
-  --d-clamp: 3;
+  /* Table cells show two lines at most, then Read more (direct
+     instruction), in either density. */
+  --d-clamp: 2;
 
   /* Motion — opening only, closing stays instant (see the Motion section
      below). Both curves are the prototype's own (.toast and .review). */
@@ -80,7 +82,7 @@ body.comfortable {
   --d-fs: 14.2px;
   --d-line: 1.65;
   --d-gap: 18px;
-  --d-clamp: 5;
+  --d-clamp: 2;
 }
 
 body {
@@ -7474,5 +7476,24 @@ button.feedgrid-live {
 }
 .setnav-item[aria-current="true"] .setnav-dot i {
   opacity: 1;
+}
+
+/* A table cell's text expanded by its row's Read more (ClampText): every
+   line, line breaks kept. */
+.cc-t.open {
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+  white-space: pre-line;
+}
+.readmore {
+  display: block;
+  margin-top: 3px;
+  font-size: 12.2px;
+  font-weight: 500;
+  color: var(--action);
+}
+.readmore:hover {
+  text-decoration: underline;
 }
 

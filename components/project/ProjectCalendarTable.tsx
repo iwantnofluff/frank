@@ -10,11 +10,11 @@ import { useArchiveCreatives } from "@/hooks/use-archive-creatives";
 import { useDeleteCreativesPermanently } from "@/hooks/use-delete-creatives-permanently";
 import { CxCell } from "@/components/project/CxCell";
 import { ReferenceLinks } from "@/components/project/ReferenceLinks";
+import { ClampText } from "@/components/project/ClampText";
 import { ProjectCalendarGrid } from "@/components/project/ProjectCalendarGrid";
 import { ColumnsPopover, type ToggleableColumn } from "@/components/project/ColumnsPopover";
 import { CreativePreviewPopover } from "@/components/project/CreativePreviewPopover";
 import { CopyVersionHistoryPopover } from "@/components/project/CopyVersionHistoryPopover";
-import { FullTextPopover } from "@/components/project/FullTextPopover";
 import { SaveViewModal } from "@/components/project/SaveViewModal";
 import { PermanentDeleteConfirm } from "@/components/project/PermanentDeleteConfirm";
 import { bandOf, stageLabel, stageColor, exceptionLabel, type Band } from "@/lib/stage-labels";
@@ -425,6 +425,10 @@ export function ProjectCalendarTable({
   // show on hover via CopyVersionHistoryPopover instead of their own
   // columns.
   const creativeIds = useMemo(() => creatives.map((c) => c.id), [creatives]);
+  // The row whose long cells are expanded (direct instruction): one row at
+  // a time; Read more in any of its cells opens all of them.
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const toggleRow = (id: string) => setExpandedRow((r) => (r === id ? null : id));
   const { data: copyVersionsByCreative } = useCopyVersionsByCreative(creativeIds);
   const { data: latestFeedback } = useLatestFeedbackByCreative(creativeIds);
 
@@ -452,24 +456,6 @@ export function ProjectCalendarTable({
   }
   function cancelCopyHide() {
     if (copyHoverTimeout.current) clearTimeout(copyHoverTimeout.current);
-  }
-
-  // Same clamp-then-hover-for-the-full-text affordance as the Post
-  // Copy/Image on Text cells above, for cells with no version history of
-  // their own (Concept, Approach, Client Feedback) — just the complete text.
-  const [textHover, setTextHover] = useState<{ rect: DOMRect; lines: string[] } | null>(null);
-  const textHoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-  function handleTextEnter(lines: string[], target: HTMLElement) {
-    if (textHoverTimeout.current) clearTimeout(textHoverTimeout.current);
-    const rect = target.getBoundingClientRect();
-    textHoverTimeout.current = setTimeout(() => setTextHover({ rect, lines }), 200);
-  }
-  function scheduleTextHide() {
-    if (textHoverTimeout.current) clearTimeout(textHoverTimeout.current);
-    textHoverTimeout.current = setTimeout(() => setTextHover(null), 200);
-  }
-  function cancelTextHide() {
-    if (textHoverTimeout.current) clearTimeout(textHoverTimeout.current);
   }
 
   function versionRows(
@@ -1086,13 +1072,9 @@ export function ProjectCalendarTable({
                                   {c.concept || c.reference_urls?.length ? (
                                     <span className="copyc">
                                       {c.concept && (
-                                        <span
-                                          className="cc-t"
-                                          onMouseEnter={(e) => handleTextEnter([c.concept as string], e.currentTarget)}
-                                          onMouseLeave={scheduleTextHide}
-                                        >
+                                        <ClampText expanded={expandedRow === c.id} onToggle={() => toggleRow(c.id)}>
                                           {c.concept}
-                                        </span>
+                                        </ClampText>
                                       )}
                                       <ReferenceLinks urls={c.reference_urls ?? []} />
                                     </span>
@@ -1105,18 +1087,10 @@ export function ProjectCalendarTable({
                               return (
                                 <td key={key} className="cellw">
                                   {c.approach_notes?.length ? (
-                                    <span
-                                      className="copyc"
-                                      onMouseEnter={(e) =>
-                                        handleTextEnter(c.approach_notes!.map((a) => `• ${a}`), e.currentTarget)
-                                      }
-                                      onMouseLeave={scheduleTextHide}
-                                    >
-                                      <span className="cc-t">
-                                        {c.approach_notes.map((a, i) => (
-                                          <div key={i}>• {a}</div>
-                                        ))}
-                                      </span>
+                                    <span className="copyc">
+                                      <ClampText expanded={expandedRow === c.id} onToggle={() => toggleRow(c.id)}>
+                                        {c.approach_notes.map((a) => `• ${a}`).join("\n")}
+                                      </ClampText>
                                     </span>
                                   ) : (
                                     <span className="tdim">—</span>
@@ -1129,12 +1103,10 @@ export function ProjectCalendarTable({
                               return (
                                 <td key={key} className="cellw">
                                   {lines.length ? (
-                                    <span
-                                      className="copyc"
-                                      onMouseEnter={(e) => handleTextEnter(lines, e.currentTarget)}
-                                      onMouseLeave={scheduleTextHide}
-                                    >
-                                      <span className="cc-t">{lines.join(" · ")}</span>
+                                    <span className="copyc">
+                                      <ClampText expanded={expandedRow === c.id} onToggle={() => toggleRow(c.id)}>
+                                        {lines.join(" · ")}
+                                      </ClampText>
                                     </span>
                                   ) : (
                                     <span className="tdim">—</span>
@@ -1149,17 +1121,21 @@ export function ProjectCalendarTable({
                               return (
                                 <td key={key} className="cellw">
                                   {latest ? (
-                                    <span
-                                      className="copyc"
-                                      onMouseEnter={(e) =>
-                                        rows.length > 1 && handleCopyEnter(label, rows, e.currentTarget)
-                                      }
-                                      onMouseLeave={scheduleCopyHide}
-                                    >
+                                    <span className="copyc">
                                       <span className="cc-v">V{latest.versionNo}</span>
-                                      <span className="cc-t">{latest.text}</span>
+                                      <ClampText expanded={expandedRow === c.id} onToggle={() => toggleRow(c.id)}>
+                                        {latest.text}
+                                      </ClampText>
+                                      {/* Earlier versions on hover, on this label alone, so
+                                          reaching for Read more doesn't open them. */}
                                       {rows.length > 1 && (
-                                        <span className="cc-n">+{rows.length - 1} earlier</span>
+                                        <span
+                                          className="cc-n"
+                                          onMouseEnter={(e) => handleCopyEnter(label, rows, e.currentTarget)}
+                                          onMouseLeave={scheduleCopyHide}
+                                        >
+                                          +{rows.length - 1} earlier
+                                        </span>
                                       )}
                                     </span>
                                   ) : (
@@ -1173,12 +1149,10 @@ export function ProjectCalendarTable({
                               return (
                                 <td key={key} className="cellw">
                                   {feedback ? (
-                                    <span
-                                      className="copyc feedback-note"
-                                      onMouseEnter={(e) => handleTextEnter([feedback.body], e.currentTarget)}
-                                      onMouseLeave={scheduleTextHide}
-                                    >
-                                      <span className="cc-t">{feedback.body}</span>
+                                    <span className="copyc feedback-note">
+                                      <ClampText expanded={expandedRow === c.id} onToggle={() => toggleRow(c.id)}>
+                                        {feedback.body}
+                                      </ClampText>
                                     </span>
                                   ) : (
                                     <span className="tdim">—</span>
@@ -1258,15 +1232,6 @@ export function ProjectCalendarTable({
           anchorRect={copyHover.rect}
           onMouseEnter={cancelCopyHide}
           onMouseLeave={scheduleCopyHide}
-        />
-      )}
-
-      {textHover && (
-        <FullTextPopover
-          lines={textHover.lines}
-          anchorRect={textHover.rect}
-          onMouseEnter={cancelTextHide}
-          onMouseLeave={scheduleTextHide}
         />
       )}
 
