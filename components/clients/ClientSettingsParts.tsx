@@ -1,14 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { Modal } from "@/components/ui/Modal";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import { ProjectPicker } from "@/components/team/ProjectPicker";
 import { usePersonActions } from "@/components/team/PersonActions";
 import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
-import { useProjects } from "@/hooks/use-projects";
-import { useProjectCreativeStats } from "@/hooks/use-project-creative-stats";
 import { useClientPeople, useSetPersonProjects, type ClientPerson } from "@/hooks/use-project-access";
 import { useAvatarUrls } from "@/hooks/use-avatar-urls";
 import { useUpdateClient } from "@/hooks/use-update-client";
@@ -19,149 +14,11 @@ import { avatarColour } from "@/lib/avatar-colour";
 import { initials } from "@/lib/initials";
 import { errorMessage } from "@/lib/errors";
 
-const STAGES = ["Concept", "Internal Review", "Client Review", "Approved"];
-
-function formatDay(value: string | null) {
-  if (!value) return "None yet";
-  return new Date(value).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
-}
-
-// A client at a glance (phase46), opened from its row's expand button: its
-// details, how its work is getting on, its projects, and who's on which.
-// Owners and Admins edit the details in place (phase48) and change people's
-// projects straight away; a User sees both read-only.
-export function ClientProfileModal({
-  agencyId,
-  client,
-  isAdmin,
-  canInvite,
-  onInvite,
-  onArchive,
-  onClose,
-}: {
-  agencyId: string;
-  client: ClientRow;
-  // Owners and Admins: they change the details (clients_details_admin_only)
-  // and people's projects (project_access policies).
-  isAdmin: boolean;
-  canInvite: boolean;
-  onInvite: () => void;
-  onArchive: () => void;
-  onClose: () => void;
-}) {
-  const { data: projects } = useProjects(client.id);
-  const { data: stats } = useProjectCreativeStats(client.id);
-  const live = (projects ?? []).filter((p) => !p.archived_at);
-  const { data: logoUrls } = useAvatarUrls([client.logo_asset_id]);
-  const logoUrl = client.logo_asset_id ? (logoUrls?.[client.logo_asset_id] ?? null) : null;
-  const [editing, setEditing] = useState(false);
-  const byStage = STAGES.map((_, i) => Object.values(stats ?? {}).reduce((n, s) => n + s.byStage[i], 0));
-  const latest = Object.values(stats ?? {}).reduce<string | null>(
-    (best, s) => (s.latestApprovedAt && (!best || s.latestApprovedAt > best) ? s.latestApprovedAt : best),
-    null,
-  );
-
-  return (
-    <Modal
-      hideCloseButton
-      title={client.name}
-      size="lg"
-      onClose={onClose}
-      footer={
-        <>
-          <button type="button" className="btn" onClick={onArchive}>
-            {client.archived_at ? "Unarchive" : "Archive"}
-          </button>
-          <span className="grow" />
-          <button type="button" className="btn primary" onClick={onClose}>
-            Done
-          </button>
-        </>
-      }
-    >
-      <div className="profgrid">
-        <div>
-          <div className="msection-h profhead">
-            Details
-            {isAdmin && !editing && (
-              <button type="button" className="badd" onClick={() => setEditing(true)}>
-                Edit
-              </button>
-            )}
-          </div>
-          {editing ? (
-            <ClientDetailsEditor agencyId={agencyId} client={client} onDone={() => setEditing(false)} />
-          ) : (
-            <>
-              <div className="profclient">
-                <div className="logo" style={{ background: client.accent_colour || "#6B7280" }}>
-                  {logoUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
-                    <img src={logoUrl} alt="" />
-                  ) : (
-                    initials(client.name, "?")
-                  )}
-                </div>
-                <div className="pp-t">
-                  <b>{client.name}</b>
-                  <span>{client.industry || "No industry set"}</span>
-                </div>
-              </div>
-              <p className="profdesc">{client.description || "No description yet."}</p>
-            </>
-          )}
-
-          <div className="msection-h">Progress</div>
-          <p className="msection-d">Live posts by stage, across its projects.</p>
-          <div className="stats profstats">
-            {STAGES.map((label, i) => (
-              <div className="stat" key={label}>
-                <div className="n">{stats ? byStage[i] : "…"}</div>
-                <div className="l">{label}</div>
-              </div>
-            ))}
-          </div>
-          <p className="profline">
-            Latest approval: <b>{formatDay(latest)}</b>
-          </p>
-
-          <div className="msection-h">Projects</div>
-          <p className="msection-d">
-            {projects ? `${live.length} live project${live.length === 1 ? "" : "s"}.` : "Loading…"}
-          </p>
-          <div className="proflist">
-            {live.map((p) => {
-              const s = stats?.[p.id];
-              return (
-                <Link className="profperson profproject" href={`/projects/${p.id}`} key={p.id} onClick={onClose}>
-                  <div className="pp-t">
-                    <b>{p.name}</b>
-                    <span>{p.type || (p.delivery === "scheduled" ? "Content Planner" : "Other Content")}</span>
-                  </div>
-                  <span className="profcount">{s ? `${s.done} of ${s.total} approved` : "…"}</span>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-
-        <div>
-          <ClientPeople
-            agencyId={agencyId}
-            clientId={client.id}
-            clientName={client.name}
-            groups={[{ name: "Projects", projects: live }]}
-            canManage={isAdmin}
-            canInvite={canInvite}
-            onInvite={onInvite}
-          />
-        </div>
-      </div>
-    </Modal>
-  );
-}
-
-function ClientPeople({
+// A client's People and its details editor (phase46, phase48), shared by
+// Client Settings' People and Client Details pages (direct instruction:
+// they replace the Client Profile window). Who's on which project changes
+// straight away; Owners and Admins edit the details in place.
+export function ClientPeople({
   agencyId,
   clientId,
   clientName,
@@ -255,7 +112,7 @@ function ClientPeople({
 }
 
 // The details as fields, saved in place.
-function ClientDetailsEditor({
+export function ClientDetailsEditor({
   agencyId,
   client,
   onDone,

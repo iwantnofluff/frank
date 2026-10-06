@@ -1,3 +1,5 @@
+import type { NavIconKey } from "@/lib/nav-icons";
+
 // Settings' sections and pages, in menu order (direct instruction — a
 // monday-style admin layout). Each page has its own address; "soon" pages
 // are in the menu, marked Coming soon, until they're built.
@@ -10,6 +12,8 @@ export interface SettingsSection {
   key: string;
   label: string;
   pages: SettingsPage[];
+  // A menu whose every section has one folds to icons (SettingsNav).
+  icon?: NavIconKey;
 }
 
 export const SETTINGS_SECTIONS: SettingsSection[] = [

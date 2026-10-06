@@ -4,11 +4,11 @@ test("creative review stage", async ({ page, frank }) => {
   await frank.loginAsStaff(page);
   await page.goto(`/creatives/${frank.creativeId}`);
   await page.waitForSelector(".stage-h");
-  // useIsStaff (NavRail's Settings link, #navSet) resolves independently
+  // useIsStaff (the agency mark's Settings menu, .markbtn) resolves independently
   // and fails closed (hidden) until it does — wait for it too, or this
   // screenshot can race ahead under worker concurrency and land on a
   // rail missing Settings.
-  await page.waitForSelector("#navSet");
+  await page.waitForSelector(".markbtn");
   await expect(page).toHaveScreenshot("creative-review.png");
 });
 
@@ -16,7 +16,7 @@ test("upload artwork modal", async ({ page, frank }) => {
   await frank.loginAsStaff(page);
   await page.goto(`/creatives/${frank.creativeId}`);
   await page.waitForSelector(".stage-h");
-  await page.waitForSelector("#navSet");
+  await page.waitForSelector(".markbtn");
 
   // Fresh fixture creative has no creative_versions yet, so this is the
   // empty artwork's trigger, not the topbar's "Upload or Edit".

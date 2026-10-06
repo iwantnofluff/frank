@@ -150,11 +150,33 @@ a {
   }
 }
 
+/* Windows open and close with the menus' motion (direct instruction):
+   the base is closed, with the closing transition; .is-open (added a frame
+   after a window appears, components/ui/Modal.tsx) is open, with the
+   opening one. A closing window is an inert copy that loses .is-open. */
 .scrim {
-  animation: fade-in var(--dur) var(--ease-std);
+  opacity: 0;
+  transition: opacity var(--dur-close) var(--ease-close);
+}
+.scrim.is-open {
+  opacity: 1;
+  transition: opacity var(--dur-open) var(--ease-open);
+}
+.scrim.closing {
+  pointer-events: none;
 }
 .modal {
-  animation: pop-in var(--dur) var(--ease-out);
+  opacity: 0;
+  transform: translateY(8px) scale(0.98);
+  transition:
+    opacity var(--dur-close) var(--ease-close),
+    transform var(--dur-close) var(--ease-close);
+}
+.scrim.is-open .modal {
+  opacity: 1;
+  transform: none;
+  transition-duration: var(--dur-open);
+  transition-timing-function: var(--ease-open);
 }
 /* Every click menu — Columns, the row "…" menu, the view-tab menu, the
    Save dropdown. */
@@ -182,10 +204,6 @@ a {
     color var(--dur-fast) var(--ease-std),
     border-color var(--dur-fast) var(--ease-std),
     box-shadow var(--dur-fast) var(--ease-std);
-}
-.modal {
-  animation-duration: var(--dur-open);
-  animation-timing-function: var(--ease-open);
 }
 /* A click menu that animates both ways (hooks/use-presence.ts): the base
    is the closed state with the closing transition, .is-open the open state
@@ -2592,6 +2610,11 @@ a.fd-ref:hover {
   height: 16px;
   flex-shrink: 0;
   fill: currentColor;
+  /* Slightly thicker than drawn (direct instruction): an outline in the
+     same colour widens every line by about 0.4px at this size. */
+  stroke: currentColor;
+  stroke-width: 30;
+  stroke-linejoin: round;
 }
 /* A name eases in when the menu opens and out, faster, when it closes. */
 .rn-label {
@@ -3373,89 +3396,9 @@ textarea.cxin {
   margin-left: 6px;
 }
 
-.kbgrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 14px;
-}
-.kbcard {
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  background: var(--surface);
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-.kbcard-h {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  padding: 10px 13px;
-  border-bottom: 1px solid var(--line);
-}
-.kbcard-h b {
-  font-size: 14.2px;
-  font-weight: 600;
-}
-.kbcard-h .n {
-  font-size: 12.7px;
-  color: var(--muted);
-}
-.kbcard-b {
-  padding: 10px 13px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.kbentry {
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  padding: 9px 10px;
-  background: var(--canvas);
-}
-.kbentry.editing {
-  background: var(--surface);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.kbentry b {
-  font-size: 13.7px;
-  font-weight: 600;
-  display: block;
-  margin-bottom: 3px;
-}
-.kbfile {
-  font-size: 13.7px;
-  font-weight: 600;
-  color: var(--action);
-  display: block;
-  margin-bottom: 3px;
-  text-align: left;
-}
-.kbfile:hover {
-  text-decoration: underline;
-}
-.kbentry p {
-  font-size: 13.7px;
-  color: var(--muted);
-  line-height: 1.45;
-  white-space: pre-wrap;
-}
-.kbentry-acts {
-  display: flex;
-  gap: 6px;
-  margin-top: 7px;
-}
-.kbempty {
-  font-size: 13.2px;
-  color: var(--muted);
-  padding: 4px 0;
-}
-
-/* Agency-level Reference Material — ports the prototype's renderMethod()
-   panel markup exactly (frank-prototype.html), rather than the generic
-   .kbcard grid above, which client-level Knowledge still uses. */
+/* Knowledge panels — the prototype's renderMethod()/kbCard() panel markup
+   (frank-prototype.html): Settings' Reference Material and, stacked one
+   per area, a client's Knowledge (direct instruction). */
 .panel {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -3516,7 +3459,10 @@ textarea.cxin {
   font-weight: 600;
   margin-bottom: 2px;
 }
+/* Its own block, so the date sits under a note, not beside it (direct
+   instruction). */
 .kb-b .body {
+  display: block;
   font-size: 13.2px;
   line-height: 1.55;
   color: var(--ink);
@@ -3524,13 +3470,38 @@ textarea.cxin {
   margin: 4px 0 5px;
 }
 .kb-b .meta {
+  display: block;
   font-size: 11.7px;
   color: var(--muted);
+}
+/* A link entry's address (prototype .kb-b .note and .reflink), at the
+   type +0.2px every size here carries. */
+.kb-b .note {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 11.7px;
+  color: var(--muted);
+  display: block;
+}
+.kb-b .reflink {
+  color: var(--action);
+  font-size: 11.2px;
+  word-break: break-all;
 }
 .kb-acts {
   display: flex;
   gap: 5px;
   flex-shrink: 0;
+}
+/* An area with nothing in it yet (direct instruction): smaller, in red,
+   with room around it, lined up with the panel's title. */
+.kb-empty {
+  margin: 0;
+  padding: 18px 15px;
+  font-size: 12.2px;
+  color: var(--rose);
 }
 .kb-foot {
   padding: 11px 15px;
@@ -7083,5 +7054,425 @@ button.feedgrid-live {
 .dtp-pop input[type="date"]::-webkit-calendar-picker-indicator,
 .dtp-pop input[type="time"]::-webkit-calendar-picker-indicator {
   display: none;
+}
+
+/* Client Settings' panels (direct instruction: Settings' structure). A
+   panel's body, lined up with its header's 15px. */
+.panel-b {
+  padding: 14px 15px;
+}
+.panel-h .btn {
+  margin-left: auto;
+}
+/* The agency's mark, opening Settings for staff (AgencyMenu). */
+.markbtn {
+  border: none;
+  font: inherit;
+  cursor: pointer;
+  transition: box-shadow var(--dur-fast) var(--ease-std);
+}
+.markbtn:hover,
+.markbtn[aria-expanded="true"] {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
+}
+
+/* The header's search (direct instruction): typing lists matching clients
+   and projects, each with a subtle Client or Project pill. */
+.gsearch {
+  position: relative;
+}
+.search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  color: #fff;
+  font: inherit;
+  font-size: 14.2px;
+  outline: none;
+}
+.search input::placeholder {
+  color: rgba(255, 255, 255, 0.78);
+}
+.search input::-webkit-search-cancel-button {
+  display: none;
+}
+.search:focus-within {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+.colpop.gsearch-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 340px;
+  padding: 4px;
+}
+.gsearch-hit {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 7px;
+  text-align: left;
+  transition: background-color var(--dur-fast) var(--ease-std);
+}
+.gsearch-hit[aria-selected="true"] {
+  background: var(--action-soft);
+}
+.gsearch-name {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.gsearch-name b {
+  font-size: 13.7px;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gsearch-client {
+  font-size: 12.2px;
+  color: var(--muted);
+}
+.gsearch-kind {
+  flex-shrink: 0;
+  font-size: 11.2px;
+  font-weight: 500;
+  color: var(--muted);
+  background: var(--canvas);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.gsearch-none {
+  padding: 10px 12px;
+  font-size: 13.2px;
+  color: var(--muted);
+}
+
+/* Help (direct instruction, after Slack's): a panel from the right, under
+   the header, sliding in and out with the menus' motion. */
+.helpbtn svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.helppanel {
+  position: fixed;
+  top: 52px;
+  right: 0;
+  bottom: 0;
+  width: 420px;
+  max-width: 100vw;
+  z-index: 90;
+  background: var(--surface);
+  border-left: 1px solid var(--line);
+  box-shadow: -12px 0 40px rgba(20, 22, 26, 0.12);
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  transform: translateX(24px);
+  pointer-events: none;
+  transition:
+    opacity var(--dur-close) var(--ease-close),
+    transform var(--dur-close) var(--ease-close);
+}
+.helppanel.is-open {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+  transition-duration: var(--dur-open);
+  transition-timing-function: var(--ease-open);
+}
+.help-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.help-h b {
+  flex: 1;
+  font-size: 17.2px;
+  font-weight: 700;
+}
+.help-ib {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+  transition: background-color var(--dur-fast) var(--ease-std);
+}
+.help-ib:hover {
+  background: var(--canvas);
+}
+.help-ib svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.help-b {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 18px 28px;
+}
+.help-k {
+  font-size: 13.2px;
+  font-weight: 600;
+  color: var(--muted);
+  margin: 18px 0 10px;
+}
+.help-k:first-child {
+  margin-top: 0;
+}
+.help-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1.5px solid var(--action);
+  border-radius: 9px;
+  padding: 9px 12px;
+}
+.help-search svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.help-search input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font: inherit;
+  font-size: 14.7px;
+  background: none;
+}
+.help-topics,
+.help-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.help-topic {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  text-align: left;
+  transition:
+    border-color var(--dur-fast) var(--ease-std),
+    box-shadow var(--dur-fast) var(--ease-std);
+}
+.help-topic:hover,
+.help-row:hover {
+  border-color: var(--line-2);
+  box-shadow: 0 2px 10px rgba(20, 22, 26, 0.07);
+}
+.help-topic b {
+  font-size: 14.7px;
+  font-weight: 600;
+}
+.help-topic-ic {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: var(--action-soft);
+  color: var(--action);
+  font-weight: 700;
+  font-size: 14.2px;
+}
+.help-cats {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.help-cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 0;
+  font-size: 14.2px;
+  color: var(--action);
+  text-align: left;
+}
+.help-cat:hover {
+  text-decoration: underline;
+}
+.help-cat svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.help-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  text-align: left;
+  transition:
+    border-color var(--dur-fast) var(--ease-std),
+    box-shadow var(--dur-fast) var(--ease-std);
+}
+.help-row b {
+  font-size: 14.2px;
+  font-weight: 600;
+}
+.help-row span {
+  font-size: 13.2px;
+  color: var(--muted);
+}
+.help-none {
+  font-size: 13.7px;
+  color: var(--muted);
+}
+.help-title {
+  font-size: 22.2px;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 2px 0 14px;
+}
+.help-article h3 {
+  font-size: 17.2px;
+  font-weight: 700;
+  margin: 22px 0 8px;
+}
+.help-article p,
+.help-article li {
+  font-size: 14.7px;
+  line-height: 1.6;
+  color: var(--ink);
+}
+.help-article p {
+  margin: 0 0 10px;
+}
+.help-article ul,
+.help-article ol {
+  margin: 0 0 12px;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.help-note {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 14px 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #fff8e6;
+  border: 1px solid #f3e1b0;
+}
+.help-note svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  fill: none;
+  stroke: #9a6b00;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.help-note p {
+  margin: 0;
+}
+
+/* A Settings menu that folds to icons (SettingsNav's IconicNav; Client
+   Settings, direct instruction). Fixed row heights open or closed, so the
+   icons never move; page labels line up under section names (10px padding,
+   16px slot, 10px gap); the column is as wide as it needs, 20px past the
+   longest name when open. */
+.setwrap:has(.setnav.iconic) {
+  grid-template-columns: max-content 1px minmax(0, 1fr);
+}
+.setnav.iconic .setnav-h,
+.setnav.iconic .setnav-item {
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 0 10px;
+  white-space: nowrap;
+}
+.setnav.iconic .setnav-h {
+  height: 36px;
+  transition: background-color var(--dur-fast) var(--ease-std);
+}
+.setnav.iconic .setnav-item {
+  height: 32px;
+}
+.setnav.iconic.named .setnav-h,
+.setnav.iconic.named .setnav-item {
+  padding-right: 20px;
+}
+.setnav.iconic .setnav-pages {
+  margin: 0 0 6px;
+}
+/* The section icons, filled (the older .setnav-h svg rule outlines every
+   svg in a header, which drew these as hairlines). */
+.setnav.iconic .setnav-h .rn-ic {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 30;
+}
+/* Pages indented under their section's name, 12px, as in Agency
+   Settings' menu (direct instruction). */
+.setnav.iconic .setnav-item .setnav-name {
+  margin-left: 12px;
+}
+.setnav.iconic .setnav-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.setnav.iconic .setnav-chev {
+  margin-left: auto;
+  padding-left: 12px;
+  display: inline-flex;
+}
+.setnav-dot {
+  width: 16px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+}
+.setnav-dot i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.55;
+}
+.setnav-item[aria-current="true"] .setnav-dot i {
+  opacity: 1;
 }
 

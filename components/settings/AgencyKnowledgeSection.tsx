@@ -8,6 +8,7 @@ import {
   useDeleteAgencyKnowledgeEntry,
 } from "@/hooks/use-agency-knowledge-mutations";
 import { KnowledgeFilePreviewModal } from "@/components/knowledge/KnowledgeFilePreviewModal";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { KNOWLEDGE_FILE_EXTENSIONS } from "@/lib/knowledge-file-validation";
 import { errorMessage } from "@/lib/errors";
 import type { AgencyKnowledgeEntryRow } from "@/hooks/use-agency-knowledge";
@@ -90,8 +91,9 @@ function NoteEditor({
 // panel (frank-prototype.html) markup exactly: a .panel with a .panel-h
 // title+count, one .kb-item row per entry (colored .kb-ic square, title,
 // body/meta line, .kb-acts), and a .kb-foot with a single "Add Reference"
-// button — rather than the generic .kbcard grid client-level Knowledge
-// still uses. This whole page is already staff-only (SettingsLayout
+// button. Client-level Knowledge (components/knowledge/KnowledgeSection)
+// uses the same panels, stacked, one per area. This whole page is already
+// staff-only (SettingsLayout
 // redirects a client-role session before this ever renders), so there's no
 // isStaff prop to thread through.
 export function AgencyKnowledgeSection({ agencyId }: { agencyId: string | undefined }) {
@@ -100,15 +102,15 @@ export function AgencyKnowledgeSection({ agencyId }: { agencyId: string | undefi
   const createFile = useCreateAgencyKnowledgeFile(agencyId);
   const deleteEntry = useDeleteAgencyKnowledgeEntry(agencyId);
 
-  const [addChoice, setAddChoice] = useState(false);
   const [adding, setAdding] = useState(false);
+  // The entry Remove was pressed on, while its confirmation is open.
+  const [removing, setRemoving] = useState<AgencyKnowledgeEntryRow | null>(null);
   const [previewing, setPreviewing] = useState<AgencyKnowledgeEntryRow | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function handleFilePicked(file: File) {
     setFileError(null);
-    setAddChoice(false);
     try {
       await createFile.mutateAsync({ title: file.name, file });
     } catch (err) {
@@ -160,7 +162,8 @@ export function AgencyKnowledgeSection({ agencyId }: { agencyId: string | undefi
                     className="btn sm"
                     onClick={(e) => {
                       e.stopPropagation();
-                      deleteEntry.mutate(entry.id);
+                      deleteEntry.reset();
+                    setRemoving(entry);
                     }}
                   >
                     Remove
@@ -170,7 +173,7 @@ export function AgencyKnowledgeSection({ agencyId }: { agencyId: string | undefi
             );
           })}
 
-          {(entries ?? []).length === 0 && !adding && <p className="kb-empty">Nothing here yet.</p>}
+          {(entries ?? []).length === 0 && !adding && <p className="kb-empty">Content pending</p>}
 
           {adding && (
             <NoteEditor
@@ -183,35 +186,21 @@ export function AgencyKnowledgeSection({ agencyId }: { agencyId: string | undefi
           )}
 
           <div className="kb-foot">
-            {addChoice ? (
-              <div style={{ display: "flex", gap: 6 }}>
-                <button
-                  type="button"
-                  className="fbtn"
-                  onClick={() => {
-                    setAddChoice(false);
-                    setAdding(true);
-                  }}
-                >
-                  Write a note
-                </button>
-                <button
-                  type="button"
-                  className="fbtn"
-                  disabled={createFile.isPending}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  {createFile.isPending ? "Uploading…" : "Upload a file"}
-                </button>
-                <button type="button" className="btn sm" onClick={() => setAddChoice(false)}>
-                  Cancel
-                </button>
-              </div>
-            ) : (
-              <button type="button" className="fbtn" onClick={() => setAddChoice(true)}>
-                Add Reference
+            {/* Straight to the two ways in (direct instruction), no "Add …"
+                step first. */}
+            <div style={{ display: "flex", gap: 6 }}>
+              <button type="button" className="fbtn" onClick={() => setAdding(true)}>
+                Write Note
               </button>
-            )}
+              <button
+                type="button"
+                className="fbtn"
+                disabled={createFile.isPending}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {createFile.isPending ? "Uploading…" : "Upload File"}
+              </button>
+            </div>
             <input
               ref={fileInputRef}
               type="file"
@@ -226,6 +215,20 @@ export function AgencyKnowledgeSection({ agencyId }: { agencyId: string | undefi
             {fileError && <p className="autherr">{fileError}</p>}
           </div>
         </div>
+      )}
+
+      {removing && (
+        <ConfirmDialog
+          title={`Remove ${removing.title}?`}
+          message={"this takes it out of the knowledge used when copy is drafted and checked. It can't be undone."}
+          confirmLabel="Remove"
+          pendingLabel="Removing…"
+          isPending={deleteEntry.isPending}
+          error={deleteEntry.error}
+          errorFallback="Couldn't remove it"
+          onConfirm={() => deleteEntry.mutate(removing.id, { onSuccess: () => setRemoving(null) })}
+          onClose={() => setRemoving(null)}
+        />
       )}
 
       {previewing && previewing.asset && (

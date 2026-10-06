@@ -10,29 +10,30 @@ test("rename and archive/unarchive a client from the dashboard", async ({ page, 
   await page.goto("/dashboard");
   await page.waitForSelector(".crow:not(.head)");
 
-  await page.getByRole("button", { name: "Open E2E Test Client's profile" }).click();
-  const profile = page.getByRole("dialog", { name: "E2E Test Client" });
-  await profile.getByRole("button", { name: "Edit", exact: true }).click();
+  // Client Settings → Client Details, from the row.
+  await page.getByRole("button", { name: "Open E2E Test Client's settings" }).click();
+  await page.waitForURL(/\/settings\/details$/);
+  const details = page.locator(".setmain");
+  await details.getByRole("button", { name: "Edit", exact: true }).click();
   await page.fill("#cName", "E2E Renamed Client");
-  await profile.getByRole("button", { name: "Save" }).click();
-  // Saved in place: the profile shows the new name, then closes.
-  await expect(page.getByRole("dialog", { name: "E2E Renamed Client" }).locator(".profclient")).toContainText(
-    "E2E Renamed Client",
-  );
-  await page.getByRole("dialog", { name: "E2E Renamed Client" }).getByRole("button", { name: "Done" }).click();
+  await details.getByRole("button", { name: "Save" }).click();
+  // Saved in place: the page shows the new name.
+  await expect(details.locator(".profclient")).toContainText("E2E Renamed Client");
+
+  await details.getByRole("button", { name: "Archive", exact: true }).click();
+  await expect(details.getByRole("button", { name: "Unarchive" })).toBeVisible();
+  await page.goto("/dashboard");
+  // It was the only client, so Active is empty now.
+  await expect(page.locator("button.chip", { hasText: "Archived" })).toHaveText("Archived (1)");
+  await expect(page.locator(".crow", { hasText: "E2E Renamed Client" })).toHaveCount(0);
+  await page.click('button.chip:has-text("Archived")');
   await expect(page.locator(".crow", { hasText: "E2E Renamed Client" })).toBeVisible();
 
-  await page.getByRole("button", { name: "Open E2E Renamed Client's profile" }).click();
-  await page.getByRole("dialog", { name: "E2E Renamed Client" }).getByRole("button", { name: "Archive" }).click();
-  await expect(page.locator(".crow", { hasText: "E2E Renamed Client" })).toHaveCount(0);
-
-  await page.click('button.chip:has-text("Archived")');
-  const archivedRow = page.locator(".crow", { hasText: "E2E Renamed Client" });
-  await expect(archivedRow).toBeVisible();
-
-  await page.getByRole("button", { name: "Open E2E Renamed Client's profile" }).click();
-  await page.getByRole("dialog", { name: "E2E Renamed Client" }).getByRole("button", { name: "Unarchive" }).click();
-  await page.click('button.chip:has-text("Active")');
+  await page.getByRole("button", { name: "Open E2E Renamed Client's settings" }).click();
+  await page.waitForURL(/\/settings\/details$/);
+  await page.locator(".setmain").getByRole("button", { name: "Unarchive" }).click();
+  await expect(page.locator(".setmain").getByRole("button", { name: "Archive", exact: true })).toBeVisible();
+  await page.goto("/dashboard");
   await expect(page.locator(".crow", { hasText: "E2E Renamed Client" })).toBeVisible();
 });
 
@@ -53,8 +54,9 @@ test("New Client takes an industry, and the Client Profile edits it in place; no
   await expect(page.locator(".scrim")).toHaveCount(0);
   await expect(page.locator(".crow", { hasText: "Client Modal E2E" })).toBeVisible();
 
-  await page.getByRole("button", { name: "Open Client Modal E2E's profile" }).click();
-  const profile = page.getByRole("dialog", { name: "Client Modal E2E" });
+  await page.getByRole("button", { name: "Open Client Modal E2E's settings" }).click();
+  await page.waitForURL(/\/settings\/details$/);
+  const profile = page.locator(".setmain");
   await expect(profile.locator(".profclient")).toContainText("D2C beauty");
   await profile.getByRole("button", { name: "Edit", exact: true }).click();
   await expect(profile.locator("#cName")).toHaveValue("Client Modal E2E");
@@ -134,19 +136,16 @@ test("the project's own detail page has no row actions menu next to its title", 
   await expect(page.locator(".vdots")).toHaveCount(0);
 });
 
-test("a client's profile opens without navigating the row, and Escape closes it", async ({ page, frank }) => {
+test("a client's row opens its Client Settings, not the client", async ({ page, frank }) => {
   await frank.loginAsStaff(page);
   await page.goto("/dashboard");
   await page.waitForSelector(".crow:not(.head)");
 
-  await page.getByRole("button", { name: "Open E2E Test Client's profile" }).click();
-  const profile = page.getByRole("dialog", { name: "E2E Test Client" });
-  await expect(profile).toContainText("E2E Test Project");
-  await page.keyboard.press("Escape");
-  await expect(profile).toHaveCount(0);
-
-  // The row itself is a <Link> — the button must never navigate it away.
-  await expect(page).toHaveURL(/\/dashboard$/);
+  // The button sits inside the row's link: it goes to Client Settings, not
+  // the client's projects.
+  await page.getByRole("button", { name: "Open E2E Test Client's settings" }).click();
+  await expect(page).toHaveURL(new RegExp(`/clients/${frank.clientId}/settings/details$`));
+  await expect(page.locator(".setmain")).toContainText("E2E Test Client");
 });
 
 test("a real client-role session has no row actions menu anywhere", async ({ page, frank }) => {

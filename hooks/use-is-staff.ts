@@ -6,9 +6,7 @@ import { useMyMembership } from "./use-my-membership";
 // Whether the signed-in user is agency staff (client_id null) rather than
 // a client-role reviewer — for gating staff-only UI (Settings, the
 // Visibility nav item). Keyed on real membership, same pattern as
-// CommentsPanel's isStaff, not store/ui-store.ts's previewMode (a
-// cosmetic-only agency/client preview toggle with no bearing on actual
-// access).
+// CommentsPanel's isStaff.
 //
 // isPending, not isLoading: useMyMembership stays disabled (and therefore
 // not "loading") until useMyAgency resolves an agencyId, so isLoading

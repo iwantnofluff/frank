@@ -25,14 +25,13 @@ async function projectsOf(frank: Frank, email: string) {
   return (data ?? []).map((r) => r.project_id as string).sort();
 }
 
-test("inviting from a Client Profile puts a User on just the projects chosen", async ({ page, frank }) => {
+test("inviting from a client's People puts a User on just the projects chosen", async ({ page, frank }) => {
   test.setTimeout(90_000);
   const second = await frank.createContinuousProject();
   await setStaffRole(frank, "owner");
   await frank.loginAsStaff(page);
-  await page.goto(`${APP_URL}/dashboard`);
-  await page.getByRole("button", { name: "Open E2E Test Client's profile" }).click();
-  await page.getByRole("dialog", { name: "E2E Test Client" }).getByRole("button", { name: "+ Invite People" }).click();
+  await page.goto(`${APP_URL}/clients/${frank.clientId}/settings/people`);
+  await page.locator(".setmain").getByRole("button", { name: "+ Invite People" }).click();
   const modal = page.getByRole("dialog", { name: "Invite Team Member" });
 
   const email = `e2e-proj-user-${Date.now()}@example.invalid`;
@@ -172,12 +171,10 @@ test("a client's profile lists its people with their projects, and an Owner chan
   const user = await seedUser(frank);
   await setStaffRole(frank, "owner");
   await frank.loginAsStaff(page);
-  await page.goto(`${APP_URL}/dashboard`);
-  await page.getByRole("button", { name: "Open E2E Test Client's profile" }).click();
-  const modal = page.getByRole("dialog", { name: "E2E Test Client" });
+  await page.goto(`${APP_URL}/clients/${frank.clientId}/settings/people`);
+  const modal = page.locator(".setmain");
   const person = modal.locator(".profperson", { hasText: "Proj User" });
   await expect(person.getByRole("button", { name: "Projects: All projects" })).toBeVisible();
-  await expect(modal).toContainText("2 live projects.");
   await page.screenshot({ path: `${process.env.SHOT_DIR ?? "test-results"}/client-profile.png` });
 
   await person.getByRole("button", { name: "Projects: All projects" }).click();
@@ -204,8 +201,8 @@ test("a User sees a client's details read-only; nobody changes a project's deliv
     await up.fill('input[type="password"]', user.password);
     await up.click('button[type="submit"]');
     await up.waitForURL(`${APP_URL}/dashboard`, { timeout: 20_000 });
-    await up.getByRole("button", { name: "Open E2E Test Client's profile" }).click();
-    const profile = up.getByRole("dialog", { name: "E2E Test Client" });
+    await up.goto(`${APP_URL}/clients/${frank.clientId}/settings/details`);
+    const profile = up.locator(".setmain");
     await expect(profile.locator(".profclient")).toBeVisible();
     await expect(profile.getByRole("button", { name: "Edit", exact: true })).toHaveCount(0);
   } finally {

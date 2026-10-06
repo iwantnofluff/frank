@@ -24,15 +24,6 @@ export function CalendarIcon() {
   );
 }
 
-export function KnowledgeIcon() {
-  return (
-    <svg viewBox="0 0 24 24">
-      <path d="M12 6.5C10.5 5 8.5 4.5 5 4.5v13c3.5 0 5.5.5 7 2 1.5-1.5 3.5-2 7-2v-13c-3.5 0-5.5.5-7 2z" />
-      <path d="M12 6.5v13" />
-    </svg>
-  );
-}
-
 export function SettingsIcon() {
   return (
     <svg viewBox="0 0 24 24">
@@ -79,3 +70,15 @@ export function ProjectsIcon() {
     </svg>
   );
 }
+
+// Help: a question mark in a circle (direct instruction, in the bell's place).
+export function HelpIcon() {
+  return (
+    <svg viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.5 9.2a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.2-2.5 3.9" />
+      <path d="M12 17.2v.01" />
+    </svg>
+  );
+}
+

@@ -15,72 +15,77 @@ test("the rail follows where you are inside a client", async ({ page, frank }) =
   await frank.loginAsStaff(page);
 
   await page.goto(`${APP_URL}/clients/${frank.clientId}`);
-  await expect(page.locator("#navSet")).toBeVisible();
+  await expect(page.locator("#navClientSet")).toBeVisible();
   expect(await railLinks(page)).toEqual([
     "Clients -> /dashboard",
-    `Knowledge -> /clients/${frank.clientId}/knowledge`,
-    "Settings -> /settings",
+    `Client Settings -> /clients/${frank.clientId}/settings`,
   ]);
 
   await page.goto(`${APP_URL}/projects/${frank.projectId}`);
   await expect(page.getByRole("link", { name: "Projects" })).toBeVisible();
-  await expect(page.locator("#navSet")).toBeVisible();
   expect(await railLinks(page)).toEqual([
     "Clients -> /dashboard",
     `Projects -> /clients/${frank.clientId}`,
-    `Knowledge -> /clients/${frank.clientId}/knowledge`,
-    "Settings -> /settings",
+    `Client Settings -> /clients/${frank.clientId}/settings`,
   ]);
 
+  // The fixture's project is a Content Planner one.
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
-  await expect(page.getByRole("link", { name: "Calendar" })).toBeVisible();
-  await expect(page.locator("#navSet")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Content Planner" })).toBeVisible();
   expect(await railLinks(page)).toEqual([
     "Clients -> /dashboard",
     `Projects -> /clients/${frank.clientId}`,
-    `Calendar -> /projects/${frank.projectId}`,
-    `Knowledge -> /clients/${frank.clientId}/knowledge`,
-    "Settings -> /settings",
+    `Content Planner -> /projects/${frank.projectId}`,
+    `Client Settings -> /clients/${frank.clientId}/settings`,
   ]);
 
-  // Calendar opens this post's own project table.
-  await page.getByRole("link", { name: "Calendar" }).click();
+  await page.getByRole("link", { name: "Content Planner" }).click();
   await page.waitForURL(`${APP_URL}/projects/${frank.projectId}`);
   await page.getByRole("link", { name: "Projects" }).click();
   await page.waitForURL(`${APP_URL}/clients/${frank.clientId}`);
+  // Client Settings opens on Client Details for staff.
+  await page.getByRole("link", { name: "Client Settings" }).click();
+  await page.waitForURL(`${APP_URL}/clients/${frank.clientId}/settings/details`);
+  await expect(page.getByRole("navigation", { name: "Client Settings sections" })).toContainText("People");
 });
 
-test("a client-side member gets the same rail, without Settings", async ({ page, frank }) => {
+test("a client-side member gets the same rail, opening their Knowledge", async ({ page, frank }) => {
   await frank.loginAsClient(page);
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
-  await expect(page.getByRole("link", { name: "Calendar" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Content Planner" })).toBeVisible();
   expect(await railLinks(page)).toEqual([
     "Clients -> /dashboard",
     `Projects -> /clients/${frank.clientId}`,
-    `Calendar -> /projects/${frank.projectId}`,
-    `Knowledge -> /clients/${frank.clientId}/knowledge`,
+    `Content Planner -> /projects/${frank.projectId}`,
+    `Client Settings -> /clients/${frank.clientId}/settings`,
   ]);
+  // Their Client Settings is Knowledge only; other pages send them there.
+  await page.goto(`${APP_URL}/clients/${frank.clientId}/settings/details`);
+  await page.waitForURL(`${APP_URL}/clients/${frank.clientId}/settings/knowledge`);
+  const menu = page.getByRole("navigation", { name: "Client Settings sections" });
+  await expect(menu).toContainText("Knowledge");
+  await expect(menu).not.toContainText("People");
+  // And no Settings: the agency's mark isn't a menu for them.
+  await expect(page.locator(".markbtn")).toHaveCount(0);
 });
 
-// Restored from the earlier version of this spec: outside a client there's
-// nothing client-scoped to link to, and Calendar/Analytics/Visibility never
-// appear anywhere now.
-test("outside a client the rail is just Clients and Settings", async ({ page, frank }) => {
+test("outside a client the rail is just Clients, and Settings opens from the agency's mark", async ({ page, frank }) => {
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/dashboard`);
-  await expect(page.locator("#navSet")).toBeVisible();
-  expect(await railLinks(page)).toEqual(["Clients -> /dashboard", "Settings -> /settings"]);
+  await page.waitForSelector(".markbtn");
+  expect(await railLinks(page)).toEqual(["Clients -> /dashboard"]);
   await expect(page.locator('a[href="/calendar"], a[href="/analytics"], a[href="/visibility"]')).toHaveCount(0);
+  await page.locator(".markbtn").click();
+  await page.getByRole("menu").getByRole("menuitem", { name: "Settings" }).click();
+  await page.waitForURL(/\/settings\//);
 });
 
-// Restored: Settings is a permission boundary, not just a route — a real
-// client-side session never gets it, including on its own projects list.
-test("a client-side member on their projects list gets Knowledge but no Settings", async ({ page, frank }) => {
+test("a client-side member on their projects list gets Client Settings but no Settings", async ({ page, frank }) => {
   await frank.loginAsClient(page);
   await page.goto(`${APP_URL}/clients/${frank.clientId}`);
   await page.waitForSelector(".clients, .empty");
   expect(await railLinks(page)).toEqual([
     "Clients -> /dashboard",
-    `Knowledge -> /clients/${frank.clientId}/knowledge`,
+    `Client Settings -> /clients/${frank.clientId}/settings`,
   ]);
 });

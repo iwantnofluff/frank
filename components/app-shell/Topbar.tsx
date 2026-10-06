@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { useUIStore } from "@/store/ui-store";
 import { useClientDetail } from "@/hooks/use-client";
 import { useProject } from "@/hooks/use-project";
 import { useCreative } from "@/hooks/use-creative";
-import { BellIcon, SearchIcon } from "./icons";
+import { HelpIcon } from "./icons";
+import { GlobalSearch } from "./GlobalSearch";
+import { HelpPanel } from "./HelpPanel";
 
 const STATIC_CRUMBS: Record<string, string> = {
   "/dashboard": "All Clients",
@@ -123,7 +125,28 @@ function StaticCrumb({ pathname }: { pathname: string }) {
   return <b>{match ? STATIC_CRUMBS[match] : "Frank"}</b>;
 }
 
+// Client Settings (direct instruction): All Clients / the client / Client
+// Settings.
+function ClientSettingsCrumb({ clientId }: { clientId: string }) {
+  const router = useRouter();
+  const { data: client } = useClientDetail(clientId);
+  return (
+    <>
+      <AllClientsCrumbLink />
+      <span className="sep">/</span>
+      <button type="button" onClick={() => router.push(`/clients/${clientId}`)}>
+        {client?.name ?? "—"}
+      </button>
+      <span className="sep">/</span>
+      <b>Client Settings</b>
+    </>
+  );
+}
+
 function Crumb({ pathname }: { pathname: string }) {
+  const settingsMatch = pathname.match(/^\/clients\/([^/]+)\/settings(\/|$)/);
+  if (settingsMatch) return <ClientSettingsCrumb clientId={settingsMatch[1]} />;
+
   const clientMatch = pathname.match(/^\/clients\/([^/]+)(\/knowledge)?\/?$/);
   if (clientMatch) {
     return (
@@ -144,10 +167,12 @@ function Crumb({ pathname }: { pathname: string }) {
   return <StaticCrumb pathname={pathname} />;
 }
 
+// The header (direct instruction): where you are, search, and Help. The
+// "Preview as" switch is gone (each person sees their own view), and Help
+// takes the bell's place until there are notifications to show.
 export function Topbar() {
   const pathname = usePathname();
-  const previewMode = useUIStore((s) => s.previewMode);
-  const setPreviewMode = useUIStore((s) => s.setPreviewMode);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   return (
     <header className="topbar">
@@ -155,35 +180,18 @@ export function Topbar() {
         <Crumb pathname={pathname} />
       </div>
       <div className="grow" />
-      <div
-        className="modeswitch"
-        title="Preview only — in the live product each user sees one view"
+      <GlobalSearch />
+      <button
+        className="bell helpbtn"
+        type="button"
+        title="Help"
+        aria-label="Help"
+        aria-expanded={helpOpen}
+        onClick={() => setHelpOpen((o) => !o)}
       >
-        <span className="msl">Preview as</span>
-        <button
-          type="button"
-          aria-pressed={previewMode === "agency"}
-          onClick={() => setPreviewMode("agency")}
-        >
-          Agency
-        </button>
-        <button
-          type="button"
-          aria-pressed={previewMode === "client"}
-          onClick={() => setPreviewMode("client")}
-        >
-          Client
-        </button>
-      </div>
-      <button className="search" type="button">
-        <SearchIcon />
-        Search
-        <span className="kbd">⌘K</span>
+        <HelpIcon />
       </button>
-      <button className="bell" type="button" title="Notifications">
-        <BellIcon />
-        <span className="cnt">0</span>
-      </button>
+      <HelpPanel open={helpOpen} onClose={() => setHelpOpen(false)} />
     </header>
   );
 }

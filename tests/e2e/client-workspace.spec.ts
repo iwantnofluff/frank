@@ -12,11 +12,11 @@ test("client workspace", async ({ page, frank }) => {
   // useProjects — wait for it to settle so the screenshot can't land on the
   // "…" pending placeholder instead of real numbers.
   await expect(page.locator(".crow:not(.head) .stagecount").first()).not.toHaveText("…");
-  // useIsStaff (NavRail's Settings link, #navSet) resolves independently
+  // useIsStaff (the agency mark's Settings menu, .markbtn) resolves independently
   // and fails closed (hidden) until it does — wait for it too, or this
   // screenshot can race ahead under worker concurrency and land on a
   // rail missing Settings.
-  await page.waitForSelector("#navSet");
+  await page.waitForSelector(".markbtn");
   await expect(page).toHaveScreenshot("client-workspace.png");
 });
 

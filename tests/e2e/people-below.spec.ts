@@ -74,8 +74,9 @@ test("an Admin switches an invited User to Client and back, then resends and rem
   // Now an Admin, without the invite switch.
   await setStaffRole(frank, "admin");
   await page.goto(`${APP_URL}/dashboard`);
-  await page.getByRole("button", { name: "Open E2E Test Client's profile" }).click();
-  const profile = page.getByRole("dialog", { name: "E2E Test Client" });
+  // Client Settings → People.
+  await page.goto(`${APP_URL}/clients/${frank.clientId}/settings/people`);
+  const profile = page.locator(".setmain");
   const row = profile.locator(".profperson", { hasText: "Pat Pending" });
   await expect(row).toContainText("User");
 

@@ -7,7 +7,6 @@ import { useProjects, type ProjectListRow } from "@/hooks/use-projects";
 import { useArchiveProject } from "@/hooks/use-archive-project";
 import { useProjectCreativeStats } from "@/hooks/use-project-creative-stats";
 import { useIsStaff } from "@/hooks/use-is-staff";
-import { useUIStore } from "@/store/ui-store";
 import { useProjectFolders, type ProjectFolderRow } from "@/hooks/use-project-folders";
 import { useDeleteProjectFolder } from "@/hooks/use-delete-project-folder";
 import { KBadge } from "@/components/project/KBadge";
@@ -64,7 +63,9 @@ export default function ClientWorkspacePage({
   const { data: projectStats, isPending: statsPending } =
     useProjectCreativeStats(id);
   const { isStaff, isPending: isStaffPending } = useIsStaff();
-  const previewMode = useUIStore((s) => s.previewMode);
+  // A client's own people get the client wording (it used to follow the
+  // "Preview as" switch, now gone).
+  const asClient = !isStaff && !isStaffPending;
   const archiveProject = useArchiveProject();
   const setIcon = useUpdateProject();
   const { data: folders } = useProjectFolders(id);
@@ -234,7 +235,7 @@ export default function ClientWorkspacePage({
       <p className="sub">
         {client?.description
           ? client.description
-          : previewMode === "client"
+          : asClient
             ? "Pick a project to see what is scheduled."
             : "Pick a project to open its calendar."}
       </p>
@@ -343,7 +344,7 @@ export default function ClientWorkspacePage({
                 ? "Nothing has been archived yet."
                 : activeProjects.length
                   ? "Try a different filter."
-                  : previewMode === "client"
+                  : asClient
                     ? "Your team is setting things up. You will get an email when there is something to review."
                     : `Create the first project for ${client?.name ?? "this client"} to start scheduling or briefing work.`}
           </span>

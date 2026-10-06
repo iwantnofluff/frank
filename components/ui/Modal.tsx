@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
+import { CLOSE_MS } from "@/hooks/use-presence";
 
 export function Modal({
   title,
@@ -35,13 +36,39 @@ export function Modal({
       if (e.key !== "Escape") return;
       // With one modal open over another (the client image cropper over Edit
       // Client), Escape closes only the topmost — the last scrim in the page.
-      const scrims = document.querySelectorAll(".scrim");
+      const scrims = document.querySelectorAll(".scrim:not(.closing)");
       if (scrims[scrims.length - 1] !== scrim.current) return;
       onClose();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
+
+  // Opening and closing motion (direct instruction: every window, the same
+  // curves as the menus). Opening: .is-open a frame after it appears.
+  // Closing: callers remove a window straight away, so on the way out it
+  // leaves a copy of itself where it was, which plays the close and is
+  // then removed. The copy is inert and hidden from assistive technology,
+  // so nothing can click or find it while it goes.
+  useLayoutEffect(() => {
+    const el = scrim.current;
+    const frame = requestAnimationFrame(() => el?.classList.add("is-open"));
+    return () => {
+      cancelAnimationFrame(frame);
+      // Only a window that has opened closes with motion (not one set up
+      // and torn down in the same moment).
+      if (!el || !el.isConnected || !el.classList.contains("is-open")) return;
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      const ghost = el.cloneNode(true) as HTMLElement;
+      ghost.classList.add("closing");
+      ghost.setAttribute("aria-hidden", "true");
+      ghost.inert = true;
+      document.body.appendChild(ghost);
+      // Removed one frame later, so it starts from open, plays, and goes.
+      requestAnimationFrame(() => ghost.classList.remove("is-open"));
+      setTimeout(() => ghost.remove(), CLOSE_MS + 40);
+    };
+  }, []);
 
   return (
     <div className="scrim" ref={scrim} onClick={onClose}>

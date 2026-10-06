@@ -2,18 +2,14 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useClients, type ClientRow } from "@/hooks/use-clients";
+import { useRouter } from "next/navigation";
+import { useClients } from "@/hooks/use-clients";
 import { useMyAgency } from "@/hooks/use-my-agency";
 import { useAgencyCreativeStats } from "@/hooks/use-agency-creative-stats";
 import { useClientListStats } from "@/hooks/use-client-list-stats";
 import { useIsStaff } from "@/hooks/use-is-staff";
-import { useArchiveClient } from "@/hooks/use-archive-client";
 import { ExpandIcon, SearchIcon } from "@/components/app-shell/icons";
 import { ClientModal } from "@/components/clients/ClientModal";
-import { ClientProfileModal } from "@/components/clients/ClientProfileModal";
-import { InviteMemberModal } from "@/components/team/InviteMemberModal";
-import { useMyMembership } from "@/hooks/use-my-membership";
-import { rolesICanInvite, seesAllClients } from "@/lib/roles";
 import { useAvatarUrls } from "@/hooks/use-avatar-urls";
 import { errorMessage } from "@/lib/errors";
 import { useCurrentUser } from "@/hooks/use-current-user";
@@ -60,17 +56,10 @@ export default function DashboardPage() {
   const { data: clientListStats, isPending: clientStatsPending } =
     useClientListStats(agency?.agencyId);
   const { isStaff, isPending: isStaffPending } = useIsStaff();
-  const archiveClient = useArchiveClient();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("active");
   const [newClientOpen, setNewClientOpen] = useState(false);
-  const [profileTarget, setProfileTarget] = useState<ClientRow | null>(null);
-  const [inviteTo, setInviteTo] = useState<string | null>(null);
-  const { data: me } = useMyMembership(agency?.agencyId);
-  // Owners and Admins change a client's details and who's on each project
-  // (phase46, phase48).
-  const isAdmin = !!me && !me.client_id && seesAllClients(me.role);
-  const inviteRoles = rolesICanInvite(me);
+  const router = useRouter();
   // Fails closed like every other isStaff gate in this app: hidden while
   // still resolving, not shown by default.
   const confirmedStaff = isStaff && !isStaffPending;
@@ -245,12 +234,13 @@ export default function DashboardPage() {
                   <button
                     type="button"
                     className="vdots"
-                    title="Open client profile"
-                    aria-label={`Open ${c.name}'s profile`}
+                    title="Open Client Settings"
+                    aria-label={`Open ${c.name}'s settings`}
                     onClick={(e) => {
+                      // A button, not a link: the row is a link already.
                       e.preventDefault();
                       e.stopPropagation();
-                      setProfileTarget(c);
+                      router.push(`/clients/${c.id}/settings`);
                     }}
                   >
                     <ExpandIcon />
@@ -270,31 +260,6 @@ export default function DashboardPage() {
         />
       )}
 
-      {profileTarget && agency && (
-        <ClientProfileModal
-          agencyId={agency.agencyId}
-          // Fresh from the list, so an edit shows straight away.
-          client={clients?.find((c) => c.id === profileTarget.id) ?? profileTarget}
-          isAdmin={isAdmin}
-          canInvite={inviteRoles.length > 0}
-          onInvite={() => setInviteTo(profileTarget.id)}
-          onArchive={() => {
-            archiveClient.mutate({ clientId: profileTarget.id, archived: !profileTarget.archived_at });
-            setProfileTarget(null);
-          }}
-          onClose={() => setProfileTarget(null)}
-        />
-      )}
-
-      {inviteTo && agency && (
-        <InviteMemberModal
-          agencyId={agency.agencyId}
-          roles={inviteRoles}
-          presetClientId={inviteTo}
-          onClose={() => setInviteTo(null)}
-          onSent={() => {}}
-        />
-      )}
 
     </div>
   );

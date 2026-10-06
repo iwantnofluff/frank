@@ -25,20 +25,21 @@ async function picture(page: Page, width: number, height: number) {
   return { name: `logo-${width}x${height}.png`, mimeType: "image/png", buffer: Buffer.from(b64, "base64") };
 }
 
-// The Client Profile, with its details turned into fields (phase48).
+// Client Settings → Client Details, from the client's row, with its
+// details turned into fields (phase48).
 async function openEditClient(page: Page) {
-  await page.getByRole("button", { name: "Open E2E Test Client's profile" }).click();
-  const profile = page.getByRole("dialog", { name: "E2E Test Client" });
-  await profile.getByRole("button", { name: "Edit", exact: true }).click();
-  return profile;
+  await page.getByRole("button", { name: "Open E2E Test Client's settings" }).click();
+  await page.waitForURL(/\/settings\/details$/);
+  const details = page.locator(".setmain");
+  await details.getByRole("button", { name: "Edit", exact: true }).click();
+  return details;
 }
 
-// Saved in place: the fields go, then the profile is closed.
-async function saveAndClose(modal: ReturnType<Page["getByRole"]>) {
-  await modal.getByRole("button", { name: "Save" }).click();
-  await expect(modal.locator("#cName")).toHaveCount(0);
-  await modal.getByRole("button", { name: "Done" }).click();
-  await expect(modal).toHaveCount(0);
+// Saved in place: the fields go, then back to the clients list.
+async function saveAndClose(details: ReturnType<Page["locator"]>) {
+  await details.getByRole("button", { name: "Save" }).click();
+  await expect(details.locator("#cName")).toHaveCount(0);
+  await details.page().goto(`${APP_URL}/dashboard`);
 }
 
 test("a client gets a square profile image and a description", async ({ page, frank }) => {

@@ -2464,3 +2464,89 @@ Direct instructions:
 - **The fields:** 8px apart; the picker at the end of the row, centred on them.
 - **The browser's picker is hidden:** its hide rule is loaded and in effect, since the date field renders differently when the picker is forced back.
 - **The custom picker:** choosing the 15th filled the date.
+
+## Slightly thicker section icons; client Knowledge stacked like Settings
+
+Direct instructions:
+- **The review page's section icons** (Brief, Content, Checks, Feed Preview) are slightly thicker: a same-colour outline (30 units on their 1200 grid, about 0.4px at 16px) widens every line, leaving the supplied shapes as they are.
+- **A client's Knowledge page** has the structure of Settings' Reference Material: the same heading (title, then the client's name and how many areas are filled), the same narrow column (`.pad.narrow`), and its eight areas stacked as panels. Each panel has a title and item count, a row per entry (the prototype's kind square and colour: Aa, DOC/file type, URL, IMG; title; note, link or file; date), and a "Write a note / Upload a file" choice at its foot. Notes can still be edited, as before, which Reference Material doesn't offer. Writing stays staff-only; a client sees the rows with no buttons. The old card grid (`.kbgrid`, `.kbcard`, `.kbentry` and friends) is gone; the prototype's `.kb-b .note` and `.reflink` styles were ported for link entries.
+
+**Verified** by measurement, against Settings' Reference Material:
+- **The same spacing:** the column (1040px wide, heading 980px), the gaps from the column's top to the heading (26px), the subtitle (41px later) and the first panel (86px), the panel header padding (11px 15px), and 20px between panels.
+- **Every area present:** all 8 show, in order.
+- **As staff:** a note was added from the first panel's foot and then edited, with the count reading "1 item".
+- **As the client:** the same row, no buttons and no foot.
+
+`placeholder-routes`, `nav-rail`, `settings`, `plan-enforcement` and `creative-review` specs pass, apart from the known `settings-team.png` flake.
+
+## Client Settings, Settings on the agency's mark, every window animates, and Knowledge tidied
+
+Direct instructions:
+- **Knowledge panels:** each foot offers "Write Note" and "Upload File" straight away (in Settings' Reference Material too), with no "Add …" step first.
+  - An empty area reads "Content pending": smaller (12.2px), in red, with 18px around it, lined up with the panel's title.
+  - A note's date sits on its own line under it.
+  - Remove asks first ("Remove …?", addressed by name, with Cancel), in both places.
+- **Every window opens and closes with the menus' motion:** 220ms in on cubic-bezier(0, 0, 0.2, 1), 170ms out on cubic-bezier(0.4, 0, 1, 1), opacity and transform only.
+  - **Opening:** `components/ui/Modal.tsx` adds `.is-open` a frame after a window appears.
+  - **Closing:** callers remove a window at once, so on the way out it leaves an inert copy of itself (hidden from assistive technology, unclickable, ignored by Escape), which loses `.is-open`, plays the close, and is removed.
+  - Only a window that had opened does this (not one React sets up and tears down in the same moment), and none does under reduced motion.
+- **Client Settings:** a client's own area with Settings' structure (its left menu, `.pad.narrow` pages) at `/clients/[id]/settings`.
+  - **Client:** Client Details (the details, edited in place by Owners and Admins, and Archive) and People (who's on which project, and inviting).
+  - **Knowledge:** the eight areas, stacked.
+  - **Connections:** Instagram (this client's account, connect / send link / reconnect / disconnect, returning to this page).
+  - **A client's own people** see Knowledge only, read only, and are sent there from any other page.
+  - **The Client Profile window is gone:** each client row's expand button opens its Client Settings.
+  - The old `/clients/[id]/knowledge` address redirects to the Knowledge page.
+- **The rail:**
+  - a client's projects list: Clients, Client Settings
+  - a project's table: Clients, Projects, Client Settings
+  - a post's review page: Clients, Projects, Content Planner (or Other Content, by the project's type), Client Settings
+  - Knowledge and Settings are no longer in the rail. Settings opens from the agency's mark (its logo, or "F") at the top, as a menu with the agency's name, for staff only; for a client's own people the mark is just the mark.
+
+**Verified:**
+- **Knowledge:** in a throwaway spec, the foot buttons read "Write Note" and "Upload File". "Content pending" is 12.2px, red (255,0,0), padded 18px 15px, starting at the same x as the panel title (130). A saved note's date sits 5px under it. Remove opened "Remove Voice?" (Cancel kept it; Remove took it out). Settings' foot and empty state match.
+- **Windows:** opening went from opacity 0.24 to 0.99 over 210ms; closing went from 0.98 to 0 over 170ms before the copy was removed. Escape still closed the real window while a copy was closing.
+- **The rail and Client Settings:** `nav-rail.spec.ts` covers the rail on every screen, the Content Planner label, Client Settings opening on Client Details, a client's view (Knowledge only, other pages redirected, no Settings menu), and Settings reached from the agency's mark.
+- **The window's old jobs:** `client-profile`, `manage-clients-projects`, `people-below` and `project-access` now do on the new pages what they did in the window (edit details and the image, archive and unarchive, change people's projects and type, invite, a User's read-only view). `placeholder-routes` covers the old Knowledge address.
+- **Screenshots:** baselines were regenerated after measuring each diff. Every change sits in the rail, except the review page's thicker section icons, the dashboard's known date column and the team roster's known flaky area.
+
+## The header: search that works, Help in the bell's place, no "Preview as"
+
+Direct instructions:
+- **"Preview as" is gone.** Each person sees their own view. The two client-page messages that followed it now follow the person's real role, and the store that held it is removed.
+- **Search works:** typing lists the clients and projects you can see whose names contain it (archived ones left out, RLS deciding the rest).
+  - Names that start with what's typed come first, eight at most.
+  - Each result carries a subtle pill, Client or Project, on the right; a project also shows its client, greyed out.
+  - Arrow keys and Enter, or a click, open one; Escape closes; ⌘K (Ctrl K) jumps into search from anywhere.
+  - The list opens and closes with the menus' motion.
+- **Help replaces the bell** (kept in code for when there are notifications): a question mark in a circle opens a panel from the right, under the header, after Slack's. It slides in and out with the menus' motion, and Escape closes it.
+  - **Its home:** "Find answers quickly" with a search, "Explore help topics" (five cards), and "Help categories" at its foot (seven).
+  - **Categories and articles:** a category lists its articles with a line each. An article reads like Slack's: a large title, section headings, steps and lists, and yellow Note boxes. Back returns to where you came from.
+  - **The 13 articles** in `lib/help-content.ts` cover: how Frank works, search, creating a client and project, Client Settings, Knowledge, Instagram, the Content Planner, Other Content, review links, comments, Write with Claude, the team, and Settings. Each was checked against the app as it is. When a feature changes, its article should change with it.
+  - Search matches every word typed, across the title and the text, with title matches first.
+- **The breadcrumb** reads All Clients / the client / Client Settings on Client Settings pages (it showed "Frank" before).
+
+**Verified**: `header.spec.ts` covers the search and the Help panel:
+- **Search:** ⌘K focuses it; "e2e test" lists the client (pill "Client") and its project (pill "Project", showing the client's name). The down arrow then Enter opens the project; a non-match says "No client or project called that."
+- **Help:** a topic opens its article and Back returns; a category lists its articles and one opens; searching "passcode" finds the review link article; Close shuts the panel.
+- **Screenshots:** baselines were regenerated after measuring each diff. Every change sits within the 52px header, apart from the team roster's known flaky area.
+
+## Client Settings' menu folds to icons
+
+Direct instruction: Client Settings' menu has icons like the review page's section menu, and behaves the same way, showing icons only when closed.
+- **The icons:** Client is the supplied buildings icon, Knowledge the suitcase, and Connections the link. They're kept as supplied in `project-details/nav-icons/`, and `lib/nav-icons.ts` is generated from them (one number mistyped in copying was caught and fixed before generating). They're drawn like the review page's icons, filled, a touch thicker.
+- **How it behaves:**
+  - Open, each section is its icon and name, with its pages listed under the open one.
+  - Closed, the icons alone, and the open section's pages as small dots in the same rows (the current page's darker). Nothing moves, and a dot still opens its page.
+  - Rows are a fixed height either way. Page labels line up under the section names.
+  - Names ease in and out with the menus' motion. The column is as wide as it needs: 20px past the longest name when open, the icons when closed.
+- **Only for menus whose every section has an icon** (`SettingsSection.icon`). Agency Settings and the admin area keep their current menu until their icons are supplied.
+
+**Verified** by measurement in a throwaway spec:
+- **Fixed icons:** in the same places open and closed (x 110, y 111 / 221 / 259).
+- **Aligned labels:** page labels sit 1px from the section names (x 135–136).
+- **Dots:** the two Client pages showed as dots when closed. The Client Details dot opened its page, and Connections then Instagram opened that page.
+- **Width:** 170px open, 36px closed.
+- **Agency Settings:** unchanged.
+- **Fix, seen in the app:** the icons rendered blank. An older `.setnav-h svg` rule outlines every svg in a section header (no fill, 2-unit stroke), which drew the 1200-grid icons as hairlines; my first check measured positions, not visibility. The icons now fill in the text colour. **Verified** by the share of each icon's box actually drawn: Client 38%, Knowledge 30%, Connections 19% (near zero before).
+- **Pages indented under their section** (direct instruction): page names sit 12px in from the section name, as in Agency Settings (measured: x 136 and 148).

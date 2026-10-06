@@ -9,7 +9,8 @@ import { useMyAgency } from "@/hooks/use-my-agency";
 import { useAgencySettings } from "@/hooks/use-agency-settings";
 import { useAvatarUrls } from "@/hooks/use-avatar-urls";
 import { AccountMenu } from "./AccountMenu";
-import { CalendarIcon, ClientsIcon, KnowledgeIcon, ProjectsIcon, SettingsIcon } from "./icons";
+import { CalendarIcon, ClientsIcon, ProjectsIcon, SettingsIcon } from "./icons";
+import { AgencyMenu } from "./AgencyMenu";
 import { brandingAllowed } from "@/lib/plans";
 
 function RailLink({
@@ -38,11 +39,13 @@ function RailLink({
 // Per direct instruction, the rail follows where you are inside a client
 // rather than the prototype's syncRail() (Calendar/Analytics/Visibility
 // whenever a client is open):
-//   a client's projects list  — Clients, Knowledge, Settings
-//   a project's table         — Clients, Projects, Knowledge, Settings
-//   a post's review page      — Clients, Projects, Calendar, Knowledge, Settings
-// where Projects goes back to that client's list and Calendar to that
-// post's own project table.
+//   a client's projects list  — Clients, Client Settings
+//   a project's table         — Clients, Projects, Client Settings
+//   a post's review page      — Clients, Projects, Content Planner (or
+//                               Other Content), Client Settings
+// where Projects goes back to that client's list and Content Planner to
+// that post's own project table. Knowledge is a page of Client Settings
+// now, and Settings opens from the agency's mark at the top (AgencyMenu).
 export function NavRail({
   userInitials,
   userName,
@@ -83,36 +86,38 @@ export function NavRail({
 
   return (
     <nav className="rail" aria-label="Main">
-      <div className="mark" style={logoUrl ? { overflow: "hidden", padding: 0 } : undefined}>
-        {logoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
-          <img src={logoUrl} alt={agency?.name ?? "Agency"} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        ) : (
-          "F"
-        )}
-      </div>
+      <AgencyMenu
+        isStaff={showStaffOnly}
+        agencyName={agency?.name ?? null}
+        mark={
+          logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
+            <img src={logoUrl} alt={agency?.name ?? "Agency"} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ) : (
+            "F"
+          )
+        }
+        hasLogo={!!logoUrl}
+      />
       <RailLink href="/dashboard" label="Clients" icon={ClientsIcon} current={pathname.startsWith("/dashboard")} />
       {insideProject && clientId && (
         <RailLink href={`/clients/${clientId}`} label="Projects" icon={ProjectsIcon} current={false} />
       )}
       {routeCreativeId && projectId && (
-        <RailLink href={`/projects/${projectId}`} label="Calendar" icon={CalendarIcon} current={false} />
+        <RailLink
+          href={`/projects/${projectId}`}
+          label={creative?.projects?.delivery === "continuous" ? "Other Content" : "Content Planner"}
+          icon={CalendarIcon}
+          current={false}
+        />
       )}
       {clientId && (
         <RailLink
-          href={`/clients/${clientId}/knowledge`}
-          label="Knowledge"
-          icon={KnowledgeIcon}
-          current={pathname.startsWith(`/clients/${clientId}/knowledge`)}
-        />
-      )}
-      {showStaffOnly && (
-        <RailLink
-          href="/settings"
-          label="Settings"
+          href={`/clients/${clientId}/settings`}
+          label="Client Settings"
           icon={SettingsIcon}
-          current={pathname.startsWith("/settings")}
-          id="navSet"
+          current={pathname.startsWith(`/clients/${clientId}/settings`)}
+          id="navClientSet"
         />
       )}
       <div className="spacer" />
