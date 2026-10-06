@@ -2677,6 +2677,7 @@ How it runs:
 - **One agency at a time:** phase61 lets the daily run take an agency, so tests run it for their own test agency only and never touch anyone else's artwork.
 
 Gaps:
+- **Fix found after deploying to staging:** the main address (beingfrank.app and staging.beingfrank.app) shows the welcome page for every path except a few named ones, and Vercel's cron calls the main address. So the run never reached its route. `/api/cron/artwork` is now one of the named paths there, still refusing anything without its secret. **Verified** locally on the main address: before, the welcome page; after, 401 without the secret and a clean run with it. `artwork-removal.spec.ts` now checks it.
 - **Setup needed:** the cron needs `CRON_SECRET` set in both Vercel projects (staging and live). Until it is, the route refuses every call and nothing is removed.
 - **Feed Preview:** the planned tile simply shows no image once the artwork is removed. The client's real Instagram posts sit beside it anyway.
 - **Header fix found on the way:** at phone width the header (306px, beside the rail) couldn't fit search, bell and Help; Help was being squashed to 19px. The search now gives way (230px when there's room), and its results span the screen on a phone.

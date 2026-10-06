@@ -199,4 +199,9 @@ test("only Owners and Admins decide, notifications are each person's own, and th
   // The daily run's route: refused without its secret.
   expect((await page.request.get(`${APP_URL}/api/cron/artwork`)).status()).toBe(401);
   expect((await page.request.get(`${APP_URL}/api/cron/artwork`, { headers: { authorization: "Bearer wrong" } })).status()).toBe(401);
+  // Vercel's cron calls the main address, which shows the welcome page for
+  // almost every path: the run's own must reach the route.
+  const atMain = await page.request.get(`${APP_URL}/api/cron/artwork`, { headers: { host: "frank.localhost:3000" } });
+  expect(atMain.status()).toBe(401);
+  expect(await atMain.json()).toEqual({ error: "Not allowed" });
 });

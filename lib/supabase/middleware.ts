@@ -75,6 +75,9 @@ export async function updateSession(request: NextRequest) {
       path.startsWith("/api/signup") ||
       path === "/api/find-workspaces" ||
       path === "/api/billing/paddle-webhook" ||
+      // The daily artwork run (phase60): Vercel's cron calls the main
+      // address. Checked by CRON_SECRET.
+      path === "/api/cron/artwork" ||
       path === "/api/connections/instagram/callback" ||
       // Meta's deauthorize and data deletion callbacks, and the page it
       // shows someone after a deletion. Checked by signature.
