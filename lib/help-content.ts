@@ -75,20 +75,22 @@ export const HELP_ARTICLES: HelpArticle[] = [
   },
   {
     id: "search",
-    title: "Find a client or project fast",
+    title: "Find a page, client or project fast",
     category: "start",
     summary: "Search from the header, or press ⌘K.",
     blocks: [
       {
         kind: "p",
-        text: "The search box in the header finds any client or project you can see. Start typing and matches appear straight away, each marked Client or Project.",
+        text: "The search box in the header finds pages, clients and projects you can see. Start typing and matches appear straight away, each marked Page, Client or Project.",
       },
       {
         kind: "list",
         items: [
+          "Type a page's name to open it: Clients, a Settings page such as Users or Reference Material, or a client's Client Settings pages such as Knowledge.",
+          "Type a project's type to list them all: planner finds every Content Planner, other content every Other Content project.",
           "Press ⌘K (Ctrl K on Windows) to jump into search from anywhere.",
           "Use the arrow keys to move through the results and Enter to open one, or click it.",
-          "Projects show their client's name, so similar project names are easy to tell apart.",
+          "Projects show their client and type, so similar names are easy to tell apart.",
         ],
       },
     ],

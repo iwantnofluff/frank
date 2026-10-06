@@ -2555,3 +2555,20 @@ Direct instruction: Client Settings' menu has icons like the review page's secti
   - **Measured** from the drawn pixels: each icon redrawn at 160px, its line weight taken as 2 × filled area / outline length, so diagonal lines count the same as straight ones.
   - **Review page:** 0.99 / 1.02 / 1.06 / 1.05px.
   - **Client Settings:** 0.98 / 0.98 / 1.03px (from 1.14 to 1.16px before the adjustment).
+
+## Search opens pages, and finds projects by type
+
+Direct instruction: typing a page's name opens it ("Clients" opens the clients list), and "planner" lists every client's planners.
+- **Pages, marked Page:**
+  - Clients (also found by "dashboard" and "home").
+  - Every Settings page, for staff, shown as "Settings · Team".
+  - Each client's Client Settings pages, shown as "NuHabit · Client Settings": only Knowledge for a client's own people, as their Client Settings has.
+- **Projects found by type as well as name:** "planner" lists every Content Planner project, "other content" every Other Content one, and a project's own type ("Paid Campaign") finds it too. Each project shows its client and type, greyed out.
+- **Order:** names starting with what's typed come first, then pages, clients and projects; ten at most.
+- The Help article on search says all this.
+
+**Verified** in `header.spec.ts`:
+- "Clients" put the clients list first, marked Page, and Enter opened it.
+- "planner" listed the fixture's project with "E2E Test Client · Content Planner".
+- "knowledge" listed the client's Knowledge page and Settings' Reference Material, and choosing the first opened `/clients/[id]/settings/knowledge`.
+- A client-role session's "knowledge" found their Knowledge but no Settings pages.

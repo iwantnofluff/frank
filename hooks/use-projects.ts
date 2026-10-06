@@ -44,6 +44,9 @@ export interface ClientProjectRow {
   id: string;
   name: string;
   client_id: string;
+  // For the header search's type matches ("planner", "other content").
+  delivery: "scheduled" | "continuous";
+  type: string | null;
 }
 
 // The live projects of several clients at once — what someone being
@@ -56,7 +59,7 @@ export function useProjectsOfClients(clientIds: string[]) {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("projects")
-        .select("id, name, client_id")
+        .select("id, name, client_id, delivery, type")
         .in("client_id", ids)
         .is("archived_at", null)
         .order("position");
