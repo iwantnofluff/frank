@@ -32,6 +32,8 @@ const PUBLIC_PATH_PREFIXES = [
   "/api/shared-review",
   "/api/invite",
   "/api/ai/classify-comment",
+  // The daily artwork run (phase60): no session, checked by CRON_SECRET.
+  "/api/cron",
   // Paddle's notifications (phase39): no session, checked by signature.
   "/api/billing/paddle-webhook",
   // Sign-up (phase42): the form on beingfrank.app, and the confirmation

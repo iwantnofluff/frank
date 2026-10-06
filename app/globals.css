@@ -332,6 +332,13 @@ a {
   letter-spacing: 0.3px;
   word-break: break-word;
 }
+/* The client's own Settings, named for it: the name at most two lines. */
+.rbtn .rlab-name {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 .rbtn[aria-current="true"] .ric {
   background: rgba(255, 255, 255, 0.22);
 }
@@ -1625,8 +1632,12 @@ body.lightrail .avatar {
   border-radius: 0 var(--r) var(--r) 0;
   padding: 4px 6px;
   border-left: none;
+  /* The arrow in the middle of the button's height (direct instruction). */
+  display: inline-flex;
+  align-items: center;
 }
 .split .split-t svg {
+  display: block;
   width: 13px;
   height: 13px;
   stroke: currentColor;
@@ -2357,7 +2368,8 @@ a.fd-ref:hover {
    items, not borders on their neighbours — `gap: 20px` above already gives
    each one at least 20px of padding on both sides for free. */
 .review-sep {
-  background: var(--line);
+  /* A shade darker than other rules (direct instruction: too light). */
+  background: var(--line-2);
   min-height: 0;
 }
 /* Feed Preview — a profile header (.fp-h) and tab row (.fp-tabs) above a
@@ -2665,6 +2677,33 @@ a.fd-ref:hover {
   row-gap: 7px;
   gap: 8px;
   flex-shrink: 0;
+}
+/* The Review page's two header rules: a shade darker (direct instruction),
+   and the centre one level with Comments' (its buttons are taller, so it
+   sits closer around them). */
+.review .stage-h,
+.review .cmts-h {
+  border-bottom-color: var(--line-2);
+}
+/* The centre's buttons sit midway between the header bar and the rule
+   (direct instruction): 16px of the page's own top space plus 1.6px above,
+   17.6px below. Comments' header is laid out the same, so the two rules
+   stay level and its title lines up with the buttons. */
+.review .stage-h,
+.review .cmts-h {
+  padding-top: 1.6px;
+  padding-bottom: 17.6px;
+}
+.review .stage-h,
+.review .cmts-h {
+  min-height: 54.8px;
+}
+/* New Post beside Edit (direct instruction): just "+" where the toolbar
+   would otherwise wrap, its name in its tooltip. */
+@media (max-width: 1560px) {
+  .stage-h .newpost .newpost-l {
+    display: none;
+  }
 }
 .stage-h b.ph,
 .cmts-h b {
@@ -7626,3 +7665,171 @@ button.feedgrid-live {
   color: var(--muted);
 }
 
+
+/* The bell and Help keep their size on a narrow header. */
+.topbar .bell {
+  flex-shrink: 0;
+}
+/* The search gives way instead: 230px when there's room, narrower on a
+   phone, so the bell and Help stay on screen. */
+.topbar .gsearch {
+  flex: 0 1 230px;
+  min-width: 0;
+}
+.topbar .gsearch .search {
+  width: 100%;
+}
+/* On a phone the narrower search's results span the screen, 16px in. */
+@media (max-width: 600px) {
+  .colpop.gsearch-pop {
+    position: fixed;
+    top: 58px;
+    left: 16px;
+    right: 16px;
+    width: auto;
+  }
+}
+
+/* Notifications (phase60): the prototype's #notif under the bell, opening
+   and closing with the menus' motion (.is-open, hooks/use-presence.ts)
+   instead of its display toggle. Type sizes as the rest of the app's. */
+.notif {
+  position: fixed;
+  top: 56px;
+  right: 16px;
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  max-height: 70vh;
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  box-shadow: 0 14px 44px rgba(20, 22, 26, 0.2);
+  display: flex;
+  flex-direction: column;
+  z-index: 65;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-4px) scale(0.98);
+  transform-origin: top right;
+  pointer-events: none;
+  transition:
+    opacity var(--dur-close) var(--ease-close),
+    transform var(--dur-close) var(--ease-close);
+}
+.notif.is-open {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+  transition-duration: var(--dur-open);
+  transition-timing-function: var(--ease-open);
+}
+.notif-h {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+}
+.notif-h b {
+  font-size: 14.7px;
+  font-weight: 600;
+}
+.notif-b {
+  overflow-y: auto;
+  flex: 1;
+}
+.notif-empty {
+  padding: 22px 14px;
+  text-align: center;
+  font-size: 13.7px;
+  color: var(--muted);
+}
+.nrow {
+  display: flex;
+  gap: 10px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--line);
+  width: 100%;
+  text-align: left;
+  position: relative;
+}
+.nrow:hover {
+  background: #fafbfc;
+}
+.nrow.unread {
+  background: var(--action-soft);
+}
+.nrow.unread:hover {
+  background: #e4eaff;
+}
+.nrow .ni {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  font-size: 10.7px;
+  font-weight: 700;
+  color: #fff;
+}
+.nrow .nt {
+  font-size: 13.7px;
+  line-height: 1.4;
+}
+.nrow .nt b {
+  font-weight: 600;
+}
+.nrow time {
+  font-size: 12.2px;
+  color: var(--muted);
+  display: block;
+  margin-top: 2px;
+}
+
+/* An Approved post's artwork warning, above its phone (phase60). */
+.note.artwork-warn {
+  max-width: 420px;
+  margin: 0 auto 14px;
+}
+
+/* The artwork decision window (phase60): the post, small, beside its name. */
+.artdec {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.artdec-media {
+  width: 72px;
+  flex-shrink: 0;
+  border-radius: var(--r);
+  overflow: hidden;
+  background: var(--canvas);
+}
+.artdec-media img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+}
+.artdec-none {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 5;
+  color: var(--muted);
+}
+.artdec-none svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+}
+.artdec b {
+  display: block;
+  font-size: 14.7px;
+}
+.artdec span {
+  font-size: 13.2px;
+  color: var(--muted);
+}

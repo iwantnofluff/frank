@@ -373,6 +373,8 @@ export const test = base.extend<{ frank: Frank }>({
       // through create_shared_link() instead and was never tracked,
       // which is exactly the gap that orphaned an agency here once already.
       ["shared_links", () => admin.from("shared_links").delete().eq("agency_id", agency.id)],
+      // phase60: notifications about its posts (cascade with them anyway).
+      ["notifications", () => admin.from("notifications").delete().eq("agency_id", agency.id)],
       ["comments", () => admin.from("comments").delete().eq("agency_id", agency.id)],
       ["copy_versions", () => admin.from("copy_versions").delete().eq("agency_id", agency.id)],
       ["creative_version_slides", () => admin.from("creative_version_slides").delete().eq("agency_id", agency.id)],

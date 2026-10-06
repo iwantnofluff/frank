@@ -10,6 +10,8 @@ export interface SharedCreative {
   // A carousel's slides, signed, in order — empty for a single image.
   slides: { position: number; signed_url: string | null; mime_type: string; filename: string }[];
   slide_count: number | null; // carousels only
+  // When its artwork was removed after going live (phase60).
+  artwork_removed_at: string | null;
   stage: number;
   // Real status, same field the internal app's own bandOf() reads — a
   // Read-only from this page for now — the guest UI's own "Make Changes"

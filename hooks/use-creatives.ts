@@ -24,6 +24,8 @@ export interface CreativeListRow {
   added_on: string;
   due_on: string | null;
   published_at: string | null;
+  // When its artwork was removed after going live (phase60).
+  artwork_removed_at: string | null;
   cx: Record<string, string | number | boolean | null>;
   archived_at: string | null;
   lead: { name: string } | null;
@@ -47,7 +49,7 @@ export function useCreatives(projectId: string) {
       const { data: rows, error } = await supabase
         .from("creatives")
         .select(
-          "id, name, format, stage, exception, lead_user_id, concept, reference_url, reference_urls, slide_count, slide_text, approach_notes, scheduled_at, formats, destination, added_on, due_on, published_at, cx, archived_at",
+          "id, name, format, stage, exception, lead_user_id, concept, reference_url, reference_urls, slide_count, slide_text, approach_notes, scheduled_at, formats, destination, added_on, due_on, published_at, artwork_removed_at, cx, archived_at",
         )
         .eq("project_id", projectId)
         .order("position");

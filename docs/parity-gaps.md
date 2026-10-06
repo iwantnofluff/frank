@@ -2626,3 +2626,85 @@ Hovering a reference link in the Content and Other Content tables shows a card f
 - **In the table:** the card showed "en.wikipedia.org / Content marketing - Wikipedia" with the full address, and stayed open with the pointer on it.
 
 A permanent spec (`link-preview.spec.ts`) covers the refusals and the card's fallback without reaching the internet, and unit tests cover the address checks and the tag parsing. Both pass.
+
+## Giving a team User a client from its People
+
+A client's People has a new first field in its invite window, "A User on Your Team" (direct instruction). It lists, alphabetically, the team's Users who have joined and haven't got this client yet. Picking one hides the name, email and role fields, keeps Projects, and the button becomes "Add to Client". Leaving it on "No, someone new" invites as before. The field appears whenever the window is opened from a client; with nobody left it's dimmed and says "Every User on your team has this client".
+
+- **Only the team's Users** (decided directly, correcting phase59, which also listed other clients' people): a client's own people are invited from that client's settings, never picked from another client's. Owners and Admins aren't listed; they see every client already. phase62 makes the database hold the same line.
+- **Straight away, no invite** (decided directly): they're on the team already, so the client is added to their client access at once, on the projects chosen (all, by default).
+- **One person after another** (direct instruction): adding someone, or pressing Done on a new invite's link, comes back to the empty window with a line saying what was done ("Aaron Teamwork added to Acme.", "Invite sent to Nina New."), ready for the next person or Cancel. From Team settings, Done still closes the window.
+- **Who can add** (`add_person_to_client`, a `SECURITY DEFINER` function that checks the caller itself): whoever can invite people, and only Users below them. Nothing is added while the agency is read-only.
+- **Fix found on the way:** the app read "my membership" as exactly one row, but one person can be a Client on two clients by being invited to each. That fails safe (no staff powers), but some screens then stopped treating them as a Client. It now reads any one of their memberships, a staff one first.
+- **Gap:** they aren't told. There's no email saying "you've been given X"; the client simply appears next time they open Frank.
+- **Gap:** the AI tools still read one membership per person; for a Client on two clients they refuse with "Staff access required", which is the right outcome.
+
+**Verified** with real sessions (`add-to-client.spec.ts`):
+- **The list:** an inviting Admin opened a second client's People. The field listed "Aaron Teamwork" and "Zoe Teamwork" only. The Client from the other client, an Owner, a pending invitee and the Admin themselves were all left out.
+- **Adding:** Aaron appeared at once as a User, not "Invited", and no invite was made. The window came back with "Aaron Teamwork added to E2E Second Client." and only Zoe left in the field. Zoe, given one of two projects, got the client and that project only.
+- **When it's empty:** with nobody left, the field showed dimmed with its message. After a new invite's link, Done came back to the empty window.
+- **Refusals:** the database refused the other client's person, an Owner, a pending invitee, an Admin without "Can invite" and a Client, and wrote nothing.
+- **Two clients:** a Client on two clients saw both, with the Client wording on each.
+
+## The client's Settings, named for it
+
+The rail's Client Settings button now carries the client's name (direct instruction): "Casa Carigar Settings". Until the name has loaded it says "Client Settings". A long name stops at two lines with "…", "Settings" always shows beneath, and the full name is in its tooltip.
+
+**Verified:** "Casa Carigar Settings" and "Southern Sun Hospitality Group International Settings" both took three lines (42px) under the icon; the long one's name was cut at two. `nav-rail.spec.ts` checks the rail on a client, a project and a post, as staff and as a client's person.
+
+## 200MB uploads
+
+Every upload can now be up to 200MB a file (direct instruction): post images, videos (still compressed to 720p first, and up to 200MB after), and knowledge files. The bucket allows 200MB (phase60), and the upload hint, the size checks and their messages all say 200MB.
+
+- **Gap, outside Frank:** Supabase has its own per-file maximum for the whole project, and on staging it refuses anything over 50MB. A 60MB and a 120MB test file were both refused ("The object exceeded the maximum allowed size") even with the bucket at 200MB. Until that limit is raised in Supabase's dashboard (Storage → Settings → Upload file size limit) on staging and live, files over 50MB still fail. They now fail with a plain message ("This file is bigger than storage accepts right now…") rather than storage's own wording.
+- Avatars and logos keep their own limits; they're cropped to 5MB.
+
+**Verified:** unit tests check the 200MB limit and the plain message. The Supabase limit was measured on staging with real uploads.
+
+## Artwork removed after a post goes live, and the bell
+
+An Approved post's artwork is removed 7 days after its live date (direct instruction): every version's files and slides go, and the post, its copy and all its comments stay. Decided directly:
+- **Only Approved posts.** A post still in review whose date has slipped keeps its artwork.
+- **Warning first:** once an Approved post is live, its Content view says "Live since 4 Oct. Its artwork will be removed on 11 Oct; the copy and comments stay."
+- **Afterwards:** where the artwork was, the post says "Artwork removed" and when. The review link does the same, and the table's hover preview says "Artwork removed".
+- **Posts with no live date** (Other Content) aren't removed automatically. 7 days after the due date (or the approval, with no due date either), each Owner and Admin gets a notification. Opening it shows the post in a "Remove Artwork?" window with Keep Artwork and Remove Artwork. Keep is for good: they aren't asked again.
+- **The bell is back** (the prototype's, top right, beside Help) with the unread count, the prototype's panel and Mark All Read, opening and closing with the menus' motion.
+
+How it runs:
+- **Daily job:** a Vercel cron job (`vercel.json`, 03:00 UTC) calls `/api/cron/artwork`. The route refuses anything without `CRON_SECRET` as its bearer token, and runs `run_artwork_housekeeping` (phase60/61, service role only), which removes what's due, writes notifications, and returns the freed storage paths. The route then deletes those files.
+- **Remove Artwork:** `remove_creative_artwork_now` and `keep_creative_artwork` check the caller is an Owner or Admin. Removing frees files through `/api/creatives/remove-artwork`, as clear-artwork does.
+- **Notifications:** each person reads and marks only their own. Nobody can write them from a session.
+- **One agency at a time:** phase61 lets the daily run take an agency, so tests run it for their own test agency only and never touch anyone else's artwork.
+
+Gaps:
+- **Setup needed:** the cron needs `CRON_SECRET` set in both Vercel projects (staging and live). Until it is, the route refuses every call and nothing is removed.
+- **Feed Preview:** the planned tile simply shows no image once the artwork is removed. The client's real Instagram posts sit beside it anyway.
+- **Header fix found on the way:** at phone width the header (306px, beside the rail) couldn't fit search, bell and Help; Help was being squashed to 19px. The search now gives way (230px when there's room), and its results span the screen on a phone.
+
+**Verified** with real sessions and real files in storage (`artwork-removal.spec.ts`):
+- **Dated posts:** an Approved post live 10 days removed its file, its asset row and its version's link to it, kept its comment, and set the removal date. Posts still in review, or live only 2 days, kept theirs.
+- **On the page:** the live-2-days post showed the warning with the right date. The removed one said "Artwork removed… 7 days after the post went live" with its comment still showing. The review link's data carried the removal date.
+- **Undated posts:** two posts 9–10 days past due notified the Admin only (not the client's person). One 2 days past due didn't. The bell showed 2 and the panel showed 2 unread.
+- **Keep:** set the post as kept, kept its file, and a second daily run didn't notify again.
+- **Remove:** deleted the file, kept the comment, and the bell went to "You're all caught up."
+- **Refusals:** a Client and a team User can't remove or keep. Nobody can write a notification or run the daily job from a session. The cron route refuses no secret and a wrong one. With the real secret, locally, it ran cleanly with nothing due anywhere on staging (checked first).
+- **Measured:**
+  - The panel fades in over about 220ms and closes on an outside click.
+  - The bell and Help are 32px, and the decision window's picture is 72×90.
+  - The warning matches the content column (420px).
+  - At 390px everything in the header fits, and search results span the screen 16px in.
+
+## Named for the client, New Post on the Review page, and its rules
+
+Direct instructions, together:
+- **Header:** on a client's Settings, the last part of the header reads "NuHabit Settings", as the rail's button does.
+- **Rail Projects:** inside a project or a post, the button reads "NuHabit Projects" (decided directly: the client's name, since it opens that client's projects), laid out like its Settings. The name takes at most two lines, then "Projects".
+- **New Post arrow:** the arrow on the Content table's New Post button is centred in the button's height. It sat 2.8px high; it's now level (95.3 / 95.3).
+- **New Post on the Review page:** a New Post button sits to the left of Edit, opening the New Post window for the same project, with no Row option. Below 1560px wide, where this toolbar changes layout, it shows just "+" (its name in its tooltip). At full width it tipped the toolbar onto a second row at 1440px.
+- **Centre header:** the Review page's centre buttons sit midway between the header bar and the rule beneath them, 17.6px each way (they had 20px above and 4px below). Comments' header is laid out the same way, so the two rules are level (both at y121.8, at 1728px and 1440px wide) and the "Comments" title lines up with the buttons (both centred at y86.9).
+- **Darker rules:** the Review page's vertical rules and its two header rules are a shade darker (`--line-2`, #D5DAE0, from #E3E6EA). The rules inside the phone mock-up are unchanged.
+
+**Verified** by measuring the real pages at 1728, 1440 and 1280px wide. `nav-rail.spec.ts` checks both named rail buttons. Screenshot baselines changed only where expected (checked area by area before updating):
+- **Review page:** the centre panel's new header spacing, and the rail.
+- **Upload modal:** the darker rule, and the rail.
+- **Content table:** 48 pixels at the New Post arrow, and the rail.

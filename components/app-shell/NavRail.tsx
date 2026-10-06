@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useIsStaff } from "@/hooks/use-is-staff";
 import { useProject } from "@/hooks/use-project";
 import { useCreative } from "@/hooks/use-creative";
+import { useClientDetail } from "@/hooks/use-client";
 import { useMyAgency } from "@/hooks/use-my-agency";
 import { useAgencySettings } from "@/hooks/use-agency-settings";
 import { useAvatarUrls } from "@/hooks/use-avatar-urls";
@@ -19,19 +20,22 @@ function RailLink({
   current,
   icon: Icon,
   id,
+  labelNode,
 }: {
   href: string;
   label: string;
   current: boolean;
   icon: () => React.JSX.Element;
   id?: string;
+  // What shows under the icon, when it isn't just the label.
+  labelNode?: React.ReactNode;
 }) {
   return (
     <Link href={href} className="rbtn" aria-current={current} title={label} id={id}>
       <span className="ric">
         <Icon />
       </span>
-      <span className="rlab">{label}</span>
+      <span className="rlab">{labelNode ?? label}</span>
     </Link>
   );
 }
@@ -68,6 +72,8 @@ export function NavRail({
   const { data: creative } = useCreative(routeCreativeId ?? "");
 
   const clientId = routeClientId ?? project?.client_id ?? creative?.projects?.client_id;
+  // Named for the client (direct instruction): "Casa Carigar Settings".
+  const { data: client } = useClientDetail(clientId ?? "");
   const projectId = routeProjectId ?? creative?.project_id;
   const insideProject = !!routeProjectId || !!routeCreativeId;
 
@@ -101,7 +107,20 @@ export function NavRail({
       />
       <RailLink href="/dashboard" label="Clients" icon={ClientsIcon} current={pathname.startsWith("/dashboard")} />
       {insideProject && clientId && (
-        <RailLink href={`/clients/${clientId}`} label="Projects" icon={ProjectsIcon} current={false} />
+        <RailLink
+          href={`/clients/${clientId}`}
+          label={client?.name ? `${client.name} Projects` : "Projects"}
+          labelNode={
+            client?.name ? (
+              <>
+                {/* Named for the client, as its Settings is (direct instruction). */}
+                <span className="rlab-name">{client.name}</span> Projects
+              </>
+            ) : undefined
+          }
+          icon={ProjectsIcon}
+          current={false}
+        />
       )}
       {routeCreativeId && projectId && (
         <RailLink
@@ -114,7 +133,15 @@ export function NavRail({
       {clientId && (
         <RailLink
           href={`/clients/${clientId}/settings`}
-          label="Client Settings"
+          label={client?.name ? `${client.name} Settings` : "Client Settings"}
+          labelNode={
+            client?.name ? (
+              <>
+                {/* A long name stops at two lines; Settings always shows. */}
+                <span className="rlab-name">{client.name}</span> Settings
+              </>
+            ) : undefined
+          }
           icon={SettingsIcon}
           current={pathname.startsWith(`/clients/${clientId}/settings`)}
           id="navClientSet"

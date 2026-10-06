@@ -105,7 +105,10 @@ export function CreativePreviewPopover({
         ) : art || versionsPending ? (
           <div className="pp-loading" style={{ aspectRatio: aspectRatioCss(creative.format) }} />
         ) : (
-          <NoArtwork format={creative.format} />
+          <NoArtwork
+            format={creative.format}
+            title={creative.artwork_removed_at ? "Artwork removed" : undefined}
+          />
         )}
       </div>
       <div className="pp-acts">

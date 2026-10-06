@@ -6,6 +6,7 @@ import type { ReviewController } from "@/hooks/use-review-controller";
 import { VideoPlayer, type TimelineMarker } from "@/components/creative-review/VideoPlayer";
 import { commentTime } from "@/lib/annotations";
 import { NoArtwork } from "@/components/creative-review/NoArtwork";
+import { dayMonth } from "@/lib/artwork-removal";
 import { CarouselNav } from "@/components/creative-review/CarouselNav";
 import { slideFrames } from "@/lib/slide-frames";
 
@@ -65,7 +66,15 @@ export function ReviewMedia({
   }, [joined]);
 
   if (!frames.length) {
-    return <NoArtwork format={active.format} note="The agency hasn't uploaded the artwork for this post yet." />;
+    return active.artwork_removed_at ? (
+      <NoArtwork
+        format={active.format}
+        title="Artwork removed"
+        note={`Removed on ${dayMonth(active.artwork_removed_at)}, after the post went live. Its copy and comments are kept.`}
+      />
+    ) : (
+      <NoArtwork format={active.format} note="The agency hasn't uploaded the artwork for this post yet." />
+    );
   }
   return (
     <>

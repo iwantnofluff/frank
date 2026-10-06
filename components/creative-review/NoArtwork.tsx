@@ -5,7 +5,18 @@ import { aspectRatioCss } from "@/lib/formats";
 // has copy but no artwork yet, so it still reads, and can be commented on,
 // as a post. The same message as the page's own empty state (.awaiting),
 // sized to the main format's shape where it has one.
-export function NoArtwork({ format, note, children }: { format: string; note?: string; children?: ReactNode }) {
+export function NoArtwork({
+  format,
+  title = "No artwork yet",
+  note,
+  children,
+}: {
+  format: string;
+  // "Artwork removed", once it has gone after the post went live (phase60).
+  title?: string;
+  note?: string;
+  children?: ReactNode;
+}) {
   return (
     <div className="awaiting ig-noart" style={{ aspectRatio: aspectRatioCss(format) }}>
       <svg viewBox="0 0 24 24">
@@ -13,7 +24,7 @@ export function NoArtwork({ format, note, children }: { format: string; note?: s
         <path d="M3 15l5-5 4 4 3-3 6 6" />
         <circle cx="9" cy="9" r="1.4" />
       </svg>
-      <b>No artwork yet</b>
+      <b>{title}</b>
       {note && <span>{note}</span>}
       {children}
     </div>

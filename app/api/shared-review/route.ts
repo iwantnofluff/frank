@@ -87,14 +87,17 @@ export async function POST(request: Request) {
   // just returned for this validated token, nothing wider.
   const formatsById = new Map<string, string[]>();
   const slideCountById = new Map<string, number | null>();
+  // When artwork was removed after going live (phase60), so the page says so.
+  const removedById = new Map<string, string | null>();
   if (serviceRole && creatives.length) {
     const { data: rows } = await serviceRole
       .from("creatives")
-      .select("id, formats, slide_count")
+      .select("id, formats, slide_count, artwork_removed_at")
       .in("id", creatives.map((c) => c.id));
     for (const r of rows ?? []) {
       formatsById.set(r.id, r.formats);
       slideCountById.set(r.id, r.slide_count);
+      removedById.set(r.id, r.artwork_removed_at);
     }
   }
 
@@ -157,6 +160,7 @@ export async function POST(request: Request) {
         formats: formatsById.get(raw.id) ?? [raw.format],
         slides: slidesById.get(raw.id) ?? [],
         slide_count: slideCountById.get(raw.id) ?? null,
+        artwork_removed_at: removedById.get(raw.id) ?? null,
         comments: raw.comments.map((m) => ({ ...m, anchor: anchorById.get(m.id) ?? null })),
       };
       // Both branches build a fresh asset object that never includes

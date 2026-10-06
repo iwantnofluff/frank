@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useClientDetail } from "@/hooks/use-client";
 import { useProject } from "@/hooks/use-project";
 import { useCreative } from "@/hooks/use-creative";
-import { HelpIcon } from "./icons";
+import { useNotifications, type NotificationRow } from "@/hooks/use-notifications";
+import { BellIcon, HelpIcon } from "./icons";
 import { GlobalSearch } from "./GlobalSearch";
 import { HelpPanel } from "./HelpPanel";
+import { NotificationsPanel } from "./NotificationsPanel";
+import { ArtworkDecisionModal } from "./ArtworkDecisionModal";
 
 const STATIC_CRUMBS: Record<string, string> = {
   "/dashboard": "All Clients",
@@ -138,7 +141,8 @@ function ClientSettingsCrumb({ clientId }: { clientId: string }) {
         {client?.name ?? "—"}
       </button>
       <span className="sep">/</span>
-      <b>Client Settings</b>
+      {/* Named for the client, as the rail's button is (direct instruction). */}
+      <b>{client?.name ? `${client.name} Settings` : "Client Settings"}</b>
     </>
   );
 }
@@ -167,12 +171,17 @@ function Crumb({ pathname }: { pathname: string }) {
   return <StaticCrumb pathname={pathname} />;
 }
 
-// The header (direct instruction): where you are, search, and Help. The
-// "Preview as" switch is gone (each person sees their own view), and Help
-// takes the bell's place until there are notifications to show.
+// The header (direct instruction): where you are, search, the bell and
+// Help. The "Preview as" switch is gone (each person sees their own view).
+// The bell is back for notifications (phase60), its count the unread ones.
 export function Topbar() {
   const pathname = usePathname();
   const [helpOpen, setHelpOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [deciding, setDeciding] = useState<NonNullable<NotificationRow["creative"]> | null>(null);
+  const bell = useRef<HTMLButtonElement>(null);
+  const { data: notifications } = useNotifications();
+  const unread = (notifications ?? []).filter((n) => !n.read_at).length;
 
   return (
     <header className="topbar">
@@ -182,12 +191,41 @@ export function Topbar() {
       <div className="grow" />
       <GlobalSearch />
       <button
+        ref={bell}
+        className="bell"
+        type="button"
+        title="Notifications"
+        aria-label={unread ? `Notifications, ${unread} unread` : "Notifications"}
+        aria-expanded={notifOpen}
+        onClick={() => {
+          setNotifOpen((o) => !o);
+          setHelpOpen(false);
+        }}
+      >
+        <BellIcon />
+        {unread > 0 && <span className="cnt">{unread > 99 ? "99+" : unread}</span>}
+      </button>
+      <NotificationsPanel
+        open={notifOpen}
+        items={notifications ?? []}
+        anchor={bell}
+        onClose={() => setNotifOpen(false)}
+        onOpenItem={(n) => {
+          setNotifOpen(false);
+          if (n.creative) setDeciding(n.creative);
+        }}
+      />
+      {deciding && <ArtworkDecisionModal post={deciding} onClose={() => setDeciding(null)} />}
+      <button
         className="bell helpbtn"
         type="button"
         title="Help"
         aria-label="Help"
         aria-expanded={helpOpen}
-        onClick={() => setHelpOpen((o) => !o)}
+        onClick={() => {
+          setHelpOpen((o) => !o);
+          setNotifOpen(false);
+        }}
       >
         <HelpIcon />
       </button>

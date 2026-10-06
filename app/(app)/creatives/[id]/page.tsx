@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCreative } from "@/hooks/use-creative";
 import { useAdvanceCreativeStage } from "@/hooks/use-advance-creative-stage";
 import { useCreativeVersions, versionSlides } from "@/hooks/use-creative-versions";
+import { artworkRemovalDate, dayMonth } from "@/lib/artwork-removal";
 import { useCopyVersions } from "@/hooks/use-copy-versions";
 import { useAssetSignedUrl, usePreloadAssets } from "@/hooks/use-asset-signed-url";
 import { useComments } from "@/hooks/use-comments";
@@ -77,6 +78,9 @@ export default function CreativeReviewPage({
   );
   const [copyVersionId, setCopyVersionId] = useState<string | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
+  // A new post in the same project, from here (direct instruction): the
+  // window only, not the table's Row option.
+  const [newPostOpen, setNewPostOpen] = useState(false);
   // null = closed. CreativeModal replaced the separate Upload or Edit /
   // Draft from Brief entry points with one window — this just remembers
   // which tab it should open on for whichever button was clicked.
@@ -120,6 +124,12 @@ export default function CreativeReviewPage({
   // between them, one place per slide even if one is still empty; a new
   // version starts again at the first.
   const slides = versionSlides(activeCreativeVersion);
+  // Approved and live: its artwork goes 7 days on (phase60), said here
+  // while there's still artwork to lose.
+  const removalDate = creative ? artworkRemovalDate(creative) : null;
+  const hasArtwork = (creativeVersions ?? []).some((v) => versionSlides(v).length > 0);
+  const removalWarning =
+    removalDate && hasArtwork && new Date(creative!.scheduled_at!) < new Date() ? removalDate : null;
   const frames = slideFrames(slides, creative?.slide_count);
   const [slideIndex, setSlideIndex] = useState(0);
   // Which way the last arrow went, so the next slide slides in from that side.
@@ -348,6 +358,17 @@ export default function CreativeReviewPage({
             {isStaff && (
               <>
                 <span className="toolsep" />
+                {creative.projects && (
+                  <button
+                    type="button"
+                    className="btn primary newpost"
+                    title="New Post"
+                    aria-label="New Post"
+                    onClick={() => setNewPostOpen(true)}
+                  >
+                    +<span className="newpost-l"> New Post</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   className="btn primary"
@@ -373,6 +394,12 @@ export default function CreativeReviewPage({
                 the same phone as the Feed Preview, laid out like a live
                 post opened there (direct instruction); the title and
                 format are in the header already. */}
+            {activeSection === "content" && removalWarning && (
+              <p className="note artwork-warn" role="status">
+                Live since {dayMonth(creative.scheduled_at!)}. Its artwork will be removed on {dayMonth(removalWarning)};
+                the copy and comments stay.
+              </p>
+            )}
             {activeSection === "content" && (
               <PhoneFrame>
               <div className="lpv-bar">
@@ -410,10 +437,15 @@ export default function CreativeReviewPage({
                   {!currentSlide ? (
                     <NoArtwork
                       format={creative.format}
+                      title={creative.artwork_removed_at ? "Artwork removed" : undefined}
                       note={
                         membershipLoading
                           ? undefined
-                          : frames.length > 1
+                          : creative.artwork_removed_at
+                            ? creative.scheduled_at
+                              ? `Removed on ${dayMonth(creative.artwork_removed_at)}, 7 days after the post went live. Its copy and comments are kept.`
+                              : `Removed on ${dayMonth(creative.artwork_removed_at)}. Its copy and comments are kept.`
+                            : frames.length > 1
                             ? `Slide ${slidePosition} has no artwork yet.`
                             : isStaff
                               ? activeCopyVersion
@@ -422,7 +454,7 @@ export default function CreativeReviewPage({
                               : "The agency hasn't uploaded the artwork for this post yet."
                       }
                     >
-                      {isStaff && (
+                      {isStaff && !creative.artwork_removed_at && (
                         <button
                           type="button"
                           className="btn primary sm"
@@ -621,6 +653,15 @@ export default function CreativeReviewPage({
           onClose={() => setCreativeModalTab(null)}
           onCreativeVersionCreated={setCreativeVersionId}
           onCopyVersionCreated={setCopyVersionId}
+        />
+      )}
+      {newPostOpen && creative.projects && (
+        <CreativeModal
+          mode="create"
+          projectId={creative.projects.id}
+          clientId={creative.projects.client_id}
+          delivery={creative.projects.delivery}
+          onClose={() => setNewPostOpen(false)}
         />
       )}
     </div>
