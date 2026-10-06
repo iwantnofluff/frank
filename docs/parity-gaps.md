@@ -2608,3 +2608,21 @@ Direct instruction, for the Content Planner and Other Content tables (and their 
 - **A fixed-height phone, scrolling under its stage strip** (direct instruction): the preview is always 560px tall, enough for the artwork and a few lines of copy. The stage strip stays fixed at the top, and everything below its divider (account line, artwork, actions, publishing note, caption) scrolls inside the phone; the preview stays open while the pointer is on it. **Verified** with a long caption: the phone measured 560px with 611px of content to scroll, and after scrolling 400px the stage strip hadn't moved and the preview was still open.
 - **Copy in view on a Reel** (direct instruction: a Reel showed no copy, which should show at least three lines): a 9:16 Reel took about 530px of the phone on its own. The phone is now 660px tall, and the preview's artwork is at most 4:5 tall (375px), cropped to fill, as Instagram's feed shows a Reel. **Verified** with a long caption, counting the caption's lines in view without scrolling: Reel 6, Instagram Feed 6, Story 6, LinkedIn image 19.
 - **Test fix found on the way:** "hover preview holds open" failed about half the time. Logging pointer events showed why: the pointer landed on the post name, then 100–200ms later the staff-only select column arrived and shifted every column, sliding the name out from under the still pointer, so the preview opened and closed. The app is right; the test hovered before the layout settled. It now waits for that column first, and passed 6 of 6 repeats.
+
+## A reference's preview card on hover
+
+Hovering a reference link in the Content and Other Content tables shows a card for that page, as Slack or LinkedIn would (direct instruction, option 2 of the ones offered): the site, its preview image, title, description and the full address. Clicking the card opens the page in a new tab. The prototype has no such card, so this is an addition.
+
+- **How it's read:** Frank's server fetches the page and reads its Open Graph tags, then Twitter's card tags, then the plain title and description (`app/api/link-preview/route.ts`, parsing in `lib/link-preview.ts`).
+- **Safeguards:** only signed-in people can ask. Only public http(s) addresses on the usual ports are fetched: every hop's host is looked up and refused if it points at a private, loopback or cloud-metadata address, and redirects are followed by hand (at most 4) so each one is checked. Reads stop at 1MB and 6 seconds, and only HTML is read.
+- **Caching:** a preview is kept for a day per server instance, a failure for an hour, and the browser keeps it for the session, so hovering again doesn't fetch again.
+- **Fallback:** when a site gives nothing (Instagram and Facebook sometimes refuse servers), the card says "No preview from this site" and shows the full address.
+- **Timing:** the card opens after 300ms of hovering and stays open while the pointer moves onto it.
+- **Gap:** the image is loaded from the site itself (with no referrer), not copied to Frank; a site that blocks hotlinking shows the card without its image.
+
+**Verified** in a throwaway spec against real sites:
+- **Real previews:** Wikipedia, GitHub, an Instagram reel and YouTube each came back with a title and an image. YouTube came back empty at first: its tags sit about 700KB into the page, past the first 200KB that was read, so the whole read (up to 1MB) is now scanned.
+- **Refusals:** signed out was refused, and 127.0.0.1, 169.254.169.254 and localhost all came back with no preview.
+- **In the table:** the card showed "en.wikipedia.org / Content marketing - Wikipedia" with the full address, and stayed open with the pointer on it.
+
+A permanent spec (`link-preview.spec.ts`) covers the refusals and the card's fallback without reaching the internet, and unit tests cover the address checks and the tag parsing. Both pass.

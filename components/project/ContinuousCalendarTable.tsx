@@ -1065,7 +1065,7 @@ export function ContinuousCalendarTable({
                                   {c.concept || c.reference_urls?.length ? (
                                     <span className="copyc">
                                       {c.concept && <ClampText expanded={expandedRow === c.id} onToggle={() => toggleRow(c.id)}>{c.concept}</ClampText>}
-                                      <ReferenceLinks urls={c.reference_urls ?? []} />
+                                      <ReferenceLinks urls={c.reference_urls ?? []} preview />
                                     </span>
                                   ) : (
                                     <span className="tdim">—</span>

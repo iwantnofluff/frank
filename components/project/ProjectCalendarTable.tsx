@@ -1076,7 +1076,7 @@ export function ProjectCalendarTable({
                                           {c.concept}
                                         </ClampText>
                                       )}
-                                      <ReferenceLinks urls={c.reference_urls ?? []} />
+                                      <ReferenceLinks urls={c.reference_urls ?? []} preview />
                                     </span>
                                   ) : (
                                     <span className="tdim">—</span>
