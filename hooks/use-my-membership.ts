@@ -13,7 +13,9 @@ export interface MyMembership {
 }
 
 // client_id null = agency staff. client_id set = a client-side reviewer
-// scoped to that one client (frank-schema.docx — memberships).
+// (frank-schema.docx — memberships). A Client can be on several clients,
+// one membership each (phase59), so this is any one of them: what's read
+// from it (Client or not, and their role) is the same for all.
 export function useMyMembership(agencyId: string | undefined) {
   const { data: user } = useCurrentUser();
 
@@ -28,10 +30,12 @@ export function useMyMembership(agencyId: string | undefined) {
         .eq("user_id", user!.id)
         .is("removed_at", null)
         .not("accepted_at", "is", null)
-        .maybeSingle();
+        // A staff membership first, if there's one alongside.
+        .order("client_id", { ascending: true, nullsFirst: true })
+        .limit(1);
 
       if (error) throw error;
-      return data;
+      return data[0] ?? null;
     },
     enabled: !!agencyId && !!user?.id,
   });
