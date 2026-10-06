@@ -2587,3 +2587,7 @@ Direct instruction, for the Content Planner and Other Content tables:
 - **Short text:** no Read more.
 
 `project-calendar` and `continuous-calendar` specs pass (their version-history hovers now point at "+1 earlier").
+
+## Wider WIIFM Direction and Copy columns
+
+Direct instruction, by default in both tables: WIIFM Direction is double its width (236px to 472px) and Copy half as wide again (220px to 330px). A saved view where someone has dragged one of these columns keeps that width. **Verified**: measured 330px and 472px in both the Content Planner and Other Content tables. Both tables' specs pass.

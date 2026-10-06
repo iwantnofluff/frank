@@ -83,8 +83,8 @@ const TOGGLABLE_COLUMNS = [
   // copy_versions row; older ones show on hover instead of their own
   // columns (CopyVersionHistoryPopover), per explicit direction.
   { key: "imageOnText", label: "Text on Image", sub: "Check WIIFM Approach", width: 220 },
-  { key: "postCopy", label: "Copy", sub: "Check WIIFM Approach", width: 220 },
-  { key: "approach", label: "WIIFM Direction", sub: "Explain the WIIFM Approach", width: 236 },
+  { key: "postCopy", label: "Copy", sub: "Check WIIFM Approach", width: 330 },
+  { key: "approach", label: "WIIFM Direction", sub: "Explain the WIIFM Approach", width: 472 },
   { key: "clientFeedback", label: "Client Feedback", sub: "", width: 220 },
 ] as const;
 

@@ -91,9 +91,9 @@ const TOGGLABLE_COLUMNS = [
   { key: "conceptRef", label: "Concept and Reference", sub: "Visual brief", width: 260 },
   { key: "finalCreative", label: "Final Creative", sub: "Approved asset", width: 200 },
   { key: "imageOnText", label: "Text on Image", sub: "On the artwork", width: 220 },
-  { key: "copy", label: "Copy", sub: "Latest version", width: 220 },
+  { key: "copy", label: "Copy", sub: "Latest version", width: 330 },
   { key: "notes", label: "Notes for Designer", sub: "Design feedback", width: 220 },
-  { key: "approach", label: "WIIFM Direction", sub: "What the reader gets", width: 236 },
+  { key: "approach", label: "WIIFM Direction", sub: "What the reader gets", width: 472 },
   { key: "principles", label: "Principles", sub: "Psychological angle", width: 180 },
 ] as const;
 
