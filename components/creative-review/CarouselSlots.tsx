@@ -160,7 +160,7 @@ export function CarouselSlots({
       />
       <p className="sub" style={{ marginBottom: 8 }}>
         {single
-          ? "Drop an image or video on the slot, or click it to browse. JPG, PNG, WebP, GIF up to 25MB; MP4 and MOV are compressed to 720p."
+          ? "Drop an image or video on the slot, or click it to browse. JPG, PNG, WebP, GIF up to 200MB; MP4 and MOV are compressed to 720p."
           : "Drop several images to fill the slides in order, or add them one at a time. Drag a slide onto another to swap them."}
       </p>
       <div

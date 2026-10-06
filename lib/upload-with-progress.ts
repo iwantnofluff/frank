@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { friendlyUploadError } from "@/lib/upload-limits";
 
 // Uploads a file to the assets bucket and reports how much has gone up.
 // supabase-js's storage upload has no progress, so this makes the same
@@ -40,7 +41,7 @@ export async function uploadWithProgress(
       } catch {
         // Not JSON — keep the status.
       }
-      reject(new Error(message));
+      reject(new Error(friendlyUploadError(message)));
     };
     xhr.onerror = () => reject(new Error("The upload was interrupted. Check your connection and try again."));
     xhr.send(file);

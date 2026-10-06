@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { validateKnowledgeFile } from "@/lib/knowledge-file-validation";
 import { assertCanUpload } from "@/lib/upload-guard";
+import { friendlyUploadError } from "@/lib/upload-limits";
 
 // Shared by both agency- and client-level knowledge file uploads (the two
 // new mutations in use-agency-knowledge-mutations.ts and
@@ -26,7 +27,7 @@ export async function uploadKnowledgeAsset(agencyId: string, file: File): Promis
   const { error: uploadError } = await supabase.storage
     .from("assets")
     .upload(path, file, { contentType: file.type });
-  if (uploadError) throw uploadError;
+  if (uploadError) throw new Error(friendlyUploadError(uploadError.message));
 
   const { data: asset, error: assetError } = await supabase
     .from("assets")

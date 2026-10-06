@@ -1,3 +1,5 @@
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@/lib/upload-limits";
+
 // Knowledge files are reference documents (Ca$hvertising, brand research,
 // a moodboard image), not creative artwork — a different accepted-type
 // list from lib/upload-validation.ts (which is image/video only, scoped
@@ -12,7 +14,7 @@ const ACCEPTED_DOC_TYPES = [
   "text/csv",
 ];
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
-const MAX_BYTES = 25 * 1024 * 1024;
+const MAX_BYTES = MAX_UPLOAD_BYTES;
 
 export function validateKnowledgeFile(
   file: File,
@@ -28,7 +30,7 @@ export function validateKnowledgeFile(
   }
 
   if (file.size > MAX_BYTES) {
-    return { ok: false, message: "Files must be 25MB or smaller." };
+    return { ok: false, message: `Files must be ${MAX_UPLOAD_MB}MB or smaller.` };
   }
 
   return { ok: true };

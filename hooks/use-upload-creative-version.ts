@@ -6,6 +6,7 @@ import { validateUploadFile, MAX_STORED_VIDEO_BYTES } from "@/lib/upload-validat
 import { compressVideo } from "@/lib/compress-video";
 import { uploadWithProgress } from "@/lib/upload-with-progress";
 import { assertCanUpload } from "@/lib/upload-guard";
+import { MAX_UPLOAD_MB } from "@/lib/upload-limits";
 
 // Where a save has got to, for the progress bar: which file of how many,
 // and whether it's being compressed (videos) or uploaded.
@@ -21,15 +22,15 @@ type OnProgress = (p: UploadProgress | null) => void;
 
 // A video is compressed to a 720p review copy before it's stored (decided
 // directly — only that copy is kept). Where the browser can't compress,
-// the original goes up as long as it fits the 50MB storage limit.
+// the original goes up as long as it fits the 200MB limit.
 async function prepareForUpload(file: File, onProgress?: (fraction: number) => void): Promise<File> {
   if (!file.type.startsWith("video/")) return file;
   const result = await compressVideo(file, onProgress);
   if (result.file.size > MAX_STORED_VIDEO_BYTES) {
     throw new Error(
       result.kind === "unchanged" && result.reason === "unsupported"
-        ? "This browser can't compress video, and the file is over 50MB. Try Chrome or Edge, or export a lighter file."
-        : "This video is still over 50MB after compressing. Try a shorter or lighter export.",
+        ? `This browser can't compress video, and the file is over ${MAX_UPLOAD_MB}MB. Try Chrome or Edge, or export a lighter file.`
+        : `This video is still over ${MAX_UPLOAD_MB}MB after compressing. Try a shorter or lighter export.`,
     );
   }
   return result.file;
