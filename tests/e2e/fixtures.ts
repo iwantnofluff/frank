@@ -9,6 +9,9 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 export const APP_URL = "http://localhost:3000";
+// A phone's screen: a review link opened at this size gets the phone
+// layout, as on a real phone (anything 900px or wider gets the desktop one).
+export const PHONE_VIEWPORT = { width: 390, height: 844 };
 
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },

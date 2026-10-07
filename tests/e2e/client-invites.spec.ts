@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { test, expect, APP_URL, type Frank } from "./fixtures";
+import { test, expect, APP_URL, type Frank, PHONE_VIEWPORT } from "./fixtures";
 
 // Inviting people as a client is created (phase44): Owner, Admin, User or
 // Client, names and all; the links to share; a Client seeing only public
@@ -160,10 +160,18 @@ test("an Owner lets an Admin invite: Admins, Users and Clients, never an Owner â
     auth: { persistSession: false },
   });
   await c.auth.signInWithPassword({ email: second.email, password: second.password });
+  // Someone with no other membership here, so it's the Owner rule that
+  // refuses it (phase63's team-or-client rule would refuse a Client first).
+  const outsiderEmail = `e2e-outsider-${Date.now()}@example.invalid`;
+  const { data: outsider } = await admin.auth.admin.createUser({ email: outsiderEmail, email_confirm: true });
+  await admin.from("users").insert({ id: outsider.user!.id, email: outsiderEmail, name: "Outsider" });
   const direct = await c
     .from("memberships")
-    .insert({ agency_id: frank.agencyId, user_id: await userIdOf(frank.clientEmail), role: "owner", invited_by: second.userId });
+    .insert({ agency_id: frank.agencyId, user_id: outsider.user!.id, role: "owner", invited_by: second.userId });
   expect(direct.error?.code).toBe("42501");
+  // Not in the agency, so the fixture's sweep wouldn't find them.
+  await admin.from("users").delete().eq("id", outsider.user!.id);
+  await admin.auth.admin.deleteUser(outsider.user!.id);
   const self = await c.from("memberships").update({ can_invite: true }).eq("id", second.membershipId).select("id");
   expect(self.data ?? []).toHaveLength(0);
 
@@ -189,7 +197,7 @@ test("people invited as Client are who a review link offers, and drop off when r
   expect(res.status()).toBe(201);
 
   const token = await frank.createSharedLink();
-  const ctx = await browser.newContext();
+  const ctx = await browser.newContext({ viewport: PHONE_VIEWPORT });
   try {
     const guest = await ctx.newPage();
     await guest.goto(`${APP_URL}/review/${token}`);

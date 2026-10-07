@@ -105,6 +105,27 @@ export async function POST(request: Request) {
     if (deactivated?.length) {
       return fail(`${email} was deactivated — reactivate them from the Team list instead`, 409);
     }
+    // On the team or at a client, never both (decided directly, phase63):
+    // said here plainly, before the database refuses it.
+    let otherKind = admin
+      .from("memberships")
+      .select("role, client:clients(name)")
+      .eq("agency_id", agencyId)
+      .eq("user_id", userId)
+      .is("removed_at", null);
+    otherKind = isClient ? otherKind.is("client_id", null) : otherKind.not("client_id", "is", null);
+    const { data: other } = await otherKind.limit(1);
+    if (other?.length) {
+      const otherClient = (other[0].client as unknown as { name: string } | null)?.name;
+      return fail(
+        isClient
+          ? other[0].role === "user"
+            ? `${email} is on your team. Give them this client from its People instead.`
+            : `${email} is on your team and already sees every client.`
+          : `${email} is a Client of ${otherClient ?? "one of your clients"}. To move them to your team, change their type in Team settings.`,
+        409,
+      );
+    }
     let existingQuery = admin
       .from("memberships")
       .select("id, role, accepted_at")
