@@ -7858,3 +7858,76 @@ button.feedgrid-live {
   overflow: hidden;
   visibility: hidden;
 }
+
+/* A person's projects on a client's People: each a link to its table,
+   divided by a thin vertical rule (direct instruction). Scoped to beat the
+   row's own one-line, cut-off text rule. */
+.profperson .pp-t .pp-projs .pp-projlist {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: 2px;
+  white-space: normal;
+  overflow: visible;
+  color: var(--ink);
+  font-size: inherit;
+}
+.pp-projlist a {
+  color: var(--ink);
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-std);
+}
+.pp-projlist a:hover {
+  color: var(--action);
+  text-decoration: underline;
+}
+.profperson .pp-t .pp-projs .pp-sep {
+  display: inline-block;
+  width: 1px;
+  height: 12px;
+  margin: 0 9px;
+  background: var(--line-2);
+}
+
+/* The share link's "copied" line, on its own under the link. */
+.field > .bsaved,
+.field > .berr {
+  display: block;
+  margin-top: 6px;
+}
+/* Copied: greyed out, not a faded blue (direct instruction). */
+.linkrow .btn.copied,
+.linkrow .btn.copied:disabled {
+  background: var(--canvas);
+  border-color: var(--line-2);
+  color: var(--muted);
+  opacity: 1;
+  cursor: default;
+  transition: none;
+}
+
+/* The review link on a computer: the post in the Review page's phone,
+   fitted to the window (direct instruction), and a note while there's
+   more of it below. */
+.dk-card .phoneframe {
+  margin-left: auto;
+  margin-right: auto;
+}
+.dk-scrollhint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 12.7px;
+  color: var(--muted);
+}
+.dk-scrollhint svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}

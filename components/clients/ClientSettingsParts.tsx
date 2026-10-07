@@ -1,7 +1,8 @@
 "use client";
 
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
-import { useState } from "react";
+import { Fragment, useState } from "react";
+import Link from "next/link";
 import { usePersonActions } from "@/components/team/PersonActions";
 import { PersonTypeMenu } from "@/components/clients/PersonTypeMenu";
 import { PersonProjectsModal } from "@/components/clients/PersonProjectsModal";
@@ -52,10 +53,21 @@ export function ClientPeople({
   }
 
   // Their projects, in words (direct instruction: shown, not hidden behind
-  // a dropdown), and always by name, even when they're on every one.
+  // a dropdown), always by name, even when they're on every one. Each opens
+  // its table; a thin rule between them, not commas.
   function projectsText(p: ClientPerson) {
     const on = groups[0].projects.filter((g) => p.projectIds.includes(g.id));
-    return on.length ? on.map((g) => g.name).join(", ") : "No projects";
+    if (!on.length) return "No projects";
+    return (
+      <span className="pp-projlist">
+        {on.map((g, i) => (
+          <Fragment key={g.id}>
+            {i > 0 && <span className="pp-sep" aria-hidden="true" />}
+            <Link href={`/projects/${g.id}`}>{g.name}</Link>
+          </Fragment>
+        ))}
+      </span>
+    );
   }
 
   return (

@@ -2782,7 +2782,7 @@ Direct instructions, together:
 ## A client's People: projects in words, type as a dropdown; a steady stage row
 
 Direct instructions:
-- **Projects:** each person on a client's People shows their projects in words under their name and email ("Amazon A+, Event Hoardings", or "No projects"), always by name, even when they're on every project (direct instruction: never "All projects"), with Edit Projects beneath. It opens a window with the checklist and its own Save, greyed until something changes. Once saved it shows "Saved", Save greys out again, and Cancel becomes Done. This replaces the "2 of 3 projects" dropdown.
+- **Projects:** each person on a client's People shows their projects in words under their name and email ("Amazon A+, Event Hoardings", or "No projects"), always by name, even when they're on every project (direct instruction: never "All projects"). Each name links to that project's table, divided from the next by a thin vertical rule rather than a comma, and turns blue and underlined on hover (direct instruction), with Edit Projects beneath. It opens a window with the checklist and its own Save, greyed until something changes. Once saved it shows "Saved", Save greys out again, and Cancel becomes Done. This replaces the "2 of 3 projects" dropdown.
 - **Type:** someone's type is a dropdown on the tag itself, a rounded rectangle reading User or Client with an arrow. Picking the other one switches them straight away, with "Saved" by them. A pending invite's Resend Invite and Remove Invite sit in the same dropdown under a divider. The row's ⋮ menu is gone. The project profile's People list keeps its ⋮ menu; it wasn't part of this.
 - **Saving** (decided directly: inside each change, not one Save for the panel).
 - **Stage row:** choosing Internal Review, Client Review or Approved no longer nudges the row. The chosen option is bold, which made it wider; every option now reserves its bold width.
@@ -2801,3 +2801,27 @@ Clearing a test agency removed its database rows but not its files, so every tes
 - **Storage:** after a run that uploads files, staging held none for deleted agencies.
 - **Screenshots:** the Review page's two changed only in the toolbar strip, which is a little wider. The affected spec files pass, 27 of 27, run one at a time.
 - **Staging's database:** during this work it failed about 1 query in 15 with "current transaction is aborted", even simple reads, which made a parallel run fail 20 tests. They passed run again. Live answered 15 of 15. A restart of the staging project in Supabase's dashboard should clear it.
+
+- **Gap, Settings at phone width:** at 390px wide, the rail (84px) and the settings menu (171px) leave only 78px for the page itself, so every Settings page, Client Settings included, squeezes its content into a narrow column. The pages work on a computer; making Settings fit a phone (the menu folding away, say) hasn't been done. Found while checking People's project links at that width.
+
+**Verified, project links:** on People, a person's three projects showed on one line ("E2E Test Project | Amazon A+ | Event Hoardings", 1×12px rules between). On hover the name went from ink to blue and underlined. Clicking "Amazon A+" opened its table.
+
+## The Share window
+
+Direct instructions:
+- **Title:** it's named for the post: "Share Lumehouse for Review".
+- **No ×:** the corner close is gone. The first step has Cancel beside Create link, and the link step has Close in place of Done.
+- **Copy:** the button is blue, darker on hover. Once the link is copied it greys out, reads "Copied", and "Link copied. Paste it wherever you're sending it." shows under the link. If the browser won't copy, it says to select the link and copy it instead.
+
+**Verified** in the app: the title read "Share E2E Test Creative for Review", with no corner close; the footer read Cancel and Create link, then Close. Copy was blue (#007BFF), darker on hover. After clicking, the clipboard held exactly the link, the button was disabled and grey (the page's background colour, muted text, not faded), the message showed, and Close closed the window. `share-eligibility` and `stage-transition` pass.
+
+## The review link on a computer: the post in a phone
+
+On a computer, the review link's post now sits in the same phone as the Review page (direct instruction; on a phone the page is the phone layout itself, unchanged). The phone scales to fit the window, leaving room for the post's title above it, so a Reel shows whole with its timeline and the caption scrolls inside the phone. While there's more below, "Scroll inside the phone to read the caption" shows under it. It goes once the end is reached. It's still one link: the visitor's screen picks the layout.
+
+**Verified** with a Reel and a three-paragraph caption:
+- **1440×900:** the phone took 95–809px, and the video with its timeline 201–690px. The page didn't scroll, and the note showed at 819–838px.
+- **1280×800:** the phone scaled to 93–707px, with the video 185–562px. The page didn't scroll.
+- **Scrolling:** scrolling the phone to its end showed the caption and took the note away.
+- **Phone width:** at 390px the phone layout showed, with no frame.
+- **Tests:** the desktop screenshot was renewed after looking at it (the phone frame, with "No artwork yet" for the fixture's post).

@@ -17,24 +17,38 @@ const BELOW = 16;
 // scales down to fit the canvas's height, so its bottom is never cut off
 // on a shorter window. zoom keeps layout and hit-testing in step, unlike a
 // transform.
-export function PhoneFrame({ children }: { children: ReactNode }) {
+export function PhoneFrame({
+  children,
+  reserve = 0,
+}: {
+  children: ReactNode;
+  // Height kept free beside it in the space it fits (a title above, a note
+  // below), on the review link (direct instruction: the Reel fits the screen).
+  reserve?: number;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(MOST);
 
   useLayoutEffect(() => {
-    const canvas = ref.current?.closest(".canvas");
+    // The Review page's canvas, or the review link's desktop middle.
+    const canvas = ref.current?.closest(".canvas, .dk-main");
     if (!(canvas instanceof HTMLElement)) return;
     function fit() {
       const style = getComputedStyle(canvas as HTMLElement);
       const room =
-        (canvas as HTMLElement).clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom) - ABOVE - BELOW;
+        (canvas as HTMLElement).clientHeight -
+        parseFloat(style.paddingTop) -
+        parseFloat(style.paddingBottom) -
+        ABOVE -
+        BELOW -
+        reserve;
       setZoom(Math.max(LEAST, Math.min(MOST, room / HEIGHT)));
     }
     fit();
     const observer = new ResizeObserver(fit);
     observer.observe(canvas);
     return () => observer.disconnect();
-  }, []);
+  }, [reserve]);
 
   return (
     <div className="phoneframe" ref={ref} style={{ zoom }}>

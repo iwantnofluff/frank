@@ -95,11 +95,14 @@ export function ShareModal({
   projectId,
   currentCreativeId,
   brandName,
+  currentName,
   onClose,
 }: {
   projectId: string;
   currentCreativeId: string;
   brandName: string;
+  // The post it was opened from, for the title.
+  currentName: string;
   onClose: () => void;
 }) {
   const [scope, setScope] = useState<SharedLinkScope>("one");
@@ -109,6 +112,8 @@ export function ShareModal({
   const [passcode, setPasscode] = useState("");
   const [canApprove, setCanApprove] = useState(true);
   const [link, setLink] = useState<string | null>(null);
+  // Copied to the clipboard (direct instruction: say so, and grey the button).
+  const [copied, setCopied] = useState<"yes" | "failed" | null>(null);
 
   const { data: allCreatives } = useCreatives(projectId);
   // Deleted (archived_at) posts are never shareable — useCreatives now
@@ -214,16 +219,22 @@ export function ShareModal({
   return (
     <>
     <Modal
-      title="Share For Review"
+      // Named for the post (direct instruction): "Share Lumehouse for Review".
+      title={`Share ${currentName} for Review`}
+      hideCloseButton
       onClose={onClose}
       footer={
         <>
           <div className="grow" />
           {link ? (
             <button type="button" className="btn" onClick={onClose}>
-              Done
+              Close
             </button>
           ) : (
+            <>
+            <button type="button" className="btn" onClick={onClose}>
+              Cancel
+            </button>
             <button
               type="button"
               className="btn primary"
@@ -236,6 +247,7 @@ export function ShareModal({
             >
               {createLink.isPending ? "Creating…" : "Create link"}
             </button>
+            </>
           )}
         </>
       }
@@ -250,12 +262,28 @@ export function ShareModal({
               <code>{link}</code>
               <button
                 type="button"
-                className="btn sm"
-                onClick={() => navigator.clipboard.writeText(link)}
+                className={copied === "yes" ? "btn sm copied" : "btn sm primary"}
+                disabled={copied === "yes"}
+                onClick={() =>
+                  navigator.clipboard.writeText(link).then(
+                    () => setCopied("yes"),
+                    () => setCopied("failed"),
+                  )
+                }
               >
-                Copy
+                {copied === "yes" ? "Copied" : "Copy"}
               </button>
             </div>
+            {copied === "yes" && (
+              <span className="bsaved" role="status">
+                Link copied. Paste it wherever you&apos;re sending it.
+              </span>
+            )}
+            {copied === "failed" && (
+              <span className="berr" role="status">
+                Couldn&apos;t copy it here. Select the link above and copy it.
+              </span>
+            )}
           </div>
           <p className="sub">
             Anyone with this link can read the work covered by the scope you
