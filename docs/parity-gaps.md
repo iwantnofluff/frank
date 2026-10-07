@@ -2709,3 +2709,50 @@ Direct instructions, together:
 - **Review page:** the centre panel's new header spacing, and the rail.
 - **Upload modal:** the darker rule, and the rail.
 - **Content table:** 48 pixels at the New Post arrow, and the rail.
+
+## Caption paragraphs, and the stage switch's colours
+
+Direct instructions:
+- **Caption paragraphs:** the caption in the phone keeps its own line breaks and blank lines, as it was written and as Instagram shows them. This applies on the Review page, on the review link (phone and desktop), and in the table's hover preview. Before, they were collapsed into one run of text.
+- **Stage colours:** on the Review page's stage switch, Client Review shows orange when it's the stage and Approved green. Internal Review keeps its blue.
+
+**Verified:**
+- **Caption:** "First paragraph line. / (blank) / Second paragraph… / Third line…" laid out as four lines, the blank one included, on the Review page and the review link.
+- **Stage colours:** the pressed button measured blue at Internal Review, orange (#FF8A00) at Client Review and green (#2BB65B) at Approved.
+- **Screenshots:** the Review page's changed only at the Client Review button, now orange. That baseline was updated after checking.
+
+## On the team or at a client, never both
+
+Within an agency, a person is now either on the team or at a client, never both (decided directly: "Team or client, agency-wide"). Before, each invite made its own membership, so the same email could be a team User with access to a client and, at once, a Client of it. Tested with a real Owner, every order went through, even for someone who had already joined as a Client. Nobody on live or staging was in that state (checked before the change).
+
+- **Inviting says why first:** inviting a team member as a Client gives "… is on your team. Give them this client from its People instead." (or "already sees every client" for Owners and Admins). Inviting a client's person to the team gives "… is a Client of Acme. To move them to your team, change their type in Team settings."
+- **The database backs it up:** phase63's trigger on memberships refuses any active membership that would make someone both, on every path. Deactivated memberships don't count, so someone deactivated on the team can become a Client, and reactivating them on the team is then refused.
+- **Still allowed:** a Client of two clients (invited to each), and changing someone's type, which changes their one membership in place.
+
+**Verified** (`team-or-client.spec.ts`):
+- **Inviting:** User then Client, and Client then User, were both refused with those messages, as was a joined Client invited as an Admin. Each person stayed only what they were first.
+- **The database, directly:** it refused both mixes, allowed a Client of a second client, and refused reactivating a team membership once the person was a Client.
+- **Existing tests:** the people and invite specs (`people-below`, `team-invite`, `team-manage`, `client-invites`, `add-to-client`) pass. One check in `client-invites`, that an Admin can't insert an Owner, used the fixture's Client as the person. It now uses someone with no other membership, so it still tests the Owner rule rather than this one.
+
+## Confirmed: a Client added by the agency reviews without signing in
+
+Checked on request, nothing changed. An Owner invited a new Client, and a browser that had never signed in opened the post's review link:
+- it stayed on the review page and showed the post;
+- the new Client's name was already in "Who are you?", before they had accepted their invite;
+- their comment posted, and staff saw it on the post.
+
+The existing `shared-review-public.spec.ts` covers commenting as "Someone else" too.
+
+## The review link fills the visitor's own screen
+
+The shared review link is now the real page, not a preview of it (direct instruction). Before, it opened the prototype's presentation: a dark page with "Shared review / This is what the client opens…", a Phone/Desktop switch, and the work drawn inside a browser frame or a phone outline. That replaces the earlier ".phonewrap preview toggle" decision below.
+
+- **Picked by screen width:** under 900px wide gets the phone layout, anything wider the desktop one. Each fills the window, with nothing around it and no switch. Turning a tablet or resizing a window switches between them.
+- **On a phone it scrolls like a post:** the post first, then its caption and comments, then the comment box and Approve at the end. The top bar stays put, and leaves room for the phone's own notch where it has one. Before, the comment box stayed pinned at the bottom and took over a third of the screen.
+- **On a computer:** the post list, the post and Comments fill the window, with no drawn browser bar.
+
+**Verified** by measuring the real page:
+- **At 1440×900:** the desktop layout was exactly 1440×900, with the list at 260px, the post at 840px and Comments at 340px, and no page scroll.
+- **At 390×844:** the phone layout was exactly 390×844. The post took 733px of the first screen, and the page scrolled (1,146px) down to the comment box and Approve. A comment posted from there showed at once.
+- **Gone:** the "Shared review" note, the Phone/Desktop buttons and the frames.
+- **Tests:** `shared-review-public.spec.ts` checks all of this, and its two screenshots were renewed (the whole page changed). Every other test that opens a review link now opens it at a phone's size, as their checks are for the phone layout, and all pass.

@@ -22,7 +22,6 @@ export function MobileReview({
 
   return (
     <div className="phone">
-      <div className="ph-notch" />
       <div className="ph-screen">
         <div className="m-top">
           <div className="m-logo" style={logoUrl ? { overflow: "hidden", padding: 0 } : undefined}>

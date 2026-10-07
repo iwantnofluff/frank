@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Page } from "@playwright/test";
-import { test, expect, APP_URL, type Frank } from "./fixtures";
+import { test, expect, APP_URL, type Frank, PHONE_VIEWPORT } from "./fixtures";
 
 const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
   auth: { persistSession: false, autoRefreshToken: false },
@@ -141,6 +141,7 @@ test("on the review link, a guest can comment at a moment and jump back to it", 
   test.setTimeout(90_000);
   await seedReel(page, frank);
   const token = await frank.createSharedLink();
+  await page.setViewportSize(PHONE_VIEWPORT);
   await page.goto(`${APP_URL}/review/${token}`);
   const scope = ".phone .ig-media";
   await expect(page.locator(`${scope} .vtime`)).toContainText(/\/ 0:0[23]/, { timeout: 15_000 });
@@ -240,6 +241,7 @@ test("a carousel's video slide has its own timeline, and its comments stay on th
 
   // A guest on the review link: same slide, own timeline.
   const token = await frank.createSharedLink();
+  await page.setViewportSize(PHONE_VIEWPORT);
   await page.goto(`${APP_URL}/review/${token}`);
   const scope = ".phone .ig-media";
   await expect(page.locator(`${scope} .car-count`)).toHaveText("1 / 2", { timeout: 15_000 });

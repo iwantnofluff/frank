@@ -1,4 +1,4 @@
-import { test, expect, APP_URL } from "./fixtures";
+import { test, expect, APP_URL, PHONE_VIEWPORT } from "./fixtures";
 
 // A post with copy but no artwork still shows, and can be commented on, as
 // a post — "No artwork yet" sits where the image would be.
@@ -34,7 +34,7 @@ test("a copy-only post shows as a post for staff, clients and a review link", as
   await clientContext.close();
 
   const token = await frank.createSharedLink();
-  const guestContext = await browser.newContext();
+  const guestContext = await browser.newContext({ viewport: PHONE_VIEWPORT });
   const guest = await guestContext.newPage();
   await guest.goto(`${APP_URL}/review/${token}`);
   // The page renders both its phone and desktop layouts; phone is shown.

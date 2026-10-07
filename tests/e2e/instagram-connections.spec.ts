@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { test, expect, APP_URL, type Frank } from "./fixtures";
+import { test, expect, APP_URL, type Frank, PHONE_VIEWPORT } from "./fixtures";
 
 // A client's Instagram, for the live feed (phase54). Instagram itself can't
 // be reached from a test, and Frank's Meta app isn't set up locally, so
@@ -157,7 +157,7 @@ test("the sign-in refuses a forged return, and nobody but the server reads a tok
 test("a review link offers Feed only with a working connection, and never shows a broken one", async ({ browser, frank }) => {
   test.setTimeout(60_000);
   const token = await frank.createSharedLink();
-  const ctx = await browser.newContext();
+  const ctx = await browser.newContext({ viewport: PHONE_VIEWPORT });
   try {
     const guest = await ctx.newPage();
     // Nothing connected: the post as before, no switch.

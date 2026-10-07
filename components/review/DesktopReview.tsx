@@ -11,27 +11,17 @@ export function DesktopReview({
   controller,
   agencyName,
   logoUrl,
-  linkUrl,
   shown,
 }: {
   controller: ReviewController;
   agencyName: string;
   logoUrl: string | null;
-  linkUrl: string;
   shown: boolean; // the layout on screen (phone or desktop)
 }) {
   const { creatives, active, activeIndex, goTo } = controller;
 
   return (
     <div className="browser">
-      <div className="br-bar">
-        <div className="br-dots">
-          <i />
-          <i />
-          <i />
-        </div>
-        <div className="br-url">{linkUrl}</div>
-      </div>
       <div className="br-screen">
         <div className="dk-list">
           <div className="dk-lh">

@@ -1,24 +1,23 @@
 import { createClient } from "@supabase/supabase-js";
-import { test, expect } from "./fixtures";
+import { test, expect, PHONE_VIEWPORT } from "./fixtures";
 
-// No session at all — a real share-link visitor. Exercises .phonewrap/
-// .browser/.phone/.dk-*/.pw-side/.pw-seg (the public review page, entirely
-// separate CSS from the authenticated app shell).
-//
-// Which shape shows is now a manual .pw-seg toggle, not a media query
-// (docs/parity-gaps.md, ".phonewrap preview toggle — RESOLVED") — matches
-// the prototype's own .desk class mechanism exactly. Default is "phone",
-// same as the prototype's `let shareView="phone"`, regardless of the
-// visitor's actual device; a real desktop visitor now has to click
-// "Desktop" to see that layout, which is a deliberate, disclosed change
-// from this page's previous responsive-by-default behaviour.
+// No session at all — a real share-link visitor. The visitor's own screen
+// picks the layout (direct instruction): a phone gets the phone layout, a
+// wider screen the desktop one, each filling the window with no frame and
+// no preview switch. These run at a phone's size unless they say otherwise.
+test.use({ viewport: PHONE_VIEWPORT });
 
-test("shared review — phone (default)", async ({ page, frank }) => {
+test("shared review — on a phone, the phone layout fills the screen", async ({ page, frank }) => {
   const token = await frank.createSharedLink();
   await page.goto(`/review/${token}`);
-  // .phonewrap renders for the loading state too ("Loading…", nothing
-  // else) — wait for real content, not just the wrapper.
+  // The page renders for the loading state too ("Loading…", nothing else)
+  // — wait for real content.
   await page.waitForSelector(".m-top");
+  await expect(page.locator(".dk-list")).toHaveCount(0);
+  await expect(page.getByText("Shared review", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Desktop" })).toHaveCount(0);
+  const box = await page.locator(".phone").boundingBox();
+  expect(box).toEqual({ x: 0, y: 0, width: PHONE_VIEWPORT.width, height: PHONE_VIEWPORT.height });
   await expect(page).toHaveScreenshot("shared-review-phone.png");
 });
 
@@ -135,24 +134,22 @@ test("shared review — no Make Changes button; Close is always present; Approve
   await expect.poll(async () => (await frank.getCreativeStatus()).stage).toBe(4);
 });
 
-test("shared review — desktop (toggled)", async ({ page, frank }) => {
+test("shared review — on a computer, the desktop layout fills the window", async ({ page, frank }) => {
   const token = await frank.createSharedLink();
-  // Wider than the default 1280 viewport — .pw-side (290px) + the 54px gap
-  // + .browser (up to 92vw) overflows 1280 once all three are on screen at
-  // once, clipping the browser frame. 1600 comfortably fits all three.
-  await page.setViewportSize({ width: 1600, height: 900 });
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`/review/${token}`);
-  await page.waitForSelector(".pw-seg");
-  await page.click('button[data-sv="desktop"]');
   await page.waitForSelector(".dk-list");
-  // .br-url renders the live page URL, which contains this test's randomly
-  // generated token — genuinely different every run by design, not a
-  // rendering difference. Masked rather than faked with a fixed token,
-  // since a fixed token risks a unique-constraint collision if this spec
-  // ever runs concurrently with itself.
-  await expect(page).toHaveScreenshot("shared-review-desktop.png", {
-    mask: [page.locator(".br-url")],
-  });
+  await expect(page.locator(".m-top")).toHaveCount(0);
+  await expect(page.getByText("Shared review", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Phone" })).toHaveCount(0);
+  const box = await page.locator(".browser").boundingBox();
+  expect(box).toEqual({ x: 0, y: 0, width: 1440, height: 900 });
+  await expect(page).toHaveScreenshot("shared-review-desktop.png");
+
+  // Narrowed to a phone's width, it becomes the phone layout.
+  await page.setViewportSize(PHONE_VIEWPORT);
+  await page.waitForSelector(".m-top");
+  await expect(page.locator(".dk-list")).toHaveCount(0);
 });
 
 // Reported directly: a slow Approve, clicked twice, left two "Approved via

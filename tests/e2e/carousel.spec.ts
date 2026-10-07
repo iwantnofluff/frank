@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Page } from "@playwright/test";
-import { test, expect, APP_URL, type Frank } from "./fixtures";
+import { test, expect, APP_URL, type Frank, PHONE_VIEWPORT } from "./fixtures";
 
 const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
   auth: { persistSession: false, autoRefreshToken: false },
@@ -206,6 +206,7 @@ test("the post page moves between slides, and pins stay on their own slide", asy
 test("the review link moves between a carousel's slides", async ({ page, frank }) => {
   await seedCarousel(frank);
   const token = await frank.createSharedLink();
+  await page.setViewportSize(PHONE_VIEWPORT);
   await page.goto(`${APP_URL}/review/${token}`);
   const phone = page.locator(".phone .ig-media");
   await expect(phone.locator(".car-count")).toHaveText("1 / 3", { timeout: 15_000 });
@@ -248,6 +249,7 @@ test("every slide can be removed and saved, leaving the post with no artwork", a
 
   // The review link agrees, rather than falling back to V1.
   const token = await frank.createSharedLink();
+  await page.setViewportSize(PHONE_VIEWPORT);
   await page.goto(`${APP_URL}/review/${token}`);
   await expect(page.locator(".phone .ig-noart")).toContainText("No artwork yet", { timeout: 15_000 });
 });
@@ -289,6 +291,7 @@ test("an empty slide still counts: arrows show, and it says it has no artwork ye
   await expect(media.locator("img")).toBeVisible();
 
   const token = await frank.createSharedLink();
+  await page.setViewportSize(PHONE_VIEWPORT);
   await page.goto(`${APP_URL}/review/${token}`);
   const phone = page.locator(".phone .ig-media");
   await expect(phone.locator(".car-count")).toHaveText("1 / 2", { timeout: 15_000 });
@@ -423,6 +426,7 @@ test("a carousel with nothing uploaded still moves between its empty slides", as
   await expect(media).toContainText("Slide 2 has no artwork yet.");
 
   const token = await frank.createSharedLink();
+  await page.setViewportSize(PHONE_VIEWPORT);
   await page.goto(`${APP_URL}/review/${token}`);
   const phone = page.locator(".phone .ig-media");
   await expect(phone.locator(".car-count")).toHaveText("1 / 2", { timeout: 15_000 });

@@ -2793,6 +2793,16 @@ a.fd-ref:hover {
   color: var(--action);
   font-weight: 600;
 }
+/* Client Review in orange, Approved in green (direct instruction);
+   Internal Review keeps the blue above. */
+.stagesw button.sw-client[aria-pressed="true"] {
+  background: var(--amber-bg);
+  color: var(--amber);
+}
+.stagesw button.sw-approved[aria-pressed="true"] {
+  background: var(--green-bg);
+  color: var(--green);
+}
 .tools .btn.primary {
   margin-left: 8px;
 }
@@ -3035,6 +3045,12 @@ select.sort:hover {
 .ig-cap b {
   font-weight: 600;
   margin-right: 5px;
+}
+/* The caption's own line breaks and blank lines, as it was written (direct
+   instruction), as Instagram shows them. */
+.ig-cap > span,
+.pp-cap {
+  white-space: pre-wrap;
 }
 .ig-time {
   padding: 0 12px 12px;
@@ -4259,60 +4275,29 @@ textarea.cxin {
 
 /* Public review — the shared, unauthenticated /review/[token] page.
    Two full layouts share one data assembly and one set of handlers
-   (developer handover, "One renderer, two shapes") — which one is visible
-   is a manual .pw-seg toggle (the .desk class on .phonewrap), matching the
-   prototype exactly. See docs/parity-gaps.md for the behaviour change this
-   was — a real visitor's device no longer picks the shape automatically. */
+   (developer handover, "One renderer, two shapes"). The visitor's own
+   screen picks one (direct instruction, replacing the prototype's preview:
+   a dark page with a Phone/Desktop switch and a drawn browser or phone):
+   a phone's browser gets the phone layout and a wider screen the desktop
+   one, each filling the window with nothing around it. */
 
-.phonewrap {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 54px;
-  background: #101318;
+.reviewpage {
+  height: 100vh;
+  height: 100dvh;
+  background: var(--canvas);
+}
+.reviewpage-loading {
   padding: 24px;
+  color: var(--muted);
 }
 
 .browser {
-  width: min(1180px, 92vw);
-  height: min(760px, 88vh);
-  border-radius: 12px;
-  background: #fff;
-  box-shadow: 0 34px 90px rgba(0, 0, 0, 0.6);
+  width: 100%;
+  height: 100%;
+  background: var(--surface);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  flex-shrink: 0;
-}
-.br-bar {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 9px 14px;
-  background: #e8ebef;
-  border-bottom: 1px solid #d4d9df;
-}
-.br-dots {
-  display: flex;
-  gap: 6px;
-}
-.br-dots i {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #c6ccd3;
-  display: block;
-}
-.br-url {
-  flex: 1;
-  font-size: 12.7px;
-  color: #6b7280;
-  background: #fff;
-  border-radius: 14px;
-  padding: 4px 12px;
-  font-family: Consolas, monospace;
 }
 .br-screen {
   flex: 1;
@@ -4445,33 +4430,19 @@ textarea.cxin {
 }
 
 .phone {
-  width: 390px;
-  height: 844px;
-  max-height: 92vh;
-  border-radius: 44px;
-  background: #000;
-  padding: 11px;
-  box-shadow: 0 34px 90px rgba(0, 0, 0, 0.6);
+  width: 100%;
+  height: 100%;
   position: relative;
-  flex-shrink: 0;
 }
-.ph-notch {
-  position: absolute;
-  top: 11px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 112px;
-  height: 26px;
-  background: #000;
-  border-radius: 0 0 17px 17px;
-  z-index: 5;
-}
+/* On a phone the whole page scrolls, as a post does (direct instruction:
+   "scroll down and comment"): the post, its comments, then the comment
+   box; the top bar stays put. */
 .ph-screen {
   width: 100%;
   height: 100%;
-  border-radius: 34px;
   background: var(--canvas);
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -4480,7 +4451,11 @@ textarea.cxin {
   flex-shrink: 0;
   background: var(--surface);
   border-bottom: 1px solid var(--line);
-  padding: 34px 16px 11px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  /* The phone's own status bar or notch, where it has one. */
+  padding: calc(11px + env(safe-area-inset-top)) 16px 11px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -4567,9 +4542,7 @@ textarea.cxin {
   background: var(--action);
 }
 .m-scroll {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
+  flex: none;
   overflow-x: hidden;
 }
 .m-body {
@@ -4750,63 +4723,6 @@ textarea.cxin {
 .m-signedin b {
   font-weight: 600;
   color: var(--ink);
-}
-
-/* Which shape shows is a manual toggle (.pw-seg, below), not a media query —
-   matches the prototype's own mechanism exactly (frank-prototype.html:
-   `.phonewrap.desk .phone{display:none}` /
-   `.phonewrap:not(.desk) .browser{display:none}`). Previously this was a
-   min-width:900px media query instead; replaced deliberately (see
-   docs/parity-gaps.md) — a real visitor's own device no longer decides
-   this on its own, the segmented control does, same as the prototype. */
-.phonewrap.desk .phone {
-  display: none;
-}
-.phonewrap:not(.desk) .browser {
-  display: none;
-}
-
-/* Phone/Desktop preview toggle, prototype's .pw-side/.pw-seg. */
-.pw-side {
-  width: 290px;
-  display: flex;
-  flex-direction: column;
-  gap: 11px;
-  color: #fff;
-}
-.pw-side b {
-  font-size: 20.2px;
-  font-weight: 600;
-}
-.pw-side > span {
-  font-size: 14.2px;
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.62);
-}
-.pw-seg {
-  display: flex;
-  gap: 3px;
-  padding: 3px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  margin-bottom: 4px;
-}
-.pw-seg button {
-  flex: 1;
-  padding: 6px 0;
-  border-radius: 6px;
-  font-size: 13.2px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.6);
-}
-.pw-seg button[aria-pressed="true"] {
-  background: #fff;
-  color: #101318;
-}
-@media (max-width: 1100px) {
-  .pw-side {
-    display: none;
-  }
 }
 
 /* Settings tab strip */

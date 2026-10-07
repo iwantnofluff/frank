@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Page } from "@playwright/test";
-import { test, expect, APP_URL } from "./fixtures";
+import { test, expect, APP_URL, PHONE_VIEWPORT } from "./fixtures";
 
 const admin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -63,7 +63,7 @@ test("a preset previews live, reverts if not saved, and applies everywhere once 
   await clientContext.close();
 
   const token = await frank.createSharedLink();
-  const guestContext = await browser.newContext();
+  const guestContext = await browser.newContext({ viewport: PHONE_VIEWPORT });
   const guest = await guestContext.newPage();
   await guest.goto(`${APP_URL}/review/${token}`);
   await waitForVar(guest, "--action", "#047857");
@@ -170,7 +170,7 @@ test("the agency logo shows on the rail, for clients, and on review links", asyn
     await clientContext.close();
 
     const token = await frank.createSharedLink();
-    const guestContext = await browser.newContext();
+    const guestContext = await browser.newContext({ viewport: PHONE_VIEWPORT });
     const guest = await guestContext.newPage();
     await guest.goto(`${APP_URL}/review/${token}`);
     await expect(guest.locator(".m-logo img").first()).toBeVisible();

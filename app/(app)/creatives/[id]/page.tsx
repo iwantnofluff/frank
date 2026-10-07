@@ -320,6 +320,7 @@ export default function CreativeReviewPage({
                   </button>
                   <button
                     type="button"
+                    className="sw-client"
                     aria-pressed={creative.stage === 3}
                     disabled={advanceStage.isPending}
                     onClick={() => {
@@ -330,6 +331,7 @@ export default function CreativeReviewPage({
                   </button>
                   <button
                     type="button"
+                    className="sw-approved"
                     aria-pressed={creative.stage === 4}
                     disabled={advanceStage.isPending}
                     onClick={() => {

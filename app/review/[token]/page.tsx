@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useState, useSyncExternalStore } from "react";
 import { applyTheme, normaliseTheme } from "@/lib/theme";
 import { useReviewController } from "@/hooks/use-review-controller";
 import { MobileReview } from "@/components/review/MobileReview";
@@ -58,6 +58,23 @@ function UnavailableNotice() {
   );
 }
 
+// The visitor's own screen picks the layout (direct instruction): a phone's
+// browser gets the phone layout, filling it; anything wider, the desktop one,
+// filling the window. No frame, no preview switch.
+const PHONE_QUERY = "(max-width: 899px)";
+function subscribe(onChange: () => void) {
+  const mq = window.matchMedia(PHONE_QUERY);
+  mq.addEventListener("change", onChange);
+  return () => mq.removeEventListener("change", onChange);
+}
+function usePhoneScreen() {
+  return useSyncExternalStore(
+    subscribe,
+    () => window.matchMedia(PHONE_QUERY).matches,
+    () => false,
+  );
+}
+
 export default function SharedReviewPage({
   params,
 }: {
@@ -66,11 +83,7 @@ export default function SharedReviewPage({
   const { token } = use(params);
   const controller = useReviewController(token);
   const { data, isLoading, isError, setPasscode } = controller;
-  // Matches the prototype's own default (`let shareView="phone"`) exactly —
-  // not a responsive guess at the visitor's actual device. See
-  // docs/parity-gaps.md for why that's a deliberate, disclosed change from
-  // this page's previous behaviour.
-  const [view, setView] = useState<"phone" | "desktop">("phone");
+  const phone = usePhoneScreen();
 
   // The agency's colours, applied the same way the signed-in app applies
   // them; an agency with no saved theme keeps Frank's default.
@@ -81,8 +94,8 @@ export default function SharedReviewPage({
 
   if (isLoading) {
     return (
-      <div className="phonewrap">
-        <p style={{ color: "#fff" }}>Loading…</p>
+      <div className="reviewpage">
+        <p className="reviewpage-loading">Loading…</p>
       </div>
     );
   }
@@ -101,51 +114,14 @@ export default function SharedReviewPage({
   }
 
   const agencyName = data.project.name;
-  const linkUrl =
-    typeof window !== "undefined" ? window.location.href : `/review/${token}`;
 
   return (
-    <div className={`phonewrap${view === "desktop" ? " desk" : ""}`}>
-      <div className="pw-side">
-        <b>Shared review</b>
-        <span>
-          This is what the client opens. The link works on any phone; no
-          account is needed to read the work or the comments.
-        </span>
-        <div className="pw-seg">
-          <button
-            type="button"
-            data-sv="phone"
-            aria-pressed={view === "phone"}
-            onClick={() => setView("phone")}
-          >
-            Phone
-          </button>
-          <button
-            type="button"
-            data-sv="desktop"
-            aria-pressed={view === "desktop"}
-            onClick={() => setView("desktop")}
-          >
-            Desktop
-          </button>
-        </div>
-      </div>
-      {/* Both layouts are drawn and one is shown; only the shown one's video
-          reports its paused moment, or the hidden one's 0:00 would win. */}
-      <MobileReview
-        controller={controller}
-        agencyName={agencyName}
-        logoUrl={branding?.logo_url ?? null}
-        shown={view === "phone"}
-      />
-      <DesktopReview
-        shown={view === "desktop"}
-        controller={controller}
-        agencyName={agencyName}
-        linkUrl={linkUrl}
-        logoUrl={branding?.logo_url ?? null}
-      />
+    <div className="reviewpage">
+      {phone ? (
+        <MobileReview controller={controller} agencyName={agencyName} logoUrl={branding?.logo_url ?? null} shown />
+      ) : (
+        <DesktopReview controller={controller} agencyName={agencyName} logoUrl={branding?.logo_url ?? null} shown />
+      )}
     </div>
   );
 }
