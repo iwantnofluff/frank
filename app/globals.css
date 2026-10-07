@@ -1170,6 +1170,54 @@ body.lightrail .avatar {
   margin: auto 0;
   max-width: 420px;
 }
+/* The privacy policy: the sign-up card, wide enough to read. */
+.authwrap.scroll > .authcard.legal {
+  max-width: 720px;
+  gap: 10px;
+  font-size: 14.7px;
+  line-height: 1.6;
+}
+.authcard.legal h2 {
+  margin: 14px 0 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+.authcard.legal p,
+.authcard.legal ul {
+  margin: 0;
+}
+.authcard.legal ul {
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.authcard.legal a,
+.authfoot a {
+  color: var(--action);
+}
+/* Under the sign-up card: the privacy policy. */
+.authwrap.scroll {
+  flex-direction: column;
+  align-items: center;
+  /* Centred by the spacers below instead: centring itself would push a
+     tall page's top out of reach. */
+  justify-content: flex-start;
+}
+.authwrap.scroll::before,
+.authwrap.scroll::after {
+  content: "";
+  flex: 1 0 0;
+}
+.authwrap.scroll > .authcard {
+  margin: 0;
+  flex-shrink: 0;
+}
+.authfoot {
+  margin: 16px 0 0;
+  font-size: 13.2px;
+  color: var(--muted);
+}
 /* "Frank" and its one line, close together (direct instruction). */
 .welcomehead {
   display: flex;

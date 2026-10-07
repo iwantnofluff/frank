@@ -13,6 +13,9 @@ export default function WelcomePage() {
   return (
     <div className="authwrap scroll">
       <Welcome />
+      <p className="authfoot">
+        <a href="/privacy">Privacy policy</a>
+      </p>
     </div>
   );
 }

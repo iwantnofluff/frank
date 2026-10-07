@@ -2936,3 +2936,16 @@ Reported directly: the phone views should show the client's logo next to the han
 Reported directly: the logo's colours were updated in a new export ("Frank logo exports" on the desktop). Its third bar is now green (#4CAF50), where it was brown (#A0522D). The header logo, the logomark in windows and Help, the white icon, the browser tab icon and the phone home-screen icon are now copied from that export. Apart from the colour, the drawings are the same as before; the files also differ in an embedded content-credentials record, which doesn't show.
 
 **Verified:** the header and the Help panel show the green bar in the app, and the tab icon served by the app carries the new colour.
+
+## A privacy policy, and a review agency for Meta
+
+Asked directly, for Meta's App Review: Frank had no privacy policy, and Meta's reviewer needs a way in that shows no real client.
+- **The policy** is at `/privacy`, readable signed out on beingfrank.app and every agency's address, and linked under the sign-up card. It names No Fluff Pvt Ltd (Mumbai) and raj@nofluff.in as the contact, follows India's DPDP Act, and covers all of Frank: what's collected, the Instagram data in detail, the service providers (Vercel, Supabase, Anthropic, OpenAI, Google, Resend, Paddle, Meta), how long things are kept, security, cookies and rights. Every claim was checked against the code. One example: the AI usage record holds who, which model and when, not the content.
+- **The page's layout:** the scrolling card pages (sign-up, privacy) now centre with spacers rather than auto margins. Otherwise a page taller than the window opened partway down, with its top out of reach.
+- **The review agency** on live: "Frank Review" at frankreview.beingfrank.app, signed up through the live sign-up route as Meta Reviewer (raj+frankreview@nofluff.in), the account then confirmed directly. Demo Client, the project Autumn Launch and the post Autumn Collection (artwork and caption) were written signed in as the reviewer, the way the app's hooks write them. The password isn't recorded here.
+
+Gaps:
+- **The review agency is on Free's 30-day trial,** ending 6 November 2026, after which it turns read-only. Meta's review may run past that.
+- **The policy is a draft** for the user's own read, and ideally a lawyer's, before it's relied on.
+
+**Verified:** `/privacy` returns the page signed out on the root and an agency address. At 1280 and 390 wide it opens at its title, scrolls to the end, and nothing runs off the side. The sign-up page's link opens it. Login and plan specs pass, after one fix: the storage test set its file on the page's first file input, which since the header's Add Logo became the header's hidden one, so the upload never happened. It now skips that input. On live, signed in as the reviewer: the Clients page lists Demo Client, the post's Feed Preview shows the artwork marked Planned, and Settings → Connections → Instagram offers Connect and Send Link.

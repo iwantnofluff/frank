@@ -177,7 +177,8 @@ test("storage: usage against the plan on the Plans page, counting what's uploade
   await expect(row).toContainText("0 KB of 25 GB");
 
   await page.goto(`${APP_URL}/settings/knowledge/reference-material`);
-  await page.locator('input[type="file"]').first().setInputFiles({
+  // Not the header's own (Add Logo, shown while the agency has no logo).
+  await page.locator('input[type="file"]:not([aria-label="Add Logo file"])').first().setInputFiles({
     name: "notes.csv",
     mimeType: "text/csv",
     buffer: Buffer.from("x".repeat(40_000)),

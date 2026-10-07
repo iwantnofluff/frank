@@ -48,6 +48,8 @@ const PUBLIC_PATH_PREFIXES = [
   "/api/connections/instagram/start",
   "/api/connections/instagram/status",
   "/api/connections/instagram/link-info",
+  // The privacy policy, readable signed out at every address.
+  "/privacy",
 ];
 
 function isPublicPath(pathname: string) {
@@ -83,7 +85,9 @@ export async function updateSession(request: NextRequest) {
       // shows someone after a deletion. Checked by signature.
       path === "/api/connections/instagram/deauthorize" ||
       path === "/api/connections/instagram/data-deletion" ||
-      path === "/instagram-data-deletion"
+      path === "/instagram-data-deletion" ||
+      // The privacy policy: Meta's App Review asks for it at this address.
+      path === "/privacy"
     ) {
       return NextResponse.next();
     }
