@@ -455,6 +455,28 @@ export const test = base.extend<{ frank: Frank }>({
         },
       ],
       ["assets", () => admin.from("assets").delete().eq("agency_id", agency.id)],
+      // The files themselves (direct instruction: no test uploads left
+      // behind in storage). Everything under the agency's folder, any depth.
+      [
+        "storage files",
+        async () => {
+          const files: string[] = [];
+          const walk = async (prefix: string) => {
+            const { data, error } = await admin.storage.from("assets").list(prefix, { limit: 1000 });
+            if (error) throw error;
+            for (const f of data ?? []) {
+              if (f.id === null) await walk(`${prefix}/${f.name}`);
+              else files.push(`${prefix}/${f.name}`);
+            }
+          };
+          await walk(agency.id);
+          for (let i = 0; i < files.length; i += 100) {
+            const { error } = await admin.storage.from("assets").remove(files.slice(i, i + 100));
+            if (error) return { error };
+          }
+          return { error: null };
+        },
+      ],
       // References both agencies and users — must run before both deletes
       // below, same reason format_directions/custom_columns do. Never
       // surfaced before real classify-comment-triggered AI calls existed:
