@@ -2930,3 +2930,9 @@ Reported directly: the phone views should show the client's logo next to the han
 - **Review link:** guests can't read the client's logo themselves, so the link's own server route signs it and sends it with the post, kept between refreshes like the post's own images.
 
 **Verified:** with a logo given to a test client, it showed (round, inside the ring) on the post page's phone, Feed Preview, hover preview and the review link at phone and computer widths. The hover preview's logo first spilled out of its circle; that was fixed and rechecked.
+
+## Frank's logo with its new green bar
+
+Reported directly: the logo's colours were updated in a new export ("Frank logo exports" on the desktop). Its third bar is now green (#4CAF50), where it was brown (#A0522D). The header logo, the logomark in windows and Help, the white icon, the browser tab icon and the phone home-screen icon are now copied from that export. Apart from the colour, the drawings are the same as before; the files also differ in an embedded content-credentials record, which doesn't show.
+
+**Verified:** the header and the Help panel show the green bar in the app, and the tab icon served by the app carries the new colour.
