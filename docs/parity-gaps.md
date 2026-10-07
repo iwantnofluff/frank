@@ -2887,3 +2887,15 @@ Direct instructions:
 - **Windows after the fix:** a window's shade covered the whole screen (1280×900), and the window sat centred at x360, as before.
 - **Draft with Frank:** its note no longer names the model.
 - **Tests:** the affected specs pass (41 of them). The screenshots changed only where the logos went round and in the window header's mark, checked before renewing.
+
+## Live's agency settings rules brought in line (phase64)
+
+Reported directly: on live, the Primary Owner couldn't save the agency's logo, from the header or from Settings ("new row violates row-level security policy for table agency_settings").
+- **Not reproducible elsewhere:** on staging and in tests, the same save works for a Primary Owner on a branded plan.
+- **The cause:** live's insert and update rules for agency_settings were an early version, made before migrations were kept (phases 1–5 were applied to live directly). They allowed only a role of exactly `admin`. Staging had phase7's rules, which use is_agency_admin(): Admins, Owners and the Primary Owner.
+- **The fix:** phase64 puts phase7's rules back. It's safe to run where they're already right.
+
+**Verified:**
+- **Live, before the fix** (from the SQL editor): the agency_settings insert and update rules checked `memberships.role = 'admin'`. Replayed as the Primary Owner on No Fluff's address, is_agency_admin, in_request_agency and the agency being visible were all true. So the old rules were the only thing refusing.
+- **After phase64 on live:** a scan for rules checking role 'admin' found only memberships_insert, which matches the same way on staging because its current, correct version lets an inviting Admin add Admins and Users.
+- **Staging:** phase64 applied and recorded. Its rules read is_agency_admin(agency_id).
