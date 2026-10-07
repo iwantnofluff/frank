@@ -66,10 +66,14 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "Approved: the client has signed it off.",
         ],
       },
+      {
+        kind: "p",
+        text: "On a post, the stage switch shows Internal Review in blue, Client Review in orange and Approved in green.",
+      },
       { kind: "h", text: "Getting around" },
       {
         kind: "p",
-        text: "The left rail follows where you are. On a client's projects you'll see Clients and Client Settings; inside a project, Projects too; on a post, the project's Content Planner or Other Content as well. Settings opens from your agency's logo at the top of the rail.",
+        text: "The left rail follows where you are, and names the client: on a client's projects you'll see Clients and the client's Settings (Casa Carigar Settings, say); inside a project, the client's Projects too; on a post, the project's Content Planner or Other Content as well. Settings for your whole agency opens from your agency's logo at the top of the rail.",
       },
     ],
   },
@@ -133,7 +137,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     blocks: [
       {
         kind: "p",
-        text: "Open Client Settings from the left rail while you're in a client, or from the expand icon on the client's row in your clients list.",
+        text: "Open a client's Settings from the left rail while you're in a client (it carries the client's name, Casa Carigar Settings, say), or from the expand icon on the client's row in your clients list.",
       },
       {
         kind: "list",
@@ -142,6 +146,16 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "People: who's on this client and which of its projects each person works on, and inviting someone new.",
           "Knowledge: what Frank knows about the client, used when copy is drafted and checked.",
           "Instagram: the client's account, so the Feed Preview shows its real posts.",
+        ],
+      },
+      { kind: "h", text: "People" },
+      {
+        kind: "list",
+        items: [
+          "Each person's projects are listed by name under them. Click one to open that project.",
+          "Edit Projects opens a window to choose their projects. Save greys out with Saved once it's done.",
+          "The User or Client tag is a dropdown: pick the other to switch them, straight away. A pending invite can be resent or removed from the same dropdown.",
+          "+ Invite People invites someone new, or gives a User already on your team this client, from A User on Your Team. Each one added brings you back to the window for the next.",
         ],
       },
       {
@@ -215,7 +229,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     blocks: [
       {
         kind: "p",
-        text: "In a Content Planner project, choose New Post. Use Window for the full form, or Row to type a quick post straight into the table.",
+        text: "In a Content Planner project, choose New Post. Use Window for the full form, or Row to type a quick post straight into the table. On a post's own page, New Post beside Edit opens the window for another post in the same project.",
       },
       { kind: "h", text: "The brief" },
       {
@@ -236,8 +250,37 @@ export const HELP_ARTICLES: HelpArticle[] = [
         ],
       },
       {
+        kind: "p",
+        text: "A video is compressed before it's saved, which can take a little while for a long one. Keep the tab open until it's done. If compressing or sending fails partway, Frank tries again on its own; if it still can't, the reason shows under Save.",
+      },
+      {
         kind: "note",
         text: "Earlier versions stay in each section's tabs, read only, and can be deleted if nobody has commented on them.",
+      },
+    ],
+  },
+  {
+    id: "artwork-after-live",
+    title: "Artwork after a post goes live",
+    category: "posts",
+    summary: "Approved posts' artwork is removed 7 days after going live; copy and comments stay.",
+    blocks: [
+      {
+        kind: "p",
+        text: "To keep your storage free for work in progress, an Approved post's artwork is removed 7 days after its live date: every version's files. The post, its copy and all its comments stay, and the post says when its artwork was removed.",
+      },
+      {
+        kind: "list",
+        items: [
+          "Once an Approved post has gone live, its page says the day its artwork will be removed, so there's time to keep a copy.",
+          "Posts that aren't Approved keep their artwork, whatever their date.",
+          "The review link shows the same: Artwork removed, with the copy and comments still there.",
+        ],
+      },
+      { kind: "h", text: "Posts with no live date" },
+      {
+        kind: "p",
+        text: "An Approved post with no live date, in Other Content say, isn't removed on its own. 7 days after its due date, Owners and Admins get a notification under the bell in the header. Opening it shows the post with Keep Artwork or Remove Artwork. Keep is for good: you won't be asked about that post again.",
       },
     ],
   },
@@ -271,9 +314,10 @@ export const HELP_ARTICLES: HelpArticle[] = [
         kind: "steps",
         items: [
           "Move a post to Client Review from its page.",
-          "Choose the share icon to make a review link, for one post or several.",
+          "Choose the share icon, then Create link, for this post or several.",
           "Add a passcode if you'd like the link protected.",
-          "Send the link to your client. They can comment, and approve if you allow it.",
+          "Choose Copy. It greys out with Link copied once it's on your clipboard.",
+          "Send the link to your client. They can comment, and approve if you allow it, without an account.",
         ],
       },
       {
@@ -283,7 +327,11 @@ export const HELP_ARTICLES: HelpArticle[] = [
       { kind: "h", text: "What your client sees" },
       {
         kind: "p",
-        text: "The review link shows each post as it will appear, and, with the client's Instagram connected, a Feed view of their real grid. An approval counts once, however many times it's pressed.",
+        text: "It's one link for every device. On a phone it fills the screen like a post, scrolling down to the comments. On a computer the post sits in a phone, sized to the window, with the caption scrolling inside it. With the client's Instagram connected there's a Feed view of their real grid too. An approval counts once, however many times it's pressed.",
+      },
+      {
+        kind: "p",
+        text: "People you've invited as Clients of that client are listed under Who are you?, so they can comment under their own name straight away. Anyone else can choose Someone else and give a name and email.",
       },
     ],
   },
@@ -297,6 +345,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         kind: "list",
         items: [
           "Comments are Public, seen by the client, or Private, for your team only.",
+          "Each name says whose side it's from: Rajesh Rana (No Fluff) for your agency, Parth Dogra (Casa Carigar) for the client, review link guests included.",
           "Drop a pin or mark an area on the artwork. On a video, a comment remembers the moment it was made.",
           "Select words in the caption to comment on just those.",
           "Resolve a comment once it's dealt with. Filter by All, Unresolved, Resolved, Mine or Private.",
@@ -346,6 +395,10 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         kind: "p",
         text: "Invite people from Settings, under Team, or from a client's People page. Each person can change the type of, resend invites to, and remove only the people below them.",
+      },
+      {
+        kind: "note",
+        text: "Someone is either on your team or at a client, never both. Inviting a team member as a Client, or a client's person onto your team, is refused with the reason. To move someone across, change their type instead. A Client can be on more than one of your clients.",
       },
     ],
   },
