@@ -891,10 +891,12 @@ export function CreativeModal(props: CreativeModalProps) {
     </div>
   );
 
-  const uploadError =
-    fileError ||
-    (uploadCarousel.error ? errorMessage(uploadCarousel.error, "Couldn't save the slides") : null) ||
-    (saveCopy.error ? errorMessage(saveCopy.error, "Couldn't save") : null);
+  // The artwork's own problem shows by its Save button and progress bar
+  // (reported directly: a failed video save looked like a loader that
+  // stopped, its reason at the foot of the window); the copy's stays here.
+  const artworkError =
+    fileError || (uploadCarousel.error ? errorMessage(uploadCarousel.error, "Couldn't save the slides") : null);
+  const uploadError = saveCopy.error ? errorMessage(saveCopy.error, "Couldn't save") : null;
 
   // Edit mode: project name up top, the post's own name and format
   // underneath it, smaller — e.g. "Winter Social Campaign" /
@@ -1288,6 +1290,7 @@ export function CreativeModal(props: CreativeModalProps) {
           {uploadProgress && uploadCarousel.isPending && (
             <UploadProgressBar progress={uploadProgress} />
           )}
+          {artworkError && !uploadCarousel.isPending && <p className="autherr">{artworkError}</p>}
 
           {/* Its own section after the artwork (direct instruction), saved
               on the post, not as a version (phase57). */}

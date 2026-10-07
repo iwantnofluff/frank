@@ -25,7 +25,21 @@ type OnProgress = (p: UploadProgress | null) => void;
 // the original goes up as long as it fits the 200MB limit.
 async function prepareForUpload(file: File, onProgress?: (fraction: number) => void): Promise<File> {
   if (!file.type.startsWith("video/")) return file;
-  const result = await compressVideo(file, onProgress);
+  // A compression that fails partway (Chrome can take its video encoder
+  // back from a tab that's out of sight) is tried once more before saying so.
+  let result;
+  try {
+    result = await compressVideo(file, onProgress);
+  } catch {
+    onProgress?.(0);
+    try {
+      result = await compressVideo(file, onProgress);
+    } catch (e) {
+      throw new Error(
+        `Couldn't compress this video (${(e as Error).message || "the browser stopped"}). Try again, keeping this tab open while it compresses.`,
+      );
+    }
+  }
   if (result.file.size > MAX_STORED_VIDEO_BYTES) {
     throw new Error(
       result.kind === "unchanged" && result.reason === "unsupported"
