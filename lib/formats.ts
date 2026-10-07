@@ -148,6 +148,12 @@ export function carouselMaxSlides(ids: string[]): number | null {
 
 // A format's shape as a CSS aspect-ratio ("4:5" → "4 / 5"); square for
 // the formats with none ("—", "varies").
+// The same shape as a number, width over height.
+export function formatRatio(id: string): number {
+  const [w, h] = aspectRatioCss(id).split(" / ").map(Number);
+  return w / h;
+}
+
 export function aspectRatioCss(id: string): string {
   const m = formatById(id)?.aspectRatio.match(/^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)$/);
   return m ? `${m[1]} / ${m[2]}` : "1 / 1";

@@ -6,6 +6,7 @@ import { useCreative } from "@/hooks/use-creative";
 import { useAdvanceCreativeStage } from "@/hooks/use-advance-creative-stage";
 import { useCreativeVersions, versionSlides } from "@/hooks/use-creative-versions";
 import { artworkRemovalDate, dayMonth } from "@/lib/artwork-removal";
+import { aspectRatioCss, formatRatio } from "@/lib/formats";
 import { useCopyVersions } from "@/hooks/use-copy-versions";
 import { useAssetSignedUrl, usePreloadAssets } from "@/hooks/use-asset-signed-url";
 import { useComments } from "@/hooks/use-comments";
@@ -154,7 +155,7 @@ export default function CreativeReviewPage({
   const currentSlide = frames[frameIndex] ?? null;
   const slidePosition = frameIndex + 1;
 
-  const { data: signedUrl } = useAssetSignedUrl(currentSlide?.asset.storage_key);
+  const { data: signedUrl, isLoading: signing } = useAssetSignedUrl(currentSlide?.asset.storage_key);
   usePreloadAssets(slides.filter((s) => s.asset.mime_type.startsWith("image/")).map((s) => s.asset.storage_key));
 
   // A video (phase34): the paused moment new comments are attached to, and
@@ -260,7 +261,11 @@ export default function CreativeReviewPage({
       />
       <div className="review-sep" aria-hidden="true" />
 
-      <div className="stage">
+      {/* Laid out, but not shown, until what decides its size is known —
+          who's looking (the staff controls can add a header row, which
+          re-scales the phone) and the post's versions — so it appears once,
+          at its real size (direct instruction: no jumping height). */}
+      <div className={`stage${membershipLoading || creativeVersions === undefined ? " stage-wait" : ""}`}>
         <div className="stage-h">
           <div className="tools">
             <div className="vsel">
@@ -309,6 +314,7 @@ export default function CreativeReviewPage({
                   title="Whether this post is visible through a share link, and whether it's been approved"
                 >
                   <button
+                    data-label="Internal Review"
                     type="button"
                     aria-pressed={creative.stage < 3}
                     disabled={advanceStage.isPending}
@@ -319,6 +325,7 @@ export default function CreativeReviewPage({
                     Internal Review
                   </button>
                   <button
+                    data-label="Client Review"
                     type="button"
                     className="sw-client"
                     aria-pressed={creative.stage === 3}
@@ -330,6 +337,7 @@ export default function CreativeReviewPage({
                     Client Review
                   </button>
                   <button
+                    data-label="Approved"
                     type="button"
                     className="sw-approved"
                     aria-pressed={creative.stage === 4}
@@ -434,9 +442,19 @@ export default function CreativeReviewPage({
                   <div className="dots">•••</div>
                 </div>
                 <div className="ig-media">
-                  {/* No version yet, one saved with every slide removed, or a
-                      carousel slide with nothing on it yet. */}
-                  {!currentSlide ? (
+                  {/* Until the versions are known, the post's own shape holds
+                      the space (direct instruction: no jumping height). */}
+                  {creativeVersions === undefined ? (
+                    // A tall format (a Reel, a Story) is nearly always a
+                    // video: held as an empty player, timeline and all.
+                    formatRatio(creative.format) < 0.8 ? (
+                      <VideoPlayer src={undefined} ratio={formatRatio(creative.format)} markers={[]} highlightedCommentId={null} onMarker={() => {}} seek={null} />
+                    ) : (
+                      <div className="ig-hold" style={{ aspectRatio: aspectRatioCss(creative.format) }} />
+                    )
+                  ) : /* No version yet, one saved with every slide removed, or a
+                      carousel slide with nothing on it yet. */
+                  !currentSlide ? (
                     <NoArtwork
                       format={creative.format}
                       title={creative.artwork_removed_at ? "Artwork removed" : undefined}
@@ -467,7 +485,9 @@ export default function CreativeReviewPage({
                         </button>
                       )}
                     </NoArtwork>
-                  ) : !signedUrl ? (
+                  ) : !signedUrl && signing && !isVideo ? (
+                    <div className="ig-hold" style={{ aspectRatio: aspectRatioCss(creative.format) }} />
+                  ) : !signedUrl && !isVideo ? (
                     <div className="ig-noasset">
                       {currentSlide?.asset.filename ?? "No preview available"}
                     </div>
@@ -475,7 +495,8 @@ export default function CreativeReviewPage({
                     <VideoPlayer
                       // Each video slide is its own player, from 0:00.
                       key={slidePosition}
-                      src={signedUrl}
+                      src={signedUrl ?? undefined}
+                      ratio={formatRatio(creative.format)}
                       markers={videoMarkers}
                       highlightedCommentId={highlightedCommentId}
                       onMarker={setHighlightedCommentId}
@@ -518,8 +539,10 @@ export default function CreativeReviewPage({
                       <img
                         key={slidePosition}
                         className={slideDir ? `car-in-${slideDir}` : undefined}
-                        src={signedUrl}
+                        src={signedUrl ?? undefined}
                         alt={creative.name}
+                        // The format's shape until the image's own is known.
+                        style={{ aspectRatio: `auto ${aspectRatioCss(creative.format)}` }}
                       />
                       <AnnotationLayer
                         mode={toolMode}

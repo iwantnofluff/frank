@@ -6,6 +6,7 @@ import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import { useAvatarUrls } from "@/hooks/use-avatar-urls";
 import { useCreative } from "@/hooks/use-creative";
 import { useMyMembership } from "@/hooks/use-my-membership";
+import { useMyAgency } from "@/hooks/use-my-agency";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useComments, type CommentRow } from "@/hooks/use-comments";
 import { useCreateComment } from "@/hooks/use-create-comment";
@@ -237,6 +238,11 @@ function VisibilityTag({
   );
 }
 
+// "(No Fluff)" or "(Casa Carigar)" after a name: whose side it's from.
+function FromName({ name }: { name: string | null }) {
+  return name ? <span className="cmt-from"> ({name})</span> : null;
+}
+
 function CommentCard({
   thread,
   replies,
@@ -248,6 +254,7 @@ function CommentCard({
   onToggleResolved,
   onToggleVisibility,
   photos,
+  fromName,
 }: {
   thread: CommentRow;
   replies: CommentRow[];
@@ -259,6 +266,8 @@ function CommentCard({
   onToggleResolved: (resolve: boolean) => void;
   onToggleVisibility: (commentId: string, next: "private" | "public") => void;
   photos: Record<string, string> | undefined;
+  // The agency's or the client's name, for after a comment's author.
+  fromName: (c: CommentRow) => string | null;
 }) {
   const [replying, setReplying] = useState(false);
   const authorName = thread.author?.name ?? thread.guest_name ?? "Someone";
@@ -284,7 +293,10 @@ function CommentCard({
           initials={initialsOf(authorName)}
           photoUrl={thread.author?.avatar_asset_id ? photos?.[thread.author.avatar_asset_id] : null}
         />
-        <b>{authorName}</b>
+        <b>
+          {authorName}
+          <FromName name={fromName(thread)} />
+        </b>
         <VisibilityTag
           visibility={thread.visibility}
           isStaff={isStaff}
@@ -326,7 +338,10 @@ function CommentCard({
                   photoUrl={r.author?.avatar_asset_id ? photos?.[r.author.avatar_asset_id] : null}
                 />
                 <div className="rb">
-                  <b>{replyAuthor}</b>
+                  <b>
+                    {replyAuthor}
+                    <FromName name={fromName(r)} />
+                  </b>
                   <VisibilityTag
                     visibility={r.visibility}
                     isStaff={isStaff}
@@ -391,6 +406,9 @@ export function CommentsPanel({
   canAnnotate: boolean;
 }) {
   const { data: creative } = useCreative(creativeId);
+  const { data: agency } = useMyAgency();
+  const clientName = creative?.projects?.clients?.name ?? null;
+  const fromName = (c: CommentRow) => (c.from === "agency" ? (agency?.name ?? null) : clientName);
   const { data: currentUser } = useCurrentUser();
   const { data: membership } = useMyMembership(creative?.agency_id);
   const { data: comments, isLoading, isError } = useComments(creativeId);
@@ -490,6 +508,7 @@ export function CommentsPanel({
             currentUserId={currentUser?.id}
             isHighlighted={highlightedCommentId === thread.id}
             photos={photos}
+            fromName={fromName}
             onSelect={() => onHighlight?.(thread.id)}
             onReply={(body, visibility) =>
               createComment.mutateAsync({

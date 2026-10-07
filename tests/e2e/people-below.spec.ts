@@ -80,10 +80,11 @@ test("an Admin switches an invited User to Client and back, then resends and rem
   const row = profile.locator(".profperson", { hasText: "Pat Pending" });
   await expect(row).toContainText("User");
 
-  await row.getByRole("button", { name: "Options for Pat Pending" }).click();
-  await page.locator(".colpop").getByRole("button", { name: "Make Client" }).click();
-  await expect(profile.getByRole("status")).toHaveText("Pat Pending is now a Client");
-  await expect(row.locator(".tag.blue")).toHaveText("Client");
+  // Their type is a dropdown on the tag itself (no ⋮ menu).
+  await row.locator(".typesel").click();
+  await page.getByRole("menuitemradio", { name: "Client" }).click();
+  await expect(row.getByRole("status")).toHaveText("Saved");
+  await expect(row.locator(".typesel")).toHaveText("Client");
   const { data: asClient } = await admin.from("memberships").select("role, client_id").eq("id", membershipId).single();
   expect(asClient).toEqual({ role: "user", client_id: frank.clientId });
   expect((await admin.from("staff_client_access").select("id").eq("membership_id", membershipId)).data).toEqual([]);
@@ -91,10 +92,9 @@ test("an Admin switches an invited User to Client and back, then resends and rem
   expect(await projectsOf()).toEqual([frank.projectId]);
   expect((await contact())?.archived_at).toBeNull();
 
-  await row.getByRole("button", { name: "Options for Pat Pending" }).click();
-  await page.locator(".colpop").getByRole("button", { name: "Make User" }).click();
-  await expect(profile.getByRole("status")).toHaveText("Pat Pending is now a User");
-  await expect(row.locator(".tag.blue")).toHaveText("User");
+  await row.locator(".typesel").click();
+  await page.getByRole("menuitemradio", { name: "User" }).click();
+  await expect(row.locator(".typesel")).toHaveText("User");
   const { data: asUser } = await admin.from("memberships").select("role, client_id").eq("id", membershipId).single();
   expect(asUser).toEqual({ role: "user", client_id: null });
   expect((await admin.from("staff_client_access").select("client_id").eq("membership_id", membershipId)).data).toEqual([
@@ -107,18 +107,18 @@ test("an Admin switches an invited User to Client and back, then resends and rem
 
   // Resend: a new link, the old one gone.
   const before = (await admin.from("invites").select("id").eq("membership_id", membershipId)).data!.map((r) => r.id);
-  await row.getByRole("button", { name: "Options for Pat Pending" }).click();
-  await page.locator(".colpop").getByRole("button", { name: "Resend Invite" }).click();
-  await expect(profile.getByRole("status")).toHaveText(`Invite resent to ${email}`, { timeout: 20_000 });
+  await row.locator(".typesel").click();
+  await page.getByRole("menuitem", { name: "Resend Invite" }).click();
+  await expect(profile.getByText(`Invite resent to ${email}`)).toBeVisible({ timeout: 20_000 });
   await expect(profile.getByRole("textbox", { name: `Invite link for ${email}` })).toHaveValue(/\/invite\//);
   const after = (await admin.from("invites").select("id").eq("membership_id", membershipId)).data!.map((r) => r.id);
   expect(after).toHaveLength(1);
   expect(before).not.toContain(after[0]);
 
   // Remove: gone.
-  await row.getByRole("button", { name: "Options for Pat Pending" }).click();
-  await page.locator(".colpop").getByRole("button", { name: "Remove Invite" }).click();
-  await expect(profile.getByRole("status")).toHaveText(`Invite to ${email} removed`);
+  await row.locator(".typesel").click();
+  await page.getByRole("menuitem", { name: "Remove Invite" }).click();
+  await expect(profile.getByText(`Invite to ${email} removed`)).toBeVisible();
   await expect(row).toHaveCount(0);
   expect((await admin.from("memberships").select("id").eq("id", membershipId)).data).toEqual([]);
 });

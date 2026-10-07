@@ -2756,3 +2756,48 @@ The shared review link is now the real page, not a preview of it (direct instruc
 - **At 390×844:** the phone layout was exactly 390×844. The post took 733px of the first screen, and the page scrolled (1,146px) down to the comment box and Approve. A comment posted from there showed at once.
 - **Gone:** the "Shared review" note, the Phone/Desktop buttons and the frames.
 - **Tests:** `shared-review-public.spec.ts` checks all of this, and its two screenshots were renewed (the whole page changed). Every other test that opens a review link now opens it at a phone's size, as their checks are for the phone layout, and all pass.
+
+## Comments say whose side they're from; stage hover; steady artwork; video saves that recover
+
+Direct instructions, together:
+- **Whose side:** on the Review page, each comment and reply names the agency or the client after its author: "Rajesh Rana (No Fluff)", "Parth Dogra (Casa Carigar)". Someone on the agency's team is the agency; a client's own people, and guests on a review link, are the client.
+- **Stage switch:** hovering an option shows its colour (blue, orange, green). The "not allowed" cursor that flashed up for the moment a change saves is gone.
+- **Steady artwork:** the post's artwork no longer changes height as it loads. Measured opening a Reel post, it went 540 → 517 → 291 → 142 → 444px over 3.4 seconds, and switching Brief → Content flashed 142px first.
+  - **The causes:** placeholders of different sizes while things loaded; the video player starting at the browser's 300×150 until the video's details arrived; and the header gaining a row when the staff controls appeared, which re-scaled the phone.
+  - **Now:** the space is held at the post's shape from the start (a tall format as an empty player, timeline included), the video player takes that shape before the video loads, and the centre panel is laid out out of sight until who's looking and the versions are known. It then appears once at its real size.
+- **Video saves that recover:** reported, a large video needed Save pressing several times, its loader stopping short.
+  - **Not reproduced:** a 166MB test video saved first time.
+  - **What the evidence shows:** on live, the post in question kept only the one successful file (6.9MB after compressing). The failed attempts never reached storage, so they failed while compressing or sending. Chrome can take its video encoder back from a tab that's out of sight, which would fit.
+  - **What changed:** a compression that fails partway is tried once more, then explained ("keep this tab open"). A send that drops, or meets a server error, is tried twice more after a short wait; a retry that finds the file already stored (only its answer was lost) counts it as sent. And the artwork's error now shows under its Save button, not at the foot of the window, where it read as a loader that just stopped.
+
+**Verified:**
+- **Comment labels:** staff and the client's own people both see "E2E Staff (E2E Test Agency)", "E2E Client User (E2E Test Client)" and "Guest Gail (E2E Test Client)". `comment-from.spec.ts` checks this, and the comment-cards screenshot changed only along the author lines.
+- **Stage switch:** hover measured blue and green, and the cursor stays a pointer straight after a click.
+- **Steady artwork:** the media area's visible height, sampled every frame, appeared once at 444px and stayed there, on opening the post (through the video loading at 3.9s) and on Brief → Content.
+- **Video saves, in real Chrome:**
+  - With the first send of a video cut off, it saved by itself in 5 seconds, from one press, as one version.
+  - With storage refusing the file, the reason showed 52px under Save and nothing was saved.
+  - Storage's answer for a file already there was checked: HTTP 400, "KeyAlreadyExists".
+
+## A client's People: projects in words, type as a dropdown; a steady stage row
+
+Direct instructions:
+- **Projects:** each person on a client's People shows their projects in words under their name and email ("Amazon A+, Event Hoardings", "All projects", "No projects"), with Edit Projects beneath. It opens a window with the checklist and its own Save, greyed until something changes. Once saved it shows "Saved", Save greys out again, and Cancel becomes Done. This replaces the "2 of 3 projects" dropdown.
+- **Type:** someone's type is a dropdown on the tag itself, a rounded rectangle reading User or Client with an arrow. Picking the other one switches them straight away, with "Saved" by them. A pending invite's Resend Invite and Remove Invite sit in the same dropdown under a divider. The row's ⋮ menu is gone. The project profile's People list keeps its ⋮ menu; it wasn't part of this.
+- **Saving** (decided directly: inside each change, not one Save for the panel).
+- **Stage row:** choosing Internal Review, Client Review or Approved no longer nudges the row. The chosen option is bold, which made it wider; every option now reserves its bold width.
+
+## Test files no longer left in storage
+
+Clearing a test agency removed its database rows but not its files, so every test run left uploads behind in staging's storage. There were 986 files (233MB) in the folders of agencies that no longer exist, all deleted (direct instruction: no heavy test videos left behind). The suite's clean-up now deletes each test agency's files too.
+
+**Verified:**
+- **Stage row:** the positions of every item in the toolbar were identical after choosing each of the three.
+- **People:**
+  - **Projects:** a person's projects read "All projects", then "E2E Test Project, Event Hoardings" after unticking one in Edit Projects and saving.
+  - **Saving:** Save was greyed before any change, enabled after one, and greyed again with "Saved" once done.
+  - **Type:** the dropdown (63×28, 6px corners) switched a Client to User with "Saved". For a pending invite it also offered Resend Invite and Remove Invite.
+  - **Tests:** `people-below.spec.ts` and `project-access.spec.ts` now use the new controls.
+- **Storage:** after a run that uploads files, staging held none for deleted agencies.
+- **Screenshots:** the Review page's two changed only in the toolbar strip, which is a little wider. The affected spec files pass, 27 of 27, run one at a time.
+- **Staging's database:** during this work it failed about 1 query in 15 with "current transaction is aborted", even simple reads, which made a parallel run fail 20 tests. They passed run again. Live answered 15 of 15. A restart of the staging project in Supabase's dashboard should clear it.

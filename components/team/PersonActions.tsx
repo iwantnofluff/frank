@@ -21,26 +21,31 @@ export function usePersonActions(agencyId: string, clientId: string) {
   const [sent, setSent] = useState<SentInvite | null>(null);
   const failed = (fallback: string) => (e: Error) => setNotice({ text: errorMessage(e, fallback), error: true });
 
+  // Switching between User and Client of this client; onDone once saved.
+  function switchType(person: ClientPerson, to: ClientPerson["kind"], onDone?: () => void) {
+    if (to === person.kind) return;
+    setNotice(null);
+    changeType.mutate(
+      to === "client"
+        ? { membershipId: person.membershipId, type: "client", clientId }
+        : { membershipId: person.membershipId, type: "user" },
+      { onSuccess: () => onDone?.(), onError: failed("Couldn't change them") },
+    );
+  }
+
   function itemsFor(person: ClientPerson): Item[] {
-    const items: Item[] = [
+    const done = (kind: string) => () => setNotice({ text: `${person.name} is now a ${kind}` });
+    return [
       person.kind === "user"
-        ? {
-            label: "Make Client",
-            onClick: () =>
-              changeType.mutate(
-                { membershipId: person.membershipId, type: "client", clientId },
-                { onSuccess: () => setNotice({ text: `${person.name} is now a Client` }), onError: failed("Couldn't change them") },
-              ),
-          }
-        : {
-            label: "Make User",
-            onClick: () =>
-              changeType.mutate(
-                { membershipId: person.membershipId, type: "user" },
-                { onSuccess: () => setNotice({ text: `${person.name} is now a User` }), onError: failed("Couldn't change them") },
-              ),
-          },
+        ? { label: "Make Client", onClick: () => switchType(person, "client", done("Client")) }
+        : { label: "Make User", onClick: () => switchType(person, "user", done("User")) },
+      ...inviteItems(person),
     ];
+  }
+
+  // A pending invite's own: resend it, or take it back.
+  function inviteItems(person: ClientPerson): Item[] {
+    const items: Item[] = [];
     if (!person.accepted) {
       items.push(
         {
@@ -86,5 +91,5 @@ export function usePersonActions(agencyId: string, clientId: string) {
     </>
   );
 
-  return { itemsFor, outcome };
+  return { itemsFor, inviteItems, switchType, switching: changeType.isPending, outcome };
 }

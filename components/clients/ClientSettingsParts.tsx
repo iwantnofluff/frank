@@ -1,9 +1,10 @@
 "use client";
 
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
-import { ProjectPicker } from "@/components/team/ProjectPicker";
+import { useState } from "react";
 import { usePersonActions } from "@/components/team/PersonActions";
-import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
+import { PersonTypeMenu } from "@/components/clients/PersonTypeMenu";
+import { PersonProjectsModal } from "@/components/clients/PersonProjectsModal";
 import { useClientPeople, useSetPersonProjects, type ClientPerson } from "@/hooks/use-project-access";
 import { useAvatarUrls } from "@/hooks/use-avatar-urls";
 import { useUpdateClient } from "@/hooks/use-update-client";
@@ -40,11 +41,23 @@ export function ClientPeople({
   const { data: photos } = useAvatarUrls((people ?? []).map((p) => p.avatarAssetId));
   const liveIds = groups[0].projects.map((p) => p.id);
   const actions = usePersonActions(agencyId, clientId);
+  const [editing, setEditing] = useState<ClientPerson | null>(null);
+  // The row whose type was just switched, for its "Saved" note.
+  const [savedRow, setSavedRow] = useState<string | null>(null);
 
   // Only live projects are offered; archived ones they're on stay as they are.
-  function change(p: ClientPerson, next: string[] | null) {
+  async function change(p: ClientPerson, next: string[]) {
     const from = p.projectIds.filter((id) => liveIds.includes(id));
-    setProjects.mutate({ membershipId: p.membershipId, clientId, from, to: next ?? liveIds });
+    await setProjects.mutateAsync({ membershipId: p.membershipId, clientId, from, to: next });
+  }
+
+  // Their projects, in words (direct instruction: shown, not hidden behind
+  // a dropdown).
+  function projectsText(p: ClientPerson) {
+    const on = groups[0].projects.filter((g) => p.projectIds.includes(g.id));
+    if (on.length === liveIds.length) return "All projects";
+    if (on.length === 0) return "No projects";
+    return on.map((g) => g.name).join(", ");
   }
 
   return (
@@ -65,7 +78,6 @@ export function ClientPeople({
             {(people ?? []).length === 0 && <p className="msection-empty">No Users or Clients yet.</p>}
             <div className="proflist">
               {(people ?? []).map((p) => {
-                const on = p.projectIds.filter((id) => liveIds.includes(id));
                 return (
                   <div className="profperson stack" key={p.membershipId}>
                     <div className="pp-top">
@@ -78,27 +90,46 @@ export function ClientPeople({
                       <div className="pp-t">
                         <b>{p.name}</b>
                         <span>{p.email}</span>
+                        {liveIds.length > 0 && (
+                          <span className="pp-projs">
+                            {projectsText(p)}
+                            <button type="button" className="badd" onClick={() => setEditing(p)}>
+                              Edit Projects
+                            </button>
+                          </span>
+                        )}
                       </div>
-                      <span className="tag blue">{p.kind === "client" ? "Client" : "User"}</span>
                       {!p.accepted && <span className="tag grey">Invited</span>}
-                      <RowActionsMenu title={`Options for ${p.name}`} items={actions.itemsFor(p)} />
+                      {savedRow === p.membershipId && (
+                        <span className="bsaved" role="status">
+                          Saved
+                        </span>
+                      )}
+                      <PersonTypeMenu
+                        person={p}
+                        disabled={actions.switching}
+                        onSwitch={(to) =>
+                          actions.switchType(p, to, () => {
+                            setSavedRow(p.membershipId);
+                            setTimeout(() => setSavedRow((r) => (r === p.membershipId ? null : r)), 2500);
+                          })
+                        }
+                        extra={actions.inviteItems(p)}
+                      />
                     </div>
-                    {liveIds.length > 0 && (
-                      <div className="pp-proj">
-                        <ProjectPicker
-                          groups={groups}
-                          value={on.length === liveIds.length ? null : on}
-                          onChange={(next) => change(p, next)}
-                        />
-                      </div>
-                    )}
                   </div>
                 );
               })}
             </div>
             {actions.outcome}
-            {setProjects.error && (
-              <p className="autherr">{errorMessage(setProjects.error, "Couldn't change their projects")}</p>
+            {editing && (
+              <PersonProjectsModal
+                name={editing.name}
+                projects={groups[0].projects}
+                initial={editing.projectIds.filter((id) => liveIds.includes(id))}
+                onSave={(next) => change(editing, next)}
+                onClose={() => setEditing(null)}
+              />
             )}
           </>
         ))}

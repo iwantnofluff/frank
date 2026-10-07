@@ -17,6 +17,10 @@ export interface CommentRow {
   resolved_at: string | null;
   created_at: string;
   author: { name: string; avatar_asset_id: string | null } | null;
+  // Whose side it came from (direct instruction: shown after the name):
+  // the agency's team, or the client — its people, or a guest on a review
+  // link.
+  from: "agency" | "client";
 }
 
 export function useComments(creativeId: string) {
@@ -36,7 +40,7 @@ export function useComments(creativeId: string) {
       const { data: rows, error } = await supabase
         .from("comments")
         .select(
-          "id, parent_id, author_id, guest_name, body, visibility, anchor, creative_version_id, copy_version_id, resolved_at, created_at",
+          "id, agency_id, parent_id, author_id, guest_name, body, visibility, anchor, creative_version_id, copy_version_id, resolved_at, created_at",
         )
         .eq("creative_id", creativeId)
         .is("deleted_at", null)
@@ -57,8 +61,23 @@ export function useComments(creativeId: string) {
         );
       }
 
+      // Who among them is on the agency's team (a membership with no
+      // client), deactivated or not.
+      const team = new Set<string>();
+      if (authorIds.length > 0) {
+        const { data: members, error: membersError } = await supabase
+          .from("memberships")
+          .select("user_id")
+          .eq("agency_id", rows[0].agency_id)
+          .is("client_id", null)
+          .in("user_id", authorIds);
+        if (membersError) throw membersError;
+        for (const m of members) team.add(m.user_id as string);
+      }
+
       return rows.map((r) => ({
         ...r,
+        from: r.author_id && team.has(r.author_id) ? "agency" : "client",
         author: r.author_id
           ? (authorsById.get(r.author_id) ?? { name: "", avatar_asset_id: null })
           : null,

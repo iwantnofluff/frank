@@ -2665,6 +2665,9 @@ a.fd-ref:hover {
   min-height: 0;
   overflow: hidden;
 }
+.stage.stage-wait > * {
+  visibility: hidden;
+}
 .stage-h,
 .cmts-h {
   background: transparent;
@@ -2785,8 +2788,28 @@ a.fd-ref:hover {
   color: var(--muted);
   white-space: nowrap;
 }
+/* Disabled only for the moment a change is saving: no "not allowed"
+   cursor flashing up after a click (direct instruction). */
 .stagesw button:disabled {
-  cursor: not-allowed;
+  cursor: pointer;
+}
+/* Hovering an option shows its own colour (direct instruction). */
+.stagesw button {
+  transition:
+    background-color var(--dur-fast) var(--ease-std),
+    color var(--dur-fast) var(--ease-std);
+}
+.stagesw button:not([aria-pressed="true"]):hover {
+  background: var(--action-soft);
+  color: var(--action);
+}
+.stagesw button.sw-client:not([aria-pressed="true"]):hover {
+  background: var(--amber-bg);
+  color: var(--amber);
+}
+.stagesw button.sw-approved:not([aria-pressed="true"]):hover {
+  background: var(--green-bg);
+  color: var(--green);
 }
 .stagesw button[aria-pressed="true"] {
   background: var(--action-soft);
@@ -2997,6 +3020,11 @@ select.sort:hover {
 .ig-media video {
   width: 100%;
   display: block;
+}
+/* The space a post's artwork will take, held while it loads (direct
+   instruction: no jumping height). */
+.ig-hold {
+  width: 100%;
 }
 /* NoArtwork: a copy-only post's stand-in for the image. */
 .ig-noart {
@@ -5647,9 +5675,9 @@ button.avatar {
 .vplayer {
   background: #000;
 }
-/* Sized to the video itself, so the pin layer (inset: 0) is exactly the
-   frame; the height is capped so a 9:16 Reel and its timeline fit on
-   screen together. */
+/* Sized to the video's shape, so the pin layer (inset: 0) is exactly the
+   frame; its width (set inline, VideoPlayer) keeps the height to 62% of
+   the screen, so a 9:16 Reel and its timeline fit on screen together. */
 .vframe {
   position: relative;
   width: fit-content;
@@ -5659,7 +5687,6 @@ button.avatar {
 .vframe video {
   display: block;
   max-width: 100%;
-  max-height: 62vh;
 }
 .vbar {
   display: flex;
@@ -7748,4 +7775,86 @@ button.feedgrid-live {
 .artdec span {
   font-size: 13.2px;
   color: var(--muted);
+}
+
+/* Whose side a comment is from, after its author's name: "(No Fluff)",
+   "(Casa Carigar)" (direct instruction). */
+.cmt-from {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+/* A client's People (direct instruction): each person's projects in words
+   under their name, with Edit Projects, and their type as a dropdown. */
+.profperson.stack .pp-top {
+  align-items: flex-start;
+}
+.profperson .pp-t .pp-projs {
+  white-space: normal;
+  color: var(--ink);
+  font-size: 13.2px;
+  line-height: 1.4;
+  margin-top: 6px;
+}
+.profperson .pp-t .pp-projs .badd {
+  display: block;
+}
+.typesel {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  padding: 4px 8px 4px 10px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r);
+  background: var(--surface);
+  color: var(--action);
+  font-size: 12.7px;
+  font-weight: 500;
+  transition: border-color var(--dur-fast) var(--ease-std);
+}
+.typesel:hover,
+.typesel[aria-expanded="true"] {
+  border-color: var(--action);
+}
+.typesel svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.typesel-tick {
+  width: 14px;
+  height: 14px;
+  margin-left: auto;
+  fill: none;
+  stroke: var(--action);
+  stroke-width: 2.4;
+}
+.typesel-sep {
+  height: 1px;
+  background: var(--line);
+  margin: 4px 6px;
+}
+.projchecks {
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 4px;
+}
+
+/* Every option keeps the width it has when chosen (bold), so choosing one
+   doesn't nudge the row (direct instruction). */
+.stagesw button {
+  display: inline-grid;
+  align-content: center;
+}
+.stagesw button::after {
+  content: attr(data-label);
+  font-weight: 600;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
 }

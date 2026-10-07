@@ -174,14 +174,20 @@ test("a client's profile lists its people with their projects, and an Owner chan
   await page.goto(`${APP_URL}/clients/${frank.clientId}/settings/people`);
   const modal = page.locator(".setmain");
   const person = modal.locator(".profperson", { hasText: "Proj User" });
-  await expect(person.getByRole("button", { name: "Projects: All projects" })).toBeVisible();
+  // Their projects in words under their name, changed from Edit Projects.
+  await expect(person.locator(".pp-projs")).toContainText("All projects");
   await page.screenshot({ path: `${process.env.SHOT_DIR ?? "test-results"}/client-profile.png` });
 
-  await person.getByRole("button", { name: "Projects: All projects" }).click();
-  await page.getByRole("dialog", { name: "Projects" }).getByRole("checkbox", { name: "E2E Test Project" }).click();
-  await expect(person.getByRole("button", { name: /^Projects: E2E Continuous Project/ })).toBeVisible();
+  await person.getByRole("button", { name: "Edit Projects" }).click();
+  const projects = page.getByRole("dialog", { name: "Proj User's Projects" });
+  await expect(projects.getByRole("button", { name: "Save" })).toBeDisabled();
+  await projects.getByRole("checkbox", { name: "E2E Test Project" }).click();
+  await projects.getByRole("button", { name: "Save" }).click();
+  await expect(projects.getByText("Saved")).toBeVisible();
+  await expect(projects.getByRole("button", { name: "Save" })).toBeDisabled();
+  await projects.getByRole("button", { name: "Done" }).click();
+  await expect(person.locator(".pp-projs")).toContainText(/^E2E Continuous Project/);
   await expect.poll(() => projectsOf(frank, user.email)).toEqual([second]);
-  await page.keyboard.press("Escape");
 
   // Invite People starts with this client chosen.
   await modal.getByRole("button", { name: "+ Invite People" }).click();

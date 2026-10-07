@@ -24,8 +24,11 @@ export function VideoPlayer({
   pauseNow,
   onMoment,
   overlay,
+  ratio,
 }: {
-  src: string;
+  // Not yet known while the file's address is fetched: the player is
+  // drawn at its size anyway, so nothing moves when the video arrives.
+  src: string | undefined;
   markers: TimelineMarker[];
   highlightedCommentId: string | null;
   onMarker: (commentId: string) => void;
@@ -37,8 +40,14 @@ export function VideoPlayer({
   onMoment?: (t: number | null) => void;
   // Drawn over the frame, given the current moment and whether paused.
   overlay?: (t: number, paused: boolean) => ReactNode;
+  // Width over height before the video has loaded: the post's format's
+  // (direct instruction: no jump to the real height). The video's own
+  // takes over once known, if different.
+  ratio: number;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
+  const [ownRatio, setOwnRatio] = useState<number | null>(null);
+  const r = ownRatio ?? ratio;
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [paused, setPaused] = useState(true);
@@ -74,13 +83,20 @@ export function VideoPlayer({
 
   return (
     <div className="vplayer">
-      <div className="vframe">
+      {/* Sized from the shape, not from the loaded video: as wide as fits,
+          no taller than 62% of the screen. */}
+      <div className="vframe" style={{ width: `min(100%, calc(62vh * ${r}))` }}>
         <video
           ref={ref}
           src={src}
           playsInline
           preload="metadata"
-          onLoadedMetadata={(e) => setDuration(e.currentTarget.duration || 0)}
+          style={{ width: "100%", aspectRatio: String(r) }}
+          onLoadedMetadata={(e) => {
+            setDuration(e.currentTarget.duration || 0);
+            const { videoWidth: w, videoHeight: h } = e.currentTarget;
+            if (w && h) setOwnRatio(w / h);
+          }}
           onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
           onSeeked={(e) => setTime(e.currentTarget.currentTime)}
           onPlay={() => setPaused(false)}

@@ -5,6 +5,7 @@ import type { SharedCreative } from "@/hooks/use-shared-review";
 import type { ReviewController } from "@/hooks/use-review-controller";
 import { VideoPlayer, type TimelineMarker } from "@/components/creative-review/VideoPlayer";
 import { commentTime } from "@/lib/annotations";
+import { formatRatio, aspectRatioCss } from "@/lib/formats";
 import { NoArtwork } from "@/components/creative-review/NoArtwork";
 import { dayMonth } from "@/lib/artwork-removal";
 import { CarouselNav } from "@/components/creative-review/CarouselNav";
@@ -88,6 +89,7 @@ export function ReviewMedia({
         <VideoPlayer
           key={`${active.id}:${slide.position}`}
           src={stableSrc!}
+          ratio={formatRatio(active.format)}
           // Only this slide's comments, when it's one video of several.
           markers={active.comments.flatMap((c) => {
             const t = commentTime(c.anchor);
@@ -113,7 +115,8 @@ export function ReviewMedia({
           className={dir ? `car-in-${dir}` : undefined}
           src={slide.signed_url}
           alt={active.name}
-          style={{ width: "100%" }}
+          // The format's shape until the image's own is known.
+          style={{ width: "100%", aspectRatio: `auto ${aspectRatioCss(active.format)}` }}
         />
       )}
       <CarouselNav
