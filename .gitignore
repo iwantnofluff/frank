@@ -45,3 +45,6 @@ next-env.d.ts
 
 # Copied from node_modules on install (scripts/copy-mediapipe-wasm.mjs)
 /public/mediapipe/wasm/
+
+# The Supabase CLI's own notes (version, last linked project)
+/supabase/.temp/
