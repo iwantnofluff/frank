@@ -175,7 +175,10 @@ test("a client's profile lists its people with their projects, and an Owner chan
   const modal = page.locator(".setmain");
   const person = modal.locator(".profperson", { hasText: "Proj User" });
   // Their projects in words under their name, changed from Edit Projects.
-  await expect(person.locator(".pp-projs")).toContainText("All projects");
+  // Named one by one, even when they're on every project.
+  await expect(person.locator(".pp-projs")).not.toContainText("All projects");
+  await expect(person.locator(".pp-projs")).toContainText("E2E Test Project");
+  await expect(person.locator(".pp-projs")).toContainText("E2E Continuous Project");
   await page.screenshot({ path: `${process.env.SHOT_DIR ?? "test-results"}/client-profile.png` });
 
   await person.getByRole("button", { name: "Edit Projects" }).click();

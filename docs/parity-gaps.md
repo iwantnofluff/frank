@@ -2782,7 +2782,7 @@ Direct instructions, together:
 ## A client's People: projects in words, type as a dropdown; a steady stage row
 
 Direct instructions:
-- **Projects:** each person on a client's People shows their projects in words under their name and email ("Amazon A+, Event Hoardings", "All projects", "No projects"), with Edit Projects beneath. It opens a window with the checklist and its own Save, greyed until something changes. Once saved it shows "Saved", Save greys out again, and Cancel becomes Done. This replaces the "2 of 3 projects" dropdown.
+- **Projects:** each person on a client's People shows their projects in words under their name and email ("Amazon A+, Event Hoardings", or "No projects"), always by name, even when they're on every project (direct instruction: never "All projects"), with Edit Projects beneath. It opens a window with the checklist and its own Save, greyed until something changes. Once saved it shows "Saved", Save greys out again, and Cancel becomes Done. This replaces the "2 of 3 projects" dropdown.
 - **Type:** someone's type is a dropdown on the tag itself, a rounded rectangle reading User or Client with an arrow. Picking the other one switches them straight away, with "Saved" by them. A pending invite's Resend Invite and Remove Invite sit in the same dropdown under a divider. The row's ⋮ menu is gone. The project profile's People list keeps its ⋮ menu; it wasn't part of this.
 - **Saving** (decided directly: inside each change, not one Save for the panel).
 - **Stage row:** choosing Internal Review, Client Review or Approved no longer nudges the row. The chosen option is bold, which made it wider; every option now reserves its bold width.

@@ -52,12 +52,10 @@ export function ClientPeople({
   }
 
   // Their projects, in words (direct instruction: shown, not hidden behind
-  // a dropdown).
+  // a dropdown), and always by name, even when they're on every one.
   function projectsText(p: ClientPerson) {
     const on = groups[0].projects.filter((g) => p.projectIds.includes(g.id));
-    if (on.length === liveIds.length) return "All projects";
-    if (on.length === 0) return "No projects";
-    return on.map((g) => g.name).join(", ");
+    return on.length ? on.map((g) => g.name).join(", ") : "No projects";
   }
 
   return (
