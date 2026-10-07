@@ -44,11 +44,51 @@ export function useSubmitSharedComment(token: string, passcode: string | null) {
       if (error) throw error;
       return data as ActionResult;
     },
-    onSuccess: (result) => {
+    // Shown at once, under the guest's name (direct instruction), until the
+    // reload brings the saved one; taken back out if it isn't saved.
+    onMutate: async (input) => {
+      await queryClient.cancelQueries({ queryKey: ["shared-review", token] });
+      const previous = queryClient.getQueriesData<SharedReviewData>({ queryKey: ["shared-review", token] });
+      queryClient.setQueriesData<SharedReviewData>({ queryKey: ["shared-review", token] }, (data) => {
+        if (!data || data.status !== "ok") return data;
+        return {
+          ...data,
+          creatives: data.creatives.map((c) =>
+            c.id !== input.creativeId
+              ? c
+              : {
+                  ...c,
+                  comments: [
+                    ...c.comments,
+                    {
+                      id: `pending-${Date.now()}`,
+                      author_name: input.guestName,
+                      body: input.body,
+                      created_at: new Date().toISOString(),
+                      anchor:
+                        input.atSeconds != null
+                          ? { type: "time", t: input.atSeconds, ...(input.slide != null ? { slide: input.slide } : {}) }
+                          : null,
+                    },
+                  ],
+                },
+          ),
+        };
+      });
+      return { previous };
+    },
+    onError: (_error, _input, context) => {
+      for (const [key, data] of context?.previous ?? []) queryClient.setQueryData(key, data);
+    },
+    onSuccess: (result, _input, context) => {
       if (result.status === "ok") {
-        queryClient.invalidateQueries({ queryKey: ["shared-review", token] });
         if (result.comment_id) classifyComment(result.comment_id);
+      } else {
+        for (const [key, data] of context?.previous ?? []) queryClient.setQueryData(key, data);
       }
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["shared-review", token] });
     },
   });
 }

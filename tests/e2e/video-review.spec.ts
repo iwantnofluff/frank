@@ -108,6 +108,8 @@ test("on the post page, comments made at a moment sit on the timeline and jump b
   await page.locator(".annot-composer textarea").fill("Pin here");
   await page.locator(".annot-composer").getByRole("button", { name: "Post" }).click();
   await expect(page.locator(".cmt", { hasText: "Pin here" })).toContainText("Pin 1 · 0:01");
+  // Comments show the moment they're posted; wait for both saves.
+  await expect(page.locator(".cmt.pending")).toHaveCount(0);
 
   const { data: rows } = await admin
     .from("comments")
@@ -156,7 +158,7 @@ test("on the review link, a guest can comment at a moment and jump back to it", 
   await phone.getByPlaceholder("Your email").fill("guest@example.invalid");
   await phone.getByPlaceholder("Add a comment…").fill("Guest at a moment");
   await phone.getByRole("button", { name: "Post", exact: true }).click();
-  await expect(phone.locator(".m-cmt", { hasText: "Guest at a moment" })).toContainText("0:01", { timeout: 15_000 });
+  await expect(phone.locator(".m-cmt:not(.pending)", { hasText: "Guest at a moment" })).toContainText("0:01", { timeout: 15_000 });
   // Posting reloads the review; the video stays where it was.
   expect(Math.abs((await videoTime(page, scope)) - at)).toBeLessThan(0.05);
 
@@ -227,6 +229,7 @@ test("a carousel's video slide has its own timeline, and its comments stay on th
   await page.locator("aside .composer .intog input").last().uncheck();
   await page.getByRole("button", { name: "Post", exact: true }).last().click();
   await expect(page.locator(".cmt", { hasText: "On the video slide" })).toContainText("0:01");
+  await expect(page.locator(".cmt.pending")).toHaveCount(0);
   const { data: row } = await admin.from("comments").select("anchor").eq("creative_id", frank.creativeId).eq("body", "On the video slide").single();
   expect((row!.anchor as { type: string; slide: number }).type).toBe("time");
   expect((row!.anchor as { slide: number }).slide).toBe(2);
@@ -254,7 +257,7 @@ test("a carousel's video slide has its own timeline, and its comments stay on th
   await phone.getByPlaceholder("Your email").fill("guest@example.invalid");
   await phone.getByPlaceholder("Add a comment…").fill("Guest on slide two");
   await phone.getByRole("button", { name: "Post", exact: true }).click();
-  await expect(phone.locator(".m-cmt", { hasText: "Guest on slide two" })).toBeVisible({ timeout: 15_000 });
+  await expect(phone.locator(".m-cmt:not(.pending)", { hasText: "Guest on slide two" })).toBeVisible({ timeout: 15_000 });
   const { data: guest } = await admin.from("comments").select("anchor").eq("creative_id", frank.creativeId).eq("body", "Guest on slide two").single();
   expect((guest!.anchor as { slide: number }).slide).toBe(2);
 });

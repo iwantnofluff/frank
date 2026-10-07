@@ -168,7 +168,7 @@ export function DesktopReview({
               <p className="sub">No comments yet.</p>
             )}
             {active?.comments.map((c) => (
-              <div className={`cmt${controller.highlightedCommentId === c.id ? " act" : ""}`} key={c.id}>
+              <div className={`cmt${controller.highlightedCommentId === c.id ? " act" : ""}${c.id.startsWith("pending-") ? " pending" : ""}`} key={c.id}>
                 <div className="cmt-h">
                   <span
                     className="who"

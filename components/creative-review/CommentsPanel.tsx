@@ -278,11 +278,14 @@ function CommentCard({
   // and stricter than the prototype, which only gates the Make
   // Public/Private toggle behind MODE==="client", not Resolve/Reopen.
   const canResolve = isStaff || thread.author_id === currentUserId;
+  // Shown the moment it's posted, before the save is back (useCreateComment):
+  // nothing to reply to or resolve yet.
+  const pending = thread.id.startsWith("pending-");
 
   return (
     <div
       id={`cmt-${thread.id}`}
-      className={`cmt${thread.resolved_at ? " resolved" : ""}${isHighlighted ? " act" : ""}${thread.visibility === "private" ? " internal" : ""}`}
+      className={`cmt${thread.resolved_at ? " resolved" : ""}${isHighlighted ? " act" : ""}${thread.visibility === "private" ? " internal" : ""}${pending ? " pending" : ""}`}
       onClick={thread.anchor ? onSelect : undefined}
       style={thread.anchor ? { cursor: "pointer" } : undefined}
     >
@@ -310,7 +313,7 @@ function CommentCard({
       {thread.anchor && <AnchorBadge anchor={thread.anchor} />}
       <p>{thread.body}</p>
 
-      <div className="cmt-f">
+      {!pending && <div className="cmt-f">
         <button type="button" onClick={() => setReplying(!replying)}>
           Reply
         </button>
@@ -324,7 +327,7 @@ function CommentCard({
             </button>
           )}
         </div>
-      </div>
+      </div>}
 
       {replies.length > 0 && (
         <div className="replies">

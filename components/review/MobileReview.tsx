@@ -132,7 +132,7 @@ export function MobileReview({
 
             {active?.comments.map((c) => (
               <div
-                className={`m-cmt${controller.highlightedCommentId === c.id ? " act" : ""}`}
+                className={`m-cmt${controller.highlightedCommentId === c.id ? " act" : ""}${c.id.startsWith("pending-") ? " pending" : ""}`}
                 key={c.id}
               >
                 <div className="ch">

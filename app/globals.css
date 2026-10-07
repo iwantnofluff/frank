@@ -8088,3 +8088,9 @@ button.hbrand-add:hover {
     transition: none;
   }
 }
+
+/* A comment shown the moment it's posted, until its save is back. */
+.cmt.pending,
+.m-cmt.pending {
+  opacity: 0.7;
+}

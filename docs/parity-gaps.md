@@ -2912,3 +2912,12 @@ Direct instruction: a comment made on one device appears on every other page ope
 - **Review link:** a guest's page showed a staff public comment after about 11s, with its images' addresses unchanged. A private note never appeared.
 - **Draft with Frank:** an open window showed a message added elsewhere after 1.1s.
 - **Tests:** `live-comments.spec.ts` covers the first two. The comment, review-link, copy-chat and video specs pass (20).
+
+## A posted comment shows at once where it was posted
+
+Reported directly: a comment took a moment to appear on the device that posted it. Before, it waited for the save, then for the comments to reload, and the save itself first asked the server who was signed in.
+- **Shown at once:** a comment now shows the moment Post is pressed, on the post page (under the poster's name and picture, marked agency or client) and on the review link (under the guest's name). The saved one replaces it once it's back. Until then it's slightly faded, without Reply or Resolve, as there's nothing saved to reply to yet.
+- **On failure:** if the save fails, it's taken back out and the error shows as before.
+- **The save itself:** it reads the session already on the device rather than asking the server.
+
+**Verified:** on the post page the comment showed 70ms after pressing Post, and its saved version was in place by 1.9s. On the review link it showed after 42ms, with one copy once saved. The comment, review-link, live-comment, video and stage specs pass.
