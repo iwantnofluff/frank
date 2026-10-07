@@ -25,6 +25,7 @@ export function DesktopReview({
   shown: boolean; // the layout on screen (phone or desktop)
 }) {
   const { creatives, active, activeIndex, goTo } = controller;
+  const clientLogoUrl = controller.data?.status === "ok" ? controller.data.client_logo_url : null;
   // Whether the post goes on below the phone's screen, for the note under it.
   const scroller = useRef<HTMLDivElement>(null);
   const [more, setMore] = useState(false);
@@ -112,7 +113,13 @@ export function DesktopReview({
                   <div className="ig">
                     <div className="ig-h">
                       <div className="ig-av">
-                        <i />
+                        {/* The client's logo beside the handle (direct instruction). */}
+                        {clientLogoUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
+                          <img src={clientLogoUrl} alt="" />
+                        ) : (
+                          <i />
+                        )}
                       </div>
                       <div>
                         <b>{agencyName}</b>

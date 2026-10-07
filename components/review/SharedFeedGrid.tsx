@@ -37,7 +37,11 @@ export function SharedFeedGrid({ controller }: { controller: ReviewController })
           onBack={() => setOpenPost(null)}
         />
       )}
-      <FeedProfile profile={liveFeed.profile} fallbackName={liveFeed.profile.username} />
+      <FeedProfile
+        profile={liveFeed.profile}
+        fallbackName={liveFeed.profile.username}
+        logoUrl={controller.data?.status === "ok" ? controller.data.client_logo_url : null}
+      />
       <FeedTabs tab={tab} onTab={setTab} />
       <div className={tab === "reels" ? "feedgrid reels" : "feedgrid"}>
         {shared.map(({ c, i }) => {

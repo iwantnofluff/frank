@@ -10,6 +10,9 @@ import { useCreativeVersions, versionSlides } from "@/hooks/use-creative-version
 import { useAssetSignedUrl } from "@/hooks/use-asset-signed-url";
 import { NoArtwork } from "@/components/creative-review/NoArtwork";
 import type { CreativeListRow } from "@/hooks/use-creatives";
+import { usePathname } from "next/navigation";
+import { useProject } from "@/hooks/use-project";
+import { useClientLogoUrl } from "@/hooks/use-client-logo-url";
 
 function relativeTime(iso: string): string {
   const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
@@ -45,6 +48,10 @@ export function CreativePreviewPopover({
   onMouseLeave?: () => void;
 }) {
   const { data: copyVersions } = useCopyVersions(creative.id);
+  // Shown on a project's own page: its client's logo beside the handle.
+  const projectId = usePathname().match(/^\/projects\/([^/]+)/)?.[1] ?? "";
+  const { data: project } = useProject(projectId);
+  const clientLogoUrl = useClientLogoUrl(project?.client_id);
   const { data: versions, isPending: versionsPending } = useCreativeVersions(creative.id);
   const art = versionSlides(versions?.[0])[0]?.asset ?? null;
   const { data: artUrl } = useAssetSignedUrl(art?.storage_key);
@@ -86,7 +93,12 @@ export function CreativePreviewPopover({
       <div className="phonepop-scroll">
       <div className="pp-h">
         <span className="pp-av">
-          <i />
+          {clientLogoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
+            <img src={clientLogoUrl} alt="" />
+          ) : (
+            <i />
+          )}
         </span>
         <div>
           <b>{creative.name}</b>

@@ -7,6 +7,7 @@ import { useAdvanceCreativeStage } from "@/hooks/use-advance-creative-stage";
 import { useCreativeVersions, versionSlides } from "@/hooks/use-creative-versions";
 import { artworkRemovalDate, dayMonth } from "@/lib/artwork-removal";
 import { useLiveUpdates } from "@/hooks/use-live-updates";
+import { useClientLogoUrl } from "@/hooks/use-client-logo-url";
 import { aspectRatioCss, formatRatio } from "@/lib/formats";
 import { useCopyVersions } from "@/hooks/use-copy-versions";
 import { useAssetSignedUrl, usePreloadAssets } from "@/hooks/use-asset-signed-url";
@@ -111,6 +112,7 @@ export default function CreativeReviewPage({
   // clicking a marker here and clicking a comment there both read and write
   // the same "which thread is highlighted" state.
   const { data: allComments } = useComments(id);
+  const clientLogoUrl = useClientLogoUrl(creative?.projects?.client_id);
   // A comment made anywhere, on any device, shows here at once (direct
   // instruction): the panel, the pins and the counts all read this.
   useLiveUpdates(`comments:${id}`, [{ table: "comments", filter: `creative_id=eq.${id}` }], [["comments", id]]);
@@ -433,9 +435,11 @@ export default function CreativeReviewPage({
               <div className="ig">
                 <div className="ig-h">
                   <div className="ig-av">
-                    {igProfile?.pictureUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element -- Instagram's own short-lived image URL
-                      <img src={igProfile.pictureUrl} alt="" />
+                    {/* The connected Instagram's own picture, else the
+                        client's logo (direct instruction), else the ring. */}
+                    {igProfile?.pictureUrl || clientLogoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- Instagram's or storage's short-lived URL
+                      <img src={igProfile?.pictureUrl ?? clientLogoUrl!} alt="" />
                     ) : (
                       <i />
                     )}

@@ -2921,3 +2921,12 @@ Reported directly: a comment took a moment to appear on the device that posted i
 - **The save itself:** it reads the session already on the device rather than asking the server.
 
 **Verified:** on the post page the comment showed 70ms after pressing Post, and its saved version was in place by 1.9s. On the review link it showed after 42ms, with one copy once saved. The comment, review-link, live-comment, video and stage specs pass.
+
+## The client's logo beside the handle in the phone
+
+Reported directly: the phone views should show the client's logo next to the handle, not a coloured circle. The prototype has the circle only, as it has no logos.
+- **Where:** the post page's phone, its Feed Preview, the hover preview on a project's table and calendar, and the review link, on a phone and a computer.
+- **Which picture:** a connected Instagram account's own profile picture comes first, as that's what the post will really show. Without one, the client's logo; without that, the coloured circle as before.
+- **Review link:** guests can't read the client's logo themselves, so the link's own server route signs it and sends it with the post, kept between refreshes like the post's own images.
+
+**Verified:** with a logo given to a test client, it showed (round, inside the ring) on the post page's phone, Feed Preview, hover preview and the review link at phone and computer widths. The hover preview's logo first spilled out of its circle; that was fixed and rechecked.

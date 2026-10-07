@@ -2099,6 +2099,15 @@ body.lightrail .avatar {
   border-radius: 50%;
   background-image: linear-gradient(135deg, #007bff, #003c61);
 }
+/* The client's logo, in place of the gradient, sized to the same ring. */
+.pp-av img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid #fff;
+}
 .pp-h b {
   font-size: 12.7px;
   font-weight: 600;

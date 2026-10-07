@@ -65,6 +65,8 @@ export type SharedReviewResult =
       contacts: SharedReviewContact[];
       // The agency's saved theme and logo (null when it has none).
       branding: { theme: Record<string, unknown> | null; logo_url: string | null };
+      // The client's logo, for the avatar beside the handle.
+      client_logo_url: string | null;
     };
 
 // Goes through /api/shared-review rather than calling the RPC directly —
@@ -116,6 +118,7 @@ function keepSignedUrls(prev: SharedReviewResult | undefined, next: SharedReview
   const before = new Map(prev.creatives.map((c) => [c.id, c]));
   return {
     ...next,
+    client_logo_url: reuse(prev.client_logo_url, next.client_logo_url),
     creatives: next.creatives.map((c) => {
       const was = before.get(c.id);
       if (!was) return c;

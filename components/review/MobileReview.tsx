@@ -19,6 +19,7 @@ export function MobileReview({
   shown: boolean; // the layout on screen (phone or desktop)
 }) {
   const { creatives, active, activeIndex, goTo } = controller;
+  const clientLogoUrl = controller.data?.status === "ok" ? controller.data.client_logo_url : null;
 
   return (
     <div className="phone">
@@ -96,7 +97,13 @@ export function MobileReview({
                 </div>
                 <div className="ig-h">
                   <div className="ig-av">
-                    <i />
+                    {/* The client's logo beside the handle (direct instruction). */}
+                    {clientLogoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
+                      <img src={clientLogoUrl} alt="" />
+                    ) : (
+                      <i />
+                    )}
                   </div>
                   <div>
                     <b>{agencyName}</b>

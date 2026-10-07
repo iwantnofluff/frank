@@ -12,6 +12,7 @@ import { LivePostView } from "@/components/creative-review/LivePostView";
 import { useClientInstagramSlides } from "@/hooks/use-instagram";
 import type { LiveFeed } from "@/lib/instagram/store";
 import { postFormats } from "@/lib/formats";
+import { useClientLogoUrl } from "@/hooks/use-client-logo-url";
 
 const GRID_SLOTS = 9;
 
@@ -55,6 +56,7 @@ export function FeedPreviewGrid({
   // A page at a time as the grid scrolls, to the account's first post.
   const { data: pages, fetchNextPage, hasNextPage, isFetchingNextPage, isPending: liveLoading } =
     useClientInstagramFeed(clientId);
+  const clientLogoUrl = useClientLogoUrl(clientId);
   const live = pages?.pages[0];
   const feed = live?.status === "ok" ? live.feed : null;
   // Posts, or just the Reels (a Reel-format plan, or a real Reel).
@@ -107,7 +109,12 @@ export function FeedPreviewGrid({
           onBack={() => setOpenPost(null)}
         />
       )}
-      <FeedProfile profile={feed?.profile ?? null} fallbackName={brandName} loading={!!clientId && liveLoading} />
+      <FeedProfile
+        profile={feed?.profile ?? null}
+        fallbackName={brandName}
+        logoUrl={clientLogoUrl}
+        loading={!!clientId && liveLoading}
+      />
       <FeedTabs tab={tab} onTab={setTab} />
 
       {isLoading ? (

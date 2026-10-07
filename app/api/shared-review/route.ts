@@ -259,5 +259,25 @@ export async function POST(request: Request) {
     }
   }
 
-  return NextResponse.json({ ...data, creatives: signedCreatives, branding });
+  // The client's logo, beside the handle in the phone (direct instruction):
+  // the link's project's client, looked up for this validated token only.
+  let clientLogoUrl: string | null = null;
+  if (serviceRole) {
+    const { data: link } = await serviceRole
+      .from("shared_links")
+      .select("projects(clients(logo_asset_id))")
+      .eq("token", token)
+      .maybeSingle();
+    const logoId = (link?.projects as unknown as { clients: { logo_asset_id: string | null } | null } | null)?.clients
+      ?.logo_asset_id;
+    if (logoId) {
+      const { data: logo } = await serviceRole.from("assets").select("storage_key").eq("id", logoId).maybeSingle();
+      if (logo) {
+        const { data: signed } = await serviceRole.storage.from("assets").createSignedUrl(logo.storage_key, 3600);
+        clientLogoUrl = signed?.signedUrl ?? null;
+      }
+    }
+  }
+
+  return NextResponse.json({ ...data, creatives: signedCreatives, branding, client_logo_url: clientLogoUrl });
 }

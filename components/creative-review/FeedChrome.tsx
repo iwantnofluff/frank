@@ -10,10 +10,13 @@ export type FeedTab = "posts" | "reels";
 export function FeedProfile({
   profile,
   fallbackName,
+  logoUrl = null,
   loading = false,
 }: {
   profile: LiveFeed["profile"] | null;
   fallbackName: string;
+  // The client's logo, where Instagram gives no picture (direct instruction).
+  logoUrl?: string | null;
   // The live feed is still on its way.
   loading?: boolean;
 }) {
@@ -21,7 +24,12 @@ export function FeedProfile({
     return (
       <div className="fp-h">
         <span className="fp-av">
-          <i />
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
+            <img src={logoUrl} alt="" />
+          ) : (
+            <i />
+          )}
         </span>
         <span className="fp-t">
           <b>{fallbackName}</b>
@@ -42,9 +50,9 @@ export function FeedProfile({
       <b className="fp-user">{profile.username}</b>
       <div className="fp-top">
         <span className="fp-av big">
-          {profile.pictureUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element -- Instagram's own short-lived image URL
-            <img src={profile.pictureUrl} alt="" />
+          {profile.pictureUrl || logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- Instagram's or storage's short-lived URL
+            <img src={profile.pictureUrl ?? logoUrl!} alt="" />
           ) : (
             <i />
           )}
