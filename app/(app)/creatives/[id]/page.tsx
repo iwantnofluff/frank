@@ -6,6 +6,7 @@ import { useCreative } from "@/hooks/use-creative";
 import { useAdvanceCreativeStage } from "@/hooks/use-advance-creative-stage";
 import { useCreativeVersions, versionSlides } from "@/hooks/use-creative-versions";
 import { artworkRemovalDate, dayMonth } from "@/lib/artwork-removal";
+import { useLiveUpdates } from "@/hooks/use-live-updates";
 import { aspectRatioCss, formatRatio } from "@/lib/formats";
 import { useCopyVersions } from "@/hooks/use-copy-versions";
 import { useAssetSignedUrl, usePreloadAssets } from "@/hooks/use-asset-signed-url";
@@ -110,6 +111,9 @@ export default function CreativeReviewPage({
   // clicking a marker here and clicking a comment there both read and write
   // the same "which thread is highlighted" state.
   const { data: allComments } = useComments(id);
+  // A comment made anywhere, on any device, shows here at once (direct
+  // instruction): the panel, the pins and the counts all read this.
+  useLiveUpdates(`comments:${id}`, [{ table: "comments", filter: `creative_id=eq.${id}` }], [["comments", id]]);
   const createComment = useCreateComment(id);
 
   const activeCreativeVersion =

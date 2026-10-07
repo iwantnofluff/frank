@@ -2899,3 +2899,16 @@ Reported directly: on live, the Primary Owner couldn't save the agency's logo, f
 - **Live, before the fix** (from the SQL editor): the agency_settings insert and update rules checked `memberships.role = 'admin'`. Replayed as the Primary Owner on No Fluff's address, is_agency_admin, in_request_agency and the agency being visible were all true. So the old rules were the only thing refusing.
 - **After phase64 on live:** a scan for rules checking role 'admin' found only memberships_insert, which matches the same way on staging because its current, correct version lets an inviting Admin add Admins and Users.
 - **Staging:** phase64 applied and recorded. Its rules read is_agency_admin(agency_id).
+
+## Comments and Draft with Frank, live on every device (phase65)
+
+Direct instruction: a comment made on one device appears on every other page open on the post, without a refresh.
+- **Signed-in pages** (a post's Comments, its pins, and the Draft with Frank window): Supabase Realtime announces changes to comments and the Draft with Frank conversations (phase65 adds them to the supabase_realtime publication), and the page reloads them through the usual rules. Realtime only sends a change to someone whose select policy lets them see that row, and a client's page reloads only what it may read, so private comments never reach a client.
+- **The review link:** a guest has no session, so the database can't send them changes. Their page checks a small fingerprint of the comments, stages and versions every 8 seconds while it's in view (not in a background tab). Only when that changes does it reload, keeping the pictures' existing signed addresses so nothing flickers.
+- **Fix found on the way:** the browser client's live connection didn't take the page's signed-in session on load, so it listened as an anonymous visitor and heard nothing. It now takes the session before subscribing.
+
+**Verified,** in separate browsers at once:
+- **Post page:** a staff page showed a comment the client's person made through their own session after 1.9s, with no reload.
+- **Review link:** a guest's page showed a staff public comment after about 11s, with its images' addresses unchanged. A private note never appeared.
+- **Draft with Frank:** an open window showed a message added elsewhere after 1.1s.
+- **Tests:** `live-comments.spec.ts` covers the first two. The comment, review-link, copy-chat and video specs pass (20).

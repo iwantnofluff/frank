@@ -1,6 +1,7 @@
 "use client";
 
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export interface SharedCreative {
   id: string;
@@ -72,8 +73,10 @@ export type SharedReviewResult =
 // nothing should grant anon a broad storage read that would let anyone
 // enumerate any agency's files by guessing paths.
 export function useSharedReview(token: string, passcode: string | null) {
-  return useQuery({
-    queryKey: ["shared-review", token, passcode],
+  const queryClient = useQueryClient();
+  const key = ["shared-review", token, passcode];
+  const query = useQuery({
+    queryKey: key,
     queryFn: async (): Promise<SharedReviewResult> => {
       const res = await fetch("/api/shared-review", {
         method: "POST",
@@ -83,11 +86,83 @@ export function useSharedReview(token: string, passcode: string | null) {
       if (!res.ok && res.status !== 500) {
         throw new Error("Couldn't load this review link.");
       }
-      return res.json();
+      const next = (await res.json()) as SharedReviewResult;
+      // Reloaded because something changed: the pictures already showing
+      // keep their addresses (a new one is a new download, and a flash).
+      return keepSignedUrls(queryClient.getQueryData<SharedReviewResult>(key), next);
     },
     enabled: !!token,
     retry: false,
   });
+  useReviewPulse(token, passcode, query.data?.status === "ok", () => {
+    void queryClient.invalidateQueries({ queryKey: key });
+  });
+  return query;
+}
+
+// Signed addresses last an hour; one is reused for up to 45 minutes.
+const REUSE_FOR_MS = 45 * 60 * 1000;
+const firstSeen = new Map<string, number>();
+
+function keepSignedUrls(prev: SharedReviewResult | undefined, next: SharedReviewResult): SharedReviewResult {
+  if (!prev || prev.status !== "ok" || next.status !== "ok") return next;
+  const now = Date.now();
+  const reuse = (old: string | null | undefined, fresh: string | null) => {
+    if (!old || !fresh) return fresh;
+    const seen = firstSeen.get(old) ?? now;
+    firstSeen.set(old, seen);
+    return now - seen < REUSE_FOR_MS ? old : fresh;
+  };
+  const before = new Map(prev.creatives.map((c) => [c.id, c]));
+  return {
+    ...next,
+    creatives: next.creatives.map((c) => {
+      const was = before.get(c.id);
+      if (!was) return c;
+      const sameAsset =
+        was.asset && c.asset && was.asset.version_no === c.asset.version_no && was.asset.filename === c.asset.filename;
+      return {
+        ...c,
+        asset: c.asset && sameAsset ? { ...c.asset, signed_url: reuse(was.asset!.signed_url, c.asset.signed_url) } : c.asset,
+        slides: c.slides.map((s) => {
+          const old = was.slides.find((o) => o.position === s.position && o.filename === s.filename);
+          return old ? { ...s, signed_url: reuse(old.signed_url, s.signed_url) } : s;
+        }),
+      };
+    }),
+  };
+}
+
+// Every 8 seconds while the page is in view (not in a background tab),
+// asks the server for a fingerprint of the comments, stages and versions;
+// when it changes, the page reloads (direct instruction: a comment made on
+// another device appears without a refresh). A visitor here has no
+// session, so the database can't send them changes directly as it does
+// for signed-in pages (hooks/use-live-updates.ts).
+function useReviewPulse(token: string, passcode: string | null, enabled: boolean, onChange: () => void) {
+  const { data } = useQuery({
+    queryKey: ["shared-review-pulse", token, passcode],
+    queryFn: async (): Promise<string | null> => {
+      const res = await fetch("/api/shared-review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, passcode, pulse: true }),
+      });
+      if (!res.ok) return null;
+      const body = await res.json();
+      return typeof body.pulse === "string" ? body.pulse : null;
+    },
+    enabled: enabled && !!token,
+    refetchInterval: 8000,
+    refetchIntervalInBackground: false,
+    retry: false,
+  });
+  const last = useRef<string | null>(null);
+  useEffect(() => {
+    if (!data) return;
+    if (last.current && last.current !== data) onChange();
+    last.current = data;
+  }, [data, onChange]);
 }
 
 // The review link's client's live Instagram feed (phase54), if connected.

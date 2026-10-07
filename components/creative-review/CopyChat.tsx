@@ -6,6 +6,7 @@ import { Modal } from "@/components/ui/Modal";
 import { useCopyChats, useSendCopyChat, type CopyChat as Chat } from "@/hooks/use-copy-chats";
 import { cleanReplyBody, type CopyChatField, type CopyChatMode } from "@/lib/ai/copy-chat";
 import { errorMessage } from "@/lib/errors";
+import { useLiveUpdates } from "@/hooks/use-live-updates";
 
 const when = (iso: string) =>
   new Date(iso).toLocaleString(undefined, { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
@@ -30,6 +31,18 @@ export function CopyChat({
   onClose: () => void;
 }) {
   const { data: chats, isLoading } = useCopyChats(creativeId);
+  // A conversation going on in another window or device updates here too
+  // (direct instruction): a new conversation for this post, or a new
+  // message in one of its conversations.
+  const chatIds = (chats ?? []).map((c) => c.id).sort().join(",");
+  useLiveUpdates(
+    `copy-chats:${creativeId}`,
+    [
+      { table: "copy_chats", filter: `creative_id=eq.${creativeId}` },
+      ...(chatIds ? [{ table: "copy_chat_messages", filter: `chat_id=in.(${chatIds})` }] : []),
+    ],
+    [["copy-chats", creativeId]],
+  );
   const send = useSendCopyChat(creativeId);
   const [chatId, setChatId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");

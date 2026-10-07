@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createAnonServerClient } from "@/lib/supabase/anon-server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
@@ -36,7 +37,11 @@ interface RpcCreative {
 // passcode, if any) has already been validated by the RPC, is what signs
 // the URL instead.
 export async function POST(request: Request) {
-  let body: { token?: string; passcode?: string | null };
+  // pulse: just a fingerprint of what a visitor would see change (comments,
+  // stages, versions), for the page to check every few seconds (direct
+  // instruction: comments made elsewhere appear without a refresh). Nothing
+  // is signed for it, so checking costs little.
+  let body: { token?: string; passcode?: string | null; pulse?: boolean };
   try {
     body = await request.json();
   } catch {
@@ -80,6 +85,17 @@ export async function POST(request: Request) {
     // Key not configured — degrade to "no preview" rather than a hard
     // failure of the whole page. Every prior phase has treated a missing
     // asset pipeline this way rather than erroring the page out.
+  }
+
+  if (body.pulse) {
+    const fingerprint = createHash("sha1")
+      .update(
+        JSON.stringify(
+          creatives.map((c) => [c.id, c.stage, c.exception, c.asset?.version_no ?? null, c.copy?.version_no ?? null, c.comments]),
+        ),
+      )
+      .digest("hex");
+    return NextResponse.json({ status: "ok", pulse: fingerprint });
   }
 
   // Every format a post goes out as (phase29) — get_shared_review returns
