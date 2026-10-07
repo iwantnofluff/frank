@@ -4,12 +4,14 @@ import { Suspense, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { forgetSignedUrls } from "@/hooks/use-avatar-urls";
 
 function AccessRemoved() {
   const agency = useSearchParams().get("agency");
 
   useEffect(() => {
     createClient().auth.signOut();
+    forgetSignedUrls();
   }, []);
 
   return (

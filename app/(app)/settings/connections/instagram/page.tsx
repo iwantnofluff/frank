@@ -96,7 +96,7 @@ export default function InstagramConnectionsPage({
           {outcome.text}
         </p>
       )}
-      {isLoading && <p className="sub">Loading…</p>}
+      {isLoading && <p className="sub">Frank is working…</p>}
       {!isLoading && active.length === 0 && <p className="sub">No clients yet.</p>}
       {active.length > 0 && (
         <section className="panel" aria-label="Instagram accounts">

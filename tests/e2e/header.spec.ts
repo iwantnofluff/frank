@@ -78,8 +78,8 @@ test("Help opens from the header: topics, categories, articles and search", asyn
   await expect(help).toContainText("Explore help topics");
 
   // A topic opens its article; Back returns.
-  await help.getByRole("button", { name: "Write copy with Claude" }).click();
-  await expect(help.getByRole("heading", { name: "Write copy with Claude" })).toBeVisible();
+  await help.getByRole("button", { name: "Draft copy with Frank" }).click();
+  await expect(help.getByRole("heading", { name: "Draft copy with Frank" })).toBeVisible();
   await help.getByRole("button", { name: "Back" }).click();
   await expect(help).toContainText("Help categories");
 

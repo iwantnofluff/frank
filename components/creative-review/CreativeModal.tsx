@@ -886,7 +886,9 @@ export function CreativeModal(props: CreativeModalProps) {
         <svg className="aicon" viewBox="0 0 24 24">
           <path d="M12 3l1.8 6.2L20 11l-6.2 1.8L12 19l-1.8-6.2L4 11l6.2-1.8L12 3z" />
         </svg>
-        {modelLabel ? `Write with ${modelLabel}` : "Write with AI"}
+        {/* Named for Frank (direct instruction); the model is named in the
+            window it opens. */}
+        Draft with Frank
       </button>
     </div>
   );
@@ -1544,7 +1546,6 @@ export function CreativeModal(props: CreativeModalProps) {
     {chatOpen && creativeId && (
       <CopyChat
         creativeId={creativeId}
-        modelName={modelLabel ?? "Claude"}
         fields={[...copyFieldSpecs, ...slideTextFields(slideCount)]}
         currentFields={{ ...draftFields, ...slideTextAsFields(slideFields(slideText, slideCount)) }}
         onUse={(fields) => {

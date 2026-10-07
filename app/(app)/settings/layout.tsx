@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useIsStaff } from "@/hooks/use-is-staff";
 import { SettingsNav } from "@/components/settings/SettingsNav";
+import { SettingsMain } from "@/components/settings/SettingsMain";
 
 // Settings is a left menu of sections and pages (lib/settings-nav.ts,
 // SettingsNav) beside the page you're on — which owns its own .pad and
@@ -38,7 +39,7 @@ export default function SettingsLayout({
     <div className="setwrap">
       <SettingsNav pathname={pathname} />
       <div className="review-sep" aria-hidden="true" />
-      <div className="setmain">{children}</div>
+      <SettingsMain>{children}</SettingsMain>
     </div>
   );
 }

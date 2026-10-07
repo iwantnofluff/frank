@@ -214,7 +214,7 @@ export default function CreativeReviewPage({
   if (creativeLoading) {
     return (
       <div className="pad">
-        <p className="sub">Loading…</p>
+        <p className="sub">Frank is working…</p>
       </div>
     );
   }

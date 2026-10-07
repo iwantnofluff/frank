@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Collapse } from "@/components/ui/Collapse";
 import { usePresence } from "@/hooks/use-presence";
 import { NAV_ICONS, NAV_ICON_STROKE, NAV_ICON_VIEWBOX } from "@/lib/nav-icons";
 import { SETTINGS_SECTIONS, settingsPageFor, type SettingsSection } from "@/lib/settings-nav";
@@ -80,7 +81,7 @@ export function SettingsNav({
                   {section.label}
                   <Chevron d={isOpen ? "M18 15l-6-6-6 6" : "M6 9l6 6 6-6"} />
                 </button>
-                {isOpen && (
+                <Collapse open={isOpen}>
                   <div className="setnav-pages">
                     {section.pages.map((page) => (
                       <Link
@@ -94,7 +95,7 @@ export function SettingsNav({
                       </Link>
                     ))}
                   </div>
-                )}
+                </Collapse>
               </div>
             );
           })}
@@ -171,7 +172,7 @@ function IconicNav({
                   </span>
                 )}
               </button>
-              {isOpen && (
+              <Collapse open={isOpen}>
                 <div className="setnav-pages">
                   {section.pages.map((page) => (
                     <Link
@@ -194,7 +195,7 @@ function IconicNav({
                     </Link>
                   ))}
                 </div>
-              )}
+              </Collapse>
             </div>
           );
         })}

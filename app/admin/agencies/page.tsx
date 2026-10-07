@@ -29,7 +29,7 @@ export default function AdminAgenciesPage() {
           New Agency
         </Link>
       </div>
-      {isLoading && <p className="sub">Loading…</p>}
+      {isLoading && <p className="sub">Frank is working…</p>}
       {deleted && <p className="bsaved">{deleted}</p>}
       {error && <p className="autherr">{errorMessage(error, "Couldn't load the agencies")}</p>}
       {agencies && (

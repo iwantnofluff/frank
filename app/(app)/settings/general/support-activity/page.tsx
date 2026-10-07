@@ -23,7 +23,7 @@ export default function SupportActivityPage() {
         description="Anything Frank's support team has done in your account, with the reason they gave."
       />
       {me && !isOwner && <p className="sub">Only Owners can see this.</p>}
-      {isOwner && isLoading && <p className="sub">Loading…</p>}
+      {isOwner && isLoading && <p className="sub">Frank is working…</p>}
       {error && <p className="autherr">{errorMessage(error, "Couldn't load the support activity")}</p>}
       {log && log.length === 0 && <p className="sub">Nothing yet. Frank&rsquo;s support hasn&rsquo;t changed anything in {agency?.name}.</p>}
       {log && log.length > 0 && (

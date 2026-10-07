@@ -36,7 +36,7 @@ export function LinkPreviewCard({
       onClick={(e) => e.stopPropagation()}
     >
       {isPending ? (
-        <span className="linkcard-wait">Loading preview…</span>
+        <span className="linkcard-wait">Frank is working…</span>
       ) : preview ? (
         <>
           {preview.image && !imageFailed && (

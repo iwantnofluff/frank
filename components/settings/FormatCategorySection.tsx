@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { FormatDefinition } from "@/lib/formats";
 import type { FormatDirectionRow as FormatDirectionRecord } from "@/hooks/use-format-directions";
 import { FormatDirectionRow } from "@/components/settings/FormatDirectionRow";
+import { Collapse } from "@/components/ui/Collapse";
 
 // Ports the prototype's fd-cat/fd-body collapse (frank-prototype.html,
 // renderMethod()) — only the first category defaults open (its own FD_OPEN
@@ -43,7 +44,8 @@ export function FormatCategorySection({
           {formats.length} format{formats.length > 1 ? "s" : ""}
         </span>
       </div>
-      <div className="fd-body" style={{ display: open ? "block" : "none" }}>
+      {/* Opens and closes with the Help panel's motion (direct instruction). */}
+      <Collapse open={open} className="fd-body">
         {formats.map((format) => (
           <FormatDirectionRow
             key={format.id}
@@ -52,7 +54,7 @@ export function FormatCategorySection({
             record={recordsById.get(format.id)}
           />
         ))}
-      </div>
+      </Collapse>
     </>
   );
 }

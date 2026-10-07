@@ -73,7 +73,7 @@ export function LivePostView({
           }}
         >
           {post.carousel && slidesLoading ? (
-            <div className="lpv-wait">Loading slides…</div>
+            <div className="lpv-wait">Frank is working…</div>
           ) : !frame ? (
             <div className="lpv-wait">This post couldn&rsquo;t be loaded.</div>
           ) : frame.videoUrl ? (

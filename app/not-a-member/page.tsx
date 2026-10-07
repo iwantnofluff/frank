@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { forgetSignedUrls } from "@/hooks/use-avatar-urls";
 
 // Signed in, but not a member of the agency whose address this is (the
 // proxy shows this, with a 403). Each agency's address has its own sign-in,
@@ -28,6 +29,7 @@ export default function NotAMemberPage() {
           className="btn primary"
           onClick={async () => {
             await createClient().auth.signOut();
+    forgetSignedUrls();
             window.location.href = "/login";
           }}
         >

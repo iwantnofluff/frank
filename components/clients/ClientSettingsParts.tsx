@@ -80,7 +80,7 @@ export function ClientPeople({
       </p>
       {canManage &&
         (isPending ? (
-          <p className="msection-d">Loading…</p>
+          <p className="msection-d">Frank is working…</p>
         ) : error ? (
           <p className="autherr">{errorMessage(error, "Couldn't load who's on this client")}</p>
         ) : (
@@ -96,6 +96,7 @@ export function ClientPeople({
                         style={{ width: 28, height: 28, fontSize: 11.2, background: avatarColour(p.name) }}
                         initials={initials(p.name, p.email)}
                         photoUrl={p.avatarAssetId ? photos?.[p.avatarAssetId] : null}
+                    hasPhoto={!!p.avatarAssetId}
                       />
                       <div className="pp-t">
                         <b>{p.name}</b>
@@ -187,7 +188,7 @@ export function ClientDetailsEditor({
   }
 
   return (
-    <>
+    <div className="enter">
       <ClientDetailsFields draft={draft} />
       {error && <p className="autherr">{errorMessage(error, "Couldn't save the client")}</p>}
       <div className="profactions">
@@ -199,6 +200,6 @@ export function ClientDetailsEditor({
         </button>
       </div>
       <ClientLogoCropper draft={draft} />
-    </>
+    </div>
   );
 }

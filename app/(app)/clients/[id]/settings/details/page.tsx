@@ -29,7 +29,7 @@ export default function ClientDetailsPage({ params }: { params: Promise<{ id: st
   return (
     <div className="pad narrow">
       <SettingsHead title="Client Details" description="The client's name, logo, industry and description." />
-      {isLoading && <p className="sub">Loading…</p>}
+      {isLoading && <p className="sub">Frank is working…</p>}
       {error && <p className="autherr">{errorMessage(error, "Couldn't load this client")}</p>}
       {client && agency && (
         <section className="panel">
@@ -52,7 +52,8 @@ export default function ClientDetailsPage({ params }: { params: Promise<{ id: st
                       // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
                       <img src={logoUrl} alt="" />
                     ) : (
-                      initials(client.name, "?")
+                      // Blank while a logo is on its way, not the initials first.
+                      client.logo_asset_id ? null : initials(client.name, "?")
                     )}
                   </div>
                   <div className="pp-t">

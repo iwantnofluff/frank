@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 
 // The end of a scrolling grid (phase54's live feed): when it comes into
 // view, the next page loads, until there's none. A full-width row of the
-// grid, nearly invisible; says "Loading…" while a page is on its way.
+// grid, nearly invisible; says "Frank is working…" while a page is on its way.
 export function LoadMore({ hasMore, loading, onMore }: { hasMore: boolean; loading: boolean; onMore: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -18,7 +18,7 @@ export function LoadMore({ hasMore, loading, onMore }: { hasMore: boolean; loadi
   if (!hasMore && !loading) return null;
   return (
     <div ref={ref} className="feedmore">
-      {loading ? "Loading…" : ""}
+      {loading ? "Frank is working…" : ""}
     </div>
   );
 }

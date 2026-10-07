@@ -9,18 +9,23 @@ import { createClient } from "@/lib/supabase/client";
 import { useViewportFit } from "@/hooks/use-viewport-fit";
 import { useMyProfile } from "@/hooks/use-my-profile";
 import { useAvatarUrls } from "@/hooks/use-avatar-urls";
+import { forgetSignedUrls } from "@/hooks/use-avatar-urls";
 
-// The prototype's avatar only jumped to Settings and had no way to sign
-// out; this is the same .colpop/.cpr shell RowActionsMenu uses, opening
-// beside the avatar at the foot of the rail.
+// Your picture at the top right of the header (direct instruction, moved
+// from the foot of the rail): My Profile, Settings for the agency's team
+// (moved here from the agency's mark), then Sign out after a divider. The
+// same .colpop/.cpr shell RowActionsMenu uses, opening below it.
 export function AccountMenu({
   initials,
   name,
   email,
+  showSettings,
 }: {
   initials: string;
   name: string | null;
   email: string;
+  // Settings is the agency's team's, not a client's people's.
+  showSettings: boolean;
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -29,10 +34,10 @@ export function AccountMenu({
   const pop = usePresence(anchor);
   const [signingOut, setSigningOut] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const { data: profile } = useMyProfile();
+  const { data: profile, isPending: profilePending } = useMyProfile();
   const { data: photos } = useAvatarUrls([profile?.avatar_asset_id]);
   const photoUrl = profile?.avatar_asset_id ? photos?.[profile.avatar_asset_id] : undefined;
-  useViewportFit(ref, pop.shown, { side: "beside", gap: 10 });
+  useViewportFit(ref, pop.shown, { side: "below", gap: 6, align: "end" });
 
   useEffect(() => {
     if (!anchor) return;
@@ -53,6 +58,7 @@ export function AccountMenu({
   async function signOut() {
     setSigningOut(true);
     await createClient().auth.signOut();
+    forgetSignedUrls();
     // Nothing from this session may be shown to whoever signs in next.
     queryClient.clear();
     router.push("/login");
@@ -63,7 +69,7 @@ export function AccountMenu({
     <>
       <button
         type="button"
-        className="avatar"
+        className="avatar topavatar"
         title="Your account"
         aria-label="Your account"
         aria-haspopup="menu"
@@ -77,7 +83,9 @@ export function AccountMenu({
         {photoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
           <img src={photoUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        ) : (
+        ) : profilePending || profile?.avatar_asset_id ? null : (
+          // Initials only when there's no photo, never before one arrives
+          // (direct instruction: no flashing in).
           initials
         )}
       </button>
@@ -96,8 +104,14 @@ export function AccountMenu({
               </div>
             </div>
             <Link href="/profile" role="menuitem" className="cpr" onClick={() => setAnchor(null)}>
-              <span className="cn">Your Profile</span>
+              <span className="cn">My Profile</span>
             </Link>
+            {showSettings && (
+              <Link href="/settings" role="menuitem" className="cpr" onClick={() => setAnchor(null)}>
+                <span className="cn">Settings</span>
+              </Link>
+            )}
+            <div className="menusep" role="separator" />
             <button
               type="button"
               role="menuitem"

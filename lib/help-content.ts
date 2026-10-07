@@ -28,7 +28,7 @@ export const HELP_CATEGORIES: HelpCategory[] = [
   { id: "clients", label: "Clients and Client Settings" },
   { id: "posts", label: "Projects and posts" },
   { id: "reviews", label: "Reviews and approvals" },
-  { id: "claude", label: "Writing with Claude" },
+  { id: "claude", label: "Drafting with Frank" },
   { id: "team", label: "Your team" },
   { id: "account", label: "Settings and billing" },
 ];
@@ -73,7 +73,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       { kind: "h", text: "Getting around" },
       {
         kind: "p",
-        text: "The left rail follows where you are, and names the client: on a client's projects you'll see Clients and the client's Settings (Casa Carigar Settings, say); inside a project, the client's Projects too; on a post, the project's Content Planner or Other Content as well. Settings for your whole agency opens from your agency's logo at the top of the rail.",
+        text: "The left rail follows where you are, and names the client: on a client's projects you'll see Clients and the client's Settings (Casa Carigar Settings, say); inside a project, the client's Projects too; on a post, the project's Content Planner or Other Content as well. Frank's logo in the top left corner takes you back to Clients. Your picture at the top right holds My Profile, Settings for your whole agency, and Sign out.",
       },
     ],
   },
@@ -172,7 +172,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     blocks: [
       {
         kind: "p",
-        text: "Knowledge has eight areas, from Tone of Voice to Moodboard and References. The more of them are filled in, the more Write with Claude and the checks can draw on. An area with nothing in it yet says Content pending.",
+        text: "Knowledge has eight areas, from Tone of Voice to Moodboard and References. The more of them are filled in, the more Draft with Frank and the checks can draw on. An area with nothing in it yet says Content pending.",
       },
       { kind: "h", text: "Add to an area" },
       {
@@ -355,19 +355,19 @@ export const HELP_ARTICLES: HelpArticle[] = [
   },
   {
     id: "write-with-claude",
-    title: "Write copy with Claude",
+    title: "Draft copy with Frank",
     category: "claude",
     summary: "Draft from the concept, or have your own draft reviewed.",
     blocks: [
       {
         kind: "p",
-        text: "In a post's Content tab, choose Write with Claude under the Caption. Claude reads the brief, the WIIFM, each format's direction, and your agency's and the client's Knowledge, files included.",
+        text: "In a post's Content tab, choose Draft with Frank under the Caption. Frank reads the brief, the WIIFM, each format's direction, and your agency's and the client's Knowledge, files included.",
       },
       {
         kind: "list",
         items: [
-          "Draft from the Concept: Claude offers a few drafts of the caption, the other copy fields and the Text on Image.",
-          "Review My Draft: Claude says what works in what you've written and how to improve it.",
+          "Draft from the Concept: Frank offers a few drafts of the caption, the other copy fields and the Text on Image.",
+          "Review My Draft: Frank says what works in what you've written and how to improve it.",
           "Ask for changes in your own words: shorter, warmer, a different hook.",
           "Use This puts a draft into the editor. Nothing is saved until you save it.",
         ],
@@ -410,15 +410,15 @@ export const HELP_ARTICLES: HelpArticle[] = [
     blocks: [
       {
         kind: "p",
-        text: "Open Settings from your agency's logo at the top of the left rail. Owners and Admins can change most of it.",
+        text: "Open Settings from your picture at the top right of the header. Owners and Admins can change most of it.",
       },
       {
         kind: "list",
         items: [
           "General: your account's name and web address, and anything Frank's support has done in your account.",
-          "Customisation: your logo and brand colours, on plans that include branding.",
+          "Customisation: your logo and brand colours, on plans that include branding. Your logo shows in the header, after Frank's; until there is one, Owners and Admins can choose Add Logo there.",
           "Team: your Users and Clients, and inviting people.",
-          "AI Governance: the model Claude drafts with.",
+          "AI Governance: the AI model Draft with Frank uses.",
           "Connections: every client's Instagram in one list.",
           "Your Plan and Billing: your plan, payment methods and invoices.",
           "Knowledge: Format Directions for each format, and Reference Material shared across every client.",

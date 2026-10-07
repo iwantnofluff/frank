@@ -19,7 +19,7 @@ export default function AdminAgencyPage({ params }: { params: Promise<{ id: stri
   const { id } = use(params);
   const { data: agencies, isLoading } = useAdminAgencies();
   const agency = agencies?.find((a) => a.id === id);
-  if (isLoading) return <p className="sub">Loading…</p>;
+  if (isLoading) return <p className="sub">Frank is working…</p>;
   if (!agency) return <p className="sub">No agency with that id.</p>;
   return <AgencyForm key={agency.id} agency={agency} />;
 }
@@ -334,7 +334,7 @@ function AgencyPeople({ agencyId }: { agencyId: string }) {
           ? `${here.length === 1 ? "1 person" : `${here.length} people`} here, team and clients.`
           : "Everyone in the agency."}
       </p>
-      {isLoading && <p className="sub">Loading…</p>}
+      {isLoading && <p className="sub">Frank is working…</p>}
       {error && <p className="autherr">{errorMessage(error, "Couldn't load the people")}</p>}
       {people && here.length > 0 && (
         <div className="adminpeople">
@@ -353,7 +353,7 @@ function SupportLog({ agencyId }: { agencyId: string }) {
     <>
       <div className="msection-h">Support Log</div>
       <p className="msection-d">What Frank has done in this agency, and why. Its Owners see this too.</p>
-      {isLoading && <p className="sub">Loading…</p>}
+      {isLoading && <p className="sub">Frank is working…</p>}
       {error && <p className="autherr">{errorMessage(error, "Couldn't load the log")}</p>}
       {actions && actions.length === 0 && <p className="msection-d">Nothing yet.</p>}
       {actions && actions.length > 0 && (
@@ -405,7 +405,7 @@ function AgencyHealthSections({ agencyId }: { agencyId: string }) {
   return (
     <>
       <div className="msection-h">Billing</div>
-      {isLoading && <p className="sub">Loading…</p>}
+      {isLoading && <p className="sub">Frank is working…</p>}
       {error && <p className="autherr">{errorMessage(error, "Couldn't load billing")}</p>}
       {data && !b && <p className="msection-d">Not paying through Paddle.</p>}
       {b && (

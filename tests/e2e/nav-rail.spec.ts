@@ -65,19 +65,25 @@ test("a client-side member gets the same rail, opening their Knowledge", async (
   const menu = page.getByRole("navigation", { name: "Client Settings sections" });
   await expect(menu).toContainText("Knowledge");
   await expect(menu).not.toContainText("People");
-  // And no Settings: the agency's mark isn't a menu for them.
-  await expect(page.locator(".markbtn")).toHaveCount(0);
+  // And no Settings in their picture's menu.
+  await page.getByRole("button", { name: "Your account" }).click();
+  await expect(page.getByRole("menuitem", { name: "My Profile" })).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: "Settings" })).toHaveCount(0);
 });
 
-test("outside a client the rail is just Clients, and Settings opens from the agency's mark", async ({ page, frank }) => {
+test("outside a client the rail is just Clients, and Settings opens from your picture", async ({ page, frank }) => {
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/dashboard`);
-  await page.waitForSelector(".markbtn");
+  await page.waitForSelector(".hbrand-agency");
   await expect.poll(() => railLinks(page)).toEqual(["Clients -> /dashboard"]);
   await expect(page.locator('a[href="/calendar"], a[href="/analytics"], a[href="/visibility"]')).toHaveCount(0);
-  await page.locator(".markbtn").click();
+  await page.getByRole("button", { name: "Your account" }).click();
+  await expect(page.getByRole("menu").getByRole("menuitem")).toHaveText(["My Profile", "Settings", "Sign out"]);
   await page.getByRole("menu").getByRole("menuitem", { name: "Settings" }).click();
   await page.waitForURL(/\/settings\//);
+  // Frank's logo goes back to the clients list.
+  await page.locator(".corner-logo").click();
+  await page.waitForURL(`${APP_URL}/dashboard`);
 });
 
 test("a client-side member on their projects list gets Client Settings but no Settings", async ({ page, frank }) => {

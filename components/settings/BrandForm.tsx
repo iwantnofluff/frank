@@ -223,7 +223,7 @@ export function BrandForm({
       <div className="panel">
         <div className="panel-h">
           <b>Logo</b>
-          <span className="sync">PNG, JPG or WebP — cropped to a square</span>
+          <span className="sync">PNG, JPG or WebP — shown round</span>
         </div>
         <div className="logo-up">
           <button

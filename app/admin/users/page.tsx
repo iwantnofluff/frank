@@ -42,7 +42,7 @@ export default function AdminUsersPage() {
           onChange={(e) => setQuery(e.target.value)}
         />
       </div>
-      {isLoading && <p className="sub">Loading…</p>}
+      {isLoading && <p className="sub">Frank is working…</p>}
       {error && <p className="autherr">{errorMessage(error, "Couldn't load the users")}</p>}
       {people && (shown.length ? <PeopleTable people={shown} /> : <p className="sub">Nobody matches that.</p>)}
     </>

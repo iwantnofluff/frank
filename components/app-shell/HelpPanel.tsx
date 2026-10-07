@@ -116,6 +116,9 @@ export function HelpPanel({ open, onClose }: { open: boolean; onClose: () => voi
             <Chevron d="M15 18l-6-6 6-6" />
           </button>
         )}
+        {/* The windows' logomark, before the title (direct instruction). */}
+        {/* eslint-disable-next-line @next/next/no-img-element -- a static SVG */}
+        <img className="help-mark" src="/brand/frank-logomark.svg" alt="" aria-hidden="true" />
         <b>Help</b>
         <button type="button" className="help-ib" aria-label="Close help" onClick={onClose}>
           <Chevron d="M18 6L6 18M6 6l12 12" />

@@ -292,6 +292,7 @@ function CommentCard({
           style={{ background: avatarColour(authorName) }}
           initials={initialsOf(authorName)}
           photoUrl={thread.author?.avatar_asset_id ? photos?.[thread.author.avatar_asset_id] : null}
+                    hasPhoto={!!thread.author?.avatar_asset_id}
         />
         <b>
           {authorName}
@@ -336,6 +337,7 @@ function CommentCard({
                   style={{ background: avatarColour(replyAuthor) }}
                   initials={initialsOf(replyAuthor)}
                   photoUrl={r.author?.avatar_asset_id ? photos?.[r.author.avatar_asset_id] : null}
+                    hasPhoto={!!r.author?.avatar_asset_id}
                 />
                 <div className="rb">
                   <b>
@@ -358,7 +360,7 @@ function CommentCard({
       )}
 
       {replying && (
-        <div className="replybox on">
+        <div className="replybox on enter">
           <Composer
             placeholder={`Reply to ${authorName}…`}
             showInternalToggle={isStaff}

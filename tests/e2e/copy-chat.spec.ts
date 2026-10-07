@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { test, expect, APP_URL, type Frank } from "./fixtures";
 
-// "Write with Claude" (phase52). Live AI replies are never asserted here
+// "Draft with Frank" (phase52; was "Write with Claude"). Live AI replies are never asserted here
 // (CLAUDE.md): a conversation is seeded, and the window, "Use This", the
 // route's own refusals and who can read conversations are checked.
 
@@ -30,16 +30,16 @@ async function seedChat(frank: Frank) {
   return chat!.id as string;
 }
 
-test("Write with Claude reopens a conversation, and Use This fills the editor", async ({ page, frank }) => {
+test("Draft with Frank reopens a conversation, and Use This fills the editor", async ({ page, frank }) => {
   test.setTimeout(90_000);
   await seedChat(frank);
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
   await page.getByRole("button", { name: "Write Copy" }).click();
   const post = page.locator(".scrim .modal").first();
-  await post.getByRole("button", { name: /^Write with (?!AI)/ }).click();
+  await post.getByRole("button", { name: "Draft with Frank" }).click();
 
-  const chat = page.getByRole("dialog", { name: "Write with Claude" });
+  const chat = page.getByRole("dialog", { name: "Draft with Frank" });
   // Nothing written yet, so there's nothing to review.
   await expect(chat.getByRole("button", { name: "Review My Draft" })).toBeDisabled();
   await chat.getByRole("button", { name: /Drafted from the concept/ }).click();
@@ -55,7 +55,7 @@ test("Write with Claude reopens a conversation, and Use This fills the editor", 
   await expect(caption).toHaveValue("Dessert, but make it daily.");
   expect((await admin.from("copy_versions").select("id").eq("creative_id", frank.creativeId)).data).toEqual([]);
   // With copy in, a review can be asked for.
-  await post.getByRole("button", { name: /^Write with (?!AI)/ }).click();
+  await post.getByRole("button", { name: "Draft with Frank" }).click();
   await expect(chat.getByRole("button", { name: "Review My Draft" })).toBeEnabled();
 });
 

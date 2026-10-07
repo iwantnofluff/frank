@@ -73,7 +73,7 @@ export function FeedTileArt({
 export function EmptyTileArt({ loading = false }: { loading?: boolean }) {
   return (
     <div className={loading ? "pp-empty loading" : "pp-empty"}>
-      <span>{loading ? "Loading live posts…" : "Live Post"}</span>
+      <span>{loading ? "Frank is working…" : "Live Post"}</span>
     </div>
   );
 }

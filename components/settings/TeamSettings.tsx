@@ -241,6 +241,7 @@ export function TeamSettings({ view }: { view: View }) {
                     style={{ width: 32, height: 32, fontSize: 12.2, background: avatarColour(m.user?.name ?? "?") }}
                     initials={initials(m.user?.name, m.user?.email ?? "?")}
                     photoUrl={m.user?.avatar_asset_id ? photos?.[m.user.avatar_asset_id] : null}
+                    hasPhoto={!!m.user?.avatar_asset_id}
                   />
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 14.7, fontWeight: 500 }}>{m.user?.name ?? "—"}</div>

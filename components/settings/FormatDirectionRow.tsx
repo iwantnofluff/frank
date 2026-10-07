@@ -78,7 +78,7 @@ export function FormatDirectionRow({
       {!editing && record?.direction_text && <div className="fd-d">{record.direction_text}</div>}
 
       {editing && (
-        <div className="fd-edit">
+        <div className="fd-edit enter">
           <div className="bsec">
             <div className="bl">Direction</div>
             <textarea

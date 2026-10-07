@@ -158,13 +158,14 @@ test("the agency logo shows on the rail, for clients, and on review links", asyn
     storageKey = a!.storage_key;
     expect(storageKey).toMatch(new RegExp(`^${frank.agencyId}/agency-logo/`));
 
-    const railLogo = page.locator(".rail .mark img");
+    // The agency's logo, after Frank's in the header.
+    const railLogo = page.locator("img.hbrand-agency");
     await expect(railLogo).toBeVisible();
 
     const clientContext = await browser.newContext();
     const clientPage = await clientContext.newPage();
     await frank.loginAsClient(clientPage);
-    const clientRailLogo = clientPage.locator(".rail .mark img");
+    const clientRailLogo = clientPage.locator("img.hbrand-agency");
     await expect(clientRailLogo).toBeVisible();
     await expect.poll(() => clientRailLogo.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(512);
     await clientContext.close();
@@ -178,7 +179,8 @@ test("the agency logo shows on the rail, for clients, and on review links", asyn
 
     await page.getByRole("button", { name: "Remove" }).click();
     await expect(railLogo).toHaveCount(0);
-    await expect(page.locator(".rail .mark")).toHaveText("F");
+    // Back to the agency's initial.
+    await expect(page.locator(".hbrand-initial")).toHaveText("E");
   } finally {
     if (storageKey) await admin.storage.from("assets").remove([storageKey]);
   }

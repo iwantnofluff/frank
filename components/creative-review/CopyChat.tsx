@@ -18,14 +18,12 @@ const when = (iso: string) =>
 // Portalled to the page: it opens over the post window.
 export function CopyChat({
   creativeId,
-  modelName,
   fields,
   currentFields,
   onUse,
   onClose,
 }: {
   creativeId: string;
-  modelName: string;
   fields: CopyChatField[];
   currentFields: Record<string, string>;
   onUse: (fields: Record<string, string>) => void;
@@ -73,8 +71,8 @@ export function CopyChat({
 
   const body = (
     <Modal
-      title="Write with Claude"
-      ariaLabel="Write with Claude"
+      title="Draft with Frank"
+      ariaLabel="Draft with Frank"
       size="lg"
       onClose={onClose}
       footer={
@@ -85,7 +83,7 @@ export function CopyChat({
               rows={2}
               value={draft}
               placeholder="Ask for changes: shorter, warmer, a different hook…"
-              aria-label="Message to Claude"
+              aria-label="Message to Frank"
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
@@ -123,7 +121,7 @@ export function CopyChat({
             Review My Draft
           </button>
           <p className="cchat-note">
-            {modelName} reads the brief, the WIIFM, each format&rsquo;s direction, and your agency&rsquo;s and this
+            Frank reads the brief, the WIIFM, each format&rsquo;s direction, and your agency&rsquo;s and this
             client&rsquo;s knowledge, files included.
           </p>
           {!!chats?.length && (
@@ -150,12 +148,12 @@ export function CopyChat({
         <div className="cchat-main" aria-live="polite">
           {!chat && !send.isPending && (
             <div className="cchat-empty">
-              {isLoading ? "Loading…" : "Start by drafting from the concept, or ask for a review of the copy you've written."}
+              {isLoading ? "Frank is working…" : "Start by drafting from the concept, or ask for a review of the copy you've written."}
             </div>
           )}
           {chat?.messages.map((m) => (
             <div key={m.id} className={`cchat-msg ${m.role}`}>
-              <div className="cchat-who">{m.role === "user" ? "You" : "Claude"}</div>
+              <div className="cchat-who">{m.role === "user" ? "You" : "Frank"}</div>
               {/* Cleaned on show too: a reply saved before the parser kept
                   cut-off drafts can still hold the raw JSON. */}
               <div className="cchat-body">{m.role === "assistant" ? cleanReplyBody(m.body) : m.body}</div>
@@ -186,8 +184,8 @@ export function CopyChat({
               ))}
             </div>
           ))}
-          {send.isPending && <div className="cchat-msg assistant pending">Claude is writing…</div>}
-          {send.error && <p className="autherr">{errorMessage(send.error, "Claude didn't answer")}</p>}
+          {send.isPending && <div className="cchat-msg assistant pending">Frank is working…</div>}
+          {send.error && <p className="autherr">{errorMessage(send.error, "Frank didn't answer")}</p>}
           {skipped.length > 0 && (
             <p className="cchat-note">Too large to include this time: {skipped.join(", ")}.</p>
           )}

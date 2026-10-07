@@ -51,7 +51,7 @@ function EntryEditor({
   const [body, setBody] = useState(initialBody);
 
   return (
-    <div className="kb-item">
+    <div className="kb-item enter">
       <span className="kb-ic" style={{ background: KB_COLOR.text }}>
         Aa
       </span>

@@ -79,7 +79,7 @@ export function CaptionHighlighter({
       </span>
 
       {pending && (
-        <div className="hl-composer" onClick={(e) => e.stopPropagation()}>
+        <div className="hl-composer enter" onClick={(e) => e.stopPropagation()}>
           <div className="quoted">&ldquo;{pending.quote}&rdquo;</div>
           <CommentDraftForm
             showVisibilityToggle={showVisibilityToggle}

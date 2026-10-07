@@ -10,6 +10,9 @@ import { BellIcon, HelpIcon } from "./icons";
 import { GlobalSearch } from "./GlobalSearch";
 import { HelpPanel } from "./HelpPanel";
 import { NotificationsPanel } from "./NotificationsPanel";
+import { HeaderBrand } from "./HeaderBrand";
+import { AccountMenu } from "./AccountMenu";
+import { useIsStaff } from "@/hooks/use-is-staff";
 import { ArtworkDecisionModal } from "./ArtworkDecisionModal";
 
 const STATIC_CRUMBS: Record<string, string> = {
@@ -171,11 +174,20 @@ function Crumb({ pathname }: { pathname: string }) {
   return <StaticCrumb pathname={pathname} />;
 }
 
-// The header (direct instruction): where you are, search, the bell and
-// Help. The "Preview as" switch is gone (each person sees their own view).
+// The header (direct instruction): Frank's logo and the agency's, where
+// you are, search, the bell, Help, and your picture with its menu. The "Preview as" switch is gone (each person sees their own view).
 // The bell is back for notifications (phase60), its count the unread ones.
-export function Topbar() {
+export function Topbar({
+  userInitials,
+  userName,
+  userEmail,
+}: {
+  userInitials: string;
+  userName: string | null;
+  userEmail: string;
+}) {
   const pathname = usePathname();
+  const { isStaff, isPending: staffPending } = useIsStaff();
   const [helpOpen, setHelpOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [deciding, setDeciding] = useState<NonNullable<NotificationRow["creative"]> | null>(null);
@@ -185,6 +197,7 @@ export function Topbar() {
 
   return (
     <header className="topbar">
+      <HeaderBrand />
       <div className="crumb">
         <Crumb pathname={pathname} />
       </div>
@@ -230,6 +243,8 @@ export function Topbar() {
         <HelpIcon />
       </button>
       <HelpPanel open={helpOpen} onClose={() => setHelpOpen(false)} />
+      <span className="tsep" aria-hidden="true" />
+      <AccountMenu initials={userInitials} name={userName} email={userEmail} showSettings={isStaff && !staffPending} />
     </header>
   );
 }

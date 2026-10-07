@@ -112,7 +112,7 @@ export function FeedPreviewGrid({
 
       {isLoading ? (
         <div className="awaiting">
-          <span>Loading feed…</span>
+          <span>Frank is working…</span>
         </div>
       ) : (
         <div className={tab === "reels" ? "feedgrid reels" : "feedgrid"}>

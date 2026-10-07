@@ -278,7 +278,7 @@ function ProjectPeople({
       </p>
       {canManage &&
         (isPending ? (
-          <p className="msection-d">Loading…</p>
+          <p className="msection-d">Frank is working…</p>
         ) : error ? (
           <p className="autherr">{errorMessage(error, "Couldn't load who's on this project")}</p>
         ) : (
@@ -297,6 +297,7 @@ function ProjectPeople({
                     }}
                     initials={initials(p.name, p.email)}
                     photoUrl={p.avatarAssetId ? photos?.[p.avatarAssetId] : null}
+                    hasPhoto={!!p.avatarAssetId}
                   />
                   <div className="pp-t">
                     <b>{p.name}</b>

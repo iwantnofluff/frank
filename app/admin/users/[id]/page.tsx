@@ -87,7 +87,7 @@ export default function AdminUserPage({ params }: { params: Promise<{ id: string
           <path d="M15 18l-6-6 6-6" />
         </svg>
       </Link>
-      {isLoading && <p className="sub">Loading…</p>}
+      {isLoading && <p className="sub">Frank is working…</p>}
       {error && <p className="autherr">{errorMessage(error, "Couldn't load this person")}</p>}
       {person && (
         <>

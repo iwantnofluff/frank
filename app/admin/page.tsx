@@ -66,7 +66,7 @@ export default function AdminOverviewPage() {
           <p className="sub">How Frank is doing, and who needs a look.</p>
         </div>
       </div>
-      {isLoading && <p className="sub">Loading…</p>}
+      {isLoading && <p className="sub">Frank is working…</p>}
       {error && <p className="autherr">{errorMessage(error, "Couldn't load the overview")}</p>}
       {o && (
         <>

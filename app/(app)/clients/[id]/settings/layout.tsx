@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useIsStaff } from "@/hooks/use-is-staff";
 import { SettingsNav } from "@/components/settings/SettingsNav";
 import { clientOnlyPage, clientSettingsSections } from "@/lib/client-settings-nav";
+import { SettingsMain } from "@/components/settings/SettingsMain";
 
 // Client Settings (direct instruction): the same structure as Settings (its
 // left menu beside the page you're on) for one client. Staff see every
@@ -33,7 +34,7 @@ export default function ClientSettingsLayout({
     <div className="setwrap">
       <SettingsNav pathname={pathname} sections={clientSettingsSections(id, isStaff)} label="Client Settings sections" />
       <div className="review-sep" aria-hidden="true" />
-      <div className="setmain">{children}</div>
+      <SettingsMain>{children}</SettingsMain>
     </div>
   );
 }

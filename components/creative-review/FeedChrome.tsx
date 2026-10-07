@@ -25,7 +25,7 @@ export function FeedProfile({
         </span>
         <span className="fp-t">
           <b>{fallbackName}</b>
-          {loading && <span className="fp-loading">Loading Instagram profile…</span>}
+          {loading && <span className="fp-loading">Frank is working…</span>}
         </span>
       </div>
     );

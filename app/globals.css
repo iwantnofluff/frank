@@ -167,9 +167,10 @@ a {
 .scrim.closing {
   pointer-events: none;
 }
+/* The Help panel's motion (direct instruction): in from 24px to the right. */
 .modal {
   opacity: 0;
-  transform: translateY(8px) scale(0.98);
+  transform: translateX(24px);
   transition:
     opacity var(--dur-close) var(--ease-close),
     transform var(--dur-close) var(--ease-close);
@@ -399,7 +400,8 @@ a {
 }
 
 .topbar {
-  height: 52px;
+  /* 20px taller than the prototype's 52 (direct instruction: it was tight). */
+  height: 72px;
   background: var(--rail);
   display: flex;
   align-items: center;
@@ -919,10 +921,11 @@ body.lightrail .avatar {
   gap: 11px;
   min-width: 0;
 }
+/* Client and project logos are round everywhere (direct instruction). */
 .logo {
   width: 32px;
   height: 32px;
-  border-radius: 7px;
+  border-radius: 50%;
   display: grid;
   place-items: center;
   font-weight: 700;
@@ -3664,6 +3667,9 @@ textarea.cxin {
   transition: transform 0.15s;
   flex-shrink: 0;
 }
+.fd-cat svg {
+  transition: transform var(--dur-open) var(--ease-std);
+}
 .fd-cat.open svg {
   transform: rotate(90deg);
 }
@@ -5199,13 +5205,13 @@ button.avatar {
 .logo.clogo {
   width: 56px;
   height: 56px;
-  border-radius: 10px;
+  border-radius: 50%;
   font-size: 18.2px;
 }
-/* Client images show as a rounded-square tile, not a circle — the guide
-   matches, so the corners that are kept don't look cut off. */
+/* Client logos show round (direct instruction): the crop guide matches,
+   so what's chosen is what shows. */
 .pcrop-ring.tile {
-  border-radius: 18%;
+  border-radius: 50%;
 }
 /* Settings > Branding — ported from frank-prototype.html (.sw, .presets,
    .pre, .prex, .unsaved, .swgrid, .dots2, .logo-up, .logo-box), values
@@ -5344,10 +5350,11 @@ button.avatar {
   display: block;
   line-height: 1.4;
 }
+/* The agency's logo, round as every logo is (direct instruction). */
 .logo-box {
   width: 56px;
   height: 56px;
-  border-radius: 10px;
+  border-radius: 50%;
   border: 1.5px dashed var(--line-2);
   display: grid;
   place-items: center;
@@ -7058,17 +7065,6 @@ button.feedgrid-live {
 .panel-h .btn {
   margin-left: auto;
 }
-/* The agency's mark, opening Settings for staff (AgencyMenu). */
-.markbtn {
-  border: none;
-  font: inherit;
-  cursor: pointer;
-  transition: box-shadow var(--dur-fast) var(--ease-std);
-}
-.markbtn:hover,
-.markbtn[aria-expanded="true"] {
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
-}
 
 /* The header's search (direct instruction): typing lists matching clients
    and projects, each with a subtle Client or Project pill. */
@@ -7162,7 +7158,7 @@ button.feedgrid-live {
 }
 .helppanel {
   position: fixed;
-  top: 52px;
+  top: 72px;
   right: 0;
   bottom: 0;
   width: 420px;
@@ -7626,7 +7622,7 @@ button.feedgrid-live {
 @media (max-width: 600px) {
   .colpop.gsearch-pop {
     position: fixed;
-    top: 58px;
+    top: 78px;
     left: 16px;
     right: 16px;
     width: auto;
@@ -7638,7 +7634,7 @@ button.feedgrid-live {
    instead of its display toggle. Type sizes as the rest of the app's. */
 .notif {
   position: fixed;
-  top: 56px;
+  top: 76px;
   right: 16px;
   width: 340px;
   max-width: calc(100vw - 32px);
@@ -7930,4 +7926,165 @@ button.feedgrid-live {
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+/* The header's left (direct instruction): Frank's logo, to the clients
+   list; a divider; the agency's logo, or its initial and, for Owners and
+   Admins, Add Logo. Then the breadcrumb. */
+.hbrand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  margin-right: 18px;
+  /* Clear of the corner logo, which reaches about 119px in (25px in, 94px
+     wide), with the same 14px after it. */
+  margin-left: 45px;
+}
+/* Frank's logo in the top left corner (direct instruction): 22px tall,
+   as far in from the left as from the top (25px, centred on the 72px
+   header), over the rail's top and a little into the header. The rail
+   keeps the space it had (.rail-top), so its icons haven't moved, and the
+   header's own logos start after it. */
+.app {
+  position: relative;
+}
+.corner-logo {
+  position: absolute;
+  top: 25px;
+  left: 25px;
+  z-index: 3;
+  display: block;
+  line-height: 0;
+  border-radius: var(--r);
+}
+.corner-logo img {
+  height: 22px;
+  width: auto;
+  display: block;
+}
+.rail-top {
+  height: 28px;
+  margin-bottom: 22px;
+  flex-shrink: 0;
+}
+.hbrand-sep,
+.tsep {
+  width: 1px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
+}
+.hbrand-agency {
+  width: 28px;
+  height: 28px;
+  /* Round, as client and project logos are (direct instruction). */
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.hbrand-initial {
+  display: grid;
+  place-items: center;
+  background: #fff;
+  color: var(--rail);
+  font-size: 13.7px;
+  font-weight: 700;
+}
+.hbrand-add {
+  font-size: 11.7px;
+  color: rgba(255, 255, 255, 0.78);
+  white-space: nowrap;
+}
+button.hbrand-add:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+.hbrand-err {
+  font-size: 11.7px;
+  color: #ffb4b4;
+  max-width: 220px;
+}
+/* Your picture, at the header's far right. */
+.topbar .tsep {
+  margin: 0 4px;
+}
+.avatar.topavatar {
+  margin: 0;
+  flex-shrink: 0;
+}
+
+/* Frank's logomark at the top left of every window (direct instruction),
+   before its title: the bars alone, no tile or border, 75% bigger than the
+   tile's bars were. */
+.modal-h .modal-mark {
+  width: 34px;
+  height: auto;
+  flex-shrink: 0;
+  margin-right: 6px;
+}
+
+/* The agency's logo on its way: a tile the same size, not its initial. */
+.hbrand-wait {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* The windows' logomark before Help's title (direct instruction). */
+.help-h .help-mark {
+  width: 24px;
+  height: auto;
+  flex-shrink: 0;
+}
+
+/* The Help panel's motion everywhere else (direct instruction): a fade and
+   a 24px slide from the right, decelerating in over --dur-open. */
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+/* A new screen (ViewTransition), a Settings page's content, an editor or
+   reply box as it opens. */
+/* No fill mode: once it's played, nothing of it stays applied. A
+   transform kept on a screen would make it the frame every window and
+   pop-up inside it is placed against (they'd stop covering the header). */
+.screen-in,
+.setmain,
+.enter {
+  animation: slide-in var(--dur-open) var(--ease-open);
+}
+/* A section's contents opening and closing (Collapse): its height eases
+   from nothing (grid rows 0fr to 1fr) while it fades and slides in; on
+   close, the same back, faster, accelerating. */
+.collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transform: translateX(24px);
+  transition:
+    grid-template-rows var(--dur-close) var(--ease-close),
+    opacity var(--dur-close) var(--ease-close),
+    transform var(--dur-close) var(--ease-close);
+}
+.collapse.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transform: none;
+  transition-duration: var(--dur-open);
+  transition-timing-function: var(--ease-open);
+}
+.collapse-in {
+  min-height: 0;
+  overflow: hidden;
+}
+@media (prefers-reduced-motion: reduce) {
+  .screen-in,
+  .setmain,
+  .enter {
+    animation: none;
+  }
+  .collapse {
+    transition: none;
+  }
 }

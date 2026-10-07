@@ -16,11 +16,11 @@ test("dashboard — clients list", async ({ page, frank }) => {
   // resolves on yet another separate query — same reasoning, wait for it
   // too or the screenshot can land on "…" there instead of real values.
   await expect(page.locator(".crow:not(.head) > div").nth(1)).not.toHaveText("…");
-  // useIsStaff (the agency mark's Settings menu, .markbtn) resolves independently
+  // useIsStaff (and with it the header's agency logo, .hbrand-agency) resolves independently
   // of both queries above and fails closed (hidden) until it does — wait
   // for it too, or this screenshot can race ahead under worker
   // concurrency and land on a rail missing Settings.
-  await page.waitForSelector(".markbtn");
+  await page.waitForSelector(".hbrand-agency");
   // The greeting changes with every sign-in — checked on its own below.
   await expect(page.locator(".greeting")).not.toHaveText("\u00a0");
   await expect(page).toHaveScreenshot("dashboard.png", { mask: [page.locator(".greeting")] });

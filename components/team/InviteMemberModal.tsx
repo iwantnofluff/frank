@@ -185,7 +185,7 @@ export function InviteMemberModal({
           >
             <option value="">
               {addableLoading
-                ? "Loading…"
+                ? "Frank is working…"
                 : addable?.length
                   ? "No, someone new"
                   : "Every User on your team has this client"}

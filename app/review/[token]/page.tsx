@@ -95,7 +95,7 @@ export default function SharedReviewPage({
   if (isLoading) {
     return (
       <div className="reviewpage">
-        <p className="reviewpage-loading">Loading…</p>
+        <p className="reviewpage-loading">Frank is working…</p>
       </div>
     );
   }

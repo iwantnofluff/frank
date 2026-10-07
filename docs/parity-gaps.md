@@ -2825,3 +2825,65 @@ On a computer, the review link's post now sits in the same phone as the Review p
 - **Scrolling:** scrolling the phone to its end showed the caption and took the note away.
 - **Phone width:** at 390px the phone layout showed, with no frame.
 - **Tests:** the desktop screenshot was renewed after looking at it (the phone frame, with "No artwork yet" for the fixture's post).
+
+## Frank's logo, the agency's logo, and your picture, in the header
+
+Direct instructions:
+- **Frank's logo:** the no-strapline version, reversed for the dark header (from "Frank Final Logo Q3 2026", copied unchanged). It sits in the top left corner, 22px tall and as far in from the left as from the top (15px), and goes to Clients. The rail keeps the space the agency's mark had, so its icons haven't moved.
+- **The agency's logo:** after a divider, the agency's logo. Without one, its initial, and for Owners and Admins on a branded plan, a small Add Logo that opens the file picker and then the crop window right there. A browser won't open a file picker from a link to another page, so it's done in place.
+- **Your picture:** at the top right after Help and a divider, with My Profile, Settings (for the agency's team only) and, after a divider, Sign out (decided directly: kept so people can still sign out). It replaces the rail's foot avatar and the agency mark's Settings menu.
+- **Favicon:** Frank's own favicon and a 180px app icon replace the starter favicon.
+
+**Verified** at 1440px:
+- **Logo:** at x15 y15, 94×22. The divider follows at x123 and the agency's tile at x136, all centred on the header's middle line (y26). The rail's first icon is at y64, where it was.
+- **Clicks:** the logo opened Clients, and Add Logo opened the file picker, then "Position the agency logo".
+- **Menus:** a team member's menu read My Profile, Settings, Sign out; a client's person's read My Profile, Sign out, with no Add Logo.
+- **Icons:** /icon.svg and /apple-icon.png are served.
+- **Tests:** the seven page screenshots changed only in the header and the rail (checked before renewing). The rail, header, branding and profile tests use the new places. The help articles now say where Settings and the logo are.
+
+## Frank's logomark on every window, Draft with Frank, and "Frank is working…"
+
+Direct instructions:
+- **Logomark:** every window shows Frank's logomark (the white app icon, frank-icon-white.svg, copied unchanged) at the top left, before its title, 26px.
+- **Draft with Frank:** the AI drafting feature is named Draft with Frank, not Write with Claude: the button under the caption, the window's title, "Frank" on its replies, "Message to Frank", "Frank is working…" while it writes, and "Frank didn't answer" if it can't. So the AI model isn't hidden, the window still says which one writes the drafts ("Drafts are written by Claude Opus 5, the model set in AI Governance"), as do AI Governance and the help.
+- **Loading messages:** every one now says "Frank is working…", 22 places including the review link, People, the feed and the link preview card. Buttons that say what they're doing (Saving…, Uploading…) are unchanged.
+- **Help:** "Draft copy with Frank", under "Drafting with Frank".
+
+**Verified:** the Edit window and the Draft with Frank window each showed the logomark (loaded, 26px) beside the title. The button read Draft with Frank, and the window's note named the model. The upload window's screenshot changed only in its header (the mark), checked before renewing. `copy-chat`, `creative-review`, `header` and `shared-review-public` pass.
+
+## A taller header, and no logo or photo flashing in
+
+Direct instructions:
+- **Taller header:** the header is 72px, 20px more than the prototype's 52 ("it's a little tight"). Frank's logo stays as far in from the left as from the top, now 25px, and everything in the header is centred on its middle line. Help, notifications and the phone search results open below it. The rail's icons haven't moved.
+- **No flash:** client logos, people's photos, your picture and the agency's logo no longer flash in as a page opens.
+  - **The cause:** each screen asked for a fresh signed address for its pictures. A new address meant the browser downloaded the picture again, and the initials showed in its place until it arrived.
+  - **Now:** each picture keeps its signed address (signed for 12 hours, reused until an hour before expiry) across every screen and across a reload, so it comes straight from the browser's cache. Where a picture is known to exist but hasn't arrived, its tile stays blank rather than showing initials first. Initials only show when there's no picture. Signing out clears the kept addresses.
+
+**Verified:**
+- **Header:** at 1440px it measured 72px, with the logo (25px in from both the left and the top), divider, agency tile, search and your picture all centred at y36. The rail's first icon stayed at y64, and notifications opened at y76.
+- **No flash:** a client's logo tile was sampled every frame on the Clients page:
+  - **First visit:** blank, then the logo loading, then the logo. Never the initials.
+  - **Returning from another page:** the logo from the first frame.
+  - **After a reload:** the logo from the first frame.
+- **Tests:** the eight page screenshots were renewed after viewing one (everything moved down 20px).
+
+## Round logos, the bigger window logomark, and the Help motion everywhere
+
+Direct instructions:
+- **Window logomark:** every window's logomark is the bars alone (frank-logomark.svg, copied unchanged), with no tile or grey border, 75% bigger than the tile's bars were (34px wide). The same mark sits before Help's title. The "Drafts are written by…" line is gone from Draft with Frank, and from its help article.
+- **Round logos:** client and project logos are round everywhere (the clients list, a client's projects, Client Details, project pictures), as are the agency's logo in the header and its upload box in Settings. The logo cropper's guide is round to match. A logo is still saved square; it's shown round.
+- **The Help panel's motion everywhere** (a fade and a 24px slide from the right, 220ms in on a decelerating curve, 170ms out accelerating):
+  - **Windows:** in place of their rise-and-grow.
+  - **Moving to a new screen:** each one slides in. In Settings and a client's Settings only the page beside the menu does, so the menu doesn't slide every time.
+  - **Collapsible sections:** the settings menus' sections and Format Directions' groups open and close smoothly, growing to their height and back, with the close shown too.
+  - **Inline editors as they open:** Write Note, a format's Direction, Client Details' editor, a comment reply, and commenting on caption words.
+  - **Reduced motion:** all of it is off for anyone whose device asks for reduced motion.
+- **Fix found on the way:** the screen animation at first kept its final state applied. A transform left on a screen makes it the frame that windows inside it are placed against, so windows stopped covering the header and sat off-centre. The animations now let go once played.
+
+**Verified** in the app:
+- **Window:** it slid in from 24px and settled at 280ms.
+- **New screen:** it faded in over about 140ms.
+- **A Settings section:** it opened from 0 to 80px and closed back to 0 before going.
+- **Windows after the fix:** a window's shade covered the whole screen (1280×900), and the window sat centred at x360, as before.
+- **Draft with Frank:** its note no longer names the model.
+- **Tests:** the affected specs pass (41 of them). The screenshots changed only where the logos went round and in the window header's mark, checked before renewing.

@@ -28,7 +28,7 @@ export function KnowledgeFilePreviewModal({
 
   return (
     <Modal title={filename} onClose={onClose}>
-      {isLoading && <p className="sub">Loading…</p>}
+      {isLoading && <p className="sub">Frank is working…</p>}
       {isError && (
         <div className="empty">
           <b>Couldn&rsquo;t load this file</b>

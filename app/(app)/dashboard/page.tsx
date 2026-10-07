@@ -205,9 +205,13 @@ export default function DashboardPage() {
                   className="logo"
                   style={{ background: c.accent_colour || "#6B7280" }}
                 >
-                  {c.logo_asset_id && logoUrls?.[c.logo_asset_id] ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
-                    <img src={logoUrls[c.logo_asset_id]} alt="" />
+                  {/* A client with a logo: blank until it's here, never its
+                      initials first (direct instruction: no flashing in). */}
+                  {c.logo_asset_id ? (
+                    logoUrls?.[c.logo_asset_id] ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
+                      <img src={logoUrls[c.logo_asset_id]} alt="" />
+                    ) : null
                   ) : (
                     clientInitials(c.name)
                   )}

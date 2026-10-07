@@ -1,7 +1,9 @@
+import Link from "next/link";
 import { NavRail } from "./NavRail";
 import { Topbar } from "./Topbar";
 import { AgencyTheme } from "./AgencyTheme";
 import { ReadOnlyBanner } from "./ReadOnlyBanner";
+import { ViewTransition } from "./ViewTransition";
 
 export function AppShell({
   children,
@@ -17,11 +19,17 @@ export function AppShell({
   return (
     <div className="app">
       <AgencyTheme />
-      <NavRail userInitials={userInitials} userName={userName} userEmail={userEmail} />
+      {/* Frank's logo in the top left corner (direct instruction), over the
+          rail's top and into the header; it goes to the clients list. */}
+      <Link href="/dashboard" className="corner-logo" aria-label="Frank" title="Go to all clients">
+        {/* eslint-disable-next-line @next/next/no-img-element -- a static SVG */}
+        <img src="/brand/frank-header-reversed.svg" alt="" />
+      </Link>
+      <NavRail />
       <div className="main">
-        <Topbar />
+        <Topbar userInitials={userInitials} userName={userName} userEmail={userEmail} />
         <ReadOnlyBanner />
-        <div className="view on">{children}</div>
+        <ViewTransition>{children}</ViewTransition>
       </div>
     </div>
   );

@@ -89,7 +89,7 @@ export default function ClientInstagramPage({
         </p>
       )}
       {isLoading ? (
-        <p className="sub">Loading…</p>
+        <p className="sub">Frank is working…</p>
       ) : (
         <section className="panel" aria-label="Instagram account">
           <div className="srow igrow">

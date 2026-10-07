@@ -24,13 +24,13 @@ async function removePhotoFile(assetId: string | null) {
   if (data) await admin.storage.from("assets").remove([data.storage_key]);
 }
 
-test("Your Profile saves title-cased names and designation, whatever was typed", async ({
+test("My Profile saves title-cased names and designation, whatever was typed", async ({
   page,
   frank,
 }) => {
   await frank.loginAsStaff(page);
   await page.getByRole("button", { name: "Your account" }).click();
-  await page.getByRole("menuitem", { name: "Your Profile" }).click();
+  await page.getByRole("menuitem", { name: "My Profile" }).click();
   await page.waitForURL(`${APP_URL}/profile`);
   await expect(page.getByLabel("Email")).toHaveValue(frank.staffEmail);
 

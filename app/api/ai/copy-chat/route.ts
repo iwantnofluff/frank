@@ -175,7 +175,7 @@ export async function POST(request: Request) {
   );
 
   const result = await runAiTask(supabase, agencyId, user.id, prompt, attachments);
-  if (!result.ok || !result.text) return fail(result.error ?? "Claude didn't answer", result.status || 502);
+  if (!result.ok || !result.text) return fail(result.error ?? "Frank didn't answer", result.status || 502);
   const reply = parseCopyChatReply(result.text, fields);
 
   // Saved now Claude has answered.
@@ -199,7 +199,7 @@ export async function POST(request: Request) {
       { chat_id: chatId, role: "assistant", body: reply.body, drafts: reply.drafts, created_by: null },
     ])
     .select("id, role, body, drafts, created_at");
-  if (saveError) return fail(`Claude answered, but the conversation couldn't be kept: ${saveError.message}`, 500);
+  if (saveError) return fail(`Frank answered, but the conversation couldn't be kept: ${saveError.message}`, 500);
 
   return NextResponse.json({ chatId, messages: saved, skippedFiles: skipped });
 }
