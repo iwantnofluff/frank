@@ -77,6 +77,9 @@ export type SharedReviewResult =
 
 export interface SharedFeedEntry {
   id: string | null;
+  // Only for a post this link doesn't share that's still in Internal
+  // Review (phase68); null otherwise.
+  name?: string | null;
   stage: number;
   reel: boolean;
 }

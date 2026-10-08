@@ -116,7 +116,7 @@ export async function POST(request: Request) {
   // again by its own function; started now so it runs alongside the rest.
   const feedPromise = anon
     .rpc("get_shared_review_feed", { p_token: token, p_passcode: passcode ?? null })
-    .then(({ data: f }) => (f?.status === "ok" ? (f.feed as { id: string | null; stage: number; reel: boolean }[]) : null));
+    .then(({ data: f }) => (f?.status === "ok" ? (f.feed as { id: string | null; name?: string | null; stage: number; reel: boolean }[]) : null));
 
   // Everything that only needs the validated token, at once.
   const [creativeRows, anchorRows, versionRows, settings, clientLogo] = serviceRole

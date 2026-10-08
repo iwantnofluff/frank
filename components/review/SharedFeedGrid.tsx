@@ -12,20 +12,20 @@ import { CommentCount } from "./CommentCount";
 
 const GRID_SLOTS = 9;
 
-// What a post this link doesn't share says on its tile (decided directly:
-// its stage, nothing else).
-const STAGE_TILE: Record<number, string> = {
-  1: "In Progress",
-  2: "Internal Review",
-  3: "In Review",
-  4: "Approved",
-};
+// Each tile's stage, named and coloured as the Review page's stage switch
+// names and colours them (direct instruction): Internal Review (Concept
+// counts as it there too), Client Review, Approved.
+function StagePill({ stage }: { stage: number }) {
+  const [label, tone] = stage >= 4 ? ["Approved", "approved"] : stage === 3 ? ["Client Review", "client"] : ["Internal Review", "internal"];
+  return <span className={`stagepill ${tone}`}>{label}</span>;
+}
 
 // A review link's Feed (phase54, then phase67): the client's profile, the
 // project's posts in grid order, then the client's real posts once their
 // Instagram is connected (placeholders until then, as on the Review page).
-// The posts this link shares open on a click and show how many comments
-// they have; every other post is a tile with its stage only.
+// The posts this link shares show their thumbnail, open on a click and show
+// how many comments they have; every other post is a tile with its stage
+// (and its name while in Internal Review). Every tile carries its stage pill.
 export function SharedFeedGrid({ controller, brandName }: { controller: ReviewController; brandName: string }) {
   const { liveFeed, liveLoading, creatives, feed, active, goTo, setView } = controller;
   const [tab, setTab] = useState<FeedTab>("posts");
@@ -62,11 +62,15 @@ export function SharedFeedGrid({ controller, brandName }: { controller: ReviewCo
           if (!c || i === undefined) {
             return (
               <div key={`stage-${n}`} className="feedgrid-tile-empty sharedfeed-stage">
-                <span>{STAGE_TILE[e.stage] ?? "In Progress"}</span>
+                {/* Named while in Internal Review (phase68); otherwise its
+                    stage alone. */}
+                {e.name && <span className="sharedfeed-name">{e.name}</span>}
+                <StagePill stage={e.stage} />
               </div>
             );
           }
-          const image = c.asset?.mime_type.startsWith("image/") ? c.asset.signed_url : null;
+          const url = c.asset?.signed_url ?? null;
+          const video = !!c.asset?.mime_type.startsWith("video/");
           return (
             <button
               key={c.id}
@@ -79,13 +83,17 @@ export function SharedFeedGrid({ controller, brandName }: { controller: ReviewCo
                 setView("post");
               }}
             >
-              {image ? (
+              {/* Its thumbnail (direct instruction): the image, or a video's
+                  first frame, as the Review page's Feed Preview shows them. */}
+              {url && video ? (
+                <video src={`${url}#t=0.1`} muted playsInline preload="metadata" aria-label={c.name} />
+              ) : url ? (
                 // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
-                <img src={image} alt={c.name} />
+                <img src={url} alt={c.name} />
               ) : (
                 <span className="sharedfeed-name">{c.name}</span>
               )}
-              <span className="sharedfeed-badge">{c.stage >= 4 ? "Approved" : "For review"}</span>
+              <StagePill stage={c.stage} />
               <CommentCount n={c.comments.length} />
             </button>
           );
