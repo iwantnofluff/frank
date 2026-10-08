@@ -1,3 +1,4 @@
 {
+  "regions": ["hnd1"],
   "crons": [{ "path": "/api/cron/artwork", "schedule": "0 3 * * *" }]
 }

@@ -2961,6 +2961,14 @@ Measured first, in real Chrome with a 249MB, 60-second video: compression tracke
 - **300MB:** Frank's limit (`lib/upload-limits.ts`) and **phase66**, which sets the storage bucket to match. Storage's "Maximum size exceeded" now reads as the plain "bigger than storage accepts" message.
 
 Gaps:
-- **Supabase's project-wide upload limit is 50MB on staging** (checked: a 69MB image was refused as "Maximum size exceeded"). It's set in Supabase's dashboard (Storage → Settings) and has to be raised to 300MB on staging and live for anything over 50MB to go up.
+- **Supabase's project-wide upload limit was 50MB on staging** (a 69MB image was refused as "Maximum size exceeded"). The user raised it on staging and live (8 Oct 2026). Rechecked: the same 69MB image saved through the app on staging, stored byte for byte, and a 69MB file was accepted by live's storage (then removed).
 
 **Verified:** phase66 applied to staging (dry run first, showing only phase66); the bucket reads 300MB. In real Chrome: a 45MB image, upload slowed to 16 Mbps, went up in 1 create and 8 pieces; cut off at 27–40% for 6 seconds, "Connection lost, trying again…" showed within 2 seconds and the upload carried on from the last confirmed piece, not from 0; the stored file matched byte for byte. The 249MB video showed Compressing, Finishing compression, Uploading and "Saving version 1…" in turn. The unsaved note, "Close Without Saving?" (Cancel and Escape) and "Still Saving" were each checked. Unit tests pass.
+
+## Review links load faster: Frank's server next to its database
+
+Reported directly: a review link took a long time to load. Measured on live: the page itself arrived in 0.8s, but its data took 4.7–6.2s for a link with one post. The `x-vercel-id` header showed the visitor reaching Vercel in Mumbai (`bom1`) and the function running in Washington DC (`iad1`, Vercel's default), while both databases are in Tokyo (`ap-northeast-1`, found from the connection pooler's answer to a wrong-password sign-in). Each database call crossed the Pacific, about 150ms, and the route made about 15 in a row.
+- **`vercel.json` sets `"regions": ["hnd1"]`** (Tokyo, decided directly): every server route and the proxy's sign-in check now run beside the database. It applies to the whole app, staging and live, at no extra cost.
+- **The review link's route waits less:** the link is read once (it was three times), the lookups that only need the validated token run together, and every file (artwork, each slide, both logos) is signed in one request instead of one at a time. About 15 rounds of waiting become 4.
+
+**Verified:** for a link with a 3-slide carousel, two comments, a client logo and agency branding, the new route's answer matched the old one exactly (keys sorted, signatures stripped); every slide and both logos were signed. Review-link, video, live-comment and Instagram specs pass (19). The before-and-after timing on live is checked once deployed.

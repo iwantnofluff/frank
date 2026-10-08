@@ -69,16 +69,22 @@ export async function POST(request: Request) {
 
   const creatives = data.creatives as RpcCreative[];
   let serviceRole: ReturnType<typeof createServiceRoleClient> | null = null;
+  // The link's agency (paused? which plan?) and its project's client logo,
+  // read once for everything below. Reported directly: the link took 5–6s
+  // to load, mostly lookups waiting on one another; they now run together
+  // where they can, and every address is signed in one request.
+  let link: LinkRow | null = null;
   try {
     serviceRole = createServiceRoleClient();
-    // A paused agency's review links stop working (phase37) — on every
-    // address, including ones the proxy doesn't gate (the old vercel.app).
-    const { data: link } = await serviceRole
+    const { data: row } = await serviceRole
       .from("shared_links")
-      .select("agencies(suspended_at)")
+      .select("agency_id, agencies(suspended_at, plan), projects(clients(logo_asset_id))")
       .eq("token", token)
       .maybeSingle();
-    if ((link?.agencies as unknown as { suspended_at: string | null } | null)?.suspended_at) {
+    link = row as unknown as LinkRow | null;
+    // A paused agency's review links stop working (phase37) — on every
+    // address, including ones the proxy doesn't gate (the old vercel.app).
+    if (link?.agencies?.suspended_at) {
       return NextResponse.json({ status: "not_found" });
     }
   } catch {
@@ -98,186 +104,155 @@ export async function POST(request: Request) {
     return NextResponse.json({ status: "ok", pulse: fingerprint });
   }
 
-  // Every format a post goes out as (phase29) — get_shared_review returns
-  // only the main one. Looked up for exactly the creatives that function
-  // just returned for this validated token, nothing wider.
+  const ids = creatives.map((c) => c.id);
+  const commentIds = creatives.flatMap((c) => c.comments.map((m) => m.id));
+  const clientLogoId = link?.projects?.clients?.logo_asset_id ?? null;
+  // Logo and colours are a Growth-and-up feature (the spec's white-label
+  // row; phase41): below that, review links keep Frank's own look.
+  const branded = !!link && brandingAllowed(link.agencies?.plan);
+
+  // Everything that only needs the validated token, at once.
+  const [creativeRows, anchorRows, versionRows, settings, clientLogo] = serviceRole
+    ? await Promise.all([
+        // Every format a post goes out as (phase29) — get_shared_review
+        // returns only the main one — its slide count, and when its artwork
+        // was removed after going live (phase60), so the page says so.
+        // Looked up for exactly the creatives that function just returned
+        // for this validated token, nothing wider.
+        ids.length
+          ? serviceRole.from("creatives").select("id, formats, slide_count, artwork_removed_at").in("id", ids).then((r) => r.data ?? [])
+          : [],
+        // Each comment's anchor — get_shared_review returns only the text —
+        // so a comment made at a moment in a video can show, and jump to, it.
+        commentIds.length
+          ? serviceRole.from("comments").select("id, anchor").in("id", commentIds).then((r) => r.data ?? [])
+          : [],
+        // Each creative's latest version, for its carousel slides (phase31).
+        ids.length
+          ? serviceRole
+              .from("creative_versions")
+              .select("id, creative_id, version_no, asset_id")
+              .in("creative_id", ids)
+              .order("version_no", { ascending: false })
+              .then((r) => r.data ?? [])
+          : [],
+        // Per direct instruction, review links carry the agency's own colours
+        // and logo. Only the theme and a signed logo URL leave the server;
+        // the agency's id never does.
+        branded
+          ? serviceRole
+              .from("agency_settings")
+              .select("theme, logo_asset:assets(storage_key)")
+              .eq("agency_id", link!.agency_id)
+              .maybeSingle()
+              .then((r) => r.data as unknown as { theme: Record<string, unknown> | null; logo_asset: { storage_key: string } | null } | null)
+          : null,
+        // The client's logo, beside the handle in the phone (direct
+        // instruction): the link's project's client.
+        clientLogoId
+          ? serviceRole.from("assets").select("storage_key").eq("id", clientLogoId).maybeSingle().then((r) => r.data)
+          : null,
+      ])
+    : [[], [], [], null, null];
+
   const formatsById = new Map<string, string[]>();
   const slideCountById = new Map<string, number | null>();
-  // When artwork was removed after going live (phase60), so the page says so.
   const removedById = new Map<string, string | null>();
-  if (serviceRole && creatives.length) {
-    const { data: rows } = await serviceRole
-      .from("creatives")
-      .select("id, formats, slide_count, artwork_removed_at")
-      .in("id", creatives.map((c) => c.id));
-    for (const r of rows ?? []) {
-      formatsById.set(r.id, r.formats);
-      slideCountById.set(r.id, r.slide_count);
-      removedById.set(r.id, r.artwork_removed_at);
-    }
+  for (const r of creativeRows) {
+    formatsById.set(r.id, r.formats);
+    slideCountById.set(r.id, r.slide_count);
+    removedById.set(r.id, r.artwork_removed_at);
   }
-
-  // Each comment's anchor — get_shared_review returns only the text — so
-  // a comment made at a moment in a video can show, and jump to, it.
   const anchorById = new Map<string, unknown>();
-  const commentIds = creatives.flatMap((c) => c.comments.map((m) => m.id));
-  if (serviceRole && commentIds.length) {
-    const { data: rows } = await serviceRole.from("comments").select("id, anchor").in("id", commentIds);
-    for (const r of rows ?? []) if (r.anchor) anchorById.set(r.id, r.anchor);
-  }
+  for (const r of anchorRows) if (r.anchor) anchorById.set(r.id, r.anchor);
 
-  // A carousel's slides (phase31), from each creative's latest version —
-  // the same version get_shared_review's `asset` comes from. Signed here
-  // for the same reason the asset is: a visitor has no session.
-  const slidesById = new Map<string, { position: number; signed_url: string | null; mime_type: string; filename: string }[]>();
+  // The latest version's slides — the same version get_shared_review's
+  // `asset` comes from.
+  const latest = new Map<string, string>();
   const emptied = new Set<string>();
-  if (serviceRole && creatives.length) {
-    const { data: versions } = await serviceRole
-      .from("creative_versions")
-      .select("id, creative_id, version_no, asset_id")
-      .in("creative_id", creatives.map((c) => c.id))
-      .order("version_no", { ascending: false });
-    const latest = new Map<string, string>();
-    for (const v of versions ?? []) {
-      if (latest.has(v.creative_id)) continue;
-      latest.set(v.creative_id, v.id);
-      // Saved with every slide removed (phase32). get_shared_review's
-      // `asset` skips a version with no file and falls back to the one
-      // before, so it's cleared here instead.
-      if (!v.asset_id) emptied.add(v.creative_id);
-    }
-    const { data: rows } = latest.size
-      ? await serviceRole
-          .from("creative_version_slides")
-          .select("creative_version_id, position, asset:assets(storage_key, mime_type, filename)")
-          .in("creative_version_id", [...latest.values()])
-      : { data: [] };
-    const creativeOf = new Map([...latest].map(([cid, vid]) => [vid, cid]));
-    for (const r of (rows ?? []) as unknown as {
-      creative_version_id: string;
-      position: number;
-      asset: { storage_key: string; mime_type: string; filename: string } | null;
-    }[]) {
-      if (!r.asset) continue;
-      const { data: signed } = await serviceRole.storage.from("assets").createSignedUrl(r.asset.storage_key, 3600);
-      const cid = creativeOf.get(r.creative_version_id)!;
-      const list = slidesById.get(cid) ?? [];
-      list.push({ position: r.position, signed_url: signed?.signedUrl ?? null, mime_type: r.asset.mime_type, filename: r.asset.filename });
-      slidesById.set(cid, list);
-    }
-    for (const list of slidesById.values()) list.sort((a, b) => a.position - b.position);
+  for (const v of versionRows) {
+    if (latest.has(v.creative_id)) continue;
+    latest.set(v.creative_id, v.id);
+    // Saved with every slide removed (phase32). get_shared_review's `asset`
+    // skips a version with no file and falls back to the one before, so
+    // it's cleared here instead.
+    if (!v.asset_id) emptied.add(v.creative_id);
   }
+  const slideRows =
+    serviceRole && latest.size
+      ? (((
+          await serviceRole
+            .from("creative_version_slides")
+            .select("creative_version_id, position, asset:assets(storage_key, mime_type, filename)")
+            .in("creative_version_id", [...latest.values()])
+        ).data ?? []) as unknown as {
+          creative_version_id: string;
+          position: number;
+          asset: { storage_key: string; mime_type: string; filename: string } | null;
+        }[])
+      : [];
 
-  const signedCreatives = await Promise.all(
-    creatives.map(async (raw) => {
-      const c = {
-        ...raw,
-        asset: emptied.has(raw.id) ? null : raw.asset,
-        formats: formatsById.get(raw.id) ?? [raw.format],
-        slides: slidesById.get(raw.id) ?? [],
-        slide_count: slideCountById.get(raw.id) ?? null,
-        artwork_removed_at: removedById.get(raw.id) ?? null,
-        comments: raw.comments.map((m) => ({ ...m, anchor: anchorById.get(m.id) ?? null })),
-      };
-      // Both branches build a fresh asset object that never includes
-      // storage_key, rather than spreading the original and overwriting it
-      // — `{ ...c.asset, storage_key: undefined }` still leaves the key
-      // present (just undefined), which only happens to disappear because
-      // JSON.stringify drops undefined values. That's an accident to rely
-      // on, not a guarantee; an explicit object has no such dependency.
-      if (!c.asset) {
-        return { ...c, asset: null };
-      }
-      if (!c.asset.storage_key || !serviceRole) {
-        return {
-          ...c,
-          asset: {
-            version_no: c.asset.version_no,
-            mime_type: c.asset.mime_type,
-            filename: c.asset.filename,
-            signed_url: null,
-          },
-        };
-      }
-
-      const { data: signed } = await serviceRole.storage
-        .from("assets")
-        .createSignedUrl(c.asset.storage_key, 3600);
-
-      return {
-        ...c,
-        asset: {
-          version_no: c.asset.version_no,
-          mime_type: c.asset.mime_type,
-          filename: c.asset.filename,
-          signed_url: signed?.signedUrl ?? null,
-        },
-      };
-    }),
-  );
-
-  // Per direct instruction, review links carry the agency's own colours and
-  // logo. Looked up only now — after get_shared_review has validated the
-  // token (and passcode) — and only the theme and a signed logo URL leave
-  // the server; the agency's id never does.
-  let branding: { theme: Record<string, unknown> | null; logo_url: string | null } = {
-    theme: null,
-    logo_url: null,
-  };
-  if (serviceRole) {
-    const { data: link } = await serviceRole
-      .from("shared_links")
-      .select("agency_id")
-      .eq("token", token)
-      .maybeSingle();
-    // Logo and colours are a Growth-and-up feature (the spec's white-label
-    // row; phase41): below that, review links keep Frank's own look.
-    const { data: owner } = link
-      ? await serviceRole.from("agencies").select("plan").eq("id", link.agency_id).maybeSingle()
-      : { data: null };
-    if (link && brandingAllowed(owner?.plan)) {
-      const { data: settings } = await serviceRole
-        .from("agency_settings")
-        .select("theme, logo_asset_id")
-        .eq("agency_id", link.agency_id)
-        .maybeSingle();
-      let logoUrl: string | null = null;
-      if (settings?.logo_asset_id) {
-        const { data: logo } = await serviceRole
-          .from("assets")
-          .select("storage_key")
-          .eq("id", settings.logo_asset_id)
-          .maybeSingle();
-        if (logo) {
-          const { data: signed } = await serviceRole.storage
-            .from("assets")
-            .createSignedUrl(logo.storage_key, 3600);
-          logoUrl = signed?.signedUrl ?? null;
-        }
-      }
-      branding = { theme: (settings?.theme as Record<string, unknown>) ?? null, logo_url: logoUrl };
-    }
+  // Every file the page shows — each post's artwork, each slide, and the two
+  // logos — signed in one request rather than one at a time. Signed here
+  // because a visitor has no session to read storage with.
+  const keys = new Set<string>();
+  for (const c of creatives) if (c.asset?.storage_key && !emptied.has(c.id)) keys.add(c.asset.storage_key);
+  for (const r of slideRows) if (r.asset) keys.add(r.asset.storage_key);
+  if (settings?.logo_asset) keys.add(settings.logo_asset.storage_key);
+  if (clientLogo) keys.add(clientLogo.storage_key);
+  const signedByKey = new Map<string, string>();
+  if (serviceRole && keys.size) {
+    const { data: signed } = await serviceRole.storage.from("assets").createSignedUrls([...keys], 3600);
+    for (const s of signed ?? []) if (s.path && s.signedUrl) signedByKey.set(s.path, s.signedUrl);
   }
+  const signedUrl = (key: string | null | undefined) => (key ? (signedByKey.get(key) ?? null) : null);
 
-  // The client's logo, beside the handle in the phone (direct instruction):
-  // the link's project's client, looked up for this validated token only.
-  let clientLogoUrl: string | null = null;
-  if (serviceRole) {
-    const { data: link } = await serviceRole
-      .from("shared_links")
-      .select("projects(clients(logo_asset_id))")
-      .eq("token", token)
-      .maybeSingle();
-    const logoId = (link?.projects as unknown as { clients: { logo_asset_id: string | null } | null } | null)?.clients
-      ?.logo_asset_id;
-    if (logoId) {
-      const { data: logo } = await serviceRole.from("assets").select("storage_key").eq("id", logoId).maybeSingle();
-      if (logo) {
-        const { data: signed } = await serviceRole.storage.from("assets").createSignedUrl(logo.storage_key, 3600);
-        clientLogoUrl = signed?.signedUrl ?? null;
-      }
-    }
+  const creativeOf = new Map([...latest].map(([cid, vid]) => [vid, cid]));
+  const slidesById = new Map<string, { position: number; signed_url: string | null; mime_type: string; filename: string }[]>();
+  for (const r of slideRows) {
+    if (!r.asset) continue;
+    const cid = creativeOf.get(r.creative_version_id)!;
+    const list = slidesById.get(cid) ?? [];
+    list.push({ position: r.position, signed_url: signedUrl(r.asset.storage_key), mime_type: r.asset.mime_type, filename: r.asset.filename });
+    slidesById.set(cid, list);
   }
+  for (const list of slidesById.values()) list.sort((a, b) => a.position - b.position);
 
-  return NextResponse.json({ ...data, creatives: signedCreatives, branding, client_logo_url: clientLogoUrl });
+  const signedCreatives = creatives.map((raw) => {
+    const asset = emptied.has(raw.id) ? null : raw.asset;
+    return {
+      ...raw,
+      formats: formatsById.get(raw.id) ?? [raw.format],
+      slides: slidesById.get(raw.id) ?? [],
+      slide_count: slideCountById.get(raw.id) ?? null,
+      artwork_removed_at: removedById.get(raw.id) ?? null,
+      comments: raw.comments.map((m) => ({ ...m, anchor: anchorById.get(m.id) ?? null })),
+      // A fresh asset object that never includes storage_key, rather than
+      // spreading the original and overwriting it — `{ ...asset,
+      // storage_key: undefined }` still leaves the key present (just
+      // undefined), which only disappears because JSON.stringify drops
+      // undefined values. That's an accident to rely on, not a guarantee.
+      asset: asset
+        ? {
+            version_no: asset.version_no,
+            mime_type: asset.mime_type,
+            filename: asset.filename,
+            signed_url: serviceRole ? signedUrl(asset.storage_key) : null,
+          }
+        : null,
+    };
+  });
+
+  const branding = branded
+    ? { theme: settings?.theme ?? null, logo_url: signedUrl(settings?.logo_asset?.storage_key) }
+    : { theme: null, logo_url: null };
+
+  return NextResponse.json({ ...data, creatives: signedCreatives, branding, client_logo_url: signedUrl(clientLogo?.storage_key) });
+}
+
+// The link's own row, as read above.
+interface LinkRow {
+  agency_id: string;
+  agencies: { suspended_at: string | null; plan: string | null } | null;
+  projects: { clients: { logo_asset_id: string | null } | null } | null;
 }
