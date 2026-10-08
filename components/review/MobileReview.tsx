@@ -36,46 +36,44 @@ export function MobileReview({
             clientName={clientName}
             detail={projectName}
             aside={
-              <span className="m-count">
-                {creatives.length ? activeIndex + 1 : 0} / {creatives.length}
-              </span>
+              // Which post of how many, with the arrows beside it (direct
+              // instruction: in place of the bar under the switch).
+              <div className="m-step">
+                {creatives.length > 1 && (
+                  <button
+                    type="button"
+                    className="m-arrow"
+                    aria-label="Previous post"
+                    disabled={activeIndex === 0}
+                    onClick={() => goTo(activeIndex - 1)}
+                  >
+                    <svg viewBox="0 0 24 24">
+                      <path d="M15 18l-6-6 6-6" />
+                    </svg>
+                  </button>
+                )}
+                <span className="m-count">
+                  {creatives.length ? activeIndex + 1 : 0} / {creatives.length}
+                </span>
+                {creatives.length > 1 && (
+                  <button
+                    type="button"
+                    className="m-arrow"
+                    aria-label="Next post"
+                    disabled={activeIndex === creatives.length - 1}
+                    onClick={() => goTo(activeIndex + 1)}
+                  >
+                    <svg viewBox="0 0 24 24">
+                      <path d="M9 18l6-6-6-6" />
+                    </svg>
+                  </button>
+                )}
+              </div>
             }
           />
         </div>
 
         <ReviewViewSwitch controller={controller} />
-
-        {controller.view === "post" && creatives.length > 1 && (
-          <div className="m-nav">
-            <button
-              className="m-arrow"
-              disabled={activeIndex === 0}
-              onClick={() => goTo(activeIndex - 1)}
-            >
-              <svg viewBox="0 0 24 24">
-                <path d="M15 18l-6-6 6-6" />
-              </svg>
-            </button>
-            <div className="m-pager">
-              {creatives.map((c, i) => (
-                <button
-                  key={c.id}
-                  className={i === activeIndex ? "on" : ""}
-                  onClick={() => goTo(i)}
-                />
-              ))}
-            </div>
-            <button
-              className="m-arrow"
-              disabled={activeIndex === creatives.length - 1}
-              onClick={() => goTo(activeIndex + 1)}
-            >
-              <svg viewBox="0 0 24 24">
-                <path d="M9 18l6-6-6-6" />
-              </svg>
-            </button>
-          </div>
-        )}
 
         <div className="m-scroll">
           {controller.view === "feed" ? (

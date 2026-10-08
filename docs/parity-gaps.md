@@ -3047,3 +3047,13 @@ Asked directly, with screenshots of a post's Content and Feed Preview:
 ## Draft with Frank, in a gradient
 
 Asked directly (with uiGradients' "Sublime Light"): the Draft with Frank button is a left-to-right gradient, #fc5c7d to #6a82fb, in place of the plain blue (`.btn-frank`), a little brighter on hover and faded like any button while it can't be used. **Verified:** looked at, and on hover; the Review page specs pass.
+
+## A review link on a phone, closer to Instagram
+
+Asked directly, to give the client as full an Instagram experience as possible:
+- **Previous and next sit beside "1 / 2"** in the header; the bar of dots under the switch is gone.
+- **More room above the Content / Feed switch** (14px, was 6px).
+- **The handle row is evenly spaced:** the post's title block above it added a 12px margin to the row's own 10px, so the logo sat lower than centre. Now 10px above and below.
+- **Scrolling:** the page's header and the switch scroll away; the post's Instagram header (logo and handle) stays at the top while the artwork and caption scroll under it, and leaves with the post as the comments come. Two things stopped it sticking: the post card clipped its corners with `overflow: hidden`, and the scroll area hid sideways overflow with `hidden`, each making its own scroller. Both now `clip`. Scrolling back down works as before.
+
+**Verified:** on a phone-sized screen, the header stuck at the top while scrolled into the post, and the arrows and spacing looked at. Review-link, video, Instagram and preferences specs pass; the phone screenshot looked at and updated.

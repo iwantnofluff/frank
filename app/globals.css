@@ -4644,8 +4644,9 @@ textarea.cxin {
   flex-shrink: 0;
   background: var(--surface);
   border-bottom: 1px solid var(--line);
-  position: sticky;
-  top: 0;
+  /* Scrolls away with the page (direct instruction): the post's own
+     Instagram header is what stays (.m-card .ig-h). */
+  position: relative;
   z-index: 2;
   /* The phone's own status bar or notch, where it has one. */
   padding: calc(11px + env(safe-area-inset-top)) 16px 11px;
@@ -4660,12 +4661,15 @@ textarea.cxin {
   color: var(--muted);
   white-space: nowrap;
 }
-.m-nav {
+.m-step {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px 0;
+  gap: 8px;
   flex-shrink: 0;
+}
+.m-step .m-arrow {
+  width: 28px;
+  height: 28px;
 }
 .m-arrow {
   width: 30px;
@@ -4693,25 +4697,11 @@ textarea.cxin {
   fill: none;
   stroke-width: 2.2;
 }
-.m-pager {
-  display: flex;
-  gap: 4px;
-  flex: 1;
-}
-.m-pager button {
-  flex: 1;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--line-2);
-  display: block;
-  padding: 0;
-}
-.m-pager button.on {
-  background: var(--action);
-}
 .m-scroll {
   flex: none;
-  overflow-x: hidden;
+  /* clip, not hidden: hidden would make this its own scroller, and the
+     post's header could no longer stick to the screen. */
+  overflow-x: clip;
 }
 .m-body {
   padding: 14px 16px 20px;
@@ -4720,13 +4710,23 @@ textarea.cxin {
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--surface);
-  overflow: hidden;
+  /* Clips the corners without becoming its own scroller, which would stop
+     the handle row below from sticking. */
+  overflow: clip;
   margin-bottom: 12px;
+}
+/* On a phone, the post's Instagram header (logo and handle) stays at the
+   top while its artwork and caption scroll under it, and leaves with the
+   post once the comments come (direct instruction), as Instagram's own. */
+.m-card .ig-h {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--surface);
 }
 .m-meta {
   padding: 13px 14px 13px;
   border-bottom: 1px solid var(--line);
-  margin-bottom: 12px;
 }
 .m-meta b {
   display: block;
@@ -6714,7 +6714,8 @@ a.profproject:hover .pp-t b {
 /* A review link's Post / Feed switch and Feed view (phase54). */
 .seg2.reviewviews {
   display: flex;
-  margin: 6px 14px 4px;
+  /* A little more room under the header (direct instruction). */
+  margin: 14px 14px 4px;
   /* Its full height in the phone layout's column, never squashed. */
   flex-shrink: 0;
 }
