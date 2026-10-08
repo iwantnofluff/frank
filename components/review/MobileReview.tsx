@@ -34,7 +34,6 @@ export function MobileReview({
             agencyName={agencyName}
             agencyLogoUrl={logoUrl}
             clientName={clientName}
-            clientLogoUrl={clientLogoUrl}
             detail={projectName}
             aside={
               <span className="m-count">

@@ -2,21 +2,19 @@ import type { ReactNode } from "react";
 
 // The top of a review link (direct instruction): Frank's logo with its
 // strapline, a divider and the agency's logo, as the app's own header has
-// them; then the client's logo, its name, and the project and how many
-// posts it holds. Logos are round, as everywhere in Frank; without one, an
-// initial in its place.
+// them; then the client's name (no logo: too many logos, direct
+// instruction), and the project and how many posts it holds. The agency's
+// logo is round, as everywhere in Frank; without one, its initial.
 export function ReviewBrandHeader({
   agencyName,
   agencyLogoUrl,
   clientName,
-  clientLogoUrl,
   detail,
   aside,
 }: {
   agencyName: string;
   agencyLogoUrl: string | null;
   clientName: string;
-  clientLogoUrl: string | null;
   detail: string;
   // Anything at the end of the client's row (the phone's "1 / 3").
   aside?: ReactNode;
@@ -30,7 +28,6 @@ export function ReviewBrandHeader({
         <Round url={agencyLogoUrl} name={agencyName} className="rv-agency" />
       </div>
       <div className="rv-client">
-        <Round url={clientLogoUrl} name={clientName} className="rv-clogo" />
         <div className="rv-client-t">
           <b>{clientName}</b>
           <span>{detail}</span>

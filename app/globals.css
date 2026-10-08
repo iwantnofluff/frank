@@ -4428,7 +4428,8 @@ textarea.cxin {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  /* Room between the logos and the client's name (direct instruction). */
+  gap: 20px;
 }
 .rv-brand {
   display: flex;
@@ -4445,8 +4446,7 @@ textarea.cxin {
   height: 26px;
   background: var(--line-2);
 }
-.rv-agency,
-.rv-clogo {
+.rv-agency {
   flex-shrink: 0;
   display: grid;
   place-items: center;
@@ -4461,13 +4461,7 @@ textarea.cxin {
   height: 30px;
   font-size: 12.2px;
 }
-.rv-clogo {
-  width: 36px;
-  height: 36px;
-  font-size: 13.7px;
-}
-.rv-agency img,
-.rv-clogo img {
+.rv-agency img {
   width: 100%;
   height: 100%;
   object-fit: cover;

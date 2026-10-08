@@ -69,7 +69,6 @@ export function DesktopReview({
               agencyName={agencyName}
               agencyLogoUrl={logoUrl}
               clientName={clientName}
-              clientLogoUrl={clientLogoUrl}
               detail={`${projectName} · ${creatives.length} ${creatives.length === 1 ? "post" : "posts"}`}
             />
           </div>
