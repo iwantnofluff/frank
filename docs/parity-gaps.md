@@ -3043,3 +3043,7 @@ Asked directly, with screenshots of a post's Content and Feed Preview:
 - **Feed tiles match on both:** the Review page's Feed Preview loses "Planned" for the same stage pill a review link's Feed has, bottom-left (Internal Review blue, Client Review orange, Approved green; `components/creative-review/StagePill.tsx`, shared). On both, a tile's title sits centred, its date under it. A review link's tiles now show their title and date too.
 
 **Verified:** both feeds looked at with the same posts (Client Review with artwork, Internal Review without, Approved with artwork); the post page has no note. The artwork-removal test now checks the post page has none. Artwork-removal, review-link, preferences, Instagram and Review page specs pass (23).
+
+## Draft with Frank, in a gradient
+
+Asked directly (with uiGradients' "Sublime Light"): the Draft with Frank button is a left-to-right gradient, #fc5c7d to #6a82fb, in place of the plain blue (`.btn-frank`), a little brighter on hover and faded like any button while it can't be used. **Verified:** looked at, and on hover; the Review page specs pass.

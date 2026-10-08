@@ -888,7 +888,7 @@ export function CreativeModal(props: CreativeModalProps) {
     <div className="field">
       <button
         type="button"
-        className="btn sm primary"
+        className="btn sm primary btn-frank"
         disabled={!modelLabel || !creativeId}
         title={creativeId ? undefined : "Save the brief first"}
         onClick={() => setChatOpen(true)}

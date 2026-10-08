@@ -8350,3 +8350,15 @@ button.hbrand-add:hover {
 .m-cmt.pending {
   opacity: 0.7;
 }
+
+/* Draft with Frank (direct instruction): the "Sublime Light" gradient,
+   #fc5c7d to #6a82fb, in place of the plain blue. Brighter on hover;
+   faded, like any button, while it can't be used. */
+.btn.primary.btn-frank {
+  background: linear-gradient(90deg, #fc5c7d, #6a82fb);
+  border-color: transparent;
+  color: #fff;
+}
+.btn.primary.btn-frank:hover:not(:disabled) {
+  background: linear-gradient(90deg, #fd6e8b, #7b90fc);
+}
