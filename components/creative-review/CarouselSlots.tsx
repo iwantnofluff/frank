@@ -5,6 +5,7 @@ import { useAssetSignedUrl } from "@/hooks/use-asset-signed-url";
 import { versionSlides, type CreativeVersionRow, type VersionAsset } from "@/hooks/use-creative-versions";
 import type { SlideSource } from "@/hooks/use-upload-creative-version";
 import { validateUploadFile, ACCEPTED_FILE_EXTENSIONS } from "@/lib/upload-validation";
+import { MAX_UPLOAD_MB } from "@/lib/upload-limits";
 
 // A post's artwork in the Edit window: one slot per slide, and one slot
 // for a post that isn't a carousel (direct instruction: the same layout
@@ -160,7 +161,7 @@ export function CarouselSlots({
       />
       <p className="sub" style={{ marginBottom: 8 }}>
         {single
-          ? "Drop an image or video on the slot, or click it to browse. JPG, PNG, WebP, GIF up to 200MB; MP4 and MOV are compressed to 720p."
+          ? `Drop an image or video on the slot, or click it to browse. JPG, PNG, WebP, GIF up to ${MAX_UPLOAD_MB}MB; MP4 and MOV are compressed to 720p. Then press Save to add it as a new version.`
           : "Drop several images to fill the slides in order, or add them one at a time. Drag a slide onto another to swap them."}
       </p>
       <div
@@ -257,6 +258,13 @@ export function CarouselSlots({
         )}
         {!pending && saveNote && <span className="bsaved">{saveNote}</span>}
       </div>
+      {/* Reported directly: people dropped a file in and left, thinking it
+          was added. It's only a version once saved. */}
+      {pending && !saving && (
+        <p className="note warn cslots-unsaved" role="status">
+          Not added yet. Press Save Creative V{nextVersionNo} to add it as version {nextVersionNo}.
+        </p>
+      )}
     </>
   );
 }

@@ -244,14 +244,14 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         kind: "list",
         items: [
-          "Creative: one slot per slide, or one for a single image or video. Save Creative V1, then V2 and so on.",
+          "Creative: one slot per slide, or one for a single image or video, up to 300MB a file. A file dropped in isn't added until you press Save Creative V1 (then V2 and so on); closing first asks if you're sure.",
           "Text on Image: the words on each slide, saved with Save Text on Image. It stays with the post rather than becoming a version.",
           "Copy: the caption and anything else the formats need. Save Copy V1, then V2 and so on.",
         ],
       },
       {
         kind: "p",
-        text: "A video is compressed before it's saved, which can take a little while for a long one. Keep the tab open until it's done. If compressing or sending fails partway, Frank tries again on its own; if it still can't, the reason shows under Save.",
+        text: "Saving shows each step: compressing a video, uploading, then saving the version. Keep the window open until it says the version is saved. A file goes up in pieces, so if the connection drops, Frank carries on from where it was once it's back; if it still can't, the reason shows under Save.",
       },
       {
         kind: "note",

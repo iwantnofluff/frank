@@ -9,20 +9,23 @@ import { assertCanUpload } from "@/lib/upload-guard";
 import { MAX_UPLOAD_MB } from "@/lib/upload-limits";
 
 // Where a save has got to, for the progress bar: which file of how many,
-// and whether it's being compressed (videos) or uploaded.
+// and whether it's being compressed (videos), uploaded, or, with every file
+// up, saved as the new version.
 export interface UploadProgress {
-  stage: "compressing" | "uploading";
+  stage: "compressing" | "uploading" | "saving";
   fraction: number; // 0–1 through this stage of this file
   file: number; // 1-based
   files: number;
   loaded?: number; // bytes, while uploading
   total?: number;
+  // The connection dropped; the upload is about to carry on where it was.
+  retrying?: boolean;
 }
 type OnProgress = (p: UploadProgress | null) => void;
 
 // A video is compressed to a 720p review copy before it's stored (decided
 // directly — only that copy is kept). Where the browser can't compress,
-// the original goes up as long as it fits the 200MB limit.
+// the original goes up as long as it fits the upload limit.
 async function prepareForUpload(file: File, onProgress?: (fraction: number) => void): Promise<File> {
   if (!file.type.startsWith("video/")) return file;
   // A compression that fails partway (Chrome can take its video encoder
@@ -81,13 +84,14 @@ async function uploadAsset(
   userId: string,
   file: File,
   onUploaded?: (loaded: number, total: number) => void,
+  onRetry?: () => void,
 ) {
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const path = `${agencyId}/${creativeId}/${crypto.randomUUID()}-${safeName}`;
   await assertCanUpload(agencyId, file.size);
 
-  // Same request supabase.storage.upload() makes, but with progress.
-  await uploadWithProgress(path, file, onUploaded);
+  // In confirmed pieces, with progress (lib/upload-with-progress.ts).
+  await uploadWithProgress(path, file, onUploaded, onRetry);
 
   const dimensions = await probeImageDimensions(file);
 
@@ -159,8 +163,16 @@ export function useUploadCarouselVersion(
           const ready = await prepareForUpload(s.file, (fraction) =>
             onProgress?.({ stage: "compressing", fraction, file, files }),
           );
-          assetId = await uploadAsset(supabase, agencyId, creativeId, user.id, ready, (loaded, total) =>
-            onProgress?.({ stage: "uploading", fraction: loaded / total, file, files, loaded, total }),
+          let last: UploadProgress = { stage: "uploading", fraction: 0, file, files, loaded: 0, total: ready.size };
+          assetId = await uploadAsset(
+            supabase,
+            agencyId,
+            creativeId,
+            user.id,
+            ready,
+            (loaded, total) =>
+              onProgress?.((last = { stage: "uploading", fraction: loaded / total, file, files, loaded, total })),
+            () => onProgress?.({ ...last, retrying: true }),
           );
         } else {
           assetId = s.assetId;
@@ -168,6 +180,9 @@ export function useUploadCarouselVersion(
         placed.push({ position: i + 1, assetId });
       }
 
+      // Every file is up: what's left is recording the version, a moment that
+      // used to show as a bar stuck at 100%.
+      onProgress?.({ stage: "saving", fraction: 1, file: files, files });
       const { data: version, error: versionError } = await supabase
         .from("creative_versions")
         .insert({

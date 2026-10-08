@@ -5895,6 +5895,25 @@ button.avatar {
 .upbar-track.compressing .upbar-fill {
   background: var(--amber);
 }
+/* Saving the version: full, and pulsing, as there's no amount to show. */
+.upbar-track.saving .upbar-fill {
+  background: var(--green);
+  animation: upbar-pulse 1.2s ease-in-out infinite;
+}
+@keyframes upbar-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+.upbar-note {
+  margin: 7px 0 0;
+  font-size: 12.2px;
+  color: var(--muted);
+}
+/* Under a slot's Save button: a dropped file isn't a version yet. */
+.note.warn.cslots-unsaved {
+  margin: 10px 0 0;
+}
 /* A quiet link under an auth card's main button ("Forgot password?"). */
 .authlink {
   display: block;

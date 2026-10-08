@@ -2,9 +2,9 @@ import { MAX_UPLOAD_BYTES } from "@/lib/upload-limits";
 
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const ACCEPTED_VIDEO_TYPES = ["video/mp4", "video/quicktime"]; // MOV reports as quicktime
-// 200MB a file (direct instruction, phase60). A video is compressed in the
+// 300MB a file (direct instruction; phase60, then phase66). A video is compressed in the
 // browser before it's stored (lib/compress-video.ts), so what's picked can
-// be up to the spec's 500MB; what's stored, 200MB. docs/parity-gaps.md.
+// be up to the spec's 500MB; what's stored, 300MB. docs/parity-gaps.md.
 const MAX_IMAGE_BYTES = MAX_UPLOAD_BYTES;
 const MAX_VIDEO_BYTES = 500 * 1024 * 1024;
 export const MAX_STORED_VIDEO_BYTES = MAX_UPLOAD_BYTES;

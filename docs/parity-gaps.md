@@ -2949,3 +2949,18 @@ Gaps:
 - **The policy is a draft** for the user's own read, and ideally a lawyer's, before it's relied on.
 
 **Verified:** `/privacy` returns the page signed out on the root and an agency address. At 1280 and 390 wide it opens at its title, scrolls to the end, and nothing runs off the side. The sign-up page's link opens it. Login and plan specs pass, after one fix: the storage test set its file on the page's first file input, which since the header's Add Logo became the header's hidden one, so the upload never happened. It now skips that input. On live, signed in as the reviewer: the Clients page lists Demo Client, the post's Feed Preview shows the artwork marked Planned, and Settings → Connections → Instagram offers Connect and Send Link.
+
+## Uploads in confirmed pieces, a bar that says what's left, and 300MB
+
+Reported directly: with a heavy video, the upload bar wasn't in step with the upload, and people dropped a file in and left without saving it. Also decided directly: uploads go to 300MB a file.
+
+Measured first, in real Chrome with a 249MB, 60-second video: compression tracked well for an ordinary MP4, but a screen-recorder-style file reported 100% within a second and sat there for 5. The upload went up as one request, so its bar counted bytes leaving the computer, not bytes storage had; a dropped connection started the whole file again from 0%; and every time, the bar sat at 100% for 2–3 seconds while storage confirmed and the version was recorded.
+- **Uploads go in 6MB pieces** through Supabase's resumable upload (`tus-js-client`, the client Supabase documents for this). The bar reaches 100% only when storage has confirmed the last piece. A dropped connection carries on from the last confirmed piece, and the bar says "Connection lost, trying again…" meanwhile. Each request carries the current session, as a long upload can outlast one. Storage refuses an oversize file before anything is sent.
+- **The bar names each step:** Compressing video (or "Finishing compression…" when a file reports 100% early), Uploading with its size, then "Saving version N…" while the version is recorded. Under it: keep the window open until it says the version is saved.
+- **Before saving:** the slot's hint ends "Then press Save to add it as a new version", and once a file is dropped in, a note by Save reads "Not added yet. Press Save Creative VN to add it as version N." Closing the window then asks first ("Close Without Saving?"); closing mid-save explains it's still saving, as the save would carry on behind a closed window.
+- **300MB:** Frank's limit (`lib/upload-limits.ts`) and **phase66**, which sets the storage bucket to match. Storage's "Maximum size exceeded" now reads as the plain "bigger than storage accepts" message.
+
+Gaps:
+- **Supabase's project-wide upload limit is 50MB on staging** (checked: a 69MB image was refused as "Maximum size exceeded"). It's set in Supabase's dashboard (Storage → Settings) and has to be raised to 300MB on staging and live for anything over 50MB to go up.
+
+**Verified:** phase66 applied to staging (dry run first, showing only phase66); the bucket reads 300MB. In real Chrome: a 45MB image, upload slowed to 16 Mbps, went up in 1 create and 8 pieces; cut off at 27–40% for 6 seconds, "Connection lost, trying again…" showed within 2 seconds and the upload carried on from the last confirmed piece, not from 0; the stored file matched byte for byte. The 249MB video showed Compressing, Finishing compression, Uploading and "Saving version 1…" in turn. The unsaved note, "Close Without Saving?" (Cancel and Escape) and "Still Saving" were each checked. Unit tests pass.

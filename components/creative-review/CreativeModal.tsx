@@ -852,6 +852,16 @@ export function CreativeModal(props: CreativeModalProps) {
     onClose();
   }
 
+  // Closing with artwork dropped in but not saved, or mid-save (reported
+  // directly: people left thinking a dropped file was added). Unsaved: ask.
+  // Mid-save: explain, as the save carries on behind a closed window.
+  const [closeAsk, setCloseAsk] = useState<"unsaved" | "saving" | null>(null);
+  function requestClose() {
+    if (uploadCarousel.isPending) setCloseAsk("saving");
+    else if (carouselPending) setCloseAsk("unsaved");
+    else onClose();
+  }
+
   // The inline "Save Version N" button under the copy fields — saves just
   // the copy, same as saveCopyIfChanged() itself, but stays open (the
   // agency may still want to drop artwork, or run a Check against what
@@ -925,13 +935,13 @@ export function CreativeModal(props: CreativeModalProps) {
       title={title}
       ariaLabel={titleAriaLabel}
       hideCloseButton
-      onClose={onClose}
+      onClose={requestClose}
       footer={
         activeTab === "brief" ? (
           <>
             <div className="grow" />
             {showUpdatedNote && <span className="bsaved">Post updated.</span>}
-            <button type="button" className="btn" onClick={onClose}>
+            <button type="button" className="btn" onClick={requestClose}>
               Cancel
             </button>
             <button
@@ -946,7 +956,7 @@ export function CreativeModal(props: CreativeModalProps) {
         ) : (
           <>
             <div className="grow" />
-            <button type="button" className="btn" onClick={onClose}>
+            <button type="button" className="btn" onClick={requestClose}>
               Cancel
             </button>
             <button
@@ -1290,7 +1300,7 @@ export function CreativeModal(props: CreativeModalProps) {
             </div>
 
           {uploadProgress && uploadCarousel.isPending && (
-            <UploadProgressBar progress={uploadProgress} />
+            <UploadProgressBar progress={uploadProgress} versionNo={nextCreativeVersionNo} />
           )}
           {artworkError && !uploadCarousel.isPending && <p className="autherr">{artworkError}</p>}
 
@@ -1506,6 +1516,25 @@ export function CreativeModal(props: CreativeModalProps) {
       )}
 
     </Modal>
+    {closeAsk === "unsaved" && (
+      <ConfirmDialog
+        title="Close Without Saving?"
+        message={`the artwork you added isn't saved yet. If you close now, it won't be added as version ${nextCreativeVersionNo}.`}
+        confirmLabel="Close Without Saving"
+        onConfirm={() => {
+          setCloseAsk(null);
+          onClose();
+        }}
+        onClose={() => setCloseAsk(null)}
+      />
+    )}
+    {closeAsk === "saving" && (
+      <ConfirmDialog
+        title="Still Saving"
+        message={`version ${nextCreativeVersionNo} is still being saved. Keep this window open until it says it's saved, then close.`}
+        onClose={() => setCloseAsk(null)}
+      />
+    )}
     {formatWarning && (
       <ConfirmDialog
         title="Remove uploaded creatives?"
