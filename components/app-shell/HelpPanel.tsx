@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { usePresence } from "@/hooks/use-presence";
+import { CalendarIcon, ClientsIcon } from "./icons";
 import {
   HELP_ARTICLES,
   HELP_CATEGORIES,
@@ -21,6 +22,33 @@ function Chevron({ d }: { d: string }) {
     </svg>
   );
 }
+
+// Each help topic's icon (direct instruction: in place of a "?"), taken from
+// where that thing lives in Frank: the rail's Clients, the Content
+// Planner's calendar, the post's Share, Frank's own mark for drafting.
+// Instagram has no icon elsewhere in Frank; its camera outline is drawn in
+// the same line style (docs/parity-gaps.md).
+const TOPIC_ICONS: Record<string, ReactNode> = {
+  "create-client": <ClientsIcon />,
+  "plan-posts": <CalendarIcon />,
+  "send-for-review": (
+    <svg viewBox="0 0 24 24">
+      <circle cx="18" cy="5" r="3" />
+      <circle cx="6" cy="12" r="3" />
+      <circle cx="18" cy="19" r="3" />
+      <path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" />
+    </svg>
+  ),
+  // eslint-disable-next-line @next/next/no-img-element -- a static SVG, drawn as is
+  "write-with-claude": <img src="/brand/frank-logomark.svg" alt="" />,
+  "connect-instagram": (
+    <svg viewBox="0 0 24 24">
+      <rect x="3" y="3" width="18" height="18" rx="5" />
+      <circle cx="12" cy="12" r="4" />
+      <path d="M17.5 6.5h.01" />
+    </svg>
+  ),
+};
 
 function Blocks({ blocks }: { blocks: HelpBlock[] }) {
   return (
@@ -173,7 +201,7 @@ export function HelpPanel({ open, onClose }: { open: boolean; onClose: () => voi
                     return a ? (
                       <button type="button" className="help-topic" key={id} onClick={() => push({ kind: "article", id })}>
                         <span className="help-topic-ic" aria-hidden="true">
-                          ?
+                          {TOPIC_ICONS[id] ?? "?"}
                         </span>
                         <b>{a.title}</b>
                       </button>

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCreative } from "@/hooks/use-creative";
 import { useAdvanceCreativeStage } from "@/hooks/use-advance-creative-stage";
 import { useCreativeVersions, versionSlides } from "@/hooks/use-creative-versions";
-import { artworkRemovalDate, dayMonth, ARTWORK_KEEP_DAYS } from "@/lib/artwork-removal";
+import { dayMonth, ARTWORK_KEEP_DAYS } from "@/lib/artwork-removal";
 import { useClientPreferences } from "@/hooks/use-client-preferences";
 import { useLiveUpdates } from "@/hooks/use-live-updates";
 import { useClientLogoUrl } from "@/hooks/use-client-logo-url";
@@ -132,14 +132,11 @@ export default function CreativeReviewPage({
   // between them, one place per slide even if one is still empty; a new
   // version starts again at the first.
   const slides = versionSlides(activeCreativeVersion);
-  // Approved and live: its artwork goes as many days on as its client keeps
-  // it (phase60, phase70), said here while there's still artwork to lose.
+  // How long the client keeps Approved artwork (phase70), for the note once
+  // it's been removed. The note before removal is on the review link only
+  // (direct instruction).
   const { data: clientPrefs } = useClientPreferences(creative?.projects?.client_id);
   const keepDays = clientPrefs?.artwork_keep_days ?? ARTWORK_KEEP_DAYS;
-  const removalDate = creative ? artworkRemovalDate(creative, keepDays) : null;
-  const hasArtwork = (creativeVersions ?? []).some((v) => versionSlides(v).length > 0);
-  const removalWarning =
-    removalDate && hasArtwork && new Date(creative!.scheduled_at!) < new Date() ? removalDate : null;
   const frames = slideFrames(slides, creative?.slide_count);
   const [slideIndex, setSlideIndex] = useState(0);
   // Which way the last arrow went, so the next slide slides in from that side.
@@ -413,12 +410,6 @@ export default function CreativeReviewPage({
                 the same phone as the Feed Preview, laid out like a live
                 post opened there (direct instruction); the title and
                 format are in the header already. */}
-            {activeSection === "content" && removalWarning && (
-              <p className="note artwork-warn" role="status">
-                Live since {dayMonth(creative.scheduled_at!)}. Its artwork will be removed on {dayMonth(removalWarning)};
-                the copy and comments stay.
-              </p>
-            )}
             {activeSection === "content" && (
               <PhoneFrame>
               <div className="lpv-bar">

@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useCreatives, type CreativeListRow } from "@/hooks/use-creatives";
 import { FeedTileArt, EmptyTileArt } from "@/components/creative-review/FeedTileArt";
+import { StagePill } from "@/components/creative-review/StagePill";
 import { FeedCaptionPopover } from "@/components/creative-review/FeedCaptionPopover";
 import { PhoneFrame } from "./PhoneFrame";
 import { useClientInstagramFeed } from "@/hooks/use-instagram";
@@ -141,8 +142,10 @@ export function FeedPreviewGrid({
                 onMouseLeave={scheduleHide}
                 title={c.name}
               >
-                {!c.published_at && <span className="feedgrid-planned-tag">Planned</span>}
                 <FeedTileArt creative={c} timeLabel={timeLabel} />
+                {/* Its stage, as a review link's Feed shows it (direct
+                    instruction: in place of "Planned", the two the same). */}
+                <StagePill stage={c.stage} />
               </button>
             );
           })}

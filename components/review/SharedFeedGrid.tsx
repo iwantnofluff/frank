@@ -9,16 +9,9 @@ import { LivePostView } from "@/components/creative-review/LivePostView";
 import { useSharedInstagramSlides } from "@/hooks/use-shared-review";
 import type { LiveFeed } from "@/lib/instagram/store";
 import { CommentCount } from "./CommentCount";
+import { StagePill } from "@/components/creative-review/StagePill";
 
 const GRID_SLOTS = 9;
-
-// Each tile's stage, named and coloured as the Review page's stage switch
-// names and colours them (direct instruction): Internal Review (Concept
-// counts as it there too), Client Review, Approved.
-function StagePill({ stage }: { stage: number }) {
-  const [label, tone] = stage >= 4 ? ["Approved", "approved"] : stage === 3 ? ["Client Review", "client"] : ["Internal Review", "internal"];
-  return <span className={`stagepill ${tone}`}>{label}</span>;
-}
 
 // A review link's Feed (phase54, then phase67): the client's profile, the
 // project's posts in grid order, then the client's real posts once their
@@ -26,6 +19,9 @@ function StagePill({ stage }: { stage: number }) {
 // The posts this link shares show their thumbnail, open on a click and show
 // how many comments they have; every other post is a tile with its stage
 // (and its name while in Internal Review). Every tile carries its stage pill.
+// As the Review page's Feed Preview writes a tile's date.
+const tileDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+
 export function SharedFeedGrid({ controller, brandName }: { controller: ReviewController; brandName: string }) {
   const { liveFeed, liveLoading, creatives, feed, active, goTo, setView } = controller;
   const [tab, setTab] = useState<FeedTab>("posts");
@@ -90,9 +86,13 @@ export function SharedFeedGrid({ controller, brandName }: { controller: ReviewCo
               ) : url ? (
                 // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
                 <img src={url} alt={c.name} />
-              ) : (
-                <span className="sharedfeed-name">{c.name}</span>
-              )}
+              ) : null}
+              {/* Its title and live date, centred, as on the Review page's
+                  Feed Preview (direct instruction: the two the same). */}
+              <div className={url ? "pp-art-overlay" : "pp-art-overlay bare"}>
+                <div className="pp-art-title">{c.name}</div>
+                {c.scheduled_at && <div className="pp-art-time">{tileDate(c.scheduled_at)}</div>}
+              </div>
               <StagePill stage={c.stage} />
               <CommentCount n={c.comments.length} />
             </button>

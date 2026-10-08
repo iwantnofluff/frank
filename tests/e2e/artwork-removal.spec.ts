@@ -93,12 +93,11 @@ test("an Approved post's artwork goes 7 days after going live, keeping its copy 
   }
 
   await frank.loginAsStaff(page);
-  // Live two days: the warning, with the day it goes.
+  // Live two days: no warning on the post page any more (direct
+  // instruction: the review link's list says when Approved artwork goes).
   await page.goto(`${APP_URL}/creatives/${recent.id}`);
-  // Same day/month as the page prints, whatever the time of day.
-  const sched = (await admin.from("creatives").select("scheduled_at").eq("id", recent.id).single()).data!.scheduled_at as string;
-  const goes = new Date(new Date(sched).getTime() + 7 * DAY).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-  await expect(page.locator(".artwork-warn")).toContainText(`Its artwork will be removed on ${goes}`);
+  await expect(page.locator(".ig-media img, .ig-media video").first()).toBeVisible();
+  await expect(page.locator(".artwork-warn")).toHaveCount(0);
   // Removed: said so where the artwork was, and its comment is still there.
   await page.goto(`${APP_URL}/creatives/${gone.id}`);
   await expect(page.locator(".ig-media")).toContainText("Artwork removed");

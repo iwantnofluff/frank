@@ -3027,3 +3027,19 @@ Asked directly: a Preferences tab in Client Settings, starting with how long App
 ## The Frank mark, in Help
 
 Asked directly, with the "Frank Logo Concepts Brief" and its text: Help → Getting started → "The Frank mark", the brand story as written (the story, red/orange/green, three readings, the short version, "Brief to green light. Frank. Faster approvals."). A new help block, `mark`, draws the three lines in the mark's colours and proportions with what each stands for; search finds the article by its words ("green light", "F", "comments"). **Verified:** opened from a Help search and looked at.
+
+## Icons on Help's topic cards
+
+Asked directly: the "Explore help topics" cards each showed a "?". Each now has an icon from where that thing lives in Frank: Create a client, the rail's Clients icon; Plan posts, the Content Planner's calendar; Send for review, the post's Share icon; Draft copy with Frank, Frank's own mark; Connect Instagram, Instagram's camera outline, drawn in the same line style since Frank has no Instagram icon of its own (the prototype has none to copy). Client Settings' buildings icon was tried first and dropped: at the cards' size its windows blurred together. **Verified:** looked at in the Help panel; the header spec (Help) passes.
+
+## The left rail's links, 10px lower
+
+Asked directly: the rail's links (Clients and those under it) moved down 20px, then back up 10px ("20px was too much"): `.rail`'s top padding is 22px (was 12px). **Verified:** the seven screenshot specs differed only in the rail column (plus faint anti-aliasing at the header logo in one); looked at and updated.
+
+## The Review page's feed matches the review link's, and the removal note goes
+
+Asked directly, with screenshots of a post's Content and Feed Preview:
+- **The "Live since… its artwork will be removed on…" note is gone from the post page** (it was meant for the review link, where the list's Approved heading says how long artwork is kept). The "Artwork removed" message once it's gone stays, as it explains the empty phone.
+- **Feed tiles match on both:** the Review page's Feed Preview loses "Planned" for the same stage pill a review link's Feed has, bottom-left (Internal Review blue, Client Review orange, Approved green; `components/creative-review/StagePill.tsx`, shared). On both, a tile's title sits centred, its date under it. A review link's tiles now show their title and date too.
+
+**Verified:** both feeds looked at with the same posts (Client Review with artwork, Internal Review without, Approved with artwork); the post page has no note. The artwork-removal test now checks the post page has none. Artwork-removal, review-link, preferences, Instagram and Review page specs pass (23).

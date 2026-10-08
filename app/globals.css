@@ -271,7 +271,9 @@ a {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  padding: 12px 6px 14px;
+  /* 10px lower than before (direct instruction; 20 was too much): the
+     links start a little further below the header. */
+  padding: 22px 6px 14px;
   gap: 2px;
   overflow-y: auto;
   overflow-x: hidden;
@@ -2620,10 +2622,28 @@ a.fd-ref:hover {
   font-size: 12.2px;
   margin-bottom: 4px;
 }
+/* A feed tile's title and date, centred (direct instruction: the Review
+   page's Feed Preview and a review link's Feed the same); its stage pill
+   sits bottom-left. */
 .feedgrid-tile .pp-art-overlay {
-  left: 8px;
-  right: 8px;
-  bottom: 8px;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 8px 22px;
+  text-align: center;
+}
+.feedgrid-tile .pp-art-overlay .pp-art-title {
+  margin-bottom: 0;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
+}
+/* No artwork yet: the title in ink on the tile's own grey. */
+.feedgrid-tile .pp-art-overlay.bare .pp-art-title {
+  color: var(--ink);
+  font-weight: 600;
+  text-shadow: none;
 }
 .feedgrid-tile .pp-art-time {
   font-size: 9.2px;
@@ -6975,19 +6995,6 @@ button.fp-tab[aria-selected="true"] {
 }
 /* A post still to be scheduled says so (direct instruction: the red edge
    alone wasn't enough to tell planned from live). */
-.feedgrid-planned-tag {
-  position: absolute;
-  top: 6px;
-  left: 6px;
-  z-index: 1;
-  font-size: 9.7px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  padding: 2px 6px;
-  border-radius: 99px;
-  background: var(--rose);
-  color: #fff;
-}
 /* A live post opened from the feed (phase54), laid over the grid inside the
    card, like Instagram's own post view. */
 .feedcard {
@@ -7531,6 +7538,21 @@ button.feedgrid-live {
   font-weight: 700;
   font-size: 14.2px;
 }
+/* Each topic's icon (line icons in the tile's blue; Frank's mark as is). */
+.help-topic-ic svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.help-topic-ic img {
+  width: 15px;
+  height: auto;
+  display: block;
+}
 .help-cats {
   display: flex;
   flex-direction: column;
@@ -7964,10 +7986,6 @@ button.feedgrid-live {
 }
 
 /* An Approved post's artwork warning, above its phone (phase60). */
-.note.artwork-warn {
-  max-width: 420px;
-  margin: 0 auto 14px;
-}
 
 /* The artwork decision window (phase60): the post, small, beside its name. */
 .artdec {
