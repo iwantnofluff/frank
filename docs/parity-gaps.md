@@ -3058,3 +3058,14 @@ Asked directly, to give the client as full an Instagram experience as possible:
 
 **Verified:** on a phone-sized screen, the header stuck at the top while scrolled into the post, and the arrows and spacing looked at. Review-link, video, Instagram and preferences specs pass; the phone screenshot looked at and updated.
 - **Then (suggested, and chosen):** swiping sideways moves between posts on a phone (60px or more, clearly more across than down; not when it starts on a carousel's slides or a video); the post's name and format sit above its card, so the card starts with the logo and handle; the comment icon under a post goes to the comments and puts the cursor in the comment box (phone and computer). **Also asked:** the phone-style rounded corners at the top of the header (and the matching ones at the bottom of the comment box) are square; Frank's logo in the review link's header is 20% bigger (36px, was 30px). **Verified:** on a touch phone screen, swipe left and right moved between posts, a swipe on a carousel's slides and a mostly vertical drag didn't; the comment icon brought the comments into view with the box focused; corners and logo looked at on both layouts. Review-link, video and carousel specs pass; both review screenshots looked at and updated.
+
+## Video first frames, comment times, and a larger Frank logo
+
+Reported and asked directly:
+- **A video's first frame shows before it plays** (it was black on a phone until Play). Phones, iPhones above all, don't draw a frame from metadata alone; the player and the video tiles (post page, review link, Feed Preview, upload slots, hover preview) ask for the first moment (`#t=…`) so they load and show it. **Verified:** in Safari's engine at iPhone size, the video was ready at its first frame before Play and played on a tap. Its headless screenshots don't paint video frames, so the picture itself is to be confirmed on a real iPhone.
+- **Each comment shows its time**, 24-hour, under its date (`CommentWhen`): the post page's comments (under "just now", "2h ago" or the day) and a review link's, on a computer and a phone. **Verified:** all three looked at.
+- **Frank's logo** in the review link's header, 10% more (40px).
+- **The comment icon** (asked: "not seeing" it): on live it is there on both layouts, between the heart and the send arrow, and goes to the comments; it looks as the icon always did.
+- **"Video not playing" and logos missing after a reload** (reported, then working again): on live, in Chrome on a computer, both logos loaded after a reload and the video played; not reproduced.
+
+Comment, review-link, video and carousel specs pass; the comment cards' and both review screenshots looked at and updated.

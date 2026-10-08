@@ -43,7 +43,8 @@ export function FeedTileArt({
   return (
     <div className="pp-art pp-art-real">
       {isVideo ? (
-        <video src={signedUrl} muted />
+        // Its first frame as the tile (#t: phones don't draw one otherwise).
+        <video src={`${signedUrl}#t=0.1`} muted playsInline preload="metadata" />
       ) : (
         // Signed URLs are short-lived and per-request — not a fit for
         // next/image's static optimisation (same reasoning as the

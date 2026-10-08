@@ -277,7 +277,9 @@ function SlotImage({ slot }: { slot: Slot }) {
   const src = slot.kind === "file" ? slot.url : signed;
   const name = slot.kind === "asset" ? slot.asset.filename : slot.file.name;
   if (!src) return <span className="cslot-empty">{name}</span>;
-  if (mime.startsWith("video/")) return <video src={src} muted />;
+  // Its first frame in the slot (#t: phones don't draw one otherwise; a
+  // just-picked file's blob: address takes it too).
+  if (mime.startsWith("video/")) return <video src={`${src}#t=0.1`} muted playsInline preload="metadata" />;
   // eslint-disable-next-line @next/next/no-img-element -- short-lived signed URL or a local preview
   return <img src={src} alt={name} />;
 }

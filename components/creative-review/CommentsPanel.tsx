@@ -1,5 +1,6 @@
 "use client";
 
+import { CommentWhen } from "./CommentWhen";
 import { useEffect, useMemo, useState } from "react";
 import { avatarColour } from "@/lib/avatar-colour";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
@@ -308,7 +309,7 @@ function CommentCard({
             onToggleVisibility(thread.id, thread.visibility === "private" ? "public" : "private")
           }
         />
-        <time>{formatWhen(thread.created_at)}</time>
+        <CommentWhen iso={thread.created_at} date={formatWhen(thread.created_at)} />
       </div>
       {thread.anchor && <AnchorBadge anchor={thread.anchor} />}
       <p>{thread.body}</p>

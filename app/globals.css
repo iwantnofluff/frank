@@ -3399,6 +3399,16 @@ select.sort:hover {
   margin: 0;
   line-height: 18px;
 }
+/* A comment's date with its 24-hour time under it (direct instruction). */
+.cwhen {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+.cmt-h time.cwhen {
+  line-height: 14px;
+}
 .cmt p {
   font-size: 13.7px;
   line-height: 1.4;
@@ -4467,8 +4477,8 @@ textarea.cxin {
   gap: 12px;
 }
 .rv-frank {
-  /* 20% bigger (direct instruction; was 30px). */
-  height: 36px;
+  /* 20% bigger, then 10% more (direct instruction; was 30px, then 36px). */
+  height: 40px;
   width: auto;
   display: block;
 }

@@ -88,7 +88,11 @@ export function VideoPlayer({
       <div className="vframe" style={{ width: `min(100%, calc(62vh * ${r}))` }}>
         <video
           ref={ref}
-          src={src}
+          // Its first frame shows before it plays (reported directly: a black
+          // screen until Play on a phone). Phones, iPhones above all, don't
+          // draw a frame from metadata alone; asking for the first moment
+          // makes them load and show it.
+          src={src ? `${src}#t=0.001` : src}
           playsInline
           preload="metadata"
           style={{ width: "100%", aspectRatio: String(r) }}

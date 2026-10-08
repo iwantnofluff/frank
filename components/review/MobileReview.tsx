@@ -3,6 +3,7 @@
 import type { ReviewController } from "@/hooks/use-review-controller";
 import { ReviewViewSwitch, SharedFeedGrid } from "./SharedFeedGrid";
 import { ReviewBrandHeader } from "./ReviewBrandHeader";
+import { CommentWhen } from "@/components/creative-review/CommentWhen";
 import { CommentJump, useSwipe } from "./mobile-gestures";
 import { formatsLabel, postFormats } from "@/lib/formats";
 import { ReviewMedia } from "./ReviewMedia";
@@ -160,7 +161,7 @@ export function MobileReview({
                     {c.author_name.slice(0, 1).toUpperCase()}
                   </span>
                   <b>{c.author_name}</b>
-                  <span>{new Date(c.created_at).toLocaleDateString()}</span>
+                  <CommentWhen iso={c.created_at} date={new Date(c.created_at).toLocaleDateString()} />
                 </div>
                 <MomentBadge comment={c} controller={controller} />
                 <p>{c.body}</p>

@@ -110,7 +110,7 @@ export function CreativePreviewPopover({
             page's own "no artwork yet" while there isn't any (direct
             instruction). */}
         {art?.mime_type.startsWith("video/") && artUrl ? (
-          <video src={artUrl} muted playsInline preload="metadata" />
+          <video src={`${artUrl}#t=0.1`} muted playsInline preload="metadata" />
         ) : art && artUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
           <img src={artUrl} alt={creative.name} />

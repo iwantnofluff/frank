@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReviewController } from "@/hooks/use-review-controller";
 import { SharedFeedGrid } from "./SharedFeedGrid";
 import { CommentCount } from "./CommentCount";
+import { CommentWhen } from "@/components/creative-review/CommentWhen";
 import { ReviewBrandHeader } from "./ReviewBrandHeader";
 import { CommentJump } from "./mobile-gestures";
 import { REVIEW_GROUPS, reviewGroup } from "./review-group";
@@ -238,7 +239,7 @@ export function DesktopReview({
                     {c.author_name.slice(0, 1).toUpperCase()}
                   </span>
                   <b>{c.author_name}</b>
-                  <time>{new Date(c.created_at).toLocaleDateString()}</time>
+                  <CommentWhen iso={c.created_at} date={new Date(c.created_at).toLocaleDateString()} />
                 </div>
                 <MomentBadge comment={c} controller={controller} />
                 <p>{c.body}</p>
