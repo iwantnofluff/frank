@@ -8,6 +8,8 @@ import { useMyAgency } from "@/hooks/use-my-agency";
 import { useMyMembership } from "@/hooks/use-my-membership";
 import { useAvatarUrls } from "@/hooks/use-avatar-urls";
 import { useArchiveClient } from "@/hooks/use-archive-client";
+import { useRouter } from "next/navigation";
+import { DeletePermanentlyDialog } from "@/components/ui/DeletePermanentlyDialog";
 import { seesAllClients } from "@/lib/roles";
 import { initials } from "@/lib/initials";
 import { errorMessage } from "@/lib/errors";
@@ -24,6 +26,10 @@ export default function ClientDetailsPage({ params }: { params: Promise<{ id: st
   const { data: logoUrls } = useAvatarUrls([client?.logo_asset_id ?? null]);
   const logoUrl = client?.logo_asset_id ? (logoUrls?.[client.logo_asset_id] ?? null) : null;
   const archive = useArchiveClient();
+  // Owners and the Primary Owner delete an archived client for good (phase74).
+  const isOwner = !!me && !me.client_id && (me.role === "owner" || me.role === "primary_owner");
+  const [deleting, setDeleting] = useState(false);
+  const router = useRouter();
   const [editing, setEditing] = useState(false);
 
   return (
@@ -77,6 +83,7 @@ export default function ClientDetailsPage({ params }: { params: Promise<{ id: st
               {client.archived_at
                 ? "This client is archived: hidden from the clients list unless Archived is chosen."
                 : "Archiving hides this client from the clients list. Nothing is deleted, and it can be unarchived."}
+              {client.archived_at && isOwner && " As an Owner, you can also delete it for good."}
             </p>
             <button
               type="button"
@@ -86,7 +93,21 @@ export default function ClientDetailsPage({ params }: { params: Promise<{ id: st
             >
               {client.archived_at ? "Unarchive" : "Archive"}
             </button>
+            {client.archived_at && isOwner && (
+              <button type="button" className="btn danger" style={{ marginLeft: 8 }} onClick={() => setDeleting(true)}>
+                Delete Permanently
+              </button>
+            )}
             {archive.error && <p className="autherr">{errorMessage(archive.error, "Couldn't change that")}</p>}
+            {deleting && (
+              <DeletePermanentlyDialog
+                kind="client"
+                id={client.id}
+                name={client.name}
+                onClose={() => setDeleting(false)}
+                onDeleted={() => router.replace("/dashboard")}
+              />
+            )}
           </div>
         </section>
       )}

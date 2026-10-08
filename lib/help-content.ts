@@ -185,7 +185,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         kind: "list",
         items: [
-          "Client Details: the name, logo, industry and description, and archiving.",
+          "Client Details: the name, logo, industry and description, and archiving. Once a client is archived, the Primary Owner and Owners can delete it for good, with everything in it, by typing its name; an archived project can be deleted the same way from its profile.",
           "People: who's on this client and which of its projects each person works on, and inviting someone new.",
           "Preferences: how long Approved artwork is kept (7, 14, 21 or 28 days) and what happens to Approved posts with no live date; whether the client can approve and whether a review link's Feed shows the project's other posts; and what a new review link starts with. Owners and Admins change them; each saves as it's picked.",
           "Knowledge: what Frank knows about the client, used when copy is drafted and checked.",
@@ -419,6 +419,76 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         kind: "note",
         text: "Each message uses one of your agency's monthly AI requests. Conversations stay with the post for your team.",
+      },
+    ],
+  },
+  {
+    id: "roles",
+    title: "Roles: who can do what",
+    category: "team",
+    summary: "Primary Owner, Owner, Admin, User and Client, and what a review link's guest can do.",
+    blocks: [
+      {
+        kind: "p",
+        text: "Everyone in Frank is either on your team or at one of your clients, never both. On the team, each role can do everything the one below it can, plus more.",
+      },
+      { kind: "h", text: "Primary Owner" },
+      {
+        kind: "list",
+        items: [
+          "The one person the account belongs to. There's only ever one.",
+          "Everything an Owner can do.",
+          "Can't be removed, and their role only changes by handing ownership to someone else.",
+        ],
+      },
+      { kind: "h", text: "Owner" },
+      {
+        kind: "list",
+        items: [
+          "Everything an Admin can do.",
+          "Invites anyone (Owners, Admins, Users and Clients) and chooses or changes their roles.",
+          "Changes the account's web address, and reads Frank support's activity in the account.",
+          "Deletes archived clients and projects for good.",
+        ],
+      },
+      { kind: "h", text: "Admin" },
+      {
+        kind: "list",
+        items: [
+          "Sees and works on every client and project.",
+          "Manages the agency's settings: logo and colours, Instagram connections, knowledge, the drafting model, the plan and billing.",
+          "Edits each client's details, people and Preferences, and archives clients and projects.",
+          "Sees Analytics, and decides on Approved artwork with no live date.",
+          "Invites Admins, Users and Clients when an Owner allows them to.",
+        ],
+      },
+      { kind: "h", text: "User" },
+      {
+        kind: "list",
+        items: [
+          "Works only on the clients they're given, and the projects they're on.",
+          "Briefs posts, uploads artwork, writes and drafts copy, comments (privately or publicly), moves posts between stages, and sends them for review.",
+          "Sees settings, but doesn't change the agency's.",
+        ],
+      },
+      { kind: "h", text: "Client" },
+      {
+        kind: "list",
+        items: [
+          "Someone at one of your clients, signed in to Frank. Can be at more than one of your clients.",
+          "Sees that client's projects (or the ones they're on), the posts and public comments, and the client's Knowledge.",
+          "Comments, and approves on review links unless the client's Preferences say the agency approves.",
+          "Never sees private comments, other clients, or your settings.",
+        ],
+      },
+      { kind: "h", text: "Review link guests" },
+      {
+        kind: "list",
+        items: [
+          "Anyone with a review link, without signing in. Not a role, but worth knowing what they can do.",
+          "Sees the posts in Client Review (and what the link shares), comments under their name, and approves if the link and the client allow it.",
+          "Never sees private comments, other projects' work, or anything beyond the link. A passcode can be added when sharing.",
+        ],
       },
     ],
   },

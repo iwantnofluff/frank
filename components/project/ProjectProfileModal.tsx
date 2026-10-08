@@ -15,6 +15,8 @@ import { PROJECT_TYPE_OPTS } from "@/lib/project-types";
 import { avatarColour } from "@/lib/avatar-colour";
 import { initials } from "@/lib/initials";
 import { errorMessage } from "@/lib/errors";
+import { DeletePermanentlyDialog } from "@/components/ui/DeletePermanentlyDialog";
+import { useMyMembership } from "@/hooks/use-my-membership";
 
 const DELIVERY_LABELS = {
   scheduled: "Content Planner",
@@ -61,6 +63,10 @@ export function ProjectProfileModal({
   onClose: () => void;
 }) {
   const updateProject = useUpdateProject();
+  // Owners and the Primary Owner delete an archived project for good (phase74).
+  const { data: me } = useMyMembership(agencyId);
+  const isOwner = !!me && !me.client_id && (me.role === "owner" || me.role === "primary_owner");
+  const [deleting, setDeleting] = useState(false);
   const [name, setName] = useState(project.name);
   const [type, setType] = useState(project.type ?? "");
   const [dueOn, setDueOn] = useState(project.due_on ?? "");
@@ -87,6 +93,7 @@ export function ProjectProfileModal({
   }
 
   return (
+    <>
     <Modal
       hideCloseButton
       // Client, then project, as the review page reads, after the project's
@@ -118,6 +125,11 @@ export function ProjectProfileModal({
           <button type="button" className="btn" onClick={onArchive}>
             {project.archived_at ? "Unarchive" : "Archive"}
           </button>
+          {project.archived_at && isOwner && (
+            <button type="button" className="btn danger" onClick={() => setDeleting(true)}>
+              Delete Permanently
+            </button>
+          )}
           <span className="grow" />
           {isAdmin ? (
             <>
@@ -245,6 +257,16 @@ export function ProjectProfileModal({
         </div>
       </div>
     </Modal>
+    {deleting && (
+      <DeletePermanentlyDialog
+        kind="project"
+        id={project.id}
+        name={project.name}
+        onClose={() => setDeleting(false)}
+        onDeleted={onClose}
+      />
+    )}
+    </>
   );
 }
 
