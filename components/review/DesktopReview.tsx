@@ -5,6 +5,7 @@ import type { ReviewController } from "@/hooks/use-review-controller";
 import { SharedFeedGrid } from "./SharedFeedGrid";
 import { CommentCount } from "./CommentCount";
 import { ReviewBrandHeader } from "./ReviewBrandHeader";
+import { CommentJump } from "./mobile-gestures";
 import { REVIEW_GROUPS, reviewGroup } from "./review-group";
 import { ReviewNav, type ReviewSection } from "@/components/creative-review/ReviewNav";
 import { formatsLabel, postFormats } from "@/lib/formats";
@@ -188,9 +189,7 @@ export function DesktopReview({
                       <svg viewBox="0 0 24 24">
                         <path d="M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 1 0-7.1 7.1L12 21.5l8.8-8.8a5 5 0 0 0 0-7.1z" />
                       </svg>
-                      <svg viewBox="0 0 24 24">
-                        <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.9 8.9 0 0 1-3.8-.9L3 20.5l1.5-4.4A8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4z" />
-                      </svg>
+                      <CommentJump variant="desktop" />
                       <svg viewBox="0 0 24 24">
                         <path d="M22 2L11 13" />
                         <path d="M22 2l-7 20-4-9-9-4z" />

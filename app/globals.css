@@ -3143,6 +3143,16 @@ select.sort:hover {
 .ig-acts .save {
   margin-left: auto;
 }
+/* The comment icon, as a button: goes to the comments (direct
+   instruction). Looks exactly like the icon beside it. */
+.ig-act-btn {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
 .ig-cap {
   padding: 22px 12px;
   font-size: 14.2px;
@@ -4457,7 +4467,8 @@ textarea.cxin {
   gap: 12px;
 }
 .rv-frank {
-  height: 30px;
+  /* 20% bigger (direct instruction; was 30px). */
+  height: 36px;
   width: auto;
   display: block;
 }
@@ -4653,7 +4664,6 @@ textarea.cxin {
   display: flex;
   align-items: center;
   gap: 10px;
-  border-radius: 34px 34px 0 0;
 }
 .m-count {
   font-size: 12.2px;
@@ -4724,9 +4734,10 @@ textarea.cxin {
   z-index: 3;
   background: var(--surface);
 }
+/* The post's name and format, above its card on a phone (direct
+   instruction: the card starts with the logo and handle). */
 .m-meta {
-  padding: 13px 14px 13px;
-  border-bottom: 1px solid var(--line);
+  padding: 2px 4px 12px;
 }
 .m-meta b {
   display: block;
@@ -4841,7 +4852,6 @@ textarea.cxin {
   background: var(--surface);
   border-top: 1px solid var(--line);
   padding: 12px 16px 26px;
-  border-radius: 0 0 34px 34px;
 }
 .m-gate {
   display: flex;
