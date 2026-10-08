@@ -22,6 +22,8 @@ export function clientSettingsSections(clientId: string, staff: boolean): Settin
       pages: [
         { href: `${base}/details`, label: "Client Details" },
         { href: `${base}/people`, label: "People" },
+        // How Frank works for this client (phase70).
+        { href: `${base}/preferences`, label: "Preferences" },
       ],
     },
     knowledge,

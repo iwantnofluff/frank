@@ -8,6 +8,8 @@ import {
   type SharedLinkScope,
 } from "@/hooks/use-create-shared-link";
 import { resolveShareEligibility } from "@/lib/shared-link-eligibility";
+import { useProject } from "@/hooks/use-project";
+import { useClientPreferences } from "@/hooks/use-client-preferences";
 import { errorMessage } from "@/lib/errors";
 import { FeedTileArt, EmptyTileArt } from "@/components/creative-review/FeedTileArt";
 import { FeedCaptionPopover } from "@/components/creative-review/FeedCaptionPopover";
@@ -111,6 +113,19 @@ export function ShareModal({
   const [passcodeOn, setPasscodeOn] = useState(false);
   const [passcode, setPasscode] = useState("");
   const [canApprove, setCanApprove] = useState(true);
+  // What a new link starts with, from the client's Preferences (phase70),
+  // set once they've loaded; then the window's own choices are kept.
+  const { data: project } = useProject(projectId);
+  const { data: prefs } = useClientPreferences(project?.client_id);
+  const [seeded, setSeeded] = useState(false);
+  if (!seeded && prefs) {
+    setSeeded(true);
+    setExpiresInDays(prefs.link_expires_days);
+    setPasscodeOn(prefs.link_passcode);
+    setCanApprove(prefs.client_can_approve && prefs.link_can_approve);
+  }
+  // A client that can't approve at all: no link lets them.
+  const approveLocked = !!prefs && !prefs.client_can_approve;
   const [link, setLink] = useState<string | null>(null);
   // Copied to the clipboard (direct instruction: say so, and grey the button).
   const [copied, setCopied] = useState<"yes" | "failed" | null>(null);
@@ -223,7 +238,7 @@ export function ShareModal({
       pickedCreatives: scope === "pick" ? Array.from(picked) : null,
       expiresInDays,
       passcode: passcodeOn ? passcode : null,
-      canApprove,
+      canApprove: canApprove && !approveLocked,
     });
     setLink(`${window.location.origin}/review/${token}`);
   }
@@ -451,14 +466,17 @@ export function ShareModal({
             <span className="sl">
               <b>Let them approve</b>
               <span>
-                Not just comment. An approval from the link is recorded
-                against whoever gave their name.
+                {approveLocked
+                  ? "Off: this client comments but doesn't approve (Client Settings → Preferences)."
+                  : "Not just comment. An approval from the link is recorded against whoever gave their name."}
               </span>
             </span>
             <button
               type="button"
               className="tog"
-              aria-pressed={canApprove}
+              aria-pressed={canApprove && !approveLocked}
+              aria-label="Let them approve"
+              disabled={approveLocked}
               onClick={() => setCanApprove(!canApprove)}
             >
               <i />

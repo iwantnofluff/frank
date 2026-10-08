@@ -435,6 +435,8 @@ export const test = base.extend<{ frank: Frank }>({
       // token row cascades with its connection).
       ["instagram_connect_links", () => admin.from("instagram_connect_links").delete().eq("agency_id", agency.id)],
       ["instagram_connections", () => admin.from("instagram_connections").delete().eq("agency_id", agency.id)],
+      // Before clients (phase70; it would also go with them, but said here).
+      ["client_preferences", () => admin.from("client_preferences").delete().eq("agency_id", agency.id)],
       ["clients", () => admin.from("clients").delete().eq("agency_id", agency.id)],
       // After clients (clients.logo_asset_id references assets) and after
       // every other table above that references assets (creative_versions,

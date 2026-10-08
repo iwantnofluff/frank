@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useCreative } from "@/hooks/use-creative";
 import { useAdvanceCreativeStage } from "@/hooks/use-advance-creative-stage";
 import { useCreativeVersions, versionSlides } from "@/hooks/use-creative-versions";
-import { artworkRemovalDate, dayMonth } from "@/lib/artwork-removal";
+import { artworkRemovalDate, dayMonth, ARTWORK_KEEP_DAYS } from "@/lib/artwork-removal";
+import { useClientPreferences } from "@/hooks/use-client-preferences";
 import { useLiveUpdates } from "@/hooks/use-live-updates";
 import { useClientLogoUrl } from "@/hooks/use-client-logo-url";
 import { aspectRatioCss, formatRatio } from "@/lib/formats";
@@ -131,9 +132,11 @@ export default function CreativeReviewPage({
   // between them, one place per slide even if one is still empty; a new
   // version starts again at the first.
   const slides = versionSlides(activeCreativeVersion);
-  // Approved and live: its artwork goes 7 days on (phase60), said here
-  // while there's still artwork to lose.
-  const removalDate = creative ? artworkRemovalDate(creative) : null;
+  // Approved and live: its artwork goes as many days on as its client keeps
+  // it (phase60, phase70), said here while there's still artwork to lose.
+  const { data: clientPrefs } = useClientPreferences(creative?.projects?.client_id);
+  const keepDays = clientPrefs?.artwork_keep_days ?? ARTWORK_KEEP_DAYS;
+  const removalDate = creative ? artworkRemovalDate(creative, keepDays) : null;
   const hasArtwork = (creativeVersions ?? []).some((v) => versionSlides(v).length > 0);
   const removalWarning =
     removalDate && hasArtwork && new Date(creative!.scheduled_at!) < new Date() ? removalDate : null;
@@ -471,7 +474,7 @@ export default function CreativeReviewPage({
                           ? undefined
                           : creative.artwork_removed_at
                             ? creative.scheduled_at
-                              ? `Removed on ${dayMonth(creative.artwork_removed_at)}, 7 days after the post went live. Its copy and comments are kept.`
+                              ? `Removed on ${dayMonth(creative.artwork_removed_at)}, ${keepDays} days after the post went live. Its copy and comments are kept.`
                               : `Removed on ${dayMonth(creative.artwork_removed_at)}. Its copy and comments are kept.`
                             : frames.length > 1
                             ? `Slide ${slidePosition} has no artwork yet.`

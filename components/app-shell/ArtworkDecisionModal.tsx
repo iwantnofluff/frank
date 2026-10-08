@@ -5,10 +5,12 @@ import { Modal } from "@/components/ui/Modal";
 import { useCreativeVersions, versionSlides } from "@/hooks/use-creative-versions";
 import { useAssetSignedUrl } from "@/hooks/use-asset-signed-url";
 import { useKeepArtwork, useRemoveArtworkNow, type NotificationRow } from "@/hooks/use-notifications";
-import { dayMonth } from "@/lib/artwork-removal";
+import { dayMonth, ARTWORK_KEEP_DAYS } from "@/lib/artwork-removal";
+import { useClientPreferences } from "@/hooks/use-client-preferences";
 import { errorMessage } from "@/lib/errors";
 
-// An Approved post with no live date, 7 days past its due date (phase60):
+// An Approved post with no live date, its client's keep time past its due
+// date (phase60, phase70):
 // an Owner or Admin removes its artwork now, or keeps it for good. Either
 // way its copy and comments stay.
 export function ArtworkDecisionModal({
@@ -25,6 +27,9 @@ export function ArtworkDecisionModal({
   const keep = useKeepArtwork();
   const busy = remove.isPending || keep.isPending;
   const error = remove.error ?? keep.error;
+  // The client's own keep time (phase70), 7 unless set.
+  const { data: prefs } = useClientPreferences(post.project?.client?.id);
+  const keepDays = prefs?.artwork_keep_days ?? ARTWORK_KEEP_DAYS;
   const since = post.due_on ? `its due date, ${dayMonth(post.due_on)}` : post.approved_at ? `it was approved, ${dayMonth(post.approved_at)}` : null;
 
   return (
@@ -81,7 +86,7 @@ export function ArtworkDecisionModal({
         </div>
       </div>
       <p className="msection-d">
-        This post is Approved and has no live date{since ? `; it's been more than 7 days since ${since}` : ""}. Removing
+        This post is Approved and has no live date{since ? `; it's been more than ${keepDays} days since ${since}` : ""}. Removing
         its artwork deletes every version&apos;s files for good. Its copy and comments are kept. Keeping it means
         you won&apos;t be asked about this post again.
       </p>

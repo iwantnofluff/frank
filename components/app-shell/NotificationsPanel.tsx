@@ -92,7 +92,7 @@ export function NotificationsPanel({
               <span>
                 <span className="nt">
                   <b>{post?.name ?? "A post"}</b>
-                  {client ? ` · ${client}` : ""}. {post?.due_on ? "7 days past its due date" : "Approved 7 days ago"}, with
+                  {client ? ` · ${client}` : ""}. {post?.due_on ? "Past its due date" : "Approved a while ago"}, with
                   no live date: remove its artwork?
                 </span>
                 <time dateTime={n.created_at}>{ago(n.created_at)}</time>

@@ -141,7 +141,7 @@ test("an undated Approved post waits on an Admin: the bell, then Keep or Remove"
   await bell.click();
   const panel = page.locator(".notif.is-open");
   await expect(panel.locator(".nrow.unread")).toHaveCount(2);
-  await expect(panel.locator(".nrow").first()).toContainText("7 days past its due date, with no live date: remove its artwork?");
+  await expect(panel.locator(".nrow").first()).toContainText("Past its due date, with no live date: remove its artwork?");
 
   // Keep: for good.
   await panel.locator(".nrow", { hasText: "Keep This One" }).click();

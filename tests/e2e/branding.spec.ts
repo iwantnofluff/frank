@@ -174,7 +174,7 @@ test("the agency logo shows on the rail, for clients, and on review links", asyn
     const guestContext = await browser.newContext({ viewport: PHONE_VIEWPORT });
     const guest = await guestContext.newPage();
     await guest.goto(`${APP_URL}/review/${token}`);
-    await expect(guest.locator(".m-logo img").first()).toBeVisible();
+    await expect(guest.locator(".rv-agency img").first()).toBeVisible();
     await guestContext.close();
 
     await page.getByRole("button", { name: "Remove" }).click();

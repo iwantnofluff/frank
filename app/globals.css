@@ -4515,6 +4515,11 @@ textarea.cxin {
   font-weight: 500;
   margin-left: 2px;
 }
+.dk-group-h em {
+  font-style: normal;
+  font-weight: 500;
+  margin-left: 4px;
+}
 .dk-item {
   display: flex;
   gap: 9px;
@@ -7376,6 +7381,45 @@ button.feedgrid-live {
   pointer-events: auto;
   transition-duration: var(--dur-open);
   transition-timing-function: var(--ease-open);
+}
+/* The Frank mark, drawn in its help article: three lines in the mark's
+   colours, each shorter than the last, with what each stands for. */
+.help-mark-story {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 4px 0 16px;
+  padding: 18px 16px;
+  border-radius: var(--r);
+  background: #201e1d;
+}
+.hms-row {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  align-items: center;
+  gap: 14px;
+}
+.hms-bar {
+  height: 16px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.hms-0 {
+  width: 96px;
+  background: #e35336;
+}
+.hms-1 {
+  width: 74px;
+  background: #f4a460;
+}
+.hms-2 {
+  width: 50px;
+  background: #4caf50;
+}
+.hms-t {
+  font-size: 13.2px;
+  font-weight: 600;
+  color: #f5f5dc;
 }
 .help-h {
   display: flex;

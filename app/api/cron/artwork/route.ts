@@ -3,7 +3,7 @@ import { createServiceRoleClient } from "@/lib/supabase/service-role";
 
 // The daily artwork run (phase60), called by Vercel's cron (vercel.json)
 // with CRON_SECRET as its bearer token. Removes the artwork of Approved
-// posts live more than 7 days ago, notifies Owners and Admins about
+// posts live longer than their client keeps artwork (7 days unless its Preferences say otherwise, phase70), notifies Owners and Admins about
 // undated ones, then deletes the freed files from storage.
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;

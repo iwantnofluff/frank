@@ -74,6 +74,9 @@ export type SharedReviewResult =
       client_name: string | null;
       // The agency's name, beside Frank's logo at the top.
       agency_name: string | null;
+      // How long an Approved post's artwork is kept after going live, from
+      // the client's Preferences (phase70).
+      artwork_keep_days: number;
       // The project's posts in grid order (phase67): an id only for posts
       // this link shares; every other post is its stage alone. Null if it
       // couldn't be read.

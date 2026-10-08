@@ -124,7 +124,7 @@ export default function PrivacyPage() {
         <ul>
           <li>Account and agency data: while the agency uses Frank, and deleted on request after that.</li>
           <li>
-            An approved post&rsquo;s artwork: removed 7 days after its live date. Its comments and captions stay with
+            An approved post&rsquo;s artwork: removed 7 to 28 days after its live date, as the agency sets for each client. Its comments and captions stay with
             the agency&rsquo;s records.
           </li>
           <li>Instagram data: until the account is disconnected or a deletion request arrives, as above.</li>

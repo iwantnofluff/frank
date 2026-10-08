@@ -47,6 +47,19 @@ function Blocks({ blocks }: { blocks: HelpBlock[] }) {
                 ))}
               </ol>
             );
+          case "mark":
+            // The mark's own colours and proportions (frank-logomark.svg):
+            // each line a little shorter than the one above.
+            return (
+              <div className="help-mark-story" key={i} aria-label="The Frank mark">
+                {b.items.map((t, n) => (
+                  <div className="hms-row" key={t}>
+                    <span className={`hms-bar hms-${n}`} aria-hidden="true" />
+                    <span className="hms-t">{t}</span>
+                  </div>
+                ))}
+              </div>
+            );
           case "note":
             return (
               <div className="help-note" key={i}>

@@ -17,7 +17,7 @@ export interface NotificationRow {
     format: string;
     due_on: string | null;
     approved_at: string | null;
-    project: { id: string; name: string; client: { name: string } | null } | null;
+    project: { id: string; name: string; client: { id: string; name: string } | null } | null;
   } | null;
 }
 
@@ -30,7 +30,7 @@ export function useNotifications(enabled = true) {
       const { data, error } = await supabase
         .from("notifications")
         .select(
-          "id, kind, created_at, read_at, creative:creatives(id, name, format, due_on, approved_at, project:projects(id, name, client:clients(name)))",
+          "id, kind, created_at, read_at, creative:creatives(id, name, format, due_on, approved_at, project:projects(id, name, client:clients(id, name)))",
         )
         .order("created_at", { ascending: false })
         .limit(50);

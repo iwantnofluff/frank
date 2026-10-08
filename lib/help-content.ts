@@ -8,7 +8,9 @@ export type HelpBlock =
   | { kind: "h"; text: string }
   | { kind: "list"; items: string[] }
   | { kind: "steps"; items: string[] }
-  | { kind: "note"; text: string };
+  | { kind: "note"; text: string }
+  // Frank's mark, drawn: its three lines, each with its label.
+  | { kind: "mark"; items: string[] };
 
 export interface HelpArticle {
   id: string;
@@ -37,6 +39,47 @@ export const HELP_CATEGORIES: HelpCategory[] = [
 export const HELP_TOPICS = ["create-client", "plan-posts", "send-for-review", "write-with-claude", "connect-instagram"];
 
 export const HELP_ARTICLES: HelpArticle[] = [
+  // From "Frank Logo Concepts Brief" (the brand story, supplied directly).
+  {
+    id: "the-frank-mark",
+    title: "The Frank mark",
+    category: "start",
+    summary: "Three lines: the work, the review, the approval. The whole job in one mark.",
+    blocks: [
+      { kind: "mark", items: ["The work", "The review", "The approval"] },
+      {
+        kind: "p",
+        text: "Every piece of client work goes the same way. Someone makes it, someone reviews it, someone signs it off. The Frank mark is that journey, top to bottom.",
+      },
+      {
+        kind: "list",
+        items: [
+          "Red is the work. The brief, the concept, the creation. It's the longest line because that's where most of the effort goes.",
+          "Orange is the review. Feedback, changes, versions. There's less of it, but this is where work usually stalls. Frank keeps it moving.",
+          "Green is the approval. The shortest line and the final one: the green light.",
+        ],
+      },
+      {
+        kind: "p",
+        text: "The lines get shorter as the work moves down, because each stage should take less effort than the one before. With the brief travelling alongside the work, review doesn't loop back to the start, and approval is a decision, not another discussion.",
+      },
+      { kind: "h", text: "Three readings, one mark" },
+      {
+        kind: "list",
+        items: [
+          "The process. Make, review, approve, with red, amber and green as the traffic-light signal everyone already understands.",
+          "The F. The lines line up on a shared left edge, so they read as the arms of an F. The mark is the name.",
+          "The comments. Stacked lines of different lengths look like a comment thread, which is where feedback lives in Frank: on the work, not scattered across WhatsApp, email and Drive.",
+        ],
+      },
+      { kind: "h", text: "In short" },
+      {
+        kind: "p",
+        text: "The Frank mark is three lines: red for the work, orange for the review, green for the approval. They shorten as the work moves towards sign-off, line up to form the F in Frank, and read like the comments that move work forward.",
+      },
+      { kind: "p", text: "Brief to green light. Frank. Faster approvals." },
+    ],
+  },
   {
     id: "how-frank-works",
     title: "How Frank works",
@@ -144,6 +187,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         items: [
           "Client Details: the name, logo, industry and description, and archiving.",
           "People: who's on this client and which of its projects each person works on, and inviting someone new.",
+          "Preferences: how long Approved artwork is kept (7, 14, 21 or 28 days) and what happens to Approved posts with no live date; whether the client can approve and whether a review link's Feed shows the project's other posts; and what a new review link starts with. Owners and Admins change them; each saves as it's picked.",
           "Knowledge: what Frank knows about the client, used when copy is drafted and checked.",
           "Instagram: the client's account, so the Feed Preview shows its real posts.",
         ],
@@ -263,24 +307,24 @@ export const HELP_ARTICLES: HelpArticle[] = [
     id: "artwork-after-live",
     title: "Artwork after a post goes live",
     category: "posts",
-    summary: "Approved posts' artwork is removed 7 days after going live; copy and comments stay.",
+    summary: "Approved posts' artwork is removed 7 to 28 days after going live, as each client is set; copy and comments stay.",
     blocks: [
       {
         kind: "p",
-        text: "To keep your storage free for work in progress, an Approved post's artwork is removed 7 days after its live date: every version's files. The post, its copy and all its comments stay, and the post says when its artwork was removed.",
+        text: "To keep your storage free for work in progress, an Approved post's artwork is removed some days after its live date: every version's files. It's 7 days unless the client's Preferences (Client Settings → Preferences) say 14, 21 or 28. The post, its copy and all its comments stay, and the post says when its artwork was removed.",
       },
       {
         kind: "list",
         items: [
           "Once an Approved post has gone live, its page says the day its artwork will be removed, so there's time to keep a copy.",
           "Posts that aren't Approved keep their artwork, whatever their date.",
-          "The review link shows the same: Artwork removed, with the copy and comments still there.",
+          "The review link shows the same: Artwork removed, with the copy and comments still there. Its list says how many days the client keeps artwork, beside Approved.",
         ],
       },
       { kind: "h", text: "Posts with no live date" },
       {
         kind: "p",
-        text: "An Approved post with no live date, in Other Content say, isn't removed on its own. 7 days after its due date, Owners and Admins get a notification under the bell in the header. Opening it shows the post with Keep Artwork or Remove Artwork. Keep is for good: you won't be asked about that post again.",
+        text: "An Approved post with no live date, in Other Content say, isn't removed on its own unless the client's Preferences say to remove it. Otherwise, the same number of days after its due date, Owners and Admins get a notification under the bell in the header. Opening it shows the post with Keep Artwork or Remove Artwork. Keep is for good: you won't be asked about that post again.",
       },
     ],
   },

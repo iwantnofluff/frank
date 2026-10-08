@@ -82,6 +82,14 @@ export function DesktopReview({
                 <div key={g.id} className="dk-group">
                   <div className="dk-group-h">
                     {g.label} <span>{items.length}</span>
+                    {/* When Approved artwork goes (direct instruction), from
+                        the client's Preferences. */}
+                    {g.id === "approved" && (
+                      <em>
+                        · Artwork removed {controller.data?.status === "ok" ? controller.data.artwork_keep_days : 7} days after
+                        going live
+                      </em>
+                    )}
                   </div>
                   {items.map(({ c, i }) => (
                     <button

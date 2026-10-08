@@ -78,7 +78,7 @@ export async function POST(request: Request) {
     serviceRole = createServiceRoleClient();
     const { data: row } = await serviceRole
       .from("shared_links")
-      .select("agency_id, agencies(name, suspended_at, plan), projects(clients(name, logo_asset_id))")
+      .select("agency_id, agencies(name, suspended_at, plan), projects(client_id, clients(name, logo_asset_id))")
       .eq("token", token)
       .maybeSingle();
     link = row as unknown as LinkRow | null;
@@ -119,7 +119,7 @@ export async function POST(request: Request) {
     .then(({ data: f }) => (f?.status === "ok" ? (f.feed as { id: string | null; name?: string | null; stage: number; reel: boolean }[]) : null));
 
   // Everything that only needs the validated token, at once.
-  const [creativeRows, anchorRows, versionRows, settings, clientLogo] = serviceRole
+  const [creativeRows, anchorRows, versionRows, settings, clientLogo, prefs] = serviceRole
     ? await Promise.all([
         // Every format a post goes out as (phase29) — get_shared_review
         // returns only the main one — its slide count, and when its artwork
@@ -159,8 +159,18 @@ export async function POST(request: Request) {
         clientLogoId
           ? serviceRole.from("assets").select("storage_key").eq("id", clientLogoId).maybeSingle().then((r) => r.data)
           : null,
+        // The client's Preferences (phase70): how long Approved artwork is
+        // kept, and whether the client can approve at all.
+        link?.projects?.client_id
+          ? serviceRole
+              .from("client_preferences")
+              .select("artwork_keep_days, client_can_approve")
+              .eq("client_id", link.projects.client_id)
+              .maybeSingle()
+              .then((r) => r.data)
+          : null,
       ])
-    : [[], [], [], null, null];
+    : [[], [], [], null, null, null];
 
   const formatsById = new Map<string, string[]>();
   const slideCountById = new Map<string, number | null>();
@@ -277,6 +287,10 @@ export async function POST(request: Request) {
   const feed = await feedPromise;
   return NextResponse.json({
     ...data,
+    // A client that can't approve (phase70) gets no Approve, whatever the
+    // link says; submit_shared_approval refuses it too.
+    can_approve: data.can_approve && (prefs?.client_can_approve ?? true),
+    artwork_keep_days: prefs?.artwork_keep_days ?? 7,
     creatives: signedCreatives,
     branding,
     client_logo_url: signedUrl(clientLogo?.storage_key),
@@ -294,5 +308,5 @@ export async function POST(request: Request) {
 interface LinkRow {
   agency_id: string;
   agencies: { name: string; suspended_at: string | null; plan: string | null } | null;
-  projects: { clients: { name: string; logo_asset_id: string | null } | null } | null;
+  projects: { client_id: string; clients: { name: string; logo_asset_id: string | null } | null } | null;
 }
