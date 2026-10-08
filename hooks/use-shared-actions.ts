@@ -63,6 +63,7 @@ export function useSubmitSharedComment(token: string, passcode: string | null) {
                     {
                       id: `pending-${Date.now()}`,
                       author_name: input.guestName,
+                      from_client: true,
                       body: input.body,
                       created_at: new Date().toISOString(),
                       anchor:

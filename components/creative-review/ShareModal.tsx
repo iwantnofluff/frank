@@ -181,10 +181,21 @@ export function ShareModal({
     [creatives, scope, currentCreativeId, picked],
   );
   const eligibilityNote = useMemo(() => {
-    const { candidateCount, eligibleCount, excludedCount } = eligibility;
+    const { candidateCount, eligibleCount, excludedCount, alsoInClientReview } = eligibility;
+    // Every link also carries the project's Client Review posts (phase69).
+    const also =
+      alsoInClientReview > 0
+        ? ` It also shows the project's ${alsoInClientReview === 1 ? "other post" : `${alsoInClientReview} other posts`} in Client Review, as every link does.`
+        : "";
     // "pick" with nothing checked yet already has its own cue (the "0
     // selected" hint and the disabled Create link button).
     if (scope === "pick" && candidateCount === 0) return null;
+    if (eligibleCount === 0 && alsoInClientReview > 0) {
+      return {
+        tone: "info" as const,
+        text: `${candidateCount === 1 ? "The post you chose won't show yet" : "The posts you chose won't show yet"} — still in Concept or Internal Review.${also}`,
+      };
+    }
     if (eligibleCount === 0) {
       return {
         tone: "warn" as const,
@@ -197,9 +208,10 @@ export function ShareModal({
     if (excludedCount > 0) {
       return {
         tone: "info" as const,
-        text: `${excludedCount} of ${candidateCount} won't show on this link — still in Concept or Internal Review. Move them to Client Review to include them.`,
+        text: `${excludedCount} of ${candidateCount} won't show on this link — still in Concept or Internal Review. Move them to Client Review to include them.${also}`,
       };
     }
+    if (also) return { tone: "info" as const, text: also.trim() };
     return null;
   }, [eligibility, scope]);
 

@@ -1,4 +1,5 @@
-// Mirrors shared_link_allowed_creative_ids() (supabase/seed.sql) exactly,
+// Mirrors shared_link_allowed_creative_ids() (phase13, then phase69: every
+// link also shows every post in Client Review) exactly,
 // client-side, so ShareModal can tell staff what a link will actually show
 // before they create it — that function's stage >= 3 rule is unconditional
 // on every scope, and nothing in the app surfaced that until now (see
@@ -21,6 +22,9 @@ export interface ShareEligibility {
    * below Client Review (Concept or Internal Review), the only reason
    * shared_link_allowed_creative_ids ever excludes one. */
   excludedCount: number;
+  /** Posts in Client Review the scope didn't choose, which every link
+   * shows anyway (phase69). */
+  alsoInClientReview: number;
 }
 
 export function resolveShareEligibility(
@@ -47,9 +51,11 @@ export function resolveShareEligibility(
   }
 
   const eligibleCount = candidates.filter((c) => c.stage >= 3).length;
+  const chosen = new Set(candidates.map((c) => c.id));
   return {
     candidateCount: candidates.length,
     eligibleCount,
     excludedCount: candidates.length - eligibleCount,
+    alsoInClientReview: creatives.filter((c) => c.stage === 3 && !chosen.has(c.id)).length,
   };
 }

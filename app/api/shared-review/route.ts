@@ -78,7 +78,7 @@ export async function POST(request: Request) {
     serviceRole = createServiceRoleClient();
     const { data: row } = await serviceRole
       .from("shared_links")
-      .select("agency_id, agencies(suspended_at, plan), projects(clients(name, logo_asset_id))")
+      .select("agency_id, agencies(name, suspended_at, plan), projects(clients(name, logo_asset_id))")
       .eq("token", token)
       .maybeSingle();
     link = row as unknown as LinkRow | null;
@@ -132,7 +132,7 @@ export async function POST(request: Request) {
         // Each comment's anchor — get_shared_review returns only the text —
         // so a comment made at a moment in a video can show, and jump to, it.
         commentIds.length
-          ? serviceRole.from("comments").select("id, anchor").in("id", commentIds).then((r) => r.data ?? [])
+          ? serviceRole.from("comments").select("id, anchor, author_id").in("id", commentIds).then((r) => r.data ?? [])
           : [],
         // Each creative's latest version, for its carousel slides (phase31).
         ids.length
@@ -172,6 +172,22 @@ export async function POST(request: Request) {
   }
   const anchorById = new Map<string, unknown>();
   for (const r of anchorRows) if (r.anchor) anchorById.set(r.id, r.anchor);
+
+  // Which comments are the client's (direct instruction: the list puts what
+  // the client has already commented on after what's still to review). A
+  // guest's comment always is; a signed-in author's is when their place in
+  // this agency is at a client (phase63: never both sides).
+  const authorIds = [...new Set(anchorRows.map((r) => r.author_id).filter((id): id is string => !!id))];
+  const clientAuthors = new Set<string>();
+  if (serviceRole && link && authorIds.length) {
+    const { data: members } = await serviceRole
+      .from("memberships")
+      .select("user_id, client_id")
+      .eq("agency_id", link.agency_id)
+      .in("user_id", authorIds);
+    for (const m of members ?? []) if (m.client_id) clientAuthors.add(m.user_id);
+  }
+  const fromClientById = new Map(anchorRows.map((r) => [r.id, !r.author_id || clientAuthors.has(r.author_id)]));
 
   // The latest version's slides — the same version get_shared_review's
   // `asset` comes from.
@@ -233,7 +249,11 @@ export async function POST(request: Request) {
       slides: slidesById.get(raw.id) ?? [],
       slide_count: slideCountById.get(raw.id) ?? null,
       artwork_removed_at: removedById.get(raw.id) ?? null,
-      comments: raw.comments.map((m) => ({ ...m, anchor: anchorById.get(m.id) ?? null })),
+      comments: raw.comments.map((m) => ({
+        ...m,
+        anchor: anchorById.get(m.id) ?? null,
+        from_client: fromClientById.get(m.id) ?? false,
+      })),
       // A fresh asset object that never includes storage_key, rather than
       // spreading the original and overwriting it — `{ ...asset,
       // storage_key: undefined }` still leaves the key present (just
@@ -263,6 +283,9 @@ export async function POST(request: Request) {
     // Whose review this is (direct instruction: the client's name was
     // missing): the link's project's client.
     client_name: link?.projects?.clients?.name ?? null,
+    // The agency's name, beside Frank's at the top (its initial when it has
+    // no logo, or its plan doesn't show one).
+    agency_name: link?.agencies?.name ?? null,
     feed,
   });
 }
@@ -270,6 +293,6 @@ export async function POST(request: Request) {
 // The link's own row, as read above.
 interface LinkRow {
   agency_id: string;
-  agencies: { suspended_at: string | null; plan: string | null } | null;
+  agencies: { name: string; suspended_at: string | null; plan: string | null } | null;
   projects: { clients: { name: string; logo_asset_id: string | null } | null } | null;
 }

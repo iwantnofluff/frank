@@ -117,13 +117,14 @@ export default function SharedReviewPage({
   // instruction: it was missing); the project's name sits under it.
   const projectName = data.project.name;
   const clientName = data.client_name ?? projectName;
+  const agencyName = data.agency_name ?? "";
 
   return (
     <div className="reviewpage">
       {phone ? (
-        <MobileReview controller={controller} clientName={clientName} projectName={projectName} logoUrl={branding?.logo_url ?? null} shown />
+        <MobileReview controller={controller} clientName={clientName} projectName={projectName} agencyName={agencyName} logoUrl={branding?.logo_url ?? null} shown />
       ) : (
-        <DesktopReview controller={controller} clientName={clientName} projectName={projectName} logoUrl={branding?.logo_url ?? null} shown />
+        <DesktopReview controller={controller} clientName={clientName} projectName={projectName} agencyName={agencyName} logoUrl={branding?.logo_url ?? null} shown />
       )}
     </div>
   );

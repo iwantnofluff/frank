@@ -37,6 +37,9 @@ export interface SharedCreative {
   comments: {
     id: string;
     author_name: string;
+    // Written by someone on the client's side (a guest, or a client's
+    // person); the list groups what the client has commented on.
+    from_client?: boolean;
     body: string;
     created_at: string;
     // A moment in the video, when made at one (phase34).
@@ -69,6 +72,8 @@ export type SharedReviewResult =
       client_logo_url: string | null;
       // The client's name: the page's heading and the phone's handle.
       client_name: string | null;
+      // The agency's name, beside Frank's logo at the top.
+      agency_name: string | null;
       // The project's posts in grid order (phase67): an id only for posts
       // this link shares; every other post is its stage alone. Null if it
       // couldn't be read.

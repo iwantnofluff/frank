@@ -2,6 +2,7 @@
 
 import type { ReviewController } from "@/hooks/use-review-controller";
 import { ReviewViewSwitch, SharedFeedGrid } from "./SharedFeedGrid";
+import { ReviewBrandHeader } from "./ReviewBrandHeader";
 import { formatsLabel, postFormats } from "@/lib/formats";
 import { ReviewMedia } from "./ReviewMedia";
 import { MomentBadge } from "./MomentBadge";
@@ -11,12 +12,14 @@ export function MobileReview({
   controller,
   clientName,
   projectName,
+  agencyName,
   logoUrl,
   shown,
 }: {
   controller: ReviewController;
   clientName: string;
   projectName: string;
+  agencyName: string;
   logoUrl: string | null;
   shown: boolean; // the layout on screen (phone or desktop)
 }) {
@@ -27,21 +30,18 @@ export function MobileReview({
     <div className="phone">
       <div className="ph-screen">
         <div className="m-top">
-          <div className="m-logo" style={logoUrl ? { overflow: "hidden", padding: 0 } : undefined}>
-            {logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
-              <img src={logoUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            ) : (
-              "F"
-            )}
-          </div>
-          <div className="m-t">
-            <b>{clientName}</b>
-            <span>{projectName}</span>
-          </div>
-          <span className="m-count">
-            {creatives.length ? activeIndex + 1 : 0} / {creatives.length}
-          </span>
+          <ReviewBrandHeader
+            agencyName={agencyName}
+            agencyLogoUrl={logoUrl}
+            clientName={clientName}
+            clientLogoUrl={clientLogoUrl}
+            detail={projectName}
+            aside={
+              <span className="m-count">
+                {creatives.length ? activeIndex + 1 : 0} / {creatives.length}
+              </span>
+            }
+          />
         </div>
 
         <ReviewViewSwitch controller={controller} />

@@ -14,6 +14,7 @@ import {
   useSubmitSharedRequestChanges,
 } from "./use-shared-actions";
 import { useGuestIdentityStore } from "@/store/guest-identity-store";
+import { reviewGroup } from "@/components/review/review-group";
 
 // One data assembly, one set of handlers — the mobile and desktop layouts
 // are both driven from this, so there's no separate mobile-only or
@@ -62,6 +63,14 @@ export function useReviewController(token: string) {
     (data?.status === "ok" ? data.feed : null) ??
     creatives.map((c) => ({ id: c.id, stage: c.stage, reel: (c.formats?.length ? c.formats : [c.format]).includes("ig_reel") }));
   const liveLoading = data?.status === "ok" && instagram.isPending;
+  // Opens on the first post the client still has to review, once the posts
+  // are in (set while rendering, React's way to adjust state from props).
+  const [started, setStarted] = useState(false);
+  if (!started && creatives.length) {
+    setStarted(true);
+    const first = creatives.findIndex((c) => reviewGroup(c) === "to_review");
+    if (first > 0) setActiveIndex(first);
+  }
   const active = creatives[activeIndex] ?? null;
   const canApprove = data?.status === "ok" && data.can_approve;
   const contacts: SharedReviewContact[] = data?.status === "ok" ? data.contacts : [];

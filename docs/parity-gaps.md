@@ -2993,3 +2993,20 @@ Asked directly, from a live review link: the post in review showed only its name
 - **phase68 (decided directly, changing part of phase67's "stage only"):** a post the link doesn't share that's still in Internal Review (or Concept) shows its name in the middle of its tile. Any other unshared post (Client Review or Approved, not in this link) still shows only its stage. Never artwork, never an id, so none of them can be opened.
 
 **Verified:** phase68 applied to staging (dry run first). In real Chrome, a shared Reel showed its first frame with an orange Client Review pill and its comment count; unshared Internal Review posts showed their names and blue pills. The review-link test now checks what's sent about unshared posts (stage and, in Internal Review, name), the pills and the count; review-link and Instagram specs pass (14).
+
+## Every review link shows every post in Client Review, grouped by what's left
+
+Asked directly, from a live link where a post in Client Review sat as a blank tile because the link was made for one post: posts in Client Review should show, and the list should say what the client has already commented on. Recommended and chosen (option 1 of two): every link shows every Client Review post, whatever its scope; the list groups them; no "seen" tracking (visitors are anonymous, and opening isn't reviewing — a comment or an approval is the clear signal).
+- **phase69, `shared_link_allowed_creative_ids`:** a link includes every post in Client Review in its project, plus what its scope chose on top ('all' adds Approved; 'one' and 'pick' add their chosen posts at Client Review or Approved). Since this one function decides what `get_shared_review`, the feed, comments and approval allow, a visitor can open, comment on and approve each of them.
+- **The Share window says so:** "It also shows the project's N other posts in Client Review, as every link does." `lib/shared-link-eligibility.ts` mirrors the rule (`alsoInClientReview`), with a unit test.
+- **The list, grouped:** To review (in Client Review, no comment from the client's side yet), Commented, then Approved, each with its count. The client's side is a guest, or someone whose membership in the agency is at a client (phase63: never both); the route marks each comment `from_client`, and a guest's own comment counts the moment it's posted. An agency comment doesn't move a post out of To review. The link opens on the first post still to review.
+
+Not done: a separate "seen" mark, for the reasons above.
+
+**Verified:** phase69 applied to staging (dry run first). A link made for one post (with only an agency comment), with two more posts in Client Review (one commented on by a guest) and one in Internal Review: the list read To review 2 (the shared post, the uncommented one), Commented 1, and opened on the first to review; the feed let all three Client Review posts open, and the Internal Review one stayed a named tile. Unit tests pass.
+
+## A review link's header: Frank, the agency, then the client
+
+Asked directly: Frank's header logo with its strapline first (`frank-header.svg`, the dark one, from "Frank logo exports" → SVG → 05 Website, now `public/brand/frank-header-strapline.svg`), a divider, the agency's logo in its circle; under them the client's logo in its circle, its name, then the project and how many posts. On a computer and a phone (where "1 / 3" sits at the end of the client's row). The route now also returns `agency_name`, for the agency's initial when there's no logo. The agency's logo still shows only on Growth and up (white-label, phase41); below that, its initial. The old header's rules (`.dk-lh`, `.m-top` logo and text) are gone.
+
+**Verified:** both layouts looked at with an agency and a client logo, and with neither (initials). Review-link, Instagram and video specs pass; both review screenshots looked at and updated (the taller header).

@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReviewController } from "@/hooks/use-review-controller";
 import { SharedFeedGrid } from "./SharedFeedGrid";
 import { CommentCount } from "./CommentCount";
+import { ReviewBrandHeader } from "./ReviewBrandHeader";
+import { REVIEW_GROUPS, reviewGroup } from "./review-group";
 import { ReviewNav, type ReviewSection } from "@/components/creative-review/ReviewNav";
 import { formatsLabel, postFormats } from "@/lib/formats";
 import { ReviewMedia } from "./ReviewMedia";
@@ -24,12 +26,14 @@ export function DesktopReview({
   controller,
   clientName,
   projectName,
+  agencyName,
   logoUrl,
   shown,
 }: {
   controller: ReviewController;
   clientName: string;
   projectName: string;
+  agencyName: string;
   logoUrl: string | null;
   shown: boolean; // the layout on screen (phone or desktop)
 }) {
@@ -61,36 +65,45 @@ export function DesktopReview({
       <div className="br-screen">
         <div className="dk-list">
           <div className="dk-lh">
-            <div className="m-logo" style={logoUrl ? { overflow: "hidden", padding: 0 } : undefined}>
-            {logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
-              <img src={logoUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            ) : (
-              "F"
-            )}
-          </div>
-            <div>
-              <b>{clientName}</b>
-              <span>
-                {projectName} · {creatives.length} shared
-              </span>
-            </div>
+            <ReviewBrandHeader
+              agencyName={agencyName}
+              agencyLogoUrl={logoUrl}
+              clientName={clientName}
+              clientLogoUrl={clientLogoUrl}
+              detail={`${projectName} · ${creatives.length} ${creatives.length === 1 ? "post" : "posts"}`}
+            />
           </div>
           <div className="dk-items">
-            {creatives.map((c, i) => (
-              <button
-                key={c.id}
-                className="dk-item"
-                aria-current={i === activeIndex}
-                onClick={() => goTo(i)}
-              >
-                <div className="t">
-                  <b>{c.name}</b>
-                  <span className="fmt">{formatsLabel(postFormats(c))}</span>
+            {/* Grouped (direct instruction): still to review first, then
+                what the client has commented on, then what's approved. */}
+            {REVIEW_GROUPS.map((g) => {
+              const items = creatives.map((c, i) => ({ c, i })).filter(({ c }) => reviewGroup(c) === g.id);
+              if (!items.length) return null;
+              return (
+                <div key={g.id} className="dk-group">
+                  <div className="dk-group-h">
+                    {g.label} <span>{items.length}</span>
+                  </div>
+                  {items.map(({ c, i }) => (
+                    <button
+                      key={c.id}
+                      className="dk-item"
+                      aria-current={i === activeIndex}
+                      onClick={() => {
+                        goTo(i);
+                        controller.setView("post");
+                      }}
+                    >
+                      <div className="t">
+                        <b>{c.name}</b>
+                        <span className="fmt">{formatsLabel(postFormats(c))}</span>
+                      </div>
+                      <CommentCount n={c.comments.length} />
+                    </button>
+                  ))}
                 </div>
-                <CommentCount n={c.comments.length} />
-              </button>
-            ))}
+              );
+            })}
           </div>
         </div>
 

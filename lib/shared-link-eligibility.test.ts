@@ -68,3 +68,11 @@ test("pick — nothing picked yet, zero candidates", () => {
   assert.equal(r.eligibleCount, 0);
   assert.equal(r.excludedCount, 0);
 });
+
+test("every scope also shows the project's other Client Review posts (phase69)", () => {
+  const more: EligibilityCreative[] = [...creatives, { id: "e", stage: 3 }];
+  assert.equal(resolveShareEligibility(more, "one", { currentCreativeId: "d" }).alsoInClientReview, 2); // c, e
+  assert.equal(resolveShareEligibility(more, "pick", { pickedIds: ["c"] }).alsoInClientReview, 1); // e
+  assert.equal(resolveShareEligibility(more, "pending").alsoInClientReview, 0);
+  assert.equal(resolveShareEligibility(more, "all").alsoInClientReview, 0);
+});
