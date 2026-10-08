@@ -80,6 +80,13 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
       { href: "/settings/knowledge/reference-material", label: "Reference Material" },
     ],
   },
+  {
+    // How the work moves from concept to approval (phase71), for Owners and
+    // Admins; to become the homepage later.
+    key: "analytics",
+    label: "Analytics",
+    pages: [{ href: "/settings/analytics", label: "Analytics" }],
+  },
 ];
 
 export const FIRST_SETTINGS_PAGE = SETTINGS_SECTIONS[0].pages[0].href;

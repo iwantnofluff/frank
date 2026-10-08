@@ -47,12 +47,13 @@ test("parseClassification — a well-formed reply", () => {
   assert.deepEqual(result, {
     category: "claim_or_compliance",
     note: "Claims wrinkles vanish in 3 days with no source.",
+    sentiment: null,
   });
 });
 
 test("parseClassification — case-insensitive category, trims whitespace", () => {
   const result = parseClassification("CATEGORY:  No_Issue  \nNOTE:  Just an acknowledgement.  ");
-  assert.deepEqual(result, { category: "no_issue", note: "Just an acknowledgement." });
+  assert.deepEqual(result, { category: "no_issue", note: "Just an acknowledgement.", sentiment: null });
 });
 
 test("parseClassification — rejects an unknown category rather than guessing", () => {
@@ -68,4 +69,17 @@ test("parseClassification — missing NOTE returns null, not a half-parsed resul
 test("parseClassification — missing CATEGORY returns null", () => {
   const result = parseClassification("NOTE: A note with no category.");
   assert.equal(result, null);
+});
+
+test("parseClassification — reads the mood (phase71), and leaves it unset when missing or unknown", () => {
+  const withMood = parseClassification("CATEGORY: preference\nMOOD: Negative\nNOTE: Wants a different colour.");
+  assert.equal(withMood?.sentiment, "negative");
+  assert.equal(withMood?.note, "Wants a different colour.");
+  assert.equal(parseClassification("CATEGORY: no_issue\nNOTE: Praise.")?.sentiment, null);
+  assert.equal(parseClassification("CATEGORY: no_issue\nMOOD: ecstatic\nNOTE: Praise.")?.sentiment, null);
+});
+
+test("buildClassifyCommentPrompt — asks for the mood in the same reply", () => {
+  const prompt = buildClassifyCommentPrompt({ body: "Love it", anchor: null, format: "ig_feed" });
+  assert.match(prompt, /MOOD: <positive, neutral or negative>/);
 });

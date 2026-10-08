@@ -8383,3 +8383,236 @@ button.hbrand-add:hover {
 .btn.primary.btn-frank:hover:not(:disabled) {
   background: linear-gradient(90deg, #fd6e8b, #7b90fc);
 }
+
+/* Settings → Analytics (phase71). Built from the dashboard's .stats cards
+   and the admin area's .admintbl; bars are plain CSS. */
+.analytics .stats {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  margin: 12px 0 10px;
+}
+.analytics .stat .n {
+  font-size: 22.2px;
+}
+.an-hint {
+  font-size: 11.7px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.an-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 6px 0 22px;
+}
+.an-pick {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12.2px;
+  color: var(--muted);
+  font-weight: 500;
+}
+.an-pick select {
+  min-width: 160px;
+}
+.an-sec {
+  margin-bottom: 30px;
+}
+.an-sec-h {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.an-sec-h h2 {
+  margin: 0;
+  font-size: 17.2px;
+  font-weight: 600;
+}
+.an-sec-h span {
+  font-size: 13.2px;
+  color: var(--muted);
+}
+.an-h {
+  margin: 16px 0 8px;
+  font-size: 13.7px;
+  font-weight: 600;
+}
+.an-note {
+  margin: 4px 0 0;
+  font-size: 12.2px;
+  color: var(--muted);
+}
+.an-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface);
+}
+.an-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 12px;
+  font-size: 13.2px;
+  border-bottom: 1px solid var(--line);
+}
+.an-list li:last-child {
+  border-bottom: 0;
+}
+.an-list a {
+  color: var(--action);
+}
+.an-list li > span:last-child {
+  color: var(--muted);
+  white-space: nowrap;
+}
+.an-list .an-late {
+  color: var(--rose);
+}
+.an-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+}
+.an-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.an-bar {
+  display: grid;
+  grid-template-columns: 140px 1fr 36px;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.7px;
+}
+.an-bar-t {
+  height: 10px;
+  border-radius: 5px;
+  background: var(--canvas);
+  overflow: hidden;
+}
+.an-bar-t i {
+  display: block;
+  height: 100%;
+  border-radius: 5px;
+  background: var(--action);
+}
+.an-bar-t i.good {
+  background: var(--green);
+}
+.an-bar-t i.bad {
+  background: var(--rose);
+}
+.an-bar-n {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.an-tablewrap {
+  overflow-x: auto;
+  margin-top: 12px;
+}
+.an-table td,
+.an-table th {
+  white-space: nowrap;
+}
+.an-count {
+  color: var(--muted);
+  font-weight: 500;
+  margin-left: 4px;
+}
+/* Trends: each measure a row of 12 weekly columns, its number on each
+   bar, every week labelled, one colour. */
+.an-trends {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface);
+  overflow-x: auto;
+}
+.an-trend {
+  display: grid;
+  grid-template-columns: 190px minmax(560px, 1fr);
+  align-items: end;
+  gap: 14px;
+}
+.an-trend-l {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-self: center;
+  font-size: 12.7px;
+}
+.an-trend-l b {
+  font-weight: 600;
+}
+.an-trend-l small {
+  font-size: 11.2px;
+  color: var(--muted);
+  line-height: 1.3;
+}
+.an-trend-cols {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 5px;
+  height: 52px;
+  align-items: end;
+}
+.an-trend-col {
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  background: var(--canvas);
+  border-radius: 3px;
+}
+.an-trend-col i {
+  display: block;
+  width: 100%;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--action) 55%, transparent);
+}
+.an-trend-col em {
+  position: absolute;
+  top: 3px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-style: normal;
+  font-size: 11.2px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  z-index: 1;
+}
+.an-trend-axis {
+  align-items: center;
+}
+.an-trend-axis .an-trend-l {
+  color: var(--muted);
+}
+.an-trend-axis .an-trend-cols {
+  height: auto;
+}
+.an-trend-wk {
+  font-size: 10.7px;
+  color: var(--muted);
+  text-align: center;
+  white-space: nowrap;
+}
+.an-sub {
+  color: var(--muted);
+  font-weight: 400;
+}
+/* Short of the promise or the contract, wherever it shows. */
+.analytics .an-late {
+  color: var(--rose);
+}

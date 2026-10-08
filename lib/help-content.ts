@@ -447,6 +447,31 @@ export const HELP_ARTICLES: HelpArticle[] = [
     ],
   },
   {
+    id: "analytics",
+    title: "Analytics: from concept to approval",
+    category: "account",
+    summary: "How long posts take, what holds them up, and what the feedback says. For Owners and Admins.",
+    blocks: [
+      {
+        kind: "p",
+        text: "Settings → Analytics shows how your work moves from concept to approval. Filter it by client, project, person, format and period.",
+      },
+      {
+        kind: "list",
+        items: [
+          "Speed: the median time from a post being created to being approved, the time it spends in Concept, Internal Review and Client Review, how many were approved before going live, and posts going live within 7 days that aren't approved yet.",
+          "Quality: how many artwork and copy versions an approved post took, how many were approved first time, and how often changes were requested.",
+          "Feedback: comments from the client and from your team, what they're about (tone and brand, copy clarity, compliance, scope change and so on), their mood, what's still unresolved, and issues that keep coming back for a client and format.",
+          "Clients and People: the same numbers for each client, and for each person leading posts.",
+        ],
+      },
+      {
+        kind: "note",
+        text: "Time in each stage and each comment's mood are recorded from 8 October 2026, so older posts show only how long they took in all.",
+      },
+    ],
+  },
+  {
     id: "settings",
     title: "Your agency's Settings",
     category: "account",

@@ -63,8 +63,11 @@ export function buildClassifyCommentPrompt(input: {
       "The categories, choose exactly one:",
       ...ISSUE_CATEGORIES.map((c) => `- ${c.key}: ${c.description}`),
       "",
+      "Also judge its mood: positive (pleased, praising, approving), neutral (matter-of-fact), or negative (unhappy, frustrated, rejecting).",
+      "",
       "Reply as exactly one block:",
       "CATEGORY: <one of the keys above, exactly as written>",
+      "MOOD: <positive, neutral or negative>",
       "NOTE: <one short sentence explaining why>",
     ].join("\n"),
   );
@@ -72,10 +75,18 @@ export function buildClassifyCommentPrompt(input: {
   return parts.join("\n\n");
 }
 
-export function parseClassification(text: string): { category: IssueCategory; note: string } | null {
+// A comment's mood (phase71, for Analytics), asked in the same call.
+export type CommentSentiment = "positive" | "neutral" | "negative";
+const SENTIMENTS = new Set<string>(["positive", "neutral", "negative"]);
+
+export function parseClassification(
+  text: string,
+): { category: IssueCategory; note: string; sentiment: CommentSentiment | null } | null {
   const categoryMatch = /CATEGORY:\s*([a-z_]+)/i.exec(text)?.[1]?.trim().toLowerCase();
   const noteMatch = /NOTE:\s*([\s\S]*?)(?:\n[A-Z_]+:|$)/i.exec(text);
   const note = noteMatch?.[1]?.trim();
   if (!categoryMatch || !note || !CATEGORY_KEYS.has(categoryMatch)) return null;
-  return { category: categoryMatch as IssueCategory, note };
+  // A missing or unknown mood leaves it unset rather than losing the rest.
+  const mood = /MOOD:\s*([a-z]+)/i.exec(text)?.[1]?.trim().toLowerCase();
+  return { category: categoryMatch as IssueCategory, note, sentiment: mood && SENTIMENTS.has(mood) ? (mood as CommentSentiment) : null };
 }

@@ -92,7 +92,7 @@ export async function POST(request: Request) {
 
   const { error: updateError } = await supabase
     .from("comments")
-    .update({ issue_category: parsed.category, issue_category_note: parsed.note })
+    .update({ issue_category: parsed.category, issue_category_note: parsed.note, sentiment: parsed.sentiment })
     .eq("id", commentId);
   if (updateError) {
     return NextResponse.json({ error: "Couldn't save the classification" }, { status: 500 });

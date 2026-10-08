@@ -14,6 +14,10 @@ export interface ClientPreferences {
   link_can_approve: boolean;
   link_expires_days: 0 | 7 | 14 | 30; // 0 = never
   link_passcode: boolean;
+  // Days before going live a post should reach the client (phase72).
+  lead_days: 14 | 21 | 28 | 35;
+  // Posts a month in the client's contract (phase73); null until set.
+  contracted_posts_per_month: number | null;
 }
 
 // What every client has until a preference is saved (the database's own
@@ -26,6 +30,8 @@ export const DEFAULT_CLIENT_PREFERENCES: ClientPreferences = {
   link_can_approve: true,
   link_expires_days: 14,
   link_passcode: false,
+  lead_days: 28,
+  contracted_posts_per_month: null,
 };
 
 const FIELDS = Object.keys(DEFAULT_CLIENT_PREFERENCES).join(", ");

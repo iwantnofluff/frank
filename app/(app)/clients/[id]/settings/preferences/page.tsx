@@ -1,6 +1,6 @@
 "use client";
 
-import { use, type ReactNode } from "react";
+import { use, useState, type ReactNode } from "react";
 import { SettingsHead } from "@/components/settings/SettingsHead";
 import { useMyAgency } from "@/hooks/use-my-agency";
 import { useMyMembership } from "@/hooks/use-my-membership";
@@ -66,6 +66,40 @@ export default function ClientPreferencesPage({ params }: { params: Promise<{ id
                 <option value="ask">Ask Owners and Admins</option>
                 <option value="remove">Remove the artwork</option>
               </select>
+            </Row>
+          </section>
+
+          <section className="panel">
+            <div className="panel-h">
+              <b>Our Promise</b>
+            </div>
+            <Row
+              title="Send to the client at least"
+              hint="How long before a post goes live it should reach the client for review. Analytics measures every post against it."
+            >
+              <select
+                aria-label="Send to the client at least"
+                value={prefs.lead_days}
+                disabled={!canEdit}
+                onChange={(e) => set({ lead_days: Number(e.target.value) as ClientPreferences["lead_days"] })}
+              >
+                {[14, 21, 28, 35].map((d) => (
+                  <option key={d} value={d}>
+                    {d === 28 ? "4 weeks" : d === 35 ? "5 weeks" : `${d / 7} weeks`} before live
+                  </option>
+                ))}
+              </select>
+            </Row>
+            <Row
+              title="Posts a month (contract)"
+              hint="What the contract promises. Analytics compares it with the approved posts going live each month."
+            >
+              <ContractPosts
+                key={prefs.contracted_posts_per_month ?? "none"}
+                value={prefs.contracted_posts_per_month}
+                disabled={!canEdit}
+                onSave={(n) => set({ contracted_posts_per_month: n })}
+              />
             </Row>
           </section>
 
@@ -166,5 +200,35 @@ function YesNo({
       <option value="yes">Yes</option>
       <option value="no">No</option>
     </select>
+  );
+}
+
+// The contract's posts a month: typed, then saved on leaving the box (or
+// Enter); empty means not set.
+function ContractPosts({ value, disabled, onSave }: { value: number | null; disabled: boolean; onSave: (n: number | null) => void }) {
+  const [draft, setDraft] = useState(value === null ? "" : String(value));
+  const commit = () => {
+    const n = draft.trim() === "" ? null : Math.max(0, Math.min(1000, Math.round(Number(draft))));
+    if (n !== null && Number.isNaN(n)) return setDraft(value === null ? "" : String(value));
+    if (n !== value) onSave(n);
+  };
+  return (
+    <input
+      className="bin one"
+      type="number"
+      min={0}
+      max={1000}
+      inputMode="numeric"
+      placeholder="Not set"
+      aria-label="Posts a month (contract)"
+      style={{ width: 110 }}
+      value={draft}
+      disabled={disabled}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") e.currentTarget.blur();
+      }}
+    />
   );
 }

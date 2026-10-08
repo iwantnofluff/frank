@@ -386,6 +386,8 @@ export const test = base.extend<{ frank: Frank }>({
       // swept by name so a failure says so).
       ["copy_chat_messages", () => admin.from("copy_chat_messages").delete().eq("agency_id", agency.id)],
       ["copy_chats", () => admin.from("copy_chats").delete().eq("agency_id", agency.id)],
+      // The stage log (phase71) goes with its posts; said here before them.
+      ["creative_stage_events", () => admin.from("creative_stage_events").delete().eq("agency_id", agency.id)],
       ["creatives", () => admin.from("creatives").delete().eq("agency_id", agency.id)],
       ["custom_columns", () => admin.from("custom_columns").delete().eq("agency_id", agency.id)],
       // References projects and memberships (phase46). Both cascade to it,

@@ -18,7 +18,8 @@ test("comment cards — internal vs public", async ({ page, frank }) => {
   await page.goto(`/creatives/${frank.creativeId}`);
   await page.waitForSelector(".cmts-b .cmt");
 
-  await expect(page.locator(".cmts")).toHaveScreenshot("comment-cards.png");
+  // Each comment's time (CommentWhen) is the time the test ran: hidden.
+  await expect(page.locator(".cmts")).toHaveScreenshot("comment-cards.png", { mask: [page.locator(".cwhen")] });
 });
 
 test("composer toggle — internal (checked) and public (unchecked)", async ({
