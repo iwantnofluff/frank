@@ -6,6 +6,7 @@ import {
   useSharedReview,
   type SharedCreative,
   type SharedReviewContact,
+  type SharedFeedEntry,
 } from "./use-shared-review";
 import {
   useSubmitSharedComment,
@@ -55,6 +56,12 @@ export function useReviewController(token: string) {
   const submitRequestChanges = useSubmitSharedRequestChanges(token, passcode);
 
   const creatives: SharedCreative[] = data?.status === "ok" ? data.creatives : [];
+  // The project's posts in grid order (phase67); without it (an older
+  // answer, or it couldn't be read), just this link's own.
+  const feed: SharedFeedEntry[] =
+    (data?.status === "ok" ? data.feed : null) ??
+    creatives.map((c) => ({ id: c.id, stage: c.stage, reel: (c.formats?.length ? c.formats : [c.format]).includes("ig_reel") }));
+  const liveLoading = data?.status === "ok" && instagram.isPending;
   const active = creatives[activeIndex] ?? null;
   const canApprove = data?.status === "ok" && data.can_approve;
   const contacts: SharedReviewContact[] = data?.status === "ok" ? data.contacts : [];
@@ -116,6 +123,8 @@ export function useReviewController(token: string) {
     token,
     liveFeed,
     liveMore,
+    liveLoading,
+    feed,
     view,
     setView,
     data,

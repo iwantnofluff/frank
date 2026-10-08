@@ -9,12 +9,14 @@ import { GuestComposer } from "./GuestComposer";
 
 export function MobileReview({
   controller,
-  agencyName,
+  clientName,
+  projectName,
   logoUrl,
   shown,
 }: {
   controller: ReviewController;
-  agencyName: string;
+  clientName: string;
+  projectName: string;
   logoUrl: string | null;
   shown: boolean; // the layout on screen (phone or desktop)
 }) {
@@ -34,8 +36,8 @@ export function MobileReview({
             )}
           </div>
           <div className="m-t">
-            <b>{agencyName}</b>
-            <span>Shared for review</span>
+            <b>{clientName}</b>
+            <span>{projectName}</span>
           </div>
           <span className="m-count">
             {creatives.length ? activeIndex + 1 : 0} / {creatives.length}
@@ -78,7 +80,7 @@ export function MobileReview({
 
         <div className="m-scroll">
           {controller.view === "feed" ? (
-            <SharedFeedGrid controller={controller} />
+            <SharedFeedGrid controller={controller} brandName={clientName} />
           ) : (
           <div className="m-body">
             {!active ? (
@@ -106,7 +108,7 @@ export function MobileReview({
                     )}
                   </div>
                   <div>
-                    <b>{agencyName}</b>
+                    <b>{clientName}</b>
                   </div>
                   <div className="dots">•••</div>
                 </div>
@@ -130,7 +132,7 @@ export function MobileReview({
                 </div>
                 {active.copy?.fields?.caption && (
                   <div className="ig-cap">
-                    <b>{agencyName}</b>
+                    <b>{clientName}</b>
                     <span>{active.copy.fields.caption}</span>
                   </div>
                 )}

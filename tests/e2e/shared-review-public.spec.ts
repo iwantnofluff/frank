@@ -190,3 +190,35 @@ test("shared review — Approve shows at once and counts once, even clicked twic
     .eq("body", "Approved via shared review link.");
   expect(approvals).toHaveLength(1);
 });
+
+// The Feed (phase67, decided directly): the project's other posts show by
+// stage only, never by name, and a post in the link opens from its tile and
+// shows how many comments it has.
+test("shared review — the feed shows other posts by stage only, and opens this link's posts", async ({ page, frank }) => {
+  await frank.createCreativeAtStage(1, "Unshared concept post");
+  await frank.createCreativeAtStage(2, "Unshared internal post");
+  await frank.insertCommentAsStaff("A public note", "public");
+  const token = await frank.createSharedLink();
+
+  // What the page is sent: nothing of the unshared posts but their stage.
+  const res = await page.request.post("/api/shared-review", { data: { token } });
+  const raw = await res.text();
+  expect(raw).not.toContain("Unshared");
+  const feed = (JSON.parse(raw) as { feed: { id: string | null; stage: number }[] }).feed;
+  expect(feed.filter((e) => e.id === null).map((e) => e.stage).sort()).toEqual([1, 2]);
+  expect(feed.filter((e) => e.id !== null)).toHaveLength(1);
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(`/review/${token}`);
+  // The list marks the post's comments.
+  await expect(page.locator(".dk-item .cmtcount")).toHaveText("1");
+  await page.locator(".dk-nav").getByRole("button", { name: "Feed" }).click();
+  const grid = page.locator(".dk-main .feedgrid");
+  await expect(grid.locator(".sharedfeed-stage")).toHaveCount(2);
+  expect((await grid.locator(".sharedfeed-stage").allTextContents()).sort()).toEqual(["In Progress", "Internal Review"]);
+  await expect(grid).not.toContainText("Unshared");
+  await expect(grid.locator(".sharedfeed-planned .cmtcount")).toHaveText("1");
+  // Its tile opens the post.
+  await grid.locator(".sharedfeed-planned").click();
+  await expect(page.locator(".dk-card .ct")).toHaveText("E2E Test Creative");
+});

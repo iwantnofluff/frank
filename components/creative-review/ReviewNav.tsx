@@ -40,7 +40,7 @@ const ICONS: Record<ReviewSection, ReactNode> = {
   ),
 };
 
-const SECTIONS: { id: ReviewSection; label: string }[] = [
+export const ALL_SECTIONS: { id: ReviewSection; label: string }[] = [
   { id: "brief", label: "Brief" },
   { id: "content", label: "Content" },
   { id: "checks", label: "Checks" },
@@ -53,16 +53,19 @@ const SECTIONS: { id: ReviewSection; label: string }[] = [
 // closes (hooks/use-presence.ts); the column itself snaps, since only
 // opacity and transform animate. Chevron paths are the prototype's own
 // (.feedrail/#fpHide, frank-prototype.html).
+// A review link shows only Content and Feed (direct instruction).
 export function ReviewNav({
   active,
   onSelect,
   collapsed,
   onToggleCollapsed,
+  sections = ALL_SECTIONS,
 }: {
   active: ReviewSection;
   onSelect: (section: ReviewSection) => void;
   collapsed: boolean;
   onToggleCollapsed: () => void;
+  sections?: { id: ReviewSection; label: string }[];
 }) {
   const names = usePresence(!collapsed);
   return (
@@ -79,7 +82,7 @@ export function ReviewNav({
         </svg>
       </button>
       <div className="reviewnav-list">
-        {SECTIONS.map((s) => (
+        {sections.map((s) => (
           <button
             key={s.id}
             type="button"

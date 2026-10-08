@@ -78,7 +78,7 @@ export async function POST(request: Request) {
     serviceRole = createServiceRoleClient();
     const { data: row } = await serviceRole
       .from("shared_links")
-      .select("agency_id, agencies(suspended_at, plan), projects(clients(logo_asset_id))")
+      .select("agency_id, agencies(suspended_at, plan), projects(clients(name, logo_asset_id))")
       .eq("token", token)
       .maybeSingle();
     link = row as unknown as LinkRow | null;
@@ -110,6 +110,13 @@ export async function POST(request: Request) {
   // Logo and colours are a Growth-and-up feature (the spec's white-label
   // row; phase41): below that, review links keep Frank's own look.
   const branded = !!link && brandingAllowed(link.agencies?.plan);
+
+  // The feed (phase67): every post of the project in grid order, by stage
+  // only unless this link shares it. Checked against the token and passcode
+  // again by its own function; started now so it runs alongside the rest.
+  const feedPromise = anon
+    .rpc("get_shared_review_feed", { p_token: token, p_passcode: passcode ?? null })
+    .then(({ data: f }) => (f?.status === "ok" ? (f.feed as { id: string | null; stage: number; reel: boolean }[]) : null));
 
   // Everything that only needs the validated token, at once.
   const [creativeRows, anchorRows, versionRows, settings, clientLogo] = serviceRole
@@ -247,12 +254,22 @@ export async function POST(request: Request) {
     ? { theme: settings?.theme ?? null, logo_url: signedUrl(settings?.logo_asset?.storage_key) }
     : { theme: null, logo_url: null };
 
-  return NextResponse.json({ ...data, creatives: signedCreatives, branding, client_logo_url: signedUrl(clientLogo?.storage_key) });
+  const feed = await feedPromise;
+  return NextResponse.json({
+    ...data,
+    creatives: signedCreatives,
+    branding,
+    client_logo_url: signedUrl(clientLogo?.storage_key),
+    // Whose review this is (direct instruction: the client's name was
+    // missing): the link's project's client.
+    client_name: link?.projects?.clients?.name ?? null,
+    feed,
+  });
 }
 
 // The link's own row, as read above.
 interface LinkRow {
   agency_id: string;
   agencies: { suspended_at: string | null; plan: string | null } | null;
-  projects: { clients: { logo_asset_id: string | null } | null } | null;
+  projects: { clients: { name: string; logo_asset_id: string | null } | null } | null;
 }

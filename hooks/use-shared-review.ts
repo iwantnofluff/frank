@@ -67,7 +67,19 @@ export type SharedReviewResult =
       branding: { theme: Record<string, unknown> | null; logo_url: string | null };
       // The client's logo, for the avatar beside the handle.
       client_logo_url: string | null;
+      // The client's name: the page's heading and the phone's handle.
+      client_name: string | null;
+      // The project's posts in grid order (phase67): an id only for posts
+      // this link shares; every other post is its stage alone. Null if it
+      // couldn't be read.
+      feed: SharedFeedEntry[] | null;
     };
+
+export interface SharedFeedEntry {
+  id: string | null;
+  stage: number;
+  reel: boolean;
+}
 
 // Goes through /api/shared-review rather than calling the RPC directly —
 // that route is what signs the asset URLs with the service role key. A

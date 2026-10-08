@@ -4394,8 +4394,16 @@ textarea.cxin {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 260px minmax(0, 1fr) 340px;
+  /* The post list wider (direct instruction: long names), then the
+     Content / Feed menu, as wide as it needs. */
+  grid-template-columns: 340px max-content minmax(0, 1fr) 340px;
   background: var(--canvas);
+}
+/* A review link's section menu (the Review page's ReviewNav). */
+.dk-nav {
+  padding: 16px 12px;
+  border-right: 1px solid var(--line-2);
+  min-height: 0;
 }
 .dk-list {
   border-right: 1px solid var(--line);
@@ -6638,12 +6646,18 @@ a.profproject:hover .pp-t b {
 .seg2.reviewviews {
   display: flex;
   margin: 6px 14px 4px;
+  /* Its full height in the phone layout's column, never squashed. */
+  flex-shrink: 0;
 }
 .seg2.reviewviews button {
   flex: 1;
 }
 .sharedfeed {
   margin: 10px;
+}
+/* In the desktop's phone, the phone is the frame. */
+.phoneframe .sharedfeed {
+  margin: 0;
 }
 .sharedfeed-planned {
   display: block;
@@ -6660,6 +6674,51 @@ a.profproject:hover .pp-t b {
   font-size: 11.2px;
   color: var(--muted);
   text-align: center;
+}
+/* A post this link doesn't share: its stage only (phase67). */
+.sharedfeed-stage {
+  display: grid;
+  place-items: center;
+  background: var(--canvas);
+  border: 1px dashed var(--line-2);
+}
+.sharedfeed-stage span {
+  font-size: 10.7px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.feedgrid-tile[aria-current="true"].sharedfeed-planned {
+  box-shadow: inset 0 0 0 2px var(--action);
+}
+/* How many comments a post has: in a review link's list and on its tile. */
+.cmtcount {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  padding: 2px 7px 2px 6px;
+  border-radius: 99px;
+  background: var(--canvas);
+  color: var(--ink);
+  font-size: 11.2px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.cmtcount svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+.dk-item .cmtcount {
+  margin-top: 1px;
+}
+.sharedfeed-planned .cmtcount {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: rgba(255, 255, 255, 0.92);
 }
 .sharedfeed-badge {
   position: absolute;

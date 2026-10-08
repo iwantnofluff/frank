@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReviewController } from "@/hooks/use-review-controller";
-import { ReviewViewSwitch, SharedFeedGrid } from "./SharedFeedGrid";
+import { SharedFeedGrid } from "./SharedFeedGrid";
+import { CommentCount } from "./CommentCount";
+import { ReviewNav, type ReviewSection } from "@/components/creative-review/ReviewNav";
 import { formatsLabel, postFormats } from "@/lib/formats";
 import { ReviewMedia } from "./ReviewMedia";
 import { MomentBadge } from "./MomentBadge";
@@ -13,18 +15,28 @@ import { PhoneFrame } from "@/components/creative-review/PhoneFrame";
 // note below.
 const RESERVE = 110;
 
+const SECTIONS: { id: ReviewSection; label: string }[] = [
+  { id: "content", label: "Content" },
+  { id: "feed", label: "Feed" },
+];
+
 export function DesktopReview({
   controller,
-  agencyName,
+  clientName,
+  projectName,
   logoUrl,
   shown,
 }: {
   controller: ReviewController;
-  agencyName: string;
+  clientName: string;
+  projectName: string;
   logoUrl: string | null;
   shown: boolean; // the layout on screen (phone or desktop)
 }) {
   const { creatives, active, activeIndex, goTo } = controller;
+  // The Review page's section menu, with only Content and Feed (direct
+  // instruction); Content is the post, Feed the grid.
+  const [navCollapsed, setNavCollapsed] = useState(false);
   const clientLogoUrl = controller.data?.status === "ok" ? controller.data.client_logo_url : null;
   // Whether the post goes on below the phone's screen, for the note under it.
   const scroller = useRef<HTMLDivElement>(null);
@@ -58,11 +70,12 @@ export function DesktopReview({
             )}
           </div>
             <div>
-              <b>{agencyName}</b>
-              <span>{creatives.length} shared</span>
+              <b>{clientName}</b>
+              <span>
+                {projectName} · {creatives.length} shared
+              </span>
             </div>
           </div>
-          <ReviewViewSwitch controller={controller} />
           <div className="dk-items">
             {creatives.map((c, i) => (
               <button
@@ -75,14 +88,36 @@ export function DesktopReview({
                   <b>{c.name}</b>
                   <span className="fmt">{formatsLabel(postFormats(c))}</span>
                 </div>
+                <CommentCount n={c.comments.length} />
               </button>
             ))}
           </div>
         </div>
 
+        <div className="dk-nav">
+          <ReviewNav
+            sections={SECTIONS}
+            active={controller.view === "feed" ? "feed" : "content"}
+            onSelect={(section) => controller.setView(section === "feed" ? "feed" : "post")}
+            collapsed={navCollapsed}
+            onToggleCollapsed={() => setNavCollapsed((c) => !c)}
+          />
+        </div>
+
         <div className="dk-main">
           {controller.view === "feed" ? (
-            <SharedFeedGrid controller={controller} />
+            <div className="dk-card">
+              {/* Headed like the post, so the phone stays where it was. */}
+              <div className="cmeta">
+                <div className="ct">Feed</div>
+                <div className="cs">
+                  <span>Posts in this link open when clicked</span>
+                </div>
+              </div>
+              <PhoneFrame reserve={RESERVE}>
+                <SharedFeedGrid controller={controller} brandName={clientName} />
+              </PhoneFrame>
+            </div>
           ) : !active ? (
             <div className="m-empty">
               <b>Nothing to review</b>
@@ -122,7 +157,7 @@ export function DesktopReview({
                         )}
                       </div>
                       <div>
-                        <b>{agencyName}</b>
+                        <b>{clientName}</b>
                       </div>
                       <div className="dots">•••</div>
                     </div>
@@ -146,7 +181,7 @@ export function DesktopReview({
                     </div>
                     {active.copy?.fields?.caption && (
                       <div className="ig-cap">
-                        <b>{agencyName}</b>
+                        <b>{clientName}</b>
                         <span>{active.copy.fields.caption}</span>
                       </div>
                     )}

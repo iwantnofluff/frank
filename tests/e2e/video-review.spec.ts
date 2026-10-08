@@ -318,8 +318,10 @@ test("a video is compressed to a 720p review copy before it's uploaded", async (
   const save = page.getByRole("button", { name: "Save Creative V1" });
   await save.click();
   // The uploader shows each stage: compressing, then uploading with its size.
-  await expect(page.getByRole("progressbar", { name: "Compressing video" })).toBeVisible({ timeout: 15_000 });
-  await expect(page.locator(".upbar")).toContainText(/Compressing video\s*\d+%/);
+  // This recording reports itself read before the encoder is done, so the
+  // bar may already say it's finishing.
+  await expect(page.getByRole("progressbar", { name: /Compressing video|Finishing compression/ })).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator(".upbar")).toContainText(/(Compressing video|Finishing compression…)\s*\d+%/);
   await expect(page.getByRole("progressbar", { name: "Uploading" })).toBeVisible({ timeout: 60_000 });
   await expect(page.locator(".upbar")).toContainText(/Uploading\s*\d+% · [\d.]+MB of [\d.]+MB/);
   await expect(page.getByText("Saved as version 1.")).toBeVisible({ timeout: 90_000 });

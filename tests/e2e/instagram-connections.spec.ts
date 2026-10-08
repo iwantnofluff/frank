@@ -154,16 +154,24 @@ test("the sign-in refuses a forged return, and nobody but the server reads a tok
   expect((await cl.from("instagram_connections").select("id")).data ?? []).toHaveLength(0);
 });
 
-test("a review link offers Feed only with a working connection, and never shows a broken one", async ({ browser, frank }) => {
+// A review link always has its Feed (phase67, decided directly); its real
+// posts only come from a working connection, never a broken one.
+test("a review link's Feed shows real posts only with a working connection", async ({ browser, frank }) => {
   test.setTimeout(60_000);
   const token = await frank.createSharedLink();
   const ctx = await browser.newContext({ viewport: PHONE_VIEWPORT });
   try {
     const guest = await ctx.newPage();
-    // Nothing connected: the post as before, no switch.
+    const openFeed = async () => {
+      await guest.waitForSelector(".m-top");
+      await guest.getByRole("group", { name: "View" }).getByRole("button", { name: "Feed" }).click();
+      // Placeholders where the real posts would be, and no real ones.
+      await expect(guest.locator(".feedgrid .pp-empty").first()).toContainText("Live Post");
+      await expect(guest.locator(".feedgrid-live")).toHaveCount(0);
+    };
+    // Nothing connected.
     await guest.goto(`${APP_URL}/review/${token}`);
-    await guest.waitForSelector(".m-top");
-    await expect(guest.getByRole("group", { name: "View" })).toHaveCount(0);
+    await openFeed();
 
     // A made-up link, or a connection that needs reconnecting: nothing.
     const bad = await guest.request.post(`${APP_URL}/api/shared-review/instagram`, { data: { token: "nope" } });
@@ -172,8 +180,7 @@ test("a review link offers Feed only with a working connection, and never shows 
     const broken = await guest.request.post(`${APP_URL}/api/shared-review/instagram`, { data: { token } });
     expect(await broken.json()).toEqual({ status: "not_connected" });
     await guest.reload();
-    await guest.waitForSelector(".m-top");
-    await expect(guest.getByRole("group", { name: "View" })).toHaveCount(0);
+    await openFeed();
   } finally {
     await ctx.close();
   }
