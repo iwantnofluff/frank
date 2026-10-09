@@ -126,7 +126,8 @@ export function KnowledgeSection({
   }
 
   return (
-    <div className="panel">
+    // An anchor for See All on the client's page (BrandReminder).
+    <div className="panel kb-section" id={`kb-${sectionKey}`}>
       <div className="panel-h">
         <b>{label}</b>
         <span className="sync">

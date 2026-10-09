@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useEffect } from "react";
 import { useClientDetail } from "@/hooks/use-client";
 import { useKnowledgeEntries } from "@/hooks/use-knowledge-entries";
 import { useIsStaff } from "@/hooks/use-is-staff";
@@ -24,6 +24,14 @@ export default function ClientSettingsKnowledgePage({
   const { isStaff, isPending: isStaffPending } = useIsStaff();
   const confirmedStaff = isStaff && !isStaffPending;
 
+  // Opened from See All on the client's page: to that section once it's
+  // there to scroll to.
+  const loaded = !isLoading && !isError;
+  useEffect(() => {
+    if (!loaded || !window.location.hash.startsWith("#kb-")) return;
+    document.getElementById(window.location.hash.slice(1))?.scrollIntoView({ block: "start" });
+  }, [loaded]);
+
   const filledCount = KNOWLEDGE_SECTIONS.filter((s) =>
     entries?.some((e) => e.section === s.key),
   ).length;
@@ -34,7 +42,7 @@ export default function ClientSettingsKnowledgePage({
   return (
     <div className="pad narrow">
       <SettingsHead
-        title="Knowledge"
+        title="Discovery"
         description={`${client?.name ?? "This client"} · ${filledCount} of ${KNOWLEDGE_SECTIONS.length} areas filled${
           filledCount < KNOWLEDGE_SECTIONS.length ? " — this is what determines how much the checks can do" : ""
         }`}

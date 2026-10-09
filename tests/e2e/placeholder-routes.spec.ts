@@ -9,7 +9,7 @@ import { test, expect } from "./fixtures";
 const SHELL_SCREENS: { path: (clientId: string) => string; heading: string }[] = [
   { path: () => "/calendar", heading: "Calendar" },
   { path: () => "/analytics", heading: "Analytics" },
-  { path: (clientId) => `/clients/${clientId}/knowledge`, heading: "Knowledge" },
+  { path: (clientId) => `/clients/${clientId}/knowledge`, heading: "Discovery" },
 ];
 
 for (const { path, heading } of SHELL_SCREENS) {

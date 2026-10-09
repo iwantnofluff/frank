@@ -4,8 +4,9 @@
 const SVG = "/brand/Frank_Final_Logos/SVG";
 
 export const BRAND = {
-  // The app's header, on the dark rail: no strapline, reversed.
-  headerReversed: `${SVG}/05%20Website/frank-header-no-strapline-reversed.svg`,
+  // The app's header, on the dark rail: with the strapline (direct
+  // instruction), reversed.
+  headerReversed: `${SVG}/05%20Website/frank-header-reversed.svg`,
   // A review link's header: with the strapline, on white.
   headerStrapline: `${SVG}/05%20Website/frank-header.svg`,
   // The three-bar mark on its own.

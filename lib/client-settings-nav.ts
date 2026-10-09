@@ -11,16 +11,18 @@ export function clientSettingsSections(clientId: string, staff: boolean): Settin
     key: "knowledge",
     label: "Knowledge",
     icon: "suitcase",
-    pages: [{ href: `${base}/knowledge`, label: "Knowledge" }],
+    // "Discovery" (direct instruction): what's been learnt about the client.
+    pages: [{ href: `${base}/knowledge`, label: "Discovery" }],
   };
   if (!staff) return [knowledge];
   return [
     {
       key: "client",
-      label: "Client",
+      // "Profile" and "About" (direct instruction; were Client and Client Details).
+      label: "Profile",
       icon: "buildings",
       pages: [
-        { href: `${base}/details`, label: "Client Details" },
+        { href: `${base}/details`, label: "About" },
         { href: `${base}/people`, label: "People" },
         // How Frank works for this client (phase70).
         { href: `${base}/preferences`, label: "Preferences" },

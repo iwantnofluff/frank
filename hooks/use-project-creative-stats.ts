@@ -13,6 +13,8 @@ export interface ProjectCreativeStats {
   // approved yet. Powers the client workspace table's "Latest Approved
   // Post" column.
   latestApprovedAt: string | null;
+  // The newest post or approval in it, for sorting by Latest activity.
+  latestActivityAt: string | null;
   // Count of creatives at each of the 4 stages (index 0 = stage 1/Concept
   // ... index 3 = stage 4/Approved), by raw stage number rather than band —
   // an exception (changes_requested/rejected) still counts under whichever
@@ -56,6 +58,7 @@ export function useProjectCreativeStats(clientId: string) {
           waitingOnApproval: 0,
           feedbackToAction: 0,
           latestApprovedAt: null,
+          latestActivityAt: null,
           byStage: [0, 0, 0, 0],
         };
       }
@@ -64,7 +67,7 @@ export function useProjectCreativeStats(clientId: string) {
 
       const { data: creatives, error: creativesError } = await supabase
         .from("creatives")
-        .select("project_id, stage, exception, approved_at")
+        .select("project_id, stage, exception, approved_at, created_at")
         .in("project_id", projectIds)
         .is("archived_at", null);
       if (creativesError) throw creativesError;
@@ -81,6 +84,9 @@ export function useProjectCreativeStats(clientId: string) {
           s.waitingOnApproval++;
         } else if (band === "changes_requested" || band === "rejected") {
           s.feedbackToAction++;
+        }
+        for (const t of [c.created_at, c.approved_at]) {
+          if (t && (!s.latestActivityAt || t > s.latestActivityAt)) s.latestActivityAt = t;
         }
         if (c.approved_at && (!s.latestApprovedAt || c.approved_at > s.latestApprovedAt)) {
           s.latestApprovedAt = c.approved_at;

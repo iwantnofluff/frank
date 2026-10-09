@@ -54,9 +54,10 @@ test("search opens pages, and finds projects by their type", async ({ page, fran
 
   // A client's Client Settings pages, and Settings' own.
   await box.fill("knowledge");
-  await expect(results.getByRole("option", { name: /Knowledge\s*E2E Test Client · Client Settings/ })).toBeVisible();
+  // Knowledge's page is Discovery (direct instruction); its section still finds it.
+  await expect(results.getByRole("option", { name: /Discovery\s*E2E Test Client · Client Settings/ })).toBeVisible();
   await expect(results.getByRole("option", { name: /Reference Material\s*Settings · Knowledge/ })).toBeVisible();
-  await results.getByRole("option", { name: /Knowledge\s*E2E Test Client · Client Settings/ }).click();
+  await results.getByRole("option", { name: /Discovery\s*E2E Test Client · Client Settings/ }).click();
   await page.waitForURL(`${APP_URL}/clients/${frank.clientId}/settings/knowledge`);
 });
 
@@ -66,7 +67,8 @@ test("a client's own people find no Settings pages, but their Knowledge", async 
   const box = page.getByRole("combobox", { name: "Search pages, clients and projects" });
   const results = page.getByRole("listbox", { name: "Search results" });
   await box.fill("knowledge");
-  await expect(results.getByRole("option", { name: /Knowledge\s*E2E Test Client · Client Settings/ })).toBeVisible();
+  // Knowledge's page is Discovery (direct instruction); its section still finds it.
+  await expect(results.getByRole("option", { name: /Discovery\s*E2E Test Client · Client Settings/ })).toBeVisible();
   await expect(results.getByRole("option", { name: /Settings · Knowledge/ })).toHaveCount(0);
 });
 

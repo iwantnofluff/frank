@@ -133,7 +133,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         kind: "list",
         items: [
-          "Type a page's name to open it: Clients, a Settings page such as Users or Reference Material, or a client's Client Settings pages such as Knowledge.",
+          "Type a page's name to open it: Clients, a Settings page such as Users or Reference Material, or a client's Client Settings pages such as Discovery.",
           "Type a project's type to list them all: planner finds every Content Planner, other content every Other Content project.",
           "Press ⌘K (Ctrl K on Windows) to jump into search from anywhere.",
           "Use the arrow keys to move through the results and Enter to open one, or click it.",
@@ -185,11 +185,11 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         kind: "list",
         items: [
-          "Client Details: the name, logo, industry and description, and archiving. Once a client is archived, the Primary Owner and Owners can delete it for good, with everything in it, by typing its name; an archived project can be deleted the same way from its profile.",
-          "People: who's on this client and which of its projects each person works on, and inviting someone new.",
-          "Preferences: how long Approved artwork is kept (7, 14, 21 or 28 days) and what happens to Approved posts with no live date; whether the client can approve and whether a review link's Feed shows the project's other posts; and what a new review link starts with. Owners and Admins change them; each saves as it's picked.",
-          "Knowledge: what Frank knows about the client, used when copy is drafted and checked.",
-          "Instagram: the client's account, so the Feed Preview shows its real posts.",
+          "Profile → About: the name, logo, industry and description, and archiving. Once a client is archived, the Primary Owner and Owners can delete it for good, with everything in it, by typing its name; an archived project can be deleted the same way from its profile.",
+          "Profile → People: who's on this client and which of its projects each person works on, and inviting someone new.",
+          "Profile → Preferences: how long Approved artwork is kept (7, 14, 21 or 28 days) and what happens to Approved posts with no live date; whether the client can approve and whether a review link's Feed shows the project's other posts; and what a new review link starts with. Owners and Admins change them; each saves as it's picked.",
+          "Knowledge → Discovery: what Frank knows about the client, used when copy is drafted and checked.",
+          "Connections → Instagram: the client's account, so the Feed Preview shows its real posts.",
         ],
       },
       { kind: "h", text: "People" },
@@ -216,7 +216,11 @@ export const HELP_ARTICLES: HelpArticle[] = [
     blocks: [
       {
         kind: "p",
-        text: "Knowledge has eight areas, from Tone of Voice to Moodboard and References. The more of them are filled in, the more Draft with Frank and the checks can draw on. An area with nothing in it yet says Content pending.",
+        text: "A client's Knowledge is in its Client Settings, under Knowledge → Discovery. It has eight areas, from Tone of Voice to Moodboard and References. The more of them are filled in, the more Draft with Frank and the checks can draw on. An area with nothing in it yet says Content pending.",
+      },
+      {
+        kind: "p",
+        text: "Its Tone of Voice, Target Audience and Prioritised Features also show on the client's page, under About the brand, so the brand is in front of you before you start. See All opens that area here.",
       },
       { kind: "h", text: "Add to an area" },
       {
@@ -311,7 +315,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     blocks: [
       {
         kind: "p",
-        text: "To keep your storage free for work in progress, an Approved post's artwork is removed some days after its live date: every version's files. It's 7 days unless the client's Preferences (Client Settings → Preferences) say 14, 21 or 28. The post, its copy and all its comments stay, and the post says when its artwork was removed.",
+        text: "To keep your storage free for work in progress, an Approved post's artwork is removed some days after its live date: every version's files. It's 7 days unless the client's Preferences (Client Settings → Profile → Preferences) say 14, 21 or 28. The post, its copy and all its comments stay, and the post says when its artwork was removed.",
       },
       {
         kind: "list",

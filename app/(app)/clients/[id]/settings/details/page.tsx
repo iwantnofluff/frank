@@ -34,7 +34,7 @@ export default function ClientDetailsPage({ params }: { params: Promise<{ id: st
 
   return (
     <div className="pad narrow">
-      <SettingsHead title="Client Details" description="The client's name, logo, industry and description." />
+      <SettingsHead title="About" description="The client's name, logo, industry and description." />
       {isLoading && <p className="sub">Frank is working…</p>}
       {error && <p className="autherr">{errorMessage(error, "Couldn't load this client")}</p>}
       {client && agency && (

@@ -3203,3 +3203,19 @@ Asked directly: on a phone the page scrolls as one: Frank's header and the Conte
 Then, asked directly: not full width after all, but the same rounded frame as a post on Content, matching it exactly, padding too. The Feed now sits in the same padding (16px each side) in the same card (12px corners, the same border), and its profile row before Instagram is connected is the post's handle row's: 10px by 12px inside, 9px between picture and name, the same ring and name size, the name sitting at the same height. The sticking stays.
 
 **Verified**: Content and Feed measured in the browser at phone size: the cards at the same place and size, the rows the same height, the picture at the same place, the name 16.7px down and 51px in on both; looked at before and after scrolling, with the profile and tabs at the top.
+
+## The header's Frank logo, with its strapline
+
+Asked directly: the Frank logo in the top left corner of every page (it goes to the clients list) is now the one with its strapline, "Faster Approvals", from the final logo set, reversed for the dark header. Then asked to make it 12% larger: 32.5px tall (112px wide), centred in the 72px header; the workspace's logo beside it moved along to keep the same 15px gap.
+
+**Verified**: measured in the running app: 112 × 32.5px, its centre at the header's middle, 14.5px to the divider; looked at. Seven screenshot baselines updated after opening each diff, every change being the header's logo and the items beside it moving along.
+
+## A client's page: the brand at a glance, and sorting projects
+
+Asked directly, so whoever opens a client is reminded of the brand before they start on it: under the counts, "About the brand" has three boxes from the client's Knowledge, Tone of Voice, Target Audience and Prioritised Features. Each shows its first entry (title, and its words cut to four lines), then the others by name ("Also: … · 1 more"), with See All opening that area in Discovery, scrolled to it. An empty one says "Nothing here yet", and for the team "Add it in Discovery". A client's own people see it too, without the way to add. The other five areas aren't shown here.
+
+Asked first for the counts and the project search to share a row, then for the search to go: the projects are now ordered by a menu beside Active and Archived instead, Latest activity (the default: the newest post or approval in the project, else when it was made), A–Z, Recently added or Deadline (the order before), remembered in the browser.
+
+Client Settings' menu, asked directly: "Client" is now "Profile" and its "Client Details" is "About"; under Knowledge, "Knowledge" is "Discovery". The page headings match; addresses stay as they were, so links keep working. Search finds a client's Settings pages by their section too, so "knowledge" still finds Discovery. Help uses the new names.
+
+**Verified**: on a client with a Tone of Voice entry and five Target Audience entries and no Prioritised Features, the boxes read as above and See All opened Discovery at Target Audience; a Client saw the boxes without "Add it in Discovery"; each sort put four projects in the expected order and A–Z was still chosen after a reload (new tests in brand-reminder.spec.ts). The menu read Profile → About and Knowledge → Discovery. client-workspace.png updated after looking.

@@ -8279,9 +8279,9 @@ button.feedgrid-live {
   gap: 12px;
   flex-shrink: 0;
   margin-right: 18px;
-  /* Clear of the corner logo, which reaches about 119px in (25px in, 94px
-     wide), with the same 14px after it. */
-  margin-left: 45px;
+  /* Clear of the corner logo, which reaches about 137px in (25px in, 112px
+     wide with its strapline), with the same 15px after it. */
+  margin-left: 64px;
 }
 /* Frank's logo in the top left corner (direct instruction): 22px tall,
    as far in from the left as from the top (25px, centred on the 72px
@@ -8291,9 +8291,12 @@ button.feedgrid-live {
 .app {
   position: relative;
 }
+/* With its strapline (direct instruction), 12% larger than the 29px that
+   kept "Frank" the size it was without one: 32.5px, centred in the 72px
+   header. */
 .corner-logo {
   position: absolute;
-  top: 25px;
+  top: 20px;
   left: 25px;
   z-index: 3;
   display: block;
@@ -8301,7 +8304,7 @@ button.feedgrid-live {
   border-radius: var(--r);
 }
 .corner-logo img {
-  height: 22px;
+  height: 32.5px;
   width: auto;
   display: block;
 }
@@ -8947,4 +8950,102 @@ button.hbrand-add:hover {
 }
 .phone .sharedfeed .fp-h:not(.fp-live) .fp-t b {
   font-size: 14.2px;
+}
+
+/* A client's page (direct instruction): the brand at a glance, three
+   boxes from the client's Knowledge (components/clients/BrandReminder.tsx),
+   and the projects' order in place of a search. */
+.brandrem {
+  margin-bottom: 26px;
+}
+.brandrem-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+@media (max-width: 900px) {
+  .brandrem-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.brandrem-box {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 13px 15px 14px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.brandrem-h {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.brandrem-h b {
+  font-size: 14.7px;
+  font-weight: 600;
+  flex: 1;
+}
+.brandrem-all {
+  font-size: 12.7px;
+  color: var(--action);
+  flex-shrink: 0;
+}
+.brandrem-all:hover {
+  text-decoration: underline;
+}
+.brandrem-first b {
+  display: block;
+  font-size: 13.2px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.brandrem-first p {
+  margin: 0;
+  font-size: 13.2px;
+  line-height: 1.5;
+  color: var(--ink);
+  white-space: pre-line;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.brandrem-first p.brandrem-kind,
+.brandrem-empty {
+  margin: 0;
+  font-size: 13.2px;
+  color: var(--muted);
+}
+.brandrem-empty a {
+  color: var(--action);
+}
+.brandrem-also {
+  margin: 8px 0 0;
+  font-size: 12.2px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+/* Clear of the header when See All scrolls to a section. */
+.kb-section {
+  scroll-margin-top: 16px;
+}
+/* The projects' order, beside Active and Archived and shaped like them. */
+.sortsel {
+  border: 1px solid var(--line-2);
+  border-radius: 20px;
+  padding: 3px 26px 3px 11px;
+  font: inherit;
+  font-size: 13.2px;
+  color: var(--ink);
+  background: var(--surface)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")
+    no-repeat right 9px center / 12px;
+  appearance: none;
+  cursor: pointer;
+}
+.sortsel:hover {
+  border-color: var(--muted);
 }

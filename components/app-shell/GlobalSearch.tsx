@@ -63,11 +63,12 @@ export function GlobalSearch() {
               .map((p) => ({ kind: "page" as const, id: p.href, name: p.label, detail: `Settings · ${sec.label}`, href: p.href })),
           )
         : []),
-      // Each client's Client Settings pages ("NuHabit · Knowledge").
+      // Each client's Client Settings pages ("NuHabit · Discovery").
       ...live.flatMap((c) =>
         clientSettingsSections(c.id, staff).flatMap((sec) =>
           sec.pages
-            .filter((p) => has(p.label) || has("client settings"))
+            // By the section too ("knowledge" finds Discovery), as Settings' pages are.
+            .filter((p) => has(p.label) || has(sec.label) || has("client settings"))
             .map((p) => ({ kind: "page" as const, id: p.href, name: p.label, detail: `${c.name} · Client Settings`, href: p.href })),
         ),
       ),

@@ -21,7 +21,18 @@ import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
 import { useMyMembership } from "@/hooks/use-my-membership";
 import { useMyAgency } from "@/hooks/use-my-agency";
 import { seesAllClients } from "@/lib/roles";
-import { ExpandIcon, SearchIcon } from "@/components/app-shell/icons";
+import { ExpandIcon } from "@/components/app-shell/icons";
+import { BrandReminder } from "@/components/clients/BrandReminder";
+import { useProjectSortStore, type ProjectSort } from "@/store/project-sort-store";
+
+// How a client's projects can be ordered (direct instruction, in place of
+// searching them).
+const PROJECT_SORTS: { id: ProjectSort; label: string }[] = [
+  { id: "latest", label: "Latest activity" },
+  { id: "name", label: "A–Z" },
+  { id: "added", label: "Recently added" },
+  { id: "deadline", label: "Deadline" },
+];
 
 type ArchiveFilter = "active" | "archived";
 
@@ -71,7 +82,8 @@ export default function ClientWorkspacePage({
   const { data: folders } = useProjectFolders(id);
   const deleteFolder = useDeleteProjectFolder();
 
-  const [query, setQuery] = useState("");
+  // Remembered in this browser, as a convenience.
+  const { sort, setSort: chooseSort } = useProjectSortStore();
   const [archiveFilter, setArchiveFilter] = useState<ArchiveFilter>("active");
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [profileTarget, setProfileTarget] = useState<ProjectListRow | null>(null);
@@ -114,23 +126,21 @@ export default function ClientWorkspacePage({
 
   const filtered = useMemo(() => {
     if (!projects) return [];
-    const q = query.trim().toLowerCase();
-    let list = projects.filter((p) => {
-      const matchesArchive = archiveFilter === "active" ? !p.archived_at : !!p.archived_at;
-      const matchesQuery =
-        !q || (p.name + " " + (p.type ?? "")).toLowerCase().includes(q);
-      return matchesArchive && matchesQuery;
-    });
-    // By deadline, no deadline last — the prototype's own default order
-    // (a fixed high 'd' value for "No deadline" rows).
-    list = [...list].sort((a, b) => {
+    const list = projects.filter((p) => (archiveFilter === "active" ? !p.archived_at : !!p.archived_at));
+    // The order picked (direct instruction). Latest: the newest post or
+    // approval in it, else when it was made. Deadline, no deadline last:
+    // the prototype's own default order.
+    const latest = (p: ProjectListRow) => projectStats?.[p.id]?.latestActivityAt ?? p.created_at;
+    return [...list].sort((a, b) => {
+      if (sort === "name") return a.name.localeCompare(b.name);
+      if (sort === "added") return b.created_at.localeCompare(a.created_at);
+      if (sort === "latest") return latest(b).localeCompare(latest(a));
       if (!a.due_on && !b.due_on) return 0;
       if (!a.due_on) return 1;
       if (!b.due_on) return -1;
       return a.due_on.localeCompare(b.due_on);
     });
-    return list;
-  }, [projects, query, archiveFilter]);
+  }, [projects, projectStats, sort, archiveFilter]);
 
   // Unfiled projects show in the flat list above the folders, per direct
   // instruction — folders are an organisational layer on top of the same
@@ -141,7 +151,7 @@ export default function ClientWorkspacePage({
   // with no search, the table shows whenever there's a folder, not only
   // when there's a project row.
   const showTable =
-    filtered.length > 0 || (archiveFilter === "active" && !query.trim() && (folders?.length ?? 0) > 0);
+    filtered.length > 0 || (archiveFilter === "active" && (folders?.length ?? 0) > 0);
 
   function renderProjectRow(p: ProjectListRow) {
     const s = projectStats?.[p.id];
@@ -259,14 +269,8 @@ export default function ClientWorkspacePage({
         </div>
       </div>
 
-      <div className="listsearch">
-        <SearchIcon />
-        <input
-          placeholder="Search projects"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-      </div>
+      {/* The brand at a glance, before the work (direct instruction). */}
+      <BrandReminder clientId={id} canEdit={isStaff && !isStaffPending} />
 
       <div className="secthead">
         <h2>All Projects</h2>
@@ -287,6 +291,19 @@ export default function ClientWorkspacePage({
           >
             Archived ({archivedCount})
           </button>
+          {/* In place of searching (direct instruction): the order. */}
+          <select
+            className="sortsel"
+            aria-label="Sort projects"
+            value={sort}
+            onChange={(e) => chooseSort(e.target.value as ProjectSort)}
+          >
+            {PROJECT_SORTS.map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.label}
+              </option>
+            ))}
+          </select>
           {confirmedStaff && <span className="toolsep" />}
           {confirmedStaff && (
             <button
@@ -329,18 +346,14 @@ export default function ClientWorkspacePage({
       {!projectsError && !isLoading && !showTable && (
         <div className="empty">
           <b>
-            {query
-              ? `No projects match “${query}”`
-              : archiveFilter === "archived"
+            {archiveFilter === "archived"
                 ? "No archived projects"
                 : activeProjects.length
                   ? "Nothing here yet"
                   : "No projects yet"}
           </b>
           <span>
-            {query
-              ? "Try a different search."
-              : archiveFilter === "archived"
+            {archiveFilter === "archived"
                 ? "Nothing has been archived yet."
                 : activeProjects.length
                   ? "Try a different filter."
