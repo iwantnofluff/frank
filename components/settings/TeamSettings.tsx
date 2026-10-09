@@ -5,6 +5,7 @@ import { useClients } from "@/hooks/use-clients";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useMyAgency } from "@/hooks/use-my-agency";
 import { useMyMembership } from "@/hooks/use-my-membership";
+import { useClientMembers } from "@/hooks/use-client-members";
 import { useTeamMembers, type TeamMemberRow } from "@/hooks/use-team-members";
 import { useStaffClientAccess } from "@/hooks/use-staff-client-access";
 import { useAvatarUrls } from "@/hooks/use-avatar-urls";
@@ -32,10 +33,22 @@ import {
 // Last column matches the dashboard's and client workspace's row menus
 // (70px, right-aligned) so the "..." sits in the same place on every list.
 const PEOPLE_COLUMNS_WITH_CLIENTS = "1fr 1.3fr 1fr 110px 110px 70px";
-const PEOPLE_COLUMNS = "1fr 1.3fr 110px 110px 70px";
-const CLIENT_VIEW_COLUMNS = "1fr 2fr 90px";
+const PEOPLE_COLUMNS = "1fr 1.3fr 110px 150px 70px";
+const CLIENT_VIEW_COLUMNS = "1fr 1.5fr 1.5fr 70px";
 
 export type View = "people" | "clients";
+
+// Under "Invited" (direct instruction: say when someone hasn't joined): until
+// when their link works, or that it's expired and needs resending. Only
+// for viewers allowed to see invites (Owners, and whoever manages them).
+function inviteNote(m: TeamMemberRow, now: number): { text: string; late: boolean } | null {
+  if (m.accepted_at || m.removed_at) return null;
+  if (!m.invite) return null;
+  const day = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  return new Date(m.invite.expires_at).getTime() < now
+    ? { text: `Link expired ${day(m.invite.expires_at)}. Resend it`, late: true }
+    : { text: `Link works until ${day(m.invite.expires_at)}`, late: false };
+}
 
 function statusOf(m: TeamMemberRow) {
   if (m.removed_at) return { label: "Deactivated", tone: "rose" };
@@ -61,7 +74,8 @@ export function TeamSettings({ view }: { view: View }) {
   // column and client view are only offered to them.
   const canSeeAccess = isStaff && seesAllClients(myMembership?.role);
 
-  const { data: members, isLoading, isError } = useTeamMembers(agencyId);
+  const { data: members, isLoading, isError, dataUpdatedAt } = useTeamMembers(agencyId);
+  const { data: clientMembers } = useClientMembers(agencyId, view === "clients");
   const { data: clients } = useClients();
   const { data: access } = useStaffClientAccess(agencyId, canSeeAccess);
   const { data: photos } = useAvatarUrls((members ?? []).map((m) => m.user?.avatar_asset_id));
@@ -185,7 +199,7 @@ export function TeamSettings({ view }: { view: View }) {
       <p className="sub">
         {view === "people"
           ? `Everyone with staff access at ${agency?.name ?? "this workspace"}.`
-          : "Which team members can see each client."}
+          : "Who can see each client: your team, and the client's own people."}
       </p>
 
       <div className="secthead" style={{ marginTop: 16 }}>
@@ -262,6 +276,10 @@ export function TeamSettings({ view }: { view: View }) {
                 </div>
                 <div>
                   <span className={`tag ${status.tone}`}>{status.label}</span>
+                  {(() => {
+                    const note = inviteNote(m, dataUpdatedAt);
+                    return note && <div className={`invnote${note.late ? " late" : ""}`}>{note.text}</div>;
+                  })()}
                 </div>
                 <div style={{ display: "flex", justifyContent: "flex-end" }}>
                   {actions && (
@@ -283,8 +301,8 @@ export function TeamSettings({ view }: { view: View }) {
       {view === "clients" && canSeeAccess && (
         <>
           <p className="sub" style={{ marginTop: 0, marginBottom: 12 }}>
-            The Primary Owner, Owners and Admins see every client, so each client lists only the
-            Users who&rsquo;ve been given access to it.
+            Agency is your team&rsquo;s Users given access to the client (the Primary Owner, Owners and
+            Admins see every client). Client is the client&rsquo;s own people.
           </p>
           {activeClients.length === 0 ? (
             <div className="empty">
@@ -293,14 +311,20 @@ export function TeamSettings({ view }: { view: View }) {
           ) : (
             <div className="clients">
               <div className="crow head" style={{ gridTemplateColumns: CLIENT_VIEW_COLUMNS }}>
+                <div>Name</div>
+                <div>Agency</div>
                 <div>Client</div>
-                <div>Users with Access</div>
-                <div className="ago">Users</div>
+                <div className="ago">People</div>
               </div>
               {activeClients.map((c) => {
                 const withAccess = restrictedMembers
                   .filter((m) => grantsFor(m.id).includes(c.id))
                   .sort((a, b) => displayName(a).localeCompare(displayName(b)));
+                // The client's own people, beside the team's (direct instruction).
+                const theirs = (clientMembers ?? [])
+                  .filter((m) => m.client_id === c.id)
+                  .map((m) => ({ name: m.user?.name || m.user?.email || "Someone", joined: !!m.accepted_at }))
+                  .sort((a, b) => a.name.localeCompare(b.name));
                 return (
                   <div
                     className="crow"
@@ -317,7 +341,14 @@ export function TeamSettings({ view }: { view: View }) {
                           .join(", ")
                       )}
                     </div>
-                    <div className="ago">{withAccess.length}</div>
+                    <div style={{ fontSize: 14.2 }}>
+                      {theirs.length === 0 ? (
+                        <span style={{ color: "var(--muted)" }}>No Clients</span>
+                      ) : (
+                        theirs.map((p) => (p.joined ? p.name : `${p.name} (invited)`)).join(", ")
+                      )}
+                    </div>
+                    <div className="ago">{withAccess.length + theirs.length}</div>
                   </div>
                 );
               })}

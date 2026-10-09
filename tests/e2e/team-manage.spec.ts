@@ -304,6 +304,9 @@ test("an Owner edits a User's clients and role; the Clients column and Clients p
   await page.getByRole("navigation", { name: "Settings sections" }).getByRole("link", { name: "Clients" }).click();
   await expect(page.locator(".crow", { hasText: "Second Client" })).toContainText("Edit Me");
   await expect(page.locator(".crow", { hasText: "E2E Test Client" })).toContainText("No Users");
+  // Beside the team's Users, the client's own people (direct instruction).
+  await expect(page.locator(".crow.head").first()).toContainText("Agency");
+  await expect(page.locator(".crow", { hasText: "E2E Test Client" })).toContainText("E2E Client User");
   await expect(page.locator(".vdots")).toHaveCount(0);
   await page.getByRole("navigation", { name: "Settings sections" }).getByRole("link", { name: "Users" }).click();
 
@@ -361,4 +364,25 @@ test("someone already on the team can't be given a second place on it", async ({
   });
   expect(res.status()).toBe(409);
   expect((await res.json()).error).toContain("already on the team");
+});
+
+// Under "Invited" (direct instruction): whether the person's link still works.
+test("a pending invite says until when its link works, or that it's expired", async ({ page, frank }) => {
+  test.setTimeout(120_000);
+  await setStaffRole(frank, "owner");
+  const a = await seedMember(frank, { role: "user", name: "Fresh Invite", pending: true });
+  const b = await seedMember(frank, { role: "admin", name: "Old Invite", pending: true });
+  const me = await staffUserId(frank);
+  for (const [m, hours] of [[a, 40], [b, -60]] as const) {
+    await admin.from("invites").insert({ membership_id: m.membershipId, token_hash: createHash("sha256").update(randomBytes(32)).digest("hex"), expires_at: new Date(Date.now() + hours * 3600e3).toISOString(), created_by: me });
+  }
+  try {
+    await frank.loginAsStaff(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(APP_URL + "/settings/team");
+    await expect(page.locator(".crow", { hasText: "Old Invite" }).locator(".invnote")).toContainText(/^Link expired .+\. Resend it$/, { timeout: 20_000 });
+    await expect(page.locator(".crow", { hasText: "Fresh Invite" }).locator(".invnote")).toContainText(/^Link works until /);
+  } finally {
+    await deleteAccount(a.userId); await deleteAccount(b.userId);
+  }
 });

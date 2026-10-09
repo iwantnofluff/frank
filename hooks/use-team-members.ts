@@ -13,6 +13,9 @@ export interface TeamMemberRow {
   can_invite: boolean;
   accepted_at: string | null;
   removed_at: string | null;
+  // For someone who hasn't joined: their latest invite link's dates, when
+  // the viewer may see them (Owners, and whoever manages the person).
+  invite: { sent_at: string; expires_at: string } | null;
   user: {
     name: string;
     email: string;
@@ -39,9 +42,23 @@ export function useTeamMembers(agencyId: string | undefined) {
         .is("removed_permanently_at", null);
 
       if (error) throw error;
+      // Whether each pending invite's link still works (direct
+      // instruction: say so when someone hasn't joined).
+      const pending = (data ?? []).filter((m) => !m.accepted_at).map((m) => m.id as string);
+      const latest = new Map<string, { sent_at: string; expires_at: string }>();
+      if (pending.length) {
+        const { data: invites } = await supabase
+          .from("invites")
+          .select("membership_id, created_at, expires_at")
+          .in("membership_id", pending)
+          .is("accepted_at", null)
+          .order("created_at", { ascending: true });
+        for (const i of invites ?? []) latest.set(i.membership_id as string, { sent_at: i.created_at as string, expires_at: i.expires_at as string });
+      }
+      const rows = (data ?? []).map((m) => ({ ...m, invite: latest.get(m.id as string) ?? null }));
       // The enum's own order (admin, user, finance, primary_owner, owner) reflects
       // when each value was added, not seniority.
-      return (data as unknown as TeamMemberRow[]).sort(
+      return (rows as unknown as TeamMemberRow[]).sort(
         (a, b) =>
           byRoleSeniority(a.role, b.role) ||
           (a.user?.name ?? "").localeCompare(b.user?.name ?? ""),
