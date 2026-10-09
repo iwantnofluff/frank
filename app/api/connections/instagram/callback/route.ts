@@ -57,7 +57,7 @@ export async function GET(request: Request) {
     let connectedByName = "the client, through a link";
     if (state.userId) {
       const { data: who } = await admin.from("users").select("name, email").eq("id", state.userId).maybeSingle();
-      connectedByName = (who?.name as string) || (who?.email as string) || "someone at the agency";
+      connectedByName = (who?.name as string) || (who?.email as string) || "someone in the workspace";
     }
     await saveConnection(admin, { clientId: state.clientId, profile, token, expiresAt, connectedByName });
     if (state.linkId) {

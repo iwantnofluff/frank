@@ -184,7 +184,7 @@ export function TeamSettings({ view }: { view: View }) {
       <h1 className="h1">{view === "people" ? "Users" : "Clients"}</h1>
       <p className="sub">
         {view === "people"
-          ? `Everyone with staff access at ${agency?.name ?? "this agency"}.`
+          ? `Everyone with staff access at ${agency?.name ?? "this workspace"}.`
           : "Which team members can see each client."}
       </p>
 

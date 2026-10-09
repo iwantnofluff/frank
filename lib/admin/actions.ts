@@ -9,7 +9,7 @@ export function reasonFrom(body: { reason?: unknown }): string | null {
   return reason.length >= 1 && reason.length <= 500 ? reason : null;
 }
 
-export const REASON_REQUIRED = "Give a reason (up to 500 characters). The agency's Owners will see it.";
+export const REASON_REQUIRED = "Give a reason (up to 500 characters). The workspace's Owners will see it.";
 
 export async function logAction(
   admin: SupabaseClient,

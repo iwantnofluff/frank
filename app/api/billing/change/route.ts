@@ -35,7 +35,7 @@ export async function POST(request: Request) {
   const { admin, agency, billing } = auth;
 
   if (!billing || !hasLiveSubscription(billing)) {
-    return NextResponse.json({ error: "Your agency doesn't pay through Paddle yet." }, { status: 409 });
+    return NextResponse.json({ error: "Your workspace doesn't pay through Paddle yet." }, { status: 409 });
   }
   if (billing.scheduled_plan || billing.cancel_at) {
     return NextResponse.json({ error: "Undo the change that's waiting first." }, { status: 409 });

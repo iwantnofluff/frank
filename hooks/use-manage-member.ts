@@ -23,6 +23,8 @@ export function useSetMemberActive(agencyId: string) {
         .update({ removed_at: active ? null : new Date().toISOString() })
         .eq("id", membershipId)
         .select("id");
+      // One active place on the team per person (phase76).
+      if (error?.code === "23505") throw new Error("They're already on the team under another invite.");
       if (error) throw error;
       assertAffected(data);
     },

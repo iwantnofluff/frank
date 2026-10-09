@@ -111,7 +111,7 @@ export function CopyChat({
           </>
         ) : (
           <>
-            <span className="grow">Each message uses one of the agency&rsquo;s monthly AI requests.</span>
+            <span className="grow">Each message uses one of the workspace&rsquo;s monthly AI requests.</span>
             <button type="button" className="btn" onClick={onClose}>
               Close
             </button>
@@ -134,7 +134,7 @@ export function CopyChat({
             Review My Draft
           </button>
           <p className="cchat-note">
-            Frank reads the brief, the WIIFM, each format&rsquo;s direction, and your agency&rsquo;s and this
+            Frank reads the brief, the WIIFM, each format&rsquo;s direction, and your workspace&rsquo;s and this
             client&rsquo;s knowledge, files included.
           </p>
           {!!chats?.length && (

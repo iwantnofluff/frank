@@ -28,7 +28,9 @@ export async function runAiTask(
   supabase: SupabaseClient,
   agencyId: string,
   userId: string,
-  prompt: string,
+  // One string, or parts (copy chat): every part but the last is the same
+  // across a conversation's messages, so a provider can keep it.
+  prompt: string | string[],
   attachments: Attachment[] = [],
 ): Promise<AiTaskResult> {
   const { data: agency, error: agencyError } = await supabase
@@ -37,14 +39,14 @@ export async function runAiTask(
     .eq("id", agencyId)
     .single();
   if (agencyError || !agency) {
-    return { ok: false, status: 500, error: "Couldn't load this agency" };
+    return { ok: false, status: 500, error: "Couldn't load this workspace" };
   }
   // Free's trial over (phase41): read-only, so nothing new is drafted.
   if (isReadOnly(agency.plan, agency.trial_ends_at)) {
     return {
       ok: false,
       status: 403,
-      error: "Your agency's free trial has ended, so Frank is read-only. Choose a plan in Settings → Your Plan to carry on.",
+      error: "Your workspace's free trial has ended, so Frank is read-only. Choose a plan in Settings → Your Plan to carry on.",
     };
   }
 
@@ -54,13 +56,13 @@ export async function runAiTask(
     .eq("agency_id", agencyId)
     .gte("created_at", monthStartIso());
   if (countError) {
-    return { ok: false, status: 500, error: "Couldn't check this agency's usage" };
+    return { ok: false, status: 500, error: "Couldn't check this workspace's usage" };
   }
   if ((count ?? 0) >= agency.ai_monthly_request_cap) {
     return {
       ok: false,
       status: 429,
-      error: `This agency has reached its monthly AI limit (${agency.ai_monthly_request_cap}). It resets on the 1st.`,
+      error: `This workspace has reached its monthly AI limit (${agency.ai_monthly_request_cap}). It resets on the 1st.`,
     };
   }
 

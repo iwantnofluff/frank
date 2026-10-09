@@ -128,7 +128,7 @@ const CHECK_LABELS: Record<CheckKind, string> = {
 // currently in it.
 const CHECK_SECTION_DESCRIPTIONS: Record<CheckKind, string> = {
   wiifm:
-    "Whether this copy leads with a real reader benefit, and draws on the agency's own reference material.",
+    "Whether this copy leads with a real reader benefit, and draws on the workspace's own reference material.",
   brand: "Whether this copy fits this client's brand knowledge — tone, protected terms, and anything else documented for them.",
   creative: "Protected terms, line lengths and the format spec, checked against the artwork itself.",
 };
@@ -226,15 +226,15 @@ const CHECK_INTROS: Record<"brand" | "wiifm", string> = {
     "You review ad/social copy against this specific client's own brand knowledge — tone of voice, audience, protected terms, and anything else documented for them — and note anything worth reconsidering.",
 };
 const CHECK_REFERENCE_LABELS: Record<"brand" | "wiifm", string> = {
-  wiifm: "Agency reference material",
+  wiifm: "Workspace reference material",
   brand: "Client knowledge",
 };
 const CHECK_AGAINST_LABELS: Record<"brand" | "wiifm", string> = {
-  wiifm: "the agency's Reference Material (Settings > Knowledge)",
+  wiifm: "the workspace's Reference Material (Settings > Knowledge)",
   brand: "this client's Knowledge",
 };
 const CHECK_EMPTY_REFERENCE: Record<"brand" | "wiifm", string> = {
-  wiifm: "No agency Reference Material yet — add some in Settings > Knowledge to make this check meaningful.",
+  wiifm: "No workspace Reference Material yet — add some in Settings > Knowledge to make this check meaningful.",
   brand: "No Knowledge entries yet for this client — add some to make this check meaningful.",
 };
 const CHECK_FINDING_COUNT = 3;

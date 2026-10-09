@@ -78,7 +78,7 @@ export function HeaderBrand() {
             <PhotoCropModal
               file={cropping}
               detectFaces={false}
-              title="Position the agency logo"
+              title="Position the workspace logo"
               onCancel={() => setCropping(null)}
               onConfirm={(cropped) => {
                 setCropping(null);

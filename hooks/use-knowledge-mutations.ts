@@ -51,7 +51,7 @@ export function useCreateKnowledgeFileEntry(clientId: string, agencyId: string |
 
   return useMutation({
     mutationFn: async ({ section, title, file }: { section: string; title: string; file: File }) => {
-      if (!agencyId) throw new Error("No agency");
+      if (!agencyId) throw new Error("No workspace");
       const assetId = await uploadKnowledgeAsset(agencyId, file);
 
       const supabase = createClient();

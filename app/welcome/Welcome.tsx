@@ -106,7 +106,7 @@ function SignUp({ onDone }: { onDone: () => void }) {
       }}
     >
       <label className="authfield">
-        <span>Agency name</span>
+        <span>Workspace name</span>
         <input required value={agencyName} onChange={(e) => setAgencyName(e.target.value)} autoComplete="organization" />
       </label>
       <label className="authfield">

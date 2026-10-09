@@ -29,7 +29,7 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
   // The plan is the agency's to choose (decided directly, 3 Oct 2026), by
   // card or by asking Frank (applying a request is /api/admin/plan-requests).
   if (body.plan !== undefined) {
-    return NextResponse.json({ error: "The plan is the agency's to choose." }, { status: 403 });
+    return NextResponse.json({ error: "The plan is the workspace's to choose." }, { status: 403 });
   }
   for (const key of EXTRAS) {
     if (body[key] === undefined) continue;
@@ -47,12 +47,12 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
 
   const { data, error } = await admin.from("agencies").update(update).eq("id", id).select("id").maybeSingle();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  if (!data) return NextResponse.json({ error: "Agency not found" }, { status: 404 });
+  if (!data) return NextResponse.json({ error: "Workspace not found" }, { status: 404 });
   if (body.suspended !== undefined) {
     try {
       await logAction(admin, user, {
         agencyId: id,
-        action: body.suspended ? "Paused the agency" : "Unpaused the agency",
+        action: body.suspended ? "Paused the workspace" : "Unpaused the workspace",
         reason: reason!,
       });
     } catch (e) {
@@ -67,7 +67,7 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
 // again while testing. Live keeps pausing as its only way to stop one.
 export async function DELETE(_request: Request, ctx: { params: Promise<{ id: string }> }) {
   if (process.env.ALLOW_AGENCY_DELETE !== "true") {
-    return NextResponse.json({ error: "Agencies can't be deleted here." }, { status: 403 });
+    return NextResponse.json({ error: "Workspaces can't be deleted here." }, { status: 403 });
   }
   const auth = await requirePlatformAdmin();
   if ("error" in auth) return auth.error;

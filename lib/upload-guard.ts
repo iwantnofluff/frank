@@ -14,7 +14,7 @@ export async function assertCanUpload(agencyId: string, bytes: number) {
   // Not readable (a guest, say): leave it to the database.
   if (!agency) return;
   if (isReadOnly(agency.plan, agency.trial_ends_at)) {
-    throw new Error("Your agency's free trial has ended, so Frank is read-only. Choose a plan in Settings → Your Plan to carry on.");
+    throw new Error("Your workspace's free trial has ended, so Frank is read-only. Choose a plan in Settings → Your Plan to carry on.");
   }
   const problem = typeof used === "number" ? storageProblem(used, agency.storage_limit_bytes as number | null, bytes) : null;
   if (problem) throw new Error(problem);

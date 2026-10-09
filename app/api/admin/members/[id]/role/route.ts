@@ -32,7 +32,7 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
     user: { email: string; name: string } | null;
   } | null;
   if (!member) return fail("Not found", 404);
-  if (member.client_id) return fail("A Client's type is changed by the agency, in its Client Profile", 409);
+  if (member.client_id) return fail("A Client's type is changed by the workspace, in its Client Profile", 409);
   if (member.role === "primary_owner") return fail("The Primary Owner's role changes only by transferring ownership", 409);
   if (member.role === role) return fail(`They're already ${ROLE_LABELS[role]}`, 409);
 
@@ -53,7 +53,7 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
       agencyId: member.agency_id,
       action: "Changed a role",
       target: `${member.user?.name || member.user?.email} (${member.user?.email})`,
-      detail: `${ROLE_LABELS[member.role]} → ${ROLE_LABELS[role]}${role === "user" ? ". They have no clients until the agency gives them some." : ""}`,
+      detail: `${ROLE_LABELS[member.role]} → ${ROLE_LABELS[role]}${role === "user" ? ". They have no clients until the workspace gives them some." : ""}`,
       reason,
     });
   } catch (e) {

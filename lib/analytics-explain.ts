@@ -109,7 +109,7 @@ export const EXPLAIN = {
     why: "How much the client engages. Very little can mean they're not really reviewing; a lot can mean the work isn't landing.",
   },
   fromTeam: {
-    what: "Comments from the agency's own team.",
+    what: "Comments from the workspace's own team.",
     why: "Shows how much internal review is happening before work reaches the client.",
   },
   unresolved: {

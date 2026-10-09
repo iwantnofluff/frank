@@ -20,7 +20,7 @@ export async function POST(request: Request) {
   const priceId = tier ? priceFor(tier.id, interval) : null;
   if (!tier || !priceId) return NextResponse.json({ error: "Choose a paid plan" }, { status: 400 });
   if (hasLiveSubscription(billing)) {
-    return NextResponse.json({ error: "Your agency already pays through Paddle — change the plan instead." }, { status: 409 });
+    return NextResponse.json({ error: "Your workspace already pays through Paddle — change the plan instead." }, { status: 409 });
   }
 
   try {

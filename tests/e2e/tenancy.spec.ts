@@ -53,11 +53,11 @@ async function twoAgencies(frank: Frank) {
 test("beingfrank.app is sign-up and find-your-address, at any path, with no sign-in", async ({ page }) => {
   for (const path of ["/", "/dashboard", "/login"]) {
     await page.goto(at(null, path));
-    await expect(page.getByLabel("Agency name")).toBeVisible();
+    await expect(page.getByLabel("Workspace name")).toBeVisible();
     await expect(page.getByRole("button", { name: "Sign In" })).toBeVisible();
   }
   await page.goto(at("www", "/"));
-  await expect(page.getByLabel("Agency name")).toBeVisible();
+  await expect(page.getByLabel("Workspace name")).toBeVisible();
 });
 
 test("an address that isn't an agency says so", async ({ page }) => {
@@ -75,11 +75,23 @@ test("an agency's address shows only that agency's work, even to someone in two"
     await expect(page.locator(".crow", { hasText: "E2E Test Client" })).toBeVisible({ timeout: 15_000 });
     await expect(page.locator(".crow", { hasText: "Other Agency Client E2E" })).toHaveCount(0);
 
-    // The other agency's address has its own sign-in, and shows only its work.
-    await signIn(page, agencies.other, frank.staffEmail, frank.staffPassword);
+    // The profile menu switches to the other workspace, still signed in
+    // (decided directly: one sign-in for every workspace, like Slack), and
+    // it shows only its own work.
+    await page.getByRole("button", { name: "Your account" }).click();
+    const menu = page.getByRole("menu", { name: "Your account" });
+    await expect(menu.locator('.ws-row[aria-current="true"]')).toContainText("E2E Test Agency", { timeout: 15_000 });
+    await menu.getByRole("menuitem", { name: "E2E Other Agency" }).click();
     await page.waitForURL(at(agencies.other, "/dashboard"), { timeout: 20_000 });
     await expect(page.locator(".crow", { hasText: "Other Agency Client E2E" })).toBeVisible({ timeout: 15_000 });
     await expect(page.locator(".crow", { hasText: "E2E Test Client" })).toHaveCount(0);
+
+    // Signing out at one signs out of both.
+    await page.getByRole("button", { name: "Your account" }).click();
+    await page.getByRole("menuitem", { name: "Sign out" }).click();
+    await page.waitForURL(/\/login/);
+    await page.goto(at(agencies.mine, "/dashboard"));
+    await page.waitForURL(/\/login/, { timeout: 15_000 });
   } finally {
     await agencies.cleanup();
   }

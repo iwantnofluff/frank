@@ -36,7 +36,7 @@ export default function AdminUsersPage() {
       <div className="listsearch">
         <SearchIcon />
         <input
-          placeholder="Search by name, email or agency"
+          placeholder="Search by name, email or workspace"
           aria-label="Search users"
           value={query}
           onChange={(e) => setQuery(e.target.value)}

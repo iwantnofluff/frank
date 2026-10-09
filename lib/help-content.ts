@@ -116,7 +116,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       { kind: "h", text: "Getting around" },
       {
         kind: "p",
-        text: "The left rail follows where you are, and names the client: on a client's projects you'll see Clients and the client's Settings (Casa Carigar Settings, say); inside a project, the client's Projects too; on a post, the project's Content Planner or Other Content as well. Frank's logo in the top left corner takes you back to Clients. Your picture at the top right holds My Profile, Settings for your whole agency, and Sign out.",
+        text: "The left rail follows where you are, and names the client: on a client's projects you'll see Clients and the client's Settings (Casa Carigar Settings, say); inside a project, the client's Projects too; on a post, the project's Content Planner or Other Content as well. Frank's logo in the top left corner takes you back to Clients. Your picture at the top right holds My Profile, Settings for your whole workspace, and Sign out. If you belong to more than one workspace, it lists them too: pick one to switch, still signed in.",
       },
     ],
   },
@@ -389,7 +389,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         kind: "list",
         items: [
           "Comments are Public, seen by the client, or Private, for your team only.",
-          "Each name says whose side it's from: Rajesh Rana (No Fluff) for your agency, Parth Dogra (Casa Carigar) for the client, review link guests included.",
+          "Each name says whose side it's from: Rajesh Rana (No Fluff) for your workspace, Parth Dogra (Casa Carigar) for the client, review link guests included.",
           "Drop a pin or mark an area on the artwork. On a video, a comment remembers the moment it was made.",
           "Select words in the caption to comment on just those.",
           "Resolve a comment once it's dealt with. Filter by All, Unresolved, Resolved, Mine or Private.",
@@ -405,7 +405,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     blocks: [
       {
         kind: "p",
-        text: "In a post's Content tab, choose Draft with Frank under the Caption. Frank reads the brief, the WIIFM, each format's direction, and your agency's and the client's Knowledge, files included.",
+        text: "In a post's Content tab, choose Draft with Frank under the Caption. Frank reads the brief, the WIIFM, each format's direction, and your workspace's and the client's Knowledge, files included.",
       },
       {
         kind: "list",
@@ -418,7 +418,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       },
       {
         kind: "note",
-        text: "Each message uses one of your agency's monthly AI requests. Conversations stay with the post for your team.",
+        text: "Each message uses one of your workspace's monthly AI requests. Conversations stay with the post for your team.",
       },
     ],
   },
@@ -456,7 +456,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         kind: "list",
         items: [
           "Sees and works on every client and project.",
-          "Manages the agency's settings: logo and colours, Instagram connections, knowledge, the drafting model, the plan and billing.",
+          "Manages the workspace's settings: logo and colours, Instagram connections, knowledge, the drafting model, the plan and billing.",
           "Edits each client's details, people and Preferences, and archives clients and projects.",
           "Sees Analytics, and decides on Approved artwork with no live date.",
           "Invites Admins, Users and Clients when an Owner allows them to.",
@@ -468,7 +468,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         items: [
           "Works only on the clients they're given, and the projects they're on.",
           "Briefs posts, uploads artwork, writes and drafts copy, comments (privately or publicly), moves posts between stages, and sends them for review.",
-          "Sees settings, but doesn't change the agency's.",
+          "Sees settings, but doesn't change the workspace's.",
         ],
       },
       { kind: "h", text: "Client" },
@@ -543,7 +543,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
   },
   {
     id: "settings",
-    title: "Your agency's Settings",
+    title: "Your workspace's Settings",
     category: "account",
     summary: "Branding, Knowledge, AI, connections and billing.",
     blocks: [

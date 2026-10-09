@@ -19,8 +19,8 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
   if (!Number.isInteger(days) || days < 1 || days > 90) return fail("Extend by 1 to 90 days", 400);
 
   const { data: agency } = await admin.from("agencies").select("plan, trial_ends_at").eq("id", id).maybeSingle();
-  if (!agency) return fail("Agency not found", 404);
-  if (agency.plan !== "free") return fail("Only an agency on Free has a trial", 409);
+  if (!agency) return fail("Workspace not found", 404);
+  if (agency.plan !== "free") return fail("Only a workspace on Free has a trial", 409);
   const from = Math.max(Date.now(), agency.trial_ends_at ? new Date(agency.trial_ends_at as string).getTime() : 0);
   const endsAt = new Date(from + days * DAY).toISOString();
   const { error } = await admin.from("agencies").update({ trial_ends_at: endsAt }).eq("id", id);

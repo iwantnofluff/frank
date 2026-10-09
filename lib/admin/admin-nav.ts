@@ -6,7 +6,7 @@ export const ADMIN_SECTIONS: SettingsSection[] = [
   { key: "dashboard", label: "Dashboard", pages: [
       // How Frank is doing, and who needs a look (decided directly).
       { href: "/admin", label: "Overview" },
-      { href: "/admin/agencies", label: "Agencies" },
+      { href: "/admin/agencies", label: "Workspaces" },
       // Everyone on Frank, view-only (decided directly, 4 Oct 2026).
       { href: "/admin/users", label: "Users" },
     ],

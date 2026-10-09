@@ -77,7 +77,7 @@ export default function AdminOverviewPage() {
             </div>
             <div className="stat">
               <div className="n">{o.counts.paying}</div>
-              <div className="l">Paying agencies</div>
+              <div className="l">Paying workspaces</div>
             </div>
             <div className="stat">
               <div className="n">{o.counts.onTrial}</div>
@@ -93,7 +93,7 @@ export default function AdminOverviewPage() {
             <div>
               <div className="msection-h">Revenue</div>
               <p className="msection-d">
-                Agencies paying by card, at list price before tax and discounts. A yearly plan counts at its monthly
+                Workspaces paying by card, at list price before tax and discounts. A yearly plan counts at its monthly
                 rate.
               </p>
               <section className="panel" aria-label="Revenue by plan">
@@ -108,7 +108,7 @@ export default function AdminOverviewPage() {
                   <div className="srow" key={r.plan}>
                     <span className="sl">
                       <b>{r.name}</b>
-                      <span>{plural(r.agencies, "agency", "agencies")}</span>
+                      <span>{plural(r.agencies, "workspace", "workspaces")}</span>
                     </span>
                     <span className="srow-note">{money(r.mrr)} a month</span>
                   </div>
@@ -125,7 +125,7 @@ export default function AdminOverviewPage() {
 
               <div className="msection-h">This month</div>
               <p className="msection-d">
-                {plural(o.signups.month, "agency", "agencies")} signed up this month, {o.signups.week} this week.{" "}
+                {plural(o.signups.month, "workspace", "workspaces")} signed up this month, {o.signups.week} this week.{" "}
                 {o.counts.agencies} in all, {o.counts.readOnly} read-only after their trial
                 {o.counts.paused ? `, ${o.counts.paused} paused` : ""}.
                 {o.changes.since
@@ -152,7 +152,7 @@ export default function AdminOverviewPage() {
             <div>
               <div className="msection-h">Needs a look</div>
               <p className="msection-d">
-                {nothingToSee ? "Nothing right now." : "Agencies worth a message or a check."}
+                {nothingToSee ? "Nothing right now." : "Workspaces worth a message or a check."}
               </p>
               {o.emailError && (
                 <p className="autherr">
@@ -163,7 +163,7 @@ export default function AdminOverviewPage() {
                 <>
                   <Group
                     title="Plan requests"
-                    hint="Waiting for you on the agency's page"
+                    hint="Waiting for you on the workspace's page"
                     items={att.planRequests}
                     note={(a) => `Wants ${a.plan}, billed ${a.interval}`}
                   />

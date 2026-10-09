@@ -160,7 +160,7 @@ export default function PlansPage() {
 
   return (
     <div className="pad" style={{ maxWidth: 1100 }}>
-      <SettingsHead title="Plans" description="Your agency's plan, what it includes, and the plans you can move to." />
+      <SettingsHead title="Plans" description="Your workspace's plan, what it includes, and the plans you can move to." />
 
       {current && (
         <div className="panel">
@@ -356,7 +356,7 @@ export default function PlansPage() {
         <ConfirmDialog
           tone="primary"
           title={`Move to ${choosing.plan.name}?`}
-          message={`this asks Frank to move ${agency?.name ?? "your agency"} to ${choosing.plan.name}${
+          message={`this asks Frank to move ${agency?.name ?? "your workspace"} to ${choosing.plan.name}${
             choosing.plan.monthly ? `, at ${price(choosing.plan, interval).amount} ${price(choosing.plan, interval).per}` : ""
           }. Frank will confirm it with you, and set up payment, before anything changes.`}
           confirmLabel="Send Request"

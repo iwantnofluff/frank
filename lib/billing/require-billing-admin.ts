@@ -26,7 +26,7 @@ export async function requireBillingAdmin(agencyId: string | undefined) {
     admin.from("agencies").select("id, name, plan").eq("id", agencyId).single(),
     admin.from("agency_billing").select("*").eq("agency_id", agencyId).maybeSingle(),
   ]);
-  if (!agency) return { error: NextResponse.json({ error: "No such agency" }, { status: 404 }) } as const;
+  if (!agency) return { error: NextResponse.json({ error: "No such workspace" }, { status: 404 }) } as const;
   return { admin, user, agency, billing: billing as BillingRow | null } as const;
 }
 

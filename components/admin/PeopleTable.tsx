@@ -40,7 +40,7 @@ export function PeopleTable({ people, agencyId }: { people: AdminPerson[]; agenc
           ) : (
             <>
               <th>Email</th>
-              <th>Agencies</th>
+              <th>Workspaces</th>
             </>
           )}
           <th>Last signed in</th>

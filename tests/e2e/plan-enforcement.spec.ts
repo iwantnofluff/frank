@@ -38,7 +38,7 @@ test("an agency signs itself up at beingfrank.app, confirms, works through its t
     const page = await ctx.newPage();
     await page.goto(`${ROOT}/`);
     await expect(page.getByRole("button", { name: "Sign Up" })).toHaveAttribute("aria-pressed", "true");
-    await page.getByLabel("Agency name").fill("E2E Signup Agency");
+    await page.getByLabel("Workspace name").fill("E2E Signup Agency");
     // The address follows the name until it's typed over, and says if it's free.
     await expect(page.getByLabel("Your address")).toHaveValue("e2e-signup-agency");
     await page.getByLabel("Your address").fill("nofluff");

@@ -122,7 +122,7 @@ export async function loadPeople(admin: SupabaseClient, onlyUserId?: string): Pr
         return {
           membershipId: m.id as string,
           agencyId: m.agency_id as string,
-          agencyName: agencyName.get(m.agency_id as string) ?? "Unknown agency",
+          agencyName: agencyName.get(m.agency_id as string) ?? "Unknown workspace",
           agencySubdomain: agencySubdomain.get(m.agency_id as string) ?? null,
           type: clientId ? ("client" as const) : role,
           typeLabel: clientId ? "Client" : ROLE_LABELS[role],

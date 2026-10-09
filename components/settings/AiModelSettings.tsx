@@ -60,8 +60,8 @@ function AiModelForm({
           ))}
         </select>
         <p className="sub" style={{ marginTop: 6 }}>
-          Every AI draft across this agency uses this model. The platform
-          covers usage up to the agency&rsquo;s monthly cap (
+          Every AI draft across this workspace uses this model. The platform
+          covers usage up to the workspace&rsquo;s monthly cap (
           {settings.ai_monthly_request_cap} requests).
         </p>
       </div>

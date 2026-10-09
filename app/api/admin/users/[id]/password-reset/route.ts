@@ -28,7 +28,7 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
     .is("removed_at", null)
     .maybeSingle();
   const agency = (membership as unknown as { agency: { name: string; subdomain: string | null } | null } | null)?.agency;
-  if (!membership || !agency?.subdomain) return fail("Choose an agency they're in", 400);
+  if (!membership || !agency?.subdomain) return fail("Choose a workspace they're in", 400);
 
   const { data, error } = await admin.auth.admin.generateLink({ type: "recovery", email: person.email as string });
   const tokenHash = data?.properties?.hashed_token;

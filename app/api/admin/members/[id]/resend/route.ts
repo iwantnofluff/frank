@@ -38,7 +38,7 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
   if (!member?.user || !member.agency) return fail("Invite not found", 404);
   if (member.accepted_at) return fail("They've already joined", 409);
   if (member.removed_at) return fail("They were deactivated", 409);
-  if (!member.agency.subdomain) return fail("This agency has no address to invite people to", 409);
+  if (!member.agency.subdomain) return fail("This workspace has no address to invite people to", 409);
 
   const { token, tokenHash } = createInviteToken();
   const { error: insertError } = await admin.from("invites").insert({

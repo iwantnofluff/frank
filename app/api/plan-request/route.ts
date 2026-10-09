@@ -46,7 +46,7 @@ export async function POST(request: Request) {
   await emailPlatformAdmins(
     admin,
     "requests",
-    `${agency?.name ?? "An agency"} asked to move to ${tier.name}`,
+    `${agency?.name ?? "A workspace"} asked to move to ${tier.name}`,
     `${who?.name ?? who?.email} at ${agency?.name} asked to move from ${from} to ${tier.name}, billed ${interval}.\n\nApply or decline it in Frank Admin.`,
   );
   return NextResponse.json({ id: row.id }, { status: 201 });

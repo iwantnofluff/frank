@@ -46,5 +46,5 @@ export async function setAgencyLogo(agencyId: string, file: File | null) {
     .select("agency_id")
     .maybeSingle();
   if (error) throw error;
-  if (!data) throw new Error("Only Admins and Owners can change the agency logo.");
+  if (!data) throw new Error("Only Admins and Owners can change the workspace logo.");
 }

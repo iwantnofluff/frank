@@ -205,7 +205,7 @@ export function BrandForm({
           </span>
           <input
             className="bin one"
-            aria-label="Agency name"
+            aria-label="Workspace name"
             style={{ width: 290 }}
             value={name}
             disabled={!canEdit}
@@ -229,7 +229,7 @@ export function BrandForm({
           <button
             type="button"
             className={logoUrl ? "logo-box has" : "logo-box"}
-            aria-label="Upload agency logo"
+            aria-label="Upload workspace logo"
             disabled={!canEdit || setLogo.isPending}
             onClick={() => logoInput.current?.click()}
           >
@@ -241,7 +241,7 @@ export function BrandForm({
             )}
           </button>
           <span className="sl">
-            <b>Agency Logo</b>
+            <b>Workspace Logo</b>
             <span>Shown in the sidebar and on the Share for Review pages your clients open</span>
           </span>
           {canEdit &&
@@ -263,7 +263,7 @@ export function BrandForm({
             ref={logoInput}
             type="file"
             accept={AVATAR_TYPES.join(",")}
-            aria-label="Agency logo file"
+            aria-label="Workspace logo file"
             hidden
             onChange={(e) => {
               const file = e.target.files?.[0];
@@ -474,7 +474,7 @@ export function BrandForm({
         <PhotoCropModal
           file={cropping}
           detectFaces={false}
-          title="Position the agency logo"
+          title="Position the workspace logo"
           onCancel={() => setCropping(null)}
           onConfirm={(cropped) => {
             setCropping(null);

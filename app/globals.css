@@ -8759,3 +8759,55 @@ button.hbrand-add:hover {
   color: var(--ink);
   margin-bottom: 2px;
 }
+
+/* The workspace switcher in the profile menu (direct instruction, like
+   Slack): each workspace with its logo, round like the header's, or its
+   initial; a tick on this one. */
+.ws-h {
+  padding: 6px 8px 4px;
+  font-size: 11.2px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.ws-row .cn {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ws-row[aria-current="true"] {
+  cursor: default;
+}
+.ws-row[aria-current="true"]:hover {
+  background: none;
+}
+.ws-mark {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.ws-initial {
+  display: grid;
+  place-items: center;
+  background: var(--rail);
+  color: #fff;
+  font-size: 11.2px;
+  font-weight: 700;
+}
+.ws-tick {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--action);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+.ws-paused {
+  font-size: 10.7px;
+  color: var(--muted);
+}

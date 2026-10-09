@@ -7,7 +7,7 @@ export default function WorkspacePausedPage() {
         <div className="mark authmark">F</div>
         <h1 className="h1">This workspace is paused</h1>
         <p className="sub">
-          This agency&rsquo;s Frank workspace has been paused. Nothing has been deleted. Contact the agency, or Frank, to
+          This Frank workspace has been paused. Nothing has been deleted. Contact the agency, or Frank, to
           have it turned back on.
         </p>
       </div>

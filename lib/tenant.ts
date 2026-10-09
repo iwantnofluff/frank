@@ -48,3 +48,28 @@ export function agencyHeader(tenant: Tenant): Record<string, string> {
 export function hostWithSubdomain(host: string, from: string, to: string): string {
   return host.toLowerCase().startsWith(`${from.toLowerCase()}.`) ? `${to}${host.slice(from.length)}` : host;
 }
+
+// One sign-in for every workspace (decided directly, like Slack): on a
+// workspace's address the session cookie belongs to the root domain, so
+// nofluff.beingfrank.app and casa.beingfrank.app share it, and switching
+// workspace doesn't ask you to sign in again. Each workspace still checks
+// you belong to it (the middleware). The cookie is named for the database
+// project, so live's (.beingfrank.app) and staging's
+// (.staging.beingfrank.app, which sits under it) never meet. A new name
+// also means the old per-address cookies are simply ignored: everyone signs
+// in once more. Elsewhere (localhost, previews) it stays the address's own.
+export function sessionCookieOptions(host: string | null | undefined): {
+  name: string;
+  domain?: string;
+  secure?: boolean;
+} {
+  const ref = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).hostname.split(".")[0];
+  const name = `sb-${ref}-session`;
+  const hostname = (host ?? "").split(":")[0].toLowerCase();
+  // The platform admin area keeps a sign-in of its own, never shared with
+  // the workspaces (and named apart, so the two never meet there).
+  if (tenantFromHost(hostname).kind === "admin") return { name: `${name}-admin` };
+  const root = ROOT_DOMAINS.find((r) => hostname === r || hostname.endsWith(`.${r}`));
+  if (!root) return { name };
+  return { name, domain: root, secure: root !== "frank.localhost" };
+}

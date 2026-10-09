@@ -93,9 +93,9 @@ test("the overview reports plan changes, a trial ending, a failed payment and a 
     await expect(page.getByText("No bounces or failures for anyone here.")).toBeVisible({ timeout: 20_000 });
     await billing.screenshot({ path: `${process.env.SHOT_DIR ?? "test-results"}/admin-agency-billing.png`, animations: "disabled" });
     // Its back arrow returns to the agencies list, now at its own address.
-    await page.getByRole("link", { name: "Back to agencies" }).click();
+    await page.getByRole("link", { name: "Back to workspaces" }).click();
     await page.waitForURL(`${ADMIN}/admin/agencies`);
-    await expect(page.getByRole("heading", { name: "Agencies" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Workspaces" })).toBeVisible();
   } finally {
     await pa.cleanup();
   }

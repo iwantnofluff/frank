@@ -49,7 +49,7 @@ export function useMyAgency() {
       };
       return {
         agencyId: row.agency_id,
-        name: row.agencies?.name ?? "Agency",
+        name: row.agencies?.name ?? "Workspace",
         // The agency's plan limit (phase37), enforced by the database.
         // null is unlimited (phase38).
         clientLimit: row.agencies?.client_limit ?? null,

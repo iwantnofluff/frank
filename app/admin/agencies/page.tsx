@@ -22,21 +22,21 @@ export default function AdminAgenciesPage() {
     <>
       <div className="adminhead">
         <div>
-          <h1 className="h1">Agencies</h1>
+          <h1 className="h1">Workspaces</h1>
           <p className="sub">{agencies ? `${agencies.length} on Frank.` : " "}</p>
         </div>
         <Link className="btn primary" href="/admin/agencies/new">
-          New Agency
+          New Workspace
         </Link>
       </div>
       {isLoading && <p className="sub">Frank is working…</p>}
       {deleted && <p className="bsaved">{deleted}</p>}
-      {error && <p className="autherr">{errorMessage(error, "Couldn't load the agencies")}</p>}
+      {error && <p className="autherr">{errorMessage(error, "Couldn't load the workspaces")}</p>}
       {agencies && (
         <table className="admintbl">
           <thead>
             <tr>
-              <th>Agency</th>
+              <th>Workspace</th>
               <th>Plan</th>
               <th>Primary Owner</th>
               <th>Members</th>
@@ -125,12 +125,12 @@ export default function AdminAgenciesPage() {
       {deleting && (
         <ConfirmDialog
           title={`Delete ${deleting.name}?`}
-          message={`this deletes ${deleting.name}, every client, post and file in it, and the accounts of its people who aren't in another agency, so their emails can sign up again. Staging only; it can't be undone.`}
-          confirmLabel="Delete Agency"
+          message={`this deletes ${deleting.name}, every client, post and file in it, and the accounts of its people who aren't in another workspace, so their emails can sign up again. Staging only; it can't be undone.`}
+          confirmLabel="Delete Workspace"
           pendingLabel="Deleting…"
           isPending={remove.isPending}
           error={remove.error}
-          errorFallback="Couldn't delete the agency"
+          errorFallback="Couldn't delete the workspace"
           onConfirm={() =>
             remove
               .mutateAsync(deleting.id)

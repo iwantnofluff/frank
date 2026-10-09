@@ -85,15 +85,15 @@ test("an admin creates an agency, and its Primary Owner is invited to its own ad
     await signInAt(page, ADMIN, pa.email, PASSWORD);
     await page.waitForURL(`${ADMIN}/admin`, { timeout: 20_000 });
     await page.goto(`${ADMIN}/admin/agencies`);
-    await page.getByRole("link", { name: "New Agency" }).click();
+    await page.getByRole("link", { name: "New Workspace" }).click();
     await page.fill("#agName", "E2E Created Agency");
     // A reserved name is refused.
     await page.fill("#agSub", "admin");
     await page.fill("#agOwner", ownerEmail);
-    await page.getByRole("button", { name: "Create Agency" }).click();
+    await page.getByRole("button", { name: "Create Workspace" }).click();
     await expect(page.locator(".autherr")).toContainText("isn't allowed");
     await page.fill("#agSub", sub);
-    await page.getByRole("button", { name: "Create Agency" }).click();
+    await page.getByRole("button", { name: "Create Workspace" }).click();
     await expect(page.getByRole("heading", { name: "E2E Created Agency" })).toBeVisible({ timeout: 20_000 });
 
     const { data: agency } = await admin.from("agencies").select("id, subdomain").eq("subdomain", sub).single();
@@ -189,11 +189,11 @@ test("limits come from the plan plus the admin override, are enforced, and pausi
 
     // Pause: nobody in the agency sees anything, and its review links stop.
     const token = await frank.createSharedLink();
-    await page.getByRole("button", { name: "Pause Agency" }).click();
+    await page.getByRole("button", { name: "Pause Workspace" }).click();
     // Pausing asks why, and logs it for the agency (phase51).
     const pause = page.getByRole("dialog", { name: /^Pause / });
     await pause.getByLabel(/Reason/).fill("Checking that pausing locks the agency");
-    await pause.getByRole("button", { name: "Pause Agency" }).click();
+    await pause.getByRole("button", { name: "Pause Workspace" }).click();
     await expect(page.getByRole("button", { name: "Reactivate" })).toBeVisible();
     expect((await staff.from("clients").select("id").eq("agency_id", frank.agencyId)).data).toEqual([]);
     const review = await (await page.request.post(`${APP_URL}/api/shared-review`, { data: { token } })).json();
@@ -209,7 +209,7 @@ test("limits come from the plan plus the admin override, are enforced, and pausi
     const reactivate = page.getByRole("dialog", { name: /^Reactivate / });
     await reactivate.getByLabel(/Reason/).fill("Done checking");
     await reactivate.getByRole("button", { name: "Reactivate" }).click();
-    await expect(page.getByRole("button", { name: "Pause Agency" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Pause Workspace" })).toBeVisible();
     expect((await staff.from("clients").select("id").eq("agency_id", frank.agencyId)).data!.length).toBe(1);
   } finally {
     await admin.from("agency_billing").delete().eq("agency_id", frank.agencyId);

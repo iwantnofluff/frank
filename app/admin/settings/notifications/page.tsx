@@ -11,7 +11,7 @@ export default function AdminNotificationsPage() {
   const save = useSaveAdminNotification();
   return (
     <div style={{ maxWidth: 760 }}>
-      <SettingsHead title="Notifications" description="The emails Frank sends you about the agencies on it." />
+      <SettingsHead title="Notifications" description="The emails Frank sends you about the workspaces on it." />
       <div className="panel">
         {!isLoading &&
           ADMIN_NOTIFICATIONS.map((n) => {

@@ -84,13 +84,26 @@ export function buildCopyChatPrompt(
   history: CopyChatTurn[],
   currentFields: Record<string, string>,
 ): string {
+  return buildCopyChatPromptParts(context, history, currentFields).join("\n\n");
+}
+
+// The prompt in two parts (direct instruction: Draft with Frank was slow):
+// what stays the same for every message of a conversation (the brief, the
+// knowledge, the instructions), which Claude keeps for a few minutes and
+// reads again quickly and cheaply, and what changes each message (the copy
+// in the editor and the conversation).
+export function buildCopyChatPromptParts(
+  context: CopyChatContext,
+  history: CopyChatTurn[],
+  currentFields: Record<string, string>,
+): [string, string] {
   const fieldList = context.fields.map((f) => `"${f.key}" (${f.label})`).join(", ");
   const current = context.fields
     .filter((f) => currentFields[f.key]?.trim())
     .map((f) => `${f.label}: ${currentFields[f.key].trim()}`)
     .join("\n");
 
-  const parts = [
+  const stable = [
     "You are a senior copywriter at a content agency, working with a colleague on the copy for one post. Be specific, warm and brief. Ground everything in the brief and the knowledge below; don't invent facts about the client.",
     `Post: ${context.postName}`,
     `Format: ${context.formatLabel}`,
@@ -99,10 +112,9 @@ export function buildCopyChatPrompt(
       ? `What the reader should get from it (WIIFM):\n${context.approachNotes.map((n) => `- ${n}`).join("\n")}`
       : null,
     context.formatDirection ? `Format direction (follow it):\n${context.formatDirection}` : null,
-    notes("Agency knowledge", context.agencyNotes),
+    notes("Workspace knowledge", context.agencyNotes),
     notes("Client knowledge", context.clientNotes),
     context.fileTitles.length ? `Attached knowledge files: ${context.fileTitles.join(", ")}.` : null,
-    current ? `The copy in the editor right now:\n${current}` : "The copy in the editor is empty.",
     context.fields.some((f) => isSlideField(f.key))
       ? "Text on Image is the words set on the artwork itself, separate from the caption: short and easy to read at a glance, never a repeat of the caption. For a carousel, each slide's text moves the story on to the next. Include it in every draft."
       : null,
@@ -113,11 +125,14 @@ export function buildCopyChatPrompt(
     `When you propose copy, end your reply with one JSON block, fenced as \`\`\`json, shaped {"drafts":[{"label":"a few words on the angle","fields":{...}}]}, where fields uses only these keys: ${fieldList}. ${
       context.fields.length > 4 ? "Offer one or two drafts, each different." : "Offer up to three drafts, each different."
     } When you're only commenting or answering, leave the JSON out. Never mention the JSON in your prose.`,
+  ];
+  const turn = [
+    current ? `The copy in the editor right now:\n${current}` : "The copy in the editor is empty.",
     "The conversation so far:",
     ...history.map((t) => `${t.role === "user" ? "Colleague" : "You"}: ${t.body}`),
     "You:",
   ];
-  return parts.filter(Boolean).join("\n\n");
+  return [stable.filter(Boolean).join("\n\n"), turn.join("\n\n")];
 }
 
 // The drafts block: from its opening fence to the closing one, or to the

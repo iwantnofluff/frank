@@ -77,7 +77,7 @@ export async function applySubscription(
       .eq("id", agencyId)
       .select("id");
     if (error) throw error;
-    if (!updated?.length) throw new Error(`Agency ${agencyId} wasn't updated`);
+    if (!updated?.length) throw new Error(`Workspace ${agencyId} wasn't updated`);
   }
   return { outcome: "applied", agencyId, plan: next.plan, planChanged, previousPlan: agency.plan };
 }

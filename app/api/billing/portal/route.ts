@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   if ("error" in auth) return auth.error;
   const { billing } = auth;
   if (!billing?.paddle_customer_id) {
-    return NextResponse.json({ error: "Your agency hasn't paid through Paddle yet." }, { status: 409 });
+    return NextResponse.json({ error: "Your workspace hasn't paid through Paddle yet." }, { status: 409 });
   }
   try {
     const session = await paddle<{ urls: { general: { overview: string } } }>(

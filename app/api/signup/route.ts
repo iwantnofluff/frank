@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   const email = body.email?.trim().toLowerCase() ?? "";
   const password = body.password ?? "";
   const fail = (error: string, status = 400) => NextResponse.json({ error }, { status });
-  if (!agencyName) return fail("Enter your agency's name");
+  if (!agencyName) return fail("Enter your workspace's name");
   if (!firstName) return fail("Enter your first name");
   if (!lastName) return fail("Enter your last name");
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail("Enter your email");

@@ -23,7 +23,7 @@ export async function POST(request: Request) {
 
   const admin = createServiceRoleClient();
   const { data: agency } = await admin.from("agencies").select("plan, subdomain").eq("id", body.agencyId).single();
-  if (!agency) return NextResponse.json({ error: "No such agency" }, { status: 404 });
+  if (!agency) return NextResponse.json({ error: "No such workspace" }, { status: 404 });
   if (!customAddressAllowed(agency.plan)) {
     return NextResponse.json({ error: "Choosing your own address comes with the Agency plan." }, { status: 403 });
   }

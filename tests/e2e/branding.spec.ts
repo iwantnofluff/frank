@@ -140,12 +140,12 @@ test("the agency logo shows on the rail, for clients, and on review links", asyn
       g.fillRect(0, 0, 600, 300);
       return c.toDataURL("image/png").split(",")[1];
     });
-    await page.getByLabel("Agency logo file").setInputFiles({
+    await page.getByLabel("Workspace logo file").setInputFiles({
       name: "agency.png",
       mimeType: "image/png",
       buffer: Buffer.from(b64, "base64"),
     });
-    const cropper = page.getByRole("dialog", { name: "Position the agency logo" });
+    const cropper = page.getByRole("dialog", { name: "Position the workspace logo" });
     await cropper.getByRole("button", { name: "Use image" }).click();
     await expect(page.getByRole("button", { name: "Remove" })).toBeVisible({ timeout: 20_000 });
 

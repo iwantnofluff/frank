@@ -57,7 +57,7 @@ export function AdminActionModal({
       {children}
       <div className="field">
         <label htmlFor="adReason">
-          Reason <span className="hint">the agency&rsquo;s Owners will see this</span>
+          Reason <span className="hint">the workspace&rsquo;s Owners will see this</span>
         </label>
         <textarea
           id="adReason"

@@ -38,13 +38,13 @@ export async function POST(request: Request) {
       await emailPlatformAdmins(
         admin,
         "billing_problems",
-        "An agency has two Paddle subscriptions",
-        `Agency ${result.agencyId} already pays through Paddle, and subscription ${sub.id} was started for it too. Frank kept the first; cancel or refund the second in Paddle.`,
+        "A workspace has two Paddle subscriptions",
+        `Workspace ${result.agencyId} already pays through Paddle, and subscription ${sub.id} was started for it too. Frank kept the first; cancel or refund the second in Paddle.`,
       );
     }
     if (result.outcome === "applied" && result.planChanged) {
       const { data: agency } = await admin.from("agencies").select("name").eq("id", result.agencyId).single();
-      const name = agency?.name ?? "An agency";
+      const name = agency?.name ?? "A workspace";
       const was = planById(result.previousPlan)?.name ?? result.previousPlan;
       const now = planById(result.plan)?.name ?? result.plan;
       await emailPlatformAdmins(admin, "plan_changes", `${name} moved from ${was} to ${now}`, `${name} is now on ${now} (was ${was}), through Paddle.`);

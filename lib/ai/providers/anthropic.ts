@@ -11,7 +11,7 @@ import type { Attachment } from "../attachment";
 const REFUSAL_RETRIES = 2;
 
 export async function generate(
-  prompt: string,
+  prompt: string | string[],
   model: string,
   attachments: Attachment[] = [],
 ): Promise<string> {
@@ -34,6 +34,7 @@ export async function generate(
   // guidance for document + instruction ordering in a single message.
   // Images as image blocks (phase52), each preceded by its title so the
   // prompt can refer to it.
+  const parts = Array.isArray(prompt) ? prompt : [prompt];
   const content: Anthropic.Messages.ContentBlockParam[] = [
     ...attachments.flatMap((a): Anthropic.Messages.ContentBlockParam[] =>
       a.mediaType === "application/pdf"
@@ -43,8 +44,19 @@ export async function generate(
             { type: "image", source: { type: "base64", media_type: a.mediaType, data: a.base64 } },
           ],
     ),
-    { type: "text", text: prompt },
+    ...parts.map((text): Anthropic.Messages.ContentBlockParam => ({ type: "text", text })),
   ];
+  // Prompt caching (direct instruction: Draft with Frank was slow): the
+  // files and the parts that don't change are kept by Claude for a few
+  // minutes, so the next message in the conversation doesn't send them
+  // through again in full. Marked on the last fixed part, and only for a
+  // prompt sent in parts (a conversation): keeping costs a little more the
+  // first time, so a one-off request (a check) isn't marked.
+  const fixedEnd = parts.length > 1 ? content.length - 2 : -1;
+  if (fixedEnd >= 0) {
+    const block = content[fixedEnd] as Anthropic.Messages.ContentBlockParam & { cache_control?: { type: "ephemeral" } };
+    block.cache_control = { type: "ephemeral" };
+  }
 
   let message: Anthropic.Messages.Message | undefined;
   for (let attempt = 0; attempt <= REFUSAL_RETRIES; attempt++) {

@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { runAiTask } from "@/lib/ai/run-ai-task";
 import { IMAGE_TYPES, type Attachment } from "@/lib/ai/attachment";
 import {
-  buildCopyChatPrompt,
+  buildCopyChatPromptParts,
   openingMessage,
   parseCopyChatReply,
   slideTextFields,
@@ -134,31 +134,36 @@ export async function POST(request: Request) {
       .from("assets")
       .select("id, storage_key, mime_type, bytes, filename")
       .in("id", fileRows.map((e) => e.asset_id as string));
+    // Which files go, within the caps, then all of them fetched at once
+    // rather than one after another (direct instruction: it was slow).
     let total = 0;
+    const chosen: { title: string; key: string; mediaType: Attachment["mediaType"] }[] = [];
     for (const entry of fileRows) {
       const asset = (assets ?? []).find((a) => a.id === entry.asset_id);
       const title = (entry.title as string) || (asset?.filename as string) || "File";
       if (!asset || !READABLE.has(asset.mime_type as string)) continue;
       const bytes = Number(asset.bytes);
-      if (attachments.length >= MAX_FILES || bytes > MAX_FILE_BYTES || total + bytes > MAX_TOTAL_BYTES) {
-        skipped.push(title);
-        continue;
-      }
-      const { data: blob } = await supabase.storage.from("assets").download(asset.storage_key as string);
-      if (!blob) {
+      if (chosen.length >= MAX_FILES || bytes > MAX_FILE_BYTES || total + bytes > MAX_TOTAL_BYTES) {
         skipped.push(title);
         continue;
       }
       total += bytes;
-      attachments.push({
-        base64: Buffer.from(await blob.arrayBuffer()).toString("base64"),
-        mediaType: asset.mime_type as Attachment["mediaType"],
-        title,
-      });
+      chosen.push({ title, key: asset.storage_key as string, mediaType: asset.mime_type as Attachment["mediaType"] });
+    }
+    const blobs = await Promise.all(chosen.map((c) => supabase.storage.from("assets").download(c.key)));
+    for (const [i, c] of chosen.entries()) {
+      const blob = blobs[i].data;
+      if (!blob) {
+        skipped.push(c.title);
+        continue;
+      }
+      attachments.push({ base64: Buffer.from(await blob.arrayBuffer()).toString("base64"), mediaType: c.mediaType, title: c.title });
     }
   }
 
-  const prompt = buildCopyChatPrompt(
+  // The brief, knowledge and instructions first, kept by Claude between
+  // messages; then this message's part.
+  const prompt = buildCopyChatPromptParts(
     {
       postName: creative.name as string,
       concept: (creative.concept as string | null) ?? null,

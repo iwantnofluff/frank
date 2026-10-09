@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies, headers } from "next/headers";
-import { agencyHeader, tenantFromHost } from "@/lib/tenant";
+import { agencyHeader, sessionCookieOptions, tenantFromHost } from "@/lib/tenant";
 
 // For use in Server Components, Server Actions and Route Handlers only.
 // Server Components can't write cookies, so setAll is a no-op there — the
@@ -16,6 +16,8 @@ export async function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       global: { headers: agencyHeader(tenantFromHost(host)) },
+      // One sign-in across every workspace's address.
+      cookieOptions: sessionCookieOptions(host),
       cookies: {
         getAll() {
           return cookieStore.getAll();

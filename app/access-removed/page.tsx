@@ -20,7 +20,7 @@ function AccessRemoved() {
       <h1 className="h1">Access removed</h1>
       <p className="sub">
         {agency ? `Your access to ${agency} on Frank` : "Your access to Frank"} has been turned off.
-        Contact an Owner at your agency if you think this is a mistake.
+        Contact an Owner of your workspace if you think this is a mistake.
       </p>
       <Link className="btn primary" href="/login" style={{ textAlign: "center" }}>
         Back to sign in

@@ -26,13 +26,13 @@ export default function NewAgencyPage() {
         else router.push(`/admin/agencies/${result.agencyId}`);
       }}
     >
-      <h1 className="h1">New Agency</h1>
+      <h1 className="h1">New Workspace</h1>
       <p className="sub">
-        The owner gets an invite to the agency&rsquo;s own address, as its Primary Owner. It starts on Free, with its
+        The owner gets an invite to the workspace&rsquo;s own address, as its Primary Owner. It starts on Free, with its
         30-day trial, and chooses its own plan.
       </p>
       <div className="field">
-        <label htmlFor="agName">Agency Name</label>
+        <label htmlFor="agName">Workspace Name</label>
         <input id="agName" className="bin one" required value={name} onChange={(e) => setName(e.target.value)} />
       </div>
       <div className="field">
@@ -54,14 +54,14 @@ export default function NewAgencyPage() {
         <label htmlFor="agOwner">Primary Owner&rsquo;s Email</label>
         <input id="agOwner" type="email" className="bin one" required value={ownerEmail} onChange={(e) => setOwnerEmail(e.target.value)} />
       </div>
-      {create.error && <p className="autherr">{errorMessage(create.error, "Couldn't create the agency")}</p>}
+      {create.error && <p className="autherr">{errorMessage(create.error, "Couldn't create the workspace")}</p>}
       {warning && <p className="autherr">{warning}</p>}
       <div className="confirm-acts">
         <button type="button" className="btn" onClick={() => router.push("/admin/agencies")}>
           Cancel
         </button>
         <button type="submit" className="btn primary" disabled={create.isPending}>
-          {create.isPending ? "Creating…" : "Create Agency"}
+          {create.isPending ? "Creating…" : "Create Workspace"}
         </button>
       </div>
     </form>

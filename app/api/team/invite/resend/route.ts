@@ -79,7 +79,7 @@ export async function POST(request: Request) {
 
   const url = `${new URL(request.url).origin}/invite/${token}`;
   const message = inviteEmail({
-    agencyName: agency?.name ?? "your agency",
+    agencyName: agency?.name ?? "a workspace",
     inviterName: inviter?.name ?? "Your team",
     roleLabel: member.client_id ? `a reviewer for ${client?.name ?? "a client"}` : ROLE_LABELS[member.role],
     url,

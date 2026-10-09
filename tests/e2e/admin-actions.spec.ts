@@ -73,7 +73,7 @@ test("the admin resends an invite and changes a role, each with a reason that's 
     await modal.getByLabel(/Reason/).fill("Their first email went to spam");
     await modal.getByRole("button", { name: "Resend Invite" }).click();
     // An agency with no address has nowhere to send them: nothing done or logged.
-    await expect(modal).toContainText("This agency has no address to invite people to");
+    await expect(modal).toContainText("This workspace has no address to invite people to");
     expect(await log(frank)).toEqual([]);
     await admin.from("agencies").update({ subdomain: `e2e${Date.now()}` }).eq("id", frank.agencyId);
     await modal.getByRole("button", { name: "Resend Invite" }).click();
@@ -99,7 +99,7 @@ test("the admin resends an invite and changes a role, each with a reason that's 
     // A password reset, to this agency's address.
     await page.getByRole("button", { name: "Send Password Reset" }).click();
     const reset = page.getByRole("dialog", { name: "Send a Password Reset" });
-    await expect(reset.getByLabel("Agency", { exact: true })).toHaveValue(frank.agencyId);
+    await expect(reset.getByLabel("Workspace", { exact: true })).toHaveValue(frank.agencyId);
     await reset.getByLabel(/Reason/).fill("Locked out before a client review");
     await reset.getByRole("button", { name: "Send Reset" }).click();
     await expect(page.getByRole("status")).toContainText(`Password reset sent to ${frank.staffEmail}`, { timeout: 20_000 });
@@ -146,10 +146,10 @@ test("the admin extends an ended trial and pauses with a reason; the agency's Ow
     // Counted from today, since it had ended.
     expect(Math.abs(ends - (Date.now() + 14 * DAY))).toBeLessThan(5 * 60_000);
 
-    await page.getByRole("button", { name: "Pause Agency" }).click();
+    await page.getByRole("button", { name: "Pause Workspace" }).click();
     const pause = page.getByRole("dialog", { name: "Pause E2E Test Agency?" });
     await pause.getByLabel(/Reason/).fill("Testing the pause");
-    await pause.getByRole("button", { name: "Pause Agency" }).click();
+    await pause.getByRole("button", { name: "Pause Workspace" }).click();
     // Closes once the agencies list has reloaded: not instant against staging.
     await expect(pause).toHaveCount(0, { timeout: 20_000 });
     await page.getByRole("button", { name: "Reactivate" }).click();
@@ -160,8 +160,8 @@ test("the admin extends an ended trial and pauses with a reason; the agency's Ow
     expect((await admin.from("agencies").select("suspended_at").eq("id", frank.agencyId).single()).data!.suspended_at).toBeNull();
     expect((await log(frank)).map((a) => a.action)).toEqual([
       "Extended the free trial",
-      "Paused the agency",
-      "Unpaused the agency",
+      "Paused the workspace",
+      "Unpaused the workspace",
     ]);
   } finally {
     await pa.cleanup();
@@ -176,7 +176,7 @@ test("the admin extends an ended trial and pauses with a reason; the agency's Ow
     await op.goto(`${APP_URL}/settings/general/support-activity`);
     const activity = op.getByRole("region", { name: "Support activity" });
     await expect(activity.locator(".srow")).toHaveCount(3);
-    await expect(activity.locator(".srow").first()).toContainText("Unpaused the agency");
+    await expect(activity.locator(".srow").first()).toContainText("Unpaused the workspace");
     await expect(activity).toContainText("Why: Needs another fortnight to decide");
     await expect(activity).toContainText("Support Sam, Frank");
     await op.screenshot({ path: `${process.env.SHOT_DIR ?? "test-results"}/owner-support-activity.png`, animations: "disabled" });

@@ -103,7 +103,7 @@ export async function POST(request: Request) {
     .single();
   if (agencyError || !agency) {
     const msg = agencyError?.message ?? "";
-    return NextResponse.json({ error: addressError(msg) ?? (msg || "Couldn't create the agency") }, { status: 400 });
+    return NextResponse.json({ error: addressError(msg) ?? (msg || "Couldn't create the workspace") }, { status: 400 });
   }
 
   // Undo the agency if the owner can't be set up, rather than leave one
@@ -173,7 +173,7 @@ export async function POST(request: Request) {
     });
   } catch (e) {
     return NextResponse.json(
-      { agencyId: agency.id, warning: `The agency was created, but the invite email didn't send. ${(e as Error).message}` },
+      { agencyId: agency.id, warning: `The workspace was created, but the invite email didn't send. ${(e as Error).message}` },
       { status: 201 },
     );
   }

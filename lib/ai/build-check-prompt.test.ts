@@ -29,13 +29,13 @@ test("buildCheckPrompt — omits concept and reference notes when empty, rather 
     intro: "You check ad copy for X.",
     concept: null,
     copyText: "Just some copy.",
-    referenceLabel: "Agency reference material",
+    referenceLabel: "Workspace reference material",
     referenceNotes: [],
     attachmentTitles: [],
     findingCount: 3,
   });
   assert.doesNotMatch(prompt, /Concept:/);
-  assert.doesNotMatch(prompt, /Agency reference material:/);
+  assert.doesNotMatch(prompt, /Workspace reference material:/);
   assert.match(prompt, /Just some copy\./);
 });
 
@@ -44,7 +44,7 @@ test("buildCheckPrompt — names attached PDF documents even with zero text note
     intro: "You check ad copy for X.",
     concept: null,
     copyText: "Just some copy.",
-    referenceLabel: "Agency reference material",
+    referenceLabel: "Workspace reference material",
     referenceNotes: [],
     attachmentTitles: ["Cialdini's Six Principles of Persuasion.pdf"],
     findingCount: 3,

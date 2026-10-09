@@ -13,7 +13,7 @@ export type InvitableRole = (typeof INVITABLE_ROLES)[number];
 
 export const ROLE_HINTS: Record<InvitableRole, string> = {
   owner: "Everything an Admin can do, plus inviting people and choosing their roles.",
-  admin: "Sees every client and manages agency settings.",
+  admin: "Sees every client and manages workspace settings.",
   user: "Sees only the clients you pick below.",
 };
 
@@ -52,7 +52,7 @@ export const INVITE_ROLE_LABELS: Record<InviteRole, string> = {
 
 export const INVITE_ROLE_HINTS: Record<InviteRole, string> = {
   owner: "Everything an Admin can do, plus inviting people and choosing their roles.",
-  admin: "Sees every client and manages agency settings.",
+  admin: "Sees every client and manages workspace settings.",
   user: "Sees only the clients they're given.",
   client: "Someone at the client. Sees this client's work and public comments only, like a review link, and doesn't use a team place.",
 };

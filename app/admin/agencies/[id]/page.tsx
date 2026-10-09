@@ -20,7 +20,7 @@ export default function AdminAgencyPage({ params }: { params: Promise<{ id: stri
   const { data: agencies, isLoading } = useAdminAgencies();
   const agency = agencies?.find((a) => a.id === id);
   if (isLoading) return <p className="sub">Frank is working…</p>;
-  if (!agency) return <p className="sub">No agency with that id.</p>;
+  if (!agency) return <p className="sub">No workspace with that id.</p>;
   return <AgencyForm key={agency.id} agency={agency} />;
 }
 
@@ -49,8 +49,8 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
       <Link
         href="/admin/agencies"
         className="reviewnav-toggle adminback"
-        aria-label="Back to agencies"
-        title="Back to agencies"
+        aria-label="Back to workspaces"
+        title="Back to workspaces"
       >
         <svg viewBox="0 0 24 24">
           <path d="M15 18l-6-6 6-6" />
@@ -75,7 +75,7 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
                 {agency.pending_request.interval}
               </b>
               <span>
-                Currently {planById(agency.plan)?.name ?? agency.plan}. Applying it moves the agency to that plan and
+                Currently {planById(agency.plan)?.name ?? agency.plan}. Applying it moves the workspace to that plan and
                 its limits.
               </span>
             </span>
@@ -116,7 +116,7 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
               ? ", trial ended: read-only until it chooses a plan."
               : `, trial ends ${new Date(agency.trial_ends_at!).toLocaleDateString()}.`
             : "."}{" "}
-        The plan is the agency&rsquo;s to choose, in its Settings → Your Plan. Add to its limits with the override
+        The plan is the workspace&rsquo;s to choose, in its Settings → Your Plan. Add to its limits with the override
         below.
       </p>
       {agency.plan === "free" && (
@@ -272,11 +272,11 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
         {saved && <span className="bsaved">Saved.</span>}
       </div>
 
-      <div className="msection-h">{agency.suspended_at ? "Paused" : "Pause this Agency"}</div>
+      <div className="msection-h">{agency.suspended_at ? "Paused" : "Pause this Workspace"}</div>
       <p className="msection-d">
         {agency.suspended_at
           ? `Paused on ${new Date(agency.suspended_at).toLocaleDateString()}. Nobody can sign in, and its review links show that it's paused.`
-          : "Nobody at the agency, or its clients, can sign in or open review links until it's turned back on. Nothing is deleted."}
+          : "Nobody in the workspace, or its clients, can sign in or open review links until it's turned back on. Nothing is deleted."}
       </p>
       {agency.suspended_at ? (
         <button type="button" className="btn" onClick={() => setPausing("unpause")}>
@@ -284,7 +284,7 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
         </button>
       ) : (
         <button type="button" className="btn danger" onClick={() => setPausing("pause")}>
-          Pause Agency
+          Pause Workspace
         </button>
       )}
       {pausing && (
@@ -295,7 +295,7 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
               ? `Nobody at ${agency.name} or its clients will be able to sign in or open review links until you reactivate it. Nothing is deleted.`
               : `Everyone at ${agency.name} can sign in again, and its review links open.`
           }
-          confirmLabel={pausing === "pause" ? "Pause Agency" : "Reactivate"}
+          confirmLabel={pausing === "pause" ? "Pause Workspace" : "Reactivate"}
           isPending={update.isPending}
           error={update.error}
           onConfirm={(reason) =>
@@ -332,7 +332,7 @@ function AgencyPeople({ agencyId }: { agencyId: string }) {
       <p className="msection-d">
         {people
           ? `${here.length === 1 ? "1 person" : `${here.length} people`} here, team and clients.`
-          : "Everyone in the agency."}
+          : "Everyone in the workspace."}
       </p>
       {isLoading && <p className="sub">Frank is working…</p>}
       {error && <p className="autherr">{errorMessage(error, "Couldn't load the people")}</p>}
@@ -352,7 +352,7 @@ function SupportLog({ agencyId }: { agencyId: string }) {
   return (
     <>
       <div className="msection-h">Support Log</div>
-      <p className="msection-d">What Frank has done in this agency, and why. Its Owners see this too.</p>
+      <p className="msection-d">What Frank has done in this workspace, and why. Its Owners see this too.</p>
       {isLoading && <p className="sub">Frank is working…</p>}
       {error && <p className="autherr">{errorMessage(error, "Couldn't load the log")}</p>}
       {actions && actions.length === 0 && <p className="msection-d">Nothing yet.</p>}

@@ -107,7 +107,7 @@ export default function AdminUserPage({ params }: { params: Promise<{ id: string
           {done && (
             <div className="admindone">
               <p className="bsaved" role="status">
-                {done.text}. It&rsquo;s in the agency&rsquo;s support log.
+                {done.text}. It&rsquo;s in the workspace&rsquo;s support log.
               </p>
               {done.link && <InviteLinks sent={[done.link]} />}
             </div>
@@ -121,8 +121,8 @@ export default function AdminUserPage({ params }: { params: Promise<{ id: string
             <Row label="Email">{person.email}</Row>
           </div>
 
-          <div className="msection-h">Agencies</div>
-          {person.memberships.length === 0 && <p className="msection-d">Not in any agency.</p>}
+          <div className="msection-h">Workspaces</div>
+          {person.memberships.length === 0 && <p className="msection-d">Not in any workspace.</p>}
           {person.memberships.map((m) => (
             <div className="panel adminperson" key={m.membershipId}>
               <div className="panel-h">
@@ -186,7 +186,7 @@ export default function AdminUserPage({ params }: { params: Promise<{ id: string
           {acting?.kind === "reset" && (
             <AdminActionModal
               title="Send a Password Reset"
-              message={`${person.name} gets an email with a link to set a new password, on the agency's address you choose.`}
+              message={`${person.name} gets an email with a link to set a new password, on the workspace's address you choose.`}
               confirmLabel="Send Reset"
               isPending={act.isPending}
               error={act.error}
@@ -194,7 +194,7 @@ export default function AdminUserPage({ params }: { params: Promise<{ id: string
               onClose={() => setActing(null)}
             >
               <div className="field">
-                <label htmlFor="adAgency">Agency</label>
+                <label htmlFor="adAgency">Workspace</label>
                 <select id="adAgency" value={resetAgency} onChange={(e) => setResetAgency(e.target.value)}>
                   {active.map((m) => (
                     <option key={m.agencyId} value={m.agencyId}>
@@ -219,7 +219,7 @@ export default function AdminUserPage({ params }: { params: Promise<{ id: string
           {acting?.kind === "role" && (
             <AdminActionModal
               title="Change Their Role"
-              message={`${person.name} is ${acting.m.typeLabel} at ${acting.m.agencyName}. Owners and Admins see every client; a User sees only the clients the agency gives them.`}
+              message={`${person.name} is ${acting.m.typeLabel} at ${acting.m.agencyName}. Owners and Admins see every client; a User sees only the clients the workspace gives them.`}
               confirmLabel="Change Role"
               isPending={act.isPending}
               error={act.error}

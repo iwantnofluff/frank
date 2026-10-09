@@ -66,7 +66,7 @@ export const PLANS: Plan[] = [
     storage: "75 GB",
     storageBytes: 80530636800,
     whiteLabel: "full",
-    highlights: ["Full white-label", "Scheduled reports and agency-level analytics"],
+    highlights: ["Full white-label", "Scheduled reports and workspace-level analytics"],
   },
   {
     id: "enterprise",

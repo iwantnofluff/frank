@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     supabase.rpc("can_invite_people", { check_agency_id: agencyId }),
     supabase.rpc("is_agency_owner_or_above", { check_agency_id: agencyId }),
   ]);
-  if (!canInvite) return fail("You can't invite people to this agency. Ask an Owner.", 403);
+  if (!canInvite) return fail("You can't invite people to this workspace. Ask an Owner.", 403);
   if (role === "owner" && !isOwner) return fail("Only an Owner can invite an Owner", 403);
 
   const [{ data: agency }, { data: inviter }, { data: client }] = await Promise.all([
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
   // Free's trial over (phase41): read-only. The membership below is written
   // as the service role, which the database doesn't hold to it, so ask here.
   if (agency && isReadOnly(agency.plan, agency.trial_ends_at)) {
-    return fail("Your agency's free trial has ended, so Frank is read-only. Choose a plan in Settings → Your Plan to carry on.", 403);
+    return fail("Your workspace's free trial has ended, so Frank is read-only. Choose a plan in Settings → Your Plan to carry on.", 403);
   }
 
   const admin = createServiceRoleClient();
@@ -199,6 +199,8 @@ export async function POST(request: Request) {
       .single();
     if (error || !membership) {
       await undoCreatedUser();
+      // One active place on the team per person (phase76).
+      if (error?.code === "23505") return fail(`${email} is already on the team`, 409);
       return fail(error?.message ?? "Couldn't add the member", 403);
     }
     membershipId = membership.id;
@@ -240,7 +242,7 @@ export async function POST(request: Request) {
 
   const url = `${new URL(request.url).origin}/invite/${token}`;
   const message = inviteEmail({
-    agencyName: agency?.name ?? "your agency",
+    agencyName: agency?.name ?? "a workspace",
     inviterName: inviter?.name ?? "Your team",
     roleLabel: isClient ? `a reviewer for ${client!.name}` : ROLE_LABELS[role],
     url,

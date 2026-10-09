@@ -344,3 +344,21 @@ test("an Admin sees who has which clients, and changes a User's", async ({ page,
   await page.getByRole("navigation", { name: "Settings sections" }).getByRole("link", { name: "Clients" }).click();
   await expect(page.locator(".crow", { hasText: "E2E Test Client" })).toContainText("Read Only");
 });
+
+// One place on the team per person (phase76, reported directly: someone was
+// listed twice). A second active team membership is refused, however it's
+// made: inviting again says so plainly.
+test("someone already on the team can't be given a second place on it", async ({ page, frank }) => {
+  const staffId = (await admin.from("users").select("id").eq("email", frank.staffEmail).single()).data!.id;
+  const second = await admin.from("memberships").insert({ agency_id: frank.agencyId, user_id: staffId, role: "user", client_id: null }).select("id");
+  expect(second.error?.code).toBe("23505");
+
+  // An Owner, who can invite.
+  await admin.from("memberships").update({ role: "owner" }).eq("agency_id", frank.agencyId).eq("user_id", staffId).is("client_id", null);
+  await frank.loginAsStaff(page);
+  const res = await page.request.post(`${APP_URL}/api/team/invite`, {
+    data: { agencyId: frank.agencyId, email: frank.staffEmail, role: "user", clientIds: [] },
+  });
+  expect(res.status()).toBe(409);
+  expect((await res.json()).error).toContain("already on the team");
+});

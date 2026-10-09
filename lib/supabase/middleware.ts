@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { agencyHeader, hostWithSubdomain, tenantFromHost } from "@/lib/tenant";
+import { agencyHeader, hostWithSubdomain, sessionCookieOptions, tenantFromHost } from "@/lib/tenant";
 
 // Routes that stay reachable without a session — the shared client review
 // link (spec section 26) is opened by people who never get an account, and
@@ -111,6 +111,8 @@ export async function updateSession(request: NextRequest) {
     {
       // Narrowed to this address's agency, like every other client.
       global: { headers: agencyHeader(tenant) },
+      // One sign-in across every workspace's address.
+      cookieOptions: sessionCookieOptions(request.headers.get("host")),
       cookies: {
         getAll() {
           return request.cookies.getAll();

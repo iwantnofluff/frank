@@ -87,7 +87,7 @@ export async function deleteAgency(admin: SupabaseClient, agencyId: string): Pro
 
   const { data: gone, error: agencyError } = await admin.from("agencies").delete().eq("id", agencyId).select("id");
   if (agencyError) throw new Error(`agencies: ${agencyError.message}`);
-  if (!gone?.length) throw new Error("The agency wasn't deleted");
+  if (!gone?.length) throw new Error("The workspace wasn't deleted");
 
   // Their accounts, unless they're in another agency or a platform admin.
   const accounts: string[] = [];

@@ -59,7 +59,7 @@ export async function lookupInvite(admin: SupabaseClient, token: string): Promis
     agencyId: m.agency_id,
     userId: m.user_id,
     email: m.user?.email ?? authUser.user?.email ?? "",
-    agencyName: m.agency?.name ?? "your agency",
+    agencyName: m.agency?.name ?? "a workspace",
     role: m.role,
     clientName: m.client?.name ?? null,
     firstName: m.user?.first_name ?? null,
