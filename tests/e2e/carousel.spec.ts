@@ -355,7 +355,7 @@ test("a format change the artwork no longer fits warns, and confirming removes a
 
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
-  await page.getByRole("button", { name: "Edit" }).click();
+  await page.getByRole("button", { name: "Edit", exact: true }).first().click();
   await page.getByRole("tab", { name: "Brief" }).click();
 
   // A change that still fits saves without asking: more slides.

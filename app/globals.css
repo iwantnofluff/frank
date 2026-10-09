@@ -5849,17 +5849,18 @@ button.avatar {
   display: block;
   max-width: 100%;
 }
+/* A little taller than at first (direct instruction): easier to hit. */
 .vbar {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
+  gap: 8px;
+  padding: 11px 12px;
   background: #14161a;
   color: #fff;
 }
 .vplay {
-  width: 26px;
-  height: 26px;
+  width: 30px;
+  height: 30px;
   display: grid;
   place-items: center;
   border-radius: 4px;
@@ -5870,15 +5871,26 @@ button.avatar {
   background: rgba(255, 255, 255, 0.14);
 }
 .vplay svg {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   fill: currentColor;
+}
+/* Back 10 seconds: a turning arrow with "10" in it. */
+.vplay svg.vback {
+  width: 22px;
+  height: 22px;
+}
+.vback text {
+  font-size: 7.4px;
+  font-weight: 700;
+  font-family: inherit;
 }
 .vtrack {
   position: relative;
   flex: 1;
-  height: 6px;
-  border-radius: 3px;
+  height: 8px;
+  margin-left: 4px;
+  border-radius: 4px;
   background: rgba(255, 255, 255, 0.25);
   cursor: pointer;
 }
@@ -5891,16 +5903,16 @@ button.avatar {
   left: 0;
   top: 0;
   bottom: 0;
-  border-radius: 3px;
+  border-radius: 4px;
   background: #fff;
   pointer-events: none;
 }
 .vmark {
   position: absolute;
   top: 50%;
-  width: 12px;
-  height: 12px;
-  margin-left: -6px;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
   transform: translateY(-50%);
   border-radius: 3px;
   background: var(--action);
@@ -5914,6 +5926,59 @@ button.avatar {
 .vmark.act {
   transform: translateY(-50%) scale(1.35);
   border-color: #fff;
+}
+/* A timeline comment's card, on hover or focus (direct instruction): who
+   made it, when in the video, and what it says. */
+.vpeek {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  width: 240px;
+  max-width: 70vw;
+  padding: 9px 11px;
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+  pointer-events: none;
+  z-index: 5;
+  transform: translateX(-50%);
+  text-align: left;
+}
+.vpeek.start {
+  transform: translateX(-14px);
+}
+.vpeek.end {
+  transform: translateX(calc(-100% + 14px));
+}
+.vpeek-h {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+}
+.vpeek-h b {
+  font-size: 12.2px;
+  font-weight: 600;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vpeek-h .t {
+  font-size: 10.7px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.vpeek p {
+  margin: 0;
+  font-size: 12.7px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
 }
 .vtime {
   font-size: 11.7px;
@@ -8615,4 +8680,82 @@ button.hbrand-add:hover {
 /* Short of the promise or the contract, wherever it shows. */
 .analytics .an-late {
   color: var(--rose);
+}
+
+/* Editing your own comment in place (phase75), and its "Edited" mark. */
+.cedited {
+  margin-left: 6px;
+  font-size: 10.7px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.cedit .bin {
+  width: 100%;
+}
+.cedit-acts {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 6px;
+}
+.cedit-btn {
+  margin-top: 4px;
+  font-size: 11.2px;
+  color: var(--muted);
+}
+.cedit-btn:hover {
+  color: var(--action);
+}
+
+/* Analytics: a number or column explained on hover or focus (direct
+   instruction): what it is, and why it matters. */
+.an-explain {
+  cursor: help;
+}
+.an-explain:focus-visible {
+  outline: 2px solid var(--action);
+  outline-offset: 2px;
+}
+.an-tip {
+  position: fixed;
+  z-index: 300;
+  padding: 11px 13px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: 0 10px 28px rgba(20, 22, 26, 0.16);
+  pointer-events: none;
+  text-align: left;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+}
+.an-tip.above {
+  transform: translateY(-100%);
+}
+.an-tip b {
+  display: block;
+  font-size: 12.7px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.an-tip p {
+  margin: 0;
+  font-size: 12.2px;
+  line-height: 1.45;
+  color: var(--ink);
+}
+.an-tip p.why {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+}
+.an-tip p.why span {
+  display: block;
+  font-size: 10.7px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 2px;
 }

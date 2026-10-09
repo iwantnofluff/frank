@@ -130,9 +130,10 @@ export async function POST(request: Request) {
           ? serviceRole.from("creatives").select("id, formats, slide_count, artwork_removed_at").in("id", ids).then((r) => r.data ?? [])
           : [],
         // Each comment's anchor — get_shared_review returns only the text —
-        // so a comment made at a moment in a video can show, and jump to, it.
+        // so a comment made at a moment in a video can show, and jump to,
+        // it; and whether it was edited (phase75).
         commentIds.length
-          ? serviceRole.from("comments").select("id, anchor, author_id").in("id", commentIds).then((r) => r.data ?? [])
+          ? serviceRole.from("comments").select("id, anchor, author_id, edited_at").in("id", commentIds).then((r) => r.data ?? [])
           : [],
         // Each creative's latest version, for its carousel slides (phase31).
         ids.length
@@ -182,6 +183,7 @@ export async function POST(request: Request) {
   }
   const anchorById = new Map<string, unknown>();
   for (const r of anchorRows) if (r.anchor) anchorById.set(r.id, r.anchor);
+  const editedById = new Map(anchorRows.map((r) => [r.id, r.edited_at as string | null]));
 
   // Which comments are the client's (direct instruction: the list puts what
   // the client has already commented on after what's still to review). A
@@ -263,6 +265,7 @@ export async function POST(request: Request) {
         ...m,
         anchor: anchorById.get(m.id) ?? null,
         from_client: fromClientById.get(m.id) ?? false,
+        edited_at: editedById.get(m.id) ?? null,
       })),
       // A fresh asset object that never includes storage_key, rather than
       // spreading the original and overwriting it — `{ ...asset,

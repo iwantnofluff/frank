@@ -16,6 +16,8 @@ export interface CommentRow {
   copy_version_id: string | null;
   resolved_at: string | null;
   created_at: string;
+  // When its author last changed it (phase75).
+  edited_at: string | null;
   author: { name: string; avatar_asset_id: string | null } | null;
   // Whose side it came from (direct instruction: shown after the name):
   // the agency's team, or the client — its people, or a guest on a review
@@ -40,7 +42,7 @@ export function useComments(creativeId: string) {
       const { data: rows, error } = await supabase
         .from("comments")
         .select(
-          "id, agency_id, parent_id, author_id, guest_name, body, visibility, anchor, creative_version_id, copy_version_id, resolved_at, created_at",
+          "id, agency_id, parent_id, author_id, guest_name, body, visibility, anchor, creative_version_id, copy_version_id, resolved_at, created_at, edited_at",
         )
         .eq("creative_id", creativeId)
         .is("deleted_at", null)

@@ -254,7 +254,7 @@ export default function CreativeReviewPage({
       const t = commentTime(c.anchor);
       if (t === null) return [];
       const kind = isPinAnchor(c.anchor) ? "pin" : isRegionAnchor(c.anchor) ? "region" : "time";
-      return [{ commentId: c.id, t, kind } as TimelineMarker];
+      return [{ commentId: c.id, t, kind, author: c.author?.name || c.guest_name || "Someone", body: c.body } as TimelineMarker];
     });
 
   return (

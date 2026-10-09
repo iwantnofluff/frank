@@ -8,6 +8,7 @@ import { CommentJump, useSwipe } from "./mobile-gestures";
 import { formatsLabel, postFormats } from "@/lib/formats";
 import { ReviewMedia } from "./ReviewMedia";
 import { MomentBadge } from "./MomentBadge";
+import { SharedCommentText } from "./SharedCommentText";
 import { GuestComposer } from "./GuestComposer";
 
 export function MobileReview({
@@ -164,7 +165,7 @@ export function MobileReview({
                   <CommentWhen iso={c.created_at} date={new Date(c.created_at).toLocaleDateString()} />
                 </div>
                 <MomentBadge comment={c} controller={controller} />
-                <p>{c.body}</p>
+                <SharedCommentText comment={c} controller={controller} />
               </div>
             ))}
           </div>

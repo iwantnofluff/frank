@@ -81,6 +81,13 @@ test("an Admin sees speed, quality, feedback and the clients and people tables",
   await expect(section("Ball in court")).toContainText("Waiting on the client");
   await expect(section("Ball in court").locator(".an-list").last()).toContainText("Analytics At Risk");
   await expect(stat("Missed live dates")).toHaveText("1");
+  // Rework is versions after the first (direct instruction): A's second artwork.
+  await expect(stat("Rework")).toHaveText("1");
+  await expect(page.locator(".stat", { hasText: "Rework" })).toContainText("Extra versions: 1 artwork, 0 copy, on 1 post");
+  // Every number explains itself on hover.
+  await page.locator(".stat", { hasText: "Rework" }).hover();
+  await expect(page.getByRole("tooltip")).toContainText("Why it matters");
+  await expect(page.getByRole("tooltip")).toContainText("unbilled");
   // Trends: 12 weeks of columns for each measure.
   await expect(page.locator(".an-trend:not(.an-trend-axis)").first().locator(".an-trend-col")).toHaveCount(12);
   await expect(page.locator(".an-trend-axis .an-trend-wk").last()).toHaveText("This week");

@@ -11,6 +11,8 @@ import { ISSUE_CATEGORIES } from "@/lib/ai/build-classify-comment-prompt";
 import { formatById } from "@/lib/formats";
 import { seesAllClients } from "@/lib/roles";
 import { errorMessage } from "@/lib/errors";
+import { Explain } from "@/components/settings/Explain";
+import type { ExplainKey } from "@/lib/analytics-explain";
 
 // Settings → Analytics (direct instruction, phase71): how the work moves
 // from concept to approval, what holds it up, and how feedback comes in,
@@ -112,21 +114,23 @@ export default function AnalyticsPage() {
             <>
               <Section title="Our promise" sub="How far ahead of going live posts reach the client">
                 <div className="stats">
-                  <Stat n={fmtDays(view.a.promise.medianDaysAhead)} l="Sent before going live" hint={`Median, ${view.a.promise.sent} posts sent`} />
+                  <Stat n={fmtDays(view.a.promise.medianDaysAhead)} k="sentAhead" l="Sent before going live" hint={`Median, ${view.a.promise.sent} posts sent`} />
                   <Stat
                     n={fmtPct(view.a.promise.metShare)}
-                    l="Met the client's promise"
+                    k="promiseMet" l="Met the client's promise"
                     hint={clientId ? `Their promise: ${weeks(data?.leadDays[clientId] ?? 28)}` : "Each post against its own client's promise"}
                   />
-                  <Stat n={String(view.a.promise.lateSends.length)} l={`Late sends`} hint={`Under ${LATE_SEND_DAYS} days to go`} />
-                  <Stat n={fmtDays(view.a.promise.medianDaysPlanned)} l="Planned ahead" hint="Created to live, median" />
+                  <Stat n={String(view.a.promise.lateSends.length)} k="lateSends" l={`Late sends`} hint={`Under ${LATE_SEND_DAYS} days to go`} />
+                  <Stat n={fmtDays(view.a.promise.medianDaysPlanned)} k="plannedAhead" l="Planned ahead" hint="Created to live, median" />
                 </div>
                 <p className="an-note">
                   Sent means first reaching Client Review, recorded from 8 October 2026. Planned ahead covers every post with a live date.
                 </p>
                 {view.a.promise.lateSends.length > 0 && (
                   <>
-                    <h3 className="an-h">Late sends</h3>
+                    <h3 className="an-h">
+                      <Explain as="span" k="lateSends" title="Late sends">Late sends</Explain>
+                    </h3>
                     <ul className="an-list">
                       {view.a.promise.lateSends.slice(0, 8).map((r) => (
                         <li key={r.id}>
@@ -150,18 +154,18 @@ export default function AnalyticsPage() {
 
               <Section title="Ball in court" sub="Who the work is waiting on right now">
                 <div className="an-cols">
-                  <Court title="Waiting on us" rows={view.a.court.onUs} />
-                  <Court title="Waiting on the client" rows={view.a.court.onClient} />
+                  <Court k="waitingOnUs" title="Waiting on us" rows={view.a.court.onUs} />
+                  <Court k="waitingOnClient" title="Waiting on the client" rows={view.a.court.onClient} />
                 </div>
               </Section>
 
               <Section title="Speed" sub={`${view.a.posts} posts, ${view.a.approved} approved`}>
                 <div className="stats">
-                  <Stat n={fmtDays(view.a.speed.medianDaysToApproval)} l="Created to approved" hint="Median, approved posts" />
-                  <Stat n={fmtDays(view.a.speed.medianDaysInStage.concept)} l="In Concept" />
-                  <Stat n={fmtDays(view.a.speed.medianDaysInStage.internal)} l="In Internal Review" />
-                  <Stat n={fmtDays(view.a.speed.medianDaysInStage.client)} l="In Client Review" />
-                  <Stat n={fmtPct(view.a.speed.approvedOnTime)} l="Approved before going live" />
+                  <Stat n={fmtDays(view.a.speed.medianDaysToApproval)} k="toApproval" l="Created to approved" hint="Median, approved posts" />
+                  <Stat n={fmtDays(view.a.speed.medianDaysInStage.concept)} k="inConcept" l="In Concept" />
+                  <Stat n={fmtDays(view.a.speed.medianDaysInStage.internal)} k="inInternal" l="In Internal Review" />
+                  <Stat n={fmtDays(view.a.speed.medianDaysInStage.client)} k="inClient" l="In Client Review" />
+                  <Stat n={fmtPct(view.a.speed.approvedOnTime)} k="approvedBeforeLive" l="Approved before going live" />
                 </div>
                 <p className="an-note">
                   Time in each stage counts from 8 October 2026, when Frank began recording every stage change.
@@ -185,10 +189,10 @@ export default function AnalyticsPage() {
 
               <Section title="Quality" sub="How many rounds it takes to get to yes">
                 <div className="stats">
-                  <Stat n={fmtNum(view.a.quality.avgCreativeRounds)} l="Artwork versions" hint="Average, approved posts" />
-                  <Stat n={fmtNum(view.a.quality.avgCopyRounds)} l="Copy versions" hint="Average, approved posts" />
-                  <Stat n={fmtPct(view.a.quality.firstTimeRight)} l="Approved first time" hint="One version each, no changes asked" />
-                  <Stat n={fmtPct(view.a.quality.changesRequestedShare)} l="Changes requested" hint={`${view.a.quality.changesRequestedPosts} ${view.a.quality.changesRequestedPosts === 1 ? "post" : "posts"}`} />
+                  <Stat n={fmtNum(view.a.quality.avgCreativeRounds)} k="artworkVersions" l="Artwork versions" hint="Average, approved posts" />
+                  <Stat n={fmtNum(view.a.quality.avgCopyRounds)} k="copyVersions" l="Copy versions" hint="Average, approved posts" />
+                  <Stat n={fmtPct(view.a.quality.firstTimeRight)} k="firstTime" l="Approved first time" hint="One version each, no changes asked" />
+                  <Stat n={fmtPct(view.a.quality.changesRequestedShare)} k="changesRequested" l="Changes requested" hint={`${view.a.quality.changesRequestedPosts} ${view.a.quality.changesRequestedPosts === 1 ? "post" : "posts"}`} />
                 </div>
               </Section>
 
@@ -196,14 +200,19 @@ export default function AnalyticsPage() {
                 <div className="stats">
                   <Stat
                     n={view.a.accountability.medianTurnaroundHours === null ? "—" : `${Math.round(view.a.accountability.medianTurnaroundHours)} h`}
-                    l="Our turnaround"
+                    k="turnaround" l="Our turnaround"
                     hint="Client comment to our reply or new version"
                   />
-                  <Stat n={String(view.a.accountability.lastMinuteApprovals)} l="Last-minute approvals" hint="Under 48 hours to go" />
-                  <Stat n={String(view.a.accountability.approvedAfterLive)} l="Approved after going live" />
-                  <Stat n={String(view.a.accountability.missedLive)} l="Missed live dates" hint="Live date passed, not approved" />
-                  <Stat n={String(view.a.accountability.rework)} l="Rework" hint="Moved back out of Approved" />
-                  <Stat n={String(view.a.accountability.scopeChanges)} l="Scope changes" hint="From the client's feedback" />
+                  <Stat n={String(view.a.accountability.lastMinuteApprovals)} k="lastMinute" l="Last-minute approvals" hint="Under 48 hours to go" />
+                  <Stat n={String(view.a.accountability.approvedAfterLive)} k="afterLive" l="Approved after going live" />
+                  <Stat n={String(view.a.accountability.missedLive)} k="missedLive" l="Missed live dates" hint="Live date passed, not approved" />
+                  <Stat
+                    k="rework"
+                    n={String(view.a.accountability.rework.artwork + view.a.accountability.rework.copy)}
+                    l="Rework"
+                    hint={`Extra versions: ${view.a.accountability.rework.artwork} artwork, ${view.a.accountability.rework.copy} copy, on ${view.a.accountability.rework.posts} ${view.a.accountability.rework.posts === 1 ? "post" : "posts"}`}
+                  />
+                  <Stat n={String(view.a.accountability.scopeChanges)} k="scopeChanges" l="Scope changes" hint="From the client's feedback" />
                 </div>
               </Section>
 
@@ -213,24 +222,28 @@ export default function AnalyticsPage() {
 
               <Section title="Feedback" sub={`${view.a.feedback.comments} comments`}>
                 <div className="stats">
-                  <Stat n={String(view.a.feedback.clientSide)} l="From the client" />
-                  <Stat n={String(view.a.feedback.agencySide)} l="From the team" />
-                  <Stat n={String(view.a.feedback.unresolved)} l="Unresolved" hint={
+                  <Stat n={String(view.a.feedback.clientSide)} k="fromClient" l="From the client" />
+                  <Stat n={String(view.a.feedback.agencySide)} k="fromTeam" l="From the team" />
+                  <Stat n={String(view.a.feedback.unresolved)} k="unresolved" l="Unresolved" hint={
                       view.a.feedback.oldestUnresolvedDays === null
                         ? undefined
                         : view.a.feedback.oldestUnresolvedDays < 1
                           ? "Oldest under a day"
                           : `Oldest ${fmtDays(view.a.feedback.oldestUnresolvedDays)}`
                     } />
-                  <Stat n={fmtDays(view.a.feedback.medianDaysToResolve)} l="To resolve" hint="Median" />
+                  <Stat n={fmtDays(view.a.feedback.medianDaysToResolve)} k="toResolve" l="To resolve" hint="Median" />
                 </div>
                 <div className="an-cols">
                   <div>
-                    <h3 className="an-h">What the feedback is about</h3>
+                    <h3 className="an-h">
+                      <Explain as="span" k="categories" title="What the feedback is about">What the feedback is about</Explain>
+                    </h3>
                     <Bars rows={view.a.feedback.byCategory.map((c) => ({ label: categoryLabel(c.category), value: c.count }))} />
                   </div>
                   <div>
-                    <h3 className="an-h">Mood</h3>
+                    <h3 className="an-h">
+                      <Explain as="span" k="mood" title="Mood">Mood</Explain>
+                    </h3>
                     <Bars
                       rows={[
                         { label: "Positive", value: view.a.feedback.sentiment.positive, tone: "good" },
@@ -248,7 +261,9 @@ export default function AnalyticsPage() {
                 </div>
                 {view.a.feedback.repeats.length > 0 && (
                   <>
-                    <h3 className="an-h">Repeat issues</h3>
+                    <h3 className="an-h">
+                      <Explain as="span" k="repeats" title="Repeat issues">Repeat issues</Explain>
+                    </h3>
                     <ul className="an-list">
                       {view.a.feedback.repeats.map((r) => (
                         <li key={`${r.clientId}${r.format}${r.category}`}>
@@ -308,13 +323,23 @@ function Section({ title, sub, children }: { title: string; sub?: string; childr
   );
 }
 
-function Stat({ n, l, hint }: { n: string; l: string; hint?: string }) {
+// `k`: its explanation, shown on hover (direct instruction).
+function Stat({ k, n, l, hint }: { k: ExplainKey; n: string; l: string; hint?: string }) {
   return (
-    <div className="stat">
+    <Explain k={k} title={l} className="stat">
       <div className="n">{n}</div>
       <div className="l">{l}</div>
       {hint && <div className="an-hint">{hint}</div>}
-    </div>
+    </Explain>
+  );
+}
+
+// A table's column heading, explained on hover.
+function Th({ k, children }: { k: ExplainKey; children: string }) {
+  return (
+    <Explain as="th" k={k} title={children}>
+      {children}
+    </Explain>
   );
 }
 
@@ -354,22 +379,22 @@ function GroupTable({
         <thead>
           <tr>
             <th>{first}</th>
-            <th>Posts</th>
-            <th>Approved</th>
-            <th>To approval</th>
-            <th>In Client Review</th>
-            <th>Artwork versions</th>
-            <th>First time</th>
-            <th>Changes asked</th>
-            <th>Client comments</th>
-            <th>Negative</th>
-            <th>Sent ahead</th>
-            {promise && <th>Promise</th>}
-            <th>Promise met</th>
-            <th>Late sends</th>
-            <th>Our turnaround</th>
-            <th>Scope changes</th>
-            <th>Rework</th>
+            <Th k="posts">Posts</Th>
+            <Th k="approved">Approved</Th>
+            <Th k="toApproval">To approval</Th>
+            <Th k="inClient">In Client Review</Th>
+            <Th k="artworkVersions">Artwork versions</Th>
+            <Th k="firstTime">First time</Th>
+            <Th k="changesRequested">Changes asked</Th>
+            <Th k="clientComments">Client comments</Th>
+            <Th k="negative">Negative</Th>
+            <Th k="sentAhead">Sent ahead</Th>
+            {promise && <Th k="promise">Promise</Th>}
+            <Th k="promiseMet">Promise met</Th>
+            <Th k="lateSends">Late sends</Th>
+            <Th k="turnaround">Our turnaround</Th>
+            <Th k="scopeChanges">Scope changes</Th>
+            <Th k="rework">Rework</Th>
           </tr>
         </thead>
         <tbody>
@@ -400,11 +425,13 @@ function GroupTable({
   );
 }
 
-function Court({ title, rows }: { title: string; rows: { id: string; name: string; days: number }[] }) {
+function Court({ k, title, rows }: { k: ExplainKey; title: string; rows: { id: string; name: string; days: number }[] }) {
   return (
     <div>
       <h3 className="an-h">
-        {title} <span className="an-count">{rows.length}</span>
+        <Explain as="span" k={k} title={title}>
+          {title} <span className="an-count">{rows.length}</span>
+        </Explain>
       </h3>
       {rows.length === 0 ? (
         <p className="an-note">Nothing.</p>
@@ -486,9 +513,9 @@ function Contract({ rows, name }: { rows: ContractRow[]; name: (id: string) => s
   return (
     <>
       <div className="stats">
-        <Stat n={`${total(last, "delivered")} of ${contracted}`} l="Approved this month" hint="Going live this month" />
-        <Stat n={`${total(last, "planned")} of ${contracted}`} l="Planned this month" hint="Every stage" />
-        <Stat n={`${total(last - 1, "delivered")} of ${contracted}`} l="Delivered last month" />
+        <Stat n={`${total(last, "delivered")} of ${contracted}`} k="contractApproved" l="Approved this month" hint="Going live this month" />
+        <Stat n={`${total(last, "planned")} of ${contracted}`} k="contractPlanned" l="Planned this month" hint="Every stage" />
+        <Stat n={`${total(last - 1, "delivered")} of ${contracted}`} k="contractLastMonth" l="Delivered last month" />
       </div>
       <p className="an-note">Red: fewer approved than the contract. Months before a client&apos;s posts were planned in Frank show 0.</p>
       <div className="an-tablewrap">

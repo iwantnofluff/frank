@@ -97,6 +97,7 @@ export function useCreateComment(creativeId: string) {
         copy_version_id: input.copyVersionId ?? null,
         resolved_at: null,
         created_at: new Date().toISOString(),
+        edited_at: null,
         author: { name: profile?.name ?? user?.email ?? "You", avatar_asset_id: profile?.avatar_asset_id ?? null },
         from: isClient ? "client" : "agency",
       };

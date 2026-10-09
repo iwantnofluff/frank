@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { classifyComment } from "@/lib/ai/classify-comment-client";
+import { useGuestEditKeysStore } from "@/store/guest-edit-keys-store";
 import type { SharedReviewResult as SharedReviewData } from "./use-shared-review";
 
 interface ActionResult {
@@ -16,6 +17,7 @@ interface ActionResult {
 
 export function useSubmitSharedComment(token: string, passcode: string | null) {
   const queryClient = useQueryClient();
+  const setEditKey = useGuestEditKeysStore((s) => s.setKey);
 
   return useMutation({
     mutationFn: async (input: {
@@ -27,8 +29,10 @@ export function useSubmitSharedComment(token: string, passcode: string | null) {
       atSeconds?: number | null;
       // Which carousel slide, when the video is one of several (phase35).
       slide?: number | null;
-    }): Promise<ActionResult> => {
+    }): Promise<ActionResult & { editKey?: string }> => {
       const supabase = createClient();
+      // The comment's edit key (phase75), kept in this browser once saved.
+      const editKey = crypto.randomUUID() + crypto.randomUUID();
       const { data, error } = await supabase.rpc("submit_shared_comment", {
         p_token: token,
         p_passcode: passcode,
@@ -40,9 +44,10 @@ export function useSubmitSharedComment(token: string, passcode: string | null) {
         // same call as before.
         ...(input.atSeconds != null ? { p_at_seconds: Math.round(input.atSeconds * 100) / 100 } : {}),
         ...(input.atSeconds != null && input.slide != null ? { p_slide: input.slide } : {}),
+        p_edit_key: editKey,
       });
       if (error) throw error;
-      return data as ActionResult;
+      return { ...(data as ActionResult), editKey };
     },
     // Shown at once, under the guest's name (direct instruction), until the
     // reload brings the saved one; taken back out if it isn't saved.
@@ -83,10 +88,60 @@ export function useSubmitSharedComment(token: string, passcode: string | null) {
     },
     onSuccess: (result, _input, context) => {
       if (result.status === "ok") {
-        if (result.comment_id) classifyComment(result.comment_id);
+        if (result.comment_id) {
+          if (result.editKey) setEditKey(result.comment_id, result.editKey);
+          classifyComment(result.comment_id);
+        }
       } else {
         for (const [key, data] of context?.previous ?? []) queryClient.setQueryData(key, data);
       }
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["shared-review", token] });
+    },
+  });
+}
+
+// A guest edits their own comment (phase75), with the key it was made
+// with; shown changed at once, put back if it isn't saved.
+export function useEditSharedComment(token: string, passcode: string | null) {
+  const queryClient = useQueryClient();
+  const keys = useGuestEditKeysStore((s) => s.keys);
+
+  return useMutation({
+    mutationFn: async (input: { commentId: string; body: string }) => {
+      const supabase = createClient();
+      const { data, error } = await supabase.rpc("edit_shared_comment", {
+        p_token: token,
+        p_passcode: passcode,
+        p_comment_id: input.commentId,
+        p_edit_key: keys[input.commentId] ?? null,
+        p_body: input.body,
+      });
+      if (error) throw error;
+      const result = data as ActionResult;
+      if (result.status !== "ok") throw new Error("Couldn't save the change");
+      return result;
+    },
+    onMutate: async (input) => {
+      await queryClient.cancelQueries({ queryKey: ["shared-review", token] });
+      const previous = queryClient.getQueriesData<SharedReviewData>({ queryKey: ["shared-review", token] });
+      queryClient.setQueriesData<SharedReviewData>({ queryKey: ["shared-review", token] }, (data) => {
+        if (!data || data.status !== "ok") return data;
+        return {
+          ...data,
+          creatives: data.creatives.map((c) => ({
+            ...c,
+            comments: c.comments.map((m) =>
+              m.id === input.commentId ? { ...m, body: input.body.trim(), edited_at: new Date().toISOString() } : m,
+            ),
+          })),
+        };
+      });
+      return { previous };
+    },
+    onError: (_error, _input, context) => {
+      for (const [key, data] of context?.previous ?? []) queryClient.setQueryData(key, data);
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ["shared-review", token] });

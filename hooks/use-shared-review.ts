@@ -44,6 +44,8 @@ export interface SharedCreative {
     created_at: string;
     // A moment in the video, when made at one (phase34).
     anchor?: { type: string; t?: number } | null;
+    // When its author last changed it (phase75).
+    edited_at?: string | null;
   }[];
 }
 

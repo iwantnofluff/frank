@@ -2,11 +2,16 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { formatVideoTime } from "@/lib/annotations";
+import { avatarColour } from "@/lib/avatar-colour";
 
 export interface TimelineMarker {
   commentId: string;
   t: number;
   kind: "pin" | "region" | "time";
+  // Who made it and what it says, for the card shown on hover (direct
+  // instruction).
+  author?: string;
+  body?: string;
 }
 
 // A video with its own play/pause and timeline (phase34): every comment
@@ -51,6 +56,8 @@ export function VideoPlayer({
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [paused, setPaused] = useState(true);
+  // The marker whose card is showing (hovered or focused).
+  const [peek, setPeek] = useState<string | null>(null);
 
   function goTo(t: number) {
     const v = ref.current;
@@ -71,6 +78,14 @@ export function VideoPlayer({
   useEffect(() => {
     onMoment?.(paused ? time : null);
   }, [paused, time, onMoment]);
+
+  // Back ten seconds (direct instruction), still playing if it was.
+  function back10() {
+    const v = ref.current;
+    if (!v) return;
+    v.currentTime = Math.max(0, v.currentTime - 10);
+    setTime(v.currentTime);
+  }
 
   function toggle() {
     const v = ref.current;
@@ -110,6 +125,14 @@ export function VideoPlayer({
         {overlay?.(time, paused)}
       </div>
       <div className="vbar">
+        <button type="button" className="vplay" aria-label="Back 10 seconds" title="Back 10 seconds" onClick={back10}>
+          <svg viewBox="0 0 24 24" className="vback">
+            <path d="M12 5V2L7.5 6 12 10V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z" />
+            <text x="12" y="15.7" textAnchor="middle">
+              10
+            </text>
+          </svg>
+        </button>
         <button type="button" className="vplay" aria-label={paused ? "Play" : "Pause"} onClick={toggle}>
           {paused ? (
             <svg viewBox="0 0 24 24">
@@ -147,14 +170,36 @@ export function VideoPlayer({
               type="button"
               className={`vmark ${m.kind}${highlightedCommentId === m.commentId ? " act" : ""}`}
               style={{ left: pct(m.t) }}
-              aria-label={`Comment at ${formatVideoTime(m.t)}`}
-              title={formatVideoTime(m.t)}
+              aria-label={`Comment at ${formatVideoTime(m.t)}${m.author ? ` by ${m.author}` : ""}`}
+              onMouseEnter={() => setPeek(m.commentId)}
+              onMouseLeave={() => setPeek((p) => (p === m.commentId ? null : p))}
+              onFocus={() => setPeek(m.commentId)}
+              onBlur={() => setPeek((p) => (p === m.commentId ? null : p))}
               onClick={() => {
                 goTo(m.t);
                 onMarker(m.commentId);
               }}
             />
           ))}
+          {(() => {
+            const m = markers.find((x) => x.commentId === peek);
+            if (!m || !m.body) return null;
+            // Kept inside the bar near either end.
+            const at = duration ? Math.min(m.t, duration) / duration : 0;
+            const side = at < 0.2 ? "start" : at > 0.8 ? "end" : "mid";
+            return (
+              <div className={`vpeek ${side}`} style={{ left: pct(m.t) }} role="tooltip">
+                <div className="vpeek-h">
+                  <span className="who" style={{ background: avatarColour(m.author ?? "Someone") }}>
+                    {(m.author ?? "Someone").slice(0, 1).toUpperCase()}
+                  </span>
+                  <b>{m.author ?? "Someone"}</b>
+                  <span className="t">{formatVideoTime(m.t)}</span>
+                </div>
+                <p>{m.body}</p>
+              </div>
+            );
+          })()}
         </div>
         <span className="vtime">
           {formatVideoTime(time)} / {formatVideoTime(duration)}

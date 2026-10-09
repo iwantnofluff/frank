@@ -1,6 +1,7 @@
 "use client";
 
 import { CommentWhen } from "./CommentWhen";
+import { CommentBody, EditCommentButton } from "./CommentBody";
 import { useEffect, useMemo, useState } from "react";
 import { avatarColour } from "@/lib/avatar-colour";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
@@ -12,6 +13,7 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import { useComments, type CommentRow } from "@/hooks/use-comments";
 import { useCreateComment } from "@/hooks/use-create-comment";
 import { useToggleCommentResolved } from "@/hooks/use-toggle-comment-resolved";
+import { useEditComment } from "@/hooks/use-edit-comment";
 import { useToggleCommentVisibility } from "@/hooks/use-toggle-comment-visibility";
 import {
   commentTime,
@@ -254,6 +256,7 @@ function CommentCard({
   onReply,
   onToggleResolved,
   onToggleVisibility,
+  onEdit,
   photos,
   fromName,
 }: {
@@ -266,11 +269,15 @@ function CommentCard({
   onReply: (body: string, visibility: "private" | "public") => Promise<void>;
   onToggleResolved: (resolve: boolean) => void;
   onToggleVisibility: (commentId: string, next: "private" | "public") => void;
+  // Your own comment's new words (phase75).
+  onEdit: (commentId: string, body: string) => Promise<unknown>;
   photos: Record<string, string> | undefined;
   // The agency's or the client's name, for after a comment's author.
   fromName: (c: CommentRow) => string | null;
 }) {
   const [replying, setReplying] = useState(false);
+  // Which of the thread's comments (it, or a reply) is being edited.
+  const [editingId, setEditingId] = useState<string | null>(null);
   const authorName = thread.author?.name ?? thread.guest_name ?? "Someone";
   // comments_update_own (supabase/seed.sql) allows author_id = auth.uid()
   // or is_agency_staff — authorship, not role. A client resolving/
@@ -312,13 +319,22 @@ function CommentCard({
         <CommentWhen iso={thread.created_at} date={formatWhen(thread.created_at)} />
       </div>
       {thread.anchor && <AnchorBadge anchor={thread.anchor} />}
-      <p>{thread.body}</p>
+      <CommentBody
+        body={thread.body}
+        editedAt={thread.edited_at}
+        editing={editingId === thread.id}
+        onEditingChange={(on) => setEditingId(on ? thread.id : null)}
+        onSave={(body) => onEdit(thread.id, body)}
+      />
 
       {!pending && <div className="cmt-f">
         <button type="button" onClick={() => setReplying(!replying)}>
           Reply
         </button>
         <div className="acts">
+          {thread.author_id === currentUserId && editingId !== thread.id && (
+            <EditCommentButton onClick={() => setEditingId(thread.id)} />
+          )}
           {canResolve && (
             <button
               type="button"
@@ -355,7 +371,16 @@ function CommentCard({
                       onToggleVisibility(r.id, r.visibility === "private" ? "public" : "private")
                     }
                   />
-                  <p>{r.body}</p>
+                  <CommentBody
+                    body={r.body}
+                    editedAt={r.edited_at}
+                    editing={editingId === r.id}
+                    onEditingChange={(on) => setEditingId(on ? r.id : null)}
+                    onSave={(body) => onEdit(r.id, body)}
+                  />
+                  {r.author_id === currentUserId && !r.id.startsWith("pending-") && editingId !== r.id && (
+                    <EditCommentButton className="cedit-btn" onClick={() => setEditingId(r.id)} />
+                  )}
                 </div>
               </div>
             );
@@ -421,6 +446,7 @@ export function CommentsPanel({
   const { data: photos } = useAvatarUrls((comments ?? []).map((c) => c.author?.avatar_asset_id));
   const createComment = useCreateComment(creativeId);
   const toggleResolved = useToggleCommentResolved(creativeId);
+  const editComment = useEditComment(creativeId);
   const toggleVisibility = useToggleCommentVisibility(creativeId);
 
   const [filter, setFilter] = useState<Filter>("all");
@@ -529,6 +555,7 @@ export function CommentsPanel({
             onToggleVisibility={(commentId, visibility) =>
               toggleVisibility.mutate({ commentId, visibility })
             }
+            onEdit={(commentId, body) => editComment.mutateAsync({ commentId, body })}
           />
         ))}
       </div>

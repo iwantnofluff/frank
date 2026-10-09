@@ -12,6 +12,7 @@ import {
   useSubmitSharedComment,
   useSubmitSharedApproval,
   useSubmitSharedRequestChanges,
+  useEditSharedComment,
 } from "./use-shared-actions";
 import { useGuestIdentityStore } from "@/store/guest-identity-store";
 import { reviewGroup } from "@/components/review/review-group";
@@ -55,6 +56,8 @@ export function useReviewController(token: string) {
   const submitComment = useSubmitSharedComment(token, passcode);
   const submitApproval = useSubmitSharedApproval(token, passcode);
   const submitRequestChanges = useSubmitSharedRequestChanges(token, passcode);
+  // A guest's own comment, edited (phase75).
+  const editComment = useEditSharedComment(token, passcode);
 
   const creatives: SharedCreative[] = data?.status === "ok" ? data.creatives : [];
   // The project's posts in grid order (phase67); without it (an older
@@ -152,6 +155,7 @@ export function useReviewController(token: string) {
     postComment,
     approve,
     requestChanges,
+    editComment,
     posting: submitComment.isPending,
     approving: submitApproval.isPending,
     requestingChanges: submitRequestChanges.isPending,

@@ -164,14 +164,23 @@ test("accountability: turnaround, last-minute and late approvals, missed live da
     { creativeId: "a", clientSide: true, category: "scope_change", sentiment: null, createdAt: d(3, 9), resolvedAt: null, isReply: false },
     { creativeId: "a", clientSide: false, category: null, sentiment: null, createdAt: d(3, 15), resolvedAt: null, isReply: true },
   ];
-  const versions: AVersion[] = [{ creativeId: "a", kind: "creative", createdAt: d(4) }];
+  // a: three artwork versions and two of copy (3 extra); b: one of each (none).
+  const versions: AVersion[] = [
+    { creativeId: "a", kind: "creative", createdAt: d(4) },
+    { creativeId: "a", kind: "creative", createdAt: d(5) },
+    { creativeId: "a", kind: "creative", createdAt: d(6) },
+    { creativeId: "a", kind: "copy", createdAt: d(4) },
+    { creativeId: "a", kind: "copy", createdAt: d(5) },
+    { creativeId: "b", kind: "creative", createdAt: d(4) },
+    { creativeId: "b", kind: "copy", createdAt: d(4) },
+  ];
   const events = [ev("b", 4, 3, d(11)), ev("b", 3, 4, d(12))];
   const a = computeAnalytics(posts, events, versions, comments, NOW);
   assert.equal(a.accountability.medianTurnaroundHours, 6); // the team's reply 6 hours on
   assert.equal(a.accountability.lastMinuteApprovals, 1);
   assert.equal(a.accountability.approvedAfterLive, 1);
   assert.equal(a.accountability.missedLive, 1);
-  assert.equal(a.accountability.rework, 1);
+  assert.deepEqual(a.accountability.rework, { artwork: 2, copy: 1, posts: 1 });
   assert.equal(a.accountability.scopeChanges, 1);
 });
 

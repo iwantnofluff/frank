@@ -94,7 +94,7 @@ export function ReviewMedia({
           markers={active.comments.flatMap((c) => {
             const t = commentTime(c.anchor);
             if (t === null || ((c.anchor as { slide?: number } | null)?.slide ?? 1) !== slide.position) return [];
-            return [{ commentId: c.id, t, kind: c.anchor?.type === "time" ? "time" : "pin" } as TimelineMarker];
+            return [{ commentId: c.id, t, kind: c.anchor?.type === "time" ? "time" : "pin", author: c.author_name, body: c.body } as TimelineMarker];
           })}
           highlightedCommentId={controller.highlightedCommentId}
           onMarker={controller.setHighlightedCommentId}

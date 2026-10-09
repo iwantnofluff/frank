@@ -123,7 +123,10 @@ export interface Analytics {
     lastMinuteApprovals: number; // approved within 48 hours before going live
     approvedAfterLive: number;
     missedLive: number; // live date passed, not approved
-    rework: number; // moved back out of Approved
+    // Rework (direct instruction: judged by versions, not by moving back
+    // out of Approved): every version after a post's first, artwork and
+    // copy, across all the posts shown.
+    rework: { artwork: number; copy: number; posts: number };
     scopeChanges: number;
   };
   speed: {
@@ -273,7 +276,11 @@ export function computeAnalytics(
       }).length,
       approvedAfterLive: dated.filter((p) => p.approvedAt! > p.scheduledAt!).length,
       missedLive: posts.filter((p) => p.stage < 4 && p.scheduledAt && p.scheduledAt < nowIso).length,
-      rework: posts.filter((p) => (eventsOf.get(p.id) ?? []).some((e) => e.fromStage === 4 && e.toStage < 4)).length,
+      rework: {
+        artwork: posts.reduce((n, p) => n + Math.max(0, rounds(p, "creative") - 1), 0),
+        copy: posts.reduce((n, p) => n + Math.max(0, rounds(p, "copy") - 1), 0),
+        posts: posts.filter((p) => rounds(p, "creative") > 1 || rounds(p, "copy") > 1).length,
+      },
       scopeChanges: theComments.filter((c) => c.category === "scope_change").length,
     },
     speed: {
@@ -328,7 +335,7 @@ export interface GroupRow {
   metShare: number | null;
   lateSends: number;
   scopeChanges: number;
-  rework: number;
+  rework: number; // versions after the first, artwork and copy
   medianTurnaroundHours: number | null;
 }
 
@@ -364,7 +371,7 @@ export function groupAnalytics(
       metShare: a.promise.metShare,
       lateSends: a.promise.lateSends.length,
       scopeChanges: a.accountability.scopeChanges,
-      rework: a.accountability.rework,
+      rework: a.accountability.rework.artwork + a.accountability.rework.copy,
       medianTurnaroundHours: a.accountability.medianTurnaroundHours,
     };
   }).sort((a, b) => b.posts - a.posts);
