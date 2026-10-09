@@ -3,15 +3,22 @@
 import { use, useState } from "react";
 import { useClientDetail } from "@/hooks/use-client";
 import { useIsStaff } from "@/hooks/use-is-staff";
-import { useMonthlyStrategies, useSaveMonthlyStrategy, type MonthlyStrategyRow } from "@/hooks/use-monthly-strategy";
+import {
+  useAddStrategyMonth,
+  useArchiveStrategyMonth,
+  useMonthlyStrategies,
+  useSaveMonthlyStrategy,
+  type MonthlyStrategyRow,
+} from "@/hooks/use-monthly-strategy";
 import { SettingsHead } from "@/components/settings/SettingsHead";
 import { STRATEGY_FIELDS, addMonths, filledFields, monthLabel, monthOf, type StrategyFields } from "@/lib/monthly-strategy";
 import { errorMessage } from "@/lib/errors";
 
 // Client Settings → Knowledge → Strategy (direct instruction, phase78): the
 // strategy decided for each month, which Draft with Frank follows for posts
-// going live that month. This month and the next two, then any earlier
-// month with something in it, each folding open; this month starts open.
+// going live that month. The months someone has added (Add Month), Active
+// or Archived like a client's projects (phase79; archiving only tidies the
+// list, drafting still follows it), each folding open, this month open.
 // The team writes it; a client's own people read it.
 export default function ClientStrategyPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -20,10 +27,15 @@ export default function ClientStrategyPage({ params }: { params: Promise<{ id: s
   const { isStaff, isPending: isStaffPending } = useIsStaff();
   const canEdit = isStaff && !isStaffPending;
 
+  const [tab, setTab] = useState<"active" | "archived">("active");
+  const add = useAddStrategyMonth(id);
   const now = monthOf(new Date(dataUpdatedAt || 0));
-  const ahead = [now, addMonths(now, 1), addMonths(now, 2)];
-  const earlier = (rows ?? []).map((r) => r.month).filter((m) => m < now && filledFields(rows!.find((r) => r.month === m)).length);
-  const months = [...ahead, ...earlier];
+  const active = (rows ?? []).filter((r) => !r.archived_at).sort((a, b) => a.month.localeCompare(b.month));
+  const archived = (rows ?? []).filter((r) => r.archived_at).sort((a, b) => b.month.localeCompare(a.month));
+  const shown = tab === "active" ? active : archived;
+  // Add Month offers the next twelve months not added yet, this one first.
+  const taken = new Set((rows ?? []).map((r) => r.month));
+  const addable = Array.from({ length: 12 }, (_, i) => addMonths(now, i)).filter((m) => !taken.has(m));
 
   return (
     <div className="pad narrow">
@@ -37,18 +49,59 @@ export default function ClientStrategyPage({ params }: { params: Promise<{ id: s
         </div>
       )}
       {!isError && !isLoading && (
-        <div style={{ marginTop: 24 }}>
-          {months.map((m) => (
-            <StrategyMonth
-              key={m}
-              clientId={id}
-              month={m}
-              current={m === now}
-              row={rows?.find((r) => r.month === m) ?? null}
-              canEdit={canEdit}
-            />
-          ))}
-        </div>
+        <>
+          <div className="secthead" style={{ marginTop: 24 }}>
+            <h2>Months</h2>
+            <div className="filters">
+              <button className="chip" type="button" aria-pressed={tab === "active"} onClick={() => setTab("active")}>
+                Active ({active.length})
+              </button>
+              <button className="chip" type="button" aria-pressed={tab === "archived"} onClick={() => setTab("archived")}>
+                Archived ({archived.length})
+              </button>
+              {canEdit && <span className="toolsep" />}
+              {canEdit && (
+                <select
+                  className="btn sm addmonth"
+                  aria-label="Add Month"
+                  value=""
+                  disabled={add.isPending || addable.length === 0}
+                  onChange={(e) => {
+                    if (!e.target.value) return;
+                    setTab("active");
+                    add.mutate(e.target.value);
+                  }}
+                >
+                  <option value="" disabled>
+                    {add.isPending ? "Adding…" : "Add Month"}
+                  </option>
+                  {addable.map((m) => (
+                    <option key={m} value={m}>
+                      {monthLabel(m)}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+          </div>
+          {add.error && <p className="autherr">{errorMessage(add.error, "Couldn't add the month")}</p>}
+          {shown.length === 0 ? (
+            <div className="empty">
+              <b>{tab === "active" ? "No months yet" : "No archived months"}</b>
+              <span>
+                {tab === "archived"
+                  ? "Nothing has been archived yet."
+                  : canEdit
+                    ? "Add a month to write down what's been decided for it."
+                    : "Nothing has been decided here yet."}
+              </span>
+            </div>
+          ) : (
+            shown.map((r) => (
+              <StrategyMonth key={r.id} clientId={id} month={r.month} current={r.month === now} row={r} canEdit={canEdit} />
+            ))
+          )}
+        </>
       )}
     </div>
   );
@@ -73,6 +126,7 @@ function StrategyMonth({
   const saved: StrategyFields = row ?? EMPTY;
   const [draft, setDraft] = useState<StrategyFields>(saved);
   const save = useSaveMonthlyStrategy(clientId);
+  const archive = useArchiveStrategyMonth(clientId);
   const filled = filledFields(row).length;
   const changed = STRATEGY_FIELDS.some((f) => (draft[f.key] ?? "").trim() !== (saved[f.key] ?? "").trim());
 
@@ -111,7 +165,19 @@ function StrategyMonth({
           )}
           {canEdit && (
             <div className="strat-f">
-              {save.error && <p className="autherr">{errorMessage(save.error, "Couldn't save the strategy")}</p>}
+              {row && (
+                <button
+                  type="button"
+                  className="btn sm strat-archive"
+                  disabled={archive.isPending}
+                  onClick={() => archive.mutate({ id: row.id, archive: !row.archived_at })}
+                >
+                  {row.archived_at ? "Unarchive" : "Archive"}
+                </button>
+              )}
+              {(save.error || archive.error) && (
+                <p className="autherr">{errorMessage(save.error ?? archive.error, "Couldn't save the strategy")}</p>
+              )}
               <button
                 type="button"
                 className="btn primary sm"

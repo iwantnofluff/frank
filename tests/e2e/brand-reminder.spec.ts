@@ -67,6 +67,9 @@ test("the team writes a month's strategy, the client's page shows it, a Client r
   await frank.loginAsStaff(page);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(APP_URL + "/clients/" + frank.clientId + "/settings/strategy");
+  // Months are added (phase79); this month is the first offered.
+  await expect(page.getByText("No months yet")).toBeVisible({ timeout: 20_000 });
+  await page.getByLabel("Add Month").selectOption({ index: 1 });
   const now = page.locator(".strat", { hasText: "This month" });
   await expect(now.getByLabel("Objective")).toBeVisible({ timeout: 20_000 });
   await now.getByLabel("Objective").fill("Launch the new range to SME owners");
@@ -84,4 +87,30 @@ test("the team writes a month's strategy, the client's page shows it, a Client r
   await expect(c.locator(".strat", { hasText: "This month" })).toContainText("Launch the new range", { timeout: 20_000 });
   await expect(c.locator(".strat textarea")).toHaveCount(0);
   await ctx.close();
+});
+
+// Archiving a month only tidies the list (phase79, decided directly): it
+// moves to Archived and can come back; Add Month no longer offers it.
+test("a month is archived to its own list and brought back", async ({ page, frank }) => {
+  test.setTimeout(90_000);
+  await frank.loginAsStaff(page);
+  await page.goto(APP_URL + "/clients/" + frank.clientId + "/settings/strategy");
+  const add = page.getByLabel("Add Month");
+  await expect(page.getByText("No months yet")).toBeVisible({ timeout: 20_000 });
+  await add.selectOption({ index: 1 });
+  await expect(page.locator(".strat")).toHaveCount(1, { timeout: 15_000 });
+  await add.selectOption({ index: 1 });
+  await expect(page.getByRole("button", { name: "Active (2)" })).toBeVisible({ timeout: 15_000 });
+  const second = page.locator(".strat").nth(1);
+  const name = await second.locator(".strat-h b").innerText();
+  await second.locator(".strat-h").click();
+  await second.getByRole("button", { name: "Archive" }).click();
+  await expect(page.getByRole("button", { name: "Archived (1)" })).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator(".strat .strat-h b")).not.toContainText([name]);
+  await expect(add.locator("option", { hasText: name })).toHaveCount(0);
+  await page.getByRole("button", { name: "Archived (1)" }).click();
+  await expect(page.locator(".strat .strat-h b")).toHaveText([name]);
+  await page.locator(".strat .strat-h").click();
+  await page.getByRole("button", { name: "Unarchive" }).click();
+  await expect(page.getByRole("button", { name: "Active (2)" })).toBeVisible({ timeout: 15_000 });
 });
