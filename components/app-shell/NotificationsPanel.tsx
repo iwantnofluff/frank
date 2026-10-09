@@ -5,6 +5,9 @@ import { usePresence } from "@/hooks/use-presence";
 import { useMarkNotificationsRead, type NotificationRow } from "@/hooks/use-notifications";
 import { avatarColour } from "@/lib/avatar-colour";
 import { initials } from "@/lib/initials";
+import { BRAND } from "@/lib/brand";
+import { displayVersion } from "@/lib/release-version";
+import type { Release } from "@/lib/releases";
 
 function ago(iso: string): string {
   const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
@@ -26,12 +29,19 @@ export function NotificationsPanel({
   anchor,
   onClose,
   onOpenItem,
+  releases = [],
+  onOpenRelease,
+  onReadReleases,
 }: {
   open: boolean;
   items: NotificationRow[];
   anchor: React.RefObject<HTMLButtonElement | null>;
   onClose: () => void;
   onOpenItem: (n: NotificationRow) => void;
+  // New versions of Frank not yet seen (direct instruction), above the rest.
+  releases?: Release[];
+  onOpenRelease?: (r: Release) => void;
+  onReadReleases?: () => void;
 }) {
   const pop = usePresence(open);
   const panel = useRef<HTMLDivElement>(null);
@@ -65,14 +75,31 @@ export function NotificationsPanel({
         <button
           type="button"
           className="btn ghost sm"
-          disabled={!unread.length || markRead.isPending}
-          onClick={() => markRead.mutate(undefined)}
+          disabled={(!unread.length && !releases.length) || markRead.isPending}
+          onClick={() => {
+            if (unread.length) markRead.mutate(undefined);
+            if (releases.length) onReadReleases?.();
+          }}
         >
           Mark All Read
         </button>
       </div>
       <div className="notif-b">
-        {items.length === 0 && <p className="notif-empty">You&apos;re all caught up.</p>}
+        {items.length === 0 && releases.length === 0 && <p className="notif-empty">You&apos;re all caught up.</p>}
+        {releases.map((r) => (
+          <button key={r.version} type="button" className="nrow unread" onClick={() => onOpenRelease?.(r)}>
+            <span className="ni ni-frank" aria-hidden="true">
+              {/* eslint-disable-next-line @next/next/no-img-element -- a static SVG */}
+              <img src={BRAND.logomark} alt="" />
+            </span>
+            <span>
+              <span className="nt">
+                <b>Frank {displayVersion(r.version)} is here</b>: {r.title}
+              </span>
+              <time dateTime={r.date}>See what&apos;s new</time>
+            </span>
+          </button>
+        ))}
         {items.map((n) => {
           const post = n.creative;
           const client = post?.project?.client?.name ?? "";

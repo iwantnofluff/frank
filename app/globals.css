@@ -9190,3 +9190,97 @@ button.hbrand-add:hover {
     transition: none;
   }
 }
+
+/* Settings → General → Updates: the newest version in full, earlier ones
+   as links that open to their changes. */
+.rel .panel-h b,
+.rel-earlier .panel-h b {
+  font-size: 14.7px;
+  font-weight: 600;
+}
+.rel-date {
+  margin-left: auto;
+  font-size: 12.7px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.rel-list {
+  margin: 0;
+  padding: 12px 15px 14px 33px;
+  display: grid;
+  gap: 6px;
+  font-size: 13.7px;
+  line-height: 1.5;
+}
+.rel-row + .rel-row {
+  border-top: 1px solid var(--line);
+}
+.rel-row .rel-list {
+  padding-top: 0;
+}
+.rel-link {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 11px 15px;
+  text-align: left;
+  cursor: pointer;
+}
+.rel-link b {
+  font-size: 13.7px;
+  font-weight: 600;
+  color: var(--action);
+  min-width: 42px;
+}
+.rel-link .rel-t {
+  font-size: 13.7px;
+  color: var(--ink);
+}
+.rel-link:hover .rel-t {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.rel,
+.rel-row {
+  scroll-margin-top: 16px;
+}
+/* A new version notice in the bell: Frank's mark on white. */
+.ni.ni-frank {
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.ni-frank img {
+  width: 60%;
+  height: 60%;
+  object-fit: contain;
+}
+/* A newer version has gone live (UpdateReady): a bar at the bottom. */
+.updready {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px 10px 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(20, 22, 26, 0.16);
+  font-size: 13.7px;
+  animation: updready-in var(--dur-open) var(--ease-open);
+}
+@keyframes updready-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .updready {
+    animation: none;
+  }
+}

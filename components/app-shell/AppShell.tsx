@@ -4,6 +4,7 @@ import { Topbar } from "./Topbar";
 import { AgencyTheme } from "./AgencyTheme";
 import { ReadOnlyBanner } from "./ReadOnlyBanner";
 import { ViewTransition } from "./ViewTransition";
+import { UpdateReady } from "./UpdateReady";
 import { BRAND } from "@/lib/brand";
 
 export function AppShell({
@@ -31,6 +32,7 @@ export function AppShell({
         <Topbar userInitials={userInitials} userName={userName} userEmail={userEmail} />
         <ReadOnlyBanner />
         <ViewTransition>{children}</ViewTransition>
+        <UpdateReady />
       </div>
     </div>
   );

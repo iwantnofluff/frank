@@ -559,7 +559,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         kind: "list",
         items: [
-          "General: your account's name and web address, and anything Frank's support has done in your account.",
+          "General: your account's name and web address, anything Frank's support has done in your account, and Updates: every version of Frank and what changed. A new version also shows in the bell, and an open tab offers to reload when one goes live.",
           "Customisation: your logo and brand colours, on plans that include branding. Your logo shows in the header, after Frank's; until there is one, Owners and Admins can choose Add Logo there.",
           "Team: your Users and Clients, and inviting people.",
           "AI Governance: the AI model Draft with Frank uses.",

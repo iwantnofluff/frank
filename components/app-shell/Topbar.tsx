@@ -10,6 +10,9 @@ import { BellIcon, HelpIcon } from "./icons";
 import { GlobalSearch } from "./GlobalSearch";
 import { HelpPanel } from "./HelpPanel";
 import { NotificationsPanel } from "./NotificationsPanel";
+import { useMarkReleasesSeen, useReleasesSeen } from "@/hooks/use-releases-seen";
+import { CURRENT_RELEASE, RELEASES } from "@/lib/releases";
+import { compareVersions } from "@/lib/release-version";
 import { HeaderBrand } from "./HeaderBrand";
 import { AccountMenu } from "./AccountMenu";
 import { useIsStaff } from "@/hooks/use-is-staff";
@@ -194,7 +197,17 @@ export function Topbar({
   const router = useRouter();
   const bell = useRef<HTMLButtonElement>(null);
   const { data: notifications } = useNotifications();
-  const unread = (notifications ?? []).filter((n) => !n.read_at).length;
+  // New versions of Frank, for the team (direct instruction): those newer
+  // than the last seen, or just the newest for someone who's seen none.
+  const team = isStaff && !staffPending;
+  const { data: seen } = useReleasesSeen(team);
+  const markReleasesSeen = useMarkReleasesSeen();
+  const newReleases = !team || !seen
+    ? []
+    : seen.seen
+      ? RELEASES.filter((r) => compareVersions(r.version, seen.seen!) < 0)
+      : [CURRENT_RELEASE];
+  const unread = (notifications ?? []).filter((n) => !n.read_at).length + newReleases.length;
 
   return (
     <header className="topbar">
@@ -224,6 +237,13 @@ export function Topbar({
         items={notifications ?? []}
         anchor={bell}
         onClose={() => setNotifOpen(false)}
+        releases={newReleases}
+        onReadReleases={() => markReleasesSeen.mutate(CURRENT_RELEASE.version)}
+        onOpenRelease={(r) => {
+          setNotifOpen(false);
+          markReleasesSeen.mutate(CURRENT_RELEASE.version);
+          router.push(`/settings/general/updates#v${r.version.replace(/\./g, "-")}`);
+        }}
         onOpenItem={(n) => {
           setNotifOpen(false);
           if (!n.creative) return;

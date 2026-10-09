@@ -25,6 +25,8 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
       { href: "/settings/general/account-url", label: "Account URL" },
       // What Frank's support has done in the account (phase51), for Owners.
       { href: "/settings/general/support-activity", label: "Support Activity" },
+      // Every version of Frank and what changed (direct instruction).
+      { href: "/settings/general/updates", label: "Updates" },
     ],
   },
   {
