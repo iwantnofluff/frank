@@ -116,7 +116,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       { kind: "h", text: "Getting around" },
       {
         kind: "p",
-        text: "The left rail follows where you are, and names the client: on a client's projects you'll see Clients and the client's Settings (Casa Carigar Settings, say); inside a project, the client's Projects too; on a post, the project's Content Planner or Other Content as well. Frank's logo in the top left corner takes you back to Clients. Your picture at the top right holds My Profile, Settings for your whole workspace, and Sign out. If you belong to more than one workspace, it lists them too: pick one to switch, still signed in.",
+        text: "The left rail follows where you are, and names the client: anywhere inside a client you'll see Clients, the client itself (Casa Carigar, with a buildings icon, opening its page), and the client's Settings (Casa Carigar Settings); in a project and on its posts, the project's Content Planner or Other Content as well. Frank's logo in the top left corner takes you back to Clients. Your picture at the top right holds My Profile, Settings for your whole workspace, and Sign out. If you belong to more than one workspace, it lists them too: pick one to switch, still signed in.",
       },
     ],
   },
@@ -187,7 +187,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         items: [
           "Profile → About: the name, logo, industry and description, and archiving. Once a client is archived, the Primary Owner and Owners can delete it for good, with everything in it, by typing its name; an archived project can be deleted the same way from its profile.",
           "Profile → People: who's on this client and which of its projects each person works on, and inviting someone new.",
-          "Profile → Preferences: how long Approved artwork is kept (7, 14, 21 or 28 days) and what happens to Approved posts with no live date; whether the client can approve and whether a review link's Feed shows the project's other posts; and what a new review link starts with. Owners and Admins change them; each saves as it's picked.",
+          "Profile → Preferences: how long Approved artwork is kept (7, 14, 21 or 28 days) and what happens to Approved posts with no live date; whether the client can approve and whether a review link's Feed shows the project's other posts; and what a new review link starts with. Owners and Admins change them; each saves as it's picked. Notifications: whether the team hears in Frank's bell and by email when the client comments or approves, and who hears: the post's lead (everyone on the client when a post has no lead), everyone on the client, or Owners and Admins.",
           "Knowledge → Discovery: what Frank knows about the client, used when copy is drafted and checked.",
           "Knowledge → Strategy: what's been decided for each month (objective, key messages, themes and campaigns, offers, key dates, notes). Add a month with Add Month; archive one to tidy the list. Draft with Frank follows the month a post goes live in, archived or not; empty fields are left out.",
           "Connections → Instagram: the client's account, so the Feed Preview shows its real posts.",

@@ -191,6 +191,7 @@ export function Topbar({
   const [helpOpen, setHelpOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [deciding, setDeciding] = useState<NonNullable<NotificationRow["creative"]> | null>(null);
+  const router = useRouter();
   const bell = useRef<HTMLButtonElement>(null);
   const { data: notifications } = useNotifications();
   const unread = (notifications ?? []).filter((n) => !n.read_at).length;
@@ -225,7 +226,10 @@ export function Topbar({
         onClose={() => setNotifOpen(false)}
         onOpenItem={(n) => {
           setNotifOpen(false);
-          if (n.creative) setDeciding(n.creative);
+          if (!n.creative) return;
+          // The client's comment or approval: the post itself (phase80).
+          if (n.kind !== "artwork_removal") router.push(`/creatives/${n.creative.id}`);
+          else setDeciding(n.creative);
         }}
       />
       {deciding && <ArtworkDecisionModal post={deciding} onClose={() => setDeciding(null)} />}

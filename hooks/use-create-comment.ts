@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import type { Anchor } from "@/lib/annotations";
+import { notifyClientActivity } from "@/lib/notify-client-activity";
 import { classifyComment } from "@/lib/ai/classify-comment-client";
 import type { CommentRow } from "./use-comments";
 import type { MyMembership } from "./use-my-membership";
@@ -66,6 +67,8 @@ export function useCreateComment(creativeId: string) {
 
       if (error) throw error;
       classifyComment(data.id);
+      // A client's own people comment here too (phase80).
+      notifyClientActivity(creativeId);
     },
     // Shown at once (direct instruction: no wait for the comment to appear
     // where it was made), in place until the saved one replaces it; taken

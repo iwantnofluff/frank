@@ -128,6 +128,52 @@ export default function ClientPreferencesPage({ params }: { params: Promise<{ id
             </Row>
           </section>
 
+          {/* When the client comments or approves (phase80, direct
+              instruction): how the team hears, and who. */}
+          <section className="panel">
+            <div className="panel-h">
+              <b>Notifications</b>
+              <span className="sync">When the client comments or approves</span>
+            </div>
+            <Row title="In Frank" hint="A notice in the bell at the top right.">
+              <YesNo
+                label="Notify in Frank"
+                value={prefs.notify_in_app}
+                disabled={!canEdit}
+                onChange={(v) => set({ notify_in_app: v })}
+              />
+            </Row>
+            <Row title="By email" hint="An email as it happens.">
+              <YesNo
+                label="Notify by email"
+                value={prefs.notify_email}
+                disabled={!canEdit}
+                onChange={(v) => set({ notify_email: v })}
+              />
+            </Row>
+            <Row
+              title="Who hears"
+              hint={
+                prefs.notify_who === "lead"
+                  ? "The post's lead. A post with no lead: everyone on the client."
+                  : prefs.notify_who === "everyone"
+                    ? "Everyone on the team who can see the post."
+                    : "The Primary Owner, Owners and Admins."
+              }
+            >
+              <select
+                aria-label="Who hears"
+                value={prefs.notify_who}
+                disabled={!canEdit || (!prefs.notify_in_app && !prefs.notify_email)}
+                onChange={(e) => set({ notify_who: e.target.value as ClientPreferences["notify_who"] })}
+              >
+                <option value="lead">The post&apos;s lead</option>
+                <option value="everyone">Everyone on the client</option>
+                <option value="admins">Owners and Admins</option>
+              </select>
+            </Row>
+          </section>
+
           <section className="panel">
             <div className="panel-h">
               <b>New Review Links</b>

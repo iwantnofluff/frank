@@ -9146,3 +9146,47 @@ button.hbrand-add:hover {
 .strat-archive {
   margin-right: auto;
 }
+
+/* A client's comment in the bell (phase80): the start of what they said. */
+.nrow .nq {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-top: 3px;
+  color: var(--muted);
+}
+
+/* A rail link that comes or goes (NavRail's RailSlot, direct instruction:
+   nothing flashes): its height opens and closes, so the links below move
+   rather than jump, and it fades and slides with the site's open and close
+   motion (--dur-open/--ease-open, --dur-close/--ease-close). */
+.rail-slot {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition:
+    grid-template-rows var(--dur-close) var(--ease-close),
+    opacity var(--dur-close) var(--ease-close),
+    transform var(--dur-close) var(--ease-close);
+}
+.rail-slot.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transform: none;
+  transition:
+    grid-template-rows var(--dur-open) var(--ease-open),
+    opacity var(--dur-open) var(--ease-open),
+    transform var(--dur-open) var(--ease-open);
+}
+.rail-slot-in {
+  min-height: 0;
+  overflow: hidden;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rail-slot,
+  .rail-slot.is-open {
+    transition: none;
+  }
+}

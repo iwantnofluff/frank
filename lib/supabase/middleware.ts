@@ -32,6 +32,10 @@ const PUBLIC_PATH_PREFIXES = [
   "/api/shared-review",
   "/api/invite",
   "/api/ai/classify-comment",
+  // Sends the emails a client's comment or approval is owed (phase80): a
+  // review link's guest has no session. Sends only what the database
+  // already marked, once.
+  "/api/notify/client-activity",
   // The daily artwork run (phase60): no session, checked by CRON_SECRET.
   "/api/cron",
   // Paddle's notifications (phase39): no session, checked by signature.

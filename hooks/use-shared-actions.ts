@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { notifyClientActivity } from "@/lib/notify-client-activity";
 import { classifyComment } from "@/lib/ai/classify-comment-client";
 import { useGuestEditKeysStore } from "@/store/guest-edit-keys-store";
 import type { SharedReviewResult as SharedReviewData } from "./use-shared-review";
@@ -86,11 +87,12 @@ export function useSubmitSharedComment(token: string, passcode: string | null) {
     onError: (_error, _input, context) => {
       for (const [key, data] of context?.previous ?? []) queryClient.setQueryData(key, data);
     },
-    onSuccess: (result, _input, context) => {
+    onSuccess: (result, input, context) => {
       if (result.status === "ok") {
         if (result.comment_id) {
           if (result.editKey) setEditKey(result.comment_id, result.editKey);
           classifyComment(result.comment_id);
+          notifyClientActivity(input.creativeId);
         }
       } else {
         for (const [key, data] of context?.previous ?? []) queryClient.setQueryData(key, data);
@@ -193,10 +195,11 @@ export function useSubmitSharedApproval(token: string, passcode: string | null) 
     onError: (_error, _input, context) => {
       if (context?.before) queryClient.setQueryData(["shared-review", token, passcode], context.before);
     },
-    onSuccess: (result, _input, context) => {
+    onSuccess: (result, input, context) => {
       if (result.status === "ok") {
         queryClient.invalidateQueries({ queryKey: ["shared-review", token] });
         if (result.comment_id) classifyComment(result.comment_id);
+        notifyClientActivity(input.creativeId);
       } else if (context?.before) {
         queryClient.setQueryData(["shared-review", token, passcode], context.before);
       }
@@ -230,10 +233,11 @@ export function useSubmitSharedRequestChanges(token: string, passcode: string | 
       if (error) throw error;
       return data as ActionResult;
     },
-    onSuccess: (result) => {
+    onSuccess: (result, input) => {
       if (result.status === "ok") {
         queryClient.invalidateQueries({ queryKey: ["shared-review", token] });
         if (result.comment_id) classifyComment(result.comment_id);
+        notifyClientActivity(input.creativeId);
       }
     },
   });

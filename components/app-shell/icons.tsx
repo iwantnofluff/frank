@@ -1,3 +1,4 @@
+import { NAV_ICONS, NAV_ICON_VIEWBOX } from "@/lib/nav-icons";
 // Ported directly from the <svg> markup in frank-prototype.html's nav rail
 // and topbar (.rbtn, .search, .bell). Paths are copied as-is; only the
 // wrapper became a component.
@@ -82,3 +83,17 @@ export function HelpIcon() {
   );
 }
 
+
+// A client, in the rail (direct instruction: the buildings icon, as Client
+// Settings' Profile uses, looking like the rail's own). The drawing is
+// filled shapes on a 1200 grid (lib/nav-icons.ts); filled and outlined so
+// its lines come out as thick as the rail's 1.25 strokes at this size.
+export function ClientIcon() {
+  return (
+    <svg viewBox={NAV_ICON_VIEWBOX.buildings} style={{ fill: "currentColor", strokeWidth: 30 }} aria-hidden="true">
+      {NAV_ICONS.buildings.map((d) => (
+        <path key={d} d={d} />
+      ))}
+    </svg>
+  );
+}

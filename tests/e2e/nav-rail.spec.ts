@@ -16,32 +16,38 @@ test("the rail follows where you are inside a client", async ({ page, frank }) =
 
   await page.goto(`${APP_URL}/clients/${frank.clientId}`);
   await expect(page.locator("#navClientSet")).toBeVisible();
+  // The client by name, with the buildings icon, on every page inside it
+  // (direct instruction; it replaced "<client> Projects").
   await expect.poll(() => railLinks(page)).toEqual([
     "Clients -> /dashboard",
+    `E2E Test Client -> /clients/${frank.clientId}`,
     `E2E Test Client Settings -> /clients/${frank.clientId}/settings`,
   ]);
 
+  // On a project's table, its Content Planner too, as the page you're on.
   await page.goto(`${APP_URL}/projects/${frank.projectId}`);
-  await expect(page.getByRole("link", { name: "E2E Test Client Projects" })).toBeVisible();
+  await expect(page.locator("#navClient")).toBeVisible();
   await expect.poll(() => railLinks(page)).toEqual([
     "Clients -> /dashboard",
-    `E2E Test Client Projects -> /clients/${frank.clientId}`,
+    `E2E Test Client -> /clients/${frank.clientId}`,
+    `Content Planner -> /projects/${frank.projectId}`,
     `E2E Test Client Settings -> /clients/${frank.clientId}/settings`,
   ]);
+  await expect(page.getByRole("link", { name: "Content Planner" })).toHaveAttribute("aria-current", "true");
 
   // The fixture's project is a Content Planner one.
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
   await expect(page.getByRole("link", { name: "Content Planner" })).toBeVisible();
   await expect.poll(() => railLinks(page)).toEqual([
     "Clients -> /dashboard",
-    `E2E Test Client Projects -> /clients/${frank.clientId}`,
+    `E2E Test Client -> /clients/${frank.clientId}`,
     `Content Planner -> /projects/${frank.projectId}`,
     `E2E Test Client Settings -> /clients/${frank.clientId}/settings`,
   ]);
 
   await page.getByRole("link", { name: "Content Planner" }).click();
   await page.waitForURL(`${APP_URL}/projects/${frank.projectId}`);
-  await page.getByRole("link", { name: "E2E Test Client Projects" }).click();
+  await page.locator("#navClient").click();
   await page.waitForURL(`${APP_URL}/clients/${frank.clientId}`);
   // The client's Settings, named for it, opens on Client Details for staff.
   await page.getByRole("link", { name: "E2E Test Client Settings" }).click();
@@ -55,7 +61,7 @@ test("a client-side member gets the same rail, opening their Knowledge", async (
   await expect(page.getByRole("link", { name: "Content Planner" })).toBeVisible();
   await expect.poll(() => railLinks(page)).toEqual([
     "Clients -> /dashboard",
-    `E2E Test Client Projects -> /clients/${frank.clientId}`,
+    `E2E Test Client -> /clients/${frank.clientId}`,
     `Content Planner -> /projects/${frank.projectId}`,
     `E2E Test Client Settings -> /clients/${frank.clientId}/settings`,
   ]);
@@ -90,8 +96,11 @@ test("a client-side member on their projects list gets Client Settings but no Se
   await frank.loginAsClient(page);
   await page.goto(`${APP_URL}/clients/${frank.clientId}`);
   await page.waitForSelector(".clients, .empty");
+  // The client by name, with the buildings icon, on every page inside it
+  // (direct instruction; it replaced "<client> Projects").
   await expect.poll(() => railLinks(page)).toEqual([
     "Clients -> /dashboard",
+    `E2E Test Client -> /clients/${frank.clientId}`,
     `E2E Test Client Settings -> /clients/${frank.clientId}/settings`,
   ]);
 });

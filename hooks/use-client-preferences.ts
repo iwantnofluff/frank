@@ -18,6 +18,11 @@ export interface ClientPreferences {
   lead_days: 14 | 21 | 28 | 35;
   // Posts a month in the client's contract (phase73); null until set.
   contracted_posts_per_month: number | null;
+  // Telling the team when the client comments or approves (phase80): in
+  // Frank's bell, by email, and who hears.
+  notify_in_app: boolean;
+  notify_email: boolean;
+  notify_who: "lead" | "everyone" | "admins";
 }
 
 // What every client has until a preference is saved (the database's own
@@ -32,6 +37,9 @@ export const DEFAULT_CLIENT_PREFERENCES: ClientPreferences = {
   link_passcode: false,
   lead_days: 28,
   contracted_posts_per_month: null,
+  notify_in_app: true,
+  notify_email: false,
+  notify_who: "lead",
 };
 
 const FIELDS = Object.keys(DEFAULT_CLIENT_PREFERENCES).join(", ");

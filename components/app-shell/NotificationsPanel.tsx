@@ -91,9 +91,24 @@ export function NotificationsPanel({
               </span>
               <span>
                 <span className="nt">
-                  <b>{post?.name ?? "A post"}</b>
-                  {client ? ` · ${client}` : ""}. {post?.due_on ? "Past its due date" : "Approved a while ago"}, with
-                  no live date: remove its artwork?
+                  {n.kind === "client_comment" ? (
+                    <>
+                      <b>{n.comment?.who ?? "The client"}</b> commented on <b>{post?.name ?? "a post"}</b>
+                      {client ? ` · ${client}` : ""}
+                      {n.comment?.body && <span className="nq">“{n.comment.body}”</span>}
+                    </>
+                  ) : n.kind === "client_approval" ? (
+                    <>
+                      <b>{post?.approved_by_name ?? "The client"}</b> approved <b>{post?.name ?? "a post"}</b>
+                      {client ? ` · ${client}` : ""}
+                    </>
+                  ) : (
+                    <>
+                      <b>{post?.name ?? "A post"}</b>
+                      {client ? ` · ${client}` : ""}. {post?.due_on ? "Past its due date" : "Approved a while ago"}, with
+                      no live date: remove its artwork?
+                    </>
+                  )}
                 </span>
                 <time dateTime={n.created_at}>{ago(n.created_at)}</time>
               </span>
