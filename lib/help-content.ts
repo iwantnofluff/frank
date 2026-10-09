@@ -189,6 +189,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "Profile → People: who's on this client and which of its projects each person works on, and inviting someone new.",
           "Profile → Preferences: how long Approved artwork is kept (7, 14, 21 or 28 days) and what happens to Approved posts with no live date; whether the client can approve and whether a review link's Feed shows the project's other posts; and what a new review link starts with. Owners and Admins change them; each saves as it's picked.",
           "Knowledge → Discovery: what Frank knows about the client, used when copy is drafted and checked.",
+          "Knowledge → Strategy: what's been decided for each month (objective, key messages, themes and campaigns, offers, key dates, notes). Draft with Frank follows the month a post goes live in; empty fields are left out.",
           "Connections → Instagram: the client's account, so the Feed Preview shows its real posts.",
         ],
       },
@@ -220,7 +221,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       },
       {
         kind: "p",
-        text: "Its Tone of Voice, Target Audience and Prioritised Features also show on the client's page, under About the brand, so the brand is in front of you before you start. See All opens that area here.",
+        text: "Its Tone of Voice, Target Audience and Prioritised Features also show on the client's page, under Strategy, with this month's strategy beside them, so the brand is in front of you before you start. See All opens that area here.",
       },
       { kind: "h", text: "Add to an area" },
       {

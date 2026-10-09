@@ -19,6 +19,9 @@ export interface CopyChatContext {
   // Knowledge files sent alongside (PDFs, images), by title.
   fileTitles: string[];
   fields: CopyChatField[];
+  // The client's strategy for the month the post goes live (phase78),
+  // ready to read; absent when nothing's been decided for it.
+  strategy?: string | null;
 }
 
 export interface CopyChatTurn {
@@ -112,6 +115,7 @@ export function buildCopyChatPromptParts(
       ? `What the reader should get from it (WIIFM):\n${context.approachNotes.map((n) => `- ${n}`).join("\n")}`
       : null,
     context.formatDirection ? `Format direction (follow it):\n${context.formatDirection}` : null,
+    context.strategy ?? null,
     notes("Workspace knowledge", context.agencyNotes),
     notes("Client knowledge", context.clientNotes),
     context.fileTitles.length ? `Attached knowledge files: ${context.fileTitles.join(", ")}.` : null,

@@ -8960,7 +8960,7 @@ button.hbrand-add:hover {
 }
 .brandrem-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
 }
 @media (max-width: 900px) {
@@ -9048,4 +9048,88 @@ button.hbrand-add:hover {
 }
 .sortsel:hover {
   border-color: var(--muted);
+}
+
+/* Client Settings → Knowledge → Strategy (phase78): each month a panel
+   that folds open from its heading. */
+.strat-h {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  background: var(--surface);
+}
+.strat-h b {
+  font-size: 14.7px;
+  font-weight: 600;
+}
+.strat-count {
+  margin-left: auto;
+  font-size: 12.7px;
+  color: var(--muted);
+}
+.strat-chev {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 2;
+  stroke-linecap: round;
+  transition: transform 0.15s ease;
+}
+.strat-h[aria-expanded="true"] .strat-chev {
+  transform: rotate(180deg);
+}
+.strat-h[aria-expanded="false"] {
+  border-bottom: 0;
+}
+.strat-b {
+  padding: 14px 15px 16px;
+  display: grid;
+  gap: 12px;
+}
+.strat-b .field {
+  margin: 0;
+}
+.strat-read span {
+  display: block;
+  font-size: 12.7px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.strat-read p {
+  margin: 0;
+  font-size: 13.7px;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+.strat-read p.muted {
+  color: var(--muted);
+}
+.strat-f {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .strat-chev {
+    transition: none;
+  }
+}
+/* This month's strategy: each field shorter, so three fit. */
+.brandrem-month > div + div {
+  margin-top: 8px;
+}
+.brandrem-month p {
+  -webkit-line-clamp: 2;
+}
+@media (max-width: 1200px) {
+  .brandrem-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 900px) {
+  .brandrem-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

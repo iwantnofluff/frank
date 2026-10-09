@@ -58,3 +58,30 @@ test("a client's projects sort by latest activity, name, when added or deadline"
   await expect(page.locator(".crow", { hasText: "Zulu New" })).toBeVisible({ timeout: 20_000 });
   await expect(page.getByLabel("Sort projects")).toHaveValue("name");
 });
+
+// A client's monthly strategy (phase78, direct instruction): written by the
+// team in Client Settings → Knowledge → Strategy, shown as this month's box
+// on the client's page, read only for the client's own people.
+test("the team writes a month's strategy, the client's page shows it, a Client reads it", async ({ page, browser, frank }) => {
+  test.setTimeout(120_000);
+  await frank.loginAsStaff(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(APP_URL + "/clients/" + frank.clientId + "/settings/strategy");
+  const now = page.locator(".strat", { hasText: "This month" });
+  await expect(now.getByLabel("Objective")).toBeVisible({ timeout: 20_000 });
+  await now.getByLabel("Objective").fill("Launch the new range to SME owners");
+  await now.getByLabel("Key messages").fill("Faster approvals, fewer meetings");
+  await now.getByLabel("Offers and promotions").fill("20% off the first month");
+  await now.getByRole("button", { name: /^Save / }).click();
+  await expect(now.getByRole("button", { name: "Saved" })).toBeVisible({ timeout: 15_000 });
+  await expect(now).toContainText("3 of 6 filled");
+  await page.goto(APP_URL + "/clients/" + frank.clientId);
+  await expect(page.locator(".brandrem-box").nth(3)).toContainText("Launch the new range", { timeout: 20_000 });
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const c = await ctx.newPage();
+  await frank.loginAsClient(c);
+  await c.goto(APP_URL + "/clients/" + frank.clientId + "/settings/strategy");
+  await expect(c.locator(".strat", { hasText: "This month" })).toContainText("Launch the new range", { timeout: 20_000 });
+  await expect(c.locator(".strat textarea")).toHaveCount(0);
+  await ctx.close();
+});

@@ -12,7 +12,11 @@ export function clientSettingsSections(clientId: string, staff: boolean): Settin
     label: "Knowledge",
     icon: "suitcase",
     // "Discovery" (direct instruction): what's been learnt about the client.
-    pages: [{ href: `${base}/knowledge`, label: "Discovery" }],
+    pages: [
+      { href: `${base}/knowledge`, label: "Discovery" },
+      // Each month's decided strategy, which drafting follows (phase78).
+      { href: `${base}/strategy`, label: "Strategy" },
+    ],
   };
   if (!staff) return [knowledge];
   return [
@@ -39,4 +43,4 @@ export function clientSettingsSections(clientId: string, staff: boolean): Settin
 }
 
 // The pages a client's own people may open.
-export const clientOnlyPage = (pathname: string) => /\/settings\/knowledge\/?$/.test(pathname);
+export const clientOnlyPage = (pathname: string) => /\/settings\/(knowledge|strategy)\/?$/.test(pathname);

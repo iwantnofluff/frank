@@ -10,6 +10,7 @@ import {
   type CopyChatMode,
   type CopyChatTurn,
 } from "@/lib/ai/copy-chat";
+import { monthOf, strategyForPrompt, type StrategyFields } from "@/lib/monthly-strategy";
 import { COPY_FIELD_LABELS, copyFieldsFor, formatsLabel, postFormats } from "@/lib/formats";
 
 const fail = (error: string, status: number) => NextResponse.json({ error }, { status });
@@ -56,7 +57,7 @@ export async function POST(request: Request) {
 
   const { data: creative } = await supabase
     .from("creatives")
-    .select("id, agency_id, name, concept, approach_notes, format, formats, slide_count, project:projects(client_id)")
+    .select("id, agency_id, name, concept, approach_notes, format, formats, slide_count, scheduled_at, due_on, project:projects(client_id)")
     .eq("id", body.creativeId ?? "")
     .maybeSingle();
   if (!creative) return fail("Post not found", 404);
@@ -103,13 +104,23 @@ export async function POST(request: Request) {
     message = openingMessage(body.mode, currentFields, fields);
   }
 
-  // The context.
-  const [directions, agencyKnowledge, clientKnowledge] = await Promise.all([
+  // The context. The client's strategy is the month the post goes live in,
+  // or this month without a live date (decided directly, phase78).
+  const strategyMonth = monthOf((creative.scheduled_at as string | null) ?? (creative.due_on as string | null) ?? new Date());
+  const [directions, agencyKnowledge, clientKnowledge, strategy] = await Promise.all([
     supabase.from("format_directions").select("format_id, direction_text").eq("agency_id", agencyId),
     supabase.from("agency_knowledge_entries").select("kind, title, body, asset_id").eq("agency_id", agencyId).order("created_at"),
     clientId
       ? supabase.from("knowledge_entries").select("kind, title, body, asset_id").eq("client_id", clientId).order("created_at")
       : Promise.resolve({ data: [] as Row[] }),
+    clientId
+      ? supabase
+          .from("client_monthly_strategies")
+          .select("objective, key_messages, themes, offers, key_dates, notes")
+          .eq("client_id", clientId)
+          .eq("month", strategyMonth)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
   const direction = formats
     .map((id) => {
@@ -173,6 +184,7 @@ export async function POST(request: Request) {
       agencyNotes: textNotes(agencyKnowledge.data as Row[] | null),
       clientNotes: textNotes(clientKnowledge.data as Row[] | null),
       fileTitles: attachments.map((a) => a.title),
+      strategy: strategyForPrompt(strategyMonth, strategy.data as Partial<StrategyFields> | null),
       fields,
     },
     [...history, { role: "user", body: message }],

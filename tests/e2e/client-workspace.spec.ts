@@ -17,7 +17,10 @@ test("client workspace", async ({ page, frank }) => {
   // screenshot can race ahead under worker concurrency and land on a
   // rail missing Settings.
   await page.waitForSelector(".hbrand-agency");
-  await expect(page).toHaveScreenshot("client-workspace.png");
+  // The Strategy boxes load on their own too; the month's name changes
+  // every month, so it's masked.
+  await expect(page.locator(".brandrem-box").nth(3)).toContainText("No strategy for this month yet.");
+  await expect(page).toHaveScreenshot("client-workspace.png", { mask: [page.locator(".brandrem-box").nth(3).locator(".brandrem-h b")] });
 });
 
 test("client workspace — project row creative stats", async ({ page, frank }) => {

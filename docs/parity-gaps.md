@@ -3219,3 +3219,13 @@ Asked first for the counts and the project search to share a row, then for the s
 Client Settings' menu, asked directly: "Client" is now "Profile" and its "Client Details" is "About"; under Knowledge, "Knowledge" is "Discovery". The page headings match; addresses stay as they were, so links keep working. Search finds a client's Settings pages by their section too, so "knowledge" still finds Discovery. Help uses the new names.
 
 **Verified**: on a client with a Tone of Voice entry and five Target Audience entries and no Prioritised Features, the boxes read as above and See All opened Discovery at Target Audience; a Client saw the boxes without "Add it in Discovery"; each sort put four projects in the expected order and A–Z was still chosen after a reload (new tests in brand-reminder.spec.ts). The menu read Profile → About and Knowledge → Discovery. client-workspace.png updated after looking.
+
+## A client's monthly strategy
+
+Asked directly: a Strategy page in Client Settings, under Knowledge beside Discovery, for what's been decided for the client each month, which Draft with Frank follows. Each month has named fields (decided directly): Objective, Key messages, Themes and campaigns, Offers and promotions, Key dates, Notes. The page shows this month and the next two, then any earlier month with something in it, each folding open, this month open; each month saves on its own. The team writes it; the client's own people read it (phase78: one row per client and month, Knowledge's own access rules, going with the client).
+
+Draft with Frank, drafting from the concept or reviewing the copy, reads the month the post goes live in (decided directly; a post with no live date, this month's), only its filled fields; a month with nothing in it changes nothing. On the client's page, "About the brand" is now "Strategy", and a fourth box shows this month's strategy, its first three filled fields, with See All.
+
+Not done: the AI check (Checks tab) doesn't read the strategy yet; asked only for drafting. A live date is read in UTC, so a post going live just after midnight in India on the 1st counts in the month before.
+
+**Verified**: phase78 rehearsed on staging with a rollback, then applied; the table is readable through the API and gives anonymous visitors nothing. In the running app: three fields saved for this month ("3 of 6 filled"); the client's page showed them in the fourth box; a Client saw them with nothing to edit (a new test in brand-reminder.spec.ts). One real Draft with Frank request on staging for a post going live in March 2027: the prompt carried March's objective and offer and nothing for the empty fields, and the draft used both. Unit tests cover the months, the filled fields and the prompt.
