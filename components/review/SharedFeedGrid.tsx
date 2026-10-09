@@ -44,13 +44,18 @@ export function SharedFeedGrid({ controller, brandName }: { controller: ReviewCo
           onBack={() => setOpenPost(null)}
         />
       )}
-      <FeedProfile
-        profile={liveFeed?.profile ?? null}
-        fallbackName={liveFeed?.profile.username ?? brandName}
-        logoUrl={controller.data?.status === "ok" ? controller.data.client_logo_url : null}
-        loading={liveLoading}
-      />
-      <FeedTabs tab={tab} onTab={setTab} />
+      {/* The profile and its tabs, held together: on a phone they stick
+          to the top once scrolled to, and the posts move under them
+          (direct instruction). */}
+      <div className="sharedfeed-head">
+        <FeedProfile
+          profile={liveFeed?.profile ?? null}
+          fallbackName={liveFeed?.profile.username ?? brandName}
+          logoUrl={controller.data?.status === "ok" ? controller.data.client_logo_url : null}
+          loading={liveLoading}
+        />
+        <FeedTabs tab={tab} onTab={setTab} />
+      </div>
       <div className={tab === "reels" ? "feedgrid reels" : "feedgrid"}>
         {planned.map((e, n) => {
           const i = e.id ? indexOf.get(e.id) : undefined;

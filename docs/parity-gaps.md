@@ -3193,3 +3193,9 @@ Asked directly. Settings → Team → Users: under "Invited", until when the per
 Settings → Team → Clients: what was one "Users with Access" column is now two, Agency (the team's Users given the client; Owners and Admins see every client anyway) and Client (the client's own people), each marking anyone still invited, and the count covers both. "Agency" here is the business side, as asked, beside the client.
 
 **Verified**: on the Users list with one pending invite still good and one expired, the notes read as above (a new test in team-manage.spec.ts); on Clients, the fixture's client showed its own person under Client and the team's User under Agency on the other client (team-manage.spec.ts checks both). settings-team.png updated after looking: the columns moved for the wider Status.
+
+## A review link's Feed on a phone
+
+Asked directly: on a phone, the Feed's Instagram frame runs the full width of the screen (it sat inset by 10px), and the page scrolls as one: Frank's header and the Content/Feed switch go up, the client's profile and its tabs stick to the top, and the posts move under them. Before, the posts scrolled in their own box three rows tall while everything above stayed put. The computer's phone mockup is unchanged.
+
+**Verified**: on a phone-sized link with 21 posts, in Chrome and in WebKit (Safari's engine): after scrolling, the profile and tabs sat at the top of the screen with the posts under them, Frank's header gone, and the page itself was what scrolled.
