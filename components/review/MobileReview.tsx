@@ -96,7 +96,11 @@ export function MobileReview({
 
         <div className="m-scroll">
           {controller.view === "feed" ? (
-            <SharedFeedGrid controller={controller} brandName={clientName} />
+            // In the same frame as a post on Content (direct instruction:
+            // match it exactly), its profile and tabs sticking.
+            <div className="m-body">
+              <SharedFeedGrid controller={controller} brandName={clientName} />
+            </div>
           ) : (
           <div className="m-body" onTouchStart={swipe.start} onTouchEnd={swipe.end}>
             {!active ? (

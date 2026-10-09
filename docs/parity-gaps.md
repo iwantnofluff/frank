@@ -3196,6 +3196,10 @@ Settings → Team → Clients: what was one "Users with Access" column is now tw
 
 ## A review link's Feed on a phone
 
-Asked directly: on a phone, the Feed's Instagram frame runs the full width of the screen (it sat inset by 10px), and the page scrolls as one: Frank's header and the Content/Feed switch go up, the client's profile and its tabs stick to the top, and the posts move under them. Before, the posts scrolled in their own box three rows tall while everything above stayed put. The computer's phone mockup is unchanged.
+Asked directly: on a phone the page scrolls as one: Frank's header and the Content/Feed switch go up, the client's profile and its tabs stick to the top, and the posts move under them. Before, the posts scrolled in their own box three rows tall while everything above stayed put. The computer's phone mockup is unchanged.
 
 **Verified**: on a phone-sized link with 21 posts, in Chrome and in WebKit (Safari's engine): after scrolling, the profile and tabs sat at the top of the screen with the posts under them, Frank's header gone, and the page itself was what scrolled.
+
+Then, asked directly: not full width after all, but the same rounded frame as a post on Content, matching it exactly, padding too. The Feed now sits in the same padding (16px each side) in the same card (12px corners, the same border), and its profile row before Instagram is connected is the post's handle row's: 10px by 12px inside, 9px between picture and name, the same ring and name size, the name sitting at the same height. The sticking stays.
+
+**Verified**: Content and Feed measured in the browser at phone size: the cards at the same place and size, the rows the same height, the picture at the same place, the name 16.7px down and 51px in on both; looked at before and after scrolling, with the profile and tabs at the top.

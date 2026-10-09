@@ -8899,15 +8899,17 @@ button.hbrand-add:hover {
   color: var(--rose, #c2410c);
 }
 
-/* A review link's Feed on a phone (direct instruction): the Instagram frame
-   runs the full width of the screen, and its profile and tabs stick to the
-   top once scrolled to, the posts moving under them. clip, not hidden, so
-   the frame doesn't stop the head from sticking. */
+/* A review link's Feed on a phone (direct instruction): the same rounded
+   frame as a post on Content (.m-card), inside the same padding, and its
+   profile and tabs stick to the top once scrolled to, the posts moving
+   under them. clip, not hidden, so the frame doesn't stop the head from
+   sticking. */
 .phone .sharedfeed {
   width: 100%;
-  margin: 0;
-  border-left: 0;
-  border-right: 0;
+  margin: 0 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
   box-shadow: none;
   overflow: clip;
 }
@@ -8915,11 +8917,34 @@ button.hbrand-add:hover {
   position: sticky;
   top: 0;
   z-index: 3;
-  background: #fff;
+  background: var(--surface);
 }
 /* …and the posts run their full length, scrolling with the page, rather
    than in a box three rows tall. */
 .phone .sharedfeed .feedgrid {
   height: auto;
   overflow: visible;
+}
+/* The profile row before Instagram is connected, exactly as a post's
+   handle row on Content (.ig-h, .ig-av; direct instruction: the same
+   padding too). */
+.phone .sharedfeed .fp-h:not(.fp-live) {
+  gap: 9px;
+  padding: 10px 12px;
+}
+.phone .sharedfeed .fp-h:not(.fp-live) .fp-av {
+  padding: 2px;
+  background: linear-gradient(135deg, #f58529, #dd2a7b);
+}
+.phone .sharedfeed .fp-h:not(.fp-live) .fp-av i,
+.phone .sharedfeed .fp-h:not(.fp-live) .fp-av img {
+  border: 0;
+}
+/* The name as a line of text in a block, as on Content, so it sits at
+   the same height. */
+.phone .sharedfeed .fp-h:not(.fp-live) .fp-t {
+  display: block;
+}
+.phone .sharedfeed .fp-h:not(.fp-live) .fp-t b {
+  font-size: 14.2px;
 }
