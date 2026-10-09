@@ -13,7 +13,7 @@ import { initials } from "@/lib/initials";
 import { avatarColour } from "@/lib/avatar-colour";
 import { useRemoveMember, useRevokeInvite, useSetCanInvite, useSetMemberActive } from "@/hooks/use-manage-member";
 import { InviteMemberModal } from "@/components/team/InviteMemberModal";
-import { InviteLinks } from "@/components/team/InviteLinks";
+import { InviteSentModal } from "@/components/team/InviteSentModal";
 import { useResendInvite, type SentInvite } from "@/hooks/use-invite-member";
 import { EditMemberModal } from "@/components/team/EditMemberModal";
 import { RemoveMemberConfirm } from "@/components/team/RemoveMemberConfirm";
@@ -99,8 +99,8 @@ export function TeamSettings({ view }: { view: View }) {
               { membershipId: m.id, email: m.user?.email ?? "", name: displayName(m) },
               {
                 onSuccess: (sent) => {
+                  setNotice(null);
                   setResent(sent);
-                  setNotice(`Invite resent to ${m.user?.email}`);
                 },
               },
             ),
@@ -334,11 +334,8 @@ export function TeamSettings({ view }: { view: View }) {
           {notice}
         </p>
       )}
-      {resent && (
-        <div style={{ marginTop: 12, maxWidth: 560 }}>
-          <InviteLinks sent={[resent]} />
-        </div>
-      )}
+      {/* A resent invite's link, in its own window (direct instruction). */}
+      {resent && <InviteSentModal sent={resent} onClose={() => setResent(null)} />}
 
       {inviting && agency && (
         <InviteMemberModal

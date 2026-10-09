@@ -3151,3 +3151,37 @@ Decided directly: what Frank called an agency is a workspace, and a person can b
 The profile menu at the top right now lists every workspace you belong to, with its logo (Growth and up, as in the header) or initial, a tick on this one, and "Paused" on a paused one; picking another opens its dashboard. It shows only with more than one, and only on a workspace's own address (/api/my-workspaces reads across them for you, since on a workspace's address the database shows only that one). One sign-in now covers every workspace (decided directly): the session cookie belongs to the root domain (.beingfrank.app, .staging.beingfrank.app), named for the database project so live's and staging's never meet. Each workspace still checks you belong to it. Signing out anywhere signs out everywhere. Because the cookie has a new name, everyone signs in once more after this goes live.
 
 **Verified**: on local workspace addresses (*.frank.localhost, the same shapes as live) with two workspaces: the cookie was set on .frank.localhost; the menu listed both with a tick on the current one; picking the other opened its dashboard without signing in, showing only its own clients; signing out at one signed out of the other. tenancy.spec.ts now checks this, and a workspace you're not in still says "Not part of this workspace". Type-check and unit tests pass after the rename; specs that looked for the old words were updated.
+
+## Review links remember a name per client, and Draft with Frank says it's thinking
+
+Reported directly: a No Fluff review link opened as "Commenting as Aryaman Arya", someone from Casa Carigar, and his comment showed as "(No Fluff)". The link remembered the last name used in a browser for every link, whichever client's. It's now remembered per client (the workspace and client's names; the page has no ids), under a new storage key so the old shared name is left behind, and "Not you?" beside "Commenting as" lets someone else on the browser give their own. Who may comment is unchanged: the client's team list is a shortcut and "Someone else" stays (decided earlier), so anyone with the link can still comment under a name they give.
+
+Asked directly, since Draft with Frank still takes a while: your message shows in the conversation the moment you send it, then "Frank is thinking" with three dots rising in turn (still dots with reduced motion). The box empties on sending and gets your words back if Frank doesn't answer.
+
+**Verified**: on a review link, a name given on one client's link wasn't assumed on another client's link in the same browser, came back on the first, and "Not you?" cleared it (a new test in shared-review-public.spec.ts). Draft with Frank looked at with a reply held back for six seconds: the message and the thinking bubble showed at once, the box was empty, and when the reply failed the words came back to the box.
+
+## Review links: only the client's own people
+
+Decided directly, after the Aryaman comment on a No Fluff link: a review link's guest comments, approves or asks for changes only as one of the people on that link's client's list (its Clients, kept on the list as they're invited, and any names already there). The link offers just the list; "Someone else" and typing a name are gone (they'd been kept on purpose before; this replaces that decision). The database checks it too (phase77): the email has to be on the client's list, case aside, and the name stored is the list's own; anyone else gets "Only the client's own people can comment here". A remembered name counts only while it's still on the list. With nobody on the list, the link says "Only <client>'s people can comment here. Ask <workspace> to add you as a Client of <client>", with no comment box and Approve off.
+
+Not done, decided directly: proving who's typing. A link has no sign-in, so someone holding it can still pick a listed name; an emailed code was offered and not chosen.
+
+**Verified**: phase77 rehearsed on staging with a rollback, then applied; its helper isn't callable from outside. On a link: only listed names offered, no free-text inputs; the database refused an unknown email with nothing written; a link whose client has nobody listed shows the note with no box (new test in shared-review-public.spec.ts). The specs that commented as guests now pick a listed name. Live has people on both clients with open links (Casa Carigar 2, No Fluff 3); in the last month two guest names wouldn't have been allowed: Aryaman on No Fluff, and Rachel, an Admin who'd comment from inside Frank. shared-review-desktop.png updated after looking: the composer now shows the note.
+
+## A resent invite's link opens in a window
+
+Asked directly: after resending an invite, from a client's People or Settings → Team → Users, the person's link used to sit under the list with no way to dismiss it (and stayed there after other actions, a removed invite's notice above someone else's link). It now opens in an "Invite Sent" window, the same title as inviting someone new: the link with Copy, and Close. The "Invite resent to …" line went, since the window says it.
+
+**Verified**: on Settings → Team → Users as an Owner, resending a pending invite opened the window with the link; Close shut it. people-below.spec.ts now checks the window on a client's People.
+
+## The final logo set
+
+Asked directly: every Frank logo on the site comes from public/brand/Frank_Final_Logos: the app's header (no strapline, reversed), a review link's header (with the strapline), the mark in windows and Help, the browser icon and the home-screen icon (dark, 180). lib/brand.ts names them. The four older copies in public/brand went. The SVGs in use were already byte-for-byte the same as the final set's; the home-screen icon looked the same but was a different file, now the final one.
+
+**Verified**: each new path served signed out (so review links and sign-in get them); the app header, a review link's header (loaded at its full 485 width) and a window's mark looked at in the running app.
+
+## Review links link into Frank
+
+Asked directly: on a review link, the client's name and the project's name (the left panel on a computer, the top on a phone) open their pages in Frank. Signed in, they open as any link; signed out, or with no account, a "Sign in to Frank" window says what it would open, offers Sign In (which comes back to that page afterwards) and says to ask the workspace for an invite. For the workspace's team only (not its Clients), the post's name above it opens the post's own page. The link's data now carries the client's id for this; it opens nothing by itself, since the page checks access as any page does. The names read as text until hovered.
+
+**Verified**: on a review link at desktop size: signed out, the project's name opened the window with Sign In pointing back to the project, and Cancel closed it; signed in as the team, the post's name linked to its page and the client's name opened the client's page; signed in as a Client, the project's name opened the project and the post's name stayed text (a new test in shared-review-public.spec.ts). The window first opened behind the phone; it's now drawn over the whole page.

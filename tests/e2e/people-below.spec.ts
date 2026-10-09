@@ -109,8 +109,11 @@ test("an Admin switches an invited User to Client and back, then resends and rem
   const before = (await admin.from("invites").select("id").eq("membership_id", membershipId)).data!.map((r) => r.id);
   await row.locator(".typesel").click();
   await page.getByRole("menuitem", { name: "Resend Invite" }).click();
-  await expect(profile.getByText(`Invite resent to ${email}`)).toBeVisible({ timeout: 20_000 });
-  await expect(profile.getByRole("textbox", { name: `Invite link for ${email}` })).toHaveValue(/\/invite\//);
+  // Its link opens in a window of its own, closed with Close (direct instruction).
+  const sentWindow = page.getByRole("dialog", { name: "Invite Sent" });
+  await expect(sentWindow.getByRole("textbox", { name: `Invite link for ${email}` })).toHaveValue(/\/invite\//, { timeout: 20_000 });
+  await sentWindow.getByRole("button", { name: "Close" }).click();
+  await expect(sentWindow).toHaveCount(0);
   const after = (await admin.from("invites").select("id").eq("membership_id", membershipId)).data!.map((r) => r.id);
   expect(after).toHaveLength(1);
   expect(before).not.toContain(after[0]);

@@ -12,6 +12,7 @@ import {
   type HelpArticle,
   type HelpBlock,
 } from "@/lib/help-content";
+import { BRAND } from "@/lib/brand";
 
 type View = { kind: "home" } | { kind: "category"; id: string } | { kind: "article"; id: string };
 
@@ -40,7 +41,7 @@ const TOPIC_ICONS: Record<string, ReactNode> = {
     </svg>
   ),
   // eslint-disable-next-line @next/next/no-img-element -- a static SVG, drawn as is
-  "write-with-claude": <img src="/brand/frank-logomark.svg" alt="" />,
+  "write-with-claude": <img src={BRAND.logomark} alt="" />,
   "connect-instagram": (
     <svg viewBox="0 0 24 24">
       <rect x="3" y="3" width="18" height="18" rx="5" />
@@ -159,7 +160,7 @@ export function HelpPanel({ open, onClose }: { open: boolean; onClose: () => voi
         )}
         {/* The windows' logomark, before the title (direct instruction). */}
         {/* eslint-disable-next-line @next/next/no-img-element -- a static SVG */}
-        <img className="help-mark" src="/brand/frank-logomark.svg" alt="" aria-hidden="true" />
+        <img className="help-mark" src={BRAND.logomark} alt="" aria-hidden="true" />
         <b>Help</b>
         <button type="button" className="help-ib" aria-label="Close help" onClick={onClose}>
           <Chevron d="M18 6L6 18M6 6l12 12" />

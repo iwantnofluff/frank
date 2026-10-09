@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { InviteLinks } from "@/components/team/InviteLinks";
+import { InviteSentModal } from "@/components/team/InviteSentModal";
 import { useChangeMemberType, useRevokeInvite } from "@/hooks/use-manage-member";
 import { useResendInvite, type SentInvite } from "@/hooks/use-invite-member";
 import type { ClientPerson } from "@/hooks/use-project-access";
@@ -55,8 +55,8 @@ export function usePersonActions(agencyId: string, clientId: string) {
               { membershipId: person.membershipId, email: person.email, name: person.name },
               {
                 onSuccess: (s) => {
+                  setNotice(null);
                   setSent(s);
-                  setNotice({ text: `Invite resent to ${person.email}` });
                 },
                 onError: failed("Couldn't resend the invite"),
               },
@@ -76,7 +76,7 @@ export function usePersonActions(agencyId: string, clientId: string) {
     return items;
   }
 
-  // What happened, and a resent invite's link to share.
+  // What happened; a resent invite's link opens in its own window.
   const outcome = (
     <>
       {notice &&
@@ -87,7 +87,7 @@ export function usePersonActions(agencyId: string, clientId: string) {
             {notice.text}
           </p>
         ))}
-      {sent && <InviteLinks sent={[sent]} />}
+      {sent && <InviteSentModal sent={sent} onClose={() => setSent(null)} />}
     </>
   );
 

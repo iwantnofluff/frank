@@ -13,7 +13,8 @@ test("comments name the agency or the client after the author", async ({ page, f
   await asClient.auth.signInWithPassword({ email: frank.clientEmail, password: frank.clientPassword });
   const { data: me } = await asClient.auth.getUser();
   await asClient.from("comments").insert({ creative_id: frank.creativeId, author_id: me.user!.id, body: "From the client", visibility: "public" });
-  // A guest on the review link.
+  // A guest on the review link — one of the client's own people (phase77).
+  await frank.createClientContact("Guest Gail", "gail@example.com");
   const token = await frank.createSharedLink();
   const anon = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     auth: { persistSession: false },
@@ -27,6 +28,7 @@ test("comments name the agency or the client after the author", async ({ page, f
     p_body: "From a guest",
   });
   expect(guest.error).toBeNull();
+  expect(guest.data).toMatchObject({ status: "ok" });
 
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);

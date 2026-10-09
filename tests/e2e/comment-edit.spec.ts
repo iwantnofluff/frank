@@ -31,15 +31,12 @@ test("on the post page, you edit your own comment in place", async ({ page, fran
 
 test("on a review link, a guest edits their own comment from the same browser only", async ({ page, frank, browser }) => {
   test.setTimeout(60_000);
+  // Only the client's own people comment on a link (phase77).
+  await frank.createClientContact("Guest Viewer", "guest@example.invalid");
   const token = await frank.createSharedLink();
   await page.goto(`${APP_URL}/review/${token}`);
-  const picker = page.locator("select").first();
   await expect(page.getByPlaceholder("Add a comment…")).toBeVisible({ timeout: 15_000 });
-  if (await picker.count()) await picker.selectOption({ label: "Someone else" }).catch(() => {});
-  if (await page.getByPlaceholder("Your name").count()) {
-    await page.getByPlaceholder("Your name").fill("Guest Viewer");
-    await page.getByPlaceholder("Your email").fill("guest@example.invalid");
-  }
+  await page.locator("select").first().selectOption({ label: "Guest Viewer" });
   await page.getByPlaceholder("Add a comment…").fill("Guest first go");
   await page.getByRole("button", { name: "Post", exact: true }).click();
   const card = page.locator(".cmt:not(.pending)", { hasText: "Guest first go" });

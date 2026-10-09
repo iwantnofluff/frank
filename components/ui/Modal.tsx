@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { CLOSE_MS } from "@/hooks/use-presence";
+import { BRAND } from "@/lib/brand";
 
 export function Modal({
   title,
@@ -82,7 +83,7 @@ export function Modal({
         <div className="modal-h">
           {/* Frank's logomark on every window (direct instruction). */}
           {/* eslint-disable-next-line @next/next/no-img-element -- a static SVG */}
-          <img className="modal-mark" src="/brand/frank-logomark.svg" alt="" aria-hidden="true" />
+          <img className="modal-mark" src={BRAND.logomark} alt="" aria-hidden="true" />
           <div className="modal-title">{title}</div>
           {!hideCloseButton && (
             <button type="button" className="iconbtn" onClick={onClose} title="Close">

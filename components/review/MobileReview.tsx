@@ -3,6 +3,7 @@
 import type { ReviewController } from "@/hooks/use-review-controller";
 import { ReviewViewSwitch, SharedFeedGrid } from "./SharedFeedGrid";
 import { ReviewBrandHeader } from "./ReviewBrandHeader";
+import { useReviewViewer } from "@/hooks/use-review-viewer";
 import { CommentWhen } from "@/components/creative-review/CommentWhen";
 import { CommentJump, useSwipe } from "./mobile-gestures";
 import { formatsLabel, postFormats } from "@/lib/formats";
@@ -27,6 +28,8 @@ export function MobileReview({
   shown: boolean; // the layout on screen (phone or desktop)
 }) {
   const { creatives, active, activeIndex, goTo } = controller;
+  // Signed in, and on the workspace's team: the post's name links into Frank.
+  const { data: viewer } = useReviewViewer();
   const clientLogoUrl = controller.data?.status === "ok" ? controller.data.client_logo_url : null;
   // Swiping sideways moves between posts (direct instruction), as on
   // Instagram; not when it starts on a carousel's slides or a video, where a
@@ -48,7 +51,9 @@ export function MobileReview({
             agencyName={agencyName}
             agencyLogoUrl={logoUrl}
             clientName={clientName}
-            detail={projectName}
+            clientId={controller.data?.status === "ok" ? controller.data.client_id : null}
+            projectName={projectName}
+            projectId={controller.data?.status === "ok" ? controller.data.project.id : null}
             aside={
               // Which post of how many, with the arrows beside it (direct
               // instruction: in place of the bar under the switch).
@@ -104,7 +109,16 @@ export function MobileReview({
               {/* The post's name and format above it, so the card itself
                   starts with the logo and handle, as an Instagram post does. */}
               <div className="m-meta">
-                <b>{active.name}</b>
+                {/* For the workspace's team, the post's own page in Frank. */}
+                <b>
+                  {viewer?.isTeam ? (
+                    <a className="rv-link" href={`/creatives/${active.id}`}>
+                      {active.name}
+                    </a>
+                  ) : (
+                    active.name
+                  )}
+                </b>
                 <div className="mm">
                   <span>{formatsLabel(postFormats(active))}</span>
                   {active.destination && <span>· {active.destination}</span>}

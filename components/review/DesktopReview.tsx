@@ -6,6 +6,7 @@ import { SharedFeedGrid } from "./SharedFeedGrid";
 import { CommentCount } from "./CommentCount";
 import { CommentWhen } from "@/components/creative-review/CommentWhen";
 import { ReviewBrandHeader } from "./ReviewBrandHeader";
+import { useReviewViewer } from "@/hooks/use-review-viewer";
 import { CommentJump } from "./mobile-gestures";
 import { REVIEW_GROUPS, reviewGroup } from "./review-group";
 import { ReviewNav, type ReviewSection } from "@/components/creative-review/ReviewNav";
@@ -41,6 +42,8 @@ export function DesktopReview({
   shown: boolean; // the layout on screen (phone or desktop)
 }) {
   const { creatives, active, activeIndex, goTo } = controller;
+  // Signed in, and on the workspace's team: the post's name links into Frank.
+  const { data: viewer } = useReviewViewer();
   // The Review page's section menu, with only Content and Feed (direct
   // instruction); Content is the post, Feed the grid.
   const [navCollapsed, setNavCollapsed] = useState(false);
@@ -72,7 +75,10 @@ export function DesktopReview({
               agencyName={agencyName}
               agencyLogoUrl={logoUrl}
               clientName={clientName}
-              detail={`${projectName} · ${creatives.length} ${creatives.length === 1 ? "post" : "posts"}`}
+              clientId={controller.data?.status === "ok" ? controller.data.client_id : null}
+              projectName={projectName}
+              projectId={controller.data?.status === "ok" ? controller.data.project.id : null}
+              count={`${creatives.length} ${creatives.length === 1 ? "post" : "posts"}`}
             />
           </div>
           <div className="dk-items">
@@ -149,7 +155,17 @@ export function DesktopReview({
           ) : (
             <div className="dk-card">
               <div className="cmeta">
-                <div className="ct">{active.name}</div>
+                {/* For the workspace's team (direct instruction), the post's
+                    name opens its own Review page in Frank. */}
+                <div className="ct">
+                  {viewer?.isTeam ? (
+                    <a className="rv-link" href={`/creatives/${active.id}`}>
+                      {active.name}
+                    </a>
+                  ) : (
+                    active.name
+                  )}
+                </div>
                 <div className="cs">
                   <span>{formatsLabel(postFormats(active))}</span>
                   {active.destination && (

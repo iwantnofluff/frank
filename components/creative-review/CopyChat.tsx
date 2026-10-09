@@ -71,13 +71,14 @@ export function CopyChat({
   function reply() {
     const message = draft.trim();
     if (!message || !chatId) return;
+    // Out of the box and into the conversation at once; back in the box if
+    // Frank doesn't answer.
+    setDraft("");
     send.mutate(
       { chatId, message, currentFields },
       {
-        onSuccess: (r) => {
-          setDraft("");
-          setSkipped(r.skippedFiles);
-        },
+        onSuccess: (r) => setSkipped(r.skippedFiles),
+        onError: () => setDraft(message),
       },
     );
   }
@@ -197,7 +198,27 @@ export function CopyChat({
               ))}
             </div>
           ))}
-          {send.isPending && <div className="cchat-msg assistant pending">Frank is working…</div>}
+          {/* While Claude answers (direct instruction: it takes a while, so
+              say so): what you sent shows at once, then Frank thinking. */}
+          {send.isPending && send.variables?.message && (
+            <div className="cchat-msg user">
+              <div className="cchat-who">You</div>
+              <div className="cchat-body">{send.variables.message}</div>
+            </div>
+          )}
+          {send.isPending && (
+            <div className="cchat-msg assistant pending" role="status">
+              <div className="cchat-who">Frank</div>
+              <div className="cchat-thinking">
+                Frank is thinking
+                <span className="cchat-dots" aria-hidden="true">
+                  <i />
+                  <i />
+                  <i />
+                </span>
+              </div>
+            </div>
+          )}
           {send.error && <p className="autherr">{errorMessage(send.error, "Frank didn't answer")}</p>}
           {skipped.length > 0 && (
             <p className="cchat-note">Too large to include this time: {skipped.join(", ")}.</p>

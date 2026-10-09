@@ -99,14 +99,17 @@ test("a review link follows the client: no approving, no other posts, and when A
   expect(body.can_approve).toBe(false);
   expect(body.artwork_keep_days).toBe(21);
   expect((body.feed as { id: string | null }[]).every((e) => e.id !== null)).toBe(true);
-  // Approving is refused by the database itself, whatever the page shows.
+  // Approving is refused by the database itself, whatever the page shows —
+  // even for one of the client's own people (phase77), so it's the
+  // preference refusing it, not who's asking.
+  await frank.createClientContact("Guest", "guest@example.invalid");
   const anon = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { auth: { persistSession: false } });
   const { data: refused } = await anon.rpc("submit_shared_approval", {
     p_token: token,
     p_passcode: null,
     p_creative_id: frank.creativeId,
     p_guest_name: "Guest",
-    p_guest_email: null,
+    p_guest_email: "guest@example.invalid",
   });
   expect(refused).toEqual({ status: "not_allowed" });
 

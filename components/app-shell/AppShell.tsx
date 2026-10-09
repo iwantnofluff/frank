@@ -4,6 +4,7 @@ import { Topbar } from "./Topbar";
 import { AgencyTheme } from "./AgencyTheme";
 import { ReadOnlyBanner } from "./ReadOnlyBanner";
 import { ViewTransition } from "./ViewTransition";
+import { BRAND } from "@/lib/brand";
 
 export function AppShell({
   children,
@@ -23,7 +24,7 @@ export function AppShell({
           rail's top and into the header; it goes to the clients list. */}
       <Link href="/dashboard" className="corner-logo" aria-label="Frank" title="Go to all clients">
         {/* eslint-disable-next-line @next/next/no-img-element -- a static SVG */}
-        <img src="/brand/frank-header-reversed.svg" alt="" />
+        <img src={BRAND.headerReversed} alt="" />
       </Link>
       <NavRail />
       <div className="main">

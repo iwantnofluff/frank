@@ -207,7 +207,6 @@ test("people invited as Client are who a review link offers, and drop off when r
       "Who are you?",
       "Already Listed",
       "Rita Reviewer",
-      "Someone else",
     ]);
 
     // Removed: off the list.
@@ -218,7 +217,7 @@ test("people invited as Client are who a review link offers, and drop off when r
       .eq("user_id", await userIdOf(email));
     await guest.reload();
     await guest.waitForSelector(".m-top");
-    await expect(guest.locator("select").first().locator("option")).toHaveText(["Who are you?", "Already Listed", "Someone else"]);
+    await expect(guest.locator("select").first().locator("option")).toHaveText(["Who are you?", "Already Listed"]);
   } finally {
     await ctx.close();
   }

@@ -8811,3 +8811,78 @@ button.hbrand-add:hover {
   font-size: 10.7px;
   color: var(--muted);
 }
+
+/* Draft with Frank waiting on Claude (direct instruction): "Frank is
+   thinking" with three dots rising in turn. Still dots when motion is
+   reduced. */
+.cchat-thinking {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+.cchat-dots {
+  display: inline-flex;
+  gap: 3px;
+  margin-left: 4px;
+}
+.cchat-dots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: cchat-dot 1.2s ease-in-out infinite;
+}
+.cchat-dots i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.cchat-dots i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes cchat-dot {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cchat-dots i {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
+/* "Not you?" beside "Commenting as" on a review link: someone else on
+   this browser picks their own name. */
+.m-notyou {
+  margin-left: auto;
+  font-size: 12.2px;
+  color: var(--action);
+}
+
+/* A review link whose client has nobody on its list yet (phase77): who can
+   comment, and how to be added. */
+.m-noone {
+  margin: 0 0 8px;
+  font-size: 12.7px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+/* Names on a review link that open their page in Frank (direct
+   instruction): the client, the project, and for the team the post. Read
+   as text until hovered. */
+.rv-link {
+  color: inherit;
+  text-decoration: none;
+}
+.rv-link:hover {
+  color: var(--action);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

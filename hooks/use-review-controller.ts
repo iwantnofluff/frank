@@ -52,7 +52,22 @@ export function useReviewController(token: string) {
     onMore: () => void instagram.fetchNextPage(),
   };
   const [view, setView] = useState<"post" | "feed">("post");
-  const identity = useGuestIdentityStore();
+  // Who's commenting, remembered for this client only (the workspace and
+  // client's names; the page has no ids to key on).
+  const identities = useGuestIdentityStore();
+  const clientKey = data?.status === "ok" ? `${data.agency_name ?? ""}|${data.client_name ?? ""}` : "";
+  const remembered = clientKey ? identities.byClient[clientKey] : undefined;
+  const identity = {
+    name: remembered?.name ?? null,
+    email: remembered?.email ?? null,
+    setIdentity: (name: string, email: string) => {
+      if (clientKey) identities.setIdentity(clientKey, name, email);
+    },
+    // "Not you?": someone else is using this browser.
+    forget: () => {
+      if (clientKey) identities.forget(clientKey);
+    },
+  };
   const submitComment = useSubmitSharedComment(token, passcode);
   const submitApproval = useSubmitSharedApproval(token, passcode);
   const submitRequestChanges = useSubmitSharedRequestChanges(token, passcode);

@@ -74,6 +74,8 @@ export type SharedReviewResult =
       client_logo_url: string | null;
       // The client's name: the page's heading and the phone's handle.
       client_name: string | null;
+      // The client's id, for its page in Frank.
+      client_id: string | null;
       // The agency's name, beside Frank's logo at the top.
       agency_name: string | null;
       // How long an Approved post's artwork is kept after going live, from

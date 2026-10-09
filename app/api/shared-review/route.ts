@@ -300,6 +300,9 @@ export async function POST(request: Request) {
     // Whose review this is (direct instruction: the client's name was
     // missing): the link's project's client.
     client_name: link?.projects?.clients?.name ?? null,
+    // Its id, for the client's name to open its page in Frank (direct
+    // instruction); only someone signed in with access gets anywhere there.
+    client_id: link?.projects?.client_id ?? null,
     // The agency's name, beside Frank's at the top (its initial when it has
     // no logo, or its plan doesn't show one).
     agency_name: link?.agencies?.name ?? null,

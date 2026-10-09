@@ -142,6 +142,8 @@ test("on the post page, comments made at a moment sit on the timeline and jump b
 test("on the review link, a guest can comment at a moment and jump back to it", async ({ page, frank }) => {
   test.setTimeout(90_000);
   await seedReel(page, frank);
+  // Only the client's own people comment on a link (phase77).
+  await frank.createClientContact("Guest Viewer", "guest@example.invalid");
   const token = await frank.createSharedLink();
   await page.setViewportSize(PHONE_VIEWPORT);
   await page.goto(`${APP_URL}/review/${token}`);
@@ -152,10 +154,7 @@ test("on the review link, a guest can comment at a moment and jump back to it", 
   const at = await videoTime(page, scope);
   const phone = page.locator(".phone");
   await expect(phone.locator(".atchip")).toHaveText("At 0:01");
-  const picker = phone.locator("select").first();
-  if (await picker.count()) await picker.selectOption({ label: "Someone else" }).catch(() => {});
-  await phone.getByPlaceholder("Your name").fill("Guest Viewer");
-  await phone.getByPlaceholder("Your email").fill("guest@example.invalid");
+  await phone.locator("select").first().selectOption({ label: "Guest Viewer" });
   await phone.getByPlaceholder("Add a comment…").fill("Guest at a moment");
   await phone.getByRole("button", { name: "Post", exact: true }).click();
   await expect(phone.locator(".m-cmt:not(.pending)", { hasText: "Guest at a moment" })).toContainText("0:01", { timeout: 15_000 });
@@ -242,7 +241,9 @@ test("a carousel's video slide has its own timeline, and its comments stay on th
   await expect(media.locator(".car-count")).toHaveText("2 / 2");
   await expect.poll(async () => Math.abs((await videoTime(page, ".ig-media")) - 1.5)).toBeLessThan(0.4);
 
-  // A guest on the review link: same slide, own timeline.
+  // A guest on the review link: same slide, own timeline. Only the
+  // client's own people comment on a link (phase77).
+  await frank.createClientContact("Guest Viewer", "guest@example.invalid");
   const token = await frank.createSharedLink();
   await page.setViewportSize(PHONE_VIEWPORT);
   await page.goto(`${APP_URL}/review/${token}`);
@@ -253,8 +254,7 @@ test("a carousel's video slide has its own timeline, and its comments stay on th
   await expect(page.locator(`${scope} .vmark`)).toHaveCount(1);
   await clickTimelineAt(page, scope, 0.25);
   const phone = page.locator(".phone");
-  await phone.getByPlaceholder("Your name").fill("Guest Viewer");
-  await phone.getByPlaceholder("Your email").fill("guest@example.invalid");
+  await phone.locator("select").first().selectOption({ label: "Guest Viewer" });
   await phone.getByPlaceholder("Add a comment…").fill("Guest on slide two");
   await phone.getByRole("button", { name: "Post", exact: true }).click();
   await expect(phone.locator(".m-cmt:not(.pending)", { hasText: "Guest on slide two" })).toBeVisible({ timeout: 15_000 });
