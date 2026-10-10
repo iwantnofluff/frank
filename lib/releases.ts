@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.17.4",
+    date: "2026-10-10",
+    title: "A chat icon for the Discussion",
+    changes: ["A project's Discussion opens from a chat icon after the Active and Archived pills, in the same grey as the “…” beside it."],
+  },
+  {
     version: "1.17.3",
     date: "2026-10-10",
     title: "Use This, field by field",

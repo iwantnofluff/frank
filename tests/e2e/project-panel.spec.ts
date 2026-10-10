@@ -67,7 +67,7 @@ test("the Activity Log shows what happened, by whom, from the record and the new
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`${APP_URL}/projects/${frank.projectId}`);
   // Discussion is a link beside the pills; the menu has the rest.
-  await expect(page.locator(".pjlink")).toHaveText("Discussion");
+  await expect(page.locator(".pjlink")).toHaveAccessibleName("Discussion");
   await page.getByRole("button", { name: "Project options" }).click();
   for (const item of ["Activity Log", "Settings"]) {
     await expect(page.getByRole("button", { name: item, exact: true })).toBeVisible();

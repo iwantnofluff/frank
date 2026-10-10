@@ -9466,26 +9466,36 @@ button.hbrand-add:hover {
 }
 
 /* A button that reads as a link inside a line of text. */
-/* A project's Discussion, as a link with a chat icon after the
-   Active/Archived pills (direct instruction). */
+/* A project's Discussion after the Active/Archived pills: only the chat
+   icon, in the "…" menu's grey with its hover, drawn as large as the
+   rail's icons look (direct instruction). */
 .pjlink {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: 4px;
-  color: var(--action);
-  font-size: 13.2px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-.pjlink svg {
-  width: 15px;
-  height: 15px;
-  fill: currentColor;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  margin-left: 2px;
+  color: var(--muted);
+  flex-shrink: 0;
+  transition:
+    background-color var(--dur-fast) var(--ease-std),
+    color var(--dur-fast) var(--ease-std);
 }
 .pjlink:hover {
-  text-decoration: underline;
-  text-underline-offset: 2px;
+  background: rgba(0, 0, 0, 0.09);
+  color: var(--ink);
+}
+/* 10% larger and a little heavier than first drawn (direct instruction):
+   the filled icon gets an outline of its own colour. */
+.pjlink svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 34;
+  stroke-linejoin: round;
+  overflow: visible;
 }
 .linkbtn {
   color: var(--action);

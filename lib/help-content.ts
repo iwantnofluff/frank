@@ -439,7 +439,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     blocks: [
       {
         kind: "p",
-        text: "At the top of a project's page, Discussion is a link after the Active and Archived pills, and the “…” menu has its Activity Log and its Settings. Only your team sees them, never the client.",
+        text: "At the top of a project's page, the chat icon after the Active and Archived pills opens its Discussion, and the “…” menu has its Activity Log and its Settings. Only your team sees them, never the client.",
       },
       {
         kind: "p",
