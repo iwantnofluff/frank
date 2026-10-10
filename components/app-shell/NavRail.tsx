@@ -92,7 +92,7 @@ export function NavRail() {
       <RailLink href="/dashboard" label="Clients" icon={ClientsIcon} current={pathname.startsWith("/dashboard")} />
       {/* The client you're in, by name (direct instruction): its page, from
           its settings, a project, a table or a post. */}
-      <RailSlot show={insideClient && !!clientId}>
+      <RailSlot show={insideClient && !!clientId} swapKey={clientId}>
         <RailLink
           href={`/clients/${clientId}`}
           label={client?.name ?? "Client"}
@@ -104,7 +104,7 @@ export function NavRail() {
       </RailSlot>
       {/* The project's table: on it (current) and on its posts (direct
           instruction). */}
-      <RailSlot show={(!!routeProjectId || !!routeCreativeId) && !!projectId}>
+      <RailSlot show={(!!routeProjectId || !!routeCreativeId) && !!projectId} swapKey={projectId}>
         <RailLink
           href={`/projects/${projectId}`}
           label={delivery === "continuous" ? "Other Content" : "Content Planner"}
@@ -112,7 +112,7 @@ export function NavRail() {
           current={pathname === `/projects/${projectId}`}
         />
       </RailSlot>
-      <RailSlot show={insideClient && !!clientId}>
+      <RailSlot show={insideClient && !!clientId} swapKey={clientId}>
         <RailLink
           href={`/clients/${clientId}/settings`}
           label={client?.name ? `${client.name} Settings` : "Client Settings"}
@@ -135,12 +135,22 @@ export function NavRail() {
 // A rail link that comes and goes: in with the site's opening motion, out
 // with its closing one, the links below sliding up or down to make room.
 // Its content stays the last client's while it closes (NavRail keeps it).
-function RailSlot({ show, children }: { show: boolean; children: React.ReactNode }) {
+// Moving straight to another client or project, the link stays and its new
+// name slides in like a new screen (direct instruction: the rail moves like
+// the rest of the site); not on the first, which the slot's own opening
+// already brings in.
+function RailSlot({ show, swapKey, children }: { show: boolean; swapKey?: string; children: React.ReactNode }) {
   const { shown, isOpen } = usePresence(show);
+  // The key it opened with, forgotten once it has closed.
+  const [firstKey, setFirstKey] = useState(show ? swapKey : undefined);
+  if (show && swapKey && firstKey === undefined) setFirstKey(swapKey);
+  if (!shown && firstKey !== undefined) setFirstKey(undefined);
   if (!shown) return null;
   return (
     <div className={`rail-slot${isOpen ? " is-open" : ""}`}>
-      <div className="rail-slot-in">{children}</div>
+      <div key={swapKey} className={`rail-slot-in${firstKey !== undefined && swapKey !== firstKey ? " rail-swap" : ""}`}>
+        {children}
+      </div>
     </div>
   );
 }

@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.14.1",
+    date: "2026-10-10",
+    title: "Smoother left rail",
+    changes: [
+      "The left rail's links now slide and fade in and out the same way as the rest of Frank, and a new client's or project's name slides into place.",
+    ],
+  },
+  {
     version: "1.14.0",
     date: "2026-10-10",
     title: "Working on a post together",

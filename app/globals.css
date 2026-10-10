@@ -310,7 +310,7 @@ a {
   gap: 4px;
   padding: 7px 2px 6px;
   color: #fff;
-  transition: color 0.12s;
+  transition: color var(--dur-fast) var(--ease-std);
   position: relative;
 }
 .rbtn .ric {
@@ -319,7 +319,7 @@ a {
   border-radius: 9px;
   display: grid;
   place-items: center;
-  transition: background 0.12s;
+  transition: background-color var(--dur-fast) var(--ease-std);
   line-height: 0;
 }
 .rbtn .ric svg {
@@ -9158,14 +9158,16 @@ button.hbrand-add:hover {
 }
 
 /* A rail link that comes or goes (NavRail's RailSlot, direct instruction:
-   nothing flashes): its height opens and closes, so the links below move
-   rather than jump, and it fades and slides with the site's open and close
-   motion (--dur-open/--ease-open, --dur-close/--ease-close). */
+   nothing flashes, and it moves like the rest of the site): exactly
+   .collapse — its height opens and closes, so the links below move rather
+   than jump, while it fades and slides 24px from the right, decelerating
+   in over --dur-open and accelerating out over --dur-close. The rail clips
+   sideways overflow, so the slide never shows a scrollbar. */
 .rail-slot {
   display: grid;
   grid-template-rows: 0fr;
   opacity: 0;
-  transform: translateY(-4px);
+  transform: translateX(24px);
   transition:
     grid-template-rows var(--dur-close) var(--ease-close),
     opacity var(--dur-close) var(--ease-close),
@@ -9175,14 +9177,17 @@ button.hbrand-add:hover {
   grid-template-rows: 1fr;
   opacity: 1;
   transform: none;
-  transition:
-    grid-template-rows var(--dur-open) var(--ease-open),
-    opacity var(--dur-open) var(--ease-open),
-    transform var(--dur-open) var(--ease-open);
+  transition-duration: var(--dur-open);
+  transition-timing-function: var(--ease-open);
 }
 .rail-slot-in {
   min-height: 0;
   overflow: hidden;
+}
+/* Another client's or project's name in the same place: slide-in, as a
+   new screen. */
+.rail-swap {
+  animation: slide-in var(--dur-open) var(--ease-open);
 }
 @media (prefers-reduced-motion: reduce) {
   .rail-slot,
