@@ -159,6 +159,14 @@ test("Discussion: a thread with a mention reaches the bell, replies arrive live,
     await expect(mine.locator(".pj-deleted")).toHaveText("This message was deleted.");
     // The reply keeps its place.
     await expect(thread.locator(".pj-reply .pj-text")).toHaveText("Confirmed, Friday works.");
+    // Raj deletes his reply: it goes, and with nothing left, the thread
+    // goes too, box and all.
+    const rajReply = bPanel.locator(".pj-reply .pj-msg").first();
+    await rajReply.getByRole("button", { name: "Delete" }).click();
+    await rajReply.getByRole("button", { name: "Delete" }).click();
+    await expect(bPanel.locator(".pj-thread")).toHaveCount(0);
+    await expect(panel.locator(".pj-thread")).toHaveCount(0, { timeout: 15_000 });
+    await expect(panel.getByText("No discussion yet.")).toBeVisible();
   } finally {
     await other.remove();
   }

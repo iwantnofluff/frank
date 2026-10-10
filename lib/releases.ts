@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.17.5",
+    date: "2026-10-10",
+    title: "Deleted messages go",
+    changes: [
+      "In a project's Discussion, a deleted message now goes completely, its reply box too. Only a deleted message that others have replied to leaves a line saying so, to keep the replies in place.",
+    ],
+  },
+  {
     version: "1.17.4",
     date: "2026-10-10",
     title: "A chat icon for the Discussion",

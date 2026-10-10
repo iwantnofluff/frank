@@ -141,11 +141,14 @@ function Discussion({ projectId }: { projectId: string }) {
   ]);
   const threads = useMemo(() => {
     const all = q.data ?? [];
-    // Newest thread first, its replies oldest first under it.
+    // Newest thread first, its replies oldest first under it. A deleted
+    // message goes, box and all (direct instruction); only a deleted
+    // thread that still has replies keeps its line, so they make sense.
     return all
       .filter((m) => !m.parent_id)
       .reverse()
-      .map((t) => ({ thread: t, replies: all.filter((m) => m.parent_id === t.id) }));
+      .map((t) => ({ thread: t, replies: all.filter((m) => m.parent_id === t.id && !m.deleted_at) }))
+      .filter(({ thread, replies }) => !thread.deleted_at || replies.length > 0);
   }, [q.data]);
 
   return (
