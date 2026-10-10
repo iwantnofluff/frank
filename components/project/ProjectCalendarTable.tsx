@@ -54,10 +54,16 @@ const STATUS_FILTERS: { value: "all" | Band; label: string }[] = [
 
 // Week/Date/Day are frozen — always shown, always sticky (left offsets
 // below match their fixed widths) — not offered in the Columns picker.
+// Columns whose words never run long are as wide as their longest words
+// and no wider, the way Day fits "Of week" (direct instruction): its
+// widest text plus 21px of padding and rule. Week, Publish Date, Time,
+// Status, Format and Slides.
+const WEEK_W = 56;
+const DATE_W = 99;
 const FROZEN_COLUMNS = [
-  { key: "week", label: "Week", sub: "No.", width: 66, stickyClass: "sk1", left: 0 },
-  { key: "date", label: "Publish Date", sub: "Of post", width: 92, stickyClass: "sk2", left: 66 },
-  { key: "day", label: "Day", sub: "Of week", width: 64, stickyClass: "sk3", left: 158 },
+  { key: "week", label: "Week", sub: "No.", width: WEEK_W, stickyClass: "sk1", left: 0 },
+  { key: "date", label: "Publish Date", sub: "Of post", width: DATE_W, stickyClass: "sk2", left: WEEK_W },
+  { key: "day", label: "Day", sub: "Of week", width: 64, stickyClass: "sk3", left: WEEK_W + DATE_W },
 ] as const;
 
 // Staff-only checkbox column, sticky ahead of Week/Date/Day when shown —
@@ -73,13 +79,13 @@ const CHECKBOX_COL_WIDTH = 36;
 // Image, Copy, WIIFM Direction. Keys stay as they were, so saved views
 // keep their columns.
 const TOGGLABLE_COLUMNS = [
-  { key: "time", label: "Time", sub: "Time of Post", width: 74 },
-  { key: "status", label: "Status", sub: "Status of Post", width: 156 },
-  { key: "type", label: "Format", sub: "Where it goes out", width: 134 },
-  { key: "slides", label: "Slides", sub: "Carousels", width: 74 },
-  // Renamed Team and 20% wider (direct instruction), for a role after the
-  // name.
-  { key: "lead", label: "Team", sub: "Person and role", width: 134 },
+  { key: "time", label: "Time", sub: "Time of Post", width: 84 },
+  { key: "status", label: "Status", sub: "Status of Post", width: 132 },
+  { key: "type", label: "Format", sub: "Where it goes out", width: 141 },
+  { key: "slides", label: "Slides", sub: "Carousels", width: 70 },
+  // Renamed Team, then wider twice (direct instruction), for a role after
+  // the name.
+  { key: "lead", label: "Team", sub: "Person and role", width: 154 },
   { key: "creative", label: "Post Name", sub: "Latest Post Visual", width: 196 },
   { key: "concept", label: "Concept and Reference", sub: "Describe the Post or Add Ref Link", width: 236 },
   // One column each, not three (1/2/3) — the cell shows the latest
@@ -922,10 +928,10 @@ export function ProjectCalendarTable({
                   <td className="sk1" style={{ left: skOffset }}>
                     <span className="tdim">—</span>
                   </td>
-                  <td className="sk2" style={{ left: 66 + skOffset }}>
+                  <td className="sk2" style={{ left: WEEK_W + skOffset }}>
                     <DraftField draft={draft} field="date" />
                   </td>
-                  <td className="sk3" style={{ left: 158 + skOffset }}>
+                  <td className="sk3" style={{ left: WEEK_W + DATE_W + skOffset }}>
                     <span className="tdim">—</span>
                   </td>
                   {visibleOrderedKeys.map((key) => {
@@ -998,10 +1004,10 @@ export function ProjectCalendarTable({
                         <td className="sk1" style={{ left: skOffset }}>
                           {isoWeekNumber(dt)}
                         </td>
-                        <td className="sk2" style={{ left: 66 + skOffset }}>
+                        <td className="sk2" style={{ left: WEEK_W + skOffset }}>
                           {dt.getDate()} {MONTH_ABBR[dt.getMonth()]} {String(dt.getFullYear()).slice(2)}
                         </td>
-                        <td className="sk3" style={{ left: 158 + skOffset }}>
+                        <td className="sk3" style={{ left: WEEK_W + DATE_W + skOffset }}>
                           {DAY_ABBR[(dt.getDay() + 6) % 7]}
                         </td>
                         {visibleOrderedKeys.map((key) => {
@@ -1048,7 +1054,6 @@ export function ProjectCalendarTable({
                                     <span className="teamcell">
                                       {c.team.map((t) => (
                                         <span className="lead" key={t.id}>
-                                          <i style={{ background: "#6B7280" }}>{t.name.slice(0, 1).toUpperCase()}</i>
                                           {t.name}
                                           {roles?.[t.id] && <span className="lead-role">({roles[t.id]})</span>}
                                         </span>

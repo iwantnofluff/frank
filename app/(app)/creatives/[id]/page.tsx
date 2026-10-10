@@ -338,11 +338,26 @@ export default function CreativeReviewPage({
                   className="stagesw"
                   title="Whether this post is visible through a share link, and whether it's been approved"
                 >
+                  {/* Concept is shown, not picked: a post leaves it by
+                      itself when its first artwork or copy is saved
+                      (phase13), and nothing moves one back. */}
+                  <button
+                    data-label="Concept"
+                    aria-label="Concept"
+                    type="button"
+                    className="sw-concept"
+                    aria-pressed={creative.stage === 1}
+                    aria-disabled="true"
+                    title="A post is in Concept until its first artwork or copy is saved"
+                  >
+                    <span className="no">1.</span>
+                    Concept
+                  </button>
                   <button
                     data-label="Internal Review"
                     aria-label="Internal Review"
                     type="button"
-                    aria-pressed={creative.stage < 3}
+                    aria-pressed={creative.stage === 2}
                     disabled={advanceStage.isPending}
                     onClick={() => {
                       if (creative.stage >= 3) advanceStage.mutate("to_internal");

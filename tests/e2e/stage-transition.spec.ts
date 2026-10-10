@@ -17,8 +17,13 @@ test("staff advances a creative to Client Review, making it visible through a sh
   await page.goto(`/creatives/${creativeId}`);
   await page.waitForSelector(".stage-h");
 
+  // A post with nothing on it shows Concept, which can't be picked.
+  const pressed = page.locator('.stagesw button[aria-pressed="true"]');
+  await expect(pressed).toHaveText("1.Concept");
+  await expect(page.locator(".stagesw").getByRole("button", { name: "Concept", exact: true })).toHaveAttribute("aria-disabled", "true");
+
   await page.click('.stagesw button:has-text("Client Review")');
-  await expect(page.locator('.stagesw button[aria-pressed="true"]')).toContainText("Client Review");
+  await expect(pressed).toContainText("Client Review");
 
   await page.click('button[title="Share for review"]');
   await page.click('button[role="radio"]:has-text("Current Post")');

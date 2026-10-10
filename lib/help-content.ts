@@ -111,7 +111,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       },
       {
         kind: "p",
-        text: "On a post, the stage switch shows Internal Review in blue, Client Review in orange and Approved in green.",
+        text: "On a post, the stage switch shows all four as numbered pills, the post's own stage in its colour: Concept red, Internal Review and Client Review orange, Approved green. Concept is lit while a post has no artwork or copy, and moves to Internal Review by itself when the first is saved; pick Internal Review, Client Review or Approved to move it on.",
       },
       { kind: "h", text: "Getting around" },
       {

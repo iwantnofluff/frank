@@ -197,7 +197,7 @@ test("a role set in Project Settings shows after the name in the Team column", a
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`${APP_URL}/projects/${frank.projectId}`);
   const cell = page.locator("tr[data-row] .lead").first();
-  await expect(cell).toHaveText("EE2E Staff", { timeout: 20_000 });
+  await expect(cell).toHaveText("E2E Staff", { timeout: 20_000 });
   await expect(page.locator("th", { hasText: "Team" }).first()).toBeVisible();
 
   await page.getByRole("button", { name: "Project options" }).click();
@@ -259,7 +259,7 @@ test("a post's Team holds several people, picked in its window and listed in the
 
     // The table: both, one a line.
     await page.goto(`${APP_URL}/projects/${frank.projectId}`);
-    await expect(page.locator("tr[data-row] .teamcell .lead")).toHaveText(["RRaj Second", "EE2E Staff"], { timeout: 20_000 });
+    await expect(page.locator("tr[data-row] .teamcell .lead")).toHaveText(["Raj Second", "E2E Staff"], { timeout: 20_000 });
 
     // Taken off: the next one leads.
     await openBrief();

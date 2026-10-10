@@ -126,7 +126,10 @@ test("project calendar — hovering a creative shows the real preview popover", 
 
   await page.hover(".pname");
   await page.waitForSelector(".evpop.on");
-  await expect(page.locator(".evpop .rvt")).toHaveText("E2E Test Creative");
+  // The stage strip is just the table's Status pill; the name is below it.
+  await expect(page.locator(".evpop .rvt")).toHaveCount(0);
+  await expect(page.locator(".evpop .rv .stg")).toHaveText(/^\d\.\S/);
+  await expect(page.locator(".evpop .pp-h b")).toHaveText("E2E Test Creative");
   await expect(page.locator(".evpop .pp-pending")).toHaveText("Not published yet");
 });
 

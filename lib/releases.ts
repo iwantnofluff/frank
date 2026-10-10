@@ -13,6 +13,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.17.1",
+    date: "2026-10-10",
+    title: "Stage pills everywhere, and a tidier table",
+    changes: [
+      "A post's stage switch shows Concept too, lit while the post has no artwork or copy yet, and its pills are a little larger.",
+      "The post preview on the table, the Feed Preview and a review link's Feed show the same numbered stage pills as the table; the preview no longer repeats the post's name above it.",
+      "The Team column is wider, without a picture before each name, and the role after a name is a little smaller.",
+      "Week, Publish Date, Time, Status, Format and Slides are as wide as their words need, and no wider.",
+    ],
+  },
+  {
     version: "1.17.0",
     date: "2026-10-10",
     title: "A post's Team, and new colours",

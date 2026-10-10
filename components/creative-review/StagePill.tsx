@@ -1,9 +1,14 @@
-// A feed tile's stage, named and coloured as the Review page's stage switch
-// names and colours them (direct instruction): Internal Review (Concept
-// counts as it there too), Client Review, Approved. The same pill on the
+import { stageColor, stageLabel } from "@/lib/stage-labels";
+
+// A feed tile's stage, as the project table's Status pill and the Review
+// page's stage switch show it (direct instruction): its number and name,
+// solid in the stage's colour with white words. The same pill on the
 // Review page's Feed Preview and a review link's Feed.
 export function StagePill({ stage }: { stage: number }) {
-  const [label, tone] =
-    stage >= 4 ? ["Approved", "approved"] : stage === 3 ? ["Client Review", "client"] : ["Internal Review", "internal"];
-  return <span className={`stagepill ${tone}`}>{label}</span>;
+  return (
+    <span className="stagepill stg" style={{ background: stageColor(stage, null) }}>
+      <span className="no">{stage}.</span>
+      {stageLabel(stage, "scheduled")}
+    </span>
+  );
 }

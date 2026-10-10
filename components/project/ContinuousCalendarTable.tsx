@@ -85,12 +85,13 @@ const TOGGLABLE_COLUMNS = [
   { key: "placement", label: "Destination", sub: "ASIN, URL or location", width: 140 },
   { key: "funnel", label: "Funnel", sub: "Funnel stage", width: 150 },
   { key: "tg", label: "TG", sub: "Target audience", width: 130 },
-  { key: "type", label: "Format", sub: "Where it goes out", width: 150 },
-  { key: "slides", label: "Slides", sub: "Carousels", width: 74 },
-  // Renamed Team and 20% wider (direct instruction), for a role after the
-  // name.
-  { key: "lead", label: "Team", sub: "Person and role", width: 134 },
-  { key: "status", label: "Status", sub: "Workflow state", width: 156 },
+  { key: "type", label: "Format", sub: "Where it goes out", width: 141 },
+  { key: "slides", label: "Slides", sub: "Carousels", width: 70 },
+  // Renamed Team, then wider twice (direct instruction), for a role after
+  // the name. Format, Slides and Status are as wide as their longest
+  // words, as on the scheduled table.
+  { key: "lead", label: "Team", sub: "Person and role", width: 154 },
+  { key: "status", label: "Status", sub: "Workflow state", width: 132 },
   { key: "conceptRef", label: "Concept and Reference", sub: "Visual brief", width: 260 },
   { key: "finalCreative", label: "Final Creative", sub: "Approved asset", width: 200 },
   { key: "imageOnText", label: "Text on Image", sub: "On the artwork", width: 220 },
@@ -1043,7 +1044,6 @@ export function ContinuousCalendarTable({
                                     <span className="teamcell">
                                       {c.team.map((t) => (
                                         <span className="lead" key={t.id}>
-                                          <i style={{ background: "#6B7280" }}>{t.name.slice(0, 1).toUpperCase()}</i>
                                           {t.name}
                                           {roles?.[t.id] && <span className="lead-role">({roles[t.id]})</span>}
                                         </span>

@@ -1580,17 +1580,8 @@ body.lightrail .search input::placeholder {
 .lead-role {
   color: var(--muted);
   white-space: nowrap;
-}
-.lead i {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-size: 9.7px;
-  font-weight: 700;
-  color: #fff;
-  font-style: normal;
+  /* 2px under the name (direct instruction). */
+  font-size: calc(var(--d-fs) - 2px);
 }
 .cellw {
   min-width: 200px;
@@ -3005,11 +2996,12 @@ a.fd-ref:hover {
   align-items: center;
   gap: 6px;
 }
+/* 5% larger than the table's (direct instruction): read on its own here. */
 .stagesw button {
   gap: 4px;
-  padding: 2px 6px;
-  border-radius: 3.4px;
-  font-size: 10.4px;
+  padding: 2.1px 6.3px;
+  border-radius: 3.6px;
+  font-size: 10.9px;
   font-weight: 600;
   white-space: nowrap;
   background: var(--line);
@@ -3038,6 +3030,18 @@ a.fd-ref:hover {
 }
 .stagesw button:not([aria-pressed="true"]):hover {
   opacity: 0.8;
+}
+/* Concept is only ever shown, never picked: no hover, no pointer. */
+.stagesw button.sw-concept {
+  cursor: default;
+}
+.stagesw button.sw-concept[aria-pressed="true"] {
+  background: var(--stage-concept);
+}
+.stagesw button.sw-concept:not([aria-pressed="true"]):hover {
+  background: var(--line);
+  color: var(--muted);
+  opacity: 1;
 }
 .tools .btn.primary {
   margin-left: 8px;
@@ -7001,24 +7005,11 @@ a.profproject:hover .pp-t b {
 /* A tile's stage, in the Review page's stage switch colours (direct
    instruction), Frank's own. The tints are see-through, so over artwork they sit on
    white. */
+/* The tile's corner; the pill itself is .stg, the table's Status pill. */
 .stagepill {
   position: absolute;
   left: 6px;
   bottom: 6px;
-  font-size: 10.2px;
-  font-weight: 600;
-  padding: 2px 7px;
-  border-radius: 99px;
-  white-space: nowrap;
-}
-.stagepill.internal,
-.stagepill.client {
-  background: linear-gradient(var(--stage-review-bg), var(--stage-review-bg)), #fff;
-  color: var(--stage-review-ink);
-}
-.stagepill.approved {
-  background: linear-gradient(var(--stage-approved-bg), var(--stage-approved-bg)), #fff;
-  color: var(--stage-approved-ink);
 }
 .sharedfeed-planned video {
   position: absolute;

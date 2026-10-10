@@ -219,10 +219,10 @@ test("shared review — the feed shows other posts by stage, and opens this link
   const grid = page.locator(".dk-main .feedgrid");
   const stageTiles = grid.locator(".sharedfeed-stage");
   await expect(stageTiles).toHaveCount(2);
-  expect((await stageTiles.locator(".stagepill").allTextContents()).sort()).toEqual(["Internal Review", "Internal Review"]);
+  expect((await stageTiles.locator(".stagepill").allTextContents()).sort()).toEqual(["1.Concept", "2.Internal Review"]);
   expect((await stageTiles.locator(".sharedfeed-name").allTextContents()).sort()).toEqual(["Unshared concept post", "Unshared internal post"]);
   // The shared post: its stage pill (Client Review) and its comment count.
-  await expect(grid.locator(".sharedfeed-planned .stagepill")).toHaveText("Client Review");
+  await expect(grid.locator(".sharedfeed-planned .stagepill")).toHaveText("3.Client Review");
   await expect(grid.locator(".sharedfeed-planned .cmtcount")).toHaveText("1");
   // Its tile opens the post.
   await grid.locator(".sharedfeed-planned").click();

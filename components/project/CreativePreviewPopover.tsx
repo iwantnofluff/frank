@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { useCopyVersions } from "@/hooks/use-copy-versions";
 import { useViewportFit } from "@/hooks/use-viewport-fit";
 import { useComments } from "@/hooks/use-comments";
-import { stageColor, stageInk, stageLabel, exceptionLabel } from "@/lib/stage-labels";
+import { stageColor, stageLabel, exceptionLabel } from "@/lib/stage-labels";
 import { aspectRatioCss, formatsLabel, postFormats } from "@/lib/formats";
 import { useCreativeVersions, versionSlides } from "@/hooks/use-creative-versions";
 import { useAssetSignedUrl } from "@/hooks/use-asset-signed-url";
@@ -61,7 +61,6 @@ export function CreativePreviewPopover({
   const caption = latestCopy?.fields?.caption;
   const openComments = comments?.filter((c) => !c.resolved_at).length ?? 0;
   const color = stageColor(creative.stage, creative.exception);
-  const ink = stageInk(creative.stage, creative.exception);
 
   // Positioned from its real measured size, re-measured as the caption and
   // comments load in — a fixed 340px guess ran it off the bottom of the
@@ -75,10 +74,17 @@ export function CreativePreviewPopover({
     <div ref={ref} className="evpop on phonepop" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
       <span className="phonepop-notch" aria-hidden="true" />
       <div className="rv">
-        <span className="rvt">{creative.name}</span>
-        <span className="tag" style={{ background: `${color}26`, color: ink }}>
-          <span className="dot" style={{ background: color }} />
-          {creative.exception ? exceptionLabel(creative.exception) : stageLabel(creative.stage, "scheduled")}
+        {/* Just the stage, as the table's Status pill: the post's name is
+            right below (direct instruction). */}
+        <span className="stg" style={{ background: color }}>
+          {creative.exception ? (
+            exceptionLabel(creative.exception)
+          ) : (
+            <>
+              <span className="no">{creative.stage}.</span>
+              {stageLabel(creative.stage, "scheduled")}
+            </>
+          )}
         </span>
         {openComments > 0 && (
           <span className="cchip">
