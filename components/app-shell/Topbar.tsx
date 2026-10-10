@@ -246,6 +246,11 @@ export function Topbar({
         }}
         onOpenItem={(n) => {
           setNotifOpen(false);
+          // A mention: the project, its Discussion open (phase84).
+          if (n.kind === "discussion_mention") {
+            if (n.mention) router.push(`/projects/${n.mention.project.id}?panel=discussion`);
+            return;
+          }
           if (!n.creative) return;
           // The client's comment or approval: the post itself (phase80).
           if (n.kind !== "artwork_removal") router.push(`/creatives/${n.creative.id}`);

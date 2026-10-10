@@ -13,6 +13,22 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.16.0",
+    date: "2026-10-10",
+    title: "A project's Activity Log and Discussion",
+    changes: [
+      "A project's page has a “…” menu with its Activity Log, its Discussion and its Settings.",
+      "The Activity Log shows what happened in the project, by whom and when: posts added, edited, moved, approved or deleted, versions, comments, review links, and changes to the project and its people.",
+      "Discussion gives the team a place to talk about a project, with threads and replies; mention someone with @ and they get a notice in their bell.",
+      "The Strategy Overview boxes on a client's page are now all one height, with each overview in short paragraphs; hover over a box to read it in full. The month's box is named for it, Oct 2026 Strategy.",
+      "Client and project rows no longer have an expand arrow: Client Settings is in the left rail inside a client, and a project's settings are in its “…” menu.",
+      "The Client Review stage is now written the same way everywhere.",
+      "Projects no longer have pictures; each is shown by its name.",
+      "The stages are now in Frank's own colours: Concept red, Internal and Client Review orange, Approved green. On a project's table the Status pill is solid, with white words, and a little smaller.",
+      "The Lead column is now called Team and is a little wider; a project's Settings can give each person a role, shown in brackets after their name.",
+    ],
+  },
+  {
     version: "1.15.0",
     date: "2026-10-10",
     title: "Strategy at a glance",

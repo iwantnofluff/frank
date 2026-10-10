@@ -25,10 +25,13 @@ async function picture(page: Page, width: number, height: number) {
   return { name: `logo-${width}x${height}.png`, mimeType: "image/png", buffer: Buffer.from(b64, "base64") };
 }
 
-// Client Settings → Client Details, from the client's row, with its
+// Client Settings → Client Details, from the client's page, with its
 // details turned into fields (phase48).
 async function openEditClient(page: Page) {
-  await page.getByRole("button", { name: "Open E2E Test Client's settings" }).click();
+  // The row's arrow went (direct instruction): the client's page, then
+  // its Settings in the rail.
+  await page.locator(".crow", { hasText: "E2E Test Client" }).click();
+  await page.getByRole("link", { name: "E2E Test Client Settings" }).click();
   await page.waitForURL(/\/settings\/details$/);
   const details = page.locator(".setmain");
   await details.getByRole("button", { name: "Edit", exact: true }).click();
@@ -134,14 +137,19 @@ test("a project moves to another client, leaving its folder behind and its share
   await page.goto(`${APP_URL}/clients/${frank.clientId}`);
   const row = page.locator(".crow", { hasText: "E2E Test Project" });
   await expect(row).toContainText("Active");
-  await page.getByRole("button", { name: "Open E2E Test Project's profile" }).click();
+  // The project's profile opens from its own page (direct instruction).
+  await page.goto(`${APP_URL}/projects/${frank.projectId}`);
+  await page.getByRole("button", { name: "Project options" }).click();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("dialog", { name: "E2E Test Project" }).getByRole("button", { name: "Move to Client" }).click();
   const modal = page.getByRole("dialog", { name: "Move E2E Test Project to another client" });
   await expect(modal.getByRole("radio")).toHaveCount(1);
   await modal.getByRole("radio", { name: "Second Client" }).click();
   await modal.getByRole("button", { name: "Move" }).click();
   await expect(modal).toHaveCount(0);
-  await expect(page.getByRole("status")).toHaveText("Moved “E2E Test Project” to Second Client.");
+  await expect(page.getByRole("status").filter({ hasText: "Moved" })).toHaveText("Moved “E2E Test Project” to Second Client.");
+  await page.goto(`${APP_URL}/clients/${frank.clientId}`);
+  await expect(page.locator(".crow.folder-band", { hasText: "Spring" })).toBeVisible();
   await expect(page.locator(".crow", { hasText: "E2E Test Project" })).toHaveCount(0);
   // The folder it left stays, now empty, for the user to delete if they want.
   await expect(page.locator(".crow.folder-band", { hasText: "Spring" })).toBeVisible();

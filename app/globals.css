@@ -57,6 +57,21 @@
   --ease-close: cubic-bezier(0.4, 0, 1, 1);
   --dur-open: 0.22s;
   --dur-close: 0.17s;
+
+  /* The stages in Frank's own colours (direct instruction), the logo's
+     three bars top to bottom: Concept the red, Internal and Client Review
+     the orange, Approved the green. Fills (bars, dots, squares) use them
+     as they are; words use the darker -ink, as the orange on its own is
+     too light to read on white. Keep in step with lib/stage-labels.ts. */
+  --stage-concept: #e35336;
+  --stage-concept-ink: #b8371e;
+  --stage-concept-bg: #e353361f;
+  --stage-review: #f4a460;
+  --stage-review-ink: #a3570f;
+  --stage-review-bg: #f4a46033;
+  --stage-approved: #4caf50;
+  --stage-approved-ink: #2e7d32;
+  --stage-approved-bg: #4caf5026;
 }
 
 * {
@@ -1417,14 +1432,17 @@ body.lightrail .avatar {
   padding-left: 12px;
   border-left: 1px solid var(--line-2);
 }
+/* A post's status on the project tables: solid stage colour, white words,
+   15% smaller than the prototype's pill (direct instruction). */
 .stg {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font-size: 12.2px;
+  gap: 4px;
+  font-size: 10.4px;
   font-weight: 600;
-  padding: 2px 7px;
-  border-radius: 4px;
+  padding: 2px 6px;
+  border-radius: 3.4px;
+  color: #fff;
   white-space: nowrap;
 }
 .stg .no {
@@ -1435,6 +1453,39 @@ body.lightrail .avatar {
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  white-space: nowrap;
+}
+/* Project Settings → Roles (phase85): a name and its role, per line. */
+.profroles {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.profrole {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  align-items: center;
+  gap: 12px;
+  font-size: 13.2px;
+}
+.profrole input {
+  padding: 6px 9px;
+}
+@media (max-width: 560px) {
+  .profrole {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+}
+/* Their role on the project, after the name (phase85): quieter, and onto
+   a second line rather than out of the cell when both don't fit. */
+.lead:has(.lead-role) {
+  flex-wrap: wrap;
+  white-space: normal;
+  row-gap: 0;
+}
+.lead-role {
+  color: var(--muted);
   white-space: nowrap;
 }
 .lead i {
@@ -2879,32 +2930,24 @@ a.fd-ref:hover {
     background-color var(--dur-fast) var(--ease-std),
     color var(--dur-fast) var(--ease-std);
 }
+/* In Frank's stage colours (direct instruction): Internal and Client
+   Review the logo's orange, Approved its green. */
 .stagesw button:not([aria-pressed="true"]):hover {
-  background: var(--action-soft);
-  color: var(--action);
-}
-.stagesw button.sw-client:not([aria-pressed="true"]):hover {
-  background: var(--amber-bg);
-  color: var(--amber);
+  background: var(--stage-review-bg);
+  color: var(--stage-review-ink);
 }
 .stagesw button.sw-approved:not([aria-pressed="true"]):hover {
-  background: var(--green-bg);
-  color: var(--green);
+  background: var(--stage-approved-bg);
+  color: var(--stage-approved-ink);
 }
 .stagesw button[aria-pressed="true"] {
-  background: var(--action-soft);
-  color: var(--action);
+  background: var(--stage-review-bg);
+  color: var(--stage-review-ink);
   font-weight: 600;
 }
-/* Client Review in orange, Approved in green (direct instruction);
-   Internal Review keeps the blue above. */
-.stagesw button.sw-client[aria-pressed="true"] {
-  background: var(--amber-bg);
-  color: var(--amber);
-}
 .stagesw button.sw-approved[aria-pressed="true"] {
-  background: var(--green-bg);
-  color: var(--green);
+  background: var(--stage-approved-bg);
+  color: var(--stage-approved-ink);
 }
 .tools .btn.primary {
   margin-left: 8px;
@@ -6836,7 +6879,7 @@ a.profproject:hover .pp-t b {
   border: 1px dashed var(--line-2);
 }
 /* A tile's stage, in the Review page's stage switch colours (direct
-   instruction). The tints are see-through, so over artwork they sit on
+   instruction), Frank's own. The tints are see-through, so over artwork they sit on
    white. */
 .stagepill {
   position: absolute;
@@ -6848,17 +6891,14 @@ a.profproject:hover .pp-t b {
   border-radius: 99px;
   white-space: nowrap;
 }
-.stagepill.internal {
-  background: linear-gradient(var(--action-soft), var(--action-soft)), #fff;
-  color: var(--action);
-}
+.stagepill.internal,
 .stagepill.client {
-  background: linear-gradient(var(--amber-bg), var(--amber-bg)), #fff;
-  color: var(--amber);
+  background: linear-gradient(var(--stage-review-bg), var(--stage-review-bg)), #fff;
+  color: var(--stage-review-ink);
 }
 .stagepill.approved {
-  background: linear-gradient(var(--green-bg), var(--green-bg)), #fff;
-  color: var(--green);
+  background: linear-gradient(var(--stage-approved-bg), var(--stage-approved-bg)), #fff;
+  color: var(--stage-approved-ink);
 }
 .sharedfeed-planned video {
   position: absolute;
@@ -7244,63 +7284,6 @@ button.feedgrid-live {
   text-decoration: none;
 }
 
-/* A project's picture (phase56): an emoticon drawn in white on the
-   project's colour, in place of its initials. Owners and Admins pick it
-   from the tile on the client workspace's rows. */
-.picon {
-  /* The supplied icons are filled shapes on a 1200 grid. */
-  width: 78%;
-  height: 78%;
-  fill: #fff;
-}
-.logo-pick {
-  border: none;
-  padding: 0;
-  font: inherit;
-  font-weight: 700;
-  font-size: 13.2px;
-  color: #fff;
-  cursor: pointer;
-  transition: box-shadow var(--dur-fast) var(--ease-std);
-}
-.logo-pick:hover,
-.logo-pick[aria-expanded="true"] {
-  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--line-2);
-}
-.colpop.iconpick {
-  width: 332px;
-}
-.iconpick-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 36px);
-  gap: 8px;
-  padding: 0 15px 15px;
-  max-height: 320px;
-  overflow-y: auto;
-}
-.iconpick-cell {
-  width: 36px;
-  height: 36px;
-  border: none;
-  border-radius: 8px;
-  display: grid;
-  place-items: center;
-  font: inherit;
-  font-weight: 700;
-  font-size: 12.7px;
-  color: #fff;
-  cursor: pointer;
-  opacity: 0.88;
-  transition: opacity var(--dur-fast) var(--ease-std), box-shadow var(--dur-fast) var(--ease-std);
-}
-.iconpick-cell:hover {
-  opacity: 1;
-}
-.iconpick-cell[aria-pressed="true"] {
-  opacity: 1;
-  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--blue);
-}
-
 /* The Content post inside the phone (direct instruction), laid out like a
    live post opened in the Feed Preview: the "Posts" bar, then the post
    filling the screen's width and scrolling within it. */
@@ -7322,13 +7305,6 @@ button.feedgrid-live {
   object-fit: cover;
   border: 1.5px solid #fff;
   box-sizing: border-box;
-}
-
-/* The Project Profile's title, after the project's picture (phase56). */
-.proftitle {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
 }
 
 /* Publish Date and Time (direct instruction): closer together, without
@@ -8977,9 +8953,11 @@ button.hbrand-add:hover {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  /* Taller, now the stage counts above have gone (direct instruction),
-     for the whole overview. */
-  min-height: 210px;
+  /* One height for all four (direct instruction: three quarters of what
+     the tallest overview took): a longer overview fades out at the foot
+     and shows in full on hover (.brandrem-full). */
+  height: 225px;
+  position: relative;
 }
 .brandrem-h {
   display: flex;
@@ -9018,17 +8996,55 @@ button.hbrand-add:hover {
   overflow: hidden;
 }
 /* A box's overview (phase83): Frank's snapshot of everything in it, in
-   full. */
+   its paragraphs, cut at the box's foot with a fade. */
+.brandrem-ov {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+  outline: none;
+}
 .brandrem-ov p {
   margin: 0;
   font-size: 13.2px;
   line-height: 1.55;
   color: var(--ink);
 }
-.brandrem-ov p.brandrem-also {
+.brandrem-ov p + p {
   margin-top: 8px;
-  font-size: 12.2px;
-  color: var(--muted);
+}
+/* The whole overview over its box while it's hovered or focused: the
+   hover previews' motion (opacity only, so it doesn't move under the
+   pointer), opening with --dur-open, closing faster. */
+.brandrem-full {
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  right: -1px;
+  min-height: calc(100% + 2px);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  padding: 13px 15px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r);
+  box-shadow: 0 12px 32px rgba(20, 22, 26, 0.14);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-close) var(--ease-close);
+}
+.brandrem-full .brandrem-ov {
+  overflow: visible;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+.brandrem-box:hover .brandrem-full,
+.brandrem-box:focus-within .brandrem-full {
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity var(--dur-open) var(--ease-open);
 }
 .brandrem-first p.brandrem-kind,
 .brandrem-empty {
@@ -9376,4 +9392,200 @@ button.hbrand-add:hover {
   color: #1a5f3f;
   font-size: 13.2px;
   line-height: 1.45;
+}
+
+/* A project's Activity Log and Discussion (phase84): the Help panel's shell
+   and motion (.helppanel), wider for threads, with its own contents. */
+.ppanel {
+  width: 460px;
+}
+.pj-empty,
+.pj-err {
+  margin: 0;
+  font-size: 13.2px;
+  color: var(--muted);
+}
+.pj-err {
+  color: var(--rose);
+}
+/* The panel's title: the project's name, then what it is; a long name
+   stops at two lines. */
+.pj-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.25;
+}
+/* A day's heading belongs to the entries under it (direct instruction:
+   more room above than below). */
+.pj-day {
+  margin: 22px 0 4px;
+  font-size: 13.2px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.pj-activity > div:first-child .pj-day {
+  margin-top: 0;
+}
+.pj-act {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line);
+}
+.pj-act:last-child {
+  border-bottom: none;
+}
+.pj-time {
+  font-size: 12.2px;
+  color: var(--muted);
+  padding-top: 1px;
+  font-variant-numeric: tabular-nums;
+}
+.pj-act p {
+  margin: 0;
+  font-size: 13.2px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.pj-act p b {
+  font-weight: 600;
+}
+.pj-post {
+  font-weight: 600;
+  color: var(--action);
+}
+a.pj-post:hover {
+  text-decoration: underline;
+}
+.pj-more {
+  margin-top: 14px;
+}
+.pj-disc {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.pj-comp {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+/* The comment box's own look (.bin). */
+.pj-comp textarea {
+  padding: 8px 10px;
+}
+.pj-comp-f {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+.pj-comp-f .pj-err {
+  margin-right: auto;
+}
+/* The @ picker, under the box. */
+.pj-pick {
+  position: absolute;
+  top: calc(100% - 40px);
+  left: 0;
+  z-index: 5;
+  min-width: 220px;
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  border-radius: 9px;
+  box-shadow: 0 10px 28px rgba(20, 22, 26, 0.14);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  animation: rise-in var(--dur-fast) var(--ease-out);
+}
+.pj-pick button {
+  text-align: left;
+  padding: 6px 9px;
+  border-radius: 6px;
+  font-size: 13.2px;
+  transition: background-color var(--dur-fast) var(--ease-std);
+}
+.pj-pick button:hover {
+  background: var(--canvas);
+}
+.pj-thread {
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pj-reply {
+  margin-left: 38px;
+}
+.pj-msg {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+}
+.pj-av {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--canvas);
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  font-size: 11.2px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.pj-msg-h {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 12.2px;
+  color: var(--muted);
+}
+.pj-msg-h b {
+  font-size: 13.2px;
+  color: var(--ink);
+  font-weight: 600;
+}
+.pj-text,
+.pj-deleted {
+  margin: 3px 0 0;
+  font-size: 13.2px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.pj-deleted {
+  color: var(--muted);
+  font-style: italic;
+}
+.pj-mention {
+  color: var(--action);
+  font-weight: 600;
+}
+.pj-acts {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+  font-size: 12.2px;
+  color: var(--muted);
+}
+.pj-acts .linkbtn.danger {
+  color: var(--rose);
+}
+@media (max-width: 520px) {
+  .ppanel {
+    width: 100vw;
+  }
+  .pj-reply {
+    margin-left: 18px;
+  }
 }

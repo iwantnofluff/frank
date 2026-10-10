@@ -5,12 +5,15 @@ import { createClient } from "@/lib/supabase/client";
 
 // One of the signed-in person's notifications: an Approved post with no
 // live date whose artwork is waiting on an Owner's or Admin's decision
-// (phase60), or the client commenting on or approving a post (phase80).
+// (phase60), the client commenting on or approving a post (phase80), or
+// someone @mentioning them in a project's Discussion (phase84).
 export interface NotificationRow {
   id: string;
-  kind: "artwork_removal" | "client_comment" | "client_approval";
+  kind: "artwork_removal" | "client_comment" | "client_approval" | "discussion_mention";
   // For a comment: who, and what they said.
   comment: { id: string; body: string; who: string } | null;
+  // For a mention: who, what they wrote, and the project.
+  mention: { who: string; body: string; project: { id: string; name: string; client: string | null } } | null;
   created_at: string;
   read_at: string | null;
   creative: {
@@ -33,7 +36,7 @@ export function useNotifications(enabled = true) {
       const { data, error } = await supabase
         .from("notifications")
         .select(
-          "id, kind, comment_id, created_at, read_at, creative:creatives(id, name, format, due_on, approved_at, approved_by_name, project:projects(id, name, client:clients(id, name)))",
+          "id, kind, comment_id, discussion_id, created_at, read_at, creative:creatives(id, name, format, due_on, approved_at, approved_by_name, project:projects(id, name, client:clients(id, name)))",
         )
         // Only those meant for the bell (a client may want email only).
         .eq("in_app", true)
@@ -60,9 +63,34 @@ export function useNotifications(enabled = true) {
           });
         }
       }
+      // Mentions: the message, its author and its project.
+      const mentionIds = data.map((n) => n.discussion_id as string | null).filter((id): id is string => !!id);
+      const mentions = new Map<string, NonNullable<NotificationRow["mention"]>>();
+      if (mentionIds.length) {
+        const { data: msgs } = await supabase
+          .from("project_discussion")
+          .select("id, body, author_id, project:projects(id, name, client:clients(name))")
+          .in("id", mentionIds);
+        const authorIds = [...new Set((msgs ?? []).map((m) => m.author_id as string))];
+        const names = new Map<string, string>();
+        if (authorIds.length) {
+          const { data: users } = await supabase.from("users").select("id, name").in("id", authorIds);
+          for (const u of users ?? []) names.set(u.id as string, u.name as string);
+        }
+        for (const m of msgs ?? []) {
+          const project = m.project as unknown as { id: string; name: string; client: { name: string } | null } | null;
+          if (!project) continue;
+          mentions.set(m.id as string, {
+            who: names.get(m.author_id as string) ?? "Someone",
+            body: m.body as string,
+            project: { id: project.id, name: project.name, client: project.client?.name ?? null },
+          });
+        }
+      }
       return data.map((n) => ({
         ...n,
         comment: n.comment_id ? (comments.get(n.comment_id as string) ?? null) : null,
+        mention: n.discussion_id ? (mentions.get(n.discussion_id as string) ?? null) : null,
       })) as unknown as NotificationRow[];
     },
     enabled,

@@ -4,6 +4,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { usePresence } from "@/hooks/use-presence";
 import { useViewportFit } from "@/hooks/use-viewport-fit";
 import { useRouter } from "next/navigation";
+import { useProjectRoles } from "@/hooks/use-project-roles";
 import type { CreativeListRow } from "@/hooks/use-creatives";
 import type { CustomColumnRow } from "@/hooks/use-custom-columns";
 import { useArchiveCreatives } from "@/hooks/use-archive-creatives";
@@ -76,7 +77,9 @@ const TOGGLABLE_COLUMNS = [
   { key: "status", label: "Status", sub: "Status of Post", width: 156 },
   { key: "type", label: "Format", sub: "Where it goes out", width: 134 },
   { key: "slides", label: "Slides", sub: "Carousels", width: 74 },
-  { key: "lead", label: "Lead", sub: "POC in Team", width: 112 },
+  // Renamed Team and 20% wider (direct instruction), for a role after the
+  // name.
+  { key: "lead", label: "Team", sub: "Person and role", width: 134 },
   { key: "creative", label: "Post Name", sub: "Latest Post Visual", width: 196 },
   { key: "concept", label: "Concept and Reference", sub: "Describe the Post or Add Ref Link", width: 236 },
   // One column each, not three (1/2/3) — the cell shows the latest
@@ -165,6 +168,8 @@ export function ProjectCalendarTable({
   draftRow?: { onClose: () => void; onCreated: (focusDate: string | null) => void } | null;
 }) {
   const router = useRouter();
+  // Each person's role here, after their name in the Team column (phase85).
+  const { data: roles } = useProjectRoles(projectId);
   const draft = useDraftPost({
     projectId,
     delivery: "scheduled",
@@ -1010,7 +1015,7 @@ export function ProjectCalendarTable({
                             case "status":
                               return (
                                 <td key={key}>
-                                  <span className="stg" style={{ background: `${color}1A`, color }}>
+                                  <span className="stg" style={{ background: color }}>
                                     {c.exception ? (
                                       exceptionLabel(c.exception)
                                     ) : (
@@ -1043,6 +1048,9 @@ export function ProjectCalendarTable({
                                         {c.lead.name.slice(0, 1).toUpperCase()}
                                       </i>
                                       {c.lead.name}
+                                      {c.lead_user_id && roles?.[c.lead_user_id] && (
+                                        <span className="lead-role">({roles[c.lead_user_id]})</span>
+                                      )}
                                     </span>
                                   ) : (
                                     <span className="tdim">—</span>

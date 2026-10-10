@@ -4,7 +4,7 @@
 // available at the Node 20.6+ this repo already requires.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { bandOf, stageLabel, stageColor, exceptionLabel, type Exception } from "./stage-labels.ts";
+import { bandOf, stageLabel, stageColor, stageInk, exceptionLabel, type Exception } from "./stage-labels.ts";
 
 const EXCEPTIONS: Exception[] = ["changes_requested", "rejected"];
 
@@ -57,7 +57,7 @@ test("bandOf — out-of-range stage falls back to stage 1's band, same shape as 
 test("stageLabel — one label per stage, unaffected by delivery mode", () => {
   assert.equal(stageLabel(1, "scheduled"), "Concept");
   assert.equal(stageLabel(2, "scheduled"), "Internal Review");
-  assert.equal(stageLabel(3, "scheduled"), "Client review");
+  assert.equal(stageLabel(3, "scheduled"), "Client Review");
   assert.equal(stageLabel(4, "scheduled"), "Approved");
   // The scheduled/continuous split only ever mattered for the old
   // stage 7/8 rows (Scheduled/Published), both gone now — every
@@ -79,10 +79,17 @@ test("stageColor — exception always wins over stage, same precedence as bandOf
   }
 });
 
-test("stageColor — no exception, colour tracks the band groupings the stage table defines", () => {
-  assert.equal(stageColor(1, null), stageColor(2, null)); // 1-2 share the "internal" grey
-  assert.notEqual(stageColor(2, null), stageColor(3, null)); // internal vs review differ
-  assert.notEqual(stageColor(3, null), stageColor(4, null)); // review vs approved differ
+test("stageColor — Frank's logo colours: Concept the red, both reviews the orange, Approved the green", () => {
+  assert.equal(stageColor(1, null), "#E35336");
+  assert.equal(stageColor(2, null), "#F4A460");
+  assert.equal(stageColor(3, null), stageColor(2, null)); // Internal and Client Review share the orange
+  assert.equal(stageColor(4, null), "#4CAF50");
+});
+
+test("stageInk — words in a darker shade of the same colour, exceptions too", () => {
+  assert.notEqual(stageInk(2, null), stageColor(2, null));
+  assert.equal(stageInk(3, null), stageInk(2, null));
+  assert.equal(stageInk(2, "rejected"), stageInk(4, "rejected"));
 });
 
 test("exceptionLabel — human-readable text for both exception values", () => {

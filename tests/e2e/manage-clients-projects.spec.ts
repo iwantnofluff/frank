@@ -10,8 +10,10 @@ test("rename and archive/unarchive a client from the dashboard", async ({ page, 
   await page.goto("/dashboard");
   await page.waitForSelector(".crow:not(.head)");
 
-  // Client Settings → Client Details, from the row.
-  await page.getByRole("button", { name: "Open E2E Test Client's settings" }).click();
+  // The row's arrow went (direct instruction): the client's page, then
+  // its Settings in the rail.
+  await page.locator(".crow", { hasText: "E2E Test Client" }).click();
+  await page.getByRole("link", { name: "E2E Test Client Settings" }).click();
   await page.waitForURL(/\/settings\/details$/);
   const details = page.locator(".setmain");
   await details.getByRole("button", { name: "Edit", exact: true }).click();
@@ -29,7 +31,10 @@ test("rename and archive/unarchive a client from the dashboard", async ({ page, 
   await page.click('button.chip:has-text("Archived")');
   await expect(page.locator(".crow", { hasText: "E2E Renamed Client" })).toBeVisible();
 
-  await page.getByRole("button", { name: "Open E2E Renamed Client's settings" }).click();
+  // The row's arrow went (direct instruction): the client's page, then
+  // its Settings in the rail.
+  await page.locator(".crow", { hasText: "E2E Renamed Client" }).click();
+  await page.getByRole("link", { name: "E2E Renamed Client Settings" }).click();
   await page.waitForURL(/\/settings\/details$/);
   await page.locator(".setmain").getByRole("button", { name: "Unarchive" }).click();
   await expect(page.locator(".setmain").getByRole("button", { name: "Archive", exact: true })).toBeVisible();
@@ -54,7 +59,10 @@ test("New Client takes an industry, and the Client Profile edits it in place; no
   await expect(page.locator(".scrim")).toHaveCount(0);
   await expect(page.locator(".crow", { hasText: "Client Modal E2E" })).toBeVisible();
 
-  await page.getByRole("button", { name: "Open Client Modal E2E's settings" }).click();
+  // The row's arrow went (direct instruction): the client's page, then
+  // its Settings in the rail.
+  await page.locator(".crow", { hasText: "Client Modal E2E" }).click();
+  await page.getByRole("link", { name: "Client Modal E2E Settings" }).click();
   await page.waitForURL(/\/settings\/details$/);
   const profile = page.locator(".setmain");
   await expect(profile.locator(".profclient")).toContainText("D2C beauty");
@@ -71,10 +79,14 @@ test("edit (name, type and details) and archive/unarchive a project from its pro
   frank,
 }) => {
   await frank.loginAsStaff(page);
-  await page.goto(`/clients/${frank.clientId}`);
-  await page.waitForSelector(".crow:not(.head)");
-
-  await page.getByRole("button", { name: "Open E2E Test Project's profile" }).click();
+  // The profile opens from the project's own page (direct instruction: the
+  // arrow on its row went).
+  const openSettings = async () => {
+    await page.goto(`/projects/${frank.projectId}`);
+    await page.getByRole("button", { name: "Project options" }).click();
+    await page.getByRole("button", { name: "Settings", exact: true }).click();
+  };
+  await openSettings();
   const modal = page.getByRole("dialog", { name: "E2E Test Project" });
   // The fixture project has no type: it shows as "—" rather than silently
   // becoming the first option, and only Content Planner types are offered.
@@ -92,38 +104,36 @@ test("edit (name, type and details) and archive/unarchive a project from its pro
   await modal.getByLabel("Description").fill("Festive season social");
   await modal.getByRole("button", { name: "Save" }).click();
   await expect(modal).toHaveCount(0);
+  await page.goto(`/clients/${frank.clientId}`);
   await expect(page.locator(".crow", { hasText: "E2E Renamed Project" })).toContainText(
     "Paid Campaign",
   );
+  // No arrow left on the row.
+  await expect(page.locator(".crow:not(.head)").first().locator("button")).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Open E2E Renamed Project's profile" }).click();
+  await openSettings();
   const renamed = page.getByRole("dialog", { name: "E2E Renamed Project" });
   await expect(renamed.getByLabel("Type")).toHaveValue("Paid Campaign");
   await expect(renamed.getByLabel("Type").locator("option")).toHaveCount(4);
   await expect(renamed.getByLabel("Due date")).toHaveValue("2026-12-15");
   await expect(renamed.getByLabel("Description")).toHaveValue("Festive season social");
-  await renamed.getByRole("button", { name: "Cancel" }).click();
+  await renamed.getByRole("button", { name: "Archive" }).click();
+  await expect(renamed).toHaveCount(0);
 
-  // The project count lives in the chips now, not beside the title.
+  // The project count lives in the chips.
+  await page.goto(`/clients/${frank.clientId}`);
   const activeChip = page.locator("button.chip", { hasText: "Active" });
   const archivedChip = page.locator("button.chip", { hasText: "Archived" });
-  await expect(activeChip).toHaveText("Active (1)");
-  await expect(archivedChip).toHaveText("Archived (0)");
-
-  await page.getByRole("button", { name: "Open E2E Renamed Project's profile" }).click();
-  await renamed.getByRole("button", { name: "Archive" }).click();
-  await expect(page.locator(".crow", { hasText: "E2E Renamed Project" })).toHaveCount(0);
   await expect(activeChip).toHaveText("Active (0)");
   await expect(archivedChip).toHaveText("Archived (1)");
-
   await page.click('button.chip:has-text("Archived")');
-  const archivedRow = page.locator(".crow", { hasText: "E2E Renamed Project" });
-  await expect(archivedRow).toBeVisible();
-
-  await page.getByRole("button", { name: "Open E2E Renamed Project's profile" }).click();
-  await renamed.getByRole("button", { name: "Unarchive" }).click();
-  await page.click('button.chip:has-text("Active")');
   await expect(page.locator(".crow", { hasText: "E2E Renamed Project" })).toBeVisible();
+
+  await openSettings();
+  await renamed.getByRole("button", { name: "Unarchive" }).click();
+  await page.goto(`/clients/${frank.clientId}`);
+  await expect(page.locator(".crow", { hasText: "E2E Renamed Project" })).toBeVisible();
+  await expect(activeChip).toHaveText("Active (1)");
 });
 
 test("the project's own detail page has no row actions menu next to its title", async ({
@@ -136,14 +146,18 @@ test("the project's own detail page has no row actions menu next to its title", 
   await expect(page.locator(".vdots")).toHaveCount(0);
 });
 
-test("a client's row opens its Client Settings, not the client", async ({ page, frank }) => {
+// The expand arrow went from client and project rows (direct instruction):
+// a row just opens the client or project, and Client Settings is in the
+// rail inside it.
+test("client rows have no arrow; the row opens the client, its Settings in the rail", async ({ page, frank }) => {
   await frank.loginAsStaff(page);
   await page.goto("/dashboard");
-  await page.waitForSelector(".crow:not(.head)");
-
-  // The button sits inside the row's link: it goes to Client Settings, not
-  // the client's projects.
-  await page.getByRole("button", { name: "Open E2E Test Client's settings" }).click();
+  const row = page.locator(".crow:not(.head)", { hasText: "E2E Test Client" });
+  await expect(row).toBeVisible();
+  await expect(row.locator("button")).toHaveCount(0);
+  await row.click();
+  await expect(page).toHaveURL(new RegExp(`/clients/${frank.clientId}$`));
+  await page.getByRole("link", { name: "E2E Test Client Settings" }).click();
   await expect(page).toHaveURL(new RegExp(`/clients/${frank.clientId}/settings/details$`));
   await expect(page.locator(".setmain")).toContainText("E2E Test Client");
 });

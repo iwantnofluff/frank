@@ -4,24 +4,14 @@ import { use, useMemo, useState } from "react";
 import Link from "next/link";
 import { useClientDetail } from "@/hooks/use-client";
 import { useProjects, type ProjectListRow } from "@/hooks/use-projects";
-import { useArchiveProject } from "@/hooks/use-archive-project";
 import { useProjectCreativeStats } from "@/hooks/use-project-creative-stats";
 import { useIsStaff } from "@/hooks/use-is-staff";
 import { useProjectFolders, type ProjectFolderRow } from "@/hooks/use-project-folders";
 import { useDeleteProjectFolder } from "@/hooks/use-delete-project-folder";
 import { KBadge } from "@/components/project/KBadge";
 import { NewProjectModal } from "@/components/project/NewProjectModal";
-import { ProjectProfileModal } from "@/components/project/ProjectProfileModal";
-import { ProjectAvatar } from "@/components/project/ProjectAvatar";
-import { useUpdateProject } from "@/hooks/use-update-project";
 import { FolderModal } from "@/components/project/FolderModal";
-import { MoveToFolderModal } from "@/components/project/MoveToFolderModal";
-import { MoveToClientModal } from "@/components/project/MoveToClientModal";
 import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
-import { useMyMembership } from "@/hooks/use-my-membership";
-import { useMyAgency } from "@/hooks/use-my-agency";
-import { seesAllClients } from "@/lib/roles";
-import { ExpandIcon } from "@/components/app-shell/icons";
 import { BrandReminder } from "@/components/clients/BrandReminder";
 import { useProjectSortStore, type ProjectSort } from "@/store/project-sort-store";
 
@@ -44,7 +34,7 @@ type ArchiveFilter = "active" | "archived";
 // regardless of how many columns sit in between, since the leading `1fr`
 // track absorbs any difference.
 // Status (128px) matches the dashboard's own Status column width.
-const PROJECT_ROW_COLUMNS = "1fr 74px 96px 90px 128px 92px 70px";
+const PROJECT_ROW_COLUMNS = "1fr 74px 96px 90px 128px 92px";
 
 function formatDate(value: string | null) {
   if (!value) return "—";
@@ -77,8 +67,6 @@ export default function ClientWorkspacePage({
   // A client's own people get the client wording (it used to follow the
   // "Preview as" switch, now gone).
   const asClient = !isStaff && !isStaffPending;
-  const archiveProject = useArchiveProject();
-  const setIcon = useUpdateProject();
   const { data: folders } = useProjectFolders(id);
   const deleteFolder = useDeleteProjectFolder();
 
@@ -86,13 +74,9 @@ export default function ClientWorkspacePage({
   const { sort, setSort: chooseSort } = useProjectSortStore();
   const [archiveFilter, setArchiveFilter] = useState<ArchiveFilter>("active");
   const [newProjectOpen, setNewProjectOpen] = useState(false);
-  const [profileTarget, setProfileTarget] = useState<ProjectListRow | null>(null);
-  const [moveClientTarget, setMoveClientTarget] = useState<ProjectListRow | null>(null);
-  const [movedNotice, setMovedNotice] = useState<string | null>(null);
   const [folderModal, setFolderModal] = useState<
     { mode: "create" } | { mode: "rename"; folder: ProjectFolderRow } | null
   >(null);
-  const [moveTarget, setMoveTarget] = useState<ProjectListRow | null>(null);
   const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
   function toggleFolderCollapsed(folderId: string) {
     setCollapsedFolders((prev) => {
@@ -106,11 +90,6 @@ export default function ClientWorkspacePage({
   // Fails closed like every other isStaff gate in this app: hidden while
   // still resolving, not shown by default.
   const confirmedStaff = isStaff && !isStaffPending;
-  // Owners and Admins change a project's details and who's on it
-  // (phase46, phase47).
-  const { data: agency } = useMyAgency();
-  const { data: me } = useMyMembership(agency?.agencyId);
-  const isAdmin = !!me && !me.client_id && seesAllClients(me.role);
   const isLoading = clientLoading || projectsLoading;
 
   // useProjects now returns archived projects too (so they can be seen and
@@ -163,13 +142,7 @@ export default function ClientWorkspacePage({
         key={p.id}
       >
         <div className="cname">
-          <ProjectAvatar
-            name={p.name}
-            colour={p.accent_colour}
-            icon={p.icon}
-            canPick={isAdmin}
-            onPick={(icon) => setIcon.mutate({ projectId: p.id, clientId: id, icon })}
-          />
+          {/* Just its name, no picture (direct instruction). */}
           <div className="t">
             <b>{p.name}</b>
             <span className="sub">
@@ -188,23 +161,6 @@ export default function ClientWorkspacePage({
           </span>
         </div>
         <div className="ago">{formatDate(s?.latestApprovedAt ?? null)}</div>
-        <div style={{ display: "flex", justifyContent: "flex-end" }}>
-          {confirmedStaff && (
-            <button
-              type="button"
-              className="vdots"
-              title="Open project profile"
-              aria-label={`Open ${p.name}'s profile`}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setProfileTarget(p);
-              }}
-            >
-              <ExpandIcon />
-            </button>
-          )}
-        </div>
       </Link>
     );
   }
@@ -290,11 +246,6 @@ export default function ClientWorkspacePage({
         </div>
       </div>
 
-      {movedNotice && (
-        <p className="sub" role="status" style={{ margin: "0 0 4px" }}>
-          {movedNotice}
-        </p>
-      )}
 
       {projectsError && (
         <div className="empty">
@@ -339,11 +290,6 @@ export default function ClientWorkspacePage({
         </div>
       )}
 
-      {setIcon.isError && (
-        <p className="autherr" role="alert">
-          Couldn&rsquo;t change the picture: {setIcon.error.message}
-        </p>
-      )}
       {!projectsError && showTable && (
         <div className="clients">
           <div className="crow head" style={{ gridTemplateColumns: PROJECT_ROW_COLUMNS }}>
@@ -353,7 +299,6 @@ export default function ClientWorkspacePage({
             <div className="ago">Client Review</div>
             <div className="ago">Status</div>
             <div className="ago">Latest Approved</div>
-            <div></div>
           </div>
           {unfiled.map((p) => renderProjectRow(p))}
           {(folders ?? []).map((f) => {
@@ -399,60 +344,11 @@ export default function ClientWorkspacePage({
         <NewProjectModal clientId={id} onClose={() => setNewProjectOpen(false)} />
       )}
 
-      {profileTarget && (
-        <ProjectProfileModal
-          // Fresh from the list, so a save shows straight away.
-          project={projects?.find((p) => p.id === profileTarget.id) ?? profileTarget}
-          clientId={id}
-          clientName={client?.name ?? "this client"}
-          stats={projectStats?.[profileTarget.id]}
-          isAdmin={isAdmin}
-          agencyId={agency?.agencyId ?? ""}
-          onMoveToFolder={() => {
-            setMoveTarget(profileTarget);
-            setProfileTarget(null);
-          }}
-          onMoveToClient={() => {
-            setMoveClientTarget(profileTarget);
-            setProfileTarget(null);
-          }}
-          onArchive={() => {
-            archiveProject.mutate({ projectId: profileTarget.id, clientId: id, archived: !profileTarget.archived_at });
-            setProfileTarget(null);
-          }}
-          onClose={() => setProfileTarget(null)}
-        />
-      )}
-
       {folderModal && (
         <FolderModal
           clientId={id}
           folder={folderModal.mode === "rename" ? folderModal.folder : null}
           onClose={() => setFolderModal(null)}
-        />
-      )}
-
-      {moveTarget && (
-        <MoveToFolderModal
-          projectId={moveTarget.id}
-          clientId={id}
-          projectName={moveTarget.name}
-          currentFolderId={moveTarget.folder_id}
-          folders={folders ?? []}
-          onClose={() => setMoveTarget(null)}
-        />
-      )}
-
-      {moveClientTarget && (
-        <MoveToClientModal
-          projectId={moveClientTarget.id}
-          projectName={moveClientTarget.name}
-          fromClientId={id}
-          onClose={() => setMoveClientTarget(null)}
-          onMoved={(clientName) => {
-            setMovedNotice(`Moved “${moveClientTarget.name}” to ${clientName}.`);
-            setMoveClientTarget(null);
-          }}
         />
       )}
     </div>

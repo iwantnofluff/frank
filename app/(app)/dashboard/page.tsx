@@ -2,13 +2,12 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useClients } from "@/hooks/use-clients";
 import { useMyAgency } from "@/hooks/use-my-agency";
 import { useAgencyCreativeStats } from "@/hooks/use-agency-creative-stats";
 import { useClientListStats } from "@/hooks/use-client-list-stats";
 import { useIsStaff } from "@/hooks/use-is-staff";
-import { ExpandIcon, SearchIcon } from "@/components/app-shell/icons";
+import { SearchIcon } from "@/components/app-shell/icons";
 import { ClientModal } from "@/components/clients/ClientModal";
 import { useAvatarUrls } from "@/hooks/use-avatar-urls";
 import { errorMessage } from "@/lib/errors";
@@ -22,7 +21,7 @@ type Filter = "active" | "archived";
 // client workspace's own project table's override, so the "..." button
 // lands in an identically-sized, identically-positioned slot on both
 // screens — see PROJECT_ROW_COLUMNS there.
-const CLIENT_ROW_COLUMNS = "1fr 96px 128px 92px 70px";
+const CLIENT_ROW_COLUMNS = "1fr 96px 128px 92px";
 
 function clientInitials(name: string) {
   return name
@@ -59,7 +58,6 @@ export default function DashboardPage() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("active");
   const [newClientOpen, setNewClientOpen] = useState(false);
-  const router = useRouter();
   // Fails closed like every other isStaff gate in this app: hidden while
   // still resolving, not shown by default.
   const confirmedStaff = isStaff && !isStaffPending;
@@ -191,7 +189,6 @@ export default function DashboardPage() {
             <div className="ago">Projects</div>
             <div className="ago">Status</div>
             <div className="ago">Last Activity</div>
-            <div></div>
           </div>
           {filtered.map((c) => (
             <Link
@@ -232,24 +229,6 @@ export default function DashboardPage() {
               </div>
               <div className="ago">
                 {clientStatsPending ? "…" : formatDate(clientListStats?.[c.id]?.lastActivityAt ?? null)}
-              </div>
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                {confirmedStaff && (
-                  <button
-                    type="button"
-                    className="vdots"
-                    title="Open Client Settings"
-                    aria-label={`Open ${c.name}'s settings`}
-                    onClick={(e) => {
-                      // A button, not a link: the row is a link already.
-                      e.preventDefault();
-                      e.stopPropagation();
-                      router.push(`/clients/${c.id}/settings`);
-                    }}
-                  >
-                    <ExpandIcon />
-                  </button>
-                )}
               </div>
             </Link>
           ))}

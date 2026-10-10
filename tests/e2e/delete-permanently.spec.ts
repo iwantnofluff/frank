@@ -84,14 +84,17 @@ test("an Owner deletes an archived project from its profile window", async ({ pa
   await setRole(frank, "owner");
   await admin.from("projects").update({ archived_at: new Date().toISOString() }).eq("id", frank.projectId);
   await frank.loginAsStaff(page);
-  await page.goto(`${APP_URL}/clients/${frank.clientId}`);
-  await page.getByRole("button", { name: /Archived/ }).click();
-  await page.getByRole("button", { name: "Open E2E Test Project's profile" }).click();
+  // From the project's own page (direct instruction), archived as it is.
+  await page.goto(`${APP_URL}/projects/${frank.projectId}`);
+  await page.getByRole("button", { name: "Project options" }).click();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "Delete Permanently" }).click();
   const dialog = page.getByRole("dialog", { name: "Delete E2E Test Project for good?" });
   await dialog.getByLabel("Name to confirm").fill("E2E Test Project");
   await dialog.getByRole("button", { name: "Delete Permanently" }).click();
   await expect(dialog).toHaveCount(0);
+  // Its page is gone with it: back to the client's.
+  await page.waitForURL(`**/clients/${frank.clientId}`);
   expect((await admin.from("projects").select("id").eq("id", frank.projectId)).data).toHaveLength(0);
   expect((await admin.from("clients").select("id").eq("id", frank.clientId)).data).toHaveLength(1);
   expect(await fileExists(art.path)).toBe(false);

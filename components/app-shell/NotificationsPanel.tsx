@@ -102,7 +102,7 @@ export function NotificationsPanel({
         ))}
         {items.map((n) => {
           const post = n.creative;
-          const client = post?.project?.client?.name ?? "";
+          const client = post?.project?.client?.name ?? n.mention?.project.client ?? "";
           return (
             <button
               key={n.id}
@@ -118,7 +118,13 @@ export function NotificationsPanel({
               </span>
               <span>
                 <span className="nt">
-                  {n.kind === "client_comment" ? (
+                  {n.kind === "discussion_mention" ? (
+                    <>
+                      <b>{n.mention?.who ?? "Someone"}</b> mentioned you in <b>{n.mention?.project.name ?? "a project"}</b>
+                      {client ? ` · ${client}` : ""}
+                      {n.mention?.body && <span className="nq">“{n.mention.body}”</span>}
+                    </>
+                  ) : n.kind === "client_comment" ? (
                     <>
                       <b>{n.comment?.who ?? "The client"}</b> commented on <b>{post?.name ?? "a post"}</b>
                       {client ? ` · ${client}` : ""}

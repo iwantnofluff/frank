@@ -6,7 +6,6 @@ import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
 import { usePersonActions } from "@/components/team/PersonActions";
 import { useUpdateProject } from "@/hooks/use-update-project";
-import { ProjectAvatar } from "@/components/project/ProjectAvatar";
 import { useClientPeople, useSetProjectAccess } from "@/hooks/use-project-access";
 import { useAvatarUrls } from "@/hooks/use-avatar-urls";
 import type { ProjectListRow } from "@/hooks/use-projects";
@@ -17,6 +16,8 @@ import { initials } from "@/lib/initials";
 import { errorMessage } from "@/lib/errors";
 import { DeletePermanentlyDialog } from "@/components/ui/DeletePermanentlyDialog";
 import { useMyMembership } from "@/hooks/use-my-membership";
+import { useProjectTeam } from "@/hooks/use-project-discussion";
+import { useProjectRoles, useSetProjectRole } from "@/hooks/use-project-roles";
 
 const DELIVERY_LABELS = {
   scheduled: "Content Planner",
@@ -48,6 +49,7 @@ export function ProjectProfileModal({
   onMoveToClient,
   onArchive,
   onClose,
+  onDeleted = onClose,
 }: {
   project: ProjectListRow;
   clientId: string;
@@ -61,6 +63,8 @@ export function ProjectProfileModal({
   onMoveToClient: () => void;
   onArchive: () => void;
   onClose: () => void;
+  // Gone for good: by default, just closed.
+  onDeleted?: () => void;
 }) {
   const updateProject = useUpdateProject();
   // Owners and the Primary Owner delete an archived project for good (phase74).
@@ -96,21 +100,9 @@ export function ProjectProfileModal({
     <>
     <Modal
       hideCloseButton
-      // Client, then project, as the review page reads, after the project's
-      // picture (phase56): Owners and Admins pick its emoticon from it here
-      // as well as on the row (direct instruction).
-      title={
-        <span className="proftitle">
-          <ProjectAvatar
-            name={project.name}
-            colour={project.accent_colour}
-            icon={project.icon}
-            canPick={isAdmin}
-            onPick={(icon) => updateProject.mutate({ projectId: project.id, clientId, icon })}
-          />
-          {`${clientName} - ${project.name}`}
-        </span>
-      }
+      // Client, then project, as the review page reads. Projects have no
+      // picture now, just their name (direct instruction).
+      title={`${clientName} - ${project.name}`}
       ariaLabel={`${clientName} - ${project.name}`}
       size="lg"
       onClose={onClose}
@@ -254,6 +246,7 @@ export function ProjectProfileModal({
             clientName={clientName}
             canManage={isAdmin}
           />
+          <ProjectRoles projectId={project.id} canManage={isAdmin} />
         </div>
       </div>
     </Modal>
@@ -263,7 +256,7 @@ export function ProjectProfileModal({
         id={project.id}
         name={project.name}
         onClose={() => setDeleting(false)}
-        onDeleted={onClose}
+        onDeleted={onDeleted}
       />
     )}
     </>
@@ -382,6 +375,58 @@ function ProjectPeople({
             )}
           </>
         ))}
+    </>
+  );
+}
+
+// Each person's role on the project (phase85, direct instruction): Lead,
+// Content, Designer… Blank shows nothing; filled in, it shows in brackets
+// after their name in the table's Team column. The whole team is listed,
+// Owners and Admins too, as they lead posts. Saved as each box is left.
+function ProjectRoles({ projectId, canManage }: { projectId: string; canManage: boolean }) {
+  const { data: team, isPending, error } = useProjectTeam(projectId, true);
+  const { data: roles } = useProjectRoles(projectId);
+  const setRole = useSetProjectRole(projectId);
+  return (
+    <>
+      <div className="msection-h">Roles</div>
+      <p className="msection-d">
+        {canManage
+          ? "What each person does on this project, shown after their name in the Team column. Leave blank for none."
+          : "What each person does on this project. Owners and Admins set them."}
+      </p>
+      {isPending ? (
+        <p className="msection-d">Frank is working…</p>
+      ) : error ? (
+        <p className="autherr">{errorMessage(error, "Couldn't load the project's team")}</p>
+      ) : (
+        <div className="profroles">
+          {(team ?? []).map((m) => (
+            <label className="profrole" key={m.user_id}>
+              <span>{m.name}</span>
+              <input
+                className="bin one"
+                // Keyed by the saved role, so a save elsewhere shows here.
+                key={roles?.[m.user_id] ?? ""}
+                defaultValue={roles?.[m.user_id] ?? ""}
+                placeholder="Role, e.g. Designer"
+                maxLength={40}
+                disabled={!canManage}
+                aria-label={`${m.name}'s role`}
+                onBlur={(e) => {
+                  const value = e.target.value.trim();
+                  if (value !== (roles?.[m.user_id] ?? "")) setRole.mutate({ userId: m.user_id, role: value });
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") e.currentTarget.blur();
+                }}
+              />
+            </label>
+          ))}
+        </div>
+      )}
+      {setRole.isSuccess && !setRole.isPending && <p className="msection-d" role="status">Saved.</p>}
+      {setRole.error && <p className="autherr">{errorMessage(setRole.error, "Couldn't save the role")}</p>}
     </>
   );
 }

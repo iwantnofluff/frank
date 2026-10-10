@@ -4,6 +4,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { usePresence } from "@/hooks/use-presence";
 import { useViewportFit } from "@/hooks/use-viewport-fit";
 import { useRouter } from "next/navigation";
+import { useProjectRoles } from "@/hooks/use-project-roles";
 import type { CreativeListRow } from "@/hooks/use-creatives";
 import type { CustomColumnRow } from "@/hooks/use-custom-columns";
 import { useArchiveCreatives } from "@/hooks/use-archive-creatives";
@@ -86,7 +87,9 @@ const TOGGLABLE_COLUMNS = [
   { key: "tg", label: "TG", sub: "Target audience", width: 130 },
   { key: "type", label: "Format", sub: "Where it goes out", width: 150 },
   { key: "slides", label: "Slides", sub: "Carousels", width: 74 },
-  { key: "lead", label: "Lead", sub: "POC in Team", width: 112 },
+  // Renamed Team and 20% wider (direct instruction), for a role after the
+  // name.
+  { key: "lead", label: "Team", sub: "Person and role", width: 134 },
   { key: "status", label: "Status", sub: "Workflow state", width: 156 },
   { key: "conceptRef", label: "Concept and Reference", sub: "Visual brief", width: 260 },
   { key: "finalCreative", label: "Final Creative", sub: "Approved asset", width: 200 },
@@ -195,6 +198,8 @@ export function ContinuousCalendarTable({
     onCreated: (d) => draftRow?.onCreated(d),
   });
   const router = useRouter();
+  // Each person's role here, after their name in the Team column (phase85).
+  const { data: roles } = useProjectRoles(projectId);
   const today = useMemo(() => new Date(), []);
   const [anchor, setAnchor] = useState(() => (initialFocusDate ? new Date(initialFocusDate) : today));
   const [viewMode, setViewMode] = useState<ViewMode>("month");
@@ -1038,6 +1043,9 @@ export function ContinuousCalendarTable({
                                         {c.lead.name.slice(0, 1).toUpperCase()}
                                       </i>
                                       {c.lead.name}
+                                      {c.lead_user_id && roles?.[c.lead_user_id] && (
+                                        <span className="lead-role">({roles[c.lead_user_id]})</span>
+                                      )}
                                     </span>
                                   ) : (
                                     <span className="tdim">—</span>
@@ -1047,7 +1055,7 @@ export function ContinuousCalendarTable({
                             case "status":
                               return (
                                 <td key={key}>
-                                  <span className="stg" style={{ background: `${color}1A`, color }}>
+                                  <span className="stg" style={{ background: color }}>
                                     {c.exception ? (
                                       exceptionLabel(c.exception)
                                     ) : (

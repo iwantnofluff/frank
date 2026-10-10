@@ -106,8 +106,10 @@ test("an Owner takes a User off a project from its profile, and the User no long
 
   await setStaffRole(frank, "owner");
   await frank.loginAsStaff(page);
-  await page.goto(`${APP_URL}/clients/${frank.clientId}`);
-  await page.getByRole("button", { name: "Open E2E Test Project's profile" }).click();
+  // The profile opens from the project's own page (the row's arrow went).
+  await page.goto(`${APP_URL}/projects/${frank.projectId}`);
+  await page.getByRole("button", { name: "Project options" }).click();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   const modal = page.getByRole("dialog", { name: "E2E Test Project" });
   await expect(modal.locator(".profperson", { hasText: "Proj User" })).toBeVisible();
   await page.screenshot({ path: `${process.env.SHOT_DIR ?? "test-results"}/project-profile.png` });
@@ -132,7 +134,9 @@ test("an Owner takes a User off a project from its profile, and the User no long
     await expect(up.locator(".crow", { hasText: "E2E Continuous Project" })).toBeVisible();
     await expect(up.locator(".crow", { hasText: "E2E Test Project" })).toHaveCount(0);
     // A User sees a profile read-only (phase47): no fields, no Save, no people.
-    await up.getByRole("button", { name: /^Open E2E Continuous Project/ }).click();
+    await up.goto(`${APP_URL}/projects/${second}`);
+    await up.getByRole("button", { name: "Project options" }).click();
+    await up.getByRole("button", { name: "Settings", exact: true }).click();
     const theirs = up.getByRole("dialog", { name: /E2E Continuous Project/ });
     await expect(theirs).toContainText("Owners and Admins change these.");
     await expect(theirs.locator(".profdl")).toContainText("Other Content");

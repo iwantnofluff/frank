@@ -33,7 +33,7 @@ test("continuous calendar — the template's columns, named as in the New Post w
   // 15 toggleable + the frozen Live Date column = 16.
   await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 16/16");
   for (const label of [
-    "Live Date", "Post Name", "Destination", "Funnel", "TG", "Format", "Slides", "Lead", "Status",
+    "Live Date", "Post Name", "Destination", "Funnel", "TG", "Format", "Slides", "Team", "Status",
     "Concept and Reference", "Final Creative", "Text on Image", "Copy", "Notes for Designer", "WIIFM Direction",
     "Principles",
   ]) {

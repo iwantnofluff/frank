@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { test, expect, APP_URL } from "./fixtures";
-import { monthSection, monthSource, sectionSource, sourceHash } from "../../lib/strategy-overview";
+import { monthSection, monthSource, overviewHash, sectionSource } from "../../lib/strategy-overview";
 const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
 // A client's page shows the brand at a glance (direct instruction): Tone of
 // Voice, Target Audience and Prioritised Features from its Knowledge, cut
@@ -45,11 +45,11 @@ test("a client's projects sort by latest activity, name, when added or deadline"
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(APP_URL + "/clients/" + frank.clientId);
   await expect(page.locator(".crow", { hasText: "Zulu New" })).toBeVisible({ timeout: 20_000 });
-  // Each row's name is its second line (after the avatar's initials).
+  // Each row's name is its first line (projects have no pictures now).
   const expectOrder = async (label: string, names: string[]) => {
     await page.getByLabel("Sort projects").selectOption({ label });
     await expect
-      .poll(async () => (await page.locator(".crow:not(.head)").allInnerTexts()).map((t) => t.split("\n")[1]))
+      .poll(async () => (await page.locator(".crow:not(.head)").allInnerTexts()).map((t) => t.split("\n")[0]))
       .toEqual(names);
   };
   // The fixture's project has a post, so it's the latest; then newest made.
@@ -135,10 +135,10 @@ test("the boxes show their overviews, and only a changed one is asked for again"
   const tone = sectionSource([{ kind: "text", title: "Voice", body: "Warm and plain." }]);
   const ms = monthSource(strategy);
   await admin.from("client_strategy_overviews").insert([
-    { client_id: frank.clientId, section: "tone", overview: "Overview of the voice, up to date.", source_hash: sourceHash(tone) },
+    { client_id: frank.clientId, section: "tone", overview: "Overview of the voice, up to date.\n\nA second paragraph about it.", source_hash: overviewHash(tone) },
     // Written before the audience last changed.
     { client_id: frank.clientId, section: "audience", overview: "An older overview of the audience.", source_hash: "00000000" },
-    { client_id: frank.clientId, section: monthSection(month), overview: "Overview of this month, up to date.", source_hash: sourceHash(ms) },
+    { client_id: frank.clientId, section: monthSection(month), overview: "Overview of this month, up to date.", source_hash: overviewHash(ms) },
   ]);
 
   const asked: string[] = [];
@@ -153,6 +153,15 @@ test("the boxes show their overviews, and only a changed one is asked for again"
   await expect(page.locator(".stats")).toHaveCount(0);
   await expect(page.locator(".brandrem-box", { hasText: "Tone of Voice" })).toContainText("Overview of the voice, up to date.", { timeout: 20_000 });
   await expect(page.locator(".brandrem-box").nth(3)).toContainText("Overview of this month, up to date.");
+  // Named for its month, here only (direct instruction).
+  await expect(page.locator(".brandrem-box").nth(3).locator(".brandrem-h b").first()).toHaveText(/^[A-Z][a-z]{2} \d{4} Strategy$/);
+  await expect(page.getByRole("heading", { name: "Strategy Overview" })).toBeVisible();
+  // In its paragraphs, and in full on hover.
+  const toneBox = page.locator(".brandrem-box", { hasText: "Tone of Voice" });
+  await expect(toneBox.locator(".brandrem-ov").first().locator("p")).toHaveText(["Overview of the voice, up to date.", "A second paragraph about it."]);
+  await expect(toneBox.locator(".brandrem-full")).toHaveCSS("opacity", "0");
+  await toneBox.hover();
+  await expect(toneBox.locator(".brandrem-full")).toHaveCSS("opacity", "1");
   // The out-of-date one stays up while Frank is asked for a new one.
   await expect(page.locator(".brandrem-box", { hasText: "Target Audience" })).toContainText("An older overview of the audience.");
   await expect.poll(() => asked).toEqual(["audience"]);

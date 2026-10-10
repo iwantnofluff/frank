@@ -170,7 +170,7 @@ test("project calendar — matches the real content-planner template's default c
 
   await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 14/14");
   for (const label of [
-    "Week", "Publish Date", "Day", "Time", "Status", "Format", "Slides", "Lead",
+    "Week", "Publish Date", "Day", "Time", "Status", "Format", "Slides", "Team",
     "Post Name", "Concept and Reference", "Text on Image", "Copy", "WIIFM Direction", "Client Feedback",
   ]) {
     // Anchored at the start: a th's text is always {label}{sub} with no

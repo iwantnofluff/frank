@@ -12,16 +12,20 @@
 export type Exception = "changes_requested" | "rejected";
 export type Band = "internal" | "review" | "approved" | Exception;
 
-const STAGE_TABLE: { label: string; band: Band; color: string }[] = [
-  { label: "Concept", band: "internal", color: "#6B7280" }, // 1
-  { label: "Internal Review", band: "internal", color: "#6B7280" }, // 2
-  { label: "Client review", band: "review", color: "#007BFF" }, // 3
-  { label: "Approved", band: "approved", color: "#2BB65B" }, // 4
+// In Frank's own colours (direct instruction): the logo's three bars, top
+// to bottom. `color` fills bars, dots and squares; `ink` is for words,
+// darker, as the logo's orange is too light to read on white. Kept in step
+// with the --stage-* colours in app/globals.css.
+const STAGE_TABLE: { label: string; band: Band; color: string; ink: string }[] = [
+  { label: "Concept", band: "internal", color: "#E35336", ink: "#B8371E" }, // 1
+  { label: "Internal Review", band: "internal", color: "#F4A460", ink: "#A3570F" }, // 2
+  { label: "Client Review", band: "review", color: "#F4A460", ink: "#A3570F" }, // 3
+  { label: "Approved", band: "approved", color: "#4CAF50", ink: "#2E7D32" }, // 4
 ];
 
-const EXCEPTION_TABLE: Record<Exception, { label: string; color: string }> = {
-  changes_requested: { label: "Changes Requested", color: "#FF8A00" },
-  rejected: { label: "Rejected", color: "#FF0000" },
+const EXCEPTION_TABLE: Record<Exception, { label: string; color: string; ink: string }> = {
+  changes_requested: { label: "Changes Requested", color: "#FF8A00", ink: "#B35F00" },
+  rejected: { label: "Rejected", color: "#FF0000", ink: "#C40000" },
 };
 
 // `delivery` no longer changes anything — every remaining stage reads the
@@ -52,6 +56,12 @@ export function bandOf(stage: number, exception: Exception | null): Band {
 export function stageColor(stage: number, exception: Exception | null): string {
   if (exception) return EXCEPTION_TABLE[exception].color;
   return (STAGE_TABLE[stage - 1] ?? STAGE_TABLE[0]).color;
+}
+
+// The same, for words (a Status pill's label).
+export function stageInk(stage: number, exception: Exception | null): string {
+  if (exception) return EXCEPTION_TABLE[exception].ink;
+  return (STAGE_TABLE[stage - 1] ?? STAGE_TABLE[0]).ink;
 }
 
 export function exceptionLabel(exception: Exception): string {

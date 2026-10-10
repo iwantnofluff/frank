@@ -6,9 +6,9 @@ import {
   monthSection,
   monthSource,
   monthWhat,
+  overviewHash,
   overviewPrompt,
   sectionSource,
-  sourceHash,
   type OverviewSection,
 } from "@/lib/strategy-overview";
 
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ overview: null });
   }
 
-  const hash = sourceHash(source);
+  const hash = overviewHash(source);
   const { data: existing } = await supabase
     .from("client_strategy_overviews")
     .select("overview, source_hash")

@@ -168,7 +168,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       },
       {
         kind: "note",
-        text: "A project's type is fixed once it's made, so choose with care. Owners and Admins can give a project a picture by clicking its tile on the client's projects list.",
+        text: "A project's type is fixed once it's made, so choose with care.",
       },
     ],
   },
@@ -180,12 +180,12 @@ export const HELP_ARTICLES: HelpArticle[] = [
     blocks: [
       {
         kind: "p",
-        text: "Open a client's Settings from the left rail while you're in a client (it carries the client's name, Casa Carigar Settings, say), or from the expand icon on the client's row in your clients list.",
+        text: "Open a client's Settings from the left rail while you're in a client: it carries the client's name, Casa Carigar Settings, say. A project's own settings (its name, details, people, folder, archiving) open from the “…” menu at the top of the project's page, under Settings.",
       },
       {
         kind: "list",
         items: [
-          "Profile → About: the name, logo, industry and description, and archiving. Once a client is archived, the Primary Owner and Owners can delete it for good, with everything in it, by typing its name; an archived project can be deleted the same way from its profile.",
+          "Profile → About: the name, logo, industry and description, and archiving. Once a client is archived, the Primary Owner and Owners can delete it for good, with everything in it, by typing its name; an archived project can be deleted the same way from its Settings, in the “…” menu on its page.",
           "Profile → People: who's on this client and which of its projects each person works on, and inviting someone new.",
           "Profile → Preferences: how long Approved artwork is kept (7, 14, 21 or 28 days) and what happens to Approved posts with no live date; whether the client can approve and whether a review link's Feed shows the project's other posts; and what a new review link starts with. Owners and Admins change them; each saves as it's picked. Notifications: whether the team hears in Frank's bell and by email when the client comments or approves, and who hears: the post's lead (everyone on the client when a post has no lead), everyone on the client, or Owners and Admins.",
           "Knowledge → Discovery: what Frank knows about the client, used when copy is drafted and checked.",
@@ -221,11 +221,11 @@ export const HELP_ARTICLES: HelpArticle[] = [
       },
       {
         kind: "p",
-        text: "Its Tone of Voice, Target Audience and Prioritised Features also show on the client's page, under Strategy, with this month's strategy beside them, so the brand is in front of you before you start. See All opens that area here.",
+        text: "Its Tone of Voice, Target Audience and Prioritised Features also show on the client's page, under Strategy Overview, with this month's strategy beside them, so the brand is in front of you before you start. See All opens that area here.",
       },
       {
         kind: "p",
-        text: "Each of those boxes is a short overview Frank writes from everything in it, as a snapshot. When something in it changes, Frank rewrites that box the next time someone on the team opens the client; until then the last one stays up. Each rewrite counts toward your workspace's monthly AI limit, and if the limit is reached a box shows its first entry instead. Frank reads notes in full, and links and files by their names only.",
+        text: "Each of those boxes is a short overview Frank writes from everything in it, in a few paragraphs, as a snapshot. A longer one fades at the foot of its box; hover over it to read it in full. When something in it changes, Frank rewrites that box the next time someone on the team opens the client; until then the last one stays up. Each rewrite counts toward your workspace's monthly AI limit, and if the limit is reached a box shows its first entry instead. Frank reads notes in full, and links and files by their names only.",
       },
       { kind: "h", text: "Add to an area" },
       {
@@ -289,7 +289,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         kind: "list",
         items: [
           "Post Name, and every Format it goes out as. A carousel asks how many slides it has.",
-          "Publish Date and Time, and a Lead from your team.",
+          "Publish Date and Time, and a Lead from your team. The table shows them in its Team column, with their role on the project in brackets if one's set in the project's Settings (Lead, Content, Designer…).",
           "The Concept, and any References, each of which opens when clicked in the table.",
         ],
       },
@@ -428,6 +428,30 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         kind: "note",
         text: "Each message uses one of your workspace's monthly AI requests. Conversations stay with the post for your team.",
+      },
+    ],
+  },
+  {
+    id: "project-activity-discussion",
+    title: "A project's Activity Log and Discussion",
+    category: "team",
+    summary: "What's happened in a project, and a place for the team to talk about it.",
+    blocks: [
+      {
+        kind: "p",
+        text: "The “…” menu at the top of a project's page has its Activity Log, its Discussion and its Settings. Only your team sees them, never the client.",
+      },
+      {
+        kind: "p",
+        text: "Settings also has Roles: what each person on the team does on this project. Owners and Admins fill them in; each shows after the person's name in the table's Team column, and a blank one shows nothing.",
+      },
+      {
+        kind: "p",
+        text: "The Activity Log lists what happened, newest first, with who did it and when: posts added, edited, moved between stages, approved, archived or deleted; artwork and copy versions; comments; review links shared; and changes to the project and who's on it. Click a post's name to open it.",
+      },
+      {
+        kind: "p",
+        text: "Discussion is for the team to talk about the project. Start a thread, or reply under one. Type @ to mention someone on the project's team: they get a notice in their bell that opens the Discussion. You can edit or delete your own messages, and new ones appear for everyone as they're posted.",
       },
     ],
   },

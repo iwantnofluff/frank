@@ -381,6 +381,10 @@ export const test = base.extend<{ frank: Frank }>({
       ["shared_links", () => admin.from("shared_links").delete().eq("agency_id", agency.id)],
       // phase60: notifications about its posts (cascade with them anyway).
       ["notifications", () => admin.from("notifications").delete().eq("agency_id", agency.id)],
+      // phase84: a project's Discussion (before users: its author has no
+      // cascade) and its log.
+      ["project_discussion", () => admin.from("project_discussion").delete().eq("agency_id", agency.id)],
+      ["project_activity", () => admin.from("project_activity").delete().eq("agency_id", agency.id)],
       ["comments", () => admin.from("comments").delete().eq("agency_id", agency.id)],
       ["copy_versions", () => admin.from("copy_versions").delete().eq("agency_id", agency.id)],
       ["creative_version_slides", () => admin.from("creative_version_slides").delete().eq("agency_id", agency.id)],

@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useProject } from "@/hooks/use-project";
 import { useLiveUpdates } from "@/hooks/use-live-updates";
 import { useProjectPresence } from "@/hooks/use-project-presence";
@@ -14,6 +15,9 @@ import { errorMessage } from "@/lib/errors";
 import { CreativeModal } from "@/components/creative-review/CreativeModal";
 import { ProjectCalendarTable } from "@/components/project/ProjectCalendarTable";
 import { ContinuousCalendarTable } from "@/components/project/ContinuousCalendarTable";
+import { ProjectSettings } from "@/components/project/ProjectSettings";
+import { ProjectPanel, type ProjectPanelView } from "@/components/project/ProjectPanel";
+import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
 
 type ArchiveFilter = "active" | "archived";
 
@@ -50,6 +54,23 @@ export default function ProjectPage({
     : null;
   const [calendarFocusDate, setCalendarFocusDate] = useState<string | null>(null);
   const [archiveFilter, setArchiveFilter] = useState<ArchiveFilter>("active");
+  // The project's profile (rename, details, people, folder, client,
+  // archive, delete), from its "…" menu now its row's arrow on the client's
+  // page has gone (direct instruction).
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  // Its Activity Log or Discussion, in a panel from the right (phase84).
+  // A mention in the bell opens it on the Discussion (?panel=discussion).
+  const asked = useSearchParams().get("panel");
+  const wanted = asked === "discussion" || asked === "activity" ? asked : null;
+  const [panel, setPanel] = useState<ProjectPanelView | null>(wanted);
+  // Asked again while already here (another mention): opened then too.
+  const [lastAsked, setLastAsked] = useState(asked);
+  if (asked !== lastAsked) {
+    setLastAsked(asked);
+    if (wanted) setPanel(wanted);
+  }
+  const [movedNotice, setMovedNotice] = useState<string | null>(null);
+  const router = useRouter();
 
   const isLoading = projectLoading || creativesLoading;
   const columns = customColumns ?? [];
@@ -129,6 +150,19 @@ export default function ProjectPage({
               </button>
             </div>
           )}
+          {/* The project's own menu (direct instruction, after monday.com's
+              board options): its Activity Log, Discussion and Settings.
+              The team only. */}
+          {confirmedStaff && project && (
+            <RowActionsMenu
+              title="Project options"
+              items={[
+                { label: "Activity Log", onClick: () => setPanel("activity") },
+                { label: "Discussion", onClick: () => setPanel("discussion") },
+                { label: "Settings", onClick: () => setSettingsOpen(true) },
+              ]}
+            />
+          )}
           {confirmedStaff && showNewBrief && <span className="toolsep" />}
           {showNewBrief && project && (
             <SplitButton
@@ -150,6 +184,12 @@ export default function ProjectPage({
           )}
         </div>
       </div>
+
+      {movedNotice && (
+        <p className="sub" role="status" style={{ margin: "0 0 4px" }}>
+          {movedNotice}
+        </p>
+      )}
 
       {isError && (
         <div className="empty">
@@ -209,6 +249,21 @@ export default function ProjectPage({
           isStaff={confirmedStaff}
           initialFocusDate={calendarFocusDate}
           draftRow={draftRow}
+        />
+      )}
+
+      <ProjectPanel projectId={id} projectName={project?.name ?? "Project"} view={panel} onClose={() => setPanel(null)} />
+
+      {settingsOpen && project && (
+        <ProjectSettings
+          projectId={id}
+          clientId={project.client_id}
+          onClose={() => setSettingsOpen(false)}
+          onDeleted={() => router.push(`/clients/${project.client_id}`)}
+          onMoved={(notice) => {
+            setSettingsOpen(false);
+            setMovedNotice(notice);
+          }}
         />
       )}
 
