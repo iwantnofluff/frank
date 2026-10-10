@@ -105,9 +105,17 @@ export default function ProjectPage({
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
         <div>
           <h1 className="h1">
-            {project && project.delivery === "scheduled"
-              ? `${project.clients?.name ?? "—"} — ${project.name}`
-              : (project?.name ?? "Project")}
+            {/* The client, a thin vertical rule, then the project (direct
+                instruction). Screen readers hear a dash between them. */}
+            {project && project.delivery === "scheduled" ? (
+              <>
+                {project.clients?.name ?? "—"}
+                <span className="h1sep"> — </span>
+                {project.name}
+              </>
+            ) : (
+              (project?.name ?? "Project")
+            )}
           </h1>
           {(!project || project.delivery !== "scheduled") && (
             <p className="sub">

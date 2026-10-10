@@ -775,6 +775,19 @@ body.lightrail .search input::placeholder {
   font-weight: 600;
   letter-spacing: -0.1px;
 }
+/* Between the client and the project in a project's title: a thin
+   vertical rule (direct instruction). Its dash stays in the text, at no
+   size, so it's still read out and copied. */
+.h1sep {
+  display: inline-block;
+  width: 0;
+  height: 21px;
+  margin: 0 14px;
+  border-left: 1.5px solid var(--line-2);
+  vertical-align: -2px;
+  font-size: 0;
+  overflow: hidden;
+}
 .sub {
   color: var(--muted);
   font-size: 14.2px;

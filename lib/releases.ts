@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.17.2",
+    date: "2026-10-10",
+    title: "A line in a project's title",
+    changes: [
+      "A project's title has a thin line between the client's name and the project's, in place of the dash.",
+    ],
+  },
+  {
     version: "1.17.1",
     date: "2026-10-10",
     title: "Stage pills everywhere, and a tidier table",
