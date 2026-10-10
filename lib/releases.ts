@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.15.0",
+    date: "2026-10-10",
+    title: "Strategy at a glance",
+    changes: [
+      "Each Strategy box on a client's page is now a short overview Frank writes from everything in it, so you get the whole picture in a few seconds.",
+      "Frank rewrites a box when what's in it changes, the next time someone on the team opens the client.",
+      "The stage counts at the top of a client's page have made way for taller Strategy boxes; each project's row still counts its posts by stage.",
+    ],
+  },
+  {
     version: "1.14.1",
     date: "2026-10-10",
     title: "Smoother left rail",

@@ -8952,10 +8952,11 @@ button.hbrand-add:hover {
   font-size: 14.2px;
 }
 
-/* A client's page (direct instruction): the brand at a glance, three
-   boxes from the client's Knowledge (components/clients/BrandReminder.tsx),
+/* A client's page (direct instruction): the brand at a glance, four
+   boxes from the client's Knowledge and strategy (components/clients/BrandReminder.tsx),
    and the projects' order in place of a search. */
 .brandrem {
+  margin-top: 24px;
   margin-bottom: 26px;
 }
 .brandrem-grid {
@@ -8976,6 +8977,9 @@ button.hbrand-add:hover {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  /* Taller, now the stage counts above have gone (direct instruction),
+     for the whole overview. */
+  min-height: 210px;
 }
 .brandrem-h {
   display: flex;
@@ -9012,6 +9016,19 @@ button.hbrand-add:hover {
   -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+/* A box's overview (phase83): Frank's snapshot of everything in it, in
+   full. */
+.brandrem-ov p {
+  margin: 0;
+  font-size: 13.2px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.brandrem-ov p.brandrem-also {
+  margin-top: 8px;
+  font-size: 12.2px;
+  color: var(--muted);
 }
 .brandrem-first p.brandrem-kind,
 .brandrem-empty {

@@ -223,6 +223,10 @@ export const HELP_ARTICLES: HelpArticle[] = [
         kind: "p",
         text: "Its Tone of Voice, Target Audience and Prioritised Features also show on the client's page, under Strategy, with this month's strategy beside them, so the brand is in front of you before you start. See All opens that area here.",
       },
+      {
+        kind: "p",
+        text: "Each of those boxes is a short overview Frank writes from everything in it, as a snapshot. When something in it changes, Frank rewrites that box the next time someone on the team opens the client; until then the last one stays up. Each rewrite counts toward your workspace's monthly AI limit, and if the limit is reached a box shows its first entry instead. Frank reads notes in full, and links and files by their names only.",
+      },
       { kind: "h", text: "Add to an area" },
       {
         kind: "list",

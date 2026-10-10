@@ -209,25 +209,6 @@ export default function ClientWorkspacePage({
     );
   }
 
-  // Same three stage buckets the table's own Concept/Internal Review/
-  // Client Review columns show per project (byStage[0..2]), just summed
-  // across every active project instead — real, schema-backed counts,
-  // not an approximation like the "Campaigns" stat this replaced.
-  const conceptCount = useMemo(() => {
-    if (!projectStats) return 0;
-    return Object.values(projectStats).reduce((n, s) => n + s.byStage[0], 0);
-  }, [projectStats]);
-
-  const internalReviewCount = useMemo(() => {
-    if (!projectStats) return 0;
-    return Object.values(projectStats).reduce((n, s) => n + s.byStage[1], 0);
-  }, [projectStats]);
-
-  const clientReviewCount = useMemo(() => {
-    if (!projectStats) return 0;
-    return Object.values(projectStats).reduce((n, s) => n + s.byStage[2], 0);
-  }, [projectStats]);
-
   if (clientError) {
     return (
       <div className="pad">
@@ -250,26 +231,9 @@ export default function ClientWorkspacePage({
             : "Pick a project to open its calendar."}
       </p>
 
-      <div className="stats">
-        <div className="stat">
-          <div className="n">{activeProjects.length}</div>
-          <div className="l">Live Projects</div>
-        </div>
-        <div className="stat">
-          <div className="n">{statsPending ? "…" : conceptCount}</div>
-          <div className="l">Concepts</div>
-        </div>
-        <div className="stat">
-          <div className="n">{statsPending ? "…" : internalReviewCount}</div>
-          <div className="l">Internal Review</div>
-        </div>
-        <div className="stat">
-          <div className="n">{statsPending ? "…" : clientReviewCount}</div>
-          <div className="l">Client Review</div>
-        </div>
-      </div>
-
-      {/* The brand at a glance, before the work (direct instruction). */}
+      {/* The brand at a glance, before the work (direct instruction); the
+          stage counts that sat above it went for it (direct instruction),
+          each project's own row still counts its posts by stage. */}
       <BrandReminder clientId={id} canEdit={isStaff && !isStaffPending} />
 
       <div className="secthead">

@@ -411,6 +411,7 @@ export const test = base.extend<{ frank: Frank }>({
       // same reason format_directions/custom_columns run before agencies.
       ["knowledge_entries", () => admin.from("knowledge_entries").delete().eq("agency_id", agency.id)],
       ["client_monthly_strategies", () => admin.from("client_monthly_strategies").delete().eq("agency_id", agency.id)],
+      ["client_strategy_overviews", () => admin.from("client_strategy_overviews").delete().eq("agency_id", agency.id)],
       // Both cascade from memberships anyway; swept explicitly so a failure
       // names the table instead of surfacing as a memberships FK error.
       ["invites", () => admin.from("invites").delete().eq("agency_id", agency.id)],
