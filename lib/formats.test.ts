@@ -2,7 +2,7 @@
 // (or `npm run test:unit`).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { FORMATS, FORMAT_CATEGORIES, formatById, formatsByCategory, postFormats, formatsLabel, copyFieldsFor, copySummary } from "./formats.ts";
+import { FORMATS, FORMAT_CATEGORIES, formatById, formatsByCategory, postFormats, formatsLabel, copyFieldsFor, copySummary, VIDEO_FORMAT_IDS, hasVideoFormat } from "./formats.ts";
 
 test("FORMATS has exactly 41 entries, matching the prototype's catalog", () => {
   assert.equal(FORMATS.length, 41);
@@ -52,4 +52,12 @@ test("copySummary: a caption alone reads plainly; other fields are labelled, in 
   assert.equal(copySummary({ alt: "A bottle", caption: "Hello" }, ["ig_feed"]), "Caption: Hello\nAlt Text: A bottle");
   assert.equal(copySummary({ hook: "Wait", headline: "Not this format" }, ["ig_reel"]), "On-screen Hook: Wait");
   assert.equal(copySummary({}, ["ig_feed"]), "");
+});
+
+test("a post has a VO when any of its formats is video (phase88)", () => {
+  for (const id of VIDEO_FORMAT_IDS) assert.ok(formatById(id), `${id} is a real format`);
+  assert.equal(hasVideoFormat(["ig_reel"]), true);
+  assert.equal(hasVideoFormat(["ig_feed", "yt_short"]), true);
+  assert.equal(hasVideoFormat(["ig_feed", "ig_carousel"]), false);
+  assert.equal(hasVideoFormat([]), false);
 });

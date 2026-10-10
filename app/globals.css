@@ -5734,41 +5734,10 @@ button.avatar {
   color: var(--muted);
 }
 /* Quick-add draft row (New Post → Row) — ported from frank-prototype.html
-   (.editbar, .eb-t, tr.draft, .ecell), values as-is. */
-.editbar {
-  position: fixed;
-  right: 22px;
-  bottom: 22px;
-  z-index: 70;
-  display: none;
-  align-items: center;
-  gap: 9px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: var(--ink);
-  box-shadow: 0 12px 34px rgba(20, 22, 26, 0.3);
-}
-.editbar.on {
-  display: flex;
-}
-.eb-t {
-  font-size: 12.7px;
-  font-weight: 500;
-  color: #fff;
-  margin-right: 2px;
-}
-.editbar .btn {
-  border-color: rgba(255, 255, 255, 0.25);
-  background: transparent;
-  color: #fff;
-}
-.editbar .btn:hover {
-  background: rgba(255, 255, 255, 0.14);
-}
-.editbar .btn.primary {
-  background: #fff;
-  color: var(--ink);
-  border-color: transparent;
+   (tr.draft, .ecell), values as-is. Its bar is the selection bar's
+   (DraftEditBar), with what's missing beside "1 added". */
+.selectionbar .sb-note {
+  color: var(--rose);
 }
 .tbl tr.draft td {
   background: #fffdf5;
@@ -5791,6 +5760,15 @@ button.avatar {
 }
 .ecell.one {
   resize: none;
+}
+/* The draft row's date and time fit their snug columns (Publish Date 99,
+   Time 84): tighter, and no picker icon; a click anywhere opens it. */
+.ecell.when {
+  padding: 5px 4px;
+  cursor: pointer;
+}
+.ecell.when::-webkit-calendar-picker-indicator {
+  display: none;
 }
 /* Carousel slides in the Edit window (CarouselSlots): one slot per slide,
    in the format's own shape. */

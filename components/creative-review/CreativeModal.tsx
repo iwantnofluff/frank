@@ -10,6 +10,7 @@ import { useCopyVersions, type CopyVersionRow } from "@/hooks/use-copy-versions"
 import { useCreativeVersions, versionSlides, type CreativeVersionRow } from "@/hooks/use-creative-versions";
 import { useCreateCreative } from "@/hooks/use-create-creative";
 import { SlideTextChangedError, useSaveSlideText } from "@/hooks/use-save-slide-text";
+import { VoiceoverChangedError, useSaveVoiceover } from "@/hooks/use-save-voiceover";
 import { useUpdateCreativeCx } from "@/hooks/use-update-creative-cx";
 import { FUNNEL_COLUMN } from "@/components/project/ContinuousCalendarTable";
 import { PostChangedError, useUpdateBrief, type BriefFields } from "@/hooks/use-update-brief";
@@ -45,6 +46,7 @@ import {
   aspectRatioCss,
   CAROUSEL_MIN_SLIDES,
   COPY_FIELD_LABELS,
+  hasVideoFormat,
 } from "@/lib/formats";
 import { slideFields, tidySlideText } from "@/lib/slide-text";
 import { ListEditor } from "@/components/ui/ListEditor";
@@ -55,6 +57,7 @@ import {
   isSlideField,
   slideTextAsFields,
   slideTextFields,
+  VO_FIELD,
   type CopyChatField as CopyFieldSpec,
 } from "@/lib/ai/copy-chat";
 import { buildCheckPrompt, parseCheckFindings, type CheckFinding } from "@/lib/ai/build-check-prompt";
@@ -488,6 +491,11 @@ export function CreativeModal(props: CreativeModalProps) {
   const initialSlideText = isCreate ? [] : (props.creative.slide_text ?? []);
   const [slideText, setSlideText] = useState<string[]>(initialSlideText);
   const [savedSlideText, setSavedSlideText] = useState<string[]>(tidySlideText(initialSlideText));
+  // A video post's VO script (phase88): on the post, with its own Save,
+  // as Text on Image is.
+  const initialVoiceover = isCreate ? "" : (props.creative.voiceover ?? "");
+  const [voiceover, setVoiceover] = useState(initialVoiceover);
+  const [savedVoiceover, setSavedVoiceover] = useState(initialVoiceover.trim());
   const [cx, setCx] = useState<Record<string, string | number | boolean | null>>({});
   // Continuous projects' Funnel and Notes for Designer (direct instruction:
   // in the window as well as the table, both optional). Saved to the same
@@ -835,6 +843,18 @@ export function CreativeModal(props: CreativeModalProps) {
       // Shown via saveSlideText.error below.
     }
   }
+  const saveVoiceover = useSaveVoiceover(creativeId ?? "", projectId);
+  const [voSaveNote, setVoSaveNote] = useState<string | null>(null);
+  async function handleSaveVoiceover() {
+    setVoSaveNote(null);
+    try {
+      await saveVoiceover.mutateAsync({ voiceover, known: savedVoiceover });
+      setSavedVoiceover(voiceover.trim());
+      setVoSaveNote("Saved.");
+    } catch {
+      // Shown via saveVoiceover.error below.
+    }
+  }
   const refreshWiifmNote = useRefreshWiifmNote(creativeId ?? "");
 
   // Same "not available in create mode" shape as copyVersions/creativeVersions
@@ -920,6 +940,8 @@ export function CreativeModal(props: CreativeModalProps) {
   // Text on Image, saved on its own (not a version).
   const draftSlideText = tidySlideText(slideFields(slideText, slideCount));
   const pendingSlideChange = JSON.stringify(draftSlideText) !== JSON.stringify(savedSlideText);
+  const isVideo = hasVideoFormat(formats);
+  const pendingVoChange = isVideo && voiceover.trim() !== savedVoiceover;
   const pendingCreativeChange = carouselPending;
 
   // What Check WIIFM/Check Brand actually check — the fields as they
@@ -1078,10 +1100,12 @@ export function CreativeModal(props: CreativeModalProps) {
             <button
               type="button"
               className="btn primary"
-              disabled={uploadSaving || !creativeId || pendingCopyChange || pendingCreativeChange || pendingSlideChange}
+              disabled={
+                uploadSaving || !creativeId || pendingCopyChange || pendingCreativeChange || pendingSlideChange || pendingVoChange
+              }
               title={
-                pendingCopyChange || pendingCreativeChange || pendingSlideChange
-                  ? "Save the copy, Text on Image or creative changes above first"
+                pendingCopyChange || pendingCreativeChange || pendingSlideChange || pendingVoChange
+                  ? "Save the copy, VO, Text on Image or creative changes above first"
                   : undefined
               }
               onClick={handleSaveUpload}
@@ -1423,6 +1447,67 @@ export function CreativeModal(props: CreativeModalProps) {
           )}
           {artworkError && !uploadCarousel.isPending && <p className="autherr">{artworkError}</p>}
 
+          {/* A video's VO script (phase88, direct instruction): its own
+              section after the Creative, laid out as Text on Image below
+              it, saved on the post with its own Save. */}
+          {isVideo && (
+            <>
+              <div className="msection-h">VO</div>
+              <p className="msection-d">The voiceover script, the words spoken over the video.</p>
+              <div className="field">
+                <label htmlFor="nbVo">Script</label>
+                <textarea
+                  id="nbVo"
+                  className="bin"
+                  rows={5}
+                  aria-label="VO"
+                  maxLength={5000}
+                  placeholder="Write the voiceover script…"
+                  value={voiceover}
+                  onChange={(e) => {
+                    setVoiceover(e.target.value);
+                    setVoSaveNote(null);
+                  }}
+                />
+              </div>
+              <div className="field">
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <button
+                    type="button"
+                    className="btn sm primary"
+                    disabled={!creativeId || !pendingVoChange || saveVoiceover.isPending}
+                    onClick={handleSaveVoiceover}
+                  >
+                    {saveVoiceover.isPending ? "Saving…" : "Save VO"}
+                  </button>
+                  {voSaveNote && !pendingVoChange && <span className="bsaved">{voSaveNote}</span>}
+                </div>
+                {saveVoiceover.error instanceof VoiceoverChangedError ? (
+                  // Someone else's VO arrived meanwhile.
+                  <p className="autherr">
+                    {saveVoiceover.error.message}{" "}
+                    <button
+                      type="button"
+                      className="linkbtn"
+                      onClick={() => {
+                        const theirs = (saveVoiceover.error as VoiceoverChangedError).theirs;
+                        setVoiceover(theirs);
+                        setSavedVoiceover(theirs);
+                        saveVoiceover.reset();
+                      }}
+                    >
+                      Show Theirs
+                    </button>
+                  </p>
+                ) : (
+                  saveVoiceover.error && (
+                    <p className="autherr">{errorMessage(saveVoiceover.error, "Couldn't save the VO")}</p>
+                  )
+                )}
+              </div>
+            </>
+          )}
+
           {/* Its own section after the artwork (direct instruction), saved
               on the post, not as a version (phase57). */}
           <div className="msection-h">Text on Image</div>
@@ -1759,12 +1844,23 @@ export function CreativeModal(props: CreativeModalProps) {
     {chatOpen && creativeId && (
       <CopyChat
         creativeId={creativeId}
-        fields={[...copyFieldSpecs, ...slideTextFields(slideCount)]}
-        currentFields={{ ...draftFields, ...slideTextAsFields(slideFields(slideText, slideCount)) }}
+        fields={[...copyFieldSpecs, ...(isVideo ? [VO_FIELD] : []), ...slideTextFields(slideCount)]}
+        currentFields={{
+          ...draftFields,
+          ...(isVideo ? { [VO_FIELD.key]: voiceover } : {}),
+          ...slideTextAsFields(slideFields(slideText, slideCount)),
+        }}
         onUse={(fields) => {
-          // The caption fields into the copy, the slides into Text on Image.
-          const copy = Object.fromEntries(Object.entries(fields).filter(([key]) => !isSlideField(key)));
+          // The caption fields into the copy, the VO into the VO, the
+          // slides into Text on Image.
+          const copy = Object.fromEntries(
+            Object.entries(fields).filter(([key]) => !isSlideField(key) && key !== VO_FIELD.key),
+          );
           setDraftFields((prev) => ({ ...prev, ...copy }));
+          if (VO_FIELD.key in fields) {
+            setVoiceover(fields[VO_FIELD.key]);
+            setVoSaveNote(null);
+          }
           setSlideText((prev) => applySlideDraft(slideFields(prev, slideCount), fields));
           setCopySaveNote(null);
         }}

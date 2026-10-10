@@ -7,11 +7,14 @@ import {
   openingMessage,
   parseCopyChatReply,
   slideTextFields,
+  VO_FIELD,
   type CopyChatMode,
   type CopyChatTurn,
 } from "@/lib/ai/copy-chat";
 import { monthOf, strategyForPrompt, type StrategyFields } from "@/lib/monthly-strategy";
-import { COPY_FIELD_LABELS, copyFieldsFor, formatsLabel, postFormats } from "@/lib/formats";
+import { COPY_FIELD_LABELS, copyFieldsFor, formatsLabel, hasVideoFormat, postFormats } from "@/lib/formats";
+import { FEEDBACK_DAYS, pickClientFeedback, pickOtherPosts, type PostRow } from "@/lib/ai/copy-chat-context";
+import { ISSUE_CATEGORIES } from "@/lib/ai/build-classify-comment-prompt";
 
 const fail = (error: string, status: number) => NextResponse.json({ error }, { status });
 
@@ -74,9 +77,12 @@ export async function POST(request: Request) {
   if (!membership || membership.client_id !== null) return fail("Staff access required", 403);
 
   const formats = postFormats(creative as { format: string; formats: string[] | null });
-  // The formats' copy fields, then the Text on Image (one per slide).
+  // The formats' copy fields, a video's VO, then the Text on Image (one
+  // per slide).
   const fields = [
     ...copyFieldsFor(formats).map((key) => ({ key, label: COPY_FIELD_LABELS[key] ?? key })),
+    // A video post's VO (phase88).
+    ...(hasVideoFormat(formats) ? [VO_FIELD] : []),
     ...slideTextFields((creative.slide_count as number | null) ?? null),
   ];
 
@@ -122,6 +128,12 @@ export async function POST(request: Request) {
           .maybeSingle()
       : Promise.resolve({ data: null }),
   ]);
+  // The client's other posts, for their voice, and what the client has
+  // asked for in the last 90 days (direct instruction).
+  const { otherPosts, clientFeedback } = clientId
+    ? await clientContext(supabase, clientId, creative.id as string)
+    : { otherPosts: [], clientFeedback: [] };
+
   const direction = formats
     .map((id) => {
       const text = (directions.data ?? []).find((d) => d.format_id === id)?.direction_text as string | null | undefined;
@@ -185,6 +197,8 @@ export async function POST(request: Request) {
       clientNotes: textNotes(clientKnowledge.data as Row[] | null),
       fileTitles: attachments.map((a) => a.title),
       strategy: strategyForPrompt(strategyMonth, strategy.data as Partial<StrategyFields> | null),
+      otherPosts,
+      clientFeedback,
       fields,
     },
     [...history, { role: "user", body: message }],
@@ -219,4 +233,68 @@ export async function POST(request: Request) {
   if (saveError) return fail(`Frank answered, but the conversation couldn't be kept: ${saveError.message}`, 500);
 
   return NextResponse.json({ chatId, messages: saved, skippedFiles: skipped });
+}
+
+// Read through the person's own session, so it's only ever what they can
+// see. Posts: the client's newest 40, of which the picker keeps 8 with
+// words. Feedback: public comments on any of the client's posts in the
+// last 90 days, of which the picker keeps the client's own.
+async function clientContext(supabase: Awaited<ReturnType<typeof createClient>>, clientId: string, creativeId: string) {
+  const since = new Date(Date.now() - FEEDBACK_DAYS * 86_400_000).toISOString();
+  const [projects, people, comments] = await Promise.all([
+    supabase.from("projects").select("id").eq("client_id", clientId),
+    supabase.from("memberships").select("user_id").eq("client_id", clientId),
+    supabase
+      .from("comments")
+      .select("body, created_at, author_id, guest_name, issue_category, creative:creatives!inner(name, project:projects!inner(client_id))")
+      .eq("creative.project.client_id", clientId)
+      .is("deleted_at", null)
+      .eq("visibility", "public")
+      .gte("created_at", since)
+      .order("created_at", { ascending: false })
+      .limit(100),
+  ]);
+  const projectIds = (projects.data ?? []).map((p) => p.id as string);
+  const { data: posts } = projectIds.length
+    ? await supabase
+        .from("creatives")
+        .select("id, name, stage, format, formats, voiceover, slide_text, updated_at")
+        .in("project_id", projectIds)
+        .is("archived_at", null)
+        .neq("id", creativeId)
+        .order("updated_at", { ascending: false })
+        .limit(40)
+    : { data: [] as Row[] };
+  const postIds = (posts ?? []).map((p) => p.id as string);
+  const { data: copies } = postIds.length
+    ? await supabase.from("copy_versions").select("creative_id, created_at, fields").in("creative_id", postIds)
+    : { data: [] as Row[] };
+
+  const otherPosts = pickOtherPosts(
+    (posts ?? []).map((p) => ({
+      id: p.id as string,
+      name: p.name as string,
+      stage: p.stage as number,
+      formatLabel: formatsLabel(postFormats(p as { format: string; formats: string[] | null })),
+      updated_at: p.updated_at as string,
+      voiceover: (p.voiceover as string | null) ?? null,
+      slide_text: (p.slide_text as string[] | null) ?? null,
+    })) satisfies PostRow[],
+    (copies ?? []) as { creative_id: string; created_at: string; fields: Record<string, unknown> | null }[],
+    COPY_FIELD_LABELS,
+  );
+  const clientFeedback = pickClientFeedback(
+    (comments.data ?? []).map((c) => ({
+      body: c.body as string,
+      created_at: c.created_at as string,
+      author_id: (c.author_id as string | null) ?? null,
+      guest_name: (c.guest_name as string | null) ?? null,
+      issue_category: (c.issue_category as string | null) ?? null,
+      post: ((c.creative as unknown as { name: string } | null)?.name ?? "a post") as string,
+    })),
+    new Set((people.data ?? []).map((m) => m.user_id as string)),
+    Object.fromEntries(ISSUE_CATEGORIES.map((c) => [c.key, c.label])),
+    new Date(),
+  );
+  return { otherPosts, clientFeedback };
 }

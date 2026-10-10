@@ -298,6 +298,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         kind: "list",
         items: [
           "Creative: one slot per slide, or one for a single image or video, up to 300MB a file. A file dropped in isn't added until you press Save Creative V1 (then V2 and so on); closing first asks if you're sure.",
+          "VO, for a video post (a Reel, Story, YouTube or other video format): the voiceover script, after the artwork, saved with Save VO. Like Text on Image, it stays with the post rather than becoming a version, and only your team sees it.",
           "Text on Image: the words on each slide, saved with Save Text on Image. It stays with the post rather than becoming a version.",
           "Copy: the caption and anything else the formats need. Save Copy V1, then V2 and so on.",
         ],
@@ -414,12 +415,12 @@ export const HELP_ARTICLES: HelpArticle[] = [
     blocks: [
       {
         kind: "p",
-        text: "In a post's Content tab, choose Draft with Frank under the Caption. Frank reads the brief, the WIIFM, each format's direction, and your workspace's and the client's Knowledge, files included.",
+        text: "In a post's Content tab, choose Draft with Frank under the Caption. Frank reads the brief, the WIIFM, each format's direction, and your workspace's and the client's Knowledge, files included. It also reads up to 8 of the client's other posts (Approved ones first) to keep to their voice without repeating them, and what the client has asked for in their comments over the last 90 days, which it follows; if that clashes with the Knowledge, Frank says so.",
       },
       {
         kind: "list",
         items: [
-          "Draft from the Concept: Frank offers a few drafts of the caption, the other copy fields and the Text on Image.",
+          "Draft from the Concept: Frank offers a few drafts of the caption, the other copy fields, the VO for a video post, and the Text on Image.",
           "Review My Draft: Frank says what works in what you've written and how to improve it.",
           "Ask for changes in your own words: shorter, warmer, a different hook.",
           "Each part of a draft has its own Use This: the Caption, the Alt Text and the Text on Image each go into the editor on their own, and the button says Added. Press Added again to take it back out (the editor goes back to what it had), or Use This on another draft's to swap it in. Nothing is saved until you save it.",

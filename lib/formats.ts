@@ -104,6 +104,24 @@ export const FORMATS: FormatDefinition[] = [
   { id: "general", category: "General", label: "Other Creative", aspectRatio: "—", copyFields: ["notes"] },
 ];
 
+// Formats that go out as video, so a post in any of them has a VO
+// (voiceover) script (phase88, direct instruction: video formats only).
+export const VIDEO_FORMAT_IDS = new Set([
+  "ig_reel",
+  "ig_story",
+  "fb_story",
+  "li_video",
+  "yt_video",
+  "yt_short",
+  "wa_status",
+  "meta_story",
+  "yt_preroll",
+]);
+
+export function hasVideoFormat(ids: string[]): boolean {
+  return ids.some((id) => VIDEO_FORMAT_IDS.has(id));
+}
+
 export function formatById(id: string): FormatDefinition | undefined {
   return FORMATS.find((f) => f.id === id);
 }

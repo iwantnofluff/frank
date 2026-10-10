@@ -27,7 +27,9 @@ test("a Content Planner post can be added straight into the table", async ({ pag
 
   await openRow(page);
   const bar = page.getByRole("region", { name: "New post row" });
-  await expect(bar).toContainText("New post in E2E Test Project");
+  // The selection bar's look, above the table (direct instruction).
+  await expect(bar).toHaveClass(/selectionbar/);
+  await expect(bar).toContainText("1 added");
   await bar.getByRole("button", { name: "Save" }).click();
   await expect(bar).toContainText("Give the post a name");
 

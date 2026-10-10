@@ -10,6 +10,7 @@ import {
   parseCopyChatReply,
   slideTextAsFields,
   slideTextFields,
+  VO_FIELD,
   type CopyChatContext,
 } from "./copy-chat.ts";
 
@@ -107,4 +108,15 @@ test("slide drafts come back through the reply, and the prompt explains them", (
   const prompt = buildCopyChatPrompt({ ...context, fields }, [{ role: "user", body: "Draft" }], {});
   assert.match(prompt, /Text on Image is the words set on the artwork itself/);
   assert.match(prompt, /"slide_2" \(Text on Image, Slide 2\)/);
+});
+
+test("a video post's VO is its own field, explained in the prompt and kept from the reply", () => {
+  const fields = [{ key: "caption", label: "Caption" }, VO_FIELD];
+  const reply = parseCopyChatReply('Here.\n```json\n{"drafts":[{"label":"A","fields":{"caption":"Hi","voiceover":"Say this."}}]}\n```', fields);
+  assert.deepEqual(reply.drafts[0].fields, { caption: "Hi", voiceover: "Say this." });
+  const prompt = buildCopyChatPrompt({ ...context, fields }, [{ role: "user", body: "Draft" }], {});
+  assert.match(prompt, /VO is the voiceover script, spoken over the video/);
+  assert.match(prompt, /"voiceover" \(VO\)/);
+  // Without it, nothing about VO.
+  assert.doesNotMatch(buildCopyChatPrompt(context, [{ role: "user", body: "Draft" }], {}), /voiceover/);
 });

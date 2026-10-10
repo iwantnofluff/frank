@@ -91,7 +91,7 @@ test("project calendar — Columns picker hides and reshows a column", async ({ 
   await page.waitForSelector(".colpop");
   await page.click('.cpr:has-text("Concept")');
   await expect(page.locator("th", { hasText: "Concept" })).toHaveCount(0);
-  await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 13/14");
+  await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 14/15");
 
   await page.click('button:has-text("Columns")');
   await page.click('.cpr:has-text("Concept")');
@@ -171,10 +171,10 @@ test("project calendar — matches the real content-planner template's default c
   await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
-  await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 14/14");
+  await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 15/15");
   for (const label of [
     "Week", "Publish Date", "Day", "Time", "Status", "Format", "Slides", "Team",
-    "Post Name", "Concept and Reference", "Text on Image", "Copy", "WIIFM Direction", "Client Feedback",
+    "Post Name", "Concept and Reference", "VO", "Text on Image", "Copy", "WIIFM Direction", "Client Feedback",
   ]) {
     // Anchored at the start: a th's text is always {label}{sub} with no
     // separator, and hasText's substring match is case-insensitive, so an

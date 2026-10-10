@@ -152,8 +152,9 @@ export function CopyChat({
             Review My Draft
           </button>
           <p className="cchat-note">
-            Frank reads the brief, the WIIFM, each format&rsquo;s direction, and your workspace&rsquo;s and this
-            client&rsquo;s knowledge, files included.
+            Frank reads the brief, the WIIFM, each format&rsquo;s direction, your workspace&rsquo;s and this
+            client&rsquo;s knowledge, the client&rsquo;s other posts for their voice, and what the client has asked
+            for in the last 90 days.
           </p>
           {!!chats?.length && (
             <>

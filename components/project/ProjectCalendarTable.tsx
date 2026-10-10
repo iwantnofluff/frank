@@ -91,6 +91,8 @@ const TOGGLABLE_COLUMNS = [
   // One column each, not three (1/2/3) — the cell shows the latest
   // copy_versions row; older ones show on hover instead of their own
   // columns (CopyVersionHistoryPopover), per explicit direction.
+  // A video post's VO script (phase88), before its Text on Image.
+  { key: "voiceover", label: "VO", sub: "Voiceover script", width: 220 },
   { key: "imageOnText", label: "Text on Image", sub: "Check WIIFM Approach", width: 220 },
   { key: "postCopy", label: "Copy", sub: "Check WIIFM Approach", width: 330 },
   { key: "approach", label: "WIIFM Direction", sub: "Explain the WIIFM Approach", width: 472 },
@@ -114,6 +116,15 @@ function timeOf(dt: Date) {
 function resolveOrder(order: string[], allKeys: string[]): string[] {
   const known = new Set(allKeys);
   const resolved = order.filter((k) => known.has(k));
+  // A built-in column a saved order doesn't know yet (VO, phase88) goes
+  // where it sits by default, after the column before it; custom columns
+  // still go at the end.
+  for (const k of DEFAULT_COLUMN_ORDER as readonly string[]) {
+    if (!known.has(k) || resolved.includes(k)) continue;
+    const at = (DEFAULT_COLUMN_ORDER as readonly string[]).indexOf(k);
+    const before = (DEFAULT_COLUMN_ORDER as readonly string[]).slice(0, at).reverse().find((p) => resolved.includes(p));
+    resolved.splice(before ? resolved.indexOf(before) + 1 : 0, 0, k);
+  }
   const missing = allKeys.filter((k) => !resolved.includes(k));
   return [...resolved, ...missing];
 }
@@ -511,15 +522,17 @@ export function ProjectCalendarTable({
     setSelected(allVisibleSelected ? new Set() : new Set(allVisibleIds));
   }
 
+  // VO is the team's (phase88, direct instruction: not shown to clients).
+  const shownColumns = TOGGLABLE_COLUMNS.filter((c) => isStaff || c.key !== "voiceover");
   const toggleableColumns: ToggleableColumn[] = [
-    ...TOGGLABLE_COLUMNS,
+    ...shownColumns,
     ...customColumns.map((c) => ({ key: `cx:${c.id}`, label: c.label, sub: "" })),
   ];
   // One lookup for every reorderable/hideable column's static shape (label,
   // sub, default width), keyed the same way the picker/order/widths state
   // already keys them — custom columns use their `cx:{id}` key throughout.
   const allColumnDefs: Record<string, { label: string; sub: string; width: number }> = {};
-  for (const c of TOGGLABLE_COLUMNS) allColumnDefs[c.key] = { label: c.label, sub: c.sub, width: c.width };
+  for (const c of shownColumns) allColumnDefs[c.key] = { label: c.label, sub: c.sub, width: c.width };
   for (const c of customColumns) {
     allColumnDefs[`cx:${c.id}`] = { label: c.label, sub: "", width: CUSTOM_COLUMN_WIDTH };
   }
@@ -841,7 +854,6 @@ export function ProjectCalendarTable({
 
       {draftRow && (
         <DraftEditBar
-          label={`New post in ${projectName}`}
           blocked={
             visibleOrderedKeys.includes("creative")
               ? null
@@ -1112,6 +1124,23 @@ export function ProjectCalendarTable({
                                   )}
                                 </td>
                               );
+                            case "voiceover": {
+                              // A video post's VO script (phase88), on the post itself.
+                              const vo = c.voiceover?.trim();
+                              return (
+                                <td key={key} className="cellw">
+                                  {vo ? (
+                                    <span className="copyc">
+                                      <ClampText expanded={expandedRow === c.id} onToggle={() => toggleRow(c.id)}>
+                                        {vo}
+                                      </ClampText>
+                                    </span>
+                                  ) : (
+                                    <span className="tdim">—</span>
+                                  )}
+                                </td>
+                              );
+                            }
                             case "imageOnText": {
                               // On the post itself (phase57), not versioned.
                               const lines = (c.slide_text ?? []).filter((t) => t.trim());

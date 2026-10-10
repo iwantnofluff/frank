@@ -13,6 +13,19 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.18.0",
+    date: "2026-10-10",
+    title: "A VO for video posts, and Frank knows the client better",
+    changes: [
+      "A video post (Reels, Stories, YouTube and other video formats) has a VO section after its Creative, for the voiceover script, with its own Save VO.",
+      "The project table has a VO column, before Text on Image; only your team sees it.",
+      "Draft with Frank writes a VO for a video post too, with its own Use This.",
+      "Draft with Frank reads the client's other posts, Approved ones first, to keep to their voice, and follows what the client has asked for in comments over the last 90 days.",
+      "Adding a row to the table shows a bar above it, like the one for selected posts: “1 added”, with Cancel and Save.",
+      "The new row's date and time fit their columns again; click anywhere in them to pick.",
+    ],
+  },
+  {
     version: "1.17.5",
     date: "2026-10-10",
     title: "Deleted messages go",

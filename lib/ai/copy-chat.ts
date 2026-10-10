@@ -22,6 +22,55 @@ export interface CopyChatContext {
   // The client's strategy for the month the post goes live (phase78),
   // ready to read; absent when nothing's been decided for it.
   strategy?: string | null;
+  // The client's other posts, for their voice (direct instruction): the
+  // latest copy of up to 8, Approved first.
+  otherPosts?: OtherPost[];
+  // What the client has asked for on their posts lately (direct
+  // instruction): real corrections from the last 90 days, newest first.
+  clientFeedback?: ClientFeedback[];
+}
+
+export interface OtherPost {
+  name: string;
+  approved: boolean;
+  formatLabel: string;
+  // Each copy field, already labelled ("Caption", "VO"…).
+  copy: { label: string; text: string }[];
+}
+
+export interface ClientFeedback {
+  post: string;
+  body: string;
+  // Its sort (Tone and Brand, Copy Clarity…), when it's been sorted.
+  category: string | null;
+}
+
+// Long pieces cut short, so a few big posts or comments can't swamp the
+// prompt.
+const clip = (text: string, max: number) => {
+  const t = text.replace(/\s+/g, " ").trim();
+  return t.length > max ? `${t.slice(0, max - 1)}…` : t;
+};
+
+function otherPostsBlock(posts: OtherPost[] | undefined): string | null {
+  if (!posts?.length) return null;
+  return [
+    "This client's other posts, for their voice. Match their tone and the way they speak to the reader; never reuse their hooks, lines or phrases, and don't copy their structure. Approved ones are the voice the client has signed off.",
+    ...posts.map(
+      (p) =>
+        `- "${p.name}" (${p.approved ? "Approved" : "not approved yet"}, ${p.formatLabel}): ${p.copy
+          .map((c) => `${c.label}: ${clip(c.text, 400)}`)
+          .join(" | ")}`,
+    ),
+  ].join("\n");
+}
+
+function feedbackBlock(feedback: ClientFeedback[] | undefined): string | null {
+  if (!feedback?.length) return null;
+  return [
+    "What the client has asked for on their posts in the last 90 days, newest first. Treat it as standing direction for this post too. If any of it conflicts with the knowledge above, point the conflict out in your reply so your colleague can decide.",
+    ...feedback.map((f) => `- On "${f.post}"${f.category ? ` (${f.category})` : ""}: ${clip(f.body, 300)}`),
+  ].join("\n");
 }
 
 export interface CopyChatTurn {
@@ -35,6 +84,9 @@ export interface CopyDraft {
 }
 
 export type CopyChatMode = "draft" | "review";
+
+// A video post's VO script (phase88) as a chat field, after the copy.
+export const VO_FIELD: CopyChatField = { key: "voiceover", label: "VO" };
 
 // Text on Image as chat fields (direct instruction): one per slide for a
 // carousel, one otherwise, alongside the formats' own copy fields.
@@ -118,9 +170,14 @@ export function buildCopyChatPromptParts(
     context.strategy ?? null,
     notes("Workspace knowledge", context.agencyNotes),
     notes("Client knowledge", context.clientNotes),
+    feedbackBlock(context.clientFeedback),
+    otherPostsBlock(context.otherPosts),
     context.fileTitles.length ? `Attached knowledge files: ${context.fileTitles.join(", ")}.` : null,
     context.fields.some((f) => isSlideField(f.key))
       ? "Text on Image is the words set on the artwork itself, separate from the caption: short and easy to read at a glance, never a repeat of the caption. For a carousel, each slide's text moves the story on to the next. Include it in every draft."
+      : null,
+    context.fields.some((f) => f.key === VO_FIELD.key)
+      ? "VO is the voiceover script, spoken over the video: written to be heard, in short natural sentences, paced to the video's length, and never a repeat of the caption or the Text on Image. Include it in every draft."
       : null,
     context.formatLabel.includes(" + ")
       ? `This post goes out as ${context.formatLabel}, and they share one set of fields: write one version of each field that works for all of them. Never split a field by platform ("IG: … LinkedIn: …").`

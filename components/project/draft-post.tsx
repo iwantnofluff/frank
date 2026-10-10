@@ -96,16 +96,16 @@ export function useDraftPost({
   };
 }
 
-// The prototype's .editbar: fixed bottom-right, naming what's being added.
+// The bar above the table while a row is being added (direct instruction):
+// the selection bar's look, "1 added" with Cancel and Save on the right,
+// in place of the prototype's .editbar fixed at the bottom right.
 export function DraftEditBar({
-  label,
   blocked,
   problem,
   saving,
   onCancel,
   onSave,
 }: {
-  label: string;
   // A required column is hidden, so the row has nowhere to type it.
   blocked: string | null;
   problem: string | null;
@@ -113,9 +113,12 @@ export function DraftEditBar({
   onCancel: () => void;
   onSave: () => void;
 }) {
+  const note = blocked ?? problem;
   return (
-    <div className="editbar on" role="region" aria-label="New post row">
-      <span className="eb-t">{blocked ?? problem ?? label}</span>
+    <div className="selectionbar" role="region" aria-label="New post row">
+      <span>1 added</span>
+      {note && <span className="sb-note">{note}</span>}
+      <div style={{ flex: 1 }} />
       <button type="button" className="btn sm" onClick={onCancel}>
         Cancel
       </button>
@@ -180,20 +183,26 @@ export function DraftField({
       return (
         <input
           type="date"
-          className="ecell one"
+          className="ecell one when"
           aria-label="Date"
           value={values.date}
           onChange={(e) => set("date", e.target.value)}
+          // Its picker opens from anywhere in the box: the icon is hidden to
+          // fit the column's snug width.
+          onClick={(e) => e.currentTarget.showPicker?.()}
         />
       );
     case "time":
       return (
         <input
           type="time"
-          className="ecell one"
+          className="ecell one when"
           aria-label="Time"
           value={values.time}
           onChange={(e) => set("time", e.target.value)}
+          // Its picker opens from anywhere in the box: the icon is hidden to
+          // fit the column's snug width.
+          onClick={(e) => e.currentTarget.showPicker?.()}
         />
       );
     case "destination":
