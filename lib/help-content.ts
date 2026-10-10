@@ -289,7 +289,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         kind: "list",
         items: [
           "Post Name, and every Format it goes out as. A carousel asks how many slides it has.",
-          "Publish Date and Time, and a Lead from your team. The table shows them in its Team column, with their role on the project in brackets if one's set in the project's Settings (Lead, Content, Designer…).",
+          "Publish Date and Time, and its Team: as many people from your team as are working on it, picked one at a time with + Add someone and taken off with the × on their name. The table lists them all in its Team column, one a line, each with their role on the project in brackets if one's set in the project's Settings (Lead, Content, Designer…). If the client has chosen that the post's Team hears about their comments and approvals, everyone on it does.",
           "The Concept, and any References, each of which opens when clicked in the table.",
         ],
       },
@@ -443,7 +443,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       },
       {
         kind: "p",
-        text: "Settings also has Roles: what each person on the team does on this project. Owners and Admins fill them in; each shows after the person's name in the table's Team column, and a blank one shows nothing.",
+        text: "Settings lists everyone on the project under People: Owners and Admins first (they're on every project), then the Users and Clients given it. It also has Roles: what each person on the team does on this project. Owners and Admins fill them in; each shows after the person's name in the table's Team column, and a blank one shows nothing.",
       },
       {
         kind: "p",

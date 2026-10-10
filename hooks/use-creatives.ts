@@ -9,7 +9,10 @@ export interface CreativeListRow {
   format: string;
   stage: number;
   exception: "changes_requested" | "rejected" | null;
+  // The first of team_user_ids, kept by the database (phase87).
   lead_user_id: string | null;
+  // Everyone on the post, in the order picked (phase87).
+  team_user_ids: string[];
   concept: string | null;
   reference_url: string | null;
   // Every reference link, in order (phase58); reference_url is no longer written.
@@ -29,6 +32,7 @@ export interface CreativeListRow {
   cx: Record<string, string | number | boolean | null>;
   archived_at: string | null;
   lead: { name: string } | null;
+  team: { id: string; name: string }[];
 }
 
 export function useCreatives(projectId: string) {
@@ -49,14 +53,16 @@ export function useCreatives(projectId: string) {
       const { data: rows, error } = await supabase
         .from("creatives")
         .select(
-          "id, name, format, stage, exception, lead_user_id, concept, reference_url, reference_urls, slide_count, slide_text, approach_notes, scheduled_at, formats, destination, added_on, due_on, published_at, artwork_removed_at, cx, archived_at",
+          "id, name, format, stage, exception, lead_user_id, team_user_ids, concept, reference_url, reference_urls, slide_count, slide_text, approach_notes, scheduled_at, formats, destination, added_on, due_on, published_at, artwork_removed_at, cx, archived_at",
         )
         .eq("project_id", projectId)
         .order("position");
 
       if (error) throw error;
 
-      const leadIds = [...new Set(rows.map((r) => r.lead_user_id).filter((id): id is string => !!id))];
+      const leadIds = [
+        ...new Set(rows.flatMap((r) => [r.lead_user_id, ...((r.team_user_ids as string[] | null) ?? [])]).filter((id): id is string => !!id)),
+      ];
       let namesById = new Map<string, string>();
       if (leadIds.length > 0) {
         const { data: users, error: usersError } = await supabase
@@ -70,6 +76,7 @@ export function useCreatives(projectId: string) {
       return rows.map((r) => ({
         ...r,
         lead: r.lead_user_id ? { name: namesById.get(r.lead_user_id) ?? "" } : null,
+        team: ((r.team_user_ids as string[] | null) ?? []).map((id) => ({ id, name: namesById.get(id) ?? "" })),
       })) as unknown as CreativeListRow[];
     },
     enabled: !!projectId,

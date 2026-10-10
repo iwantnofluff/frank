@@ -18,6 +18,8 @@ import { DeletePermanentlyDialog } from "@/components/ui/DeletePermanentlyDialog
 import { useMyMembership } from "@/hooks/use-my-membership";
 import { useProjectTeam } from "@/hooks/use-project-discussion";
 import { useProjectRoles, useSetProjectRole } from "@/hooks/use-project-roles";
+import { useTeamMembers } from "@/hooks/use-team-members";
+import { ROLE_LABELS, seesAllClients } from "@/lib/roles";
 
 const DELIVERY_LABELS = {
   scheduled: "Content Planner",
@@ -145,7 +147,9 @@ export function ProjectProfileModal({
         </>
       }
     >
-      <div className="profgrid">
+      {/* Wider, with a line down the middle (direct instruction: it felt
+          cramped). */}
+      <div className="profgrid split">
         <div>
           <div className="msection-h">Details</div>
           <p className="msection-d">
@@ -277,9 +281,16 @@ function ProjectPeople({
   canManage: boolean;
 }) {
   const { data: people, isPending, error } = useClientPeople(clientId, canManage);
+  // Owners and Admins are on every project without being added, so they're
+  // listed too (direct instruction), first, and can't be taken off.
+  const { data: team } = useTeamMembers(agencyId || undefined);
+  const leaders = (team ?? []).filter((m) => seesAllClients(m.role) && m.accepted_at && !m.removed_at && m.user);
   const setAccess = useSetProjectAccess();
   const actions = usePersonActions(agencyId, clientId);
-  const { data: photos } = useAvatarUrls((people ?? []).map((p) => p.avatarAssetId));
+  const { data: photos } = useAvatarUrls([
+    ...(people ?? []).map((p) => p.avatarAssetId),
+    ...leaders.map((m) => m.user!.avatar_asset_id),
+  ]);
   const on = (people ?? []).filter((p) => p.projectIds.includes(projectId));
   const off = (people ?? []).filter((p) => !p.projectIds.includes(projectId));
 
@@ -288,9 +299,30 @@ function ProjectPeople({
       <div className="msection-h">People</div>
       <p className="msection-d">
         {canManage
-          ? "Users and Clients on this project. Owners and Admins see every project. Changes apply straight away."
-          : "Owners and Admins choose who's on this project."}
+          ? "Everyone on this project. Owners and Admins are on every project; add Users and Clients here. Changes apply straight away."
+          : "Everyone on this project. Owners and Admins choose who's on it."}
       </p>
+      {leaders.length > 0 && (
+        <div className="proflist leaders">
+          {leaders.map((m) => (
+            <div className="profperson" key={m.id}>
+              <PersonAvatar
+                className="who"
+                style={{ width: 28, height: 28, fontSize: 11.2, background: avatarColour(m.user!.name) }}
+                initials={initials(m.user!.name, m.user!.email)}
+                photoUrl={m.user!.avatar_asset_id ? photos?.[m.user!.avatar_asset_id] : null}
+                hasPhoto={!!m.user!.avatar_asset_id}
+              />
+              <div className="pp-t">
+                <b>{m.user!.name}</b>
+                <span>{m.user!.email}</span>
+              </div>
+              <span className="tag blue">{ROLE_LABELS[m.role]}</span>
+              <span className="pp-all">Every project</span>
+            </div>
+          ))}
+        </div>
+      )}
       {canManage &&
         (isPending ? (
           <p className="msection-d">Frank is working…</p>
@@ -298,7 +330,7 @@ function ProjectPeople({
           <p className="autherr">{errorMessage(error, "Couldn't load who's on this project")}</p>
         ) : (
           <>
-            {on.length === 0 && <p className="msection-empty">Nobody yet, besides Owners and Admins.</p>}
+            {on.length === 0 && <p className="msection-empty">No Users or Clients yet.</p>}
             <div className="proflist">
               {on.map((p) => (
                 <div className="profperson" key={p.membershipId}>

@@ -13,6 +13,20 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.17.0",
+    date: "2026-10-10",
+    title: "A post's Team, and new colours",
+    changes: [
+      "A post can have several people on its Team, not just one Lead: pick them in the post's window or the table's quick-add row, and the Team column lists them all with their roles.",
+      "When a client's comments and approvals go to the post's Team, everyone on it hears.",
+      "Five new colour presets in Brand Colours: Plum, Dusk, Paper, Harbour and Lagoon. Warm studio, Forest, Ink and Slate have gone; a workspace using one keeps its colours.",
+      "Paper has a light rail, with Frank's logo and the header in dark.",
+      "A project's Settings is wider, with a line between its two halves, and People lists Owners and Admins too.",
+      "The Activity Log and Discussion have the Updates page's look: each day of the log is its own card.",
+      "On a post's page, the stage switch uses the table's Status pills: grey until picked, then in the stage's colour.",
+    ],
+  },
+  {
     version: "1.16.0",
     date: "2026-10-10",
     title: "A project's Activity Log and Discussion",

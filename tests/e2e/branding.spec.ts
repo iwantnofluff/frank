@@ -31,12 +31,12 @@ test("a preset previews live, reverts if not saved, and applies everywhere once 
   test.setTimeout(90_000);
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/settings/customisation/brand-colours`);
-  const forest = page.getByRole("button", { name: "Forest" });
+  const harbour = page.getByRole("button", { name: "Harbour" });
   await expect(page.getByRole("button", { name: "No Fluff" })).toHaveAttribute("aria-pressed", "true");
 
-  await forest.click();
-  await expect(forest).toHaveAttribute("aria-pressed", "true");
-  await waitForVar(page, "--action", "#047857");
+  await harbour.click();
+  await expect(harbour).toHaveAttribute("aria-pressed", "true");
+  await waitForVar(page, "--action", "#1B7F89");
   await expect(page.locator(".unsaved")).toHaveText("Unsaved changes");
 
   // Leaving without saving puts the saved theme back.
@@ -45,28 +45,28 @@ test("a preset previews live, reverts if not saved, and applies everywhere once 
   await waitForVar(page, "--action", "#007BFF");
 
   await page.goto(`${APP_URL}/settings/customisation/brand-colours`);
-  await forest.click();
+  await harbour.click();
   await page.getByRole("button", { name: "Save Changes" }).click();
   await expect(page.getByRole("status")).toHaveText("Saved");
 
   const { data: row } = await admin.from("agency_settings").select("theme").eq("agency_id", frank.agencyId).single();
-  expect(row!.theme).toMatchObject({ action: "#047857", rail: "#0F1B17", hl: "#FFFBF0", private: "#FF5590" });
+  expect(row!.theme).toMatchObject({ action: "#1B7F89", rail: "#144B5C", hl: "#FFFBF0", private: "#FF5590" });
 
   await page.goto(`${APP_URL}/dashboard`);
-  await waitForVar(page, "--action", "#047857");
-  await waitForVar(page, "--rail", "#0F1B17");
+  await waitForVar(page, "--action", "#1B7F89");
+  await waitForVar(page, "--rail", "#144B5C");
 
   const clientContext = await browser.newContext();
   const clientPage = await clientContext.newPage();
   await frank.loginAsClient(clientPage);
-  await waitForVar(clientPage, "--action", "#047857");
+  await waitForVar(clientPage, "--action", "#1B7F89");
   await clientContext.close();
 
   const token = await frank.createSharedLink();
   const guestContext = await browser.newContext({ viewport: PHONE_VIEWPORT });
   const guest = await guestContext.newPage();
   await guest.goto(`${APP_URL}/review/${token}`);
-  await waitForVar(guest, "--action", "#047857");
+  await waitForVar(guest, "--action", "#1B7F89");
   await guestContext.close();
 });
 
@@ -90,9 +90,9 @@ test("hex edits, saved presets and Reset to Default", async ({ page, frank }) =>
   await expect(page.getByRole("button", { name: "No Fluff" })).toHaveAttribute("aria-pressed", "false");
   await page.getByRole("button", { name: "Save current as preset" }).click();
   const dialog = page.getByRole("dialog", { name: "Save Colour Preset" });
-  await dialog.getByLabel("Preset Name").fill("Forest");
+  await dialog.getByLabel("Preset Name").fill("Harbour");
   await dialog.getByRole("button", { name: "Save Preset" }).click();
-  await expect(dialog.locator(".autherr")).toHaveText('"Forest" is a built-in preset — pick another name');
+  await expect(dialog.locator(".autherr")).toHaveText('"Harbour" is a built-in preset — pick another name');
   await dialog.getByLabel("Preset Name").fill("Kabir & Sons");
   await dialog.getByRole("button", { name: "Save Preset" }).click();
   await expect(dialog).toHaveCount(0);
@@ -193,5 +193,5 @@ test("a User can see the agency's look but not change it", async ({ page, frank 
   await page.goto(`${APP_URL}/settings/customisation/brand-colours`);
   await expect(page.getByText("Only Admins, Owners and the Primary Owner can change this.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Save Changes" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Forest" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Harbour" })).toBeDisabled();
 });

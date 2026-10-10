@@ -200,7 +200,7 @@ test("branding: Frank's own look below Growth, the agency's from Growth", async 
   await frank.loginAsStaff(page); // Starter
   await page.goto(`${APP_URL}/settings/customisation/brand-colours`);
   await expect(page.locator(".note")).toContainText("Growth and up");
-  await expect(page.getByRole("button", { name: "Forest" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Harbour" })).toBeDisabled();
   await expect.poll(action).not.toBe("#047857");
   // Review links too.
   const token = await frank.createSharedLink();

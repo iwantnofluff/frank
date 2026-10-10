@@ -25,7 +25,11 @@ export function AppShell({
           rail's top and into the header; it goes to the clients list. */}
       <Link href="/dashboard" className="corner-logo" aria-label="Frank" title="Go to all clients">
         {/* eslint-disable-next-line @next/next/no-img-element -- a static SVG */}
-        <img src={BRAND.headerReversed} alt="" />
+        <img className="logo-rev" src={BRAND.headerReversed} alt="" />
+        {/* On a light rail (the Paper preset, or any light colour), the
+            dark version of the same logo. */}
+        {/* eslint-disable-next-line @next/next/no-img-element -- a static SVG */}
+        <img className="logo-ink" src={BRAND.headerStrapline} alt="" />
       </Link>
       <NavRail />
       <div className="main">

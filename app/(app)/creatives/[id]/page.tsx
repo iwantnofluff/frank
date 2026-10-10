@@ -74,8 +74,10 @@ export default function CreativeReviewPage({
   const { data: teamMembers } = useTeamMembers(creative?.agency_id);
   const isStaff = membership ? membership.client_id === null : false;
   const advanceStage = useAdvanceCreativeStage(id);
-  const leadName =
-    teamMembers?.find((m) => m.user_id === creative?.lead_user_id)?.user?.name ?? null;
+  // Everyone on the post (phase87), in the order picked.
+  const teamNames = (creative?.team_user_ids ?? []).map(
+    (uid) => teamMembers?.find((m) => m.user_id === uid)?.user?.name ?? "Someone",
+  );
   // Independent selections: picking a copy version never touches which
   // artwork version is showing, and vice versa (frank-schema.docx —
   // "Versions are independent").
@@ -331,11 +333,14 @@ export default function CreativeReviewPage({
               <>
                 <span className="toolsep" />
                 <div
+                  // The table's Status pills (direct instruction): grey until
+                  // picked, then solid in the stage's colour.
                   className="stagesw"
                   title="Whether this post is visible through a share link, and whether it's been approved"
                 >
                   <button
                     data-label="Internal Review"
+                    aria-label="Internal Review"
                     type="button"
                     aria-pressed={creative.stage < 3}
                     disabled={advanceStage.isPending}
@@ -343,10 +348,12 @@ export default function CreativeReviewPage({
                       if (creative.stage >= 3) advanceStage.mutate("to_internal");
                     }}
                   >
+                    <span className="no">2.</span>
                     Internal Review
                   </button>
                   <button
                     data-label="Client Review"
+                    aria-label="Client Review"
                     type="button"
                     className="sw-client"
                     aria-pressed={creative.stage === 3}
@@ -355,10 +362,12 @@ export default function CreativeReviewPage({
                       if (creative.stage !== 3) advanceStage.mutate("to_review");
                     }}
                   >
+                    <span className="no">3.</span>
                     Client Review
                   </button>
                   <button
                     data-label="Approved"
+                    aria-label="Approved"
                     type="button"
                     className="sw-approved"
                     aria-pressed={creative.stage === 4}
@@ -367,6 +376,7 @@ export default function CreativeReviewPage({
                       if (creative.stage !== 4) advanceStage.mutate("to_approved");
                     }}
                   >
+                    <span className="no">4.</span>
                     Approved
                   </button>
                 </div>
@@ -425,7 +435,7 @@ export default function CreativeReviewPage({
             {activeSection === "brief" && (
               <BriefPanel
                 creative={creative}
-                leadName={leadName}
+                teamNames={teamNames}
               />
             )}
             {/* Always the post, even before anything's made (direct

@@ -34,10 +34,10 @@ test("the default theme is the No Fluff preset", () => {
 });
 
 test("applying a preset starts from the default, and is then recognised", () => {
-  const t = presetTheme(BUILT_IN_PRESETS.Forest);
-  assert.equal(t.action, "#047857");
+  const t = presetTheme(BUILT_IN_PRESETS.Harbour);
+  assert.equal(t.rail, "#144B5C");
   assert.equal(t.surface, DEFAULT_THEME.surface);
-  assert.equal(matchPreset(t, BUILT_IN_PRESETS), "Forest");
+  assert.equal(matchPreset(t, BUILT_IN_PRESETS), "Harbour");
 });
 
 test("a hand-edited theme matches no preset", () => {
@@ -48,4 +48,10 @@ test("colour objects compare equal regardless of key order", async () => {
   const { sameColours } = await import("./theme.ts");
   assert.equal(sameColours({ a: { x: "#1", y: "#2" } }, { a: { y: "#2", x: "#1" } }), true);
   assert.equal(sameColours({ a: { x: "#1" } }, { a: { x: "#2" } }), false);
+});
+
+test("the presets are No Fluff and the five rails, each a different rail", () => {
+  assert.deepEqual(Object.keys(BUILT_IN_PRESETS), ["No Fluff", "Plum", "Dusk", "Paper", "Harbour", "Lagoon"]);
+  const rails = Object.values(BUILT_IN_PRESETS).map((p) => p.rail);
+  assert.equal(new Set(rails).size, rails.length);
 });

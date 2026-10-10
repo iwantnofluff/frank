@@ -18,7 +18,7 @@ test("staff advances a creative to Client Review, making it visible through a sh
   await page.waitForSelector(".stage-h");
 
   await page.click('.stagesw button:has-text("Client Review")');
-  await expect(page.locator('.stagesw button[aria-pressed="true"]')).toHaveText("Client Review");
+  await expect(page.locator('.stagesw button[aria-pressed="true"]')).toContainText("Client Review");
 
   await page.click('button[title="Share for review"]');
   await page.click('button[role="radio"]:has-text("Current Post")');
@@ -66,7 +66,7 @@ test("Share for review becomes enabled once a creative moves to Client Review", 
   await expect(page.locator('button[title="Only available in Client Review"]')).toBeDisabled();
 
   await page.click('.stagesw button:has-text("Client Review")');
-  await expect(page.locator('.stagesw button[aria-pressed="true"]')).toHaveText("Client Review");
+  await expect(page.locator('.stagesw button[aria-pressed="true"]')).toContainText("Client Review");
 
   // Reactive, not just correct after a reload — advancing the stage
   // pill alone flips the button, still on the same page.
@@ -84,7 +84,7 @@ test("staff can approve a creative directly, and revoke that approval", async ({
   await page.waitForSelector(".stage-h");
 
   await page.click('.stagesw button:has-text("Approved")');
-  await expect(page.locator('.stagesw button[aria-pressed="true"]')).toHaveText("Approved");
+  await expect(page.locator('.stagesw button[aria-pressed="true"]')).toContainText("Approved");
 
   // Real attribution recorded, same shape as a guest approval gets.
   const admin = createClient(SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
@@ -101,7 +101,7 @@ test("staff can approve a creative directly, and revoke that approval", async ({
 
   // Revoke — moving back to Client Review clears the approval record.
   await page.click('.stagesw button:has-text("Client Review")');
-  await expect(page.locator('.stagesw button[aria-pressed="true"]')).toHaveText("Client Review");
+  await expect(page.locator('.stagesw button[aria-pressed="true"]')).toContainText("Client Review");
   const { data: revoked } = await admin
     .from("creatives")
     .select("stage, approved_at, approved_by_name")

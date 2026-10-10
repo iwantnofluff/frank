@@ -546,6 +546,38 @@ body.lightrail .avatar {
   background: rgba(0, 0, 0, 0.18);
   color: var(--ink);
 }
+/* What the header gained since the prototype (Frank's logo, the agency's,
+   search's own field), dark on a light rail (the Paper preset). */
+.corner-logo .logo-ink,
+body.lightrail .corner-logo .logo-rev {
+  display: none;
+}
+body.lightrail .corner-logo .logo-ink {
+  display: block;
+}
+body.lightrail .hbrand-sep,
+body.lightrail .tsep {
+  background: rgba(0, 0, 0, 0.15);
+}
+body.lightrail .hbrand-initial {
+  background: var(--ink);
+  color: #fff;
+}
+body.lightrail .hbrand-add {
+  color: rgba(0, 0, 0, 0.6);
+}
+body.lightrail button.hbrand-add:hover {
+  color: var(--ink);
+}
+body.lightrail .hbrand-wait {
+  background: rgba(0, 0, 0, 0.08);
+}
+body.lightrail .search input {
+  color: var(--ink);
+}
+body.lightrail .search input::placeholder {
+  color: rgba(0, 0, 0, 0.55);
+}
 
 .search {
   display: flex;
@@ -1448,6 +1480,67 @@ body.lightrail .avatar {
 .stg .no {
   opacity: 0.65;
   font-weight: 700;
+}
+/* A post's Team picker (phase87): chips for who's on it, then "+ Add
+   someone". */
+.teampick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.teampick select {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+.tchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 4px 4px 10px;
+  border-radius: 99px;
+  background: var(--action-soft);
+  color: var(--ink);
+  font-size: 13.2px;
+  white-space: nowrap;
+}
+.tchip button {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  color: var(--muted);
+  transition: background-color var(--dur-fast) var(--ease-std), color var(--dur-fast) var(--ease-std);
+}
+.tchip button:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--ink);
+}
+.tchip svg {
+  width: 11px;
+  height: 11px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+.teampick.compact {
+  gap: 4px;
+}
+.teampick.compact .tchip {
+  font-size: 12.2px;
+  padding: 2px 3px 2px 8px;
+}
+.teampick.compact select {
+  flex-basis: 100%;
+}
+/* A post's Team cell (phase87): one person a line. */
+.teamcell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
 }
 .lead {
   display: inline-flex;
@@ -2903,51 +2996,48 @@ a.fd-ref:hover {
    always visible with the current one highlighted, same shape as the
    topbar's own .modeswitch (Preview as Agency/Client) but in this page's
    own light-surface palette instead of that one's dark-topbar colors. */
+/* The post's stage switch as the project table's Status pills (direct
+   instruction): the same size, shape and words, grey until picked, then
+   solid in the stage's colour with white words. Hovering one shows its
+   colour. */
 .stagesw {
   display: flex;
   align-items: center;
-  height: 26px;
-  border: 1px solid var(--line-2);
-  border-radius: var(--r);
-  overflow: hidden;
+  gap: 6px;
 }
 .stagesw button {
-  height: 100%;
-  padding: 0 11px;
-  font-size: 13.2px;
-  font-weight: 500;
-  color: var(--muted);
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 3.4px;
+  font-size: 10.4px;
+  font-weight: 600;
   white-space: nowrap;
+  background: var(--line);
+  color: var(--muted);
+  transition:
+    background-color var(--dur-fast) var(--ease-std),
+    color var(--dur-fast) var(--ease-std);
+}
+.stagesw button .no {
+  opacity: 0.65;
+  font-weight: 700;
 }
 /* Disabled only for the moment a change is saving: no "not allowed"
    cursor flashing up after a click (direct instruction). */
 .stagesw button:disabled {
   cursor: pointer;
 }
-/* Hovering an option shows its own colour (direct instruction). */
-.stagesw button {
-  transition:
-    background-color var(--dur-fast) var(--ease-std),
-    color var(--dur-fast) var(--ease-std);
-}
-/* In Frank's stage colours (direct instruction): Internal and Client
-   Review the logo's orange, Approved its green. */
+.stagesw button[aria-pressed="true"],
 .stagesw button:not([aria-pressed="true"]):hover {
-  background: var(--stage-review-bg);
-  color: var(--stage-review-ink);
+  background: var(--stage-review);
+  color: #fff;
 }
+.stagesw button.sw-approved[aria-pressed="true"],
 .stagesw button.sw-approved:not([aria-pressed="true"]):hover {
-  background: var(--stage-approved-bg);
-  color: var(--stage-approved-ink);
+  background: var(--stage-approved);
 }
-.stagesw button[aria-pressed="true"] {
-  background: var(--stage-review-bg);
-  color: var(--stage-review-ink);
-  font-weight: 600;
-}
-.stagesw button.sw-approved[aria-pressed="true"] {
-  background: var(--stage-approved-bg);
-  color: var(--stage-approved-ink);
+.stagesw button:not([aria-pressed="true"]):hover {
+  opacity: 0.8;
 }
 .tools .btn.primary {
   margin-left: 8px;
@@ -6477,10 +6567,40 @@ button.avatar {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 32px;
 }
+/* Project Settings: wider, a line down the middle (direct instruction). */
+.modal.lg:has(.profgrid.split) {
+  max-width: 1100px;
+}
+.profgrid.split {
+  gap: 0;
+}
+.profgrid.split > :first-child {
+  padding-right: 40px;
+  border-right: 1px solid var(--line);
+}
+.profgrid.split > :last-child {
+  padding-left: 40px;
+}
+/* Owners and Admins in People: on every project, nothing to change. */
+.proflist.leaders {
+  margin-bottom: 0;
+}
+.profperson .pp-all {
+  font-size: 12.2px;
+  color: var(--muted);
+  white-space: nowrap;
+}
 @media (max-width: 760px) {
   .profgrid {
     grid-template-columns: minmax(0, 1fr);
     gap: 8px;
+  }
+  .profgrid.split > :first-child {
+    padding-right: 0;
+    border-right: 0;
+  }
+  .profgrid.split > :last-child {
+    padding-left: 0;
   }
 }
 .stats.profstats {
@@ -8162,15 +8282,8 @@ button.feedgrid-live {
 /* Every option keeps the width it has when chosen (bold), so choosing one
    doesn't nudge the row (direct instruction). */
 .stagesw button {
-  display: inline-grid;
-  align-content: center;
-}
-.stagesw button::after {
-  content: attr(data-label);
-  font-weight: 600;
-  height: 0;
-  overflow: hidden;
-  visibility: hidden;
+  display: inline-flex;
+  align-items: center;
 }
 
 /* A person's projects on a client's People: each a link to its table,
@@ -9417,34 +9530,40 @@ button.hbrand-add:hover {
   overflow: hidden;
   line-height: 1.25;
 }
-/* A day's heading belongs to the entries under it (direct instruction:
-   more room above than below). */
-.pj-day {
-  margin: 22px 0 4px;
-  font-size: 13.2px;
-  font-weight: 600;
-  color: var(--muted);
+/* Laid out as Settings → Updates (direct instruction): the page's
+   background, and white cards on it. */
+.ppanel .help-b {
+  background: var(--canvas);
 }
-.pj-activity > div:first-child .pj-day {
-  margin-top: 0;
+.pj-activity {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+/* A day: its date in the header row (as "Earlier versions"), entries as
+   rows, each time on the right where Updates puts a version's date. */
+.pj-daycard {
+  margin: 0;
 }
 .pj-act {
-  display: grid;
-  grid-template-columns: 44px minmax(0, 1fr);
-  gap: 8px;
-  padding: 7px 0;
-  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 11px 15px;
 }
-.pj-act:last-child {
-  border-bottom: none;
+.pj-act + .pj-act {
+  border-top: 1px solid var(--line);
 }
 .pj-time {
-  font-size: 12.2px;
+  margin-left: auto;
+  font-size: 12.7px;
   color: var(--muted);
-  padding-top: 1px;
+  white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
 .pj-act p {
+  flex: 1;
+  min-width: 0;
   margin: 0;
   font-size: 13.2px;
   line-height: 1.5;
@@ -9461,7 +9580,7 @@ a.pj-post:hover {
   text-decoration: underline;
 }
 .pj-more {
-  margin-top: 14px;
+  align-self: flex-start;
 }
 .pj-disc {
   display: flex;
@@ -9514,6 +9633,7 @@ a.pj-post:hover {
   background: var(--canvas);
 }
 .pj-thread {
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r);
   padding: 12px 14px;

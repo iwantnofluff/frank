@@ -143,8 +143,11 @@ test("an Owner takes a User off a project from its profile, and the User no long
     await up.screenshot({ path: `${process.env.SHOT_DIR ?? "test-results"}/project-profile-user.png`, animations: "disabled" });
     await expect(theirs.getByRole("textbox")).toHaveCount(0);
     await expect(theirs.getByRole("button", { name: "Save" })).toHaveCount(0);
-    await expect(theirs).toContainText("Owners and Admins choose who's on this project.");
-    await expect(theirs.locator(".profperson")).toHaveCount(0);
+    await expect(theirs).toContainText("Owners and Admins choose who's on it.");
+    // Only the Owner, who's on every project; nobody to add or take off.
+    await expect(theirs.locator(".profperson")).toHaveCount(1);
+    await expect(theirs.locator(".proflist.leaders .profperson")).toContainText("Owner");
+    await expect(theirs.getByRole("button", { name: /off this project/ })).toHaveCount(0);
   } finally {
     await ctx.close();
   }

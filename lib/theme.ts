@@ -45,10 +45,15 @@ export const BUILT_IN_PRESETS: Record<string, Partial<Theme>> = {
     rose: "#FF0000",
     hl: "#FFFBF0",
   },
-  "Warm studio": { action: "#C2410C", rail: "#1C1917", canvas: "#F5F3F0", ink: "#1C1917" },
-  Forest: { action: "#047857", rail: "#0F1B17", canvas: "#F0F4F2", ink: "#14201B" },
-  Ink: { action: "#4338CA", rail: "#1E1B31", canvas: "#F3F2F8", ink: "#1A1830" },
-  Slate: { action: "#0F766E", rail: "#0F172A", canvas: "#F1F5F9", ink: "#0F172A" },
+  // Five rails from "mobile-app-design-custom-colors-scheme" by David
+  // Michael (Adobe Color), with buttons, page and text to suit (direct
+  // instruction, 10 Oct 2026). The palette's teals are a shade darker as
+  // buttons, so white words on them stay readable.
+  Plum: { action: "#6D4FC2", rail: "#544374", canvas: "#F3F1F7", ink: "#1D1828" },
+  Dusk: { action: "#3F6AE0", rail: "#485274", canvas: "#EFF1F6", ink: "#181C2A" },
+  Paper: { action: "#1F7A82", rail: "#FDFDFE", canvas: "#F2F4F6", ink: "#13232A" },
+  Harbour: { action: "#1B7F89", rail: "#144B5C", canvas: "#EEF4F5", ink: "#10242B" },
+  Lagoon: { action: "#144B5C", rail: "#22848D", canvas: "#EDF5F5", ink: "#0F2A30" },
 };
 
 export const HEX = /^#[0-9A-Fa-f]{6}$/;

@@ -1037,15 +1037,17 @@ export function ContinuousCalendarTable({
                             case "lead":
                               return (
                                 <td key={key}>
-                                  {c.lead ? (
-                                    <span className="lead">
-                                      <i style={{ background: "#6B7280" }}>
-                                        {c.lead.name.slice(0, 1).toUpperCase()}
-                                      </i>
-                                      {c.lead.name}
-                                      {c.lead_user_id && roles?.[c.lead_user_id] && (
-                                        <span className="lead-role">({roles[c.lead_user_id]})</span>
-                                      )}
+                                  {/* Everyone on the post (phase87), one a line, each with
+                                      their role on the project if set. */}
+                                  {c.team.length ? (
+                                    <span className="teamcell">
+                                      {c.team.map((t) => (
+                                        <span className="lead" key={t.id}>
+                                          <i style={{ background: "#6B7280" }}>{t.name.slice(0, 1).toUpperCase()}</i>
+                                          {t.name}
+                                          {roles?.[t.id] && <span className="lead-role">({roles[t.id]})</span>}
+                                        </span>
+                                      ))}
                                     </span>
                                   ) : (
                                     <span className="tdim">—</span>

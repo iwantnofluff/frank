@@ -78,19 +78,27 @@ function Activity({ projectId }: { projectId: string }) {
   if (q.isPending) return <p className="pj-empty">Frank is working…</p>;
   if (q.isError) return <p className="pj-err">{errorMessage(q.error, "Couldn't load the activity")}</p>;
   if (!rows.length) return <p className="pj-empty">Nothing has happened here yet.</p>;
+  // One card per day, as Updates lists versions (direct instruction): the
+  // day in the card's header, its entries as rows under it.
+  const days: { day: string; rows: ActivityRow[] }[] = [];
+  for (const r of rows) {
+    const day = dayLabel(r.at);
+    if (days[days.length - 1]?.day === day) days[days.length - 1].rows.push(r);
+    else days.push({ day, rows: [r] });
+  }
   return (
     <div className="pj-activity">
-      {rows.map((r, i) => {
-        // A day's heading over its first entry.
-        const day = dayLabel(r.at);
-        const head = i === 0 || dayLabel(rows[i - 1].at) !== day ? <p className="pj-day">{day}</p> : null;
-        return (
-          <div key={`${r.at}-${r.kind}-${i}`}>
-            {head}
-            <ActivityItem row={r} />
+      {days.map((d) => (
+        <section className="panel pj-daycard" key={d.day} aria-label={d.day}>
+          <div className="panel-h">
+            <b>{d.day}</b>
+            <span className="sync">{d.rows.length}</span>
           </div>
-        );
-      })}
+          {d.rows.map((r, i) => (
+            <ActivityItem row={r} key={`${r.at}-${r.kind}-${i}`} />
+          ))}
+        </section>
+      ))}
       {q.hasNextPage && (
         <button type="button" className="btn sm pj-more" disabled={q.isFetchingNextPage} onClick={() => q.fetchNextPage()}>
           {q.isFetchingNextPage ? "Loading…" : "Show earlier"}
@@ -105,7 +113,6 @@ function ActivityItem({ row }: { row: ActivityRow }) {
   const post = namesPost(row.kind, row.creative_name) ? row.creative_name : null;
   return (
     <div className="pj-act">
-      <span className="pj-time">{timeOf(row.at)}</span>
       <p>
         {line.who && <b>{line.who} </b>}
         {line.before}
@@ -119,6 +126,7 @@ function ActivityItem({ row }: { row: ActivityRow }) {
           ))}
         {line.after}
       </p>
+      <span className="pj-time">{timeOf(row.at)}</span>
     </div>
   );
 }

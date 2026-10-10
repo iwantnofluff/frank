@@ -155,7 +155,7 @@ export default function ClientPreferencesPage({ params }: { params: Promise<{ id
               title="Who hears"
               hint={
                 prefs.notify_who === "lead"
-                  ? "The post's lead. A post with no lead: everyone on the client."
+                  ? "Everyone on the post's Team. A post with nobody on it: everyone on the client."
                   : prefs.notify_who === "everyone"
                     ? "Everyone on the team who can see the post."
                     : "The Primary Owner, Owners and Admins."
@@ -167,7 +167,7 @@ export default function ClientPreferencesPage({ params }: { params: Promise<{ id
                 disabled={!canEdit || (!prefs.notify_in_app && !prefs.notify_email)}
                 onChange={(e) => set({ notify_who: e.target.value as ClientPreferences["notify_who"] })}
               >
-                <option value="lead">The post&apos;s lead</option>
+                <option value="lead">The post&apos;s Team</option>
                 <option value="everyone">Everyone on the client</option>
                 <option value="admins">Owners and Admins</option>
               </select>

@@ -7,7 +7,9 @@ export interface CreateCreativeInput {
   name: string;
   // Keys, e.g. "ig_feed" — never labels. The first is the main format.
   formats: string[];
-  leadUserId: string | null;
+  // The post's Team, in the order picked (phase87); the database keeps the
+  // first as lead_user_id.
+  teamUserIds: string[];
   concept: string;
   // Every reference link (phase58), already tidied.
   referenceUrls: string[];
@@ -54,7 +56,7 @@ export function useCreateCreative(projectId: string) {
           name: input.name,
           format: input.formats[0],
           formats: input.formats,
-          lead_user_id: input.leadUserId,
+          team_user_ids: input.teamUserIds,
           concept: input.concept.trim() || null,
           reference_urls: input.referenceUrls,
           slide_count: input.slideCount,

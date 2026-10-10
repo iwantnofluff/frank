@@ -6,7 +6,8 @@ import { createClient } from "@/lib/supabase/client";
 export interface BriefFields {
   name: string;
   formats: string[]; // the first is the main format
-  leadUserId: string | null;
+  // The post's Team, in the order picked (phase87).
+  teamUserIds: string[];
   concept: string;
   // Every reference link (phase58), already tidied.
   referenceUrls: string[];
@@ -61,7 +62,7 @@ export function useUpdateBrief(creativeId: string) {
           name: fields.name.trim(),
           format: fields.formats[0],
           formats: fields.formats,
-          lead_user_id: fields.leadUserId,
+          team_user_ids: fields.teamUserIds,
           concept: fields.concept.trim() || null,
           reference_urls: fields.referenceUrls,
           slide_count: fields.slideCount,
@@ -80,7 +81,7 @@ export function useUpdateBrief(creativeId: string) {
         // Changed since it was opened, or not yours to change: which.
         const { data: now } = await supabase
           .from("creatives")
-          .select("name, format, formats, lead_user_id, concept, reference_urls, slide_count, scheduled_at, destination, due_on, updated_at, updated_by")
+          .select("name, format, formats, team_user_ids, concept, reference_urls, slide_count, scheduled_at, destination, due_on, updated_at, updated_by")
           .eq("id", creativeId)
           .maybeSingle();
         // Changed since, but by this same person (another part of the
@@ -100,7 +101,7 @@ export function useUpdateBrief(creativeId: string) {
           throw new PostChangedError((who?.name as string | undefined) ?? null, now.updated_at as string, {
             name: now.name as string,
             formats: ((now.formats as string[] | null)?.length ? now.formats : [now.format]) as string[],
-            leadUserId: (now.lead_user_id as string | null) ?? null,
+            teamUserIds: (now.team_user_ids as string[] | null) ?? [],
             concept: (now.concept as string | null) ?? "",
             referenceUrls: (now.reference_urls as string[] | null) ?? [],
             slideCount: (now.slide_count as number | null) ?? null,

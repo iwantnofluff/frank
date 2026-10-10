@@ -79,7 +79,7 @@ test("the Activity Log shows what happened, by whom, from the record and the new
   // And what was already recorded.
   await expect(panel.locator(".pj-act", { hasText: "internal comment" })).toContainText("E2E Staff left an internal comment on E2E Test Creative: “Can we try a warmer photo?”");
   await expect(panel.locator(".pj-act", { hasText: "added" }).first()).toContainText("E2E Test Creative");
-  await expect(panel.locator(".pj-day").first()).toHaveText("Today");
+  await expect(panel.locator(".pj-daycard .panel-h b").first()).toHaveText("Today");
   await expect(panel.locator(".pj-title")).toHaveText("Renamed Project Activity Log");
   // The post links to it.
   await expect(panel.locator(".pj-act", { hasText: "edited" }).getByRole("link", { name: "E2E Test Creative" })).toHaveAttribute(
@@ -223,4 +223,59 @@ test("a role set in Project Settings shows after the name in the Team column", a
   const client = await signedIn(frank.clientEmail, frank.clientPassword);
   const attempt = await client.from("project_roles").insert({ project_id: frank.projectId, user_id: staffId, role: "Boss" }).select("role");
   expect(attempt.error).not.toBeNull();
+});
+
+// A post's Team (phase87, direct instruction: several people, not one
+// Lead): picked in the post's window, in the order picked, the first kept
+// as lead_user_id; the table lists everyone. Only the agency's team can be
+// on a post, and the database says so.
+test("a post's Team holds several people, picked in its window and listed in the table", async ({ page, browser, frank }) => {
+  test.setTimeout(120_000);
+  const staffId = (await admin.from("users").select("id").eq("email", frank.staffEmail).single()).data!.id;
+  const second = await teammate(browser, frank.agencyId);
+  // The post's window, on its Brief: Edit is clicked again until it opens
+  // (a click before the page is ready does nothing).
+  const openBrief = async () => {
+    await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
+    await expect(async () => {
+      await page.getByRole("button", { name: "Edit", exact: true }).click();
+      await page.getByRole("tab", { name: "Brief" }).click({ timeout: 2_000 });
+    }).toPass({ timeout: 30_000 });
+    await expect(page.locator("#nbName")).toBeVisible({ timeout: 15_000 });
+  };
+  try {
+    await admin.from("creatives").update({ scheduled_at: new Date().toISOString() }).eq("id", frank.creativeId);
+    await frank.loginAsStaff(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openBrief();
+    const add = page.getByLabel("Add someone to this post's team");
+    await add.selectOption({ label: "Raj Second" });
+    await add.selectOption({ label: "E2E Staff" });
+    await expect(page.locator(".tchip")).toHaveText(["Raj Second", "E2E Staff"]);
+    await page.getByRole("button", { name: "Update", exact: true }).click();
+    await expect
+      .poll(async () => (await admin.from("creatives").select("team_user_ids, lead_user_id").eq("id", frank.creativeId).single()).data)
+      .toEqual({ team_user_ids: [second.id, staffId], lead_user_id: second.id });
+
+    // The table: both, one a line.
+    await page.goto(`${APP_URL}/projects/${frank.projectId}`);
+    await expect(page.locator("tr[data-row] .teamcell .lead")).toHaveText(["RRaj Second", "EE2E Staff"], { timeout: 20_000 });
+
+    // Taken off: the next one leads.
+    await openBrief();
+    await page.getByRole("button", { name: "Take Raj Second off this post" }).click();
+    await page.getByRole("button", { name: "Update", exact: true }).click();
+    await expect
+      .poll(async () => (await admin.from("creatives").select("team_user_ids, lead_user_id").eq("id", frank.creativeId).single()).data)
+      .toEqual({ team_user_ids: [staffId], lead_user_id: staffId });
+
+    // Not the client's people, straight at the database either.
+    const clientId = (await admin.from("users").select("id").eq("email", frank.clientEmail).single()).data!.id;
+    const staff = await signedIn(frank.staffEmail, frank.staffPassword);
+    const refused = await staff.from("creatives").update({ team_user_ids: [staffId, clientId] }).eq("id", frank.creativeId).select("id");
+    expect(refused.error?.message).toContain("Only people on the agency's team can be on a post");
+  } finally {
+    await admin.from("creatives").update({ team_user_ids: [] }).eq("id", frank.creativeId);
+    await second.remove();
+  }
 });

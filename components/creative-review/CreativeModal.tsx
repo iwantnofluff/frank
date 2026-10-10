@@ -14,6 +14,7 @@ import { useUpdateCreativeCx } from "@/hooks/use-update-creative-cx";
 import { FUNNEL_COLUMN } from "@/components/project/ContinuousCalendarTable";
 import { PostChangedError, useUpdateBrief, type BriefFields } from "@/hooks/use-update-brief";
 import { useTeamMembers } from "@/hooks/use-team-members";
+import { TeamPicker } from "@/components/ui/TeamPicker";
 import { useMyAgency } from "@/hooks/use-my-agency";
 import { useCustomColumns } from "@/hooks/use-custom-columns";
 import {
@@ -397,11 +398,12 @@ function briefChanges(
   const out: string[] = [];
   const same = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
   const who = (id: string | null) => (id ? (team?.find((m) => m.user_id === id)?.user?.name ?? "someone") : "no one");
+  const whoAll = (ids: string[]) => (ids.length ? ids.map(who).join(", ") : "no one");
   const day = (iso: string | null) =>
     iso ? new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "none";
   if (opened.name !== theirs.name) out.push(`Name: ${theirs.name}`);
   if (!same(postFormats(opened), theirs.formats)) out.push("Formats");
-  if ((opened.lead_user_id ?? null) !== theirs.leadUserId) out.push(`Lead: ${who(theirs.leadUserId)}`);
+  if (!same(opened.team_user_ids ?? [], theirs.teamUserIds)) out.push(`Team: ${whoAll(theirs.teamUserIds)}`);
   if ((opened.concept ?? "") !== theirs.concept) out.push("Concept");
   if (!same(opened.reference_urls ?? [], theirs.referenceUrls)) out.push("References");
   if ((opened.slide_count ?? null) !== theirs.slideCount) out.push(`Slides: ${theirs.slideCount ?? "none"}`);
@@ -469,7 +471,7 @@ export function CreativeModal(props: CreativeModalProps) {
   // format for a new brief; an existing creative's format is fixed, so
   // there's nothing to warn about changing.
   const { data: repeatIssue } = useRepeatIssueCount(isCreate ? clientId : undefined, isCreate ? format : undefined);
-  const [leadUserId, setLeadUserId] = useState(isCreate ? "" : (props.creative.lead_user_id ?? ""));
+  const [teamUserIds, setTeamUserIds] = useState<string[]>(isCreate ? [] : (props.creative.team_user_ids ?? []));
   const [date, setDate] = useState(isCreate ? "" : isoToDateInput(props.creative.scheduled_at));
   const [time, setTime] = useState(isCreate ? "09:00" : isoToTimeInput(props.creative.scheduled_at));
   const [destination, setDestination] = useState(isCreate ? "" : (props.creative.destination ?? ""));
@@ -533,7 +535,8 @@ export function CreativeModal(props: CreativeModalProps) {
             name: f.name,
             format: f.formats[0],
             formats: f.formats,
-            lead_user_id: f.leadUserId,
+            team_user_ids: f.teamUserIds,
+            lead_user_id: f.teamUserIds[0] ?? null,
             concept: f.concept || null,
             reference_urls: f.referenceUrls,
             slide_count: f.slideCount,
@@ -592,7 +595,7 @@ export function CreativeModal(props: CreativeModalProps) {
       const newId = await createCreative.mutateAsync({
         name: name.trim(),
         formats,
-        leadUserId: leadUserId || null,
+        teamUserIds,
         concept,
         referenceUrls: tidyReferences(referenceUrls),
         slideCount,
@@ -636,7 +639,7 @@ export function CreativeModal(props: CreativeModalProps) {
       savedAt = await updateBrief.mutateAsync({
         name: name.trim(),
         formats,
-        leadUserId: leadUserId || null,
+        teamUserIds,
         concept,
         referenceUrls: tidyReferences(referenceUrls),
         slideCount,
@@ -662,7 +665,7 @@ export function CreativeModal(props: CreativeModalProps) {
     knowBrief({
       name: name.trim(),
       formats,
-      leadUserId: leadUserId || null,
+      teamUserIds,
       concept,
       referenceUrls: tidyReferences(referenceUrls),
       slideCount,
@@ -716,7 +719,7 @@ export function CreativeModal(props: CreativeModalProps) {
     const same = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
     if (o.name !== t.name) setName(t.name);
     if (!same(postFormats(o), t.formats)) setFormats(t.formats);
-    if ((o.lead_user_id ?? null) !== t.leadUserId) setLeadUserId(t.leadUserId ?? "");
+    if (!same(o.team_user_ids ?? [], t.teamUserIds)) setTeamUserIds(t.teamUserIds);
     if ((o.concept ?? "") !== t.concept) setConcept(t.concept);
     if (!same(o.reference_urls ?? [], t.referenceUrls)) setReferenceUrls(t.referenceUrls.length ? t.referenceUrls : [""]);
     if ((o.slide_count ?? null) !== t.slideCount && t.slideCount) setSlideCountChoice(t.slideCount);
@@ -1134,7 +1137,7 @@ export function CreativeModal(props: CreativeModalProps) {
       {activeTab === "brief" && (
         <div className="mtabbody">
           <div className="msection-h">Details</div>
-          <p className="msection-d">The basics — what this is, its format, when it&rsquo;s due, and who&rsquo;s leading it.</p>
+          <p className="msection-d">The basics — what this is, its format, when it&rsquo;s due, and who&rsquo;s on it.</p>
 
           <div className="field">
             <label htmlFor="nbName">Post Name</label>
@@ -1261,20 +1264,15 @@ export function CreativeModal(props: CreativeModalProps) {
           )}
 
           <div className="field">
-            <label htmlFor="nbLead">Lead</label>
-            <select
-              id="nbLead"
-              className="bin one"
-              value={leadUserId}
-              onChange={(e) => setLeadUserId(e.target.value)}
-            >
-              <option value="">Unassigned</option>
-              {(teamMembers ?? []).map((m) => (
-                <option key={m.user_id} value={m.user_id}>
-                  {m.user?.name ?? "—"}
-                </option>
-              ))}
-            </select>
+            <label htmlFor="nbTeam">Team</label>
+            <TeamPicker
+              id="nbTeam"
+              options={(teamMembers ?? [])
+                .filter((m) => (m.accepted_at && !m.removed_at) || teamUserIds.includes(m.user_id))
+                .map((m) => ({ id: m.user_id, name: m.user?.name ?? m.user?.email ?? "—" }))}
+              value={teamUserIds}
+              onChange={setTeamUserIds}
+            />
           </div>
 
           <div className="msection-h">Concept</div>

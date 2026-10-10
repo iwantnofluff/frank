@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useCreateCreative } from "@/hooks/use-create-creative";
 import { useMyAgency } from "@/hooks/use-my-agency";
 import { useTeamMembers } from "@/hooks/use-team-members";
+import { TeamPicker } from "@/components/ui/TeamPicker";
 import { errorMessage } from "@/lib/errors";
 import { FORMAT_CATEGORIES, formatsByCategory } from "@/lib/formats";
 
@@ -15,7 +16,7 @@ import { FORMAT_CATEGORIES, formatsByCategory } from "@/lib/formats";
 export interface DraftPostValues {
   name: string;
   format: string;
-  leadUserId: string;
+  teamUserIds: string[];
   date: string; // scheduled: publish date; continuous: due date (optional)
   time: string;
   destination: string; // continuous only
@@ -44,7 +45,7 @@ export function useDraftPost({
   const [values, setValues] = useState<DraftPostValues>({
     name: "",
     format: DEFAULT_FORMAT,
-    leadUserId: "",
+    teamUserIds: [],
     // Today for both: an Other Content post with no due date is never listed
     // in its table, so one added by row would vanish on save.
     date: todayIso(),
@@ -70,7 +71,7 @@ export function useDraftPost({
       await createCreative.mutateAsync({
         name: values.name.trim(),
         formats: [values.format],
-        leadUserId: values.leadUserId || null,
+        teamUserIds: values.teamUserIds,
         concept: values.concept,
         referenceUrls: [],
         slideCount: null,
@@ -168,14 +169,12 @@ export function DraftField({
       );
     case "lead":
       return (
-        <select className="ecell one" aria-label="Lead" value={values.leadUserId} onChange={(e) => set("leadUserId", e.target.value)}>
-          <option value="">No lead yet</option>
-          {draft.team.map((m) => (
-            <option key={m.user_id} value={m.user_id}>
-              {m.user?.name ?? m.user?.email}
-            </option>
-          ))}
-        </select>
+        <TeamPicker
+          compact
+          options={draft.team.map((m) => ({ id: m.user_id, name: m.user?.name ?? m.user?.email ?? "—" }))}
+          value={values.teamUserIds}
+          onChange={(ids) => set("teamUserIds", ids)}
+        />
       );
     case "date":
       return (

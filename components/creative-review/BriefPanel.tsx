@@ -13,10 +13,10 @@ import { ReferenceLinks } from "@/components/project/ReferenceLinks";
 // page's own ReviewNav now, not a per-panel accordion.
 export function BriefPanel({
   creative,
-  leadName,
+  teamNames,
 }: {
   creative: CreativeRow;
-  leadName: string | null;
+  teamNames: string[];
 }) {
   const formats = postFormats(creative);
   // Each content type once, in the order its formats were chosen.
@@ -71,8 +71,8 @@ export function BriefPanel({
       )}
 
       <div className="bsec">
-        <div className="bl">Lead</div>
-        <p className="fd-d">{leadName || "Unassigned"}</p>
+        <div className="bl">Team</div>
+        <p className="fd-d">{teamNames.length ? teamNames.join(", ") : "Nobody yet"}</p>
       </div>
 
       <div className="bsec">
