@@ -219,7 +219,8 @@ test("every slide can be removed and saved, leaving the post with no artwork", a
   await seedCarousel(frank);
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
-  await page.getByRole("button", { name: "Edit" }).click();
+  // The post's own Edit, not a comment's (comments have one too).
+  await page.locator(".btn.primary", { hasText: /^Edit$/ }).click();
   await expect(page.locator(".cslot.filled")).toHaveCount(3);
   for (const n of [1, 2, 3]) {
     await page.locator(".cslot").nth(n - 1).hover();

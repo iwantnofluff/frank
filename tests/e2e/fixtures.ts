@@ -1,4 +1,5 @@
 import { test as base, expect, type Page } from "@playwright/test";
+import { CURRENT_RELEASE } from "../../lib/releases";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import path from "path";
 
@@ -134,7 +135,9 @@ export const test = base.extend<{ frank: Frank }>({
     if (agencyError) throw agencyError;
 
     await admin.from("users").insert([
-      { id: staffAuth.user.id, email: staffEmail, name: "E2E Staff" },
+      // Today's update already seen, so the bell's count (and screenshots)
+      // don't hang on when that check loads; updates.spec clears it.
+      { id: staffAuth.user.id, email: staffEmail, name: "E2E Staff", releases_seen: CURRENT_RELEASE.version },
       { id: clientAuth.user.id, email: clientEmail, name: "E2E Client User" },
     ]);
 

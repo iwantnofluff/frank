@@ -9,6 +9,8 @@ const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SU
 // get no notice.
 test("a new version is in the team's bell, opens Updates, and a newer one offers to reload", async ({ page, browser, frank }) => {
   test.setTimeout(120_000);
+  // Seen none yet (the fixture marks today's as seen for every other test).
+  await admin.from("users").update({ releases_seen: null }).eq("email", frank.staffEmail);
   await frank.loginAsStaff(page);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(APP_URL + "/dashboard");

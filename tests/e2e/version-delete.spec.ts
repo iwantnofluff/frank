@@ -51,7 +51,8 @@ test("copy versions have tabs, and one without comments can be deleted", async (
 
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
-  await page.getByRole("button", { name: "Edit" }).click();
+  // The post's own Edit, not a comment's (comments have one too).
+  await page.locator(".btn.primary", { hasText: /^Edit$/ }).click();
 
   // The latest is open and editable; an older tab is read only.
   await expect(page.getByRole("tab", { name: "V2" })).toHaveAttribute("aria-selected", "true");
