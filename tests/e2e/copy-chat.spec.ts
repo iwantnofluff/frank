@@ -23,14 +23,17 @@ async function seedChat(frank: Frank) {
       role: "assistant",
       body: "Two angles to try.",
       created_by: null,
-      drafts: [{ label: "Playful", fields: { caption: "Dessert, but make it daily." } }],
+      drafts: [
+        { label: "Playful", fields: { caption: "Dessert, but make it daily.", alt: "A spoon in a bowl of kheer.", slide_1: "DAILY DESSERT" } },
+        { label: "Warm", fields: { caption: "Something sweet, every day." } },
+      ],
     },
   ]);
   if (error) throw new Error(`Seeding the conversation failed: ${error.message}`);
   return chat!.id as string;
 }
 
-test("Draft with Frank reopens a conversation, and Use This fills the editor", async ({ page, frank }) => {
+test("Draft with Frank reopens a conversation, and each field's Use This adds, removes and replaces", async ({ page, frank }) => {
   test.setTimeout(90_000);
   await seedChat(frank);
   await frank.loginAsStaff(page);
@@ -44,15 +47,34 @@ test("Draft with Frank reopens a conversation, and Use This fills the editor", a
   await expect(chat.getByRole("button", { name: "Review My Draft" })).toBeDisabled();
   await chat.getByRole("button", { name: /Drafted from the concept/ }).click();
   await expect(chat.locator(".cchat-msg.user")).toContainText("Draft some copy for this post from the concept.");
-  await expect(chat.locator(".cchat-draft")).toContainText("Dessert, but make it daily.");
+  await expect(chat.locator(".cchat-draft").first()).toContainText("Dessert, but make it daily.");
   await page.screenshot({ path: `${process.env.SHOT_DIR ?? "test-results"}/copy-chat.png`, animations: "disabled" });
-  await chat.getByRole("button", { name: "Use This" }).click();
-  await expect(chat.getByRole("button", { name: "In the editor" })).toBeVisible();
+  // Each field has its own button: Caption, Alt Text and Text on Image.
+  const playful = chat.locator(".cchat-draft").nth(0);
+  const warm = chat.locator(".cchat-draft").nth(1);
+  await expect(playful.locator(".cchat-group .btn")).toHaveText(["Use This", "Use This", "Use This"]);
+  await expect(playful.getByRole("button", { name: "Use This for Text on Image" })).toBeVisible();
+  // Added; another suggestion's Caption replaces it; pressing Added again removes it.
+  await playful.getByRole("button", { name: "Use This for Caption" }).click();
+  await expect(playful.getByRole("button", { name: "Added: Caption" })).toHaveAttribute("aria-pressed", "true");
+  await warm.getByRole("button", { name: "Use This for Caption" }).click();
+  await expect(warm.getByRole("button", { name: "Added: Caption" })).toBeVisible();
+  await expect(playful.getByRole("button", { name: "Use This for Caption" })).toBeVisible();
+  await warm.getByRole("button", { name: "Added: Caption" }).click();
+  await expect(chat.getByRole("button", { name: /^Added/ })).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  const caption = post.locator(".field", { has: page.locator("label", { hasText: /^Caption$/ }) }).locator("textarea");
+  const alt = post.locator(".field", { has: page.locator("label", { hasText: /^Alt Text$/ }) }).locator("input, textarea");
+  await expect(caption).toHaveValue("");
+  // Then the Caption and Alt Text in: into the editor, not saved as a version.
+  await post.getByRole("button", { name: "Draft with Frank" }).click();
+  await chat.getByRole("button", { name: /Drafted from the concept/ }).click();
+  await playful.getByRole("button", { name: "Use This for Caption" }).click();
+  await playful.getByRole("button", { name: "Use This for Alt Text" }).click();
   await page.keyboard.press("Escape");
   await expect(chat).toHaveCount(0);
-  // Into the editor, not saved as a version.
-  const caption = post.locator(".field", { has: page.locator("label", { hasText: /^Caption$/ }) }).locator("textarea");
   await expect(caption).toHaveValue("Dessert, but make it daily.");
+  await expect(alt).toHaveValue("A spoon in a bowl of kheer.");
   expect((await admin.from("copy_versions").select("id").eq("creative_id", frank.creativeId)).data).toEqual([]);
   // With copy in, a review can be asked for.
   await post.getByRole("button", { name: "Draft with Frank" }).click();

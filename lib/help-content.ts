@@ -422,7 +422,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "Draft from the Concept: Frank offers a few drafts of the caption, the other copy fields and the Text on Image.",
           "Review My Draft: Frank says what works in what you've written and how to improve it.",
           "Ask for changes in your own words: shorter, warmer, a different hook.",
-          "Use This puts a draft into the editor. Nothing is saved until you save it.",
+          "Each part of a draft has its own Use This: the Caption, the Alt Text and the Text on Image each go into the editor on their own, and the button says Added. Press Added again to take it back out (the editor goes back to what it had), or Use This on another draft's to swap it in. Nothing is saved until you save it.",
         ],
       },
       {
@@ -439,7 +439,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     blocks: [
       {
         kind: "p",
-        text: "The “…” menu at the top of a project's page has its Activity Log, its Discussion and its Settings. Only your team sees them, never the client.",
+        text: "At the top of a project's page, Discussion is a link after the Active and Archived pills, and the “…” menu has its Activity Log and its Settings. Only your team sees them, never the client.",
       },
       {
         kind: "p",

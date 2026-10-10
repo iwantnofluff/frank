@@ -66,8 +66,10 @@ test("the Activity Log shows what happened, by whom, from the record and the new
   await frank.loginAsStaff(page);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`${APP_URL}/projects/${frank.projectId}`);
+  // Discussion is a link beside the pills; the menu has the rest.
+  await expect(page.locator(".pjlink")).toHaveText("Discussion");
   await page.getByRole("button", { name: "Project options" }).click();
-  for (const item of ["Activity Log", "Discussion", "Settings"]) {
+  for (const item of ["Activity Log", "Settings"]) {
     await expect(page.getByRole("button", { name: item, exact: true })).toBeVisible();
   }
   await page.getByRole("button", { name: "Activity Log", exact: true }).click();
@@ -106,7 +108,6 @@ test("Discussion: a thread with a mention reaches the bell, replies arrive live,
     await frank.loginAsStaff(page);
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(`${APP_URL}/projects/${frank.projectId}`);
-    await page.getByRole("button", { name: "Project options" }).click();
     await page.getByRole("button", { name: "Discussion", exact: true }).click();
     const panel = page.getByRole("complementary", { name: "Discussion" });
     await expect(panel.getByText("No discussion yet.")).toBeVisible();

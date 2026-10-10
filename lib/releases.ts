@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.17.3",
+    date: "2026-10-10",
+    title: "Use This, field by field",
+    changes: [
+      "In Draft with Frank, each part of a draft has its own Use This: Caption, Alt Text and Text on Image go into the editor separately. The button then says Added; press it again to take it back out, or use another draft's to swap it in.",
+      "A project's Discussion is a link with a chat icon after the Active and Archived pills, rather than in the “…” menu.",
+    ],
+  },
+  {
     version: "1.17.2",
     date: "2026-10-10",
     title: "A line in a project's title",

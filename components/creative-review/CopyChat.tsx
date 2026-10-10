@@ -4,9 +4,24 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Modal } from "@/components/ui/Modal";
 import { useCopyChats, useSendCopyChat, type CopyChat as Chat } from "@/hooks/use-copy-chats";
-import { cleanReplyBody, type CopyChatField, type CopyChatMode } from "@/lib/ai/copy-chat";
+import { cleanReplyBody, isSlideField, type CopyChatField, type CopyChatMode } from "@/lib/ai/copy-chat";
 import { errorMessage } from "@/lib/errors";
 import { useLiveUpdates } from "@/hooks/use-live-updates";
+
+// A draft's fields, each with its own Use This (direct instruction):
+// every copy field on its own (Caption, Alt Text…), and Text on Image as
+// one, all its slides together.
+function draftGroups(fields: CopyChatField[], draft: Record<string, string>) {
+  const shown = fields.filter((f) => draft[f.key]);
+  const slides = shown.filter((f) => isSlideField(f.key));
+  return [
+    ...shown.filter((f) => !isSlideField(f.key)).map((f) => ({ id: f.key, label: f.label, fields: [f] })),
+    ...(slides.length ? [{ id: "slides", label: "Text on Image", fields: slides }] : []),
+  ];
+}
+
+const pick = (from: Record<string, string>, fields: CopyChatField[]) =>
+  Object.fromEntries(fields.map((f) => [f.key, from[f.key] ?? ""]));
 
 const when = (iso: string) =>
   new Date(iso).toLocaleString(undefined, { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
@@ -14,7 +29,7 @@ const when = (iso: string) =>
 // "Write with Claude" (phase52): a conversation about this post's copy.
 // Start by asking Claude to draft from the concept, or to review the draft
 // in the editor; then talk it through. A draft Claude offers fills the
-// editor with "Use this"; nothing is saved as a copy version until the
+// editor field by field with "Use This"; nothing is saved as a copy version until the
 // person saves one. Conversations stay with the post, for the team.
 // Portalled to the page: it opens over the post window.
 export function CopyChat({
@@ -47,7 +62,9 @@ export function CopyChat({
   const [chatId, setChatId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [skipped, setSkipped] = useState<string[]>([]);
-  const [used, setUsed] = useState<string | null>(null);
+  // Which suggestion is in the editor for each field, and what the editor
+  // had before Frank's, so pressing Added again puts that back.
+  const [added, setAdded] = useState<Record<string, { source: string; before: Record<string, string> }>>({});
   const endRef = useRef<HTMLDivElement>(null);
   const chat: Chat | undefined = chats?.find((c) => c.id === chatId);
   const hasCopy = fields.some((f) => currentFields[f.key]?.trim());
@@ -175,25 +192,48 @@ export function CopyChat({
                 <div className="cchat-draft" key={i}>
                   <div className="cchat-draft-h">
                     <b>{d.label}</b>
-                    <button
-                      type="button"
-                      className="btn sm"
-                      onClick={() => {
-                        onUse(d.fields);
-                        setUsed(`${m.id}-${i}`);
-                      }}
-                    >
-                      {used === `${m.id}-${i}` ? "In the editor" : "Use This"}
-                    </button>
                   </div>
-                  {fields
-                    .filter((f) => d.fields[f.key])
-                    .map((f) => (
-                      <div key={f.key} className="cchat-field">
-                        <span>{f.label}</span>
-                        <p>{d.fields[f.key]}</p>
+                  {draftGroups(fields, d.fields).map((g) => {
+                    const source = `${m.id}-${i}`;
+                    const isAdded = added[g.id]?.source === source;
+                    return (
+                      <div key={g.id} className="cchat-group">
+                        <div className="cchat-fields">
+                          {g.fields.map((f) => (
+                            <div key={f.key} className="cchat-field">
+                              <span>{f.label}</span>
+                              <p>{d.fields[f.key]}</p>
+                            </div>
+                          ))}
+                        </div>
+                        <button
+                          type="button"
+                          className={`btn sm${isAdded ? " added" : ""}`}
+                          aria-pressed={isAdded}
+                          aria-label={isAdded ? `Added: ${g.label}` : `Use This for ${g.label}`}
+                          onClick={() => {
+                            if (isAdded) {
+                              // Pressed again: the editor goes back to what it had.
+                              onUse(added[g.id].before);
+                              setAdded((prev) => {
+                                const next = { ...prev };
+                                delete next[g.id];
+                                return next;
+                              });
+                            } else {
+                              // In, replacing another suggestion's if there was one;
+                              // what to go back to is still the editor's own.
+                              const before = added[g.id]?.before ?? pick(currentFields, g.fields);
+                              onUse(pick(d.fields, g.fields));
+                              setAdded((prev) => ({ ...prev, [g.id]: { source, before } }));
+                            }
+                          }}
+                        >
+                          {isAdded ? "Added" : "Use This"}
+                        </button>
                       </div>
-                    ))}
+                    );
+                  })}
                 </div>
               ))}
             </div>
