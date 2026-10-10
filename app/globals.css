@@ -9284,3 +9284,74 @@ button.hbrand-add:hover {
     animation: none;
   }
 }
+
+/* A button that reads as a link inside a line of text. */
+.linkbtn {
+  color: var(--action);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* Who else is here (PresenceAvatars, phase82): overlapping pictures, a
+   green dot on anyone editing. */
+.presence {
+  display: flex;
+  align-items: center;
+}
+.presence-p {
+  position: relative;
+  margin-left: -6px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+.presence-p:first-child {
+  margin-left: 0;
+}
+.presence-av {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 10.7px;
+  font-weight: 700;
+  overflow: hidden;
+}
+.presence-av img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.presence-p.editing::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #22a06b;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+.presence-more {
+  margin-left: 4px;
+  font-size: 12.2px;
+  color: var(--muted);
+}
+.presence-note {
+  font-size: 12.7px;
+  color: #1a7f53;
+  white-space: nowrap;
+}
+.presence-banner {
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #eaf7f0;
+  color: #1a5f3f;
+  font-size: 13.2px;
+  line-height: 1.45;
+}

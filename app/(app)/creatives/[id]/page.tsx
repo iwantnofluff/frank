@@ -41,6 +41,8 @@ import { CarouselNav } from "@/components/creative-review/CarouselNav";
 import { VideoPlayer, type TimelineMarker } from "@/components/creative-review/VideoPlayer";
 import { CaptionHighlighter } from "@/components/creative-review/CaptionHighlighter";
 import { CreativeModal } from "@/components/creative-review/CreativeModal";
+import { useProjectPresence } from "@/hooks/use-project-presence";
+import { PresenceAvatars } from "@/components/app-shell/PresenceAvatars";
 
 // How close, in seconds, the paused moment has to be to a pin's for it to
 // show on the frame — about a frame or two either side.
@@ -89,6 +91,16 @@ export default function CreativeReviewPage({
   // Draft from Brief entry points with one window — this just remembers
   // which tab it should open on for whichever button was clicked.
   const [creativeModalTab, setCreativeModalTab] = useState<"brief" | "upload" | null>(null);
+  // Who else on the team is on this post, and editing it (phase82, direct
+  // instruction): the project's room, saying I'm here and whether my Edit
+  // window is open.
+  const present = useProjectPresence(
+    creative?.project_id,
+    { viewing: id, editing: !!creativeModalTab },
+    !!membership && membership.client_id === null,
+  );
+  const hereToo = present.filter((p) => p.viewing === id);
+  const editingNow = hereToo.filter((p) => p.editing).map((p) => p.name);
   const [toolMode, setToolMode] = useState<ToolMode>(null);
   // Which of Brief/Content/Checks/Feed Preview the canvas shows — replaced
   // the three independent accordions (Brief/Content/Checks could each be
@@ -117,6 +129,9 @@ export default function CreativeReviewPage({
   // A comment made anywhere, on any device, shows here at once (direct
   // instruction): the panel, the pins and the counts all read this.
   useLiveUpdates(`comments:${id}`, [{ table: "comments", filter: `creative_id=eq.${id}` }], [["comments", id]]);
+  // And the post itself, changed by someone else (phase82): its brief, stage
+  // and Text on Image show at once.
+  useLiveUpdates(`creative:${id}`, [{ table: "creatives", filter: `id=eq.${id}` }], [["creative", id]]);
   const createComment = useCreateComment(id);
 
   const activeCreativeVersion =
@@ -357,6 +372,15 @@ export default function CreativeReviewPage({
                 </div>
               </>
             )}
+            {editingNow.length > 0 && (
+              <span className="presence-note">
+                {editingNow.join(" and ")} {editingNow.length === 1 ? "is" : "are"} editing
+              </span>
+            )}
+            <PresenceAvatars
+              people={hereToo}
+              describe={(p) => `${p.name}, ${p.editing ? "editing this post" : "on this post"}`}
+            />
             <button
               type="button"
               className="tool"
@@ -678,6 +702,7 @@ export default function CreativeReviewPage({
           creativeVersions={creativeVersions ?? []}
           copyVersions={copyVersions ?? []}
           initialTab={creativeModalTab}
+          othersEditing={editingNow}
           onClose={() => setCreativeModalTab(null)}
           onCreativeVersionCreated={setCreativeVersionId}
           onCopyVersionCreated={setCopyVersionId}

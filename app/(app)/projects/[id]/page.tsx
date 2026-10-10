@@ -2,6 +2,9 @@
 
 import { use, useMemo, useState } from "react";
 import { useProject } from "@/hooks/use-project";
+import { useLiveUpdates } from "@/hooks/use-live-updates";
+import { useProjectPresence } from "@/hooks/use-project-presence";
+import { PresenceAvatars } from "@/components/app-shell/PresenceAvatars";
 import { useCreatives } from "@/hooks/use-creatives";
 import { useCustomColumns } from "@/hooks/use-custom-columns";
 import { useUpdateCreativeCx } from "@/hooks/use-update-creative-cx";
@@ -27,6 +30,9 @@ export default function ProjectPage({
     isError,
     error,
   } = useCreatives(id);
+  // Posts changed by anyone else show at once (phase82): a new post, a
+  // stage, a date, a name.
+  useLiveUpdates(`creatives:${id}`, [{ table: "creatives", filter: `project_id=eq.${id}` }], [["creatives", id]]);
   const { data: customColumns } = useCustomColumns(id);
   const updateCx = useUpdateCreativeCx(id);
   const { isStaff, isPending: isStaffPending } = useIsStaff();
@@ -50,6 +56,8 @@ export default function ProjectPage({
   // Fails closed like every other isStaff gate this session: hidden/
   // read-only while still resolving, not shown/editable by default.
   const confirmedStaff = isStaff && !isStaffPending;
+  // Who else on the team has this project open (phase82): the team only.
+  const present = useProjectPresence(id, { viewing: null, editing: false }, confirmedStaff);
   // Entry point lives here rather than the topbar, same as the prototype's
   // own #briefWrap (only shown on the calendar view, not as a global nav
   // item) — docs/parity-gaps.md.
@@ -93,6 +101,14 @@ export default function ProjectPage({
           )}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {/* Who else on the team has this project open (phase82). */}
+          <PresenceAvatars
+            people={present}
+            describe={(p) => {
+              const post = p.viewing ? creatives?.find((c) => c.id === p.viewing)?.name : null;
+              return post ? `${p.name}, ${p.editing ? "editing" : "on"} ${post}` : `${p.name}, on this table`;
+            }}
+          />
           {confirmedStaff && (
             <div className="filters">
               <button

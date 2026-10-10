@@ -9,10 +9,10 @@ import type { CreativeRow } from "@/hooks/use-creative";
 import { useCopyVersions, type CopyVersionRow } from "@/hooks/use-copy-versions";
 import { useCreativeVersions, versionSlides, type CreativeVersionRow } from "@/hooks/use-creative-versions";
 import { useCreateCreative } from "@/hooks/use-create-creative";
-import { useSaveSlideText } from "@/hooks/use-save-slide-text";
+import { SlideTextChangedError, useSaveSlideText } from "@/hooks/use-save-slide-text";
 import { useUpdateCreativeCx } from "@/hooks/use-update-creative-cx";
 import { FUNNEL_COLUMN } from "@/components/project/ContinuousCalendarTable";
-import { useUpdateBrief } from "@/hooks/use-update-brief";
+import { PostChangedError, useUpdateBrief, type BriefFields } from "@/hooks/use-update-brief";
 import { useTeamMembers } from "@/hooks/use-team-members";
 import { useMyAgency } from "@/hooks/use-my-agency";
 import { useCustomColumns } from "@/hooks/use-custom-columns";
@@ -109,6 +109,8 @@ type CreativeModalProps =
       creativeVersions: CreativeVersionRow[];
       copyVersions: CopyVersionRow[];
       initialTab?: Tab;
+      // Others on the team with this post's Edit window open (phase82).
+      othersEditing?: string[];
       onCreativeVersionCreated: (versionId: string) => void;
       onCopyVersionCreated: (versionId: string) => void;
       onClose: () => void;
@@ -385,6 +387,30 @@ function isoToTimeInput(iso: string | null): string {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
+// What someone else changed in the brief, against the post as this window
+// opened it (phase82), in words: "Concept", "Live date: 14 Nov".
+function briefChanges(
+  opened: CreativeRow,
+  theirs: PostChangedError["theirs"],
+  team: { user_id: string; user: { name: string } | null }[] | undefined,
+): string[] {
+  const out: string[] = [];
+  const same = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+  const who = (id: string | null) => (id ? (team?.find((m) => m.user_id === id)?.user?.name ?? "someone") : "no one");
+  const day = (iso: string | null) =>
+    iso ? new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "none";
+  if (opened.name !== theirs.name) out.push(`Name: ${theirs.name}`);
+  if (!same(postFormats(opened), theirs.formats)) out.push("Formats");
+  if ((opened.lead_user_id ?? null) !== theirs.leadUserId) out.push(`Lead: ${who(theirs.leadUserId)}`);
+  if ((opened.concept ?? "") !== theirs.concept) out.push("Concept");
+  if (!same(opened.reference_urls ?? [], theirs.referenceUrls)) out.push("References");
+  if ((opened.slide_count ?? null) !== theirs.slideCount) out.push(`Slides: ${theirs.slideCount ?? "none"}`);
+  if ((opened.scheduled_at ?? null) !== theirs.scheduledAt) out.push(`Live date: ${day(theirs.scheduledAt)}`);
+  if ((opened.destination ?? null) !== theirs.destination) out.push("Where it goes");
+  if ((opened.due_on ?? null) !== theirs.dueOn) out.push(`Due: ${day(theirs.dueOn)}`);
+  return out;
+}
+
 export function CreativeModal(props: CreativeModalProps) {
   const { onClose } = props;
   const isCreate = props.mode === "create";
@@ -489,6 +515,35 @@ export function CreativeModal(props: CreativeModalProps) {
   const creativeId = isCreate ? createdCreativeId : props.creative.id;
 
   const updateBrief = useUpdateBrief(creativeId ?? "");
+  // When the post last changed as this window opened it (phase82, direct
+  // instruction): a save goes through only if nobody has changed it since.
+  const [briefBase, setBriefBase] = useState<string | null>(isCreate ? null : (props.creative.updated_at ?? null));
+  // Someone else's change found on saving: who, when, and their brief.
+  const [conflict, setConflict] = useState<PostChangedError | null>(null);
+  // The brief as this window last knew it on record: as opened, then as
+  // saved or taken from someone else. Not the live post (the page refreshes
+  // that as others save), or someone's change would look like nothing
+  // changed and be saved over.
+  const [opened, setOpened] = useState<CreativeRow | null>(isCreate ? null : props.creative);
+  function knowBrief(f: BriefFields) {
+    setOpened((o) =>
+      o
+        ? {
+            ...o,
+            name: f.name,
+            format: f.formats[0],
+            formats: f.formats,
+            lead_user_id: f.leadUserId,
+            concept: f.concept || null,
+            reference_urls: f.referenceUrls,
+            slide_count: f.slideCount,
+            scheduled_at: f.scheduledAt,
+            destination: f.destination,
+            due_on: f.dueOn,
+          }
+        : o,
+    );
+  }
   const updateCx = useUpdateCreativeCx(projectId);
   const delivery = isCreate ? props.delivery : (props.creative.projects?.delivery ?? "scheduled");
 
@@ -505,7 +560,10 @@ export function CreativeModal(props: CreativeModalProps) {
   const [formatWarning, setFormatWarning] = useState<string[] | null>(null);
   const clearArtwork = useClearArtwork(creativeId ?? "");
 
-  async function handleSaveBrief({ artworkCleared = false }: { artworkCleared?: boolean } = {}) {
+  async function handleSaveBrief({
+    artworkCleared = false,
+    overBase,
+  }: { artworkCleared?: boolean; overBase?: string } = {}) {
     if (!name.trim()) {
       setNameError("Give the brief a name.");
       return;
@@ -573,7 +631,35 @@ export function CreativeModal(props: CreativeModalProps) {
     // creation too — a deliberate reversal of this modal's own original
     // scope (see hooks/use-update-brief.ts). Runs both for a real edit
     // and for the second-and-later save of a brief created this session.
-    await updateBrief.mutateAsync({
+    let savedAt: string;
+    try {
+      savedAt = await updateBrief.mutateAsync({
+        name: name.trim(),
+        formats,
+        leadUserId: leadUserId || null,
+        concept,
+        referenceUrls: tidyReferences(referenceUrls),
+        slideCount,
+        scheduledAt,
+        destination: delivery === "continuous" ? destination.trim() : null,
+        dueOn: delivery === "continuous" ? dueOn || null : null,
+        expectedUpdatedAt: overBase ?? briefBase,
+      });
+    } catch (e) {
+      // Someone else saved it while this was open: say so, and let them
+      // choose (the window below), rather than undo their change.
+      if (e instanceof PostChangedError) {
+        // Changed, but nothing in the brief (a table column, the stage):
+        // nothing of theirs to undo, so saved over it.
+        if (opened && briefChanges(opened, e.theirs, teamMembers).length === 0) {
+          return handleSaveBrief({ artworkCleared, overBase: e.theirs.updatedAt });
+        }
+        setConflict(e);
+      }
+      return;
+    }
+    setBriefBase(savedAt);
+    knowBrief({
       name: name.trim(),
       formats,
       leadUserId: leadUserId || null,
@@ -584,6 +670,7 @@ export function CreativeModal(props: CreativeModalProps) {
       destination: delivery === "continuous" ? destination.trim() : null,
       dueOn: delivery === "continuous" ? dueOn || null : null,
     });
+    setConflict(null);
     setSavedBrief({ formats, slideCount });
     // Funnel and Notes for Designer, each its own atomic write (as the
     // table's), only when changed.
@@ -617,7 +704,33 @@ export function CreativeModal(props: CreativeModalProps) {
     : updateBrief.isPending || updateCx.isPending;
   const briefError = isCreate
     ? createCreative.error
-    : updateBrief.error || updateCx.error;
+    : (updateBrief.error instanceof PostChangedError ? null : updateBrief.error) || updateCx.error;
+
+  // Their changes into the boxes, the rest of yours kept, and this window
+  // now starts from their version: only what they changed is taken.
+  function keepTheirs(c: PostChangedError) {
+    if (isCreate) return;
+    const t = c.theirs;
+    const o = opened;
+    if (!o) return;
+    const same = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+    if (o.name !== t.name) setName(t.name);
+    if (!same(postFormats(o), t.formats)) setFormats(t.formats);
+    if ((o.lead_user_id ?? null) !== t.leadUserId) setLeadUserId(t.leadUserId ?? "");
+    if ((o.concept ?? "") !== t.concept) setConcept(t.concept);
+    if (!same(o.reference_urls ?? [], t.referenceUrls)) setReferenceUrls(t.referenceUrls.length ? t.referenceUrls : [""]);
+    if ((o.slide_count ?? null) !== t.slideCount && t.slideCount) setSlideCountChoice(t.slideCount);
+    if ((o.scheduled_at ?? null) !== t.scheduledAt) {
+      setDate(isoToDateInput(t.scheduledAt));
+      setTime(isoToTimeInput(t.scheduledAt));
+    }
+    if ((o.destination ?? null) !== t.destination) setDestination(t.destination ?? "");
+    if ((o.due_on ?? null) !== t.dueOn) setDueOn(t.dueOn ?? "");
+    setBriefBase(t.updatedAt);
+    knowBrief(t);
+    setConflict(null);
+    updateBrief.reset();
+  }
 
   // ---- Content tab state ---------------------------------------
 
@@ -712,7 +825,7 @@ export function CreativeModal(props: CreativeModalProps) {
   async function handleSaveSlideText() {
     setSlideSaveNote(null);
     try {
-      await saveSlideText.mutateAsync(draftSlideText);
+      await saveSlideText.mutateAsync({ slideText: draftSlideText, known: savedSlideText });
       setSavedSlideText(draftSlideText);
       setSlideSaveNote("Saved.");
     } catch {
@@ -976,6 +1089,14 @@ export function CreativeModal(props: CreativeModalProps) {
         )
       }
     >
+      {/* Someone else on the team has this post open to edit too (phase82):
+          said, not locked; a save that would undo theirs asks first. */}
+      {!isCreate && (props.othersEditing?.length ?? 0) > 0 && (
+        <p className="presence-banner" role="status">
+          {props.othersEditing!.join(" and ")} {props.othersEditing!.length === 1 ? "is" : "are"} editing this post too.
+          Frank will check before your save replaces any of their changes.
+        </p>
+      )}
       <div className="mtabs" role="tablist">
         <button
           type="button"
@@ -1332,8 +1453,27 @@ export function CreativeModal(props: CreativeModalProps) {
               </button>
               {slideSaveNote && !pendingSlideChange && <span className="bsaved">{slideSaveNote}</span>}
             </div>
-            {saveSlideText.error && (
-              <p className="autherr">{errorMessage(saveSlideText.error, "Couldn't save the Text on Image")}</p>
+            {saveSlideText.error instanceof SlideTextChangedError ? (
+              // Someone else's Text on Image arrived meanwhile (phase82).
+              <p className="autherr">
+                {saveSlideText.error.message}{" "}
+                <button
+                  type="button"
+                  className="linkbtn"
+                  onClick={() => {
+                    const theirs = (saveSlideText.error as SlideTextChangedError).theirs;
+                    setSlideText(theirs);
+                    setSavedSlideText(tidySlideText(theirs));
+                    saveSlideText.reset();
+                  }}
+                >
+                  Show Theirs
+                </button>
+              </p>
+            ) : (
+              saveSlideText.error && (
+                <p className="autherr">{errorMessage(saveSlideText.error, "Couldn't save the Text on Image")}</p>
+              )
             )}
           </div>
 
@@ -1516,6 +1656,52 @@ export function CreativeModal(props: CreativeModalProps) {
       )}
 
     </Modal>
+    {/* Someone else saved this post while it was open (phase82). */}
+    {conflict && !isCreate && (
+      <Modal
+        hideCloseButton
+        size="sm"
+        title="Changed While You Were Editing"
+        onClose={() => setConflict(null)}
+        footer={
+          <>
+            <button type="button" className="btn" onClick={() => setConflict(null)}>
+              Cancel
+            </button>
+            <button type="button" className="btn" onClick={() => keepTheirs(conflict)}>
+              Keep Theirs
+            </button>
+            <button
+              type="button"
+              className="btn primary"
+              disabled={updateBrief.isPending}
+              onClick={() => void handleSaveBrief({ overBase: conflict.theirs.updatedAt })}
+            >
+              Use Mine
+            </button>
+          </>
+        }
+      >
+        <p className="sub">
+          {conflict.byName ?? "Someone"} saved this post at{" "}
+          {new Date(conflict.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}, after you
+          opened it.
+        </p>
+        {(() => {
+          const changed = opened ? briefChanges(opened, conflict.theirs, teamMembers) : [];
+          return changed.length ? (
+            <ul className="confirm-list">
+              {changed.map((c) => (
+                <li key={c}>{c}</li>
+              ))}
+            </ul>
+          ) : null;
+        })()}
+        <p className="sub" style={{ marginTop: 8 }}>
+          Keep Theirs takes their changes and keeps the rest of yours, ready to save. Use Mine saves yours over theirs.
+        </p>
+      </Modal>
+    )}
     {closeAsk === "unsaved" && (
       <ConfirmDialog
         title="Close Without Saving?"

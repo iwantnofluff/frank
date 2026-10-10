@@ -428,6 +428,26 @@ export const HELP_ARTICLES: HelpArticle[] = [
     ],
   },
   {
+    id: "working-together",
+    title: "Working on the same post as someone else",
+    category: "team",
+    summary: "Who else is here, who's editing, and what happens if two of you save.",
+    blocks: [
+      {
+        kind: "p",
+        text: "On a project's table and on a post, the pictures at the top are the others on your team who have it open right now. Hover one to see where they are. A green dot means they have the post's Edit window open.",
+      },
+      {
+        kind: "p",
+        text: "When someone else is editing the post you're on, it says so beside the post's tools and at the top of your Edit window. Nothing is locked: you can both carry on.",
+      },
+      {
+        kind: "p",
+        text: "If they save while you're editing, your save stops and tells you who changed it, when, and what. Keep Theirs takes their changes and keeps the rest of yours, ready to save. Use Mine saves yours over theirs. Text on Image works the same way, with Show Theirs. Changes to the post also appear on everyone's page as they're made, without a refresh.",
+      },
+    ],
+  },
+  {
     id: "roles",
     title: "Roles: who can do what",
     category: "team",

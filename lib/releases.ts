@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.14.0",
+    date: "2026-10-10",
+    title: "Working on a post together",
+    changes: [
+      "A project's table and its posts show who else on the team has them open, and who is editing.",
+      "If someone saves a post while you're editing it, Frank stops your save and shows what they changed, so you can keep theirs or use yours.",
+      "Changes to posts now appear on everyone's open pages without a refresh.",
+    ],
+  },
+  {
     version: "1.13.0",
     date: "2026-10-09",
     title: "Updates",
