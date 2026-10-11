@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { AppShell } from "@/components/app-shell/AppShell";
 import { initials } from "@/lib/initials";
+import { railSeed } from "@/lib/rail-seed";
 
 // The middleware already redirects unauthenticated requests to /login; this
 // check is a second, independent layer rather than the only one — the same
@@ -46,11 +48,12 @@ export default async function AppLayout({
     redirect(name ? `/access-removed?agency=${encodeURIComponent(name)}` : "/access-removed");
   }
 
-  const { data: profile } = await supabase
-    .from("users")
-    .select("name")
-    .eq("id", user.id)
-    .maybeSingle();
+  // The page's client for the rail (x-frank-path, set by the proxy), read
+  // alongside the profile so the first paint names it.
+  const [{ data: profile }, seed] = await Promise.all([
+    supabase.from("users").select("name").eq("id", user.id).maybeSingle(),
+    railSeed(supabase, (await headers()).get("x-frank-path")),
+  ]);
 
   const userInitials = initials(profile?.name, user.email ?? "?");
 
@@ -59,6 +62,7 @@ export default async function AppLayout({
       userInitials={userInitials}
       userName={profile?.name ?? null}
       userEmail={user.email ?? ""}
+      railSeed={seed}
     >
       {children}
     </AppShell>

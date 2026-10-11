@@ -62,8 +62,18 @@ function isPublicPath(pathname: string) {
   );
 }
 
+// Carry on to the page, telling it its own path (x-frank-path): the app's
+// layout uses it to name the client in the rail in the first paint
+// (direct instruction: no delay on a fresh load). Built from the request's
+// headers as they stand, so cookies refreshed below go along too.
+function nextWithPath(request: NextRequest) {
+  const headers = new Headers(request.headers);
+  headers.set("x-frank-path", request.nextUrl.pathname);
+  return NextResponse.next({ request: { headers } });
+}
+
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
+  let supabaseResponse = nextWithPath(request);
   const tenant = tenantFromHost(request.headers.get("host"));
 
   const path = request.nextUrl.pathname;
@@ -125,7 +135,7 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
-          supabaseResponse = NextResponse.next({ request });
+          supabaseResponse = nextWithPath(request);
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options),
           );

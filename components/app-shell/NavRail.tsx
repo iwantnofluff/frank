@@ -8,6 +8,7 @@ import { useCreative } from "@/hooks/use-creative";
 import { useClientDetail } from "@/hooks/use-client";
 import { usePresence } from "@/hooks/use-presence";
 import { CalendarIcon, ClientIcon, ClientsIcon, SettingsIcon } from "./icons";
+import type { RailSeed } from "@/lib/rail-seed";
 
 function RailLink({
   href,
@@ -52,8 +53,12 @@ function RailLink({
 // keeps the client (and project) it already had rather than dropping them;
 // a link that really comes or goes slides in or out with the site's own
 // open and close motion (usePresence).
-export function NavRail() {
+export function NavRail({ seed }: { seed: RailSeed | null }) {
   const pathname = usePathname();
+  // On a fresh load the server already read this page's client (direct
+  // instruction: no delay before it's named), used until the page's own
+  // queries answer, and only on the page it was read for.
+  const seeded = seed && seed.path === pathname ? seed : null;
 
   const routeClientId = pathname.match(/^\/clients\/([^/]+)/)?.[1];
   const routeProjectId = pathname.match(/^\/projects\/([^/]+)/)?.[1];
@@ -68,9 +73,10 @@ export function NavRail() {
   // The client and project last known, kept while the next page's own data
   // loads and while their links animate out (React's way to keep a value
   // from earlier renders: set while rendering).
-  const knownClient = routeClientId ?? project?.client_id ?? creative?.projects?.client_id;
-  const knownProject = routeProjectId ?? creative?.project_id;
-  const knownDelivery = (routeProjectId ? project?.delivery : creative?.projects?.delivery) ?? undefined;
+  const knownClient = routeClientId ?? project?.client_id ?? creative?.projects?.client_id ?? seeded?.clientId;
+  const knownProject = routeProjectId ?? creative?.project_id ?? seeded?.projectId ?? undefined;
+  const knownDelivery =
+    (routeProjectId ? project?.delivery : creative?.projects?.delivery) ?? seeded?.delivery ?? undefined;
   const [keptClient, setKeptClient] = useState(knownClient);
   const [keptProject, setKeptProject] = useState({ id: knownProject, delivery: knownDelivery });
   if (knownClient && knownClient !== keptClient) setKeptClient(knownClient);
@@ -82,7 +88,8 @@ export function NavRail() {
   const delivery = knownDelivery ?? keptProject.delivery;
 
   // Named for the client (direct instruction): "Casa Carigar Settings".
-  const { data: client } = useClientDetail(clientId ?? "");
+  const { data: clientRow } = useClientDetail(clientId ?? "");
+  const client = clientRow ?? (seeded && seeded.clientId === clientId ? { name: seeded.clientName } : undefined);
 
   return (
     <nav className="rail" aria-label="Main">

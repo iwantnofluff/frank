@@ -6,17 +6,21 @@ import { ReadOnlyBanner } from "./ReadOnlyBanner";
 import { ViewTransition } from "./ViewTransition";
 import { UpdateReady } from "./UpdateReady";
 import { BRAND } from "@/lib/brand";
+import type { RailSeed } from "@/lib/rail-seed";
 
 export function AppShell({
   children,
   userInitials,
   userName,
   userEmail,
+  railSeed,
 }: {
   children: React.ReactNode;
   userInitials: string;
   userName: string | null;
   userEmail: string;
+  // The opened page's client, read on the server (lib/rail-seed.ts).
+  railSeed?: RailSeed | null;
 }) {
   return (
     <div className="app">
@@ -31,7 +35,7 @@ export function AppShell({
         {/* eslint-disable-next-line @next/next/no-img-element -- a static SVG */}
         <img className="logo-ink" src={BRAND.headerStrapline} alt="" />
       </Link>
-      <NavRail />
+      <NavRail seed={railSeed ?? null} />
       <div className="main">
         <Topbar userInitials={userInitials} userName={userName} userEmail={userEmail} />
         <ReadOnlyBanner />

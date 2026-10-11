@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.18.4",
+    date: "2026-10-11",
+    title: "The rail names the client straight away",
+    changes: ["Opening a client, project or post page, the left rail shows the client's name as soon as the page appears, with no gap while it loads."],
+  },
+  {
     version: "1.18.3",
     date: "2026-10-11",
     title: "Column headers that stay put",
