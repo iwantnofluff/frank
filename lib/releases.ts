@@ -13,6 +13,18 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.18.2",
+    date: "2026-10-11",
+    title: "A clearer post page, and buttons that swipe",
+    changes: [
+      "On a post's page, the stage pills are a little larger and the dividers in the bar above the post a little taller.",
+      "“No artwork yet” in the phone reads at the same size as the comments' “No comments”, with a larger picture above it; the review link's phone matches.",
+      "Save Copy is greyed out until there's a change to save.",
+      "Blue buttons turn a soft greyed blue on hover, and every button's hover colour now swipes in from the side your pointer comes in.",
+      "The left rail names the client's planner: No Fluff Planner, Casa Carigar Planner.",
+    ],
+  },
+  {
     version: "1.18.1",
     date: "2026-10-11",
     title: "Draft with Frank remembers what you used",

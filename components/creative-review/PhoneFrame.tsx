@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
 // The phone's drawn size (the user's iPhone template) and the most it's
 // scaled on screen: 10% up from the 0.85 it had (direct instruction).
@@ -51,7 +51,8 @@ export function PhoneFrame({
   }, [reserve]);
 
   return (
-    <div className="phoneframe" ref={ref} style={{ zoom }}>
+    // --pf-zoom lets text inside be sized as seen, not as drawn.
+    <div className="phoneframe" ref={ref} style={{ zoom, "--pf-zoom": zoom } as CSSProperties}>
       <span className="pf-notch" aria-hidden="true" />
       <span className="pf-btn pf-btn1" aria-hidden="true" />
       <span className="pf-btn pf-btn2" aria-hidden="true" />

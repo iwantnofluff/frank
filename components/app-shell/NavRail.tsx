@@ -107,7 +107,16 @@ export function NavRail() {
       <RailSlot show={(!!routeProjectId || !!routeCreativeId) && !!projectId} swapKey={projectId}>
         <RailLink
           href={`/projects/${projectId}`}
-          label={delivery === "continuous" ? "Other Content" : "Content Planner"}
+          // The client's planner by name (direct instruction): "No Fluff
+          // Planner". A long name stops at two lines; Planner always shows.
+          label={delivery === "continuous" ? "Other Content" : client?.name ? `${client.name} Planner` : "Content Planner"}
+          labelNode={
+            delivery === "continuous" ? undefined : (
+              <>
+                <span className="rlab-name">{client?.name ?? "Content"}</span> Planner
+              </>
+            )
+          }
           icon={CalendarIcon}
           current={pathname === `/projects/${projectId}`}
         />

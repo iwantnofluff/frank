@@ -654,24 +654,52 @@ body.lightrail .search input::placeholder {
   font-weight: 500;
   background: var(--surface);
   transition: background 0.12s, border-color 0.12s;
+  /* The hover colour swipes in over the button from the edge the pointer
+     came in by (direct instruction; useButtonSwipe sets data-from and
+     .swipe), at the site's hover speed. Each kind of button names its own
+     hover colour in --btn-hover. */
+  --btn-hover: var(--canvas);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
 }
-.btn:hover {
-  background: var(--canvas);
+.btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--btn-hover);
+  pointer-events: none;
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path var(--dur-fast) var(--ease-std);
+}
+.btn[data-from="right"]::before {
+  clip-path: inset(0 0 0 100%);
+}
+.btn[data-from="top"]::before {
+  clip-path: inset(0 0 100% 0);
+}
+.btn[data-from="bottom"]::before {
+  clip-path: inset(100% 0 0 0);
+}
+.btn.swipe:not(:disabled)::before {
+  clip-path: inset(0);
+}
+.btn.swipe-snap::before {
+  transition: none;
 }
 .btn.primary {
   background: var(--action);
   border-color: var(--action);
   color: #fff;
-}
-.btn.primary:hover {
-  background: #1540db;
+  /* The disabled button's greyed blue (direct instruction, in place of
+     indigo): the brand colour at 45% on white, so it follows a
+     workspace's own colours. */
+  --btn-hover: color-mix(in srgb, var(--action) 45%, #fff);
 }
 .btn.ghost {
   border-color: transparent;
   background: transparent;
-}
-.btn.ghost:hover {
-  background: var(--canvas);
 }
 .btn.sm {
   padding: 4px 10px;
@@ -696,8 +724,8 @@ body.lightrail .search input::placeholder {
   color: var(--rose);
   border-color: #f3c6ce;
 }
-.btn.danger:hover {
-  background: var(--rose-bg);
+.btn.danger {
+  --btn-hover: var(--rose-bg);
 }
 .btn:disabled {
   opacity: 0.45;
@@ -3009,12 +3037,13 @@ a.fd-ref:hover {
   align-items: center;
   gap: 6px;
 }
-/* 5% larger than the table's (direct instruction): read on its own here. */
+/* Larger than the table's, read on its own here: 5% (direct instruction),
+   then 5% again. */
 .stagesw button {
   gap: 4px;
-  padding: 2.1px 6.3px;
-  border-radius: 3.6px;
-  font-size: 10.9px;
+  padding: 2.2px 6.6px;
+  border-radius: 3.8px;
+  font-size: 11.45px;
   font-weight: 600;
   white-space: nowrap;
   background: var(--line);
@@ -3122,9 +3151,12 @@ select.sort:hover {
    both sides of the line regardless of what sits next to it, rather than
    half the gap coming from .tools' own flex `gap` and half from a
    one-sided border/padding. */
+/* A little taller (direct instruction), in the page's own line colour:
+   --line-2, as the panel dividers (.review-sep) and the rule under this
+   bar. */
 .toolsep {
   width: 1px;
-  height: 22px;
+  height: 28px;
   background: var(--line-2);
   margin: 0 8px;
   flex-shrink: 0;
@@ -7099,6 +7131,25 @@ a.profproject:hover .pp-t b {
   box-sizing: border-box;
   flex-shrink: 0;
 }
+/* "No artwork yet" in the phone reads at the comments panel's empty-state
+   size whatever the phone's zoom (direct instruction): 15.2px and 13.7px
+   as seen. Its picture twice its size, in the phone's own scale. */
+.phoneframe .ig-noart b {
+  font-size: calc(15.2px / var(--pf-zoom, 1));
+}
+.phoneframe .ig-noart span {
+  font-size: calc(13.7px / var(--pf-zoom, 1));
+  max-width: calc(290px / var(--pf-zoom, 1));
+}
+.phoneframe .ig-noart svg {
+  width: 52px;
+  height: 52px;
+}
+/* Room for the larger message on one line where it can be. */
+.phoneframe .ig-noart {
+  padding-left: 12px;
+  padding-right: 12px;
+}
 .pf-screen {
   position: absolute;
   inset: 0;
@@ -8544,8 +8595,8 @@ button.hbrand-add:hover {
   border-color: transparent;
   color: #fff;
 }
-.btn.primary.btn-frank:hover:not(:disabled) {
-  background: linear-gradient(90deg, #fd6e8b, #7b90fc);
+.btn.primary.btn-frank {
+  --btn-hover: linear-gradient(90deg, #fd6e8b, #7b90fc);
 }
 
 /* Settings → Analytics (phase71). Built from the dashboard's .stats cards

@@ -1642,7 +1642,14 @@ export function CreativeModal(props: CreativeModalProps) {
 
               <div className="field">
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <button type="button" className="btn sm primary" disabled={saveCopy.isPending} onClick={handleSaveCopyOnly}>
+                  {/* Greyed while there's nothing new to save (direct
+                      instruction), as Save Text on Image and Save VO are. */}
+                  <button
+                    type="button"
+                    className="btn sm primary"
+                    disabled={saveCopy.isPending || !pendingCopyChange}
+                    onClick={handleSaveCopyOnly}
+                  >
                     {saveCopy.isPending ? "Saving…" : `Save Copy V${nextCopyVersionNo}`}
                   </button>
                   {copySaveNote && (
