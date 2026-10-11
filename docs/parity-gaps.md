@@ -3497,3 +3497,24 @@ Direct instruction: on a fresh page load the client's part of the rail labels ("
 Now the proxy passes each page its own path (an x-frank-path request header, set in updateSession's NextResponse.next, from the request's headers as they stand so refreshed session cookies still go along), and the app's layout, already reading the user on the server, reads that page's client in the same breath (lib/rail-seed.ts, one query, through the person's own session so RLS applies) and hands it to the rail. The rail uses it until its own queries answer, and only on the page it was read for; moving around inside the app works as before, keeping the last client while the next page loads.
 
 **Verified**: with JavaScript turned off, the server's HTML already reads "E2E Test Client Projects / Planner / Settings" on a client's, project's and post's page, and just "Clients" on the dashboard. With JavaScript, no hydration warning or console error on those pages, and clicking from the dashboard into a client still names it. nav-rail, tenancy, login, admin and the review link's desktop screenshot pass (16).
+
+## Copy Caption, Draft with Frank in the footer, one gap above buttons
+
+Direct instruction:
+- **Copy Caption** under the caption, where Draft with Frank was: copies what's in the caption box (the latest version, or edits not yet saved), with its line breaks and blank lines between paragraphs, ready to paste into Instagram or another platform. The clipboard gets plain text (line endings made plain, trailing spaces trimmed, nothing hidden added) and the same as HTML paragraphs for editors that paste rich text (lib/copy-text.ts). "Copied" for two seconds; a browser that refuses the clipboard says so. Not checked in Instagram itself here, only that a paste keeps every line break; if Instagram's own box drops blank lines, that's Instagram, and the usual workaround (a blank-looking character on empty lines) wasn't added, since it would put hidden characters into every other platform's paste too.
+- **Draft with Frank** moved to the Content tab's footer, at the left, so it's in reach however far the window is scrolled.
+- **One gap above every button row** in the window: Save Creative, Save VO, Save Text on Image, Copy Caption and Save Copy all sit 18px below what's above them (Save Creative's gap). Textareas had sat on the text baseline, leaving 6px under them (26px gaps); a field's textarea is now a block, and a button row (.field.btnrow) takes 18px above it.
+- While doing that, the first try inserted the new rules into the middle of the light-rail top bar's .btn.primary rule (the same text matched there first); caught by measuring, put back as it was before shipping.
+
+**Verified**: on a Reel with a caption and a hook: all five gaps measured 18px. Copy Caption put the caption on the clipboard exactly as written ("…agree.\nHe found seven patterns.\n\nThey aren't tricks.\n\nWe build around them.") and as <p> paragraphs with a <br>; pasted into a plain box, identical. copy-chat and voiceover specs (which open Draft with Frank from the footer) pass; creative-review.png and upload-artwork-modal.png updated after looking at their diffs (Draft with Frank in the footer, the tighter gap). Unit tests for the paste tidying and the HTML.
+
+### UI consistency: open items
+
+Asked to track UX/UI inconsistencies across the app. Measured in the post window this time: every section heading the same size, 20px and a rule and 16px above it, 4px to its description, 8px to the first field, 7px from a field's label to its box, 18px above every button row. Seen but not changed (each is a decision, or wasn't asked):
+1. Text on Image's field label repeats its heading ("Text on Image" / "Text on Image"); VO's says "Script".
+2. The post window's footer button says "Update" on Brief and "Save and Close" on Content.
+3. A hovered blue button and a disabled one are now the same greyed blue (as asked); nothing tells them apart but the pointer.
+4. The review link's empty comments read "No comments yet." in smaller text; the post page reads "No comments" / "Be the first to leave one."
+5. Two greys for lines: --line (#E3E6EA) and --line-2 (#D5DAE0); the panel dividers, the post toolbar's rule and its separators are --line-2, while some rules are --line.
+6. Long client names make the rail's labels three lines ("E2E Test Client Projects"), so the icons below move as you go in and out of a client.
+Not yet audited the same way: the Settings pages, the client page, the dashboard, the review link, the admin area.

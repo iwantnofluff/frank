@@ -731,6 +731,17 @@ body.lightrail .search input::placeholder {
   opacity: 0.45;
   cursor: not-allowed;
 }
+/* A field's text box sits on its own line, not on the text baseline,
+   which left a few pixels under every textarea. */
+.field textarea {
+  display: block;
+}
+/* A row of buttons under a section's field (Save VO, Save Text on Image,
+   Copy Caption, Save Copy) sits as close as Save Creative does under the
+   artwork: 18px (direct instruction, one gap for all). */
+.mtabbody *:has(+ .field.btnrow) {
+  margin-bottom: 18px;
+}
 
 .view {
   display: none;

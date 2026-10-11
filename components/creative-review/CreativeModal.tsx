@@ -49,6 +49,7 @@ import {
   hasVideoFormat,
 } from "@/lib/formats";
 import { slideFields, tidySlideText } from "@/lib/slide-text";
+import { copyCaption } from "@/lib/copy-text";
 import { ListEditor } from "@/components/ui/ListEditor";
 import { linkHref, tidyReferences } from "@/lib/links";
 import { FormatPicker } from "./FormatPicker";
@@ -1026,22 +1027,57 @@ export function CreativeModal(props: CreativeModalProps) {
 
 
   // "Write with Claude" (phase52): under the caption field.
+  // In the Content tab's footer, so it's in reach however far down the
+  // window is scrolled (direct instruction).
   const writeWithClaude = (
-    <div className="field">
-      <button
-        type="button"
-        className="btn sm primary btn-frank"
-        disabled={!modelLabel || !creativeId}
-        title={creativeId ? undefined : "Save the brief first"}
-        onClick={() => setChatOpen(true)}
-      >
-        <svg className="aicon" viewBox="0 0 24 24">
-          <path d="M12 3l1.8 6.2L20 11l-6.2 1.8L12 19l-1.8-6.2L4 11l6.2-1.8L12 3z" />
-        </svg>
-        {/* Named for Frank (direct instruction); the model is named in the
-            window it opens. */}
-        Draft with Frank
-      </button>
+    <button
+      type="button"
+      className="btn primary btn-frank"
+      disabled={!modelLabel || !creativeId}
+      title={creativeId ? undefined : "Save the brief first"}
+      onClick={() => setChatOpen(true)}
+    >
+      <svg className="aicon" viewBox="0 0 24 24">
+        <path d="M12 3l1.8 6.2L20 11l-6.2 1.8L12 19l-1.8-6.2L4 11l6.2-1.8L12 3z" />
+      </svg>
+      {/* Named for Frank (direct instruction); the model is named in the
+          window it opens. */}
+      Draft with Frank
+    </button>
+  );
+
+  // Under the caption, where Draft with Frank was (direct instruction):
+  // the caption as it is in the box, paragraphs and all, ready to paste
+  // into Instagram or another platform.
+  const [captionCopied, setCaptionCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
+  const captionNow = draftFields.caption ?? "";
+  const copyCaptionButton = (
+    <div className="field btnrow">
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <button
+          type="button"
+          className="btn sm"
+          disabled={!captionNow.trim()}
+          onClick={async () => {
+            setCopyFailed(false);
+            try {
+              await copyCaption(captionNow);
+              setCaptionCopied(true);
+              window.setTimeout(() => setCaptionCopied(false), 2000);
+            } catch {
+              setCopyFailed(true);
+            }
+          }}
+        >
+          <svg className="aicon" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="9" y="9" width="11" height="11" rx="2" />
+            <path d="M5 15V6a2 2 0 0 1 2-2h9" />
+          </svg>
+          {captionCopied ? "Copied" : "Copy Caption"}
+        </button>
+        {copyFailed && <span className="autherr">Couldn&rsquo;t copy. Select the caption and copy it instead.</span>}
+      </div>
     </div>
   );
 
@@ -1097,6 +1133,7 @@ export function CreativeModal(props: CreativeModalProps) {
           </>
         ) : (
           <>
+            {activeTab === "upload" && creativeId && writeWithClaude}
             <div className="grow" />
             <button type="button" className="btn" onClick={requestClose}>
               Cancel
@@ -1474,7 +1511,7 @@ export function CreativeModal(props: CreativeModalProps) {
                   }}
                 />
               </div>
-              <div className="field">
+              <div className="field btnrow">
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <button
                     type="button"
@@ -1528,7 +1565,7 @@ export function CreativeModal(props: CreativeModalProps) {
             fixed
             bare
           />
-          <div className="field">
+          <div className="field btnrow">
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <button
                 type="button"
@@ -1606,7 +1643,7 @@ export function CreativeModal(props: CreativeModalProps) {
                 </p>
               )}
 
-              {copyFieldSpecs.map((spec, i) => (
+              {copyFieldSpecs.map((spec) => (
                 <Fragment key={spec.key}>
                 <div className="field">
                   <label>{spec.label}</label>
@@ -1631,16 +1668,11 @@ export function CreativeModal(props: CreativeModalProps) {
                     />
                   )}
                 </div>
-                {/* Under the caption (direct instruction), or under the
-                    last field when the formats have no caption. */}
-                {(spec.key === "caption" ||
-                  (!copyFieldSpecs.some((f) => f.key === "caption") && i === copyFieldSpecs.length - 1)) &&
-                  writeWithClaude}
+                {spec.key === "caption" && copyCaptionButton}
                 </Fragment>
               ))}
-              {!includesCopy && writeWithClaude}
 
-              <div className="field">
+              <div className="field btnrow">
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   {/* Greyed while there's nothing new to save (direct
                       instruction), as Save Text on Image and Save VO are. */}

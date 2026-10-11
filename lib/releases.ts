@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.18.5",
+    date: "2026-10-11",
+    title: "Copy Caption",
+    changes: [
+      "A Copy Caption button under the caption copies it with its line breaks and paragraphs, ready to paste into Instagram or another platform.",
+      "Draft with Frank is in the post window's footer, so it's always in reach while you scroll.",
+      "The Save and Copy buttons in the post window all sit the same distance below what's above them.",
+    ],
+  },
+  {
     version: "1.18.4",
     date: "2026-10-11",
     title: "The rail names the client straight away",

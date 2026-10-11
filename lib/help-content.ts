@@ -300,7 +300,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "Creative: one slot per slide, or one for a single image or video, up to 300MB a file. A file dropped in isn't added until you press Save Creative V1 (then V2 and so on); closing first asks if you're sure.",
           "VO, for a video post (a Reel, Story, YouTube or other video format): the voiceover script, after the artwork, saved with Save VO. Like Text on Image, it stays with the post rather than becoming a version, and only your team sees it.",
           "Text on Image: the words on each slide, saved with Save Text on Image. It stays with the post rather than becoming a version.",
-          "Copy: the caption and anything else the formats need. Save Copy V1, then V2 and so on.",
+          "Copy: the caption and anything else the formats need. Save Copy V1, then V2 and so on; it's greyed until there's a change to save. Copy Caption, under the caption, copies it with its line breaks and paragraphs, ready to paste into Instagram or another platform.",
         ],
       },
       {
@@ -415,7 +415,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     blocks: [
       {
         kind: "p",
-        text: "In a post's Content tab, choose Draft with Frank under the Caption. Frank reads the brief, the WIIFM, each format's direction, and your workspace's and the client's Knowledge, files included. It also reads up to 8 of the client's other posts (Approved ones first) to keep to their voice without repeating them, and what the client has asked for in their comments over the last 90 days, which it follows; if that clashes with the Knowledge, Frank says so.",
+        text: "In a post's Content tab, choose Draft with Frank at the foot of the window. Frank reads the brief, the WIIFM, each format's direction, and your workspace's and the client's Knowledge, files included. It also reads up to 8 of the client's other posts (Approved ones first) to keep to their voice without repeating them, and what the client has asked for in their comments over the last 90 days, which it follows; if that clashes with the Knowledge, Frank says so.",
       },
       {
         kind: "list",
