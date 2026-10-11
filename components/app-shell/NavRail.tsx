@@ -90,13 +90,19 @@ export function NavRail() {
           height the agency's mark took, so the icons below stay put. */}
       <div className="rail-top" aria-hidden="true" />
       <RailLink href="/dashboard" label="Clients" icon={ClientsIcon} current={pathname.startsWith("/dashboard")} />
-      {/* The client you're in, by name (direct instruction): its page, from
-          its settings, a project, a table or a post. */}
+      {/* The client you're in, by name, as its projects (direct
+          instruction: "No Fluff Projects"): its page, from its settings, a
+          project, a table or a post. A long name stops at two lines;
+          Projects always shows. */}
       <RailSlot show={insideClient && !!clientId} swapKey={clientId}>
         <RailLink
           href={`/clients/${clientId}`}
-          label={client?.name ?? "Client"}
-          labelNode={<span className="rlab-name">{client?.name ?? "\u00a0"}</span>}
+          label={client?.name ? `${client.name} Projects` : "Client Projects"}
+          labelNode={
+            <>
+              <span className="rlab-name">{client?.name ?? "\u00a0"}</span> Projects
+            </>
+          }
           icon={ClientIcon}
           current={pathname === `/clients/${clientId}`}
           id="navClient"

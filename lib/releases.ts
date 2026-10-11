@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.18.3",
+    date: "2026-10-11",
+    title: "Column headers that stay put",
+    changes: [
+      "On a planner or Other Content table, the column headers stay in view as you scroll through the posts, and everything above the table stays where it is.",
+      "Each week's label stays at the left as the table scrolls sideways.",
+      "The left rail names the client's page as its projects: No Fluff Projects, NuHabit Projects.",
+    ],
+  },
+  {
     version: "1.18.2",
     date: "2026-10-11",
     title: "A clearer post page, and buttons that swipe",

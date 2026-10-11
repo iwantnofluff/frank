@@ -1421,6 +1421,26 @@ body.lightrail .search input::placeholder {
   border: 1px solid var(--line-2);
   border-radius: var(--r);
 }
+/* A project's table (Content Planner and Other Content) scrolls in place
+   (direct instruction): the page fits the window, everything above the
+   table and the legend below it stay put, and the table's own area
+   scrolls, so its column headers (th, sticky at top 0) stay in view. The
+   area is only as tall as the table, up to the room there is. Only while
+   there's a table: the calendar and the empty state scroll as before. */
+.pad.projpage:has(> .tblwrap) {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.pad.projpage:has(> .tblwrap) > * {
+  flex-shrink: 0;
+}
+.pad.projpage > .tblwrap {
+  flex: 0 1 auto;
+  min-height: 200px;
+  overflow: auto;
+}
 .tbl {
   border-collapse: separate;
   border-spacing: 0;
@@ -1481,6 +1501,9 @@ body.lightrail .search input::placeholder {
   position: sticky;
   left: 0;
   z-index: 1;
+  /* Not hidden like other cells, so the label inside sticks to the table's
+     scroll, not this cell's. */
+  overflow: visible;
   background: var(--canvas);
   font-size: 12.7px;
   font-weight: 600;
@@ -1492,6 +1515,10 @@ body.lightrail .search input::placeholder {
   display: inline-flex;
   align-items: center;
   white-space: nowrap;
+  /* The band's cell spans the whole table, so its own sticky does
+     nothing; the label stays at the left as the table scrolls sideways. */
+  position: sticky;
+  left: 12px;
 }
 .tbl .wkband .rng {
   font-weight: 400;
@@ -1877,9 +1904,11 @@ body.lightrail .search input::placeholder {
 }
 
 /* Column drag-to-reorder and resize (table header only). */
+/* Not position: relative, which undid .tbl th's sticky (direct
+   instruction: sticky headers); sticky holds the grip and resize handle
+   just the same. */
 .tbl th.dragcol {
   cursor: grab;
-  position: relative;
 }
 .tbl th.dragcol:active {
   cursor: grabbing;

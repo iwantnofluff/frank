@@ -116,7 +116,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       { kind: "h", text: "Getting around" },
       {
         kind: "p",
-        text: "The left rail follows where you are, and names the client: anywhere inside a client you'll see Clients, the client itself (Casa Carigar, with a buildings icon, opening its page), and the client's Settings (Casa Carigar Settings); in a project and on its posts, the client's planner (Casa Carigar Planner) or Other Content as well. Frank's logo in the top left corner takes you back to Clients. Your picture at the top right holds My Profile, Settings for your whole workspace, and Sign out. If you belong to more than one workspace, it lists them too: pick one to switch, still signed in.",
+        text: "The left rail follows where you are, and names the client: anywhere inside a client you'll see Clients, the client's projects (Casa Carigar Projects, with a buildings icon, opening its page), and the client's Settings (Casa Carigar Settings); in a project and on its posts, the client's planner (Casa Carigar Planner) or Other Content as well. Frank's logo in the top left corner takes you back to Clients. Your picture at the top right holds My Profile, Settings for your whole workspace, and Sign out. If you belong to more than one workspace, it lists them too: pick one to switch, still signed in.",
       },
     ],
   },

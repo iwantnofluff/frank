@@ -101,7 +101,9 @@ export default function ProjectPage({
   );
 
   return (
-    <div className="pad">
+    // projpage: the table scrolls in place under its own sticky headers,
+    // the page above it staying put (direct instruction).
+    <div className="pad projpage">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
         <div>
           <h1 className="h1">
