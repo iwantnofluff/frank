@@ -49,12 +49,14 @@ test("several formats: labels joined, copy fields combined once each, older rows
 
 test("copySummary: the caption plain, never labelled; other fields labelled after a blank line, in the formats' order", () => {
   assert.equal(copySummary({ caption: " Hello " }, ["ig_feed"]), "Hello");
-  assert.equal(copySummary({ alt: "A bottle", caption: "Hello\n\nMore" }, ["ig_feed"]), "Hello\n\nMore\n\nAlt Text: A bottle");
+  // Not Alt Text (direct instruction).
+  assert.equal(copySummary({ alt: "A bottle", caption: "Hello\n\nMore" }, ["ig_feed"]), "Hello\n\nMore");
+  assert.equal(copySummary({ caption: "Hi", hook: "Wait for it" }, ["ig_reel"]), "Hi\n\nOn-screen Hook: Wait for it");
   assert.equal(copySummary({ hook: "Wait", headline: "Not this format" }, ["ig_reel"]), "On-screen Hook: Wait");
   assert.equal(copySummary({}, ["ig_feed"]), "");
-  assert.deepEqual(copySummaryParts({ alt: "A bottle", caption: "Hello" }, ["ig_feed"]), {
+  assert.deepEqual(copySummaryParts({ hook: "Wait", caption: "Hello" }, ["ig_reel"]), {
     caption: "Hello",
-    others: [{ label: "Alt Text", text: "A bottle" }],
+    others: [{ label: "On-screen Hook", text: "Wait" }],
   });
 });
 

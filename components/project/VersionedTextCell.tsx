@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { CopyVersionHistoryPopover } from "@/components/project/CopyVersionHistoryPopover";
+import { CopyCaptionChip } from "@/components/project/CopyCaptionChip";
 import { ClampText } from "@/components/project/ClampText";
 
 // A table cell's latest copy version (the Copy column), with its
@@ -17,7 +18,7 @@ export function VersionedTextCell({
 }: {
   label: string;
   // node: the same, formatted (the Copy column's labels), when there is one.
-  rows: { versionNo: number; text: string; node?: React.ReactNode }[];
+  rows: { versionNo: number; text: string; node?: React.ReactNode; caption?: string | null }[];
   // Its row's Read more (ClampText): the table holds which row is open.
   expanded: boolean;
   onToggle: () => void;
@@ -44,7 +45,11 @@ export function VersionedTextCell({
     <>
       <span className="copyc">
         <span className="cc-v">V{latest.versionNo}</span>
-        <ClampText expanded={expanded} onToggle={onToggle}>
+        <ClampText
+          expanded={expanded}
+          onToggle={onToggle}
+          after={latest.caption ? <CopyCaptionChip caption={latest.caption} /> : null}
+        >
           {latest.node ?? latest.text}
         </ClampText>
         {/* Earlier versions on hover, on this label alone. */}

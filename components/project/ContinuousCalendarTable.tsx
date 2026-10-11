@@ -23,8 +23,9 @@ import { getMonthWeeks, getWeekDays, isoWeekNumber, dateKey } from "@/lib/calend
 import { useMyAgency } from "@/hooks/use-my-agency";
 import { useCopyVersionsByCreative } from "@/hooks/use-copy-versions-by-creative";
 import { VersionedTextCell } from "@/components/project/VersionedTextCell";
-import { copySummary, formatsLabel, postFormats } from "@/lib/formats";
+import { copySummary, copySummaryParts, formatsLabel, postFormats } from "@/lib/formats";
 import { CopySummaryText } from "@/components/project/CopySummaryText";
+import { CopyCaptionChip } from "@/components/project/CopyCaptionChip";
 import { DraftEditBar, DraftField, useDraftPost } from "@/components/project/draft-post";
 import {
   useCalendarViews,
@@ -1144,6 +1145,7 @@ export function ContinuousCalendarTable({
                                   versionNo: v.versionNo,
                                   text: copySummary(v.fields, postFormats(c)),
                                   node: <CopySummaryText fields={v.fields} formatIds={postFormats(c)} />,
+                                  caption: copySummaryParts(v.fields, postFormats(c)).caption,
                                 }))
                                 .filter((v) => v.text);
                               return (
@@ -1173,7 +1175,17 @@ export function ContinuousCalendarTable({
                                 <td key={key} className="cellw">
                                   {c.approach_notes?.length ? (
                                     <span className="copyc">
-                                      <ClampText expanded={expandedRow === c.id} onToggle={() => toggleRow(c.id)}>
+                                      <ClampText
+                                        expanded={expandedRow === c.id}
+                                        onToggle={() => toggleRow(c.id)}
+                                        after={
+                                          <CopyCaptionChip
+                                            caption={c.approach_notes.map((a) => `• ${a}`).join("\n")}
+                                            label="Copy WIIFM"
+                                            title="Copy the WIIFM Direction, one point a line"
+                                          />
+                                        }
+                                      >
                                         {c.approach_notes.map((a) => `• ${a}`).join("\n")}
                                       </ClampText>
                                     </span>

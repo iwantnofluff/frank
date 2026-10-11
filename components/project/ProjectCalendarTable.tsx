@@ -20,8 +20,9 @@ import { SaveViewModal } from "@/components/project/SaveViewModal";
 import { PermanentDeleteConfirm } from "@/components/project/PermanentDeleteConfirm";
 import { bandOf, stageLabel, stageColor, exceptionLabel, type Band } from "@/lib/stage-labels";
 import { errorMessage } from "@/lib/errors";
-import { copySummary, formatsLabel, postFormats } from "@/lib/formats";
+import { copySummary, copySummaryParts, formatsLabel, postFormats } from "@/lib/formats";
 import { CopySummaryText } from "@/components/project/CopySummaryText";
+import { CopyCaptionChip } from "@/components/project/CopyCaptionChip";
 import { getMonthWeeks, getWeekDays, isoWeekNumber, dateKey } from "@/lib/calendar-weeks";
 import { useCopyVersionsByCreative, type CopyVersionSummary } from "@/hooks/use-copy-versions-by-creative";
 import { useLatestFeedbackByCreative } from "@/hooks/use-latest-feedback-by-creative";
@@ -484,13 +485,14 @@ export function ProjectCalendarTable({
   function versionRows(
     versions: CopyVersionSummary[] | undefined,
     formatIds: string[],
-  ): { versionNo: number; text: string; node: React.ReactNode }[] {
+  ): { versionNo: number; text: string; node: React.ReactNode; caption: string | null }[] {
     if (!versions) return [];
     return versions
       .map((v) => ({
         versionNo: v.versionNo,
         text: copySummary(v.fields, formatIds),
         node: <CopySummaryText fields={v.fields} formatIds={formatIds} />,
+        caption: copySummaryParts(v.fields, formatIds).caption,
       }))
       .filter((v) => v.text);
   }
@@ -1117,7 +1119,17 @@ export function ProjectCalendarTable({
                                 <td key={key} className="cellw">
                                   {c.approach_notes?.length ? (
                                     <span className="copyc">
-                                      <ClampText expanded={expandedRow === c.id} onToggle={() => toggleRow(c.id)}>
+                                      <ClampText
+                                        expanded={expandedRow === c.id}
+                                        onToggle={() => toggleRow(c.id)}
+                                        after={
+                                          <CopyCaptionChip
+                                            caption={c.approach_notes.map((a) => `• ${a}`).join("\n")}
+                                            label="Copy WIIFM"
+                                            title="Copy the WIIFM Direction, one point a line"
+                                          />
+                                        }
+                                      >
                                         {c.approach_notes.map((a) => `• ${a}`).join("\n")}
                                       </ClampText>
                                     </span>
@@ -1169,7 +1181,11 @@ export function ProjectCalendarTable({
                                   {latest ? (
                                     <span className="copyc">
                                       <span className="cc-v">V{latest.versionNo}</span>
-                                      <ClampText expanded={expandedRow === c.id} onToggle={() => toggleRow(c.id)}>
+                                      <ClampText
+                                        expanded={expandedRow === c.id}
+                                        onToggle={() => toggleRow(c.id)}
+                                        after={latest.caption ? <CopyCaptionChip caption={latest.caption} /> : null}
+                                      >
                                         {latest.node}
                                       </ClampText>
                                       {/* Earlier versions on hover, on this label alone, so

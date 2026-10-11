@@ -10,10 +10,15 @@ export function ClampText({
   expanded,
   onToggle,
   children,
+  after,
 }: {
   expanded: boolean;
   onToggle: () => void;
   children: ReactNode;
+  // Shown at the end of the text once all of it is in view: straight away
+  // when it fits, after Read more when it doesn't (the Copy column's Copy
+  // Caption, direct instruction).
+  after?: ReactNode;
 }) {
   const ref = useRef<HTMLSpanElement>(null);
   const [overflows, setOverflows] = useState(false);
@@ -35,6 +40,7 @@ export function ClampText({
       <span ref={ref} className={`cc-t${expanded ? " open" : ""}`}>
         {children}
       </span>
+      {after && (!overflows || expanded) && <span className="cc-after">{after}</span>}
       {(overflows || expanded) && (
         <button
           type="button"

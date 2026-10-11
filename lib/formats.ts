@@ -182,12 +182,14 @@ export function aspectRatioCss(id: string): string {
 // formats use, in their order. The caption reads as itself, never
 // labelled; each other field comes after it, labelled ("Alt Text") and
 // set apart by a blank line (direct instruction: "Caption:" ran on into
-// the rest).
+// the rest). Alt Text isn't shown.
 export function copySummaryParts(
   fields: Record<string, string>,
   formatIds: string[],
 ): { caption: string | null; others: { label: string; text: string }[] } {
-  const filled = copyFieldsFor(formatIds).filter((key) => fields[key]?.trim());
+  // Not Alt Text (direct instruction: it's for the platform, not the
+  // planner).
+  const filled = copyFieldsFor(formatIds).filter((key) => key !== "alt" && fields[key]?.trim());
   return {
     caption: filled.includes("caption") ? fields.caption.trim() : null,
     others: filled.filter((key) => key !== "caption").map((key) => ({ label: COPY_FIELD_LABELS[key] ?? key, text: fields[key].trim() })),

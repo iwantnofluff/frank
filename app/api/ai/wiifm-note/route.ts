@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { runAiTask } from "@/lib/ai/run-ai-task";
 import { copyFieldsFor, postFormats, COPY_FIELD_LABELS } from "@/lib/formats";
+import { buildWiifmPrompt, parseWiifmNotes } from "@/lib/ai/wiifm-prompt";
 
 // Ported the reasoning behind removing the manual "Approach notes — WIIFM
 // rationale" input from BriefPanel.tsx: a hand-typed note goes stale the
@@ -87,27 +88,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No copy to analyse yet" }, { status: 400 });
   }
 
-  const prompt = [
-    "You analyse ad/social copy for its WIIFM (\"what's in it for me\") angle —",
-    "what the reader actually gets, not what the brand is saying about itself.",
-    creative.concept ? `The brief's concept: ${creative.concept}` : null,
-    `The copy:\n${copyText}`,
-    "",
-    "List, one per line, the specific things a reader gets from this copy.",
-    "Plain, concrete statements only — no preamble, no numbering, no markdown.",
-  ]
-    .filter(Boolean)
-    .join("\n");
+  // Only what's working, as the principle or bias it uses, in short
+  // bullets (direct instruction; lib/ai/wiifm-prompt.ts).
+  const prompt = buildWiifmPrompt((creative.concept as string | null) ?? null, copyText);
 
   const result = await runAiTask(supabase, agencyId, user.id, prompt);
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
 
-  const approachNotes = (result.text ?? "")
-    .split("\n")
-    .map((line) => line.replace(/^[-•\d.)\s]+/, "").trim())
-    .filter(Boolean);
+  const approachNotes = parseWiifmNotes(result.text ?? "");
 
   const { data, error } = await supabase
     .from("creatives")

@@ -3542,3 +3542,12 @@ Asked why "Caption:" came before the caption on the planner: the Copy column sho
 While checking: the popup's version heading style (.cp-row b: block, small capitals, blue on the latest) also caught the new bold labels, putting "ALT TEXT:" on a line of its own; it's now only the row's own heading (.cp-row > b).
 
 **Verified**: a post with a three-paragraph caption and Alt Text: the cell reads the caption, a blank line, then "Alt Text:" in bold with its text; the popup the same, with "V2 · Latest" and "V1" headings as before. Unit test updated; project-calendar and continuous-calendar specs pass (22).
+
+## Copy from the table; no Alt Text in Copy; the WIIFM Direction as what's working
+
+Direct instruction:
+- **The Copy column drops Alt Text** (it's for the platform, not the planner). Other fields (a Reel's On-screen Hook, an ad's Headline) still follow the caption, labelled.
+- **Copy Caption in the Copy column**, and **Copy WIIFM in the WIIFM Direction column**: pill-sized (the Status pill's 10.4px, 2px 6px, 3.4px corners, its grey), at the end of the text, shown once all of it is in view: straight away when it fits in two lines, after Read more when it doesn't (ClampText's new `after`). They copy with line breaks and paragraphs (lib/copy-text), WIIFM as "• point" lines; "Copied" for two seconds; the click doesn't open the post. On both tables (planner and Other Content).
+- **The WIIFM Direction** (rewritten from the copy at every copy save, app/api/ai/wiifm-note) now lists only what's working: 3 to 5 bullets, each "Principle: the words that use it, and what that does", under 15 words after the principle; never what's missing or weak, never suggestions (lib/ai/wiifm-prompt.ts, tested; at most five kept, bullets and bold stripped). Draft with Frank reads it as "what's already working… build on them" rather than "what the reader should get".
+
+**Verified**: on the table, a short caption shows Copy Caption at once, a long one only after Read more; it copied the caption exactly and stayed on the table; it's the Status pill's size (10.4px, 19px tall). Copy WIIFM after Read more copied the three points one a line. With the real model (one request) on the "Nobody misses on purpose" caption: five points, e.g. "Loss aversion: 'Most of the waste comes from the target.' makes wasted budget feel personal.", nothing on what isn't working. Unit tests for the prompt and the reading-back (which caught a bold label keeping its closing asterisks); project-calendar, continuous-calendar and copy-chat specs pass (24).

@@ -301,6 +301,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "VO, for a video post (a Reel, Story, YouTube or other video format): the voiceover script, after the artwork, saved with Save VO. Like Text on Image, it stays with the post rather than becoming a version, and only your team sees it.",
           "Text on Image: the words on each slide, saved with Save Text on Image. It stays with the post rather than becoming a version.",
           "Copy: the caption and anything else the formats need. Save Copy V1, then V2 and so on; it's greyed until there's a change to save. Copy Caption, under the caption, copies it with its line breaks and paragraphs, ready to paste into Instagram or another platform.",
+          "WIIFM Direction: each time copy is saved, Frank lists what's working in it, in 3 to 5 short points, each naming the psychology principle or bias the copy uses (curiosity gap, loss aversion and so on) and the words that use it. It never lists what isn't working. On the table, Copy Caption and Copy WIIFM copy either one, ready to paste.",
         ],
       },
       {

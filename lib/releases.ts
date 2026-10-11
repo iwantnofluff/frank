@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.19.2",
+    date: "2026-10-11",
+    title: "Copy from the table, and a sharper WIIFM",
+    changes: [
+      "The table's Copy column has a Copy Caption button at the end of the caption (after Read more, for a long one), and the WIIFM Direction column a Copy WIIFM button.",
+      "The Copy column no longer shows Alt Text.",
+      "The WIIFM Direction lists only what's working in the copy, in 3 to 5 short points, each naming the psychology principle or bias it uses.",
+    ],
+  },
+  {
     version: "1.19.1",
     date: "2026-10-11",
     title: "A roomier Draft with Frank, a clearer Copy column",

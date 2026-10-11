@@ -164,7 +164,7 @@ export function buildCopyChatPromptParts(
     `Format: ${context.formatLabel}`,
     context.concept ? `Concept:\n${context.concept}` : "Concept: none written yet.",
     context.approachNotes.length
-      ? `What the reader should get from it (WIIFM):\n${context.approachNotes.map((n) => `- ${n}`).join("\n")}`
+      ? `What's already working in this post's copy (its WIIFM Direction: the psychology principles and biases it uses; build on them):\n${context.approachNotes.map((n) => `- ${n}`).join("\n")}`
       : null,
     context.formatDirection ? `Format direction (follow it):\n${context.formatDirection}` : null,
     context.strategy ?? null,
