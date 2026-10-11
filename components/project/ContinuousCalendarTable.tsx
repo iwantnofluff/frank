@@ -24,6 +24,7 @@ import { useMyAgency } from "@/hooks/use-my-agency";
 import { useCopyVersionsByCreative } from "@/hooks/use-copy-versions-by-creative";
 import { VersionedTextCell } from "@/components/project/VersionedTextCell";
 import { copySummary, formatsLabel, postFormats } from "@/lib/formats";
+import { CopySummaryText } from "@/components/project/CopySummaryText";
 import { DraftEditBar, DraftField, useDraftPost } from "@/components/project/draft-post";
 import {
   useCalendarViews,
@@ -1139,7 +1140,11 @@ export function ContinuousCalendarTable({
                             }
                             case "copy": {
                               const rows = (copyVersionsByCreative?.[c.id] ?? [])
-                                .map((v) => ({ versionNo: v.versionNo, text: copySummary(v.fields, postFormats(c)) }))
+                                .map((v) => ({
+                                  versionNo: v.versionNo,
+                                  text: copySummary(v.fields, postFormats(c)),
+                                  node: <CopySummaryText fields={v.fields} formatIds={postFormats(c)} />,
+                                }))
                                 .filter((v) => v.text);
                               return (
                                 <td key={key} className="cellw">

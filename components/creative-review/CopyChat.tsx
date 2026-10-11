@@ -169,8 +169,9 @@ export function CopyChat({
           </button>
           {/* What Frank reads, in a little detail (direct instruction), the
               client's own choices included. */}
+          {/* Headed like Earlier Conversations (direct instruction). */}
+          <div className="cchat-head">Frank reads</div>
           <div className="cchat-note">
-            Frank reads:
             <ul className="cchat-reads">
               <li>This post&rsquo;s brief: its name, format, Concept and WIIFM.</li>
               <li>Each format&rsquo;s direction, from Knowledge.</li>

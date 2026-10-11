@@ -2507,7 +2507,8 @@ body.lightrail .search input::placeholder {
 .cp-row:last-child {
   border-bottom: none;
 }
-.cp-row b {
+/* The version heading ("V2 · Latest"), not the copy's own field labels. */
+.cp-row > b {
   display: block;
   font-size: 10.7px;
   font-weight: 600;
@@ -2516,7 +2517,7 @@ body.lightrail .search input::placeholder {
   color: var(--muted);
   margin-bottom: 3px;
 }
-.cp-row.live b {
+.cp-row.live > b {
   color: var(--action);
 }
 .cp-row span {
@@ -6849,15 +6850,35 @@ a.profproject:hover .pp-t b {
 }
 /* "Write with Claude" (phase52): earlier conversations and how to start on
    the left, the conversation on the right. */
+/* As wide as Project Settings, with the same line between its two sides
+   and 40px either side of it (direct instruction). */
+.modal.lg:has(.cchat) {
+  max-width: 1100px;
+}
 .cchat {
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
-  gap: 20px;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 0;
   min-height: 420px;
+}
+.cchat > .cchat-side {
+  padding-right: 40px;
+  border-right: 1px solid var(--line);
+}
+.cchat > .cchat-main {
+  padding-left: 40px;
 }
 @media (max-width: 760px) {
   .cchat {
     grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+  .cchat > .cchat-side {
+    padding-right: 0;
+    border-right: 0;
+  }
+  .cchat > .cchat-main {
+    padding-left: 0;
   }
 }
 .cchat-side {

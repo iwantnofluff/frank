@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.19.1",
+    date: "2026-10-11",
+    title: "A roomier Draft with Frank, a clearer Copy column",
+    changes: [
+      "Draft with Frank is wider, with a line between its two sides, and “Frank reads” is headed like “Earlier conversations”.",
+      "The table's Copy column shows the caption as it is, without a “Caption:” label; any other field follows after a blank line, its name in bold.",
+    ],
+  },
+  {
     version: "1.19.0",
     date: "2026-10-11",
     title: "Choose what Frank reads",

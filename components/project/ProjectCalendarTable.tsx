@@ -21,6 +21,7 @@ import { PermanentDeleteConfirm } from "@/components/project/PermanentDeleteConf
 import { bandOf, stageLabel, stageColor, exceptionLabel, type Band } from "@/lib/stage-labels";
 import { errorMessage } from "@/lib/errors";
 import { copySummary, formatsLabel, postFormats } from "@/lib/formats";
+import { CopySummaryText } from "@/components/project/CopySummaryText";
 import { getMonthWeeks, getWeekDays, isoWeekNumber, dateKey } from "@/lib/calendar-weeks";
 import { useCopyVersionsByCreative, type CopyVersionSummary } from "@/hooks/use-copy-versions-by-creative";
 import { useLatestFeedbackByCreative } from "@/hooks/use-latest-feedback-by-creative";
@@ -483,12 +484,13 @@ export function ProjectCalendarTable({
   function versionRows(
     versions: CopyVersionSummary[] | undefined,
     formatIds: string[],
-  ): { versionNo: number; text: string }[] {
+  ): { versionNo: number; text: string; node: React.ReactNode }[] {
     if (!versions) return [];
     return versions
       .map((v) => ({
         versionNo: v.versionNo,
         text: copySummary(v.fields, formatIds),
+        node: <CopySummaryText fields={v.fields} formatIds={formatIds} />,
       }))
       .filter((v) => v.text);
   }
@@ -1168,7 +1170,7 @@ export function ProjectCalendarTable({
                                     <span className="copyc">
                                       <span className="cc-v">V{latest.versionNo}</span>
                                       <ClampText expanded={expandedRow === c.id} onToggle={() => toggleRow(c.id)}>
-                                        {latest.text}
+                                        {latest.node}
                                       </ClampText>
                                       {/* Earlier versions on hover, on this label alone, so
                                           reaching for Read more doesn't open them. */}

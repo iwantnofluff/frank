@@ -16,7 +16,8 @@ export function VersionedTextCell({
   onToggle,
 }: {
   label: string;
-  rows: { versionNo: number; text: string }[];
+  // node: the same, formatted (the Copy column's labels), when there is one.
+  rows: { versionNo: number; text: string; node?: React.ReactNode }[];
   // Its row's Read more (ClampText): the table holds which row is open.
   expanded: boolean;
   onToggle: () => void;
@@ -44,7 +45,7 @@ export function VersionedTextCell({
       <span className="copyc">
         <span className="cc-v">V{latest.versionNo}</span>
         <ClampText expanded={expanded} onToggle={onToggle}>
-          {latest.text}
+          {latest.node ?? latest.text}
         </ClampText>
         {/* Earlier versions on hover, on this label alone. */}
         {rows.length > 1 && (

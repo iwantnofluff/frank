@@ -3528,3 +3528,17 @@ Direct instruction (choices asked):
 - **Earlier conversations** scroll on their own past about six (280px).
 
 **Verified**: phase89 rehearsed on staging (defaults 12m and 90d, off and all saved, an unknown value refused), then applied. By hand: as an Admin, set posts to 6 months and comments off on the real page; both saved; the window then listed "Up to 8 of the client's Approved posts from the last 6 months…" and "Not the client's comments: off in this client's Preferences."; with the real model (two requests), given an Approved post and an unapproved one, each with copy, Frank was given only the Approved one and no comments. client-preferences.spec.ts checks the defaults and that both choices save; unit tests cover Approved-only, the periods (including all time), and the feedback period. copy-chat.spec.ts passes.
+
+## Draft with Frank: wider, a line down the middle, "Frank reads" as a heading
+
+Direct instruction: "Frank reads" is headed in the same style as "Earlier conversations" (.cchat-head: small capitals, muted); the window is 1100px wide (was 900), as Project Settings is; and the same line runs between its two sides (--line, 40px either side; the sidebar column 260px). On a phone the two stack, as before, with no line.
+
+**Verified**: screenshot at 1600 × 1000 with a conversation open: 1100px wide, both sides clear of the line, the heading matching. copy-chat.spec.ts passes. The line is --line, as Project Settings' is; the panel dividers on the post page are --line-2, already on the UI consistency list (item 5).
+
+## The Copy column: the caption unlabelled, other fields set apart
+
+Asked why "Caption:" came before the caption on the planner: the Copy column shows every copy field a post has (an earlier direct instruction), and when there was more than the caption each was labelled, so a post with a caption and Alt Text read "Caption: …" with "Alt Text: …" running straight on after the caption's last line. Now (agreed) the caption reads as itself, never labelled, and each other field follows after a blank line with its name in bold ("**Alt Text:** …"), in the table cell and in the earlier-versions popup alike (lib/formats.ts copySummaryParts, components/project/CopySummaryText.tsx). The plain-text summary (copySummary) is the same, with blank lines between fields.
+
+While checking: the popup's version heading style (.cp-row b: block, small capitals, blue on the latest) also caught the new bold labels, putting "ALT TEXT:" on a line of its own; it's now only the row's own heading (.cp-row > b).
+
+**Verified**: a post with a three-paragraph caption and Alt Text: the cell reads the caption, a blank line, then "Alt Text:" in bold with its text; the popup the same, with "V2 · Latest" and "V1" headings as before. Unit test updated; project-calendar and continuous-calendar specs pass (22).

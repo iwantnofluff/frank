@@ -6,6 +6,8 @@ import { useViewportFit } from "@/hooks/use-viewport-fit";
 export interface CopyHistoryRow {
   versionNo: number;
   text: string;
+  // The same, formatted (the Copy column's labels), when there is one.
+  node?: React.ReactNode;
 }
 
 // Ports frank-prototype.html's `.copypop`/`.cp-row` — a hover card listing
@@ -43,7 +45,7 @@ export function CopyVersionHistoryPopover({
               V{row.versionNo}
               {i === 0 ? " · Latest" : ""}
             </b>
-            <span>{row.text}</span>
+            <span>{row.node ?? row.text}</span>
           </div>
         ))
       )}
