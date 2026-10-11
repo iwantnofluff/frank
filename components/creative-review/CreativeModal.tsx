@@ -807,6 +807,10 @@ export function CreativeModal(props: CreativeModalProps) {
 
   // "Write with Claude" (phase52), over this window.
   const [chatOpen, setChatOpen] = useState(false);
+  // What each field held before a Draft with Frank suggestion went in, so
+  // Added pressed again puts it back, even after the chat window was
+  // closed and opened again.
+  const [chatBefore, setChatBefore] = useState<Record<string, Record<string, string>>>({});
 
   // Where a save has got to (compressing a video, uploading), shown by the
   // uploader under the artwork.
@@ -1864,6 +1868,8 @@ export function CreativeModal(props: CreativeModalProps) {
           setSlideText((prev) => applySlideDraft(slideFields(prev, slideCount), fields));
           setCopySaveNote(null);
         }}
+        before={chatBefore}
+        onBeforeChange={setChatBefore}
         onClose={() => setChatOpen(false)}
       />
     )}

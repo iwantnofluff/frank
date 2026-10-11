@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.18.1",
+    date: "2026-10-11",
+    title: "Draft with Frank remembers what you used",
+    changes: [
+      "In Draft with Frank, a suggestion you've used still says Added when you open it again, as long as the editor holds its words; change any of them and it goes back to Use This.",
+    ],
+  },
+  {
     version: "1.18.0",
     date: "2026-10-10",
     title: "A VO for video posts, and Frank knows the client better",

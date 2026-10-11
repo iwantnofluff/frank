@@ -79,6 +79,22 @@ test("Draft with Frank reopens a conversation, and each field's Use This adds, r
   // With copy in, a review can be asked for.
   await post.getByRole("button", { name: "Draft with Frank" }).click();
   await expect(chat.getByRole("button", { name: "Review My Draft" })).toBeEnabled();
+  // Opened again, what's in the editor is still Added (direct instruction).
+  await chat.getByRole("button", { name: /Drafted from the concept/ }).click();
+  await expect(playful.getByRole("button", { name: "Added: Caption" })).toBeVisible();
+  await expect(playful.getByRole("button", { name: "Added: Alt Text" })).toBeVisible();
+  await expect(playful.getByRole("button", { name: "Use This for Text on Image" })).toBeVisible();
+  // Changed by hand, it isn't any more; Added still takes Frank's back out.
+  await page.keyboard.press("Escape");
+  await caption.fill("Dessert, but make it daily. Every day.");
+  await post.getByRole("button", { name: "Draft with Frank" }).click();
+  await chat.getByRole("button", { name: /Drafted from the concept/ }).click();
+  await expect(playful.getByRole("button", { name: "Use This for Caption" })).toBeVisible();
+  await playful.getByRole("button", { name: "Added: Alt Text" }).click();
+  await expect(playful.getByRole("button", { name: "Use This for Alt Text" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(alt).toHaveValue("");
+  await expect(caption).toHaveValue("Dessert, but make it daily. Every day.");
 });
 
 test("the route refuses a review with no draft and anyone but staff; Clients can't read conversations", async ({

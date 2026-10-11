@@ -423,7 +423,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "Draft from the Concept: Frank offers a few drafts of the caption, the other copy fields, the VO for a video post, and the Text on Image.",
           "Review My Draft: Frank says what works in what you've written and how to improve it.",
           "Ask for changes in your own words: shorter, warmer, a different hook.",
-          "Each part of a draft has its own Use This: the Caption, the Alt Text and the Text on Image each go into the editor on their own, and the button says Added. Press Added again to take it back out (the editor goes back to what it had), or Use This on another draft's to swap it in. Nothing is saved until you save it.",
+          "Each part of a draft has its own Use This: the Caption, the Alt Text and the Text on Image each go into the editor on their own, and the button says Added. Press Added again to take it back out (the editor goes back to what it had), or Use This on another draft's to swap it in. Open Draft with Frank again later and what you used still says Added; change any of it in the editor and it doesn't. Nothing is saved until you save it.",
         ],
       },
       {

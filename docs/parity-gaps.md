@@ -3451,3 +3451,11 @@ Adding a row (New Post → Row) showed the prototype's .editbar, a dark bar fixe
 While checking it: the snug Publish Date (99px) and Time (84px) columns from 1.17.1 cut the draft row's date and time boxes ("10/10/2(", "09:"). They're tighter now and have no picker icon (hidden to fit); a click anywhere in the box opens the picker.
 
 **Verified**: screenshots at 1600px of the bar empty and with "Give the post a name"; the date and time boxes with "28/12/2026" and "11:45 PM" showing whole (nothing scrolled). quick-add-row.spec.ts checks the bar is the selection bar with "1 added"; it, project-calendar.spec.ts and continuous-calendar.spec.ts pass (24).
+
+## Draft with Frank: Added follows the editor
+
+A suggestion's "Added" was remembered only while the Draft with Frank window stayed open. Now (direct instruction) a field's button says Added whenever the editor holds exactly that suggestion's words (trimmed), so it's still Added when the window is opened again, and goes back to Use This as soon as the person changes any of it. Two suggestions with identical words would both show Added.
+
+What Added pressed again restores (the field as it was before Frank's went in) now lives in the post's window, not the chat's, so it survives closing and reopening the chat. Swapping one suggestion for another keeps the original; using one after editing by hand keeps the edit as what to go back to. When nothing is known (the post window was closed since), Added empties the field.
+
+**Verified**: copy-chat.spec.ts, extended: Caption and Alt Text used, the window closed and opened again, both still Added and Text on Image not; the Caption edited by hand shows Use This again; Added on Alt Text takes it back out to empty while the edited Caption stays. Its earlier steps (replace, remove) and voiceover.spec.ts still pass.

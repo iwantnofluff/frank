@@ -23,6 +23,12 @@ function draftGroups(fields: CopyChatField[], draft: Record<string, string>) {
 const pick = (from: Record<string, string>, fields: CopyChatField[]) =>
   Object.fromEntries(fields.map((f) => [f.key, from[f.key] ?? ""]));
 
+// A suggestion is "Added" while the editor holds exactly its words for
+// that field (direct instruction): still so when the window is opened
+// again, and not once the person changes any of it.
+const holds = (editor: Record<string, string>, draft: Record<string, string>, fields: CopyChatField[]) =>
+  fields.length > 0 && fields.every((f) => (editor[f.key] ?? "").trim() === (draft[f.key] ?? "").trim());
+
 const when = (iso: string) =>
   new Date(iso).toLocaleString(undefined, { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
@@ -37,12 +43,19 @@ export function CopyChat({
   fields,
   currentFields,
   onUse,
+  before,
+  onBeforeChange,
   onClose,
 }: {
   creativeId: string;
   fields: CopyChatField[];
   currentFields: Record<string, string>;
   onUse: (fields: Record<string, string>) => void;
+  // What the editor had in each field before Frank's went in, so Added
+  // pressed again puts it back. Kept by the post's window, so it lasts
+  // when this one is closed and opened again.
+  before: Record<string, Record<string, string>>;
+  onBeforeChange: (next: Record<string, Record<string, string>>) => void;
   onClose: () => void;
 }) {
   const { data: chats, isLoading } = useCopyChats(creativeId);
@@ -62,9 +75,6 @@ export function CopyChat({
   const [chatId, setChatId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [skipped, setSkipped] = useState<string[]>([]);
-  // Which suggestion is in the editor for each field, and what the editor
-  // had before Frank's, so pressing Added again puts that back.
-  const [added, setAdded] = useState<Record<string, { source: string; before: Record<string, string> }>>({});
   const endRef = useRef<HTMLDivElement>(null);
   const chat: Chat | undefined = chats?.find((c) => c.id === chatId);
   const hasCopy = fields.some((f) => currentFields[f.key]?.trim());
@@ -195,8 +205,7 @@ export function CopyChat({
                     <b>{d.label}</b>
                   </div>
                   {draftGroups(fields, d.fields).map((g) => {
-                    const source = `${m.id}-${i}`;
-                    const isAdded = added[g.id]?.source === source;
+                    const isAdded = holds(currentFields, d.fields, g.fields);
                     return (
                       <div key={g.id} className="cchat-group">
                         <div className="cchat-fields">
@@ -214,19 +223,26 @@ export function CopyChat({
                           aria-label={isAdded ? `Added: ${g.label}` : `Use This for ${g.label}`}
                           onClick={() => {
                             if (isAdded) {
-                              // Pressed again: the editor goes back to what it had.
-                              onUse(added[g.id].before);
-                              setAdded((prev) => {
-                                const next = { ...prev };
-                                delete next[g.id];
-                                return next;
-                              });
+                              // Pressed again: the editor goes back to what it had
+                              // (empty when that's not known).
+                              onUse(before[g.id] ?? pick({}, g.fields));
+                              const next = { ...before };
+                              delete next[g.id];
+                              onBeforeChange(next);
                             } else {
-                              // In, replacing another suggestion's if there was one;
-                              // what to go back to is still the editor's own.
-                              const before = added[g.id]?.before ?? pick(currentFields, g.fields);
+                              // In. Replacing another suggestion of Frank's, what to
+                              // go back to stays the editor's own; otherwise it's
+                              // what's there now, the person's edits included.
+                              const frankIn = chat?.messages.some((msg) =>
+                                msg.drafts.some((other) =>
+                                  holds(currentFields, other.fields, draftGroups(fields, other.fields).find((x) => x.id === g.id)?.fields ?? []),
+                                ),
+                              );
+                              onBeforeChange({
+                                ...before,
+                                [g.id]: frankIn && before[g.id] ? before[g.id] : pick(currentFields, g.fields),
+                              });
                               onUse(pick(d.fields, g.fields));
-                              setAdded((prev) => ({ ...prev, [g.id]: { source, before } }));
                             }
                           }}
                         >
