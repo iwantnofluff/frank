@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.19.3",
+    date: "2026-10-11",
+    title: "A narrower WIIFM column",
+    changes: ["The table's WIIFM Direction column starts as wide as Copy, now that it's a few short points."],
+  },
+  {
     version: "1.19.2",
     date: "2026-10-11",
     title: "Copy from the table, and a sharper WIIFM",

@@ -97,7 +97,8 @@ const TOGGLABLE_COLUMNS = [
   { key: "voiceover", label: "VO", sub: "Voiceover script", width: 220 },
   { key: "imageOnText", label: "Text on Image", sub: "Check WIIFM Approach", width: 220 },
   { key: "postCopy", label: "Copy", sub: "Check WIIFM Approach", width: 330 },
-  { key: "approach", label: "WIIFM Direction", sub: "Explain the WIIFM Approach", width: 472 },
+  // As wide as Copy (direct instruction), now that it's a few short points.
+  { key: "approach", label: "WIIFM Direction", sub: "Explain the WIIFM Approach", width: 330 },
   { key: "clientFeedback", label: "Client Feedback", sub: "", width: 220 },
 ] as const;
 

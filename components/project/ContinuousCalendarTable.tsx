@@ -101,7 +101,8 @@ const TOGGLABLE_COLUMNS = [
   { key: "imageOnText", label: "Text on Image", sub: "On the artwork", width: 220 },
   { key: "copy", label: "Copy", sub: "Latest version", width: 330 },
   { key: "notes", label: "Notes for Designer", sub: "Design feedback", width: 220 },
-  { key: "approach", label: "WIIFM Direction", sub: "What the reader gets", width: 472 },
+  // As wide as Copy (direct instruction), now that it's a few short points.
+  { key: "approach", label: "WIIFM Direction", sub: "What the reader gets", width: 330 },
   { key: "principles", label: "Principles", sub: "Psychological angle", width: 180 },
 ] as const;
 
