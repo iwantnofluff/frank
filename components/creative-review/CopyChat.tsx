@@ -7,6 +7,8 @@ import { useCopyChats, useSendCopyChat, type CopyChat as Chat } from "@/hooks/us
 import { cleanReplyBody, isSlideField, type CopyChatField, type CopyChatMode } from "@/lib/ai/copy-chat";
 import { errorMessage } from "@/lib/errors";
 import { useLiveUpdates } from "@/hooks/use-live-updates";
+import { useClientPreferences } from "@/hooks/use-client-preferences";
+import { feedbackReach, postsReach } from "@/lib/ai/copy-chat-context";
 
 // A draft's fields, each with its own Use This (direct instruction):
 // every copy field on its own (Caption, Alt Text…), and Text on Image as
@@ -40,6 +42,7 @@ const when = (iso: string) =>
 // Portalled to the page: it opens over the post window.
 export function CopyChat({
   creativeId,
+  clientId,
   fields,
   currentFields,
   onUse,
@@ -48,6 +51,8 @@ export function CopyChat({
   onClose,
 }: {
   creativeId: string;
+  // The post's client, for what its Preferences let Frank read.
+  clientId: string | null;
   fields: CopyChatField[];
   currentFields: Record<string, string>;
   onUse: (fields: Record<string, string>) => void;
@@ -72,6 +77,7 @@ export function CopyChat({
     [["copy-chats", creativeId]],
   );
   const send = useSendCopyChat(creativeId);
+  const { data: prefs } = useClientPreferences(clientId);
   const [chatId, setChatId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [skipped, setSkipped] = useState<string[]>([]);
@@ -161,28 +167,49 @@ export function CopyChat({
           >
             Review My Draft
           </button>
-          <p className="cchat-note">
-            Frank reads the brief, the WIIFM, each format&rsquo;s direction, your workspace&rsquo;s and this
-            client&rsquo;s knowledge, the client&rsquo;s other posts for their voice, and what the client has asked
-            for in the last 90 days.
-          </p>
+          {/* What Frank reads, in a little detail (direct instruction), the
+              client's own choices included. */}
+          <div className="cchat-note">
+            Frank reads:
+            <ul className="cchat-reads">
+              <li>This post&rsquo;s brief: its name, format, Concept and WIIFM.</li>
+              <li>Each format&rsquo;s direction, from Knowledge.</li>
+              <li>The client&rsquo;s strategy for the month the post goes live.</li>
+              <li>Your workspace&rsquo;s and this client&rsquo;s Knowledge: notes in full, and up to 10 PDFs or images.</li>
+              <li>
+                {!prefs || prefs.frank_posts === "off"
+                  ? "Not the client\u2019s other posts: off in this client\u2019s Preferences."
+                  : `Up to 8 of the client\u2019s Approved posts ${postsReach(prefs.frank_posts)}, for their voice: copy, VO and Text on Image.`}
+              </li>
+              <li>
+                {!prefs || prefs.frank_feedback === "off"
+                  ? "Not the client\u2019s comments: off in this client\u2019s Preferences."
+                  : `Up to 20 of the client\u2019s own comments ${feedbackReach(prefs.frank_feedback)}, as standing direction, not praise or approvals.`}
+              </li>
+              <li>The copy in the editor, and this conversation.</li>
+            </ul>
+          </div>
           {!!chats?.length && (
             <>
               <div className="cchat-head">Earlier conversations</div>
-              {chats.map((c) => (
-                <button
-                  type="button"
-                  key={c.id}
-                  className="cchat-past"
-                  aria-pressed={c.id === chatId}
-                  onClick={() => setChatId(c.id)}
-                >
-                  <b>{c.mode === "draft" ? "Drafted from the concept" : "Reviewed a draft"}</b>
-                  <span>
-                    {c.author ?? "Someone"} · {when(c.updated_at)}
-                  </span>
-                </button>
-              ))}
+              {/* Scrolls on its own once there are more than fit (direct
+                  instruction). */}
+              <div className="cchat-pastlist">
+                {chats.map((c) => (
+                  <button
+                    type="button"
+                    key={c.id}
+                    className="cchat-past"
+                    aria-pressed={c.id === chatId}
+                    onClick={() => setChatId(c.id)}
+                  >
+                    <b>{c.mode === "draft" ? "Drafted from the concept" : "Reviewed a draft"}</b>
+                    <span>
+                      {c.author ?? "Someone"} · {when(c.updated_at)}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </>
           )}
         </div>

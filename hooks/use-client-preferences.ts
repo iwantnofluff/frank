@@ -23,6 +23,11 @@ export interface ClientPreferences {
   notify_in_app: boolean;
   notify_email: boolean;
   notify_who: "lead" | "everyone" | "admins";
+  // What Draft with Frank reads beyond the post (phase89): the client's
+  // Approved posts, and the client's own comments, each off or from how
+  // far back.
+  frank_posts: "off" | "3m" | "6m" | "12m" | "all";
+  frank_feedback: "off" | "30d" | "90d" | "180d" | "all";
 }
 
 // What every client has until a preference is saved (the database's own
@@ -40,6 +45,8 @@ export const DEFAULT_CLIENT_PREFERENCES: ClientPreferences = {
   notify_in_app: true,
   notify_email: false,
   notify_who: "lead",
+  frank_posts: "12m",
+  frank_feedback: "90d",
 };
 
 const FIELDS = Object.keys(DEFAULT_CLIENT_PREFERENCES).join(", ");

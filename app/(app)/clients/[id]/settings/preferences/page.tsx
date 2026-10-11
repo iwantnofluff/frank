@@ -174,6 +174,49 @@ export default function ClientPreferencesPage({ params }: { params: Promise<{ id
             </Row>
           </section>
 
+          {/* What Draft with Frank reads beyond the post (phase89, direct
+              instruction): each source off, or from how far back. */}
+          <section className="panel">
+            <div className="panel-h">
+              <b>Draft with Frank</b>
+              <span className="sync">What Frank reads beyond the post</span>
+            </div>
+            <Row
+              title="The client's Approved posts"
+              hint="Up to 8 of them, newest first, for the client's voice: their copy, VO and Text on Image."
+            >
+              <select
+                aria-label="Frank reads the client's Approved posts"
+                value={prefs.frank_posts}
+                disabled={!canEdit}
+                onChange={(e) => set({ frank_posts: e.target.value as ClientPreferences["frank_posts"] })}
+              >
+                <option value="off">Off</option>
+                <option value="3m">From the last 3 months</option>
+                <option value="6m">From the last 6 months</option>
+                <option value="12m">From the last 12 months</option>
+                <option value="all">All time</option>
+              </select>
+            </Row>
+            <Row
+              title="The client's comments"
+              hint="Up to 20 of the client's own, newest first, as standing direction. Praise and approvals are left out."
+            >
+              <select
+                aria-label="Frank reads the client's comments"
+                value={prefs.frank_feedback}
+                disabled={!canEdit}
+                onChange={(e) => set({ frank_feedback: e.target.value as ClientPreferences["frank_feedback"] })}
+              >
+                <option value="off">Off</option>
+                <option value="30d">From the last 30 days</option>
+                <option value="90d">From the last 90 days</option>
+                <option value="180d">From the last 180 days</option>
+                <option value="all">All time</option>
+              </select>
+            </Row>
+          </section>
+
           <section className="panel">
             <div className="panel-h">
               <b>New Review Links</b>

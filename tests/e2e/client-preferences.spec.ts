@@ -57,6 +57,14 @@ test("an Admin sets Preferences, which save at once; a client's own people can't
   // A client that can't approve: new links can't either, and say so.
   await expect(page.getByLabel("New links can approve")).toBeDisabled();
   await expect(page.getByLabel("New links can approve")).toHaveValue("no");
+  // What Draft with Frank reads (phase89): each source off or how far back.
+  await expect(page.getByLabel("Frank reads the client's Approved posts")).toHaveValue("12m");
+  await expect(page.getByLabel("Frank reads the client's comments")).toHaveValue("90d");
+  await page.getByLabel("Frank reads the client's Approved posts").selectOption("all");
+  await page.getByLabel("Frank reads the client's comments").selectOption("off");
+  await expect
+    .poll(async () => (await admin.from("client_preferences").select("frank_posts, frank_feedback").eq("client_id", frank.clientId).single()).data)
+    .toEqual({ frank_posts: "all", frank_feedback: "off" });
 
   // A client's person: the page isn't theirs, and the database refuses them.
   const client = await session(frank.clientEmail, frank.clientPassword);

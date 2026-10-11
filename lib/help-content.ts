@@ -415,7 +415,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     blocks: [
       {
         kind: "p",
-        text: "In a post's Content tab, choose Draft with Frank at the foot of the window. Frank reads the brief, the WIIFM, each format's direction, and your workspace's and the client's Knowledge, files included. It also reads up to 8 of the client's other posts (Approved ones first) to keep to their voice without repeating them, and what the client has asked for in their comments over the last 90 days, which it follows; if that clashes with the Knowledge, Frank says so.",
+        text: "In a post's Content tab, choose Draft with Frank at the foot of the window. Frank reads the brief, the WIIFM, each format's direction, and your workspace's and the client's Knowledge, files included. It also reads up to 8 of the client's Approved posts, to keep to their voice without repeating them, and up to 20 of the client's own comments, which it follows (not praise or approvals); if those clash with the Knowledge, Frank says so. How far back each reaches, or whether Frank reads it at all, is set in the client's Preferences (by default, Approved posts from the last 12 months and comments from the last 90 days). The window lists what Frank reads for that client.",
       },
       {
         kind: "list",

@@ -55,10 +55,10 @@ const clip = (text: string, max: number) => {
 function otherPostsBlock(posts: OtherPost[] | undefined): string | null {
   if (!posts?.length) return null;
   return [
-    "This client's other posts, for their voice. Match their tone and the way they speak to the reader; never reuse their hooks, lines or phrases, and don't copy their structure. Approved ones are the voice the client has signed off.",
+    "This client's Approved posts, the voice they've signed off. Match their tone and the way they speak to the reader; never reuse their hooks, lines or phrases, and don't copy their structure.",
     ...posts.map(
       (p) =>
-        `- "${p.name}" (${p.approved ? "Approved" : "not approved yet"}, ${p.formatLabel}): ${p.copy
+        `- "${p.name}" (${p.formatLabel}): ${p.copy
           .map((c) => `${c.label}: ${clip(c.text, 400)}`)
           .join(" | ")}`,
     ),
@@ -68,7 +68,7 @@ function otherPostsBlock(posts: OtherPost[] | undefined): string | null {
 function feedbackBlock(feedback: ClientFeedback[] | undefined): string | null {
   if (!feedback?.length) return null;
   return [
-    "What the client has asked for on their posts in the last 90 days, newest first. Treat it as standing direction for this post too. If any of it conflicts with the knowledge above, point the conflict out in your reply so your colleague can decide.",
+    "What the client has asked for in their comments, newest first. Treat it as standing direction for this post too. If any of it conflicts with the knowledge above, point the conflict out in your reply so your colleague can decide.",
     ...feedback.map((f) => `- On "${f.post}"${f.category ? ` (${f.category})` : ""}: ${clip(f.body, 300)}`),
   ].join("\n");
 }

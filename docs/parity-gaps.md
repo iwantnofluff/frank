@@ -3518,3 +3518,13 @@ Asked to track UX/UI inconsistencies across the app. Measured in the post window
 5. Two greys for lines: --line (#E3E6EA) and --line-2 (#D5DAE0); the panel dividers, the post toolbar's rule and its separators are --line-2, while some rules are --line.
 6. Long client names make the rail's labels three lines ("E2E Test Client Projects"), so the icons below move as you go in and out of a client.
 Not yet audited the same way: the Settings pages, the client page, the dashboard, the review link, the admin area.
+
+## What Frank reads: Approved posts only, set per client in Preferences (phase89)
+
+Direct instruction (choices asked):
+- **Approved posts only.** Draft with Frank reads up to 8 of the client's Approved posts (stage 4), newest approval first; it used to fill up with posts not yet approved after the Approved ones. The prompt now calls them the voice the client has signed off.
+- **Set per client, in Preferences** (asked Knowledge or Preferences; Preferences, since it's how Frank behaves for the client, not material it reads): a "Draft with Frank" panel with one choice each, "Off" being one of them. The client's Approved posts: Off, from the last 3, 6 or 12 months (by when each was approved), or all time; default 12 months. The client's comments: Off, from the last 30, 90 or 180 days, or all time; default 90 days. Stored as client_preferences.frank_posts and .frank_feedback (text, checked values), changed by Owners and Admins like every preference.
+- **The window lists what Frank reads**, in a little detail and with this client's choices: the brief (name, format, Concept, WIIFM), each format's direction, the month's strategy, workspace and client Knowledge (notes in full, up to 10 PDFs or images), the Approved posts and comments as set (or "off in this client's Preferences"), and the copy in the editor and the conversation.
+- **Earlier conversations** scroll on their own past about six (280px).
+
+**Verified**: phase89 rehearsed on staging (defaults 12m and 90d, off and all saved, an unknown value refused), then applied. By hand: as an Admin, set posts to 6 months and comments off on the real page; both saved; the window then listed "Up to 8 of the client's Approved posts from the last 6 months…" and "Not the client's comments: off in this client's Preferences."; with the real model (two requests), given an Approved post and an unapproved one, each with copy, Frank was given only the Approved one and no comments. client-preferences.spec.ts checks the defaults and that both choices save; unit tests cover Approved-only, the periods (including all time), and the feedback period. copy-chat.spec.ts passes.

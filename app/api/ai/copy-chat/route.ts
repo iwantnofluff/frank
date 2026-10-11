@@ -13,7 +13,15 @@ import {
 } from "@/lib/ai/copy-chat";
 import { monthOf, strategyForPrompt, type StrategyFields } from "@/lib/monthly-strategy";
 import { COPY_FIELD_LABELS, copyFieldsFor, formatsLabel, hasVideoFormat, postFormats } from "@/lib/formats";
-import { FEEDBACK_DAYS, pickClientFeedback, pickOtherPosts, type PostRow } from "@/lib/ai/copy-chat-context";
+import {
+  feedbackSince,
+  pickClientFeedback,
+  pickOtherPosts,
+  postsSince,
+  type FeedbackSetting,
+  type PostRow,
+  type PostsSetting,
+} from "@/lib/ai/copy-chat-context";
 import { ISSUE_CATEGORIES } from "@/lib/ai/build-classify-comment-prompt";
 
 const fail = (error: string, status: number) => NextResponse.json({ error }, { status });
@@ -236,34 +244,52 @@ export async function POST(request: Request) {
 }
 
 // Read through the person's own session, so it's only ever what they can
-// see. Posts: the client's newest 40, of which the picker keeps 8 with
-// words. Feedback: public comments on any of the client's posts in the
-// last 90 days, of which the picker keeps the client's own.
+// see. What reaches back how far is the client's choice in Preferences
+// (phase89): posts are its Approved ones (direct instruction), the newest
+// 40 approved since then, of which the picker keeps 8 with words;
+// feedback is public comments on any of its posts since then, of which the
+// picker keeps the client's own. Either can be off.
 async function clientContext(supabase: Awaited<ReturnType<typeof createClient>>, clientId: string, creativeId: string) {
-  const since = new Date(Date.now() - FEEDBACK_DAYS * 86_400_000).toISOString();
+  const now = new Date();
+  const { data: prefs } = await supabase
+    .from("client_preferences")
+    .select("frank_posts, frank_feedback")
+    .eq("client_id", clientId)
+    .maybeSingle();
+  const postsSetting = ((prefs?.frank_posts as PostsSetting | undefined) ?? "12m") as PostsSetting;
+  const feedbackSetting = ((prefs?.frank_feedback as FeedbackSetting | undefined) ?? "90d") as FeedbackSetting;
+  const postsFrom = postsSince(postsSetting, now);
+  const feedbackFrom = feedbackSince(feedbackSetting, now);
+
   const [projects, people, comments] = await Promise.all([
-    supabase.from("projects").select("id").eq("client_id", clientId),
+    postsSetting === "off" ? Promise.resolve({ data: [] as Row[] }) : supabase.from("projects").select("id").eq("client_id", clientId),
     supabase.from("memberships").select("user_id").eq("client_id", clientId),
-    supabase
-      .from("comments")
-      .select("body, created_at, author_id, guest_name, issue_category, creative:creatives!inner(name, project:projects!inner(client_id))")
-      .eq("creative.project.client_id", clientId)
-      .is("deleted_at", null)
-      .eq("visibility", "public")
-      .gte("created_at", since)
-      .order("created_at", { ascending: false })
-      .limit(100),
+    feedbackSetting === "off"
+      ? Promise.resolve({ data: [] as Row[] })
+      : (() => {
+          let q = supabase
+            .from("comments")
+            .select("body, created_at, author_id, guest_name, issue_category, creative:creatives!inner(name, project:projects!inner(client_id))")
+            .eq("creative.project.client_id", clientId)
+            .is("deleted_at", null)
+            .eq("visibility", "public");
+          if (feedbackFrom) q = q.gte("created_at", feedbackFrom.toISOString());
+          return q.order("created_at", { ascending: false }).limit(100);
+        })(),
   ]);
   const projectIds = (projects.data ?? []).map((p) => p.id as string);
   const { data: posts } = projectIds.length
-    ? await supabase
-        .from("creatives")
-        .select("id, name, stage, format, formats, voiceover, slide_text, updated_at")
-        .in("project_id", projectIds)
-        .is("archived_at", null)
-        .neq("id", creativeId)
-        .order("updated_at", { ascending: false })
-        .limit(40)
+    ? await (() => {
+        let q = supabase
+          .from("creatives")
+          .select("id, name, stage, format, formats, voiceover, slide_text, updated_at, approved_at")
+          .in("project_id", projectIds)
+          .eq("stage", 4)
+          .is("archived_at", null)
+          .neq("id", creativeId);
+        if (postsFrom) q = q.gte("approved_at", postsFrom.toISOString());
+        return q.order("approved_at", { ascending: false, nullsFirst: false }).limit(40);
+      })()
     : { data: [] as Row[] };
   const postIds = (posts ?? []).map((p) => p.id as string);
   const { data: copies } = postIds.length
@@ -277,11 +303,13 @@ async function clientContext(supabase: Awaited<ReturnType<typeof createClient>>,
       stage: p.stage as number,
       formatLabel: formatsLabel(postFormats(p as { format: string; formats: string[] | null })),
       updated_at: p.updated_at as string,
+      approved_at: (p.approved_at as string | null) ?? null,
       voiceover: (p.voiceover as string | null) ?? null,
       slide_text: (p.slide_text as string[] | null) ?? null,
     })) satisfies PostRow[],
     (copies ?? []) as { creative_id: string; created_at: string; fields: Record<string, unknown> | null }[],
     COPY_FIELD_LABELS,
+    postsFrom,
   );
   const clientFeedback = pickClientFeedback(
     (comments.data ?? []).map((c) => ({
@@ -294,7 +322,7 @@ async function clientContext(supabase: Awaited<ReturnType<typeof createClient>>,
     })),
     new Set((people.data ?? []).map((m) => m.user_id as string)),
     Object.fromEntries(ISSUE_CATEGORIES.map((c) => [c.key, c.label])),
-    new Date(),
+    feedbackFrom,
   );
   return { otherPosts, clientFeedback };
 }

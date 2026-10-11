@@ -6878,6 +6878,25 @@ a.profproject:hover .pp-t b {
   color: var(--muted);
   margin-top: 8px;
 }
+/* What Frank reads: a short list under the buttons. */
+.cchat-reads {
+  margin: 4px 0 0;
+  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+/* Earlier conversations: about six in view, the rest a scroll away. */
+.cchat-pastlist {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 280px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin-right: -6px;
+  padding-right: 6px;
+}
 .cchat-past {
   display: flex;
   flex-direction: column;

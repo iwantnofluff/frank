@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.19.0",
+    date: "2026-10-11",
+    title: "Choose what Frank reads",
+    changes: [
+      "Each client's Preferences has a Draft with Frank section: whether Frank reads the client's Approved posts, and from how far back (3, 6 or 12 months, or all time), and the same for the client's comments (30, 90 or 180 days, or all time).",
+      "Frank now reads only the client's Approved posts, never drafts the client hasn't signed off.",
+      "Draft with Frank lists what Frank reads, with this client's choices, and earlier conversations scroll once there are many.",
+    ],
+  },
+  {
     version: "1.18.5",
     date: "2026-10-11",
     title: "Copy Caption",
