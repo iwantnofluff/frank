@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.21.1",
+    date: "2026-10-12",
+    title: "Tick boxes on Read only",
+    changes: ["In the bell, read notifications can be ticked on the Read tab only, where the select-all box says All."],
+  },
+  {
     version: "1.21.0",
     date: "2026-10-12",
     title: "Sort and clear the bell",

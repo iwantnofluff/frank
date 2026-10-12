@@ -78,9 +78,9 @@ test("the bell counts, filters by person, and deletes selected read ones", async
   const panel = page.getByRole("dialog", { name: "Notifications" });
   const chips = panel.locator(".notif-tabs .chip");
   await expect(chips).toHaveText(["All (4)", "Unread (1)", "Read (3)"]);
-  await panel.getByRole("button", { name: "Unread (1)" }).click();
+  await panel.getByRole("button", { name: "Unread (1)", exact: true }).click();
   await expect(panel.locator(".nrow")).toHaveCount(1);
-  await panel.getByRole("button", { name: "Read (3)" }).click();
+  await panel.getByRole("button", { name: "Read (3)", exact: true }).click();
   await expect(panel.locator(".nrow")).toHaveCount(3);
 
   // By person: Asha's two.
@@ -90,6 +90,12 @@ test("the bell counts, filters by person, and deletes selected read ones", async
   await panel.getByRole("button", { name: "Clear" }).click();
   await expect(chips).toHaveText(["All (4)", "Unread (1)", "Read (3)"]);
 
+  // Ticks only on the Read tab (direct instruction).
+  await panel.getByRole("button", { name: "All (4)", exact: true }).click();
+  await expect(panel.locator(".nrow-sel")).toHaveCount(0);
+  await expect(panel.getByLabel("Select all read")).toHaveCount(0);
+  await panel.getByRole("button", { name: "Read (3)", exact: true }).click();
+  await expect(panel.locator(".notif-all")).toHaveText("All");
   // One selected and deleted, then the rest with select all.
   await panel.getByLabel("Select Ben's post").check();
   await panel.getByRole("button", { name: "Delete (1)" }).click();

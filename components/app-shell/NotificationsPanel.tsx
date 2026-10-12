@@ -159,7 +159,8 @@ export function NotificationsPanel({
         </span>
       </button>
     );
-    if (!n.read_at) return button;
+    // Tick boxes only on the Read tab (direct instruction).
+    if (!n.read_at || tab !== "read") return button;
     return (
       <div className="nrow-sel" key={n.id}>
         <input
@@ -211,7 +212,10 @@ export function NotificationsPanel({
             type="button"
             className="chip"
             aria-pressed={tab === t}
-            onClick={() => setTab(t)}
+            onClick={() => {
+              setTab(t);
+              setSelected(new Set());
+            }}
           >
             {t === "all" ? "All" : t === "unread" ? "Unread" : "Read"} ({counts[t]})
           </button>
@@ -276,7 +280,8 @@ export function NotificationsPanel({
         {/* Unread, then Read (direct instruction): a read one stays in
             the bell until the workspace's keep time passes (phase90). */}
         {tab !== "read" && unreadItems.map(row)}
-        {tab !== "unread" && readItems.length > 0 && (
+        {tab === "all" && readItems.length > 0 && <div className="notif-sec">Read</div>}
+        {tab === "read" && readItems.length > 0 && (
           <div className="notif-sec notif-readh">
             <label className="notif-all">
               <input
@@ -285,7 +290,7 @@ export function NotificationsPanel({
                 checked={allChosen}
                 onChange={() => setSelected(allChosen ? new Set() : new Set(readItems.map((n) => n.id)))}
               />
-              Read
+              All
             </label>
             <div className="grow" />
             {chosen.length > 0 && (
