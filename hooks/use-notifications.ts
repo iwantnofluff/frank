@@ -41,7 +41,10 @@ export function useNotifications(enabled = true) {
         // Only those meant for the bell (a client may want email only).
         .eq("in_app", true)
         .order("created_at", { ascending: false })
-        .limit(50);
+        // Enough for the bell's counts to mean something (direct
+        // instruction: All, Unread, Read); read ones are purged on the
+        // workspace's schedule (phase90).
+        .limit(200);
       if (error) throw error;
       // The comments, and their authors' names, read plainly rather than
       // embedded (a guest's comment has no author; see use-comments.ts).
@@ -109,6 +112,27 @@ export function useMarkNotificationsRead() {
       if (ids) q = q.in("id", ids);
       const { error } = await q;
       if (error) throw error;
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+  });
+}
+
+// Deletes some of my read notifications (phase91: my own, read ones only,
+// which RLS holds to as well). A blocked delete comes back short, which is
+// said rather than taken as done.
+export function useDeleteNotifications() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("notifications")
+        .delete()
+        .in("id", ids)
+        .not("read_at", "is", null)
+        .select("id");
+      if (error) throw error;
+      if ((data?.length ?? 0) < ids.length) throw new Error("Some couldn't be deleted. Only read notifications can be.");
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
   });

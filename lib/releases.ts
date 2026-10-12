@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.21.0",
+    date: "2026-10-12",
+    title: "Sort and clear the bell",
+    changes: [
+      "The bell has All, Unread and Read, each with how many there are.",
+      "A filter icon narrows the bell to certain people, clients or both.",
+      "Read notifications can be ticked, one by one or all at once, and deleted.",
+    ],
+  },
+  {
     version: "1.20.0",
     date: "2026-10-12",
     title: "A tidier bell",

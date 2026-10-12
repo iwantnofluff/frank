@@ -609,7 +609,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         kind: "list",
         items: [
-          "General: your account's name and web address, Notifications (how long the bell keeps a notification once it's been read: 30, 60 or 90 days; unread ones always stay), anything Frank's support has done in your account, and Updates: every version of Frank and what changed. A new version also shows in the bell, and an open tab offers to reload when one goes live. The bell lists Unread first, then Read.",
+          "General: your account's name and web address, Notifications (how long the bell keeps a notification once it's been read: 30, 60 or 90 days; unread ones always stay), anything Frank's support has done in your account, and Updates: every version of Frank and what changed. A new version also shows in the bell, and an open tab offers to reload when one goes live. The bell shows All, Unread and Read with how many of each; the funnel icon narrows it to certain people or clients; read ones can be ticked, or all ticked at once, and deleted.",
           "Customisation: your logo and brand colours, on plans that include branding. Your logo shows in the header, after Frank's; until there is one, Owners and Admins can choose Add Logo there.",
           "Team: your Users and Clients, and inviting people.",
           "AI Governance: the AI model Draft with Frank uses.",

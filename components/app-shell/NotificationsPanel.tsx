@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePresence } from "@/hooks/use-presence";
-import { useMarkNotificationsRead, type NotificationRow } from "@/hooks/use-notifications";
+import { useDeleteNotifications, useMarkNotificationsRead, type NotificationRow } from "@/hooks/use-notifications";
+import { errorMessage } from "@/lib/errors";
 import { avatarColour } from "@/lib/avatar-colour";
 import { initials } from "@/lib/initials";
 import { BRAND } from "@/lib/brand";
@@ -20,9 +21,25 @@ function ago(iso: string): string {
   return `${days} days ago`;
 }
 
+// Who a notification is from (direct instruction: filter by person): the
+// commenter, the mentioner, the approver, or Frank for its own reminders.
+function personOf(n: NotificationRow): string {
+  if (n.kind === "discussion_mention") return n.mention?.who ?? "Someone";
+  if (n.kind === "client_comment") return n.comment?.who ?? "The client";
+  if (n.kind === "client_approval") return n.creative?.approved_by_name ?? "The client";
+  return "Frank";
+}
+function clientOf(n: NotificationRow): string {
+  return n.creative?.project?.client?.name ?? n.mention?.project.client ?? "";
+}
+
+type Tab = "all" | "unread" | "read";
+
 // The prototype's #notif: a panel under the bell, newest first, unread on
 // a blue wash, with Mark All Read. Opening one marks it read and opens its
 // window. Opens and closes with the menus' motion (hooks/use-presence.ts).
+// All, Unread and Read with their counts; read ones selectable and
+// deletable; a filter by person and client (direct instruction).
 export function NotificationsPanel({
   open,
   items,
@@ -46,7 +63,25 @@ export function NotificationsPanel({
   const pop = usePresence(open);
   const panel = useRef<HTMLDivElement>(null);
   const markRead = useMarkNotificationsRead();
+  const remove = useDeleteNotifications();
   const unread = items.filter((n) => !n.read_at);
+  const [tab, setTab] = useState<Tab>("all");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [people, setPeople] = useState<Set<string>>(new Set());
+  const [clients, setClients] = useState<Set<string>>(new Set());
+  const filtering = people.size > 0 || clients.size > 0;
+  const allPeople = useMemo(() => [...new Set(items.map(personOf))].sort(), [items]);
+  const allClients = useMemo(() => [...new Set(items.map(clientOf).filter(Boolean))].sort(), [items]);
+  const shown = items.filter(
+    (n) => (!people.size || people.has(personOf(n))) && (!clients.size || clients.has(clientOf(n))),
+  );
+  const toggle = (set: Set<string>, value: string) => {
+    const next = new Set(set);
+    if (next.has(value)) next.delete(value);
+    else next.add(value);
+    return next;
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -65,12 +100,22 @@ export function NotificationsPanel({
     };
   }, [open, onClose, anchor]);
 
-  const unreadItems = items.filter((n) => !n.read_at);
-  const readItems = items.filter((n) => n.read_at);
+  const unreadItems = shown.filter((n) => !n.read_at);
+  const readItems = shown.filter((n) => n.read_at);
+  // New versions of Frank are unread, but have no person or client.
+  const shownReleases = filtering ? [] : releases;
+  const counts = {
+    unread: unreadItems.length + shownReleases.length,
+    read: readItems.length,
+    all: unreadItems.length + shownReleases.length + readItems.length,
+  };
+  // Only what's selected and still in view counts.
+  const chosen = readItems.filter((n) => selected.has(n.id)).map((n) => n.id);
+  const allChosen = readItems.length > 0 && chosen.length === readItems.length;
   const row = (n: NotificationRow) => {
     const post = n.creative;
     const client = post?.project?.client?.name ?? n.mention?.project.client ?? "";
-    return (
+    const button = (
       <button
         key={n.id}
         type="button"
@@ -114,6 +159,18 @@ export function NotificationsPanel({
         </span>
       </button>
     );
+    if (!n.read_at) return button;
+    return (
+      <div className="nrow-sel" key={n.id}>
+        <input
+          type="checkbox"
+          aria-label={`Select ${post?.name ?? n.mention?.project.name ?? "this notification"}`}
+          checked={selected.has(n.id)}
+          onChange={() => setSelected((s) => toggle(s, n.id))}
+        />
+        {button}
+      </div>
+    );
   };
 
   if (!pop.shown) return null;
@@ -123,6 +180,18 @@ export function NotificationsPanel({
       <div className="notif-h">
         <b>Notifications</b>
         <div className="grow" />
+        <button
+          type="button"
+          className={`notif-filter${filtering ? " on" : ""}`}
+          aria-label="Filter by person or client"
+          aria-expanded={filterOpen}
+          title="Filter by person or client"
+          onClick={() => setFilterOpen((o) => !o)}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 5h16l-6 7.5V19l-4-2v-4.5L4 5z" />
+          </svg>
+        </button>
         <button
           type="button"
           className="btn ghost sm"
@@ -135,10 +204,62 @@ export function NotificationsPanel({
           Mark All Read
         </button>
       </div>
+      <div className="notif-tabs" role="group" aria-label="Show">
+        {(["all", "unread", "read"] as const).map((t) => (
+          <button
+            key={t}
+            type="button"
+            className="chip"
+            aria-pressed={tab === t}
+            onClick={() => setTab(t)}
+          >
+            {t === "all" ? "All" : t === "unread" ? "Unread" : "Read"} ({counts[t]})
+          </button>
+        ))}
+      </div>
+      {filterOpen && (
+        <div className="notif-filters">
+          <div className="notif-fgroup">
+            <div className="notif-sec">People</div>
+            {allPeople.map((p) => (
+              <label key={p} className="notif-fopt">
+                <input type="checkbox" checked={people.has(p)} onChange={() => setPeople((s) => toggle(s, p))} />
+                {p}
+              </label>
+            ))}
+          </div>
+          <div className="notif-fgroup">
+            <div className="notif-sec">Clients</div>
+            {allClients.length === 0 && <span className="notif-fnone">None</span>}
+            {allClients.map((c) => (
+              <label key={c} className="notif-fopt">
+                <input type="checkbox" checked={clients.has(c)} onChange={() => setClients((s) => toggle(s, c))} />
+                {c}
+              </label>
+            ))}
+          </div>
+          {filtering && (
+            <button
+              type="button"
+              className="linkbtn notif-fclear"
+              onClick={() => {
+                setPeople(new Set());
+                setClients(new Set());
+              }}
+            >
+              Clear
+            </button>
+          )}
+        </div>
+      )}
       <div className="notif-b">
-        {items.length === 0 && releases.length === 0 && <p className="notif-empty">You&apos;re all caught up.</p>}
-        {(unreadItems.length > 0 || releases.length > 0) && <div className="notif-sec">Unread</div>}
-        {releases.map((r) => (
+        {counts[tab] === 0 && (
+          <p className="notif-empty">
+            {filtering ? "Nothing matches the filter." : tab === "read" ? "Nothing read yet." : "You\u2019re all caught up."}
+          </p>
+        )}
+        {tab !== "read" && counts.unread > 0 && <div className="notif-sec">Unread</div>}
+        {tab !== "read" && shownReleases.map((r) => (
           <button key={r.version} type="button" className="nrow unread" onClick={() => onOpenRelease?.(r)}>
             <span className="ni ni-frank" aria-hidden="true">
               {/* eslint-disable-next-line @next/next/no-img-element -- a static SVG */}
@@ -154,9 +275,33 @@ export function NotificationsPanel({
         ))}
         {/* Unread, then Read (direct instruction): a read one stays in
             the bell until the workspace's keep time passes (phase90). */}
-        {unreadItems.map(row)}
-        {readItems.length > 0 && <div className="notif-sec">Read</div>}
-        {readItems.map(row)}
+        {tab !== "read" && unreadItems.map(row)}
+        {tab !== "unread" && readItems.length > 0 && (
+          <div className="notif-sec notif-readh">
+            <label className="notif-all">
+              <input
+                type="checkbox"
+                aria-label="Select all read"
+                checked={allChosen}
+                onChange={() => setSelected(allChosen ? new Set() : new Set(readItems.map((n) => n.id)))}
+              />
+              Read
+            </label>
+            <div className="grow" />
+            {chosen.length > 0 && (
+              <button
+                type="button"
+                className="linkbtn danger"
+                disabled={remove.isPending}
+                onClick={() => remove.mutate(chosen, { onSuccess: () => setSelected(new Set()) })}
+              >
+                {remove.isPending ? "Deleting…" : `Delete (${chosen.length})`}
+              </button>
+            )}
+          </div>
+        )}
+        {remove.isError && <p className="autherr notif-err">{errorMessage(remove.error, "Couldn't delete them")}</p>}
+        {tab !== "unread" && readItems.map(row)}
       </div>
     </div>
   );

@@ -8290,6 +8290,121 @@ button.feedgrid-live {
   text-transform: uppercase;
   color: var(--muted);
 }
+/* All, Unread, Read with counts; a filter by person and client; read
+   ones selectable and deletable (direct instruction). */
+.notif-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.notif-filter {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  margin-right: 4px;
+}
+.notif-filter:hover,
+.notif-filter[aria-expanded="true"] {
+  background: rgba(0, 0, 0, 0.07);
+  color: var(--ink);
+}
+.notif-filter svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+}
+.notif-filter.on::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--action);
+}
+.notif-filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 12px;
+  padding: 2px 0 10px;
+  border-bottom: 1px solid var(--line);
+  max-height: 220px;
+  overflow-y: auto;
+}
+.notif-fgroup {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.notif-fopt {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 14px;
+  font-size: 13.2px;
+  cursor: pointer;
+}
+.notif-fnone {
+  padding: 3px 14px;
+  font-size: 13.2px;
+  color: var(--muted);
+}
+.notif-fclear {
+  grid-column: 1 / -1;
+  justify-self: start;
+  margin: 2px 14px 0;
+  font-size: 12.7px;
+}
+.notif-readh {
+  display: flex;
+  align-items: center;
+}
+.notif-readh .linkbtn {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 12.7px;
+  font-weight: 500;
+}
+.notif-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+}
+.nrow-sel {
+  display: flex;
+  align-items: flex-start;
+  /* The row's line runs the full width, tick box included. */
+  border-bottom: 1px solid var(--line);
+}
+.nrow-sel:hover {
+  background: #fafbfc;
+}
+.nrow-sel > input {
+  margin: 14px 0 0 14px;
+  flex-shrink: 0;
+}
+.nrow-sel > .nrow {
+  flex: 1;
+  min-width: 0;
+  padding-left: 9px;
+  border-bottom: 0;
+}
+.notif-readh .linkbtn.danger {
+  color: var(--rose);
+}
+.notif-err {
+  margin: 4px 14px;
+}
 .notif-empty {
   padding: 22px 14px;
   text-align: center;
