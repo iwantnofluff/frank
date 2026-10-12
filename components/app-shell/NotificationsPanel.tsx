@@ -259,7 +259,7 @@ export function NotificationsPanel({
       <div className="notif-b">
         {counts[tab] === 0 && (
           <p className="notif-empty">
-            {filtering ? "Nothing matches the filter." : tab === "read" ? "Nothing read yet." : "You\u2019re all caught up."}
+            {filtering ? "Nothing matches the filter." : tab === "read" ? "Nothing read yet." : "You're all caught up."}
           </p>
         )}
         {tab !== "read" && counts.unread > 0 && <div className="notif-sec">Unread</div>}
