@@ -65,6 +65,57 @@ export function NotificationsPanel({
     };
   }, [open, onClose, anchor]);
 
+  const unreadItems = items.filter((n) => !n.read_at);
+  const readItems = items.filter((n) => n.read_at);
+  const row = (n: NotificationRow) => {
+    const post = n.creative;
+    const client = post?.project?.client?.name ?? n.mention?.project.client ?? "";
+    return (
+      <button
+        key={n.id}
+        type="button"
+        className={`nrow${n.read_at ? "" : " unread"}`}
+        onClick={() => {
+          if (!n.read_at) markRead.mutate([n.id]);
+          onOpenItem(n);
+        }}
+      >
+        <span className="ni" style={{ background: avatarColour(client || "Frank") }}>
+          {initials(client, "F")}
+        </span>
+        <span>
+          <span className="nt">
+            {n.kind === "discussion_mention" ? (
+              <>
+                <b>{n.mention?.who ?? "Someone"}</b> mentioned you in <b>{n.mention?.project.name ?? "a project"}</b>
+                {client ? ` · ${client}` : ""}
+                {n.mention?.body && <span className="nq">“{n.mention.body}”</span>}
+              </>
+            ) : n.kind === "client_comment" ? (
+              <>
+                <b>{n.comment?.who ?? "The client"}</b> commented on <b>{post?.name ?? "a post"}</b>
+                {client ? ` · ${client}` : ""}
+                {n.comment?.body && <span className="nq">“{n.comment.body}”</span>}
+              </>
+            ) : n.kind === "client_approval" ? (
+              <>
+                <b>{post?.approved_by_name ?? "The client"}</b> approved <b>{post?.name ?? "a post"}</b>
+                {client ? ` · ${client}` : ""}
+              </>
+            ) : (
+              <>
+                <b>{post?.name ?? "A post"}</b>
+                {client ? ` · ${client}` : ""}. {post?.due_on ? "Past its due date" : "Approved a while ago"}, with
+                no live date: remove its artwork?
+              </>
+            )}
+          </span>
+          <time dateTime={n.created_at}>{ago(n.created_at)}</time>
+        </span>
+      </button>
+    );
+  };
+
   if (!pop.shown) return null;
 
   return (
@@ -86,6 +137,7 @@ export function NotificationsPanel({
       </div>
       <div className="notif-b">
         {items.length === 0 && releases.length === 0 && <p className="notif-empty">You&apos;re all caught up.</p>}
+        {(unreadItems.length > 0 || releases.length > 0) && <div className="notif-sec">Unread</div>}
         {releases.map((r) => (
           <button key={r.version} type="button" className="nrow unread" onClick={() => onOpenRelease?.(r)}>
             <span className="ni ni-frank" aria-hidden="true">
@@ -100,54 +152,11 @@ export function NotificationsPanel({
             </span>
           </button>
         ))}
-        {items.map((n) => {
-          const post = n.creative;
-          const client = post?.project?.client?.name ?? n.mention?.project.client ?? "";
-          return (
-            <button
-              key={n.id}
-              type="button"
-              className={`nrow${n.read_at ? "" : " unread"}`}
-              onClick={() => {
-                if (!n.read_at) markRead.mutate([n.id]);
-                onOpenItem(n);
-              }}
-            >
-              <span className="ni" style={{ background: avatarColour(client || "Frank") }}>
-                {initials(client, "F")}
-              </span>
-              <span>
-                <span className="nt">
-                  {n.kind === "discussion_mention" ? (
-                    <>
-                      <b>{n.mention?.who ?? "Someone"}</b> mentioned you in <b>{n.mention?.project.name ?? "a project"}</b>
-                      {client ? ` · ${client}` : ""}
-                      {n.mention?.body && <span className="nq">“{n.mention.body}”</span>}
-                    </>
-                  ) : n.kind === "client_comment" ? (
-                    <>
-                      <b>{n.comment?.who ?? "The client"}</b> commented on <b>{post?.name ?? "a post"}</b>
-                      {client ? ` · ${client}` : ""}
-                      {n.comment?.body && <span className="nq">“{n.comment.body}”</span>}
-                    </>
-                  ) : n.kind === "client_approval" ? (
-                    <>
-                      <b>{post?.approved_by_name ?? "The client"}</b> approved <b>{post?.name ?? "a post"}</b>
-                      {client ? ` · ${client}` : ""}
-                    </>
-                  ) : (
-                    <>
-                      <b>{post?.name ?? "A post"}</b>
-                      {client ? ` · ${client}` : ""}. {post?.due_on ? "Past its due date" : "Approved a while ago"}, with
-                      no live date: remove its artwork?
-                    </>
-                  )}
-                </span>
-                <time dateTime={n.created_at}>{ago(n.created_at)}</time>
-              </span>
-            </button>
-          );
-        })}
+        {/* Unread, then Read (direct instruction): a read one stays in
+            the bell until the workspace's keep time passes (phase90). */}
+        {unreadItems.map(row)}
+        {readItems.length > 0 && <div className="notif-sec">Read</div>}
+        {readItems.map(row)}
       </div>
     </div>
   );

@@ -8,6 +8,8 @@ import { cleanReplyBody, isSlideField, type CopyChatField, type CopyChatMode } f
 import { errorMessage } from "@/lib/errors";
 import { useLiveUpdates } from "@/hooks/use-live-updates";
 import { useClientPreferences } from "@/hooks/use-client-preferences";
+import { useClientDetail } from "@/hooks/use-client";
+import { useMyAgency } from "@/hooks/use-my-agency";
 import { feedbackReach, postsReach } from "@/lib/ai/copy-chat-context";
 
 // A draft's fields, each with its own Use This (direct instruction):
@@ -21,6 +23,8 @@ function draftGroups(fields: CopyChatField[], draft: Record<string, string>) {
     ...(slides.length ? [{ id: "slides", label: "Text on Image", fields: slides }] : []),
   ];
 }
+
+const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 const pick = (from: Record<string, string>, fields: CopyChatField[]) =>
   Object.fromEntries(fields.map((f) => [f.key, from[f.key] ?? ""]));
@@ -42,6 +46,7 @@ const when = (iso: string) =>
 // Portalled to the page: it opens over the post window.
 export function CopyChat({
   creativeId,
+  postName,
   clientId,
   fields,
   currentFields,
@@ -51,6 +56,8 @@ export function CopyChat({
   onClose,
 }: {
   creativeId: string;
+  // In the header, under "Draft with Frank" (direct instruction).
+  postName: string;
   // The post's client, for what its Preferences let Frank read.
   clientId: string | null;
   fields: CopyChatField[];
@@ -78,6 +85,12 @@ export function CopyChat({
   );
   const send = useSendCopyChat(creativeId);
   const { data: prefs } = useClientPreferences(clientId);
+  // Named, not "your workspace" or "the client" (direct instruction):
+  // "No Fluff's", "Casa Carigar's", until the names load.
+  const { data: agency } = useMyAgency();
+  const { data: client } = useClientDetail(clientId ?? "");
+  const ours = agency?.name ? `${agency.name}\u2019s` : "Your workspace\u2019s";
+  const theirs = client?.name ? `${client.name}\u2019s` : "the client\u2019s";
   const [chatId, setChatId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [skipped, setSkipped] = useState<string[]>([]);
@@ -118,7 +131,12 @@ export function CopyChat({
 
   const body = (
     <Modal
-      title="Draft with Frank"
+      title={
+        <>
+          <div className="modal-title-project">Draft with Frank</div>
+          <div className="modal-title-post">{postName}</div>
+        </>
+      }
       ariaLabel="Draft with Frank"
       size="lg"
       onClose={onClose}
@@ -145,7 +163,7 @@ export function CopyChat({
           </>
         ) : (
           <>
-            <span className="grow">Each message uses one of the workspace&rsquo;s monthly AI requests.</span>
+            <span className="grow">Each message uses one of {agency?.name ? `${agency.name}\u2019s` : "the workspace\u2019s"} monthly AI requests.</span>
             <button type="button" className="btn" onClick={onClose}>
               Close
             </button>
@@ -175,17 +193,19 @@ export function CopyChat({
             <ul className="cchat-reads">
               <li>This post&rsquo;s brief: its name, format, Concept and WIIFM.</li>
               <li>Each format&rsquo;s direction, from Knowledge.</li>
-              <li>The client&rsquo;s strategy for the month the post goes live.</li>
-              <li>Your workspace&rsquo;s and this client&rsquo;s Knowledge: notes in full, and up to 10 PDFs or images.</li>
+              <li>{capital(theirs)} strategy for the month the post goes live.</li>
+              <li>
+                {ours} and {theirs} Knowledge: notes in full, and up to 10 PDFs or images.
+              </li>
               <li>
                 {!prefs || prefs.frank_posts === "off"
-                  ? "Not the client\u2019s other posts: off in this client\u2019s Preferences."
-                  : `Up to 8 of the client\u2019s Approved posts ${postsReach(prefs.frank_posts)}, for their voice: copy, VO and Text on Image.`}
+                  ? `Not ${theirs} Approved posts: off in ${theirs} Preferences.`
+                  : `Up to 8 of ${theirs} Approved posts ${postsReach(prefs.frank_posts)}, for their voice: copy, VO and Text on Image.`}
               </li>
               <li>
                 {!prefs || prefs.frank_feedback === "off"
-                  ? "Not the client\u2019s comments: off in this client\u2019s Preferences."
-                  : `Up to 20 of the client\u2019s own comments ${feedbackReach(prefs.frank_feedback)}, as standing direction, not praise or approvals.`}
+                  ? `Not ${theirs} comments: off in ${theirs} Preferences.`
+                  : `Up to 20 of ${theirs} own comments ${feedbackReach(prefs.frank_feedback)}, as standing direction, not praise or approvals.`}
               </li>
               <li>The copy in the editor, and this conversation.</li>
             </ul>

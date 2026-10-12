@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.20.0",
+    date: "2026-10-12",
+    title: "A tidier bell",
+    changes: [
+      "The bell lists Unread and Read separately.",
+      "Settings → General → Notifications sets how long a notification stays once read: 30, 60 or 90 days. Unread ones always stay.",
+      "Draft with Frank shows the post's name in its header, and names your workspace and the client rather than “your workspace” and “the client”.",
+    ],
+  },
+  {
     version: "1.19.3",
     date: "2026-10-11",
     title: "A narrower WIIFM column",

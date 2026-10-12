@@ -1887,6 +1887,7 @@ export function CreativeModal(props: CreativeModalProps) {
     {chatOpen && creativeId && (
       <CopyChat
         creativeId={creativeId}
+        postName={name || (isCreate ? "New post" : props.creative.name)}
         clientId={clientId ?? null}
         fields={[...copyFieldSpecs, ...(isVideo ? [VO_FIELD] : []), ...slideTextFields(slideCount)]}
         currentFields={{

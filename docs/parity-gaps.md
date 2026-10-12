@@ -3517,6 +3517,7 @@ Asked to track UX/UI inconsistencies across the app. Measured in the post window
 4. The review link's empty comments read "No comments yet." in smaller text; the post page reads "No comments" / "Be the first to leave one."
 5. Two greys for lines: --line (#E3E6EA) and --line-2 (#D5DAE0); the panel dividers, the post toolbar's rule and its separators are --line-2, while some rules are --line.
 6. Long client names make the rail's labels three lines ("E2E Test Client Projects"), so the icons below move as you go in and out of a client.
+7. Settings → General → Support Activity renders without the page padding (.pad, max 1100px) the other General pages use, so its panel would run to the window's edge (seen in the code while building Settings → General → Notifications; not yet looked at on screen).
 Not yet audited the same way: the Settings pages, the client page, the dashboard, the review link, the admin area.
 
 ## What Frank reads: Approved posts only, set per client in Preferences (phase89)
@@ -3555,3 +3556,12 @@ Direct instruction:
 **Existing WIIFM Directions rewritten on live (11 Oct 2026, asked):** the new style applies at each copy save, so posts saved before 1.19.2 kept their long old notes (7 to 11 points). A one-off script, compiled outside the repo and deleted after, did for each live post with a WIIFM exactly what the copy-save route does, through runAiTask (No Fluff's cap and usage log applied, logged against Raj): 8 of the 9 rewritten, each now 5 points; "Trial 21 Sep" skipped, as it has no copy left to read (its old notes stay until it has copy). 8 requests confirmed in ai_usage_events. Staging's posts were not touched.
 
 **WIIFM Direction column width** (direct instruction): 330px by default, as Copy is (was 472, sized for the long old notes), on both tables. A width someone has dragged and saved in a view stays theirs. Checked by the project-calendar and continuous-calendar specs.
+
+## The bell in Unread and Read; read notifications purged after the workspace's time (phase90); names in Draft with Frank
+
+Asked whether a notification staying in the bell after it's clicked is an error: no. Opening one marks it read (it loses its blue wash) but the bell kept every notification, up to 50, read or not, and nothing ever removed them. Now (direct instruction, choices asked):
+- **The bell splits Unread and Read**, each headed like the Draft with Frank window's lists (new versions of Frank sit under Unread).
+- **Settings → General → Notifications**: how long a notification stays once it's been read, 30, 60 or 90 days (default 90), for the whole workspace; Owners and Admins change it, saving as it's picked. Unread ones are never removed. Stored as agency_settings.notification_keep_days; removed by purge_read_notifications(), which the daily run (/api/cron/artwork, 3am) calls after the artwork; only the server can run it.
+- **Draft with Frank** has the post's name under its title, as the post window does, and names the workspace and the client in what Frank reads and in the footer ("No Fluff's and Casa Carigar's Knowledge", "one of No Fluff's monthly AI requests"), falling back to "your workspace" and "the client" while they load.
+
+**Verified**: phase90 rehearsed on staging (at 30 days, a notification read 40 days ago removed; one read 10 days ago and an unread 100-day-old one kept; 45 refused), then applied. notifications-purge.spec.ts: the bell's Unread and Read sections with the right rows in each; an Admin sets 30 days on the real page; the purge removes only the 40-day-read one; an unsigned-in caller is refused the purge. By hand: screenshots of the bell, the settings page (with the page padding the other General pages have), and Draft with Frank naming "E2E Test Agency's and E2E Test Client's Knowledge" with the post's name in the header. client-notifications, updates and copy-chat specs pass.
