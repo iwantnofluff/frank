@@ -406,9 +406,11 @@ test("shared review — a link for one post opens on it, the project's other wai
   await page.getByRole("button", { name: "Next post" }).click();
   await expect(page.locator(".m-also")).toHaveText("Also waiting for your review");
 
-  // A link to the whole project is one list, opening on what's still to review.
+  // A link to the whole project is one list, opening on a post still to
+  // review (either of the two; their order isn't fixed), not the commented one.
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`/review/${await frank.createSharedLink()}`);
-  await expect(page.locator(".dk-item[aria-current='true'] b")).toHaveText("Aaa Other Post");
+  await expect(page.locator(".dk-item")).toHaveCount(3);
+  await expect(page.locator(".dk-item[aria-current='true'] b")).not.toHaveText("Zzz Sent Post");
   await expect(page.locator(".dk-sec-h")).toHaveCount(0);
 });

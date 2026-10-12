@@ -122,9 +122,23 @@ function CreativeCrumb({ creativeId }: { creativeId: string }) {
         <b>—</b>
       )}
       <span className="sep">/</span>
-      <b>{creative?.name ?? "—"}</b>
+      <b>
+        {creative?.name ?? "—"}
+        {publishDate(creative) && ` (${publishDate(creative)})`}
+      </b>
     </>
   );
+}
+
+// The post's publish date after its name (direct instruction), e.g. "16 Oct
+// 26": a scheduled project's Publish Date, or a continuous one's Live Date
+// (a plain date, read as the day it names, not shifted by time zone).
+function publishDate(creative: ReturnType<typeof useCreative>["data"]): string | null {
+  if (!creative) return null;
+  const continuous = creative.projects?.delivery === "continuous";
+  const at = continuous ? (creative.due_on ? `${creative.due_on}T00:00:00` : null) : creative.scheduled_at;
+  if (!at) return null;
+  return new Date(at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "2-digit" });
 }
 
 function StaticCrumb({ pathname }: { pathname: string }) {

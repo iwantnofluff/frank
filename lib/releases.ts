@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.22.3",
+    date: "2026-10-12",
+    title: "The publish date beside the post's name",
+    changes: [
+      "On a post's page, the trail at the top gives its date after its name, e.g. Test (16 Oct 26): the Publish Date in a scheduled project, the Live Date in a continuous one. A post with no date yet shows its name alone.",
+      "On a review link, Sent for review and Also waiting for your review are in capitals, like Draft with Frank's headings.",
+    ],
+  },
+  {
     version: "1.22.2",
     date: "2026-10-12",
     title: "Review links open on what you sent",

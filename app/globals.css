@@ -4892,16 +4892,22 @@ textarea.cxin {
   padding-top: 10px;
   border-top: 1px solid var(--line);
 }
+/* In capitals, as Draft with Frank's own headings (.cchat-head; direct
+   instruction). */
 .dk-sec-h {
   padding: 4px 10px 6px;
-  font-size: 12.5px;
+  font-size: 11.2px;
   font-weight: 600;
-  color: var(--ink);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 .m-also {
   margin-bottom: 4px;
-  font-size: 11.7px;
+  font-size: 11.2px;
   font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   color: var(--muted);
 }
 /* A review link's list, grouped: To review, Commented, Approved. */
