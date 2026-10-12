@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useClientDetail } from "@/hooks/use-client";
 import { useProject } from "@/hooks/use-project";
 import { useCreative } from "@/hooks/use-creative";
+import { publishDate } from "@/lib/publish-date";
 import { useNotifications, type NotificationRow } from "@/hooks/use-notifications";
 import { BellIcon, HelpIcon } from "./icons";
 import { GlobalSearch } from "./GlobalSearch";
@@ -95,6 +96,8 @@ function CreativeCrumb({ creativeId }: { creativeId: string }) {
   const router = useRouter();
   const { data: creative } = useCreative(creativeId);
   const project = creative?.projects;
+  // Its date after its name (lib/publish-date.ts).
+  const date = creative ? publishDate(project?.delivery, creative.scheduled_at, creative.due_on) : null;
 
   return (
     <>
@@ -124,22 +127,13 @@ function CreativeCrumb({ creativeId }: { creativeId: string }) {
       <span className="sep">/</span>
       <b>
         {creative?.name ?? "—"}
-        {publishDate(creative) && ` (${publishDate(creative)})`}
+        {date && ` (${date})`}
       </b>
     </>
   );
 }
 
-// The post's publish date after its name (direct instruction), e.g. "16 Oct
-// 26": a scheduled project's Publish Date, or a continuous one's Live Date
-// (a plain date, read as the day it names, not shifted by time zone).
-function publishDate(creative: ReturnType<typeof useCreative>["data"]): string | null {
-  if (!creative) return null;
-  const continuous = creative.projects?.delivery === "continuous";
-  const at = continuous ? (creative.due_on ? `${creative.due_on}T00:00:00` : null) : creative.scheduled_at;
-  if (!at) return null;
-  return new Date(at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "2-digit" });
-}
+
 
 function StaticCrumb({ pathname }: { pathname: string }) {
   const match = Object.keys(STATIC_CRUMBS).find((prefix) =>

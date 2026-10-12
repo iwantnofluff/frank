@@ -6,9 +6,8 @@ import { SharedFeedGrid } from "./SharedFeedGrid";
 import { CommentCount } from "./CommentCount";
 import { CommentWhen } from "@/components/creative-review/CommentWhen";
 import { ReviewBrandHeader } from "./ReviewBrandHeader";
-import { useReviewViewer } from "@/hooks/use-review-viewer";
 import { CommentJump } from "./mobile-gestures";
-import { REVIEW_GROUPS, reviewGroup } from "./review-group";
+import { RECENT_APPROVED_DAYS, reviewGroup } from "./review-group";
 import { ReviewNav, type ReviewSection } from "@/components/creative-review/ReviewNav";
 import { formatsLabel, postFormats, isStoryFormat } from "@/lib/formats";
 import { ReviewMedia } from "./ReviewMedia";
@@ -16,10 +15,11 @@ import { MomentBadge } from "./MomentBadge";
 import { SharedCommentText } from "./SharedCommentText";
 import { GuestComposer } from "./GuestComposer";
 import { PhoneFrame } from "@/components/creative-review/PhoneFrame";
+import { publishDate } from "@/lib/publish-date";
 
-// Kept free beside the phone: the post's title above it and the scroll
-// note below.
-const RESERVE = 110;
+// Kept free beside the phone: the scroll note below it. No title above it
+// (direct instruction: the list names the post).
+const RESERVE = 46;
 
 const SECTIONS: { id: ReviewSection; label: string }[] = [
   { id: "content", label: "Content" },
@@ -43,7 +43,8 @@ export function DesktopReview({
 }) {
   const { creatives, active, activeIndex, goTo } = controller;
   // Signed in, and on the workspace's team: the post's name links into Frank.
-  const { data: viewer } = useReviewViewer();
+  // The project's kind, for each post's date after its name.
+  const projectDelivery = controller.data?.status === "ok" ? controller.data.project.delivery : null;
   // The Review page's section menu, with only Content and Feed (direct
   // instruction); Content is the post, Feed the grid.
   const [navCollapsed, setNavCollapsed] = useState(false);
@@ -82,56 +83,47 @@ export function DesktopReview({
             />
           </div>
           <div className="dk-items">
-            {/* What this link was sent for, then the project's other posts
-                waiting for review (direct instruction), each grouped: still
-                to review first, then commented on, then approved. A link to
-                the whole project is one list, as before. */}
-            {(controller.hasSent
-              ? [
-                  { label: "Sent for review", sent: true },
-                  { label: "Also waiting for your review", sent: false },
-                ]
-              : [{ label: null, sent: false }]
-            ).map((sec) => {
-              const inSec = creatives.map((c, i) => ({ c, i })).filter(({ c }) => !controller.hasSent || controller.isSent(c) === sec.sent);
-              if (!inSec.length) return null;
+            {/* One level of heading (direct instruction): what this link
+                was sent for, then the project's other posts waiting for
+                review (or, for a link to the whole project, what's waiting),
+                then recent approvals (review-group.ts). */}
+            {controller.sections.map((sec) => {
+              const start = creatives.indexOf(sec.items[0]);
               return (
-                <div key={sec.label ?? "all"} className="dk-sec">
-                  {sec.label && <div className="dk-sec-h">{sec.label}</div>}
-                  {REVIEW_GROUPS.map((g) => {
-                    const items = inSec.filter(({ c }) => reviewGroup(c) === g.id);
-                    if (!items.length) return null;
+                <div key={sec.id} className="dk-sec">
+                  <div className="dk-sec-h">
+                    {sec.label} <span>{sec.items.length}</span>
+                  </div>
+                  {sec.id === "approved" && (
+                    // When Approved artwork goes (direct instruction), from
+                    // the client's Preferences.
+                    <div className="dk-sec-note">
+                      Last {RECENT_APPROVED_DAYS} days · Artwork removed{" "}
+                      {controller.data?.status === "ok" ? controller.data.artwork_keep_days : 7} days after going live
+                    </div>
+                  )}
+                  {sec.items.map((c, k) => {
+                    const i = start + k;
+                    const date = publishDate(projectDelivery, c.scheduled_at, c.due_on);
                     return (
-                      <div key={g.id} className="dk-group">
-                        <div className="dk-group-h">
-                          {g.label} <span>{items.length}</span>
-                          {/* When Approved artwork goes (direct instruction), from
-                              the client's Preferences. */}
-                          {g.id === "approved" && (
-                            <em>
-                              · Artwork removed {controller.data?.status === "ok" ? controller.data.artwork_keep_days : 7} days after
-                              going live
-                            </em>
-                          )}
+                      <button
+                        key={c.id}
+                        className="dk-item"
+                        aria-current={i === activeIndex}
+                        onClick={() => {
+                          goTo(i);
+                          controller.setView("post");
+                        }}
+                      >
+                        <div className="t">
+                          {/* Its date above its name (direct instruction). */}
+                          {date && <span className="dk-date">{date}</span>}
+                          <b>{c.name}</b>
+                          <span className="fmt">{formatsLabel(postFormats(c))}</span>
                         </div>
-                        {items.map(({ c, i }) => (
-                          <button
-                            key={c.id}
-                            className="dk-item"
-                            aria-current={i === activeIndex}
-                            onClick={() => {
-                              goTo(i);
-                              controller.setView("post");
-                            }}
-                          >
-                            <div className="t">
-                              <b>{c.name}</b>
-                              <span className="fmt">{formatsLabel(postFormats(c))}</span>
-                            </div>
-                            <CommentCount n={c.comments.length} />
-                          </button>
-                        ))}
-                      </div>
+                        {reviewGroup(c) === "commented" && <span className="dk-tag">Commented</span>}
+                        <CommentCount n={c.comments.length} />
+                      </button>
                     );
                   })}
                 </div>
@@ -153,13 +145,6 @@ export function DesktopReview({
         <div className="dk-main">
           {controller.view === "feed" ? (
             <div className="dk-card">
-              {/* Headed like the post, so the phone stays where it was. */}
-              <div className="cmeta">
-                <div className="ct">Feed</div>
-                <div className="cs">
-                  <span>Posts in this link open when clicked</span>
-                </div>
-              </div>
               <PhoneFrame reserve={RESERVE}>
                 <SharedFeedGrid controller={controller} brandName={clientName} />
               </PhoneFrame>
@@ -171,28 +156,6 @@ export function DesktopReview({
             </div>
           ) : (
             <div className="dk-card">
-              <div className="cmeta">
-                {/* For the workspace's team (direct instruction), the post's
-                    name opens its own Review page in Frank. */}
-                <div className="ct">
-                  {viewer?.isTeam ? (
-                    <a className="rv-link" href={`/creatives/${active.id}`}>
-                      {active.name}
-                    </a>
-                  ) : (
-                    active.name
-                  )}
-                </div>
-                <div className="cs">
-                  <span>{formatsLabel(postFormats(active))}</span>
-                  {active.destination && (
-                    <>
-                      <span className="sep">·</span>
-                      <span>{active.destination}</span>
-                    </>
-                  )}
-                </div>
-              </div>
               {/* In the same phone as the Review page (direct instruction:
                   desktop only; the phone layout is the phone itself). It
                   fits the window, and the post scrolls inside it. */}

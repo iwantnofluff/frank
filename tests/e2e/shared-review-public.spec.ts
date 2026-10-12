@@ -226,7 +226,8 @@ test("shared review — the feed shows other posts by stage, and opens this link
   await expect(grid.locator(".sharedfeed-planned .cmtcount")).toHaveText("1");
   // Its tile opens the post.
   await grid.locator(".sharedfeed-planned").click();
-  await expect(page.locator(".dk-card .ct")).toHaveText("E2E Test Creative");
+  await expect(page.locator(".dk-item[aria-current='true'] b")).toContainText("E2E Test Creative");
+  await expect(page.locator(".dk-card .lpv-bar")).toBeVisible();
 });
 
 // Reported directly: a No Fluff link opened as someone remembered from a
@@ -340,7 +341,6 @@ test("shared review — names link into Frank: sign in first, and the post for t
   await page.goto(`/review/${token}`);
   const head = page.locator(".dk-list .rv-client");
   await expect(head.getByRole("link", { name: "E2E Test Client" })).toBeVisible({ timeout: 20_000 });
-  await expect(page.locator(".dk-card .ct a")).toHaveCount(0);
   await head.getByRole("link", { name: "E2E Test Project" }).click();
   const win = page.getByRole("dialog", { name: "Sign in to Frank" });
   await expect(win).toContainText("To open E2E Test Project in Frank, sign in.");
@@ -348,10 +348,10 @@ test("shared review — names link into Frank: sign in first, and the post for t
   await win.getByRole("button", { name: "Cancel" }).click();
   await expect(win).toHaveCount(0);
 
-  // The team: the post's name opens its page; the client's name goes straight there.
+  // The team: the client's name goes straight there. (The post's own name
+  // above the phone, which opened its page, went with the title.)
   await frank.loginAsStaff(page);
   await page.goto(`/review/${token}`);
-  await expect(page.locator(".dk-card .ct a")).toHaveAttribute("href", `/creatives/${frank.creativeId}`, { timeout: 20_000 });
   await page.locator(".dk-list .rv-client").getByRole("link", { name: "E2E Test Client" }).click();
   await page.waitForURL(`**/clients/${frank.clientId}`, { timeout: 20_000 });
 
@@ -361,8 +361,6 @@ test("shared review — names link into Frank: sign in first, and the post for t
   await frank.loginAsClient(client);
   await client.goto(`/review/${token}`);
   await expect(client.locator(".dk-list .rv-client").getByRole("link", { name: "E2E Test Project" })).toBeVisible({ timeout: 20_000 });
-  await expect(client.locator(".dk-card .ct")).toContainText("E2E Test Creative");
-  await expect(client.locator(".dk-card .ct a")).toHaveCount(0);
   await ctx.close();
 });
 
@@ -394,9 +392,10 @@ test("shared review — a link for one post opens on it, the project's other wai
 
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`/review/${token}`);
-  await expect(page.locator(".dk-sec-h")).toHaveText(["Sent for review", "Also waiting for your review"]);
-  await expect(page.locator(".dk-sec").first().locator(".dk-item b")).toHaveText(["Zzz Sent Post"]);
-  await expect(page.locator(".dk-item[aria-current='true'] b")).toHaveText("Zzz Sent Post");
+  await expect(page.locator(".dk-sec-h")).toHaveText(["Sent for review 1", "Also waiting for your review 2"]);
+  await expect(page.locator(".dk-sec").first().locator(".dk-tag")).toHaveText("Commented");
+  await expect(page.locator(".dk-sec").first().locator(".dk-item b")).toHaveText([/^Zzz Sent Post/]);
+  await expect(page.locator(".dk-item[aria-current='true'] b")).toHaveText(/^Zzz Sent Post/);
 
   // On a phone: the link's post first; the next is labelled as the extra.
   await page.setViewportSize(PHONE_VIEWPORT);
@@ -411,6 +410,50 @@ test("shared review — a link for one post opens on it, the project's other wai
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`/review/${await frank.createSharedLink()}`);
   await expect(page.locator(".dk-item")).toHaveCount(3);
-  await expect(page.locator(".dk-item[aria-current='true'] b")).not.toHaveText("Zzz Sent Post");
-  await expect(page.locator(".dk-sec-h")).toHaveCount(0);
+  await expect(page.locator(".dk-item[aria-current='true'] b")).not.toHaveText(/^Zzz Sent Post/);
+  await expect(page.locator(".dk-sec-h")).toHaveText(["Waiting for your review 3"]);
+});
+
+test("shared review — the list's Approved goes back 30 days, keeping what the link was sent for", async ({ page, frank }) => {
+  // Direct instruction: a project's approved posts would make the list too
+  // long after a while.
+  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const day = 86_400_000;
+  const approvedAt = async (name: string, daysAgo: number) => {
+    const id = await frank.createCreativeAtStage(4, name);
+    const { error } = await admin.from("creatives").update({ approved_at: new Date(Date.now() - daysAgo * day).toISOString() }).eq("id", id);
+    if (error) throw error;
+    return id;
+  };
+  await approvedAt("Approved Lately", 5);
+  await approvedAt("Approved Long Ago", 40);
+  const sentOld = await approvedAt("Sent Long Ago", 50);
+  const staffId = (await admin.from("users").select("id").eq("email", frank.staffEmail).single()).data!.id;
+  const token = `e2e-pick-${Date.now()}`;
+  const { error } = await admin.from("shared_links").insert({
+    project_id: frank.projectId,
+    token,
+    scope: "pick",
+    picked_creatives: [sentOld],
+    requires_passcode: false,
+    passcode_hash: null,
+    can_approve: false,
+    created_by: staffId,
+  });
+  if (error) throw error;
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  // A link to the whole project: the old approval isn't listed.
+  await page.goto(`/review/${await frank.createSharedLink()}`);
+  const approved = page.locator(".dk-sec", { hasText: "Approved" });
+  await expect(approved.locator(".dk-item b")).toHaveText([/^Approved Lately/]);
+  await expect(approved.locator(".dk-sec-note")).toContainText("Last 30 days");
+
+  // A link made for an old approval keeps it, and opens on it (a link for
+  // particular posts shows no other approved ones, phase69).
+  await page.goto(`/review/${token}`);
+  await expect(approved.locator(".dk-item b")).toHaveText([/^Sent Long Ago/]);
+  await expect(page.locator(".dk-item[aria-current='true'] b")).toHaveText(/^Sent Long Ago/);
 });

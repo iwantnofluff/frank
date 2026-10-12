@@ -123,7 +123,7 @@ test("a review link follows the client: no approving, no other posts, and when A
 
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`${APP_URL}/review/${token}`);
-  await expect(page.locator(".dk-group-h", { hasText: "Approved" })).toContainText("Artwork removed 21 days after going live");
+  await expect(page.locator(".dk-sec", { hasText: "Approved" }).locator(".dk-sec-note")).toContainText("Artwork removed 21 days after going live");
   await expect(page.getByRole("button", { name: "Approve", exact: true })).toHaveCount(0);
   expect(approved).toBeTruthy();
 });

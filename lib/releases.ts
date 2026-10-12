@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.22.4",
+    date: "2026-10-12",
+    title: "A clearer review link list",
+    changes: [
+      "A review link's list has one level of heading, in capitals with a line between: Sent for review (or Waiting for your review, on a link to the whole project), Also waiting for your review, and Approved. A post the client has commented on says Commented beside it.",
+      "Approved shows the last 30 days only, so the list stays short. A link always keeps the posts it was sent for.",
+      "Each post's date is above its name, in small grey type. The post's name and format no longer sit above the phone, which is a little bigger for it and centred top to bottom.",
+    ],
+  },
+  {
     version: "1.22.3",
     date: "2026-10-12",
     title: "The publish date beside the post's name",

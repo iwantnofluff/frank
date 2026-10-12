@@ -381,7 +381,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       },
       {
         kind: "p",
-        text: "A link opens on the post or posts you sent it for, under Sent for review, even once the client has commented. Every link also lists the project's other posts in Client Review, after them, under Also waiting for your review.",
+        text: "A link opens on the post or posts you sent it for, under Sent for review, even once the client has commented. Every link also lists the project's other posts in Client Review, after them, under Also waiting for your review. Approved posts come last, from the last 30 days only, though a link always keeps the posts it was sent for. Each post shows its date above its name.",
       },
       { kind: "h", text: "What your client sees" },
       {

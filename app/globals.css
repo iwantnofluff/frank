@@ -4910,24 +4910,30 @@ textarea.cxin {
   text-transform: uppercase;
   color: var(--muted);
 }
-/* A review link's list, grouped: To review, Commented, Approved. */
-.dk-group + .dk-group {
-  margin-top: 10px;
-}
-.dk-group-h {
-  padding: 4px 10px 6px;
-  font-size: 11.7px;
-  font-weight: 600;
-  color: var(--muted);
-}
-.dk-group-h span {
-  font-weight: 500;
+.dk-sec-h span {
   margin-left: 2px;
 }
-.dk-group-h em {
-  font-style: normal;
+/* Under Approved: how far back it goes, and when artwork goes. */
+.dk-sec-note {
+  padding: 0 10px 6px;
+  font-size: 11.7px;
+  color: var(--muted);
+}
+/* A post's date, above its name (direct instruction). */
+.dk-item .t .dk-date {
+  font-size: 11px;
+  color: var(--muted);
+}
+/* A post the client has commented on, among those still in review. */
+.dk-tag {
+  align-self: center;
+  font-size: 11px;
   font-weight: 500;
-  margin-left: 4px;
+  padding: 2px 7px;
+  border-radius: 20px;
+  background: var(--canvas);
+  color: var(--muted);
+  white-space: nowrap;
 }
 .dk-item {
   display: flex;
@@ -4972,9 +4978,12 @@ textarea.cxin {
   flex-direction: column;
   align-items: center;
 }
+/* Centred top to bottom (direct instruction), by auto margins so a card
+   taller than the pane still scrolls from its top rather than being cut. */
 .dk-card {
   width: 460px;
   max-width: 100%;
+  margin-block: auto;
 }
 .dk-side {
   border-left: 1px solid var(--line);

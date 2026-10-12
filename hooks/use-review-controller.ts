@@ -15,7 +15,7 @@ import {
   useEditSharedComment,
 } from "./use-shared-actions";
 import { useGuestIdentityStore } from "@/store/guest-identity-store";
-import { reviewGroup } from "@/components/review/review-group";
+import { reviewGroup, reviewSections } from "@/components/review/review-group";
 
 // One data assembly, one set of handlers — the mobile and desktop layouts
 // are both driven from this, so there's no separate mobile-only or
@@ -74,14 +74,16 @@ export function useReviewController(token: string) {
   // A guest's own comment, edited (phase75).
   const editComment = useEditSharedComment(token, passcode);
 
-  // The posts this link was made for come first (direct instruction: the
-  // link opened on another post waiting for review), then the project's
-  // other posts in Client Review that every link also shows (phase69).
+  // The list's sections (review-group.ts): the posts this link was made for
+  // first (direct instruction: the link opened on another post waiting for
+  // review), then the project's other posts in Client Review that every
+  // link also shows (phase69), then recent approvals. The page steps
+  // through posts in that order. The time is read once, when the answer
+  // arrives, so the list doesn't shift while it's open.
   const sentIds = useMemo(() => new Set(data?.status === "ok" ? (data.sent_ids ?? []) : []), [data]);
-  const creatives: SharedCreative[] = useMemo(() => {
-    const all = data?.status === "ok" ? data.creatives : [];
-    return sentIds.size ? [...all.filter((c) => sentIds.has(c.id)), ...all.filter((c) => !sentIds.has(c.id))] : all;
-  }, [data, sentIds]);
+  const [now] = useState(() => Date.now());
+  const sections = useMemo(() => reviewSections(data?.status === "ok" ? data.creatives : [], sentIds, now), [data, sentIds, now]);
+  const creatives: SharedCreative[] = useMemo(() => sections.flatMap((s) => s.items), [sections]);
   const isSent = (c: SharedCreative) => sentIds.has(c.id);
   // The project's posts in grid order (phase67); without it (an older
   // answer, or it couldn't be read), just this link's own.
@@ -97,9 +99,10 @@ export function useReviewController(token: string) {
   const [started, setStarted] = useState(false);
   if (!started && creatives.length) {
     setStarted(true);
+    const toReview = (c: SharedCreative) => reviewGroup(c) === "to_review";
     const first = sentIds.size
-      ? Math.max(0, creatives.findIndex((c) => sentIds.has(c.id) && reviewGroup(c) === "to_review"))
-      : creatives.findIndex((c) => reviewGroup(c) === "to_review");
+      ? [creatives.findIndex((c) => sentIds.has(c.id) && toReview(c)), creatives.findIndex((c) => sentIds.has(c.id))].find((i) => i >= 0) ?? 0
+      : creatives.findIndex(toReview);
     if (first > 0) setActiveIndex(first);
   }
   const active = creatives[activeIndex] ?? null;
@@ -173,6 +176,7 @@ export function useReviewController(token: string) {
     passcode,
     setPasscode,
     creatives,
+    sections,
     // Whether this link was made for particular posts, and which.
     hasSent: sentIds.size > 0,
     isSent,

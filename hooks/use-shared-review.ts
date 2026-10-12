@@ -24,6 +24,8 @@ export interface SharedCreative {
   scheduled_at: string | null;
   destination: string | null;
   approved_at: string | null;
+  // A continuous project's Live Date (the list's date after the name).
+  due_on?: string | null;
   asset: {
     version_no: number;
     mime_type: string;

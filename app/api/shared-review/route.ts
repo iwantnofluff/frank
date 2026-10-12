@@ -127,7 +127,7 @@ export async function POST(request: Request) {
         // Looked up for exactly the creatives that function just returned
         // for this validated token, nothing wider.
         ids.length
-          ? serviceRole.from("creatives").select("id, formats, slide_count, artwork_removed_at").in("id", ids).then((r) => r.data ?? [])
+          ? serviceRole.from("creatives").select("id, formats, slide_count, artwork_removed_at, due_on").in("id", ids).then((r) => r.data ?? [])
           : [],
         // Each comment's anchor — get_shared_review returns only the text —
         // so a comment made at a moment in a video can show, and jump to,
@@ -176,7 +176,9 @@ export async function POST(request: Request) {
   const formatsById = new Map<string, string[]>();
   const slideCountById = new Map<string, number | null>();
   const removedById = new Map<string, string | null>();
+  const dueOnById = new Map<string, string | null>();
   for (const r of creativeRows) {
+    dueOnById.set(r.id, r.due_on);
     formatsById.set(r.id, r.formats);
     slideCountById.set(r.id, r.slide_count);
     removedById.set(r.id, r.artwork_removed_at);
@@ -261,6 +263,9 @@ export async function POST(request: Request) {
       slides: slidesById.get(raw.id) ?? [],
       slide_count: slideCountById.get(raw.id) ?? null,
       artwork_removed_at: removedById.get(raw.id) ?? null,
+      // A continuous project's Live Date, for the date after the post's
+      // name in the list (scheduled_at comes from get_shared_review).
+      due_on: dueOnById.get(raw.id) ?? null,
       comments: raw.comments.map((m) => ({
         ...m,
         anchor: anchorById.get(m.id) ?? null,
