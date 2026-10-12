@@ -34,7 +34,9 @@ test("the bell splits Unread and Read, and read ones go after the workspace's ke
   await expect(panel.locator(".nrow:not(.unread)")).toHaveCount(2);
 
   // An Admin sets 30 days.
+  // Notifications is now a section of Preferences; its old address lands there.
   await page.goto(`${APP_URL}/settings/general/notifications`);
+  await page.waitForURL(`${APP_URL}/settings/general/preferences`);
   await expect(page.getByLabel("Keep read notifications for")).toHaveValue("90");
   await page.getByLabel("Keep read notifications for").selectOption("30");
   await expect
@@ -112,3 +114,50 @@ test("the bell counts, filters by person, and deletes selected read ones", async
   const { data: gone } = await me.from("notifications").delete().eq("creative_id", frank.creativeId).select("id");
   expect(gone ?? []).toHaveLength(0);
 });
+
+test("Preferences sets how far back a review link lists Approved posts (phase92)", async ({ page, frank }) => {
+  // Direct instruction: 7, 14, 21 or 28 days, or Always; 14 by default.
+  const approvedAgo = async (name: string, days: number) => {
+    const id = await frank.createCreativeAtStage(4, name);
+    const { error } = await admin.from("creatives").update({ approved_at: new Date(Date.now() - days * 86_400_000).toISOString() }).eq("id", id);
+    if (error) throw error;
+  };
+  await approvedAgo("Approved 10 Days Ago", 10);
+  await approvedAgo("Approved 20 Days Ago", 20);
+  const token = await frank.createSharedLink();
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const listed = async () => {
+    await page.goto(`${APP_URL}/review/${token}`);
+    const approved = page.locator(".dk-sec", { hasText: "Approved" });
+    await expect(approved.locator(".dk-item").first()).toBeVisible();
+    return approved;
+  };
+  // The default, with no settings saved: 14 days.
+  let approved = await listed();
+  await expect(approved.locator(".dk-item b")).toHaveText(["Approved 10 Days Ago"]);
+  await expect(approved.locator(".dk-sec-note")).toContainText("Last 14 days");
+
+  await frank.loginAsStaff(page);
+  await page.goto(`${APP_URL}/settings/general/preferences`);
+  const pick = page.getByLabel("List Approved posts for");
+  await expect(pick).toHaveValue("14");
+  await pick.selectOption("always");
+  await expect
+    .poll(async () => (await admin.from("agency_settings").select("review_approved_days").eq("agency_id", frank.agencyId).maybeSingle()).data)
+    .toEqual({ review_approved_days: null });
+  approved = await listed();
+  await expect(approved.locator(".dk-item b")).toHaveText(["Approved 10 Days Ago", "Approved 20 Days Ago"]);
+  await expect(approved.locator(".dk-sec-note")).not.toContainText("Last");
+
+  await page.goto(`${APP_URL}/settings/general/preferences`);
+  await pick.selectOption("7");
+  await expect
+    .poll(async () => (await admin.from("agency_settings").select("review_approved_days").eq("agency_id", frank.agencyId).maybeSingle()).data?.review_approved_days)
+    .toBe(7);
+  approved = page.locator(".dk-sec", { hasText: "Approved" });
+  await page.goto(`${APP_URL}/review/${token}`);
+  await expect(page.locator(".dk-item").first()).toBeVisible();
+  await expect(approved).toHaveCount(0);
+});
+

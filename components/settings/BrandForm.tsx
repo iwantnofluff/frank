@@ -196,7 +196,7 @@ export function BrandForm({
       {part === "name" && (
       <div className="panel">
         <div className="panel-h">
-          <b>Account Name</b>
+          <b>Workspace Name</b>
         </div>
         <div className="srow">
           <span className="sl">

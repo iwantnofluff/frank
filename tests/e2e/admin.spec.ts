@@ -147,7 +147,7 @@ test("limits come from the plan plus the admin override, are enforced, and pausi
     // admin's to change, and the page doesn't explain the address any more.
     await expect(page.locator("#agAddress")).toHaveCount(0);
     await expect(page.locator("#agPlan")).toHaveCount(0);
-    await expect(page.getByText("Account URL")).toHaveCount(0);
+    await expect(page.getByText("Workspace URL")).toHaveCount(0);
     const refused = await page.request.patch(`${ADMIN}/api/admin/agencies/${frank.agencyId}`, { data: { plan: "agency" } });
     expect(refused.status()).toBe(403);
 

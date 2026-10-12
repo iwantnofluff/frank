@@ -175,9 +175,9 @@ function SignIn({ onForgot }: { onForgot: () => void }) {
       }}
     >
       <label className="authfield">
-        <span>Your account URL</span>
+        <span>Your workspace URL</span>
         <span className="subfield">
-          <input required aria-label="Your account URL" value={address} onChange={(e) => setAddress(clean(e.target.value))} />
+          <input required aria-label="Your workspace URL" value={address} onChange={(e) => setAddress(clean(e.target.value))} />
           <span>.{ROOT}</span>
         </span>
       </label>

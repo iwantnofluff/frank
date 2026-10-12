@@ -24,7 +24,7 @@ const STATIC_CRUMBS: Record<string, string> = {
   "/calendar": "Calendar",
   "/analytics": "Analytics",
   "/visibility": "Client visibility",
-  "/settings": "Settings",
+  "/settings": "Workspace Settings",
 };
 
 function AllClientsCrumbLink() {

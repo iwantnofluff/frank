@@ -56,7 +56,7 @@ test("search opens pages, and finds projects by their type", async ({ page, fran
   await box.fill("knowledge");
   // Knowledge's page is Discovery (direct instruction); its section still finds it.
   await expect(results.getByRole("option", { name: /Discovery\s*E2E Test Client · Client Settings/ })).toBeVisible();
-  await expect(results.getByRole("option", { name: /Reference Material\s*Settings · Knowledge/ })).toBeVisible();
+  await expect(results.getByRole("option", { name: /Reference Material\s*Workspace Settings · Knowledge/ })).toBeVisible();
   await results.getByRole("option", { name: /Discovery\s*E2E Test Client · Client Settings/ }).click();
   await page.waitForURL(`${APP_URL}/clients/${frank.clientId}/settings/knowledge`);
 });

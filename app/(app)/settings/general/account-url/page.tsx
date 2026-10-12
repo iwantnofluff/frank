@@ -48,10 +48,10 @@ export default function AccountUrlPage() {
 
   return (
     <div className="pad" style={{ maxWidth: 1100 }}>
-      <SettingsHead title="Account URL" description="Where your team and your clients sign in to your workspace on Frank." />
+      <SettingsHead title="Workspace URL" description="Where your team and your clients sign in to your workspace on Frank." />
       <div className="panel">
         <div className="panel-h">
-          <b>Account URL</b>
+          <b>Workspace URL</b>
         </div>
         {canChange ? (
           <div className="srow">

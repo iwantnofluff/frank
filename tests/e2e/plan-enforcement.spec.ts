@@ -85,10 +85,10 @@ test("an agency signs itself up at beingfrank.app, confirms, works through its t
     const signin = await other.newPage();
     await signin.goto(`${ROOT}/`);
     await signin.getByRole("button", { name: "Sign In" }).click();
-    await signin.getByLabel("Your account URL").fill("nosuchagency");
+    await signin.getByLabel("Your workspace URL").fill("nosuchagency");
     await signin.getByRole("button", { name: "Continue" }).click();
     await expect(signin.locator(".autherr")).toContainText("no Frank workspace");
-    await signin.getByLabel("Your account URL").fill(sub);
+    await signin.getByLabel("Your workspace URL").fill(sub);
     await signin.getByRole("button", { name: "Continue" }).click();
     await signin.waitForURL(`${home}/login`);
     await expect(signin.getByRole("heading", { name: "Hey, sign in to E2E Signup Agency" })).toBeVisible();

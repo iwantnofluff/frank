@@ -15,7 +15,7 @@ import {
   useEditSharedComment,
 } from "./use-shared-actions";
 import { useGuestIdentityStore } from "@/store/guest-identity-store";
-import { reviewGroup, reviewSections } from "@/components/review/review-group";
+import { DEFAULT_APPROVED_DAYS, reviewGroup, reviewSections } from "@/components/review/review-group";
 
 // One data assembly, one set of handlers — the mobile and desktop layouts
 // are both driven from this, so there's no separate mobile-only or
@@ -82,7 +82,11 @@ export function useReviewController(token: string) {
   // arrives, so the list doesn't shift while it's open.
   const sentIds = useMemo(() => new Set(data?.status === "ok" ? (data.sent_ids ?? []) : []), [data]);
   const [now] = useState(() => Date.now());
-  const sections = useMemo(() => reviewSections(data?.status === "ok" ? data.creatives : [], sentIds, now), [data, sentIds, now]);
+  const approvedDays = data?.status === "ok" ? (data.approved_days === undefined ? DEFAULT_APPROVED_DAYS : data.approved_days) : DEFAULT_APPROVED_DAYS;
+  const sections = useMemo(
+    () => reviewSections(data?.status === "ok" ? data.creatives : [], sentIds, now, approvedDays),
+    [data, sentIds, now, approvedDays],
+  );
   const creatives: SharedCreative[] = useMemo(() => sections.flatMap((s) => s.items), [sections]);
   const isSent = (c: SharedCreative) => sentIds.has(c.id);
   // The project's posts in grid order (phase67); without it (an older
@@ -177,6 +181,8 @@ export function useReviewController(token: string) {
     setPasscode,
     creatives,
     sections,
+    // Days of Approved posts listed; null is Always.
+    approvedDays,
     // Whether this link was made for particular posts, and which.
     hasSent: sentIds.size > 0,
     isSent,

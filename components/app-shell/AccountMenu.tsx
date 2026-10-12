@@ -136,7 +136,7 @@ export function AccountMenu({
             </Link>
             {showSettings && (
               <Link href="/settings" role="menuitem" className="cpr" onClick={() => setAnchor(null)}>
-                <span className="cn">Settings</span>
+                <span className="cn">Workspace Settings</span>
               </Link>
             )}
             <div className="menusep" role="separator" />

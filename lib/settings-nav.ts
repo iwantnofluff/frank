@@ -21,10 +21,12 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     key: "general",
     label: "General",
     pages: [
-      { href: "/settings/general/account-name", label: "Account Name" },
-      { href: "/settings/general/account-url", label: "Account URL" },
-      // How long read notifications are kept (phase90).
-      { href: "/settings/general/notifications", label: "Notifications" },
+      // Workspace, not Account (direct instruction); the addresses stay.
+      { href: "/settings/general/account-name", label: "Workspace Name" },
+      { href: "/settings/general/account-url", label: "Workspace URL" },
+      // How long read notifications are kept (phase90) and how far back
+      // review links list Approved posts (phase92).
+      { href: "/settings/general/preferences", label: "Preferences" },
       // What Frank's support has done in the account (phase51), for Owners.
       { href: "/settings/general/support-activity", label: "Support Activity" },
       // Every version of Frank and what changed (direct instruction).

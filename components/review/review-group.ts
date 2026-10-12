@@ -11,10 +11,11 @@ export function reviewGroup(c: SharedCreative): ReviewGroup {
 }
 
 // How far back the list's Approved goes (direct instruction: a project's
-// approved posts would make the list too long after a while). A post this
-// link was made for stays, however long ago it was approved, and so does
-// one with no approval date to judge by.
-export const RECENT_APPROVED_DAYS = 30;
+// approved posts would make the list too long after a while): the
+// workspace's choice in Preferences (phase92), null for Always, 14 by
+// default. A post this link was made for stays, however long ago it was
+// approved, and so does one with no approval date to judge by.
+export const DEFAULT_APPROVED_DAYS = 14;
 
 export interface ReviewSection {
   id: "sent" | "also" | "waiting" | "approved";
@@ -27,15 +28,20 @@ export interface ReviewSection {
 // review (the project's other posts in Client Review, phase69); a link to
 // the whole project has Waiting for your review. Each lists what's still to
 // review before what the client has commented on. Approved comes last,
-// newest first, only the last RECENT_APPROVED_DAYS. Empty sections are left
+// newest first, only the last approvedDays (all of them when null). Empty sections are left
 // out. The page steps through posts in this order.
-export function reviewSections(all: SharedCreative[], sentIds: Set<string>, now: number): ReviewSection[] {
+export function reviewSections(
+  all: SharedCreative[],
+  sentIds: Set<string>,
+  now: number,
+  approvedDays: number | null = DEFAULT_APPROVED_DAYS,
+): ReviewSection[] {
   const toReviewFirst = (list: SharedCreative[]) => [
     ...list.filter((c) => reviewGroup(c) === "to_review"),
     ...list.filter((c) => reviewGroup(c) === "commented"),
   ];
   const inReview = all.filter((c) => c.stage < 4);
-  const cutoff = now - RECENT_APPROVED_DAYS * 86_400_000;
+  const cutoff = approvedDays === null ? -Infinity : now - approvedDays * 86_400_000;
   const approved = all
     .filter((c) => c.stage >= 4 && (sentIds.has(c.id) || c.approved_at === null || Date.parse(c.approved_at) >= cutoff))
     .sort((a, b) => (b.approved_at ?? "").localeCompare(a.approved_at ?? ""));

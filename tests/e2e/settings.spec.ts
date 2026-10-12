@@ -71,11 +71,11 @@ test("settings — the left menu: sections open one at a time, pages have their 
   await page.waitForURL(/\/settings\/general\/account-name$/);
   const nav = page.getByRole("navigation", { name: "Settings sections" });
   await expect(nav.getByRole("button", { name: "General" })).toHaveAttribute("aria-expanded", "true");
-  await expect(nav.getByRole("link", { name: "Account Name" })).toHaveAttribute("aria-current", "true");
+  await expect(nav.getByRole("link", { name: "Workspace Name" })).toHaveAttribute("aria-current", "true");
 
   // Opening another section closes the first.
   await nav.getByRole("button", { name: "Billing" }).click();
-  await expect(nav.getByRole("link", { name: "Account Name" })).toHaveCount(0);
+  await expect(nav.getByRole("link", { name: "Workspace Name" })).toHaveCount(0);
   await expect(nav.getByRole("link", { name: /^Invoice Settings/ })).toContainText("Soon");
   await nav.getByRole("link", { name: /^Invoice Settings/ }).click();
   await page.waitForURL(/\/settings\/billing\/invoice-settings$/);

@@ -13,6 +13,9 @@ export interface AgencySettingsRow {
   custom_presets: Record<string, Partial<Theme>>;
   // How long a read notification is kept (phase90): 30, 60 or 90 days.
   notification_keep_days: 30 | 60 | 90;
+  // How far back a review link lists Approved posts (phase92); null is
+  // Always.
+  review_approved_days: 7 | 14 | 21 | 28 | null;
 }
 
 export function useAgencySettings(agencyId: string | undefined) {
@@ -22,7 +25,7 @@ export function useAgencySettings(agencyId: string | undefined) {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("agency_settings")
-        .select("agency_id, theme, logo_asset_id, custom_presets, notification_keep_days")
+        .select("agency_id, theme, logo_asset_id, custom_presets, notification_keep_days, review_approved_days")
         .eq("agency_id", agencyId!)
         .maybeSingle();
 
@@ -44,6 +47,25 @@ export function useSaveNotificationKeep(agencyId: string | undefined) {
       const { data, error } = await supabase
         .from("agency_settings")
         .upsert({ agency_id: agencyId!, notification_keep_days: days }, { onConflict: "agency_id" })
+        .select("agency_id")
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) throw new Error("Only Owners and Admins can change this.");
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["agency-settings", agencyId] }),
+  });
+}
+
+// Preferences → Review links (phase92): how far back a review link lists
+// Approved posts; null is Always.
+export function useSaveReviewApprovedDays(agencyId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (days: 7 | 14 | 21 | 28 | null) => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("agency_settings")
+        .upsert({ agency_id: agencyId!, review_approved_days: days }, { onConflict: "agency_id" })
         .select("agency_id")
         .maybeSingle();
       if (error) throw error;

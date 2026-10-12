@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.23.0",
+    date: "2026-10-12",
+    title: "Workspace Settings and Preferences",
+    changes: [
+      "Settings is now Workspace Settings, with Workspace Name and Workspace URL in place of Account Name and Account URL.",
+      "Notifications is now Preferences, in two sections: Notifications (how long read ones stay) and Review Links.",
+      "Review Links sets how far back a review link lists Approved posts: 7, 14, 21 or 28 days, or Always. It's 14 days unless changed. A link always keeps the posts it was sent for.",
+    ],
+  },
+  {
     version: "1.22.4",
     date: "2026-10-12",
     title: "A clearer review link list",

@@ -60,7 +60,7 @@ export function GlobalSearch() {
         ? SETTINGS_SECTIONS.flatMap((sec) =>
             sec.pages
               .filter((p) => has(p.label) || has(sec.label) || has("settings"))
-              .map((p) => ({ kind: "page" as const, id: p.href, name: p.label, detail: `Settings · ${sec.label}`, href: p.href })),
+              .map((p) => ({ kind: "page" as const, id: p.href, name: p.label, detail: `Workspace Settings · ${sec.label}`, href: p.href })),
           )
         : []),
       // Each client's Client Settings pages ("NuHabit · Discovery").

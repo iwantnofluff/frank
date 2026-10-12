@@ -119,7 +119,7 @@ export async function POST(request: Request) {
     .then(({ data: f }) => (f?.status === "ok" ? (f.feed as { id: string | null; name?: string | null; stage: number; reel: boolean }[]) : null));
 
   // Everything that only needs the validated token, at once.
-  const [creativeRows, anchorRows, versionRows, settings, clientLogo, prefs] = serviceRole
+  const [creativeRows, anchorRows, versionRows, settings, clientLogo, prefs, reviewPrefs] = serviceRole
     ? await Promise.all([
         // Every format a post goes out as (phase29) — get_shared_review
         // returns only the main one — its slide count, and when its artwork
@@ -170,8 +170,18 @@ export async function POST(request: Request) {
               .maybeSingle()
               .then((r) => r.data)
           : null,
+        // How far back the list shows Approved posts (phase92), the
+        // workspace's choice whatever its plan.
+        link
+          ? serviceRole
+              .from("agency_settings")
+              .select("review_approved_days")
+              .eq("agency_id", link.agency_id)
+              .maybeSingle()
+              .then((r) => r.data as { review_approved_days: number | null } | null)
+          : null,
       ])
-    : [[], [], [], null, null, null];
+    : [[], [], [], null, null, null, null];
 
   const formatsById = new Map<string, string[]>();
   const slideCountById = new Map<string, number | null>();
@@ -299,6 +309,9 @@ export async function POST(request: Request) {
     // link says; submit_shared_approval refuses it too.
     can_approve: data.can_approve && (prefs?.client_can_approve ?? true),
     artwork_keep_days: prefs?.artwork_keep_days ?? 7,
+    // Days of Approved posts the list shows (phase92): the workspace's
+    // choice, null for Always, 14 where it has no settings yet.
+    approved_days: reviewPrefs ? reviewPrefs.review_approved_days : 14,
     creatives: signedCreatives,
     branding,
     client_logo_url: signedUrl(clientLogo?.storage_key),

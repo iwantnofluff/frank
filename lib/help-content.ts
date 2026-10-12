@@ -238,7 +238,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       },
       {
         kind: "note",
-        text: "Knowledge that applies to every client, such as your agency's own playbooks, belongs in Settings, under Reference Material.",
+        text: "Knowledge that applies to every client, such as your agency's own playbooks, belongs in Workspace Settings, under Reference Material.",
       },
     ],
   },
@@ -381,7 +381,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       },
       {
         kind: "p",
-        text: "A link opens on the post or posts you sent it for, under Sent for review, even once the client has commented. Every link also lists the project's other posts in Client Review, after them, under Also waiting for your review. Approved posts come last, from the last 30 days only, though a link always keeps the posts it was sent for. Each post shows its date above its name.",
+        text: "A link opens on the post or posts you sent it for, under Sent for review, even once the client has commented. Every link also lists the project's other posts in Client Review, after them, under Also waiting for your review. Approved posts come last, from recent days only (14 by default; set in Workspace Settings → General → Preferences), though a link always keeps the posts it was sent for. Each post shows its date above its name.",
       },
       { kind: "h", text: "What your client sees" },
       {
@@ -567,7 +567,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       },
       {
         kind: "p",
-        text: "Invite people from Settings, under Team, or from a client's People page. Each person can change the type of, resend invites to, and remove only the people below them.",
+        text: "Invite people from Workspace Settings, under Team, or from a client's People page. Each person can change the type of, resend invites to, and remove only the people below them.",
       },
       {
         kind: "note",
@@ -583,7 +583,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     blocks: [
       {
         kind: "p",
-        text: "Settings → Analytics shows how your work moves from concept to approval. Filter it by client, project, person, format and period.",
+        text: "Workspace Settings → Analytics shows how your work moves from concept to approval. Filter it by client, project, person, format and period.",
       },
       {
         kind: "list",
@@ -602,18 +602,18 @@ export const HELP_ARTICLES: HelpArticle[] = [
   },
   {
     id: "settings",
-    title: "Your workspace's Settings",
+    title: "Workspace Settings",
     category: "account",
     summary: "Branding, Knowledge, AI, connections and billing.",
     blocks: [
       {
         kind: "p",
-        text: "Open Settings from your picture at the top right of the header. Owners and Admins can change most of it.",
+        text: "Open Workspace Settings from your picture at the top right of the header. Owners and Admins can change most of it.",
       },
       {
         kind: "list",
         items: [
-          "General: your account's name and web address, Notifications (how long the bell keeps a notification once it's been read: 30, 60 or 90 days; unread ones always stay), anything Frank's support has done in your account, and Updates: every version of Frank and what changed. A new version also shows in the bell, and an open tab offers to reload when one goes live. The bell shows All, Unread and Read with how many of each; the funnel icon narrows it to certain people or clients; on the Read tab, read ones can be ticked, or all ticked at once with All, and deleted.",
+          "General: your Workspace Name and Workspace URL, Preferences (how long the bell keeps a notification once it's been read: 30, 60 or 90 days, unread ones always staying; and how far back a review link lists Approved posts: 7, 14, 21 or 28 days, or Always, 14 by default), anything Frank's support has done in your account, and Updates: every version of Frank and what changed. A new version also shows in the bell, and an open tab offers to reload when one goes live. The bell shows All, Unread and Read with how many of each; the funnel icon narrows it to certain people or clients; on the Read tab, read ones can be ticked, or all ticked at once with All, and deleted.",
           "Customisation: your logo and brand colours, on plans that include branding. Your logo shows in the header, after Frank's; until there is one, Owners and Admins can choose Add Logo there.",
           "Team: your Users and Clients, and inviting people.",
           "AI Governance: the AI model Draft with Frank uses.",

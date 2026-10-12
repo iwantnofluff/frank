@@ -7,7 +7,7 @@ import { CommentCount } from "./CommentCount";
 import { CommentWhen } from "@/components/creative-review/CommentWhen";
 import { ReviewBrandHeader } from "./ReviewBrandHeader";
 import { CommentJump } from "./mobile-gestures";
-import { RECENT_APPROVED_DAYS, reviewGroup } from "./review-group";
+import { reviewGroup } from "./review-group";
 import { ReviewNav, type ReviewSection } from "@/components/creative-review/ReviewNav";
 import { formatsLabel, postFormats, isStoryFormat } from "@/lib/formats";
 import { ReviewMedia } from "./ReviewMedia";
@@ -98,7 +98,7 @@ export function DesktopReview({
                     // When Approved artwork goes (direct instruction), from
                     // the client's Preferences.
                     <div className="dk-sec-note">
-                      Last {RECENT_APPROVED_DAYS} days · Artwork removed{" "}
+                      {controller.approvedDays !== null && `Last ${controller.approvedDays} days · `}Artwork removed{" "}
                       {controller.data?.status === "ok" ? controller.data.artwork_keep_days : 7} days after going live
                     </div>
                   )}

@@ -348,10 +348,13 @@ test("shared review — names link into Frank: sign in first, and the post for t
   await win.getByRole("button", { name: "Cancel" }).click();
   await expect(win).toHaveCount(0);
 
-  // The team: the client's name goes straight there. (The post's own name
+  // The team: the client's name goes straight there, once the page knows
+  // they're signed in (it looks up their membership). (The post's own name
   // above the phone, which opened its page, went with the title.)
   await frank.loginAsStaff(page);
+  const known = page.waitForResponse((r) => r.url().includes("/rest/v1/memberships"));
   await page.goto(`/review/${token}`);
+  await known;
   await page.locator(".dk-list .rv-client").getByRole("link", { name: "E2E Test Client" }).click();
   await page.waitForURL(`**/clients/${frank.clientId}`, { timeout: 20_000 });
 
@@ -414,7 +417,7 @@ test("shared review — a link for one post opens on it, the project's other wai
   await expect(page.locator(".dk-sec-h")).toHaveText(["Waiting for your review 3"]);
 });
 
-test("shared review — the list's Approved goes back 30 days, keeping what the link was sent for", async ({ page, frank }) => {
+test("shared review — the list's Approved goes back the workspace's days (14 by default), keeping what the link was sent for", async ({ page, frank }) => {
   // Direct instruction: a project's approved posts would make the list too
   // long after a while.
   const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
@@ -449,7 +452,7 @@ test("shared review — the list's Approved goes back 30 days, keeping what the 
   await page.goto(`/review/${await frank.createSharedLink()}`);
   const approved = page.locator(".dk-sec", { hasText: "Approved" });
   await expect(approved.locator(".dk-item b")).toHaveText([/^Approved Lately/]);
-  await expect(approved.locator(".dk-sec-note")).toContainText("Last 30 days");
+  await expect(approved.locator(".dk-sec-note")).toContainText("Last 14 days");
 
   // A link made for an old approval keeps it, and opens on it (a link for
   // particular posts shows no other approved ones, phase69).
