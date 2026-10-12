@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.21.2",
+    date: "2026-10-12",
+    title: "A plainer message in the bell",
+    changes: ["If deleting notifications ever fails, the bell says so in plain words rather than the database's."],
+  },
+  {
     version: "1.21.1",
     date: "2026-10-12",
     title: "Tick boxes on Read only",

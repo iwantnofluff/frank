@@ -305,7 +305,15 @@ export function NotificationsPanel({
             )}
           </div>
         )}
-        {remove.isError && <p className="autherr notif-err">{errorMessage(remove.error, "Couldn't delete them")}</p>}
+        {/* Said plainly, not as the database put it ("permission denied for
+            table notifications"); our own message when only some went. */}
+        {remove.isError && (
+          <p className="autherr notif-err">
+            {remove.error instanceof Error && !("code" in remove.error)
+              ? errorMessage(remove.error, "Couldn't delete them")
+              : "Couldn\u2019t delete these. Please try again, or contact support if it keeps happening."}
+          </p>
+        )}
         {tab !== "unread" && readItems.map(row)}
       </div>
     </div>
