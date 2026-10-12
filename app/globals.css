@@ -1447,6 +1447,11 @@ body.lightrail .search input::placeholder {
 .pad.projpage:has(> .tblwrap) > * {
   flex-shrink: 0;
 }
+/* Who else is on the table, 10px further from the Active/Archived pills
+   (direct instruction). */
+.pad.projpage .presence {
+  margin-right: 10px;
+}
 .pad.projpage > .tblwrap {
   flex: 0 1 auto;
   min-height: 200px;

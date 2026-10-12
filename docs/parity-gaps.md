@@ -3582,3 +3582,5 @@ Direct instruction:
 **The bell 25% wider** (direct instruction): 425px (the prototype's 340px), still no wider than the window less 32px on a phone. Screenshot checked; notifications-purge.spec.ts passes.
 
 **Copy Caption and Copy WIIFM spacing** (direct instruction): 10px above and 6px below (was 6px above, nothing below), so they sit clear of the text and of Read less.
+
+**Who's here, further from the pills** (direct instruction): on a project's page the presence avatars sit 10px further from Active/Archived (18px apart, was 8; .pad.projpage .presence; measured with a stand-in, as the avatars only show for someone else). The post page's are untouched.
