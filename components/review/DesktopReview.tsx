@@ -82,41 +82,58 @@ export function DesktopReview({
             />
           </div>
           <div className="dk-items">
-            {/* Grouped (direct instruction): still to review first, then
-                what the client has commented on, then what's approved. */}
-            {REVIEW_GROUPS.map((g) => {
-              const items = creatives.map((c, i) => ({ c, i })).filter(({ c }) => reviewGroup(c) === g.id);
-              if (!items.length) return null;
+            {/* What this link was sent for, then the project's other posts
+                waiting for review (direct instruction), each grouped: still
+                to review first, then commented on, then approved. A link to
+                the whole project is one list, as before. */}
+            {(controller.hasSent
+              ? [
+                  { label: "Sent for review", sent: true },
+                  { label: "Also waiting for your review", sent: false },
+                ]
+              : [{ label: null, sent: false }]
+            ).map((sec) => {
+              const inSec = creatives.map((c, i) => ({ c, i })).filter(({ c }) => !controller.hasSent || controller.isSent(c) === sec.sent);
+              if (!inSec.length) return null;
               return (
-                <div key={g.id} className="dk-group">
-                  <div className="dk-group-h">
-                    {g.label} <span>{items.length}</span>
-                    {/* When Approved artwork goes (direct instruction), from
-                        the client's Preferences. */}
-                    {g.id === "approved" && (
-                      <em>
-                        · Artwork removed {controller.data?.status === "ok" ? controller.data.artwork_keep_days : 7} days after
-                        going live
-                      </em>
-                    )}
-                  </div>
-                  {items.map(({ c, i }) => (
-                    <button
-                      key={c.id}
-                      className="dk-item"
-                      aria-current={i === activeIndex}
-                      onClick={() => {
-                        goTo(i);
-                        controller.setView("post");
-                      }}
-                    >
-                      <div className="t">
-                        <b>{c.name}</b>
-                        <span className="fmt">{formatsLabel(postFormats(c))}</span>
+                <div key={sec.label ?? "all"} className="dk-sec">
+                  {sec.label && <div className="dk-sec-h">{sec.label}</div>}
+                  {REVIEW_GROUPS.map((g) => {
+                    const items = inSec.filter(({ c }) => reviewGroup(c) === g.id);
+                    if (!items.length) return null;
+                    return (
+                      <div key={g.id} className="dk-group">
+                        <div className="dk-group-h">
+                          {g.label} <span>{items.length}</span>
+                          {/* When Approved artwork goes (direct instruction), from
+                              the client's Preferences. */}
+                          {g.id === "approved" && (
+                            <em>
+                              · Artwork removed {controller.data?.status === "ok" ? controller.data.artwork_keep_days : 7} days after
+                              going live
+                            </em>
+                          )}
+                        </div>
+                        {items.map(({ c, i }) => (
+                          <button
+                            key={c.id}
+                            className="dk-item"
+                            aria-current={i === activeIndex}
+                            onClick={() => {
+                              goTo(i);
+                              controller.setView("post");
+                            }}
+                          >
+                            <div className="t">
+                              <b>{c.name}</b>
+                              <span className="fmt">{formatsLabel(postFormats(c))}</span>
+                            </div>
+                            <CommentCount n={c.comments.length} />
+                          </button>
+                        ))}
                       </div>
-                      <CommentCount n={c.comments.length} />
-                    </button>
-                  ))}
+                    );
+                  })}
                 </div>
               );
             })}

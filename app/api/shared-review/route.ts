@@ -78,7 +78,7 @@ export async function POST(request: Request) {
     serviceRole = createServiceRoleClient();
     const { data: row } = await serviceRole
       .from("shared_links")
-      .select("agency_id, agencies(name, suspended_at, plan), projects(client_id, clients(name, logo_asset_id))")
+      .select("agency_id, scope, creative_id, picked_creatives, agencies(name, suspended_at, plan), projects(client_id, clients(name, logo_asset_id))")
       .eq("token", token)
       .maybeSingle();
     link = row as unknown as LinkRow | null;
@@ -306,13 +306,27 @@ export async function POST(request: Request) {
     // The agency's name, beside Frank's at the top (its initial when it has
     // no logo, or its plan doesn't show one).
     agency_name: link?.agencies?.name ?? null,
+    // The posts this link was made for (direct instruction: a link opened on
+    // whichever other post was waiting): the one post, or the ones picked;
+    // null for a link to the whole project. Every link also shows the
+    // project's other posts in Client Review (phase69); the page opens on
+    // these and lists them first, the rest under their own heading.
+    sent_ids: sentIds(link, ids),
     feed,
   });
+}
+
+function sentIds(link: LinkRow | null, shown: string[]): string[] | null {
+  const chosen = link?.scope === "one" ? [link.creative_id] : link?.scope === "pick" ? (link.picked_creatives ?? []) : null;
+  return chosen ? chosen.filter((id): id is string => !!id && shown.includes(id)) : null;
 }
 
 // The link's own row, as read above.
 interface LinkRow {
   agency_id: string;
+  scope: "pending" | "all" | "one" | "pick";
+  creative_id: string | null;
+  picked_creatives: string[] | null;
   agencies: { name: string; suspended_at: string | null; plan: string | null } | null;
   projects: { client_id: string; clients: { name: string; logo_asset_id: string | null } | null } | null;
 }

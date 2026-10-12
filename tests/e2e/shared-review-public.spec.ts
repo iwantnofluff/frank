@@ -365,3 +365,50 @@ test("shared review — names link into Frank: sign in first, and the post for t
   await expect(client.locator(".dk-card .ct a")).toHaveCount(0);
   await ctx.close();
 });
+
+test("shared review — a link for one post opens on it, the project's other waiting posts listed after", async ({ page, frank }) => {
+  // Direct instruction: a link sent for one post opened on another that was
+  // waiting, once the client had commented on the first.
+  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  await frank.createCreativeAtStage(3, "Aaa Other Post");
+  const sent = await frank.createCreativeAtStage(3, "Zzz Sent Post");
+  const { error: commentError } = await admin
+    .from("comments")
+    .insert({ creative_id: sent, body: "Looks good", visibility: "public", guest_name: "Client Person" });
+  if (commentError) throw commentError;
+  const staffId = (await admin.from("users").select("id").eq("email", frank.staffEmail).single()).data!.id;
+  const token = `e2e-one-${Date.now()}`;
+  const { error } = await admin.from("shared_links").insert({
+    project_id: frank.projectId,
+    token,
+    scope: "one",
+    creative_id: sent,
+    requires_passcode: false,
+    passcode_hash: null,
+    can_approve: false,
+    created_by: staffId,
+  });
+  if (error) throw error;
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(`/review/${token}`);
+  await expect(page.locator(".dk-sec-h")).toHaveText(["Sent for review", "Also waiting for your review"]);
+  await expect(page.locator(".dk-sec").first().locator(".dk-item b")).toHaveText(["Zzz Sent Post"]);
+  await expect(page.locator(".dk-item[aria-current='true'] b")).toHaveText("Zzz Sent Post");
+
+  // On a phone: the link's post first; the next is labelled as the extra.
+  await page.setViewportSize(PHONE_VIEWPORT);
+  await page.reload();
+  await expect(page.locator(".m-meta b")).toHaveText("Zzz Sent Post");
+  await expect(page.locator(".m-also")).toHaveCount(0);
+  await page.getByRole("button", { name: "Next post" }).click();
+  await expect(page.locator(".m-also")).toHaveText("Also waiting for your review");
+
+  // A link to the whole project is one list, opening on what's still to review.
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(`/review/${await frank.createSharedLink()}`);
+  await expect(page.locator(".dk-item[aria-current='true'] b")).toHaveText("Aaa Other Post");
+  await expect(page.locator(".dk-sec-h")).toHaveCount(0);
+});

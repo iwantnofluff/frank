@@ -379,6 +379,10 @@ export const HELP_ARTICLES: HelpArticle[] = [
         kind: "note",
         text: "Only posts in Client Review can be shared. Posts still in Concept or Internal Review are greyed out when choosing several.",
       },
+      {
+        kind: "p",
+        text: "A link opens on the post or posts you sent it for, under Sent for review, even once the client has commented. Every link also lists the project's other posts in Client Review, after them, under Also waiting for your review.",
+      },
       { kind: "h", text: "What your client sees" },
       {
         kind: "p",

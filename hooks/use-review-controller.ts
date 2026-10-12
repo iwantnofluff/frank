@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   useSharedInstagramFeed,
   useSharedReview,
@@ -74,19 +74,32 @@ export function useReviewController(token: string) {
   // A guest's own comment, edited (phase75).
   const editComment = useEditSharedComment(token, passcode);
 
-  const creatives: SharedCreative[] = data?.status === "ok" ? data.creatives : [];
+  // The posts this link was made for come first (direct instruction: the
+  // link opened on another post waiting for review), then the project's
+  // other posts in Client Review that every link also shows (phase69).
+  const sentIds = useMemo(() => new Set(data?.status === "ok" ? (data.sent_ids ?? []) : []), [data]);
+  const creatives: SharedCreative[] = useMemo(() => {
+    const all = data?.status === "ok" ? data.creatives : [];
+    return sentIds.size ? [...all.filter((c) => sentIds.has(c.id)), ...all.filter((c) => !sentIds.has(c.id))] : all;
+  }, [data, sentIds]);
+  const isSent = (c: SharedCreative) => sentIds.has(c.id);
   // The project's posts in grid order (phase67); without it (an older
   // answer, or it couldn't be read), just this link's own.
   const feed: SharedFeedEntry[] =
     (data?.status === "ok" ? data.feed : null) ??
     creatives.map((c) => ({ id: c.id, stage: c.stage, reel: (c.formats?.length ? c.formats : [c.format]).includes("ig_reel") }));
   const liveLoading = data?.status === "ok" && instagram.isPending;
-  // Opens on the first post the client still has to review, once the posts
-  // are in (set while rendering, React's way to adjust state from props).
+  // Opens, once the posts are in, on the post this link was made for (the
+  // first of them still to review, if it was made for several), whatever
+  // the client has done with it; a link to the whole project opens on the
+  // first post still to review. Set while rendering, React's way to adjust
+  // state from props.
   const [started, setStarted] = useState(false);
   if (!started && creatives.length) {
     setStarted(true);
-    const first = creatives.findIndex((c) => reviewGroup(c) === "to_review");
+    const first = sentIds.size
+      ? Math.max(0, creatives.findIndex((c) => sentIds.has(c.id) && reviewGroup(c) === "to_review"))
+      : creatives.findIndex((c) => reviewGroup(c) === "to_review");
     if (first > 0) setActiveIndex(first);
   }
   const active = creatives[activeIndex] ?? null;
@@ -160,6 +173,9 @@ export function useReviewController(token: string) {
     passcode,
     setPasscode,
     creatives,
+    // Whether this link was made for particular posts, and which.
+    hasSent: sentIds.size > 0,
+    isSent,
     active,
     activeIndex,
     goTo,

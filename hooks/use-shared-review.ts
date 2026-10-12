@@ -81,6 +81,9 @@ export type SharedReviewResult =
       // How long an Approved post's artwork is kept after going live, from
       // the client's Preferences (phase70).
       artwork_keep_days: number;
+      // The posts this link was made for, listed first and opened on; null
+      // for a link to the whole project (scope pending or all).
+      sent_ids: string[] | null;
       // The project's posts in grid order (phase67): an id only for posts
       // this link shares; every other post is its stage alone. Null if it
       // couldn't be read.

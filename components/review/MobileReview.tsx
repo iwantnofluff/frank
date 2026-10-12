@@ -113,6 +113,9 @@ export function MobileReview({
               {/* The post's name and format above it, so the card itself
                   starts with the logo and handle, as an Instagram post does. */}
               <div className="m-meta">
+                {/* Not what this link was sent for, but waiting for review
+                    too (direct instruction); it comes after the link's own. */}
+                {controller.hasSent && !controller.isSent(active) && <div className="m-also">Also waiting for your review</div>}
                 {/* For the workspace's team, the post's own page in Frank. */}
                 <b>
                   {viewer?.isTeam ? (

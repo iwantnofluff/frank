@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.22.2",
+    date: "2026-10-12",
+    title: "Review links open on what you sent",
+    changes: [
+      "A review link made for one post, or a few, opens on them, even after the client has commented. They're listed first under Sent for review, and the project's other posts in Client Review follow under Also waiting for your review. On a phone, the link's posts come first and the others say so.",
+    ],
+  },
+  {
     version: "1.22.1",
     date: "2026-10-12",
     title: "Stories shown as stories",
