@@ -1,6 +1,8 @@
-// The eight fixed sections of the client knowledge folder (spec section 22).
-// Fixed by design — users cannot add, remove or rename them.
+// The fixed sections of the client knowledge folder (spec section 22), with
+// About first (direct instruction). Fixed by design — users cannot add,
+// remove or rename them.
 export const KNOWLEDGE_SECTIONS = [
+  { key: "about", label: "About" },
   { key: "tone", label: "Tone of Voice" },
   { key: "audience", label: "Target Audience" },
   { key: "features", label: "Prioritised Features" },

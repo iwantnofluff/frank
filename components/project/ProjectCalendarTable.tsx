@@ -97,6 +97,9 @@ const TOGGLABLE_COLUMNS = [
   { key: "voiceover", label: "VO", sub: "Voiceover script", width: 220 },
   { key: "imageOnText", label: "Text on Image", sub: "Check WIIFM Approach", width: 220 },
   { key: "postCopy", label: "Copy", sub: "Check WIIFM Approach", width: 330 },
+  // The latest copy's Alt Text, its own column after Copy (direct
+  // instruction).
+  { key: "altText", label: "Alt Text", sub: "For screen readers", width: 220 },
   // As wide as Copy (direct instruction), now that it's a few short points.
   { key: "approach", label: "WIIFM Direction", sub: "Explain the WIIFM Approach", width: 330 },
   { key: "clientFeedback", label: "Client Feedback", sub: "", width: 220 },
@@ -1165,6 +1168,28 @@ export function ProjectCalendarTable({
                                     <span className="copyc">
                                       <ClampText expanded={expandedRow === c.id} onToggle={() => toggleRow(c.id)}>
                                         {lines.join(" · ")}
+                                      </ClampText>
+                                    </span>
+                                  ) : (
+                                    <span className="tdim">—</span>
+                                  )}
+                                </td>
+                              );
+                            }
+                            case "altText": {
+                              // The latest copy version's Alt Text (direct instruction:
+                              // its own column after Copy, with Copy Alt Text).
+                              const alt = copyVersionsByCreative?.[c.id]?.[0]?.fields?.alt?.trim();
+                              return (
+                                <td key={key} className="cellw">
+                                  {alt ? (
+                                    <span className="copyc">
+                                      <ClampText
+                                        expanded={expandedRow === c.id}
+                                        onToggle={() => toggleRow(c.id)}
+                                        after={<CopyCaptionChip caption={alt} label="Copy Alt Text" title="Copy the Alt Text" />}
+                                      >
+                                        {alt}
                                       </ClampText>
                                     </span>
                                   ) : (

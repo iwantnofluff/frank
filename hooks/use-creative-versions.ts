@@ -2,38 +2,9 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { CREATIVE_VERSIONS_SELECT, type CreativeVersionRow } from "@/lib/creative-queries";
 
-export interface VersionAsset {
-  id: string;
-  storage_key: string;
-  filename: string;
-  mime_type: string;
-}
-
-export interface CreativeVersionRow {
-  id: string;
-  version_no: number;
-  note: string | null;
-  created_at: string;
-  asset: VersionAsset | null;
-  // A carousel version's slides, in order (phase31). Empty for a single
-  // image — use versionSlides() rather than reading this directly.
-  // The asset is null when the viewer can't read that file.
-  slides: { position: number; asset: VersionAsset | null }[];
-}
-
-// Every slide of a version, in order: a carousel's own slides, or a single
-// upload as its one slide.
-export function versionSlides(v: CreativeVersionRow | null | undefined): { position: number; asset: VersionAsset }[] {
-  if (!v) return [];
-  // A slide whose file can't be read is left out rather than breaking the
-  // page; an empty version (every slide removed) has none at all.
-  if (v.slides?.length)
-    return v.slides
-      .filter((s): s is { position: number; asset: VersionAsset } => !!s.asset)
-      .sort((a, b) => a.position - b.position);
-  return v.asset ? [{ position: 1, asset: v.asset }] : [];
-}
+export { versionSlides, type CreativeVersionRow, type VersionAsset } from "@/lib/creative-queries";
 
 export function useCreativeVersions(creativeId: string) {
   return useQuery({
@@ -42,9 +13,7 @@ export function useCreativeVersions(creativeId: string) {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("creative_versions")
-        .select(
-          "id, version_no, note, created_at, asset:assets(id, storage_key, filename, mime_type), slides:creative_version_slides(position, asset:assets(id, storage_key, filename, mime_type))",
-        )
+        .select(CREATIVE_VERSIONS_SELECT)
         .eq("creative_id", creativeId)
         .order("version_no", { ascending: false });
 

@@ -15,12 +15,18 @@ async function signedUrlFor(storageKey: string): Promise<string> {
   return data.signedUrl;
 }
 
+const SIGNED_URL_FRESH_MS = 30 * 60_000;
+
 export function useAssetSignedUrl(storageKey: string | undefined) {
   return useQuery({
     queryKey: ["asset-signed-url", storageKey],
     queryFn: () => signedUrlFor(storageKey!),
     enabled: !!storageKey,
     retry: false,
+    // A link lasts an hour; kept for half of it, so the one the server
+    // signed for the page is used rather than fetched again (and the image
+    // downloaded twice).
+    staleTime: SIGNED_URL_FRESH_MS,
   });
 }
 
@@ -34,6 +40,7 @@ export function usePreloadAssets(storageKeys: (string | undefined)[]) {
       queryFn: () => signedUrlFor(key!),
       enabled: !!key,
       retry: false,
+      staleTime: SIGNED_URL_FRESH_MS,
     })),
   });
   const urls = results.map((r) => r.data).filter((u): u is string => !!u);

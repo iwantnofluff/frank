@@ -1049,37 +1049,42 @@ export function CreativeModal(props: CreativeModalProps) {
   // Under the caption, where Draft with Frank was (direct instruction):
   // the caption as it is in the box, paragraphs and all, ready to paste
   // into Instagram or another platform.
-  const [captionCopied, setCaptionCopied] = useState(false);
-  const [copyFailed, setCopyFailed] = useState(false);
-  const captionNow = draftFields.caption ?? "";
-  const copyCaptionButton = (
-    <div className="field btnrow">
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <button
-          type="button"
-          className="btn sm"
-          disabled={!captionNow.trim()}
-          onClick={async () => {
-            setCopyFailed(false);
-            try {
-              await copyCaption(captionNow);
-              setCaptionCopied(true);
-              window.setTimeout(() => setCaptionCopied(false), 2000);
-            } catch {
-              setCopyFailed(true);
-            }
-          }}
-        >
-          <svg className="aicon" viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="9" y="9" width="11" height="11" rx="2" />
-            <path d="M5 15V6a2 2 0 0 1 2-2h9" />
-          </svg>
-          {captionCopied ? "Copied" : "Copy Caption"}
-        </button>
-        {copyFailed && <span className="autherr">Couldn&rsquo;t copy. Select the caption and copy it instead.</span>}
+  // ...and the same under Alt Text (direct instruction): Copy Alt Text.
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [copyFailedKey, setCopyFailedKey] = useState<string | null>(null);
+  const copyFieldButton = (key: string, label: string) => {
+    const text = draftFields[key] ?? "";
+    return (
+      <div className="field btnrow">
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button
+            type="button"
+            className="btn sm"
+            disabled={!text.trim()}
+            onClick={async () => {
+              setCopyFailedKey(null);
+              try {
+                await copyCaption(text);
+                setCopiedKey(key);
+                window.setTimeout(() => setCopiedKey((k) => (k === key ? null : k)), 2000);
+              } catch {
+                setCopyFailedKey(key);
+              }
+            }}
+          >
+            <svg className="aicon" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="9" y="9" width="11" height="11" rx="2" />
+              <path d="M5 15V6a2 2 0 0 1 2-2h9" />
+            </svg>
+            {copiedKey === key ? "Copied" : `Copy ${label}`}
+          </button>
+          {copyFailedKey === key && (
+            <span className="autherr">Couldn&rsquo;t copy. Select the {label.toLowerCase()} and copy it instead.</span>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // The artwork's own problem shows by its Save button and progress bar
   // (reported directly: a failed video save looked like a loader that
@@ -1668,7 +1673,8 @@ export function CreativeModal(props: CreativeModalProps) {
                     />
                   )}
                 </div>
-                {spec.key === "caption" && copyCaptionButton}
+                {spec.key === "caption" && copyFieldButton("caption", "Caption")}
+                {spec.key === "alt" && copyFieldButton("alt", "Alt Text")}
                 </Fragment>
               ))}
 

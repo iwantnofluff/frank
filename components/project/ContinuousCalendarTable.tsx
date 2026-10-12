@@ -100,6 +100,9 @@ const TOGGLABLE_COLUMNS = [
   { key: "voiceover", label: "VO", sub: "Voiceover script", width: 220 },
   { key: "imageOnText", label: "Text on Image", sub: "On the artwork", width: 220 },
   { key: "copy", label: "Copy", sub: "Latest version", width: 330 },
+  // The latest copy's Alt Text, its own column after Copy (direct
+  // instruction).
+  { key: "altText", label: "Alt Text", sub: "For screen readers", width: 220 },
   { key: "notes", label: "Notes for Designer", sub: "Design feedback", width: 220 },
   // As wide as Copy (direct instruction), now that it's a few short points.
   { key: "approach", label: "WIIFM Direction", sub: "What the reader gets", width: 330 },
@@ -1133,6 +1136,28 @@ export function ContinuousCalendarTable({
                                   {lines.length ? (
                                     <span className="copyc">
                                       <ClampText expanded={expandedRow === c.id} onToggle={() => toggleRow(c.id)}>{lines.join("\n")}</ClampText>
+                                    </span>
+                                  ) : (
+                                    <span className="tdim">—</span>
+                                  )}
+                                </td>
+                              );
+                            }
+                            case "altText": {
+                              // The latest copy version's Alt Text (direct instruction:
+                              // its own column after Copy, with Copy Alt Text).
+                              const alt = copyVersionsByCreative?.[c.id]?.[0]?.fields?.alt?.trim();
+                              return (
+                                <td key={key} className="cellw">
+                                  {alt ? (
+                                    <span className="copyc">
+                                      <ClampText
+                                        expanded={expandedRow === c.id}
+                                        onToggle={() => toggleRow(c.id)}
+                                        after={<CopyCaptionChip caption={alt} label="Copy Alt Text" title="Copy the Alt Text" />}
+                                      >
+                                        {alt}
+                                      </ClampText>
                                     </span>
                                   ) : (
                                     <span className="tdim">—</span>

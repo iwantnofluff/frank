@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.22.0",
+    date: "2026-10-12",
+    title: "Alt Text, About, and artwork that shows at once",
+    changes: [
+      "The table has an Alt Text column after Copy, with a Copy Alt Text button, and the post window has Copy Alt Text under the Alt Text.",
+      "A post's artwork shows with the page instead of a moment after it.",
+      "A client's Discovery has an About box, first.",
+    ],
+  },
+  {
     version: "1.21.5",
     date: "2026-10-12",
     title: "Room beside who's here",

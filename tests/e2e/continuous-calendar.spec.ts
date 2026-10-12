@@ -30,11 +30,11 @@ test("continuous calendar — the template's columns, named as in the New Post w
   await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
-  // 16 toggleable (VO, phase88) + the frozen Live Date column = 17.
-  await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 17/17");
+  // 17 toggleable (VO, phase88; Alt Text) + the frozen Live Date column = 18.
+  await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 18/18");
   for (const label of [
     "Live Date", "Post Name", "Destination", "Funnel", "TG", "Format", "Slides", "Team", "Status",
-    "Concept and Reference", "Final Creative", "VO", "Text on Image", "Copy", "Notes for Designer", "WIIFM Direction",
+    "Concept and Reference", "Final Creative", "VO", "Text on Image", "Copy", "Alt Text", "Notes for Designer", "WIIFM Direction",
     "Principles",
   ]) {
     await expect(page.locator("th", { hasText: new RegExp(`^${label}`) })).toHaveCount(1);
@@ -52,13 +52,13 @@ test("continuous calendar — Funnel and Notes for Designer persist", async ({ p
 
   // Default column order's td indices: 0 the staff-only select-row
   // checkbox, 1 Live Date, 2 Post Name, 3 Destination, 4 Funnel, ...,
-  // 15 Notes for Designer (VO, phase88, is 12).
+  // 16 Notes for Designer (VO, phase88, is 12; Alt Text is 15).
   const row = page.locator("tr[data-row]", { hasText: "Chip Test Creative" });
   const cells = row.locator("td");
   // Each save lands before the reload (it used to race it).
   const saved = () => page.waitForResponse((r) => r.url().includes("update_creative_cx") && r.ok());
   await Promise.all([saved(), cells.nth(4).locator("select").selectOption("tof")]);
-  const notes = cells.nth(15).locator("input");
+  const notes = cells.nth(16).locator("input");
   await notes.fill("Keep the logo top left");
   await Promise.all([saved(), notes.blur()]);
   await page.reload();
@@ -68,7 +68,7 @@ test("continuous calendar — Funnel and Notes for Designer persist", async ({ p
   const reloadedCells = page.locator("tr[data-row]", { hasText: "Chip Test Creative" }).locator("td");
   await expect(reloadedCells.nth(4).locator("select")).toHaveValue("tof");
   await expect(reloadedCells.nth(4)).toContainText("TOF");
-  await expect(reloadedCells.nth(15).locator("input")).toHaveValue("Keep the logo top left");
+  await expect(reloadedCells.nth(16).locator("input")).toHaveValue("Keep the logo top left");
 });
 
 test("continuous calendar — Format, Text on Image and Copy come from the post itself", async ({ page, frank }) => {

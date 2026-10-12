@@ -217,7 +217,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     blocks: [
       {
         kind: "p",
-        text: "A client's Knowledge is in its Client Settings, under Knowledge → Discovery. It has eight areas, from Tone of Voice to Moodboard and References. The more of them are filled in, the more Draft with Frank and the checks can draw on. An area with nothing in it yet says Content pending.",
+        text: "A client's Knowledge is in its Client Settings, under Knowledge → Discovery. It has nine areas, from About (who the client is) to Moodboard and References. The more of them are filled in, the more Draft with Frank and the checks can draw on. An area with nothing in it yet says Content pending.",
       },
       {
         kind: "p",

@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { CREATIVE_SELECT } from "@/lib/creative-queries";
 
 export interface CreativeRow {
   id: string;
@@ -52,9 +53,7 @@ export function useCreative(creativeId: string) {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("creatives")
-        .select(
-          "id, agency_id, project_id, name, format, stage, exception, lead_user_id, team_user_ids, scheduled_at, formats, destination, due_on, concept, reference_url, reference_urls, slide_count, slide_text, voiceover, approach_notes, artwork_removed_at, cx, updated_at, updated_by, projects(id, name, delivery, client_id, clients(name))",
-        )
+        .select(CREATIVE_SELECT)
         .eq("id", creativeId)
         .single();
 
