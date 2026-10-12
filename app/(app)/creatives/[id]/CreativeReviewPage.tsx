@@ -9,7 +9,7 @@ import { dayMonth, ARTWORK_KEEP_DAYS } from "@/lib/artwork-removal";
 import { useClientPreferences } from "@/hooks/use-client-preferences";
 import { useLiveUpdates } from "@/hooks/use-live-updates";
 import { useClientLogoUrl } from "@/hooks/use-client-logo-url";
-import { aspectRatioCss, formatRatio } from "@/lib/formats";
+import { aspectRatioCss, formatRatio, isStoryFormat } from "@/lib/formats";
 import { useCopyVersions } from "@/hooks/use-copy-versions";
 import { useAssetSignedUrl, usePreloadAssets } from "@/hooks/use-asset-signed-url";
 import { useComments } from "@/hooks/use-comments";
@@ -472,7 +472,8 @@ export function CreativeReviewPage({ id }: { id: string }) {
                 <b>Posts</b>
               </div>
               <div className="pf-scroll">
-              <div className="ig">
+              {/* A Story as Instagram shows one (direct instruction). */}
+              <div className={`ig${isStoryFormat(creative.format) ? " story" : ""}`}>
                 <div className="ig-h">
                   <div className="ig-av">
                     {/* The connected Instagram's own picture, else the
@@ -580,7 +581,10 @@ export function CreativeReviewPage({ id }: { id: string }) {
                       )}
                     />
                   ) : (
-                    <>
+                    // The image and its pins share one box the image's own
+                    // size, so a pin stays put when the image is centred
+                    // (a Story, on black).
+                    <div className="ig-frame">
                       {/* Signed URLs are short-lived and per-request — not a
                           fit for next/image's static optimisation. */}
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -612,7 +616,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
                           setToolMode(null);
                         }}
                       />
-                    </>
+                    </div>
                   )}
                   <CarouselNav index={frameIndex} count={frames.length} onChange={goToSlide} overVideo={!!isVideo} />
                 </div>

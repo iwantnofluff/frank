@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { formatVideoTime } from "@/lib/annotations";
 import { avatarColour } from "@/lib/avatar-colour";
 
@@ -98,9 +98,9 @@ export function VideoPlayer({
 
   return (
     <div className="vplayer">
-      {/* Sized from the shape, not from the loaded video: as wide as fits,
-          no taller than 62% of the screen. */}
-      <div className="vframe" style={{ width: `min(100%, calc(62vh * ${r}))` }}>
+      {/* Sized from the shape, not from the loaded video (.vframe): as wide
+          as fits, no taller than 62% of the screen, or a Story's screen. */}
+      <div className="vframe" style={{ "--vr": r } as CSSProperties}>
         <video
           ref={ref}
           // Its first frame shows before it plays (reported directly: a black

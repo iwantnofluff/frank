@@ -10,7 +10,7 @@ import { useReviewViewer } from "@/hooks/use-review-viewer";
 import { CommentJump } from "./mobile-gestures";
 import { REVIEW_GROUPS, reviewGroup } from "./review-group";
 import { ReviewNav, type ReviewSection } from "@/components/creative-review/ReviewNav";
-import { formatsLabel, postFormats } from "@/lib/formats";
+import { formatsLabel, postFormats, isStoryFormat } from "@/lib/formats";
 import { ReviewMedia } from "./ReviewMedia";
 import { MomentBadge } from "./MomentBadge";
 import { SharedCommentText } from "./SharedCommentText";
@@ -184,7 +184,8 @@ export function DesktopReview({
                   <b>Posts</b>
                 </div>
                 <div className="pf-scroll" ref={scroller} onScroll={measure}>
-                  <div className="ig">
+                  {/* A Story as Instagram shows one (direct instruction). */}
+                  <div className={`ig${isStoryFormat(active.format) ? " story" : ""}`}>
                     <div className="ig-h">
                       <div className="ig-av">
                         {/* The client's logo beside the handle (direct instruction). */}

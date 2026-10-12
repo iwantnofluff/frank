@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.22.1",
+    date: "2026-10-12",
+    title: "Stories shown as stories",
+    changes: [
+      "A Story (Instagram, Facebook, Meta or WhatsApp Status) is shown in the phone as Instagram shows one: the whole artwork on black, filling the screen, with the account name over the top and no likes or caption. Nothing at the top or bottom is cut off, at any window size, on the post's page and on the review link.",
+    ],
+  },
+  {
     version: "1.22.0",
     date: "2026-10-12",
     title: "Alt Text, About, and artwork that shows at once",

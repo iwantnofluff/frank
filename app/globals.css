@@ -3315,6 +3315,96 @@ select.sort:hover {
   padding: 10px 12px;
   border-bottom: 1px solid var(--line);
 }
+/* An image and its pins in one box the image's own size. */
+.ig-frame {
+  position: relative;
+}
+/* A Story (lib/formats.ts STORY_FORMAT_IDS), as Instagram shows one
+   (direct instruction: its artwork was cut off): the artwork fills the
+   phone's screen on black, whole, with a progress line and the account
+   over the top; no feed header, likes or caption. */
+.pf-screen:has(.ig.story) {
+  background: #000;
+}
+.pf-screen:has(.ig.story) .lpv-bar {
+  background: #000;
+  border-color: transparent;
+  color: #fff;
+}
+.pf-screen:has(.ig.story) .lpv-bar b {
+  display: none;
+}
+.pf-screen:has(.ig.story) .lpv-bar:not(:has(button)) {
+  display: none;
+}
+.pf-screen:has(.ig.story) .pf-scroll {
+  overflow: hidden;
+}
+.ig.story {
+  position: relative;
+  height: 100%;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+}
+.ig.story .ig-h {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  border: 0;
+  padding: 16px 12px 12px;
+  background: linear-gradient(rgba(0, 0, 0, 0.45), transparent);
+}
+.ig.story .ig-h::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 10px;
+  right: 10px;
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.85);
+}
+.ig.story .ig-h b,
+.ig.story .ig-h .dots {
+  color: #fff;
+}
+.ig.story .ig-acts,
+.ig.story .ig-cap {
+  display: none;
+}
+.ig.story .ig-media {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  container-type: size;
+}
+.ig.story .ig-media img {
+  width: auto;
+  max-width: 100cqw;
+  max-height: 100cqh;
+}
+/* A video Story: the video and its timeline (a set height, so the video
+   can be sized against what's left) as large as the screen allows. */
+.ig.story .vplayer {
+  width: 100%;
+}
+.ig.story .vframe {
+  width: min(100cqw, calc((100cqh - 46px) * var(--vr)));
+}
+.ig.story .vbar {
+  height: 46px;
+  box-sizing: border-box;
+}
+.ig.story .ig-hold {
+  width: auto;
+  height: 100%;
+  max-width: 100%;
+}
 .ig-av {
   width: 30px;
   height: 30px;
@@ -6068,11 +6158,12 @@ button.avatar {
   background: #000;
 }
 /* Sized to the video's shape, so the pin layer (inset: 0) is exactly the
-   frame; its width (set inline, VideoPlayer) keeps the height to 62% of
-   the screen, so a 9:16 Reel and its timeline fit on screen together. */
+   frame; its width (from --vr, the shape, set by VideoPlayer) keeps the
+   height to 62% of the screen, so a 9:16 Reel and its timeline fit on
+   screen together. */
 .vframe {
   position: relative;
-  width: fit-content;
+  width: min(100%, calc(62vh * var(--vr)));
   max-width: 100%;
   margin: 0 auto;
 }

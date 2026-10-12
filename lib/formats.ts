@@ -118,6 +118,16 @@ export const VIDEO_FORMAT_IDS = new Set([
   "yt_preroll",
 ]);
 
+// Formats shown full screen, one frame at a time (direct instruction: a
+// Story's artwork was cut off in the review's phone): drawn as Instagram
+// draws a story, the artwork filling the screen with the account over it,
+// rather than as a feed post with a header, likes and caption.
+export const STORY_FORMAT_IDS = new Set(["ig_story", "fb_story", "wa_status", "meta_story"]);
+
+export function isStoryFormat(id: string | null | undefined): boolean {
+  return !!id && STORY_FORMAT_IDS.has(id);
+}
+
 export function hasVideoFormat(ids: string[]): boolean {
   return ids.some((id) => VIDEO_FORMAT_IDS.has(id));
 }
