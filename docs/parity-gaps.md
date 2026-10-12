@@ -3580,3 +3580,5 @@ Direct instruction:
 **Deleting on live failed at first**: "permission denied for table notifications" in the bell. The live run of phase91 hadn't granted delete (the grant was added to phase91 after its first rehearsal on staging failed in exactly this way); running the current phase91 again on live fixed it, which I couldn't check myself (live's grants and policies aren't readable with the access used for live checks). The bell no longer shows a database error as it comes: anything from the database reads "Couldn't delete these. Please try again, or contact support if it keeps happening."; the app's own message, when only some went, stays as it is.
 
 **The bell 25% wider** (direct instruction): 425px (the prototype's 340px), still no wider than the window less 32px on a phone. Screenshot checked; notifications-purge.spec.ts passes.
+
+**Copy Caption and Copy WIIFM spacing** (direct instruction): 10px above and 6px below (was 6px above, nothing below), so they sit clear of the text and of Read less.

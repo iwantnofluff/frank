@@ -1560,7 +1560,8 @@ body.lightrail .search input::placeholder {
    size and shape, in its grey, at the end of the copy. */
 .cc-after {
   display: block;
-  margin-top: 6px;
+  /* A little room either side (direct instruction). */
+  margin: 10px 0 6px;
 }
 .copychip {
   display: inline-flex;
