@@ -8240,7 +8240,8 @@ button.feedgrid-live {
   position: fixed;
   top: 76px;
   right: 16px;
-  width: 340px;
+  /* 25% wider than the prototype's 340px (direct instruction). */
+  width: 425px;
   max-width: calc(100vw - 32px);
   max-height: 70vh;
   background: var(--surface);
