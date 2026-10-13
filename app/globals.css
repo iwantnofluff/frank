@@ -3463,15 +3463,23 @@ select.sort:hover {
   position: relative;
 }
 /* A Story (lib/formats.ts STORY_FORMAT_IDS), as Instagram shows one
-   (direct instruction: its artwork was cut off): the artwork fills the
-   phone's screen on black, whole, with a progress line and the account
-   over the top; no feed header, likes or caption. */
+   (direct instruction: its artwork was cut off, then: a clean full
+   screen). The artwork starts at the very top of the screen, whole, on
+   black; the progress line, back arrow and account sit over it, as on
+   Instagram; no feed header, likes, caption or upload date. */
 .pf-screen:has(.ig.story) {
   background: #000;
+  padding-top: 0;
 }
+/* The back arrow, over the artwork beside the account. */
 .pf-screen:has(.ig.story) .lpv-bar {
-  background: #000;
-  border-color: transparent;
+  position: absolute;
+  top: 44px;
+  left: 4px;
+  z-index: 5;
+  padding: 0;
+  background: none;
+  border: 0;
   color: #fff;
 }
 .pf-screen:has(.ig.story) .lpv-bar b {
@@ -3490,6 +3498,8 @@ select.sort:hover {
   display: flex;
   flex-direction: column;
 }
+/* The account, below the notch, with a shade so it reads on any artwork,
+   and the progress line above it. */
 .ig.story .ig-h {
   position: absolute;
   top: 0;
@@ -3497,13 +3507,16 @@ select.sort:hover {
   right: 0;
   z-index: 3;
   border: 0;
-  padding: 16px 12px 12px;
-  background: linear-gradient(rgba(0, 0, 0, 0.45), transparent);
+  padding: 40px 12px 16px;
+  background: linear-gradient(rgba(0, 0, 0, 0.5), transparent);
+}
+.pf-screen:has(.lpv-bar button) .ig.story .ig-h {
+  padding-left: 36px;
 }
 .ig.story .ig-h::before {
   content: "";
   position: absolute;
-  top: 6px;
+  top: 32px;
   left: 10px;
   right: 10px;
   height: 2px;
@@ -3515,14 +3528,15 @@ select.sort:hover {
   color: #fff;
 }
 .ig.story .ig-acts,
-.ig.story .ig-cap {
+.ig.story .ig-cap,
+.ig.story .ig-time {
   display: none;
 }
 .ig.story .ig-media {
   flex: 1;
   min-height: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   container-type: size;
 }

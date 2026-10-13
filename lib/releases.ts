@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.23.6",
+    date: "2026-10-13",
+    title: "A cleaner Story",
+    changes: ["A Story's artwork now starts at the very top of the phone, whole, with the progress line, back arrow and account over it as on Instagram. The stray line and the upload date are gone."],
+  },
+  {
     version: "1.23.5",
     date: "2026-10-13",
     title: "Feeds newest first",
