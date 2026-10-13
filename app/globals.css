@@ -3538,6 +3538,12 @@ select.sort:hover {
    right below it, and the home bar's space under that. */
 .ig.story .ig-media {
   flex: none;
+}
+/* The artwork's corners rounded, not the box around it, so a comment box
+   opened on it isn't cut off. */
+.ig.story .ig-media img,
+.ig.story .ig-media .vframe,
+.ig.story .ig-media .ig-hold {
   border-radius: 10px;
   overflow: hidden;
 }
@@ -6388,6 +6394,12 @@ button.avatar {
   max-width: 100%;
   margin: 0 auto;
 }
+/* In the phone, a video fills its width as on Instagram (direct
+   instruction: a Reel had a gutter each side, held to 62% of the window's
+   height, which is for the page, not the phone, whose post scrolls). */
+.phoneframe .ig-media .vframe {
+  width: 100%;
+}
 .vframe video {
   display: block;
   max-width: 100%;
@@ -7907,10 +7919,18 @@ button.feedgrid-live {
 /* The Content post inside the phone (direct instruction), laid out like a
    live post opened in the Feed Preview: the "Posts" bar, then the post
    filling the screen's width and scrolling within it. */
+/* Scrolls up and down only, with no scroll bar showing (direct
+   instruction), as on a phone. overflow-x: clip, not hidden: nothing, not
+   even a focused field near the edge, can scroll the post sideways. */
 .pf-scroll {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: clip;
+  scrollbar-width: none;
+}
+.pf-scroll::-webkit-scrollbar {
+  display: none;
 }
 .phoneframe .ig {
   width: 100%;

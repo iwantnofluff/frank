@@ -13,6 +13,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.24.2",
+    date: "2026-10-13",
+    title: "Comments at once, and a tidier phone",
+    changes: [
+      "A comment shows on everyone else's open post page the moment it arrives, rather than after the comments reload.",
+      "The comment box on the artwork stays inside the phone, wherever the pin or area is, and no longer slides the post sideways.",
+      "The phone's post scrolls without a scroll bar showing.",
+      "A Reel, or any video post, fills the phone's width with no gap down the sides.",
+    ],
+  },
+  {
     version: "1.24.1",
     date: "2026-10-13",
     title: "Artwork that loads fast",

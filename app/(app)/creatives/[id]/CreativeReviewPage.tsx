@@ -12,7 +12,8 @@ import { useClientLogoUrl } from "@/hooks/use-client-logo-url";
 import { aspectRatioCss, formatRatio, isStoryFormat, postFormats } from "@/lib/formats";
 import { useCopyVersions } from "@/hooks/use-copy-versions";
 import { useArtworkUrl, usePreloadAssets } from "@/hooks/use-asset-signed-url";
-import { useComments } from "@/hooks/use-comments";
+import { useQueryClient } from "@tanstack/react-query";
+import { applyLiveComment, useComments, type CommentRow } from "@/hooks/use-comments";
 import { useCreateComment } from "@/hooks/use-create-comment";
 import { useMyMembership } from "@/hooks/use-my-membership";
 import { useTeamMembers } from "@/hooks/use-team-members";
@@ -125,11 +126,15 @@ export function CreativeReviewPage({ id }: { id: string }) {
   // Shared with CommentsPanel via the same query cache (identical key), so
   // clicking a marker here and clicking a comment there both read and write
   // the same "which thread is highlighted" state.
+  const queryClient = useQueryClient();
   const { data: allComments } = useComments(id);
   const clientLogoUrl = useClientLogoUrl(creative?.projects?.client_id);
   // A comment made anywhere, on any device, shows here at once (direct
   // instruction): the panel, the pins and the counts all read this.
-  useLiveUpdates(`comments:${id}`, [{ table: "comments", filter: `creative_id=eq.${id}` }], [["comments", id]]);
+  // Shown the moment it arrives, then reloaded (direct instruction).
+  useLiveUpdates(`comments:${id}`, [{ table: "comments", filter: `creative_id=eq.${id}` }], [["comments", id]], true, (change) =>
+    queryClient.setQueryData<CommentRow[]>(["comments", id], (list) => applyLiveComment(list, change.eventType, change.row)),
+  );
   // And the post itself, changed by someone else (phase82): its brief, stage
   // and Text on Image show at once.
   useLiveUpdates(`creative:${id}`, [{ table: "creatives", filter: `id=eq.${id}` }], [["creative", id]]);

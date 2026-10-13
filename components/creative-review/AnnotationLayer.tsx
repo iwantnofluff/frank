@@ -17,6 +17,9 @@ interface RegionMarker extends RegionAnchor {
 // each event, and everything is rendered back out as a percentage of the
 // same container — never a cached pixel value — so a window resize between
 // dropping a pin and viewing it later can't put it in the wrong place.
+// The comment box's width (as .annot-composer).
+const COMPOSER_W = 240;
+
 export function AnnotationLayer({
   mode,
   pins,
@@ -144,18 +147,16 @@ export function AnnotationLayer({
         <div
           className="annot-composer"
           style={{
-            left: `${(draft.type === "pin" ? draft.x : draft.x + draft.w) * 100}%`,
-            top: `${(draft.type === "pin" ? draft.y : draft.y) * 100}%`,
-            // Flips toward whichever side has room rather than always
-            // centring under the anchor — a pin/region near the artwork's
-            // own edge used to push the composer (240px wide) half off
-            // it, clipped by the page's own scroll container. 0.75/0.25
-            // thresholds match the composer's width against a typical
-            // ~460px-wide postbox closely enough without measuring the
-            // real rendered size.
-            transform: `translate(${draft.x > 0.75 ? "-95%" : draft.x < 0.25 ? "-5%" : "-50%"}, ${
-              draft.y > 0.75 ? "calc(-100% - 12px)" : "12px"
-            })`,
+            // Centred under the pin, or under the middle of the area, then
+            // kept inside the artwork's own edges (direct instruction: near
+            // the right edge it poked out past the phone's screen, and its
+            // focus scrolled the whole post sideways). Measured, so it
+            // holds at any size the artwork is drawn; 8px clear of each edge.
+            left: `clamp(8px, calc(${(draft.type === "pin" ? draft.x : draft.x + draft.w / 2) * 100}% - ${COMPOSER_W / 2}px), calc(100% - ${COMPOSER_W + 8}px))`,
+            top: `${(draft.type === "pin" ? draft.y : draft.y + (draft.y > 0.75 ? 0 : draft.h)) * 100}%`,
+            width: COMPOSER_W,
+            maxWidth: "calc(100% - 16px)",
+            transform: `translateY(${draft.y > 0.75 ? "calc(-100% - 12px)" : "12px"})`,
           }}
           onClick={(e) => e.stopPropagation()}
         >

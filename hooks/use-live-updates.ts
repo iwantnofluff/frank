@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useQueryClient, type QueryKey } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 
@@ -16,8 +16,29 @@ export interface LiveSource {
 // someone whose select policy lets them see the row (phase65), and it's
 // only a nudge: the reload goes through the usual rules, so nothing is
 // shown that couldn't be read already.
-export function useLiveUpdates(name: string, sources: LiveSource[], queryKeys: QueryKey[], enabled = true) {
+// A change as it arrives: the table, what happened, and the row (as the
+// database lets this person see it).
+export interface LiveChange {
+  table: string;
+  eventType: "INSERT" | "UPDATE" | "DELETE";
+  row: Record<string, unknown>;
+}
+
+export function useLiveUpdates(
+  name: string,
+  sources: LiveSource[],
+  queryKeys: QueryKey[],
+  enabled = true,
+  // Applied the moment a change arrives, before the reload (direct
+  // instruction: a comment should show on another screen at once).
+  onChange?: (change: LiveChange) => void,
+) {
   const queryClient = useQueryClient();
+  // The latest handler, without resubscribing when it changes.
+  const onChangeRef = useRef(onChange);
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  });
   // By value, so a new array each render doesn't resubscribe.
   const signature = JSON.stringify(sources);
   const keySignature = JSON.stringify(queryKeys);
@@ -31,7 +52,12 @@ export function useLiveUpdates(name: string, sources: LiveSource[], queryKeys: Q
       channel = channel.on(
         "postgres_changes",
         { event: "*", schema: "public", table: s.table, ...(s.filter ? { filter: s.filter } : {}) },
-        () => {
+        (payload: { eventType: LiveChange["eventType"]; new: Record<string, unknown>; old: Record<string, unknown> }) => {
+          onChangeRef.current?.({
+            table: s.table,
+            eventType: payload.eventType,
+            row: payload.eventType === "DELETE" ? payload.old : payload.new,
+          });
           for (const key of keys) void queryClient.invalidateQueries({ queryKey: key });
         },
       );
