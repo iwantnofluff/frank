@@ -2851,6 +2851,18 @@ a.fd-ref:hover {
   font-size: 10.2px;
   color: var(--muted);
 }
+/* A planned tile's date, with no artwork to sit over (direct instruction). */
+.pp-empty .pp-empty-date {
+  font-size: 10.2px;
+  font-weight: 500;
+  color: var(--ink);
+}
+/* A post that's gone live (lib/post-live.ts), in place of its stage:
+   dark, so it doesn't read as the green of 4. Approved. */
+.stagepill.live {
+  background: var(--ink);
+  color: #fff;
+}
 /* Deliberately not sharing .feedgrid-tile/.pktile — those classes mean
    "a real, selectable creative tile" to more than just this stylesheet
    (share-eligibility.spec.ts loops every `.pktile` assuming each one is a

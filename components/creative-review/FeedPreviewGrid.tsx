@@ -1,5 +1,6 @@
 "use client";
 
+import { isLive } from "@/lib/post-live";
 import { useMemo, useRef, useState } from "react";
 import { useCreatives, type CreativeListRow } from "@/hooks/use-creatives";
 import { FeedTileArt, EmptyTileArt } from "@/components/creative-review/FeedTileArt";
@@ -71,7 +72,15 @@ export function FeedPreviewGrid({
     [pages],
   );
   const livePosts = tab === "reels" ? allLive.filter((p) => p.reel) : allLive;
-  const shown = tab === "reels" ? creatives.filter((c) => postFormats(c).includes("ig_reel")) : creatives;
+  // A post that's gone live (lib/post-live.ts: Approved, its date passed)
+  // is already among the real posts once the client's Instagram is
+  // connected, so it isn't shown twice (direct instruction). Without a
+  // connection it stays, marked Live.
+  const connected = !!feed;
+  const [now] = useState(() => Date.now());
+  // The post being looked at always stays, live or not.
+  const planned = connected ? creatives.filter((c) => !isLive(c, now) || c.id === activeCreativeId) : creatives;
+  const shown = tab === "reels" ? planned.filter((c) => postFormats(c).includes("ig_reel")) : planned;
 
   // Same hover-preview pattern as ProjectCalendarTable's own creative
   // rows: a short delay before showing (so a pointer passing over several
@@ -125,8 +134,11 @@ export function FeedPreviewGrid({
       ) : (
         <div className={tab === "reels" ? "feedgrid reels" : "feedgrid"}>
           {shown.map((c) => {
-            const timeLabel = c.scheduled_at
-              ? new Date(c.scheduled_at).toLocaleDateString(undefined, {
+            // Its Publish Date, or a continuous project's Live Date (read
+            // as the day it names).
+            const when = c.scheduled_at ?? (c.due_on ? `${c.due_on}T00:00:00` : null);
+            const timeLabel = when
+              ? new Date(when).toLocaleDateString(undefined, {
                   month: "short",
                   day: "numeric",
                 })
@@ -135,7 +147,7 @@ export function FeedPreviewGrid({
               <button
                 key={c.id}
                 type="button"
-                className={`feedgrid-tile${c.published_at ? "" : " not-live"}`}
+                className={`feedgrid-tile${c.published_at || isLive(c, now) ? "" : " not-live"}`}
                 aria-current={c.id === activeCreativeId}
                 onClick={() => onSelect(c.id)}
                 onMouseEnter={(e) => handleEnter(c, e.currentTarget)}
@@ -145,7 +157,7 @@ export function FeedPreviewGrid({
                 <FeedTileArt creative={c} timeLabel={timeLabel} />
                 {/* Its stage, as a review link's Feed shows it (direct
                     instruction: in place of "Planned", the two the same). */}
-                <StagePill stage={c.stage} />
+                {isLive(c, now) ? <span className="stagepill stg live">Live</span> : <StagePill stage={c.stage} />}
               </button>
             );
           })}
@@ -158,7 +170,7 @@ export function FeedPreviewGrid({
               space, per direct instruction. Never rendered when there are
               already 9+ real creatives; overflow scrolls instead. */}
           {Array.from({
-            length: tab === "reels" ? 0 : Math.max(0, GRID_SLOTS - creatives.length - livePosts.length),
+            length: tab === "reels" ? 0 : Math.max(0, GRID_SLOTS - planned.length - livePosts.length),
           }).map((_, i) => (
             <div key={`empty-${i}`} className="feedgrid-tile-empty">
               <EmptyTileArt loading={!!clientId && liveLoading} />

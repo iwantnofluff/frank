@@ -35,6 +35,8 @@ export function FeedTileArt({
     return (
       <div className="pp-empty">
         <b>{creative.name}</b>
+        {/* Its date too (direct instruction: only tiles with artwork had one). */}
+        {timeLabel !== "—" && <span className="pp-empty-date">{timeLabel}</span>}
         <span>No Creative</span>
       </div>
     );

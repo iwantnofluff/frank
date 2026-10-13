@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.23.4",
+    date: "2026-10-13",
+    title: "Live posts in the Feed Preview",
+    changes: [
+      "Every planned post in the Feed Preview shows its date, with or without artwork.",
+      "An Approved post whose date has passed counts as live. With the client's Instagram connected, it leaves the planned posts, as the real one shows from Instagram. Without it, it stays, marked Live.",
+    ],
+  },
+  {
     version: "1.23.3",
     date: "2026-10-13",
     title: "Room for the previous and next titles",
