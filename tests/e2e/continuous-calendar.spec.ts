@@ -108,7 +108,7 @@ test("continuous calendar — status filter narrows the visible rows", async ({ 
   await page.waitForSelector(".tbl");
   await expect(page.locator(".pname", { hasText: "Concept Stage Creative" })).toBeVisible();
 
-  await page.selectOption("select.sort", "review");
+  await page.getByLabel("Status").selectOption("3");
   await expect(page.locator(".pname", { hasText: "Concept Stage Creative" })).toHaveCount(0);
   await expect(page.locator(".pname", { hasText: "Client Review Creative" })).toBeVisible();
 });

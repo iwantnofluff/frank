@@ -1,9 +1,10 @@
 "use client";
 
+import { matchesFilter, type PostFilter } from "@/lib/post-filters";
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CreativeListRow } from "@/hooks/use-creatives";
-import { bandOf, stageColor, type Band } from "@/lib/stage-labels";
+import { stageColor } from "@/lib/stage-labels";
 import { getMonthGridDays, dateKey } from "@/lib/calendar-weeks";
 import { CreativePreviewPopover } from "@/components/project/CreativePreviewPopover";
 
@@ -22,12 +23,13 @@ export function ProjectCalendarGrid({
   year,
   month,
   creatives,
-  statusFilter,
+  filter,
 }: {
   year: number;
   month: number;
   creatives: CreativeListRow[];
-  statusFilter: "all" | Band;
+  // The table's status and platform filters (lib/post-filters.ts).
+  filter: PostFilter;
 }) {
   const router = useRouter();
   const today = useMemo(() => new Date(), []);
@@ -37,7 +39,7 @@ export function ProjectCalendarGrid({
     const map = new Map<string, { c: CreativeListRow; dt: Date }[]>();
     for (const c of creatives) {
       if (!c.scheduled_at) continue;
-      if (statusFilter !== "all" && bandOf(c.stage, c.exception) !== statusFilter) continue;
+      if (!matchesFilter(c, filter)) continue;
       const dt = new Date(c.scheduled_at);
       const key = dateKey(dt);
       if (!map.has(key)) map.set(key, []);
@@ -45,7 +47,7 @@ export function ProjectCalendarGrid({
     }
     for (const list of map.values()) list.sort((a, b) => a.dt.getTime() - b.dt.getTime());
     return map;
-  }, [creatives, statusFilter]);
+  }, [creatives, filter]);
 
   const days = useMemo(() => getMonthGridDays(year, month), [year, month]);
 

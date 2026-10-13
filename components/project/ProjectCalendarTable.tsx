@@ -1,5 +1,6 @@
 "use client";
 
+import { matchesFilter, PLATFORM_FILTERS, STATUS_FILTERS, type PlatformFilter, type PostFilter, type StatusFilter } from "@/lib/post-filters";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { usePresence } from "@/hooks/use-presence";
 import { useViewportFit } from "@/hooks/use-viewport-fit";
@@ -18,7 +19,7 @@ import { CreativePreviewPopover } from "@/components/project/CreativePreviewPopo
 import { CopyVersionHistoryPopover } from "@/components/project/CopyVersionHistoryPopover";
 import { SaveViewModal } from "@/components/project/SaveViewModal";
 import { PermanentDeleteConfirm } from "@/components/project/PermanentDeleteConfirm";
-import { bandOf, stageLabel, stageColor, exceptionLabel, type Band } from "@/lib/stage-labels";
+import { bandOf, stageLabel, stageColor, exceptionLabel } from "@/lib/stage-labels";
 import { errorMessage } from "@/lib/errors";
 import { copySummary, copySummaryParts, formatsLabel, postFormats } from "@/lib/formats";
 import { CopySummaryText } from "@/components/project/CopySummaryText";
@@ -44,15 +45,6 @@ const MONTH_ABBR = MONTH_NAMES.map((m) => m.slice(0, 3));
 const DAY_ABBR = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 type ViewMode = "week" | "month" | "calendar";
-
-const STATUS_FILTERS: { value: "all" | Band; label: string }[] = [
-  { value: "all", label: "All Statuses" },
-  { value: "internal", label: "In Production" },
-  { value: "review", label: "Client Review" },
-  { value: "changes_requested", label: "Changes Requested" },
-  { value: "rejected", label: "Rejected" },
-  { value: "approved", label: "Approved" },
-];
 
 // Week/Date/Day are frozen — always shown, always sticky (left offsets
 // below match their fixed widths) — not offered in the Columns picker.
@@ -204,7 +196,10 @@ export function ProjectCalendarTable({
   // The draft row lives in the table, so opening one from the Calendar grid
   // switches to the Month table (the prototype refuses instead).
   if (draftRow && viewMode === "calendar") setViewMode("month");
-  const [statusFilter, setStatusFilter] = useState<"all" | Band>("all");
+  // Status and platform (lib/post-filters.ts; direct instruction).
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [platformFilter, setPlatformFilter] = useState<PlatformFilter>("all");
+  const filter = useMemo<PostFilter>(() => ({ status: statusFilter, platform: platformFilter }), [statusFilter, platformFilter]);
 
   // Checkbox multi-select — table views only (Week/Month), not the
   // Calendar grid. Cleared whenever the underlying row set changes (the
@@ -504,10 +499,10 @@ export function ProjectCalendarTable({
   const filtered = useMemo(() => {
     return creatives
       .filter((c) => c.scheduled_at)
-      .filter((c) => statusFilter === "all" || bandOf(c.stage, c.exception) === statusFilter)
+      .filter((c) => matchesFilter(c, filter))
       .map((c) => ({ c, dt: new Date(c.scheduled_at as string) }))
       .sort((a, b) => a.dt.getTime() - b.dt.getTime());
-  }, [creatives, statusFilter]);
+  }, [creatives, filter]);
 
   const weeks = useMemo(() => {
     const dayChunks = viewMode === "week" ? [getWeekDays(anchor)] : getMonthWeeks(anchor.getFullYear(), anchor.getMonth());
@@ -724,9 +719,22 @@ export function ProjectCalendarTable({
         <select
           className="sort"
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as "all" | Band)}
+          aria-label="Status"
+          onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
         >
           {STATUS_FILTERS.map((f) => (
+            <option key={f.value} value={f.value}>
+              {f.label}
+            </option>
+          ))}
+        </select>
+        <select
+          className="sort"
+          value={platformFilter}
+          aria-label="Platform"
+          onChange={(e) => setPlatformFilter(e.target.value as PlatformFilter)}
+        >
+          {PLATFORM_FILTERS.map((f) => (
             <option key={f.value} value={f.value}>
               {f.label}
             </option>
@@ -879,7 +887,7 @@ export function ProjectCalendarTable({
           year={anchor.getFullYear()}
           month={anchor.getMonth()}
           creatives={creatives}
-          statusFilter={statusFilter}
+          filter={filter}
         />
       ) : weeks.length === 0 && !draftRow ? (
         <div className="empty">

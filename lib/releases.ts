@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.24.8",
+    date: "2026-10-13",
+    title: "Filter the planner by stage and platform",
+    changes: [
+      "The planner's status filter lists the four stages, 1. Concept to 4. Approved, in place of the older In Production, Changes Requested and Rejected.",
+      "A new platform filter shows the posts going out on Meta (Instagram, Facebook, WhatsApp), LinkedIn, Pinterest or YouTube. A post on several shows under each.",
+    ],
+  },
+  {
     version: "1.24.7",
     date: "2026-10-13",
     title: "Late posts stand out; Share by the pills",

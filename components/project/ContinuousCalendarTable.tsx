@@ -1,5 +1,6 @@
 "use client";
 
+import { matchesFilter, PLATFORM_FILTERS, STATUS_FILTERS, type PlatformFilter, type PostFilter, type StatusFilter } from "@/lib/post-filters";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { usePresence } from "@/hooks/use-presence";
 import { useViewportFit } from "@/hooks/use-viewport-fit";
@@ -17,7 +18,7 @@ import { ColumnsPopover, type ToggleableColumn } from "@/components/project/Colu
 import { CreativePreviewPopover } from "@/components/project/CreativePreviewPopover";
 import { SaveViewModal } from "@/components/project/SaveViewModal";
 import { PermanentDeleteConfirm } from "@/components/project/PermanentDeleteConfirm";
-import { bandOf, stageLabel, stageColor, exceptionLabel, type Band } from "@/lib/stage-labels";
+import { bandOf, stageLabel, stageColor, exceptionLabel } from "@/lib/stage-labels";
 import { errorMessage } from "@/lib/errors";
 import { getMonthWeeks, getWeekDays, isoWeekNumber, dateKey } from "@/lib/calendar-weeks";
 import { useMyAgency } from "@/hooks/use-my-agency";
@@ -42,15 +43,6 @@ const MONTH_NAMES = [
 const MONTH_ABBR = MONTH_NAMES.map((m) => m.slice(0, 3));
 
 type ViewMode = "week" | "month" | "calendar";
-
-const STATUS_FILTERS: { value: "all" | Band; label: string }[] = [
-  { value: "all", label: "All Statuses" },
-  { value: "internal", label: "In Production" },
-  { value: "review", label: "Client Review" },
-  { value: "changes_requested", label: "Changes Requested" },
-  { value: "rejected", label: "Rejected" },
-  { value: "approved", label: "Approved" },
-];
 
 // One frozen date column — no Week-number/Day-of-week split the way
 // Scheduled has, since that's not part of the 13-field template this
@@ -222,7 +214,10 @@ export function ContinuousCalendarTable({
   const [anchor, setAnchor] = useState(() => (initialFocusDate ? new Date(initialFocusDate) : today));
   const [viewMode, setViewMode] = useState<ViewMode>("month");
   if (draftRow && viewMode === "calendar") setViewMode("month");
-  const [statusFilter, setStatusFilter] = useState<"all" | Band>("all");
+  // Status and platform (lib/post-filters.ts; direct instruction).
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [platformFilter, setPlatformFilter] = useState<PlatformFilter>("all");
+  const filter = useMemo<PostFilter>(() => ({ status: statusFilter, platform: platformFilter }), [statusFilter, platformFilter]);
 
   // Checkbox multi-select — table views only (Week/Month), not the
   // Calendar grid. Cleared whenever the underlying row set changes (the
@@ -478,10 +473,10 @@ export function ContinuousCalendarTable({
   const filtered = useMemo(() => {
     return creatives
       .filter((c) => c.due_on)
-      .filter((c) => statusFilter === "all" || bandOf(c.stage, c.exception) === statusFilter)
+      .filter((c) => matchesFilter(c, filter))
       .map((c) => ({ c, dt: new Date(c.due_on as string) }))
       .sort((a, b) => a.dt.getTime() - b.dt.getTime());
-  }, [creatives, statusFilter]);
+  }, [creatives, filter]);
 
   const weeks = useMemo(() => {
     const dayChunks = viewMode === "week" ? [getWeekDays(anchor)] : getMonthWeeks(anchor.getFullYear(), anchor.getMonth());
@@ -698,9 +693,22 @@ export function ContinuousCalendarTable({
         <select
           className="sort"
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as "all" | Band)}
+          aria-label="Status"
+          onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
         >
           {STATUS_FILTERS.map((f) => (
+            <option key={f.value} value={f.value}>
+              {f.label}
+            </option>
+          ))}
+        </select>
+        <select
+          className="sort"
+          value={platformFilter}
+          aria-label="Platform"
+          onChange={(e) => setPlatformFilter(e.target.value as PlatformFilter)}
+        >
+          {PLATFORM_FILTERS.map((f) => (
             <option key={f.value} value={f.value}>
               {f.label}
             </option>
@@ -855,7 +863,7 @@ export function ContinuousCalendarTable({
           year={anchor.getFullYear()}
           month={anchor.getMonth()}
           creatives={creatives}
-          statusFilter={statusFilter}
+          filter={filter}
         />
       ) : weeks.length === 0 && !draftRow ? (
         <div className="empty">

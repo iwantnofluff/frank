@@ -55,9 +55,33 @@ test("project calendar — status filter narrows the visible rows", async ({ pag
   await goToMonth(page, "March 2027");
   await expect(page.locator(".pname", { hasText: "Concept-Stage E2E" })).toBeVisible();
 
-  await page.selectOption("select.sort", "review");
+  // The four stages (direct instruction: the older bands went).
+  const status = page.getByLabel("Status");
+  await expect(status.locator("option")).toHaveText(["All Statuses", "1. Concept", "2. Internal Review", "3. Client Review", "4. Approved"]);
+  await status.selectOption("3");
   await expect(page.locator(".pname", { hasText: "Concept-Stage E2E" })).toHaveCount(0);
   await expect(page.locator(".pname", { hasText: "E2E Test Creative" })).toBeVisible();
+});
+
+test("project calendar — platform filter shows posts going out on that platform", async ({ page, frank }) => {
+  // Fixture's post is Instagram Feed (Meta); one LinkedIn-only post beside it.
+  const li = await frank.createCreativeAtStage(3, "LinkedIn Only E2E");
+  const { createClient } = await import("@supabase/supabase-js");
+  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
+  const { error } = await admin.from("creatives").update({ format: "li_image", formats: ["li_image"] }).eq("id", li);
+  if (error) throw error;
+  await frank.loginAsStaff(page);
+  await page.goto(`/projects/${frank.projectId}`);
+  await page.waitForSelector(".tblwrap, .empty");
+  await goToMonth(page, "March 2027");
+  const platform = page.getByLabel("Platform");
+  await expect(platform.locator("option")).toHaveText(["All Platforms", "Meta", "LinkedIn", "Pinterest", "YouTube"]);
+  await platform.selectOption("linkedin");
+  await expect(page.locator(".pname", { hasText: "LinkedIn Only E2E" })).toBeVisible();
+  await expect(page.locator(".pname", { hasText: "E2E Test Creative" })).toHaveCount(0);
+  await platform.selectOption("meta");
+  await expect(page.locator(".pname", { hasText: "E2E Test Creative" })).toBeVisible();
+  await expect(page.locator(".pname", { hasText: "LinkedIn Only E2E" })).toHaveCount(0);
 });
 
 test("project calendar — Calendar mode renders the day grid and hides the Columns button", async ({
