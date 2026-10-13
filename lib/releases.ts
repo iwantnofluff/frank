@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.23.1",
+    date: "2026-10-13",
+    title: "Previous and next post beside the phone",
+    changes: [
+      "On a post's page, arrows either side of the phone open the project's previous and next post, in the planner's date order, each with its date, title and format beside it. On a narrower window it's just the arrows, with the details when you hover.",
+    ],
+  },
+  {
     version: "1.23.0",
     date: "2026-10-12",
     title: "Workspace Settings and Preferences",

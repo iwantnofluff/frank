@@ -32,6 +32,7 @@ import { ChecksPanel } from "@/components/creative-review/ChecksPanel";
 import { ReviewNav, type ReviewSection } from "@/components/creative-review/ReviewNav";
 import { FeedPreviewGrid } from "@/components/creative-review/FeedPreviewGrid";
 import { PhoneFrame } from "@/components/creative-review/PhoneFrame";
+import { PostNeighbours } from "@/components/creative-review/PostNeighbours";
 import { useClientInstagramFeed } from "@/hooks/use-instagram";
 import { CommentsPanel } from "@/components/creative-review/CommentsPanel";
 import { ShareModal } from "@/components/creative-review/ShareModal";
@@ -457,6 +458,11 @@ export function CreativeReviewPage({ id }: { id: string }) {
                 post opened there (direct instruction); the title and
                 format are in the header already. */}
             {activeSection === "content" && (
+              <PostNeighbours
+                creativeId={creative.id}
+                projectId={creative.project_id}
+                delivery={creative.projects?.delivery}
+              >
               <PhoneFrame>
               <div className="lpv-bar">
                 <button
@@ -677,6 +683,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
               </div>
               </div>
               </PhoneFrame>
+              </PostNeighbours>
             )}
             {activeSection === "checks" && (
               <ChecksPanel

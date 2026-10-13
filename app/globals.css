@@ -3246,6 +3246,84 @@ select.sort:hover {
   justify-content: center;
   padding: 22px 20px;
 }
+/* The previous and next post either side of the phone on a post's page
+   (direct instruction): an arrow, then the post's date, title and format.
+   An empty side keeps its width so the phone stays centred. */
+.pnav-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.pnav {
+  width: 140px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+  text-decoration: none;
+}
+.pnav.next {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+.pnav-arrow {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.pnav-arrow svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.pnav:hover .pnav-arrow {
+  background: var(--action-soft);
+  box-shadow: inset 0 0 0 1px var(--action);
+  color: var(--action);
+}
+.pnav-d {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pnav-d b {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.pnav-date,
+.pnav-fmt {
+  font-size: 11px;
+  color: var(--muted);
+}
+/* Where the canvas is too narrow for the details, just the arrows. */
+.canvas:has(.pnav-row) {
+  container-type: inline-size;
+}
+@container (max-width: 690px) {
+  .pnav {
+    width: 34px;
+  }
+  .pnav-d {
+    display: none;
+  }
+}
 .cmeta {
   padding-bottom: 13px;
   border-bottom: 1px solid var(--line);
