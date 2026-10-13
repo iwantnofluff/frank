@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.24.1",
+    date: "2026-10-13",
+    title: "Artwork that loads fast",
+    changes: ["Uploaded images also get a light copy sized for the phone, about 30 times smaller, so a post's artwork shows with the page instead of after it. The original is kept for downloads. Artwork already uploaded has its copy made too."],
+  },
+  {
     version: "1.24.0",
     date: "2026-10-13",
     title: "A true iPhone 15",

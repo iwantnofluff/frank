@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createAnonServerClient } from "@/lib/supabase/anon-server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { brandingAllowed } from "@/lib/plans";
+import { previewKey } from "@/lib/artwork-preview";
 
 interface RpcCreative {
   id: string;
@@ -243,8 +244,11 @@ export async function POST(request: Request) {
   // logos — signed in one request rather than one at a time. Signed here
   // because a visitor has no session to read storage with.
   const keys = new Set<string>();
-  for (const c of creatives) if (c.asset?.storage_key && !emptied.has(c.id)) keys.add(c.asset.storage_key);
-  for (const r of slideRows) if (r.asset) keys.add(r.asset.storage_key);
+  // Each artwork's lighter copy too (lib/artwork-preview.ts), shown where it
+  // exists; a missing one just doesn't sign.
+  for (const c of creatives)
+    if (c.asset?.storage_key && !emptied.has(c.id)) keys.add(c.asset.storage_key).add(previewKey(c.asset.storage_key));
+  for (const r of slideRows) if (r.asset) keys.add(r.asset.storage_key).add(previewKey(r.asset.storage_key));
   if (settings?.logo_asset) keys.add(settings.logo_asset.storage_key);
   if (clientLogo) keys.add(clientLogo.storage_key);
   const signedByKey = new Map<string, string>();
@@ -253,6 +257,8 @@ export async function POST(request: Request) {
     for (const s of signed ?? []) if (s.path && s.signedUrl) signedByKey.set(s.path, s.signedUrl);
   }
   const signedUrl = (key: string | null | undefined) => (key ? (signedByKey.get(key) ?? null) : null);
+  // For showing artwork: its copy if there is one, else the original.
+  const artworkUrl = (key: string) => signedUrl(previewKey(key)) ?? signedUrl(key);
 
   const creativeOf = new Map([...latest].map(([cid, vid]) => [vid, cid]));
   const slidesById = new Map<string, { position: number; signed_url: string | null; mime_type: string; filename: string }[]>();
@@ -260,7 +266,7 @@ export async function POST(request: Request) {
     if (!r.asset) continue;
     const cid = creativeOf.get(r.creative_version_id)!;
     const list = slidesById.get(cid) ?? [];
-    list.push({ position: r.position, signed_url: signedUrl(r.asset.storage_key), mime_type: r.asset.mime_type, filename: r.asset.filename });
+    list.push({ position: r.position, signed_url: artworkUrl(r.asset.storage_key), mime_type: r.asset.mime_type, filename: r.asset.filename });
     slidesById.set(cid, list);
   }
   for (const list of slidesById.values()) list.sort((a, b) => a.position - b.position);
@@ -292,7 +298,7 @@ export async function POST(request: Request) {
             version_no: asset.version_no,
             mime_type: asset.mime_type,
             filename: asset.filename,
-            signed_url: serviceRole ? signedUrl(asset.storage_key) : null,
+            signed_url: serviceRole ? artworkUrl(asset.storage_key) : null,
           }
         : null,
     };

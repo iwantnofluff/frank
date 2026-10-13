@@ -11,7 +11,7 @@ import { useLiveUpdates } from "@/hooks/use-live-updates";
 import { useClientLogoUrl } from "@/hooks/use-client-logo-url";
 import { aspectRatioCss, formatRatio, isStoryFormat, postFormats } from "@/lib/formats";
 import { useCopyVersions } from "@/hooks/use-copy-versions";
-import { useAssetSignedUrl, usePreloadAssets } from "@/hooks/use-asset-signed-url";
+import { useArtworkUrl, usePreloadAssets } from "@/hooks/use-asset-signed-url";
 import { useComments } from "@/hooks/use-comments";
 import { useCreateComment } from "@/hooks/use-create-comment";
 import { useMyMembership } from "@/hooks/use-my-membership";
@@ -177,7 +177,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
   const currentSlide = frames[frameIndex] ?? null;
   const slidePosition = frameIndex + 1;
 
-  const { data: signedUrl, isLoading: signing } = useAssetSignedUrl(currentSlide?.asset.storage_key);
+  const { data: signedUrl, isLoading: signing } = useArtworkUrl(currentSlide?.asset.storage_key);
   usePreloadAssets(slides.filter((s) => s.asset.mime_type.startsWith("image/")).map((s) => s.asset.storage_key));
 
   // A video (phase34): the paused moment new comments are attached to, and

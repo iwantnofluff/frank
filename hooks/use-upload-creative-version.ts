@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { validateUploadFile, MAX_STORED_VIDEO_BYTES } from "@/lib/upload-validation";
 import { compressVideo } from "@/lib/compress-video";
 import { uploadWithProgress } from "@/lib/upload-with-progress";
+import { makePreview, previewKey, withPreviews } from "@/lib/artwork-preview";
 import { assertCanUpload } from "@/lib/upload-guard";
 import { MAX_UPLOAD_MB } from "@/lib/upload-limits";
 
@@ -92,6 +93,19 @@ async function uploadAsset(
 
   // In confirmed pieces, with progress (lib/upload-with-progress.ts).
   await uploadWithProgress(path, file, onUploaded, onRetry);
+  // Its lighter copy for the phone (lib/artwork-preview.ts). If it can't be
+  // made or saved, the original shows instead, so the upload carries on.
+  try {
+    const preview = await makePreview(file);
+    if (preview) {
+      const { error } = await supabase.storage
+        .from("assets")
+        .upload(previewKey(path), preview, { contentType: preview.type, upsert: true });
+      if (error) console.warn("Artwork preview not saved; the original will show", error.message);
+    }
+  } catch (e) {
+    console.warn("Artwork preview not made; the original will show", e);
+  }
 
   const dimensions = await probeImageDimensions(file);
 
@@ -112,7 +126,7 @@ async function uploadAsset(
   if (assetError) {
     // Best-effort — don't leave the file behind with no DB row
     // pointing at it if the insert that was supposed to record it failed.
-    await supabase.storage.from("assets").remove([path]);
+    await supabase.storage.from("assets").remove(withPreviews([path]));
     throw assetError;
   }
   return asset.id as string;

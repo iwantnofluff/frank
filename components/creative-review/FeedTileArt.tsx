@@ -1,7 +1,7 @@
 "use client";
 
 import { useCreativeVersions } from "@/hooks/use-creative-versions";
-import { useAssetSignedUrl } from "@/hooks/use-asset-signed-url";
+import { useArtworkUrl } from "@/hooks/use-asset-signed-url";
 import type { CreativeListRow } from "@/hooks/use-creatives";
 
 // Real artwork when a creative has one, a plain "No Creative" tile when it
@@ -28,7 +28,7 @@ export function FeedTileArt({
 }) {
   const { data: versions } = useCreativeVersions(creative.id);
   const latest = versions?.[0] ?? null;
-  const { data: signedUrl } = useAssetSignedUrl(latest?.asset?.storage_key);
+  const { data: signedUrl } = useArtworkUrl(latest?.asset?.storage_key);
   const isVideo = latest?.asset?.mime_type?.startsWith("video/") ?? false;
 
   if (!signedUrl) {

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Modal } from "@/components/ui/Modal";
 import { useCreativeVersions, versionSlides } from "@/hooks/use-creative-versions";
-import { useAssetSignedUrl } from "@/hooks/use-asset-signed-url";
+import { useArtworkUrl } from "@/hooks/use-asset-signed-url";
 import { useKeepArtwork, useRemoveArtworkNow, type NotificationRow } from "@/hooks/use-notifications";
 import { dayMonth, ARTWORK_KEEP_DAYS } from "@/lib/artwork-removal";
 import { useClientPreferences } from "@/hooks/use-client-preferences";
@@ -22,7 +22,7 @@ export function ArtworkDecisionModal({
 }) {
   const { data: versions } = useCreativeVersions(post.id);
   const first = versionSlides(versions?.[0])[0]?.asset;
-  const { data: url } = useAssetSignedUrl(first?.mime_type.startsWith("image/") ? first.storage_key : undefined);
+  const { data: url } = useArtworkUrl(first?.mime_type.startsWith("image/") ? first.storage_key : undefined);
   const remove = useRemoveArtworkNow();
   const keep = useKeepArtwork();
   const busy = remove.isPending || keep.isPending;

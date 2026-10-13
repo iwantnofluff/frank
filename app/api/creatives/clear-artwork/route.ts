@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { PREVIEW_SUFFIX, withPreviews } from "@/lib/artwork-preview";
 
 // Deletes every artwork version of a post — its versions, slides, the
 // comments on them, and the files (phase33). The access check and the
@@ -28,8 +29,9 @@ export async function POST(request: Request) {
   let filesRemoved = 0;
   if (paths.length) {
     try {
-      const { data } = await createServiceRoleClient().storage.from("assets").remove(paths);
-      filesRemoved = data?.length ?? 0;
+      const { data } = await createServiceRoleClient().storage.from("assets").remove(withPreviews(paths));
+      // Originals only: their lighter copies (lib/artwork-preview.ts) go too.
+      filesRemoved = (data ?? []).filter((f) => !f.name.endsWith(PREVIEW_SUFFIX)).length;
     } catch {
       // The rows are already gone; a file left in storage is the known
       // storage-sweep gap, not a reason to report the delete as failed.

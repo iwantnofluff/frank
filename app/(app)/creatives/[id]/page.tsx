@@ -1,6 +1,7 @@
 import { QueryClient, dehydrate } from "@tanstack/react-query";
 import { SeedQueries } from "@/components/ui/SeedQueries";
 import { createClient } from "@/lib/supabase/server";
+import { previewKey } from "@/lib/artwork-preview";
 import { CREATIVE_SELECT, CREATIVE_VERSIONS_SELECT, versionSlides, type CreativeVersionRow } from "@/lib/creative-queries";
 import { CreativeReviewPage } from "./CreativeReviewPage";
 
@@ -28,9 +29,15 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       .filter((s) => s.asset.mime_type.startsWith("image/"))
       .map((s) => s.asset.storage_key);
     if (keys.length) {
-      const { data: signed } = await supabase.storage.from("assets").createSignedUrls(keys, 3600);
-      for (const s of signed ?? []) {
-        if (s.path && s.signedUrl && !s.error) queryClient.setQueryData(["asset-signed-url", s.path], s.signedUrl);
+      // Each image's lighter copy where it has one (lib/artwork-preview.ts),
+      // its original otherwise, under the key the page reads (useArtworkUrl).
+      const { data: signed } = await supabase.storage
+        .from("assets")
+        .createSignedUrls([...keys.map(previewKey), ...keys], 3600);
+      const ok = new Map((signed ?? []).filter((s) => s.path && s.signedUrl && !s.error).map((s) => [s.path!, s.signedUrl]));
+      for (const key of keys) {
+        const url = ok.get(previewKey(key)) ?? ok.get(key);
+        if (url) queryClient.setQueryData(["artwork-url", key], url);
       }
     }
   }

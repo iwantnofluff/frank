@@ -7,7 +7,7 @@ import { useComments } from "@/hooks/use-comments";
 import { stageColor, stageLabel, exceptionLabel } from "@/lib/stage-labels";
 import { aspectRatioCss, formatsLabel, postFormats } from "@/lib/formats";
 import { useCreativeVersions, versionSlides } from "@/hooks/use-creative-versions";
-import { useAssetSignedUrl } from "@/hooks/use-asset-signed-url";
+import { useArtworkUrl } from "@/hooks/use-asset-signed-url";
 import { NoArtwork } from "@/components/creative-review/NoArtwork";
 import type { CreativeListRow } from "@/hooks/use-creatives";
 import { usePathname } from "next/navigation";
@@ -54,7 +54,7 @@ export function CreativePreviewPopover({
   const clientLogoUrl = useClientLogoUrl(project?.client_id);
   const { data: versions, isPending: versionsPending } = useCreativeVersions(creative.id);
   const art = versionSlides(versions?.[0])[0]?.asset ?? null;
-  const { data: artUrl } = useAssetSignedUrl(art?.storage_key);
+  const { data: artUrl } = useArtworkUrl(art?.storage_key);
   const { data: comments } = useComments(creative.id);
 
   const latestCopy = copyVersions?.[0];

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useAssetSignedUrl } from "@/hooks/use-asset-signed-url";
+import { useArtworkUrl } from "@/hooks/use-asset-signed-url";
 import { versionSlides, type CreativeVersionRow, type VersionAsset } from "@/hooks/use-creative-versions";
 import type { SlideSource } from "@/hooks/use-upload-creative-version";
 import { validateUploadFile, ACCEPTED_FILE_EXTENSIONS } from "@/lib/upload-validation";
@@ -271,7 +271,7 @@ export function CarouselSlots({
 
 function SlotImage({ slot }: { slot: Slot }) {
   const storageKey = slot?.kind === "asset" ? slot.asset.storage_key : undefined;
-  const { data: signed } = useAssetSignedUrl(storageKey);
+  const { data: signed } = useArtworkUrl(storageKey);
   if (!slot) return <span className="cslot-empty">Empty</span>;
   const mime = slot.kind === "asset" ? slot.asset.mime_type : slot.file.type;
   const src = slot.kind === "file" ? slot.url : signed;
