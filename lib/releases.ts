@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.23.9",
+    date: "2026-10-13",
+    title: "No line across a Story",
+    changes: ["The thin white line across the top of a Story is gone. It was Instagram's progress bar, but it read as a line on the artwork."],
+  },
+  {
     version: "1.23.8",
     date: "2026-10-13",
     title: "Stories fill the phone",

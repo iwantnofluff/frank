@@ -3475,8 +3475,8 @@ select.sort:hover {
 /* A Story (lib/formats.ts STORY_FORMAT_IDS), as Instagram shows one
    (direct instruction: its artwork was cut off, then: a clean full
    screen). The artwork starts at the very top of the screen, whole, on
-   black; the progress line, back arrow and account sit over it, as on
-   Instagram; no feed header, likes, caption or upload date. */
+   black; the back arrow and account sit over it, as on Instagram; no
+   progress line, feed header, likes, caption or upload date. */
 .pf-screen:has(.ig.story) {
   background: #000;
   padding-top: 0;
@@ -3508,8 +3508,9 @@ select.sort:hover {
   display: flex;
   flex-direction: column;
 }
-/* The account, below the notch, with a shade so it reads on any artwork,
-   and the progress line above it. */
+/* The account, below the notch, with a shade so it reads on any artwork.
+   No progress line: it read as a stray line on the artwork (direct
+   instruction). */
 .ig.story .ig-h {
   position: absolute;
   top: 0;
@@ -3522,16 +3523,6 @@ select.sort:hover {
 }
 .pf-screen:has(.lpv-bar button) .ig.story .ig-h {
   padding-left: 36px;
-}
-.ig.story .ig-h::before {
-  content: "";
-  position: absolute;
-  top: 32px;
-  left: 10px;
-  right: 10px;
-  height: 2px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.85);
 }
 .ig.story .ig-h b,
 .ig.story .ig-h .dots {
