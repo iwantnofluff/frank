@@ -33,6 +33,11 @@ async function picture(page: Page) {
   return { name: "art.png", mimeType: "image/png", buffer: Buffer.from(b64, "base64") };
 }
 
+// The caption's box in the post window, by its label (the window has other
+// boxes above it, Text on Image among them).
+const caption = (page: import("@playwright/test").Page) =>
+  page.locator(".mtabbody .field", { has: page.locator("label", { hasText: /^Caption$/ }) }).locator("textarea");
+
 test("copy versions have tabs, and one without comments can be deleted", async ({ page, frank }) => {
   test.setTimeout(60_000);
   await frank.createCopyVersion(frank.creativeId, 1, { caption: "First caption" });
@@ -56,7 +61,7 @@ test("copy versions have tabs, and one without comments can be deleted", async (
 
   // The latest is open and editable; an older tab is read only.
   await expect(page.getByRole("tab", { name: "V2" })).toHaveAttribute("aria-selected", "true");
-  await expect(page.locator(".mtabbody .field > textarea.bin").first()).toHaveValue("Second caption");
+  await expect(caption(page)).toHaveValue("Second caption");
   await page.getByRole("tab", { name: "V1" }).click();
   await expect(page.getByText("An earlier version, read only.")).toBeVisible();
   await expect(page.locator(".fd-d", { hasText: "First caption" })).toBeVisible();
@@ -79,11 +84,11 @@ test("copy versions have tabs, and one without comments can be deleted", async (
   await expect(confirm).toHaveCount(0);
   await expect(page.getByRole("tab", { name: "V2" })).toHaveCount(0);
   await expect(page.locator(".scrim")).toHaveCount(1);
-  await expect(page.locator(".mtabbody .field > textarea.bin").first()).toHaveValue("First caption");
+  await expect(caption(page)).toHaveValue("First caption");
   expect((await copyVersions(frank.creativeId)).map((v) => v.version_no)).toEqual([1]);
 
   // Deleting the latest frees its number: the next save is V2 again.
-  await page.locator(".mtabbody .field > textarea.bin").first().fill("Third caption");
+  await caption(page).fill("Third caption");
   await page.getByRole("button", { name: "Save Copy V2" }).click();
   await expect(page.getByRole("tab", { name: /^V\d$/ })).toHaveText(["V1", "V2"]);
 });
