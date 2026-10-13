@@ -187,7 +187,7 @@ test("continuous calendar — saved views are scoped separately from Scheduled's
   await page.waitForSelector(".tbl");
   await page.click('button:has-text("Columns")');
   await page.waitForSelector(".colpop");
-  await page.click('.cpr:has-text("Principles")');
+  await page.getByRole("checkbox", { name: /^Show Principles/ }).click();
   await page.keyboard.press("Escape");
   await page.click('.split button:has-text("Save as New View")');
   await page.fill("#viewName", "Continuous-Only View");

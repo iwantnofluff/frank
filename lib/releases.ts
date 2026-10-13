@@ -13,6 +13,18 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.25.0",
+    date: "2026-10-13",
+    title: "Choose a project's columns",
+    changes: [
+      "New Project has a second step, Columns: every column is ticked to start. Untick any the project doesn't need, drag them into order, rename them, and see what each one records. This becomes the project's table.",
+      "Add a project's own columns, such as Thumbnail Text, choosing what each records: Single Line Text, Large Text, Number, Date, Dropdown or Checkbox. They're filled in from the post window, when adding a post or editing one.",
+      "The table's Columns picker works the same way: drag, rename and add columns there too. Renaming changes the column for the whole project; anything else you change is kept by saving it as a view.",
+      "Saved views now belong to their project. Ones saved before this stay shared until you save over them.",
+      "Adding, renaming and choosing a project's columns is for Owners and Admins.",
+    ],
+  },
+  {
     version: "1.24.8",
     date: "2026-10-13",
     title: "Filter the planner by stage and platform",

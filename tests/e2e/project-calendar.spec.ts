@@ -113,12 +113,12 @@ test("project calendar — Columns picker hides and reshows a column", async ({ 
   await expect(page.locator("th", { hasText: "Concept" })).toBeVisible();
   await page.click('button:has-text("Columns")');
   await page.waitForSelector(".colpop");
-  await page.click('.cpr:has-text("Concept")');
+  await page.getByRole("checkbox", { name: /^Show Concept/ }).click();
   await expect(page.locator("th", { hasText: "Concept" })).toHaveCount(0);
   await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 15/16");
 
   await page.click('button:has-text("Columns")');
-  await page.click('.cpr:has-text("Concept")');
+  await page.getByRole("checkbox", { name: /^Show Concept/ }).click();
   await expect(page.locator("th", { hasText: "Concept" })).toBeVisible();
 });
 
@@ -310,7 +310,7 @@ test("project calendar — hiding a column via the Columns picker also marks the
 
   await page.click('button:has-text("Columns")');
   await page.waitForSelector(".colpop");
-  await page.click('.cpr:has-text("Concept")');
+  await page.getByRole("checkbox", { name: /^Show Concept/ }).click();
   await page.keyboard.press("Escape");
 
   await expect(viewSaveSplit(page).locator(".btn.primary").first()).toHaveText("Save as New View");

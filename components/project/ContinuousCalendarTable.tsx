@@ -1,5 +1,9 @@
 "use client";
 
+import { useRenameColumn } from "@/hooks/use-rename-column";
+import { columnTypeLabel } from "@/lib/column-types";
+import { AddColumnForm } from "@/components/project/AddColumnForm";
+import { useCreateCustomColumn } from "@/hooks/use-create-custom-column";
 import { matchesFilter, PLATFORM_FILTERS, STATUS_FILTERS, type PlatformFilter, type PostFilter, type StatusFilter } from "@/lib/post-filters";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { usePresence } from "@/hooks/use-presence";
@@ -74,7 +78,7 @@ const CHECKBOX_COL_WIDTH = 36;
 // longer shown. Notes for Designer is its own text (cx.designer_notes),
 // also in the window; it used to show the WIIFM direction, which now has
 // its own column.
-const TOGGLABLE_COLUMNS = [
+export const TOGGLABLE_COLUMNS = [
   { key: "creative", label: "Post Name", sub: "Concept title", width: 196 },
   { key: "placement", label: "Destination", sub: "ASIN, URL or location", width: 140 },
   { key: "funnel", label: "Funnel", sub: "Funnel stage", width: 150 },
@@ -176,6 +180,10 @@ export function ContinuousCalendarTable({
   creatives,
   archiveMode,
   customColumns,
+  defaultHidden = [],
+  defaultOrder = null,
+  columnLabels = {},
+  canAddColumns = false,
   onCxSave,
   cxReadOnly,
   isStaff,
@@ -191,6 +199,13 @@ export function ContinuousCalendarTable({
   // way.
   archiveMode: "active" | "archived";
   customColumns: CustomColumnRow[];
+  // The Main Table\'s hidden columns (projects.default_hidden_columns).
+  defaultHidden?: string[];
+  // Its Main Table's order and renamed columns (phase96).
+  defaultOrder?: string[] | null;
+  columnLabels?: Record<string, string>;
+  // Owners and Admins: + Add Column in the Columns picker (phase96).
+  canAddColumns?: boolean;
   onCxSave: (creativeId: string, key: string, value: string | number | boolean | null) => void;
   cxReadOnly: boolean;
   isStaff: boolean;
@@ -258,8 +273,15 @@ export function ContinuousCalendarTable({
 
   // No entry for a key means "visible" everywhere this is read (`!== false`)
   // — a new custom column needs no sync effect to default it to shown.
-  const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({});
-  const [columnOrder, setColumnOrder] = useState<string[]>(DEFAULT_COLUMN_ORDER);
+  const createColumn = useCreateCustomColumn(projectId);
+  // The Main Table starts from the project's own defaults (phase96).
+  const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(defaultHidden.map((k) => [k, false])),
+  );
+  // The Main Table's order: the project's own, else the planner's.
+  const projectOrder = defaultOrder?.length ? defaultOrder : (DEFAULT_COLUMN_ORDER as unknown as string[]);
+  const [columnOrder, setColumnOrder] = useState<string[]>(projectOrder);
+  const renameColumn = useRenameColumn(projectId, columnLabels);
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
 
   // Saved Views — agency-wide (hooks/use-calendar-views.ts), scoped to
@@ -268,7 +290,7 @@ export function ContinuousCalendarTable({
   // vice versa. null activeViewId means "Main Table", the built-in
   // default that can be dirtied but never itself saved over.
   const { data: agency } = useMyAgency();
-  const { data: savedViews } = useCalendarViews("continuous");
+  const { data: savedViews } = useCalendarViews("continuous", projectId);
   const createView = useCreateCalendarView();
   const updateView = useUpdateCalendarView();
   const deleteView = useDeleteCalendarView();
@@ -301,8 +323,8 @@ export function ContinuousCalendarTable({
   }, [viewMenuAnchor, saveDropdownAnchor]);
 
   const activeView = activeViewId ? (savedViews?.find((v) => v.id === activeViewId) ?? null) : null;
-  const baselineOrder = activeView?.column_order ?? DEFAULT_COLUMN_ORDER;
-  const baselineHidden = activeView?.hidden_columns ?? [];
+  const baselineOrder = activeView?.column_order ?? projectOrder;
+  const baselineHidden = activeView?.hidden_columns ?? defaultHidden;
   const baselineWidths = activeView?.column_widths ?? {};
   const currentHidden = hiddenListFromVisibility(columnVisibility);
   const isDirty =
@@ -312,8 +334,8 @@ export function ContinuousCalendarTable({
 
   function loadView(view: CalendarViewRow | null) {
     setActiveViewId(view?.id ?? null);
-    setColumnOrder(view ? view.column_order : DEFAULT_COLUMN_ORDER);
-    setColumnVisibility(view ? Object.fromEntries(view.hidden_columns.map((k) => [k, false])) : {});
+    setColumnOrder(view ? view.column_order : projectOrder);
+    setColumnVisibility(Object.fromEntries((view ? view.hidden_columns : defaultHidden).map((k) => [k, false])));
     setColumnWidths(view ? view.column_widths : {});
     setViewMenuAnchor(null);
   }
@@ -331,6 +353,7 @@ export function ContinuousCalendarTable({
       if (target === "update" && activeView) {
         const updated = await updateView.mutateAsync({
           id: activeView.id,
+          projectId,
           name,
           columnOrder,
           hiddenColumns: currentHidden,
@@ -341,6 +364,7 @@ export function ContinuousCalendarTable({
         const created = await createView.mutateAsync({
           agencyId: agency.agencyId,
           tableType: "continuous",
+          projectId,
           name,
           columnOrder,
           hiddenColumns: currentHidden,
@@ -500,7 +524,11 @@ export function ContinuousCalendarTable({
   }
 
   // VO is the team's (phase88, direct instruction: not shown to clients).
-  const shownColumns = TOGGLABLE_COLUMNS.filter((c) => isStaff || c.key !== "voiceover");
+  // Renamed for the project (phase96), the rest as they come.
+  const shownColumns = TOGGLABLE_COLUMNS.filter((c) => isStaff || c.key !== "voiceover").map((c) => ({
+    ...c,
+    label: columnLabels[c.key] ?? c.label,
+  }));
   const toggleableColumns: ToggleableColumn[] = [
     ...shownColumns,
     ...customColumns.map((c) => ({ key: `cx:${c.id}`, label: c.label, sub: "" })),
@@ -1278,9 +1306,24 @@ export function ContinuousCalendarTable({
         <ColumnsPopover
           anchorRect={columnsPop.shown}
           isOpen={columnsPop.isOpen}
-          columns={toggleableColumns}
+          columns={resolvedOrder.map((key) => ({
+            key,
+            label: allColumnDefs[key].label,
+            typeLabel: columnTypeLabel(key, customColumnByKey.get(key)),
+          }))}
+          onReorder={setColumnOrder}
+          onRename={canAddColumns ? (key, label) => renameColumn.mutate({ key, label }) : undefined}
           visibility={columnVisibility}
           frozenCount={FROZEN_COLUMNS.length}
+          footer={
+            canAddColumns ? (
+              <AddColumnForm
+                onAdd={async (column) => {
+                  await createColumn.mutateAsync({ ...column, position: customColumns.length });
+                }}
+              />
+            ) : undefined
+          }
           onToggle={(key) =>
             setColumnVisibility((prev) => ({ ...prev, [key]: prev[key] === false }))
           }

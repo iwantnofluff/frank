@@ -497,7 +497,13 @@ export function CreativeModal(props: CreativeModalProps) {
   const initialVoiceover = isCreate ? "" : (props.creative.voiceover ?? "");
   const [voiceover, setVoiceover] = useState(initialVoiceover);
   const [savedVoiceover, setSavedVoiceover] = useState(initialVoiceover.trim());
-  const [cx, setCx] = useState<Record<string, string | number | boolean | null>>({});
+  // The project's own fields (custom columns): on a new post kept until
+  // it's made; on an existing one, its saved values, each saved again on
+  // Update only if changed (phase96, direct instruction).
+  type CxValue = string | number | boolean | null;
+  const initialCx: Record<string, CxValue> = isCreate ? {} : ((props.creative.cx as Record<string, CxValue> | null) ?? {});
+  const [cx, setCx] = useState<Record<string, CxValue>>(initialCx);
+  const [savedCx, setSavedCx] = useState<Record<string, CxValue>>(initialCx);
   // Continuous projects' Funnel and Notes for Designer (direct instruction:
   // in the window as well as the table, both optional). Saved to the same
   // cx keys the table writes.
@@ -694,6 +700,14 @@ export function CreativeModal(props: CreativeModalProps) {
         }
       }
       setSavedFields(next);
+    }
+    // The project's own fields, each its own write as from the table.
+    if (creativeId && customColumns?.length) {
+      for (const col of customColumns) {
+        const value = cx[col.key] ?? null;
+        if (value !== (savedCx[col.key] ?? null)) await updateCx.mutateAsync({ creativeId, key: col.key, value });
+      }
+      setSavedCx(cx);
     }
     if (updatedNoteTimeout.current) clearTimeout(updatedNoteTimeout.current);
     setShowUpdatedNote(true);
@@ -1432,7 +1446,7 @@ export function CreativeModal(props: CreativeModalProps) {
             </>
           )}
 
-          {isCreate && customColumns && customColumns.length > 0 && (
+          {customColumns && customColumns.length > 0 && (
             <div className="field">
               <label>Project Fields</label>
               {customColumns.map((col) => (

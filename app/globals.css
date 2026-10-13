@@ -4196,9 +4196,12 @@ select.sort:hover {
 
 /* Custom columns — the "+ Add column" form and inline cell editors */
 
+/* Adding a project's own column (AddColumnForm; phase96): its name, what
+   it records, and a dropdown's options, stacked. */
 .addcol {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: 8px;
   padding: 10px;
   background: var(--surface);
@@ -4206,8 +4209,108 @@ select.sort:hover {
   border-top: none;
 }
 .addcol .bin.one {
-  width: auto;
-  min-width: 120px;
+  width: 100%;
+}
+.addcol-f {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.addcol-open {
+  margin-top: 4px;
+}
+/* The Columns picker's footer: + Add Column. */
+.cp-f {
+  border-top: 1px solid var(--line);
+  padding: 8px;
+}
+/* The column editor (ColumnEditor; direct instruction), in the New Project
+   window's Columns step and the table's Columns picker: a drag grip, a
+   tick, the name (editable for Owners and Admins) and its type. */
+.coled {
+  display: flex;
+  flex-direction: column;
+}
+.coled-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px 6px 4px;
+  border-radius: 6px;
+  border-top: 2px solid transparent;
+  cursor: grab;
+}
+.coled-row:hover {
+  background: var(--canvas);
+}
+.coled-row.dragging {
+  opacity: 0.45;
+}
+.coled-row.over {
+  border-top-color: var(--action);
+}
+.coled-grip svg {
+  width: 16px;
+  height: 16px;
+  fill: var(--muted);
+  display: block;
+}
+.coled-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.7px;
+  font-weight: 500;
+}
+.coled-name-in {
+  border: 1px solid transparent;
+  border-radius: 5px;
+  padding: 3px 6px;
+  background: transparent;
+  font: inherit;
+  font-size: 13.7px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.coled-name-in:hover {
+  border-color: var(--line-2);
+}
+.coled-name-in:focus {
+  outline: none;
+  border-color: var(--action);
+  background: var(--surface);
+  cursor: text;
+}
+.coled-type {
+  flex: none;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.coled-x {
+  font-size: 16px;
+  line-height: 1;
+  color: var(--muted);
+}
+.coled-x:hover {
+  color: var(--rose);
+}
+.modal .coled {
+  max-height: min(38vh, 360px);
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 4px;
+  margin-bottom: 10px;
+}
+/* The table's Columns picker, wide enough for names and types. */
+.colpop.wide {
+  width: 440px;
+  max-width: calc(100vw - 32px);
+}
+/* A Large Text column's box in the table and the post window. */
+.cxin.cxin-long {
+  resize: vertical;
+  min-height: 54px;
 }
 .cxin {
   width: 100%;

@@ -11,10 +11,23 @@ export interface CustomColumnOption {
 
 export type CustomColumnType =
   | "text"
+  | "long_text"
   | "dropdown"
   | "status"
   | "checkbox"
-  | "number";
+  | "number"
+  | "date";
+
+// What a new column can record, as offered when adding one (phase96,
+// decided directly); "status" stays readable for any column already using it.
+export const COLUMN_TYPE_OPTIONS: { value: CustomColumnType; label: string }[] = [
+  { value: "text", label: "Single Line Text" },
+  { value: "long_text", label: "Large Text" },
+  { value: "number", label: "Number" },
+  { value: "date", label: "Date" },
+  { value: "dropdown", label: "Dropdown" },
+  { value: "checkbox", label: "Checkbox" },
+];
 
 export interface CustomColumnRow {
   id: string;

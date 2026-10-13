@@ -11,6 +11,8 @@ export interface CalendarViewRow {
   column_order: string[];
   hidden_columns: string[];
   column_widths: Record<string, number>;
+  // Its project (phase96); null for the shared ones saved before.
+  project_id: string | null;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -24,15 +26,19 @@ export interface CalendarViewRow {
 // Scheduled and Continuous tables have entirely different column sets — a
 // view saved on one would otherwise show up as a nonsensical tab on the
 // other.
-export function useCalendarViews(tableType: CalendarViewTableType) {
+// Since phase96 (decided directly) a view belongs to its project: this
+// project's views, and the shared ones saved before, which stay shared
+// until saved over from a project.
+export function useCalendarViews(tableType: CalendarViewTableType, projectId: string) {
   return useQuery({
-    queryKey: ["calendar-views", tableType],
+    queryKey: ["calendar-views", tableType, projectId],
     queryFn: async (): Promise<CalendarViewRow[]> => {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("calendar_views")
-        .select("id, name, column_order, hidden_columns, column_widths, created_by, created_at, updated_at")
+        .select("id, name, column_order, hidden_columns, column_widths, project_id, created_by, created_at, updated_at")
         .eq("table_type", tableType)
+        .or(`project_id.is.null,project_id.eq.${projectId}`)
         .order("name");
       if (error) throw error;
       return data as unknown as CalendarViewRow[];
@@ -57,8 +63,9 @@ export function useCreateCalendarView() {
     mutationFn: async ({
       agencyId,
       tableType,
+      projectId,
       ...input
-    }: CalendarViewInput & { agencyId: string; tableType: CalendarViewTableType }) => {
+    }: CalendarViewInput & { agencyId: string; tableType: CalendarViewTableType; projectId: string }) => {
       const supabase = createClient();
       const {
         data: { user },
@@ -70,6 +77,7 @@ export function useCreateCalendarView() {
         .insert({
           agency_id: agencyId,
           table_type: tableType,
+          project_id: projectId,
           name: input.name,
           column_order: input.columnOrder,
           hidden_columns: input.hiddenColumns,
@@ -90,7 +98,7 @@ export function useCreateCalendarView() {
 export function useUpdateCalendarView() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...input }: CalendarViewInput & { id: string }) => {
+    mutationFn: async ({ id, projectId, ...input }: CalendarViewInput & { id: string; projectId: string }) => {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("calendar_views")
@@ -99,6 +107,8 @@ export function useUpdateCalendarView() {
           column_order: input.columnOrder,
           hidden_columns: input.hiddenColumns,
           column_widths: input.columnWidths,
+          // Saving over a shared view makes it this project's (phase96).
+          project_id: projectId,
           updated_at: new Date().toISOString(),
         })
         .eq("id", id)

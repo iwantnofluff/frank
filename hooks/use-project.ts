@@ -11,6 +11,10 @@ export interface ProjectRow {
   type: string | null;
   due_on: string | null;
   archived_at: string | null;
+  // The Main Table's hidden columns, chosen when it was made (phase96).
+  default_hidden_columns: string[];
+  default_column_order: string[] | null;
+  column_labels: Record<string, string>;
   clients: { name: string } | null;
 }
 
@@ -21,7 +25,7 @@ export function useProject(projectId: string) {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("projects")
-        .select("id, client_id, name, delivery, type, due_on, archived_at, clients(name)")
+        .select("id, client_id, name, delivery, type, due_on, archived_at, default_hidden_columns, default_column_order, column_labels, clients(name)")
         .eq("id", projectId)
         .single();
 

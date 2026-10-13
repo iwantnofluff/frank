@@ -6,6 +6,12 @@ import { Modal } from "@/components/ui/Modal";
 import { useCreateProject } from "@/hooks/use-create-project";
 import { PROJECT_TYPE_OPTS } from "@/lib/project-types";
 import { errorMessage } from "@/lib/errors";
+import { useSetProjectColumns } from "@/hooks/use-set-project-columns";
+import { AddColumnForm, type ColumnSpec } from "@/components/project/AddColumnForm";
+import { TOGGLABLE_COLUMNS as SCHEDULED_COLUMNS } from "@/components/project/ProjectCalendarTable";
+import { TOGGLABLE_COLUMNS as CONTINUOUS_COLUMNS } from "@/components/project/ContinuousCalendarTable";
+import { ColumnEditor } from "@/components/project/ColumnEditor";
+import { columnTypeLabel, customTypeLabel } from "@/lib/column-types";
 
 type Delivery = "scheduled" | "continuous";
 
@@ -28,18 +34,41 @@ export function NewProjectModal({
   const [delivery, setDelivery] = useState<Delivery>("scheduled");
   const [type, setType] = useState(PROJECT_TYPE_OPTS.scheduled[0]);
   const [nameError, setNameError] = useState<string | null>(null);
+  // The second step, Columns (phase96, direct instruction): every column
+  // ticked; unticked ones are hidden in the Main Table. Columns of the
+  // project's own are added here too, kept until the project is made.
+  const [step, setStep] = useState<"details" | "columns">("details");
+  const setColumns = useSetProjectColumns();
+  const builtIn = delivery === "scheduled" ? SCHEDULED_COLUMNS : CONTINUOUS_COLUMNS;
+  const builtInLabels: Record<string, string> = Object.fromEntries(builtIn.map((c) => [c.key, c.label]));
+  // The step's columns: their order (built-in keys and "new:<n>" for ones
+  // added here), which are unticked, any renamed, and the added ones.
+  const [order, setOrder] = useState<string[]>(() => SCHEDULED_COLUMNS.map((c) => c.key));
+  const [hidden, setHidden] = useState<Set<string>>(new Set());
+  const [labels, setLabels] = useState<Record<string, string>>({});
+  const [added, setAdded] = useState<Record<string, ColumnSpec>>({});
+  const [nextNew, setNextNew] = useState(1);
 
   function handleDeliveryChange(next: Delivery) {
     setDelivery(next);
     setType(PROJECT_TYPE_OPTS[next][0]);
+    // The other kind of project has its own columns.
+    setOrder((next === "scheduled" ? SCHEDULED_COLUMNS : CONTINUOUS_COLUMNS).map((c) => c.key));
+    setHidden(new Set());
+    setLabels({});
+    setAdded({});
   }
 
-  async function handleSubmit() {
+  function next() {
     if (!name.trim()) {
       setNameError("Give it a name first.");
       return;
     }
     setNameError(null);
+    setStep("columns");
+  }
+
+  async function handleSubmit() {
 
     const project = await createProject.mutateAsync({
       clientId,
@@ -47,36 +76,101 @@ export function NewProjectModal({
       type,
       delivery,
     });
+    await setColumns.mutateAsync({
+      projectId: project.id,
+      order,
+      hidden: [...hidden],
+      labels,
+      added,
+      builtInLabels,
+    });
     onClose();
     router.push(`/projects/${project.id}`);
   }
 
   const submitError = createProject.error
     ? errorMessage(createProject.error, "Couldn't create the project")
-    : null;
+    : setColumns.error
+      ? errorMessage(setColumns.error, "The project was made, but its columns weren't saved")
+      : null;
+  const pending = createProject.isPending || setColumns.isPending;
+  const shownCount = order.filter((k) => !hidden.has(k)).length;
 
   return (
     <Modal hideCloseButton
       title="New Project"
-      size="sm"
+      size={step === "columns" ? "lg" : "sm"}
       onClose={onClose}
       footer={
-        <>
-          <div className="grow" />
-          <button type="button" className="btn" onClick={onClose}>
-            Cancel
-          </button>
-          <button
-            type="button"
-            className="btn primary"
-            disabled={createProject.isPending}
-            onClick={handleSubmit}
-          >
-            {createProject.isPending ? "Creating…" : "Create"}
-          </button>
-        </>
+        step === "details" ? (
+          <>
+            <div className="grow" />
+            <button type="button" className="btn" onClick={onClose}>
+              Cancel
+            </button>
+            <button type="button" className="btn primary" onClick={next}>
+              Next
+            </button>
+          </>
+        ) : (
+          <>
+            <span className="grow">
+              {shownCount} of {order.length} columns shown
+            </span>
+            <button type="button" className="btn" onClick={() => setStep("details")}>
+              Back
+            </button>
+            <button type="button" className="btn primary" disabled={pending} onClick={handleSubmit}>
+              {pending ? "Creating…" : "Create"}
+            </button>
+          </>
+        )
       }
     >
+      {step === "columns" ? (
+        <>
+          <p className="sub" style={{ marginTop: 0 }}>
+            The columns in this project&rsquo;s table: drag to reorder, rename any, untick any it doesn&rsquo;t need
+            (a saved view can still show them later), or add its own. This becomes the project&rsquo;s table.
+          </p>
+          <ColumnEditor
+            columns={order.map((key) => ({
+              key,
+              label: labels[key] ?? builtInLabels[key] ?? added[key]?.label ?? key,
+              typeLabel: added[key] ? customTypeLabel(added[key].type) : columnTypeLabel(key),
+            }))}
+            hidden={hidden}
+            onToggle={(key) =>
+              setHidden((prev) => {
+                const next = new Set(prev);
+                if (next.has(key)) next.delete(key);
+                else next.add(key);
+                return next;
+              })
+            }
+            onReorder={setOrder}
+            onRename={(key, label) => setLabels((prev) => ({ ...prev, [key]: label }))}
+            onRemove={(key) => {
+              setOrder((prev) => prev.filter((k) => k !== key));
+              setAdded((prev) => {
+                const next = { ...prev };
+                delete next[key];
+                return next;
+              });
+            }}
+          />
+          <AddColumnForm
+            onAdd={(column) => {
+              const key = `new:${nextNew}`;
+              setNextNew((n) => n + 1);
+              setAdded((prev) => ({ ...prev, [key]: column }));
+              setOrder((prev) => [...prev, key]);
+            }}
+          />
+          {submitError && <p className="autherr">{submitError}</p>}
+        </>
+      ) : (
+      <>
       <div className="field">
         <label htmlFor="newName">Project name</label>
         <input
@@ -152,7 +246,8 @@ export function NewProjectModal({
         </div>
       </div>
 
-      {submitError && <p className="autherr">{submitError}</p>}
+      </>
+      )}
     </Modal>
   );
 }

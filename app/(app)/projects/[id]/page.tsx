@@ -10,6 +10,9 @@ import { useCreatives } from "@/hooks/use-creatives";
 import { useCustomColumns } from "@/hooks/use-custom-columns";
 import { useUpdateCreativeCx } from "@/hooks/use-update-creative-cx";
 import { useIsStaff } from "@/hooks/use-is-staff";
+import { useMyAgency } from "@/hooks/use-my-agency";
+import { useMyMembership } from "@/hooks/use-my-membership";
+import { seesAllClients } from "@/lib/roles";
 import { SplitButton } from "@/components/ui/SplitButton";
 import { errorMessage } from "@/lib/errors";
 import { CreativeModal } from "@/components/creative-review/CreativeModal";
@@ -40,6 +43,10 @@ export default function ProjectPage({
   const { data: customColumns } = useCustomColumns(id);
   const updateCx = useUpdateCreativeCx(id);
   const { isStaff, isPending: isStaffPending } = useIsStaff();
+  // Owners and Admins add a project's columns (phase96).
+  const { data: myAgency } = useMyAgency();
+  const { data: me } = useMyMembership(myAgency?.agencyId);
+  const isAdmin = !!me && !me.client_id && seesAllClients(me.role);
   const [newBriefOpen, setNewBriefOpen] = useState(false);
   // New Post → Row: a draft row at the top of the table instead of the window.
   const [draftRowOpen, setDraftRowOpen] = useState(false);
@@ -251,6 +258,10 @@ export default function ProjectPage({
           creatives={visibleCreatives}
           archiveMode={archiveFilter}
           customColumns={columns}
+          defaultHidden={project.default_hidden_columns ?? []}
+          defaultOrder={project.default_column_order}
+          columnLabels={project.column_labels ?? {}}
+          canAddColumns={isAdmin}
           onCxSave={(creativeId, key, value) =>
             updateCx.mutate({ creativeId, key, value })
           }
@@ -269,6 +280,10 @@ export default function ProjectPage({
           creatives={visibleCreatives}
           archiveMode={archiveFilter}
           customColumns={columns}
+          defaultHidden={project.default_hidden_columns ?? []}
+          defaultOrder={project.default_column_order}
+          columnLabels={project.column_labels ?? {}}
+          canAddColumns={isAdmin}
           onCxSave={(creativeId, key, value) =>
             updateCx.mutate({ creativeId, key, value })
           }

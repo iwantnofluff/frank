@@ -1,71 +1,55 @@
 "use client";
 
 import { useState } from "react";
-import type { CustomColumnOption, CustomColumnType } from "@/hooks/use-custom-columns";
-import { useCreateCustomColumn } from "@/hooks/use-create-custom-column";
+import { COLUMN_TYPE_OPTIONS, type CustomColumnOption, type CustomColumnType } from "@/hooks/use-custom-columns";
+import { parseOptions } from "@/hooks/use-create-custom-column";
+import { errorMessage } from "@/lib/errors";
 
-const TYPE_LABELS: Record<CustomColumnType, string> = {
-  text: "Text",
-  number: "Number",
-  checkbox: "Checkbox",
-  dropdown: "Dropdown",
-  status: "Status",
-};
+export interface ColumnSpec {
+  label: string;
+  type: CustomColumnType;
+  options: CustomColumnOption[] | null;
+}
 
-const STATUS_COLOURS = [
-  "#007BFF",
-  "#2BB65B",
-  "#FF8A00",
-  "#FF0000",
-  "#6B7280",
-];
-
-export function AddColumnForm({
-  projectId,
-  nextPosition,
-}: {
-  projectId: string;
-  nextPosition: number;
-}) {
+// Adding a project's own column (phase96, direct instruction): its name and
+// what it records. The table's Columns picker saves it at once; a new
+// project's Columns step keeps it until the project is made.
+export function AddColumnForm({ onAdd }: { onAdd: (column: ColumnSpec) => Promise<void> | void }) {
   const [open, setOpen] = useState(false);
   const [label, setLabel] = useState("");
   const [type, setType] = useState<CustomColumnType>("text");
   const [optionsText, setOptionsText] = useState("");
-
-  const createColumn = useCreateCustomColumn(projectId);
-  const needsOptions = type === "dropdown" || type === "status";
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const options = type === "dropdown" ? parseOptions(optionsText) : null;
+  const ready = !!label.trim() && (type !== "dropdown" || (options?.length ?? 0) > 0);
 
   function reset() {
     setLabel("");
     setType("text");
     setOptionsText("");
+    setError(null);
     setOpen(false);
   }
 
-  async function handleSubmit() {
-    if (!label.trim()) return;
-
-    let options: CustomColumnOption[] | null = null;
-    if (needsOptions) {
-      options = optionsText
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean)
-        .map((s, i) => ({
-          value: s.toLowerCase().replace(/[^a-z0-9]+/g, "_"),
-          label: s,
-          colour: type === "status" ? STATUS_COLOURS[i % STATUS_COLOURS.length] : undefined,
-        }));
+  async function add() {
+    if (!ready) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await onAdd({ label: label.trim(), type, options });
+      reset();
+    } catch (e) {
+      setError(errorMessage(e, "Couldn't add the column"));
+    } finally {
+      setSaving(false);
     }
-
-    await createColumn.mutateAsync({ label: label.trim(), type, options, position: nextPosition });
-    reset();
   }
 
   if (!open) {
     return (
-      <button type="button" className="btn sm" onClick={() => setOpen(true)}>
-        + Add column
+      <button type="button" className="fbtn addcol-open" onClick={() => setOpen(true)}>
+        + Add Column
       </button>
     );
   }
@@ -74,41 +58,45 @@ export function AddColumnForm({
     <div className="addcol">
       <input
         className="bin one"
-        placeholder="Column name"
+        aria-label="Column name"
+        placeholder="Column name, e.g. Thumbnail Text"
         value={label}
         onChange={(e) => setLabel(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") void add();
+        }}
         autoFocus
       />
       <select
         className="bin one"
+        aria-label="What it records"
         value={type}
         onChange={(e) => setType(e.target.value as CustomColumnType)}
       >
-        {Object.entries(TYPE_LABELS).map(([value, text]) => (
-          <option key={value} value={value}>
-            {text}
+        {COLUMN_TYPE_OPTIONS.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
           </option>
         ))}
       </select>
-      {needsOptions && (
+      {type === "dropdown" && (
         <input
           className="bin one"
-          placeholder="Options, comma separated"
+          aria-label="Options"
+          placeholder="Options, separated by commas"
           value={optionsText}
           onChange={(e) => setOptionsText(e.target.value)}
         />
       )}
-      <button
-        type="button"
-        className="btn primary sm"
-        disabled={!label.trim() || createColumn.isPending}
-        onClick={handleSubmit}
-      >
-        Add
-      </button>
-      <button type="button" className="btn sm" onClick={reset}>
-        Cancel
-      </button>
+      <div className="addcol-f">
+        <button type="button" className="btn sm" onClick={reset}>
+          Cancel
+        </button>
+        <button type="button" className="btn primary sm" disabled={!ready || saving} onClick={() => void add()}>
+          {saving ? "Adding…" : "Add"}
+        </button>
+      </div>
+      {error && <p className="autherr">{error}</p>}
     </div>
   );
 }

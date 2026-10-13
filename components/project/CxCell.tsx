@@ -37,6 +37,40 @@ export function CxCell({
     );
   }
 
+  // Large Text: a box that grows, saved when left (phase96).
+  if (column.type === "long_text") {
+    return (
+      <div onClick={stop}>
+        <textarea
+          className="cxin cxin-long"
+          rows={3}
+          value={draft}
+          disabled={readOnly}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={() => onSave(draft || null)}
+        />
+      </div>
+    );
+  }
+
+  // Date: the browser's own date picker, kept as YYYY-MM-DD (phase96).
+  if (column.type === "date") {
+    return (
+      <div onClick={stop}>
+        <input
+          className="cxin"
+          type="date"
+          value={draft}
+          disabled={readOnly}
+          onChange={(e) => {
+            setDraft(e.target.value);
+            onSave(e.target.value || null);
+          }}
+        />
+      </div>
+    );
+  }
+
   if (column.type === "number") {
     return (
       <div onClick={stop}>
