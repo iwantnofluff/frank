@@ -47,6 +47,14 @@ test("Feed Preview dates every tile, marks live posts, and doesn't show them twi
   await page.getByRole("button", { name: "Feed", exact: true }).click();
   await expect(tile("Approved For Next Week")).toBeVisible();
   await expect(tile("Went Live Yesterday")).toHaveCount(0);
+
+  // Looking at a post that has itself gone live: its own tile goes too
+  // (direct instruction: it showed beside the real one).
+  await admin.from("creatives").update({ stage: 4, scheduled_at: new Date(Date.now() - day).toISOString() }).eq("id", frank.creativeId);
+  await page.reload();
+  await page.getByRole("button", { name: "Feed", exact: true }).click();
+  await expect(tile("Approved For Next Week")).toBeVisible();
+  await expect(tile("E2E Test Creative")).toHaveCount(0);
 });
 
 test("the Feed Preview and a review link's Feed put the newest post first, as Instagram does (phase93)", async ({ page, frank }) => {

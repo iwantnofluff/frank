@@ -3710,3 +3710,5 @@ Direct instruction: the post page's left column of sections (Brief, Content, Che
 
 **Verified**: screenshots at 1728, 1440 and 1280 wide of each section, a hovered name and the selected one; the previous and next post still show their details at 1440. creative-review.png and upload-artwork-modal.png updated after looking at them (the icons in the corner, the pills on the left). creative-review, feed-preview-live, instagram-connections, post-neighbours, project-panel, carousel, collaboration, new-brief, stage-transition and share-eligibility pass.
 
+**A live post you're looking at** (direct instruction: an Approved post past its date still showed as a planned tile beside the real one in its own Feed): 1.23.4 kept the post being looked at in the planned tiles, live or not, so its tile could be highlighted. That exception is gone: once a post is live, with the client's Instagram connected, the real post stands for it in its own Feed as in any other. feed-preview-live.spec.ts now covers looking at a live post, its own tile gone.
+

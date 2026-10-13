@@ -92,8 +92,9 @@ export function FeedPreviewGrid({
   // connection it stays, marked Live.
   const connected = !!feed;
   const [now] = useState(() => Date.now());
-  // The post being looked at always stays, live or not.
-  const planned = connected ? creatives.filter((c) => !isLive(c, now) || c.id === activeCreativeId) : creatives;
+  // The post being looked at too: once it's live, the real one stands for
+  // it, as for any other (direct instruction: it showed twice).
+  const planned = connected ? creatives.filter((c) => !isLive(c, now)) : creatives;
   const shown = tab === "reels" ? planned.filter((c) => postFormats(c).includes("ig_reel")) : planned;
 
   // Same hover-preview pattern as ProjectCalendarTable's own creative

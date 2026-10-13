@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.24.6",
+    date: "2026-10-13",
+    title: "A live post shows once in the Feed",
+    changes: ["Looking at a post that has gone live, its Feed no longer shows it twice: with the client's Instagram connected, the real post stands for it."],
+  },
+  {
     version: "1.24.5",
     date: "2026-10-13",
     title: "A roomier post page",
