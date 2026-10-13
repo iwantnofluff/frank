@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.24.3",
+    date: "2026-10-13",
+    title: "What a User can change",
+    changes: [
+      "Format Directions and Reference Material are Owners' and Admins' to change; Users read them.",
+      "Only Owners and Admins can archive or restore a client or a project.",
+      "For a User, the Workspace Name shows as text rather than a box they can't type in.",
+    ],
+  },
+  {
     version: "1.24.2",
     date: "2026-10-13",
     title: "Comments at once, and a tidier phone",

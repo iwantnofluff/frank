@@ -116,9 +116,12 @@ export function ProjectProfileModal({
           <button type="button" className="btn" onClick={onMoveToClient}>
             Move to Client
           </button>
-          <button type="button" className="btn" onClick={onArchive}>
-            {project.archived_at ? "Unarchive" : "Archive"}
-          </button>
+          {/* Owners and Admins only (phase94). */}
+          {isAdmin && (
+            <button type="button" className="btn" onClick={onArchive}>
+              {project.archived_at ? "Unarchive" : "Archive"}
+            </button>
+          )}
           {project.archived_at && isOwner && (
             <button type="button" className="btn danger" onClick={() => setDeleting(true)}>
               Delete Permanently
@@ -436,6 +439,11 @@ function ProjectRoles({ projectId, canManage }: { projectId: string; canManage: 
           {(team ?? []).map((m) => (
             <label className="profrole" key={m.user_id}>
               <span>{m.name}</span>
+              {/* Text for anyone who can't set it (direct instruction: a
+                  disabled box read as editable to a User). */}
+              {!canManage ? (
+                <b className="srow-val">{roles?.[m.user_id] || "—"}</b>
+              ) : (
               <input
                 className="bin one"
                 // Keyed by the saved role, so a save elsewhere shows here.
@@ -443,7 +451,6 @@ function ProjectRoles({ projectId, canManage }: { projectId: string; canManage: 
                 defaultValue={roles?.[m.user_id] ?? ""}
                 placeholder="Role, e.g. Designer"
                 maxLength={40}
-                disabled={!canManage}
                 aria-label={`${m.name}'s role`}
                 onBlur={(e) => {
                   const value = e.target.value.trim();
@@ -453,6 +460,7 @@ function ProjectRoles({ projectId, canManage }: { projectId: string; canManage: 
                   if (e.key === "Enter") e.currentTarget.blur();
                 }}
               />
+              )}
             </label>
           ))}
         </div>

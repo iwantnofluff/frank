@@ -153,7 +153,8 @@ test("an Owner takes a User off a project from its profile, and the User no long
     await ctx.close();
   }
 
-  // Nor straight at the database; archiving, not a detail, still works.
+  // Nor straight at the database; nor, since phase94 (decided directly),
+  // archiving.
   const c = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     auth: { persistSession: false },
   });
@@ -161,8 +162,7 @@ test("an Owner takes a User off a project from its profile, and the User no long
   const renamed = await c.from("projects").update({ name: "Renamed By User" }).eq("id", second).select("id");
   expect(renamed.error?.code).toBe("42501");
   const archived = await c.from("projects").update({ archived_at: new Date().toISOString() }).eq("id", second).select("id");
-  expect(archived.data).toHaveLength(1);
-  await admin.from("projects").update({ archived_at: null }).eq("id", second);
+  expect(archived.error?.message).toBe("Only Owners and Admins can archive or restore a project");
 
   // Back on.
   await modal.getByLabel("Add someone to this project").selectOption({ label: "Proj User (User)" });

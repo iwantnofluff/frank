@@ -27,10 +27,13 @@ export function FormatDirectionRow({
   agencyId,
   format,
   record,
+  canEdit,
 }: {
   agencyId: string;
   format: FormatDefinition;
   record: FormatDirectionRecord | undefined;
+  // Owners and Admins (phase94); everyone else reads them.
+  canEdit: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [direction, setDirection] = useState(record?.direction_text ?? "");
@@ -66,13 +69,11 @@ export function FormatDirectionRow({
       <div className="fd-h">
         <b>{format.label}</b>
         <span className="fd-m">{metaLine(record)}</span>
-        <button
-          type="button"
-          className="fbtn"
-          onClick={() => setEditing((e) => !e)}
-        >
-          {editing ? "Close" : "Edit"}
-        </button>
+        {canEdit && (
+          <button type="button" className="fbtn" onClick={() => setEditing((e) => !e)}>
+            {editing ? "Close" : "Edit"}
+          </button>
+        )}
       </div>
 
       {!editing && record?.direction_text && <div className="fd-d">{record.direction_text}</div>}

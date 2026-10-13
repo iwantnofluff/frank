@@ -16,12 +16,14 @@ export function FormatCategorySection({
   formats,
   recordsById,
   defaultOpen,
+  canEdit,
 }: {
   agencyId: string;
   category: string;
   formats: FormatDefinition[];
   recordsById: Map<string, FormatDirectionRecord>;
   defaultOpen: boolean;
+  canEdit: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
 
@@ -52,6 +54,7 @@ export function FormatCategorySection({
             agencyId={agencyId}
             format={format}
             record={recordsById.get(format.id)}
+            canEdit={canEdit}
           />
         ))}
       </Collapse>

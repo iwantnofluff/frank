@@ -2847,6 +2847,11 @@ a.fd-ref:hover {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* A setting's value shown as text, for someone who can't change it. */
+.srow-val {
+  font-size: 13.2px;
+  font-weight: 500;
+}
 /* A team User picked in the New Client window. */
 .ncteam-who {
   flex: 1;

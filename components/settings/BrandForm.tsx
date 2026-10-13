@@ -203,17 +203,22 @@ export function BrandForm({
             <b>Name</b>
             <span>Shown across Frank and to your clients</span>
           </span>
+          {/* Plain text for anyone who can't change it (direct instruction:
+              a disabled box still read as editable to a User). */}
+          {!canEdit ? (
+            <b className="srow-val">{name}</b>
+          ) : (
           <input
             className="bin one"
             aria-label="Workspace name"
             style={{ width: 290 }}
             value={name}
-            disabled={!canEdit}
             onChange={(e) => {
               setName(e.target.value);
               save.reset();
             }}
           />
+          )}
         </div>
       </div>
 

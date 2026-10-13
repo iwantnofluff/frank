@@ -1,6 +1,8 @@
 "use client";
 
 import { useMyAgency } from "@/hooks/use-my-agency";
+import { useMyMembership } from "@/hooks/use-my-membership";
+import { seesAllClients } from "@/lib/roles";
 import { useFormatDirections } from "@/hooks/use-format-directions";
 import { FormatCategorySection } from "@/components/settings/FormatCategorySection";
 import { SettingsHead } from "@/components/settings/SettingsHead";
@@ -10,6 +12,9 @@ import { FORMATS, FORMAT_CATEGORIES, formatsByCategory } from "@/lib/formats";
 // drafting model have their own pages now).
 export default function FormatDirectionsPage() {
   const { data: agency } = useMyAgency();
+  // Owners and Admins change them (phase94); a User reads them.
+  const { data: me } = useMyMembership(agency?.agencyId);
+  const canEdit = !!me && !me.client_id && seesAllClients(me.role);
   const {
     data: formats,
     isLoading,
@@ -37,7 +42,7 @@ export default function FormatDirectionsPage() {
         <div className="fd-note">
           What each format needs from the copy. The drafter reads these when a
           brief names a format — edit one and every draft for that format
-          changes.
+          changes.{me && !canEdit && " Only Owners and Admins can change them."}
         </div>
 
         {isError && (
@@ -56,6 +61,7 @@ export default function FormatDirectionsPage() {
                 formats={formatsByCategory(category)}
                 recordsById={recordsById}
                 defaultOpen={i === 0}
+                canEdit={canEdit}
               />
             ))}
           </>

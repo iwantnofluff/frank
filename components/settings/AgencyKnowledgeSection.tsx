@@ -96,7 +96,7 @@ function NoteEditor({
 // staff-only (SettingsLayout
 // redirects a client-role session before this ever renders), so there's no
 // isStaff prop to thread through.
-export function AgencyKnowledgeSection({ agencyId }: { agencyId: string | undefined }) {
+export function AgencyKnowledgeSection({ agencyId, canEdit }: { agencyId: string | undefined; canEdit: boolean }) {
   const { data: entries, isLoading, isError } = useAgencyKnowledge(agencyId);
   const createEntry = useCreateAgencyKnowledgeEntry(agencyId);
   const createFile = useCreateAgencyKnowledgeFile(agencyId);
@@ -156,6 +156,7 @@ export function AgencyKnowledgeSection({ agencyId }: { agencyId: string | undefi
                     {entry.authorName} · {fmtDay(entry.created_at)}
                   </span>
                 </span>
+                {canEdit && (
                 <span className="kb-acts">
                   <button
                     type="button"
@@ -169,6 +170,7 @@ export function AgencyKnowledgeSection({ agencyId }: { agencyId: string | undefi
                     Remove
                   </button>
                 </span>
+                )}
               </div>
             );
           })}
@@ -185,6 +187,7 @@ export function AgencyKnowledgeSection({ agencyId }: { agencyId: string | undefi
             />
           )}
 
+          {canEdit && (
           <div className="kb-foot">
             {/* Straight to the two ways in (direct instruction), no "Add …"
                 step first. */}
@@ -214,6 +217,7 @@ export function AgencyKnowledgeSection({ agencyId }: { agencyId: string | undefi
             />
             {fileError && <p className="autherr">{fileError}</p>}
           </div>
+          )}
         </div>
       )}
 
