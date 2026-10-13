@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.24.0",
+    date: "2026-10-13",
+    title: "A true iPhone 15",
+    changes: [
+      "The phone is drawn as an iPhone 15: its 393 × 852 screen and rounded corners, the Dynamic Island in place of the old notch, and its buttons on the right sides.",
+      "A Story sits on it as Instagram lays one out: full width under the status bar, nothing cropped, with Instagram's Send message bar below.",
+    ],
+  },
+  {
     version: "1.23.9",
     date: "2026-10-13",
     title: "No line across a Story",

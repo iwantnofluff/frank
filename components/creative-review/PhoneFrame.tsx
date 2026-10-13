@@ -2,12 +2,10 @@
 
 import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
-// The phone's drawn size (the user's iPhone template) and the most it's
-// scaled on screen: 10% up from the 0.85 it had (direct instruction).
+// The phone's drawn size and the most it's scaled on screen: 10% up from
+// the 0.85 it had (direct instruction). An iPhone 15 (direct instruction:
+// true to the real phone): a 393 × 852 screen inside a 12px frame.
 const HEIGHT = 876;
-// A Story's phone (direct instruction: the artwork should fill it): its
-// screen exactly 9:16, 390 × 693.3 inside the 12px frame.
-const STORY_HEIGHT = 718;
 const MOST = 0.935;
 const LEAST = 0.6;
 // The space kept above it (margin-top), and below so it isn't flush.
@@ -24,7 +22,6 @@ export function PhoneFrame({
   children,
   reserve = 0,
   scale = 1,
-  story = false,
 }: {
   children: ReactNode;
   // Height kept free beside it in the space it fits (a title above, a note
@@ -33,10 +30,8 @@ export function PhoneFrame({
   // A share of its usual size (direct instruction: 0.85 on a post's page,
   // to make room for the previous and next post beside it).
   scale?: number;
-  // Shaped to a Story (9:16 screen) rather than a modern iPhone's.
-  story?: boolean;
 }) {
-  const height = story ? STORY_HEIGHT : HEIGHT;
+  const height = HEIGHT;
   const ref = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(MOST * scale);
 
@@ -63,10 +58,14 @@ export function PhoneFrame({
 
   return (
     // --pf-zoom lets text inside be sized as seen, not as drawn.
-    <div className={story ? "phoneframe story" : "phoneframe"} ref={ref} style={{ zoom, "--pf-zoom": zoom } as CSSProperties}>
+    <div className="phoneframe" ref={ref} style={{ zoom, "--pf-zoom": zoom } as CSSProperties}>
       <span className="pf-notch" aria-hidden="true" />
-      <span className="pf-btn pf-btn1" aria-hidden="true" />
-      <span className="pf-btn pf-btn2" aria-hidden="true" />
+      {/* An iPhone 15's: the side button on the right; the Action button
+          and the two volume buttons on the left. */}
+      <span className="pf-btn pf-btn-side" aria-hidden="true" />
+      <span className="pf-btn pf-btn-action" aria-hidden="true" />
+      <span className="pf-btn pf-btn-volup" aria-hidden="true" />
+      <span className="pf-btn pf-btn-voldown" aria-hidden="true" />
       <div className="pf-screen">{children}</div>
     </div>
   );

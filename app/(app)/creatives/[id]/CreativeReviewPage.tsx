@@ -33,6 +33,7 @@ import { ReviewNav, type ReviewSection } from "@/components/creative-review/Revi
 import { FeedPreviewGrid } from "@/components/creative-review/FeedPreviewGrid";
 import { PhoneFrame } from "@/components/creative-review/PhoneFrame";
 import { PNAV_CURRENT_H, PostNeighbours } from "@/components/creative-review/PostNeighbours";
+import { StoryReplyBar } from "@/components/creative-review/StoryReplyBar";
 import { useClientInstagramFeed } from "@/hooks/use-instagram";
 import { CommentsPanel } from "@/components/creative-review/CommentsPanel";
 import { ShareModal } from "@/components/creative-review/ShareModal";
@@ -469,7 +470,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
               >
               {/* 15% smaller, with the post's date and title above it
                   (direct instruction), to make room beside it. */}
-              <PhoneFrame scale={0.85} reserve={PNAV_CURRENT_H} story={isStoryFormat(creative.format)}>
+              <PhoneFrame scale={0.85} reserve={PNAV_CURRENT_H}>
               <div className="lpv-bar">
                 <button
                   type="button"
@@ -644,6 +645,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
                     <path d="M22 2l-7 20-4-9-9-4z" />
                   </svg>
                 </div>
+                {isStoryFormat(creative.format) && <StoryReplyBar />}
                 <div className="ig-cap">
                   <b>{accountName}</b>
                   {caption ? (

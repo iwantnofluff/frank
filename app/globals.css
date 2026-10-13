@@ -3479,12 +3479,11 @@ select.sort:hover {
    progress line, feed header, likes, caption or upload date. */
 .pf-screen:has(.ig.story) {
   background: #000;
-  padding-top: 0;
 }
 /* The back arrow, over the artwork beside the account. */
 .pf-screen:has(.ig.story) .lpv-bar {
   position: absolute;
-  top: 44px;
+  top: 66px;
   left: 4px;
   z-index: 5;
   padding: 0;
@@ -3518,8 +3517,9 @@ select.sort:hover {
   right: 0;
   z-index: 3;
   border: 0;
-  padding: 40px 12px 16px;
-  background: linear-gradient(rgba(0, 0, 0, 0.5), transparent);
+  padding: 14px 12px 16px;
+  border-radius: 10px 10px 0 0;
+  background: linear-gradient(rgba(0, 0, 0, 0.35), transparent);
 }
 .pf-screen:has(.lpv-bar button) .ig.story .ig-h {
   padding-left: 36px;
@@ -3533,18 +3533,18 @@ select.sort:hover {
 .ig.story .ig-time {
   display: none;
 }
+/* As Instagram lays a 9:16 story on an iPhone 15 (direct instruction):
+   full width under the status bar, corners slightly rounded, the reply bar
+   right below it, and the home bar's space under that. */
 .ig.story .ig-media {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  container-type: size;
+  flex: none;
+  border-radius: 10px;
+  overflow: hidden;
 }
 .ig.story .ig-media img {
-  width: auto;
-  max-width: 100cqw;
-  max-height: 100cqh;
+  width: 100%;
+  max-width: none;
+  max-height: none;
 }
 /* A video Story fills the screen too, its timeline laid over its foot
    (the screen is exactly 9:16, with no room below it). */
@@ -3553,7 +3553,7 @@ select.sort:hover {
   width: 100%;
 }
 .ig.story .vframe {
-  width: min(100cqw, calc(100cqh * var(--vr)));
+  width: 100%;
 }
 .ig.story .vbar {
   position: absolute;
@@ -3565,10 +3565,32 @@ select.sort:hover {
   box-sizing: border-box;
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.6));
 }
+/* Instagram's reply bar (StoryReplyBar). */
+.ig-reply {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px;
+}
+.ig-reply-msg {
+  flex: 1;
+  padding: 9px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 22px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.9);
+}
+.ig-reply svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 .ig.story .ig-hold {
-  width: auto;
-  height: 100%;
-  max-width: 100%;
+  width: 100%;
 }
 .ig-av {
   width: 30px;
@@ -7523,18 +7545,15 @@ a.profproject:hover .pp-t b {
   /* Scaled by PhoneFrame (zoom, set inline): 0.935 at most, less to fit
      a shorter window. 20px above it (direct instruction). */
   margin-top: 20px;
-  width: 414px;
+  /* An iPhone 15 (direct instruction: true to the real phone): a 393 ×
+     852 screen, its corners 55 round, inside a 12px frame. */
+  width: 417px;
   height: 876px;
   border: 12px solid #000;
-  border-radius: 60px;
+  border-radius: 67px;
   background: #fff;
   box-sizing: border-box;
   flex-shrink: 0;
-}
-/* A Story's phone: shorter, its screen exactly 9:16, so the artwork fills
-   it edge to edge (direct instruction). */
-.phoneframe.story {
-  height: 718px;
 }
 /* "No artwork yet" in the phone reads at the comments panel's empty-state
    size whatever the phone's zoom (direct instruction): 15.2px and 13.7px
@@ -7555,41 +7574,59 @@ a.profproject:hover .pp-t b {
   padding-left: 12px;
   padding-right: 12px;
 }
+/* Its content starts under the status bar, 54 deep on an iPhone 15. */
 .pf-screen {
   position: absolute;
   inset: 0;
-  border-radius: 48px;
+  border-radius: 55px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  padding-top: 26px;
+  padding-top: 54px;
   background: #fff;
 }
+/* The Dynamic Island: 126 × 37, 11 below the top of the screen. */
 .pf-notch {
   position: absolute;
-  top: -1px;
+  top: 11px;
   left: 50%;
-  width: 186px;
-  height: 20px;
+  width: 126px;
+  height: 37px;
   transform: translateX(-50%);
   background: #000;
-  border-radius: 0 0 14px 14px;
+  border-radius: 19px;
   z-index: 2;
 }
+/* An iPhone 15's buttons: the side button on the right; the Action button
+   and the volume buttons on the left. */
 .pf-btn {
   position: absolute;
-  right: -17px;
   width: 5px;
   background: #000;
+}
+.pf-btn-side {
+  right: -17px;
+  top: 240px;
+  height: 92px;
   border-radius: 0 3px 3px 0;
 }
-.pf-btn1 {
-  top: 106px;
-  height: 72px;
+.pf-btn-action,
+.pf-btn-volup,
+.pf-btn-voldown {
+  left: -17px;
+  border-radius: 3px 0 0 3px;
 }
-.pf-btn2 {
-  top: 192px;
-  height: 44px;
+.pf-btn-action {
+  top: 150px;
+  height: 28px;
+}
+.pf-btn-volup {
+  top: 210px;
+  height: 58px;
+}
+.pf-btn-voldown {
+  top: 280px;
+  height: 58px;
 }
 /* The feed card fills the screen; no card edge of its own. */
 .phoneframe .feedcard {

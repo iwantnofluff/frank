@@ -15,6 +15,7 @@ import { MomentBadge } from "./MomentBadge";
 import { SharedCommentText } from "./SharedCommentText";
 import { GuestComposer } from "./GuestComposer";
 import { PhoneFrame } from "@/components/creative-review/PhoneFrame";
+import { StoryReplyBar } from "@/components/creative-review/StoryReplyBar";
 import { publishDate } from "@/lib/publish-date";
 
 // Kept free beside the phone: the scroll note below it. No title above it
@@ -159,7 +160,7 @@ export function DesktopReview({
               {/* In the same phone as the Review page (direct instruction:
                   desktop only; the phone layout is the phone itself). It
                   fits the window, and the post scrolls inside it. */}
-              <PhoneFrame reserve={RESERVE} story={isStoryFormat(active.format)}>
+              <PhoneFrame reserve={RESERVE}>
                 <div className="lpv-bar">
                   <b>Posts</b>
                 </div>
@@ -197,6 +198,7 @@ export function DesktopReview({
                         <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
                       </svg>
                     </div>
+                    {isStoryFormat(active.format) && <StoryReplyBar />}
                     {active.copy?.fields?.caption && (
                       <div className="ig-cap">
                         <b>{clientName}</b>
