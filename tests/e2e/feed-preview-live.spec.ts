@@ -48,3 +48,24 @@ test("Feed Preview dates every tile, marks live posts, and doesn't show them twi
   await expect(tile("Approved For Next Week")).toBeVisible();
   await expect(tile("Went Live Yesterday")).toHaveCount(0);
 });
+
+test("the Feed Preview and a review link's Feed put the newest post first, as Instagram does (phase93)", async ({ page, frank }) => {
+  const own = Date.parse((await admin.from("creatives").select("scheduled_at").eq("id", frank.creativeId).single()).data!.scheduled_at as string);
+  // Made in this order (the planner's), dated out of it.
+  for (const [name, days] of [["Plus Five", 5], ["Plus One", 1], ["Plus Nine", 9]] as const) {
+    const id = await frank.createCreativeAtStage(3, name);
+    const { error } = await admin.from("creatives").update({ scheduled_at: new Date(own + days * day).toISOString() }).eq("id", id);
+    if (error) throw error;
+  }
+  const newestFirst = ["Plus Nine", "Plus Five", "Plus One", "E2E Test Creative"];
+
+  await frank.loginAsStaff(page);
+  await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
+  await page.getByRole("button", { name: "Feed Preview" }).click();
+  await expect(page.locator(".feedgrid-tile .pp-empty b")).toHaveText(newestFirst);
+
+  const token = await frank.createSharedLink();
+  const body = await (await page.request.post(`${APP_URL}/api/shared-review`, { data: { token } })).json();
+  const names = new Map((body.creatives as { id: string; name: string }[]).map((c) => [c.id, c.name]));
+  expect((body.feed as { id: string | null }[]).map((e) => (e.id ? names.get(e.id) : null))).toEqual(newestFirst);
+});

@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.23.5",
+    date: "2026-10-13",
+    title: "Feeds newest first",
+    changes: ["The Feed Preview and a review link's Feed put the newest planned post first, as Instagram does, with posts that have no date yet at the very start."],
+  },
+  {
     version: "1.23.4",
     date: "2026-10-13",
     title: "Live posts in the Feed Preview",

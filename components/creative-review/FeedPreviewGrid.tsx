@@ -51,7 +51,21 @@ export function FeedPreviewGrid({
   const { data: allCreatives, isLoading } = useCreatives(projectId);
   // Deleted (archived_at) posts never show here — useCreatives now
   // returns them too, for the project page's own Active/Archived toggle.
-  const creatives = useMemo(() => (allCreatives ?? []).filter((c) => !c.archived_at), [allCreatives]);
+  // Newest first, as Instagram's grid reads (direct instruction: they were
+  // in the planner's order, oldest first): by Publish Date, or a continuous
+  // project's Live Date; posts with no date yet first, as the furthest out,
+  // in the planner's order.
+  const creatives = useMemo(() => {
+    const when = (c: CreativeListRow) => {
+      const at = c.scheduled_at ?? (c.due_on ? `${c.due_on}T00:00:00` : null);
+      return at ? new Date(at).getTime() : Infinity;
+    };
+    return (allCreatives ?? [])
+      .filter((c) => !c.archived_at)
+      .map((c, i) => ({ c, i, t: when(c) }))
+      .sort((a, b) => (a.t === b.t ? a.i - b.i : b.t - a.t))
+      .map(({ c }) => c);
+  }, [allCreatives]);
   // The client's real feed, once connected (phase54): the planned posts
   // first, then the real ones after them, the way the grid will read once
   // these go live.
