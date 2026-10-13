@@ -20,6 +20,7 @@ test("Feed Preview dates every tile, marks live posts, and doesn't show them twi
   await dated("Went Live Yesterday", 4, -1);
   await dated("Approved For Next Week", 4, 7);
   await dated("Still In Review", 2, 3);
+  await dated("Late In Review", 2, -2);
 
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
@@ -28,6 +29,9 @@ test("Feed Preview dates every tile, marks live posts, and doesn't show them twi
   await expect(tile("Went Live Yesterday").locator(".stagepill")).toHaveText("Live");
   await expect(tile("Approved For Next Week").locator(".stagepill")).toContainText("Approved");
   await expect(tile("Still In Review").locator(".pp-empty-date")).not.toBeEmpty();
+  // Past its date and not live: the date in bold red (direct instruction).
+  await expect(tile("Late In Review").locator(".pp-empty-date")).toHaveClass(/overdue/);
+  await expect(tile("Still In Review").locator(".pp-empty-date")).not.toHaveClass(/overdue/);
   await expect(tile("Went Live Yesterday")).not.toHaveClass(/not-live/);
 
   // Connected: the client's feed answers with its real post.

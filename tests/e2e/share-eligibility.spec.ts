@@ -11,23 +11,23 @@ import { test, expect } from "./fixtures";
 // piece's stage regressing after it's already selected, while the modal
 // stays open.
 
-test("Share for review is disabled outside Client Review, and enabled once there", async ({ page, frank }) => {
+test("Share for review shows only in Client Review", async ({ page, frank }) => {
   const internalCreativeId = await frank.createCreativeAtStage(1);
   await frank.loginAsStaff(page);
   await page.goto(`/creatives/${internalCreativeId}`);
 
-  const shareButton = page.locator('button[title="Only available in Client Review"]');
-  await expect(shareButton).toBeDisabled();
+  await page.waitForSelector(".stage-h");
+  await expect(page.getByRole("button", { name: "Share for review" })).toHaveCount(0);
 
   await page.goto(`/creatives/${frank.creativeId}`); // fixture's own creative is stage 3
-  await expect(page.locator('button[title="Share for review"]')).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Share for review" })).toBeVisible();
 });
 
 test("ShareModal's Multiple Posts grid greys out posts still below Client Review", async ({ page, frank }) => {
   await frank.createCreativeAtStage(1);
   await frank.loginAsStaff(page);
   await page.goto(`/creatives/${frank.creativeId}`); // fixture's own creative is stage 3, eligible
-  await page.click('button[title="Share for review"]');
+  await page.getByRole("button", { name: "Share for review" }).click();
   await page.click('button[role="radio"]:has-text("Multiple Posts")');
 
   const internalTile = page.locator(`.pktile[title="Move this post to Client Review to share it"]`);

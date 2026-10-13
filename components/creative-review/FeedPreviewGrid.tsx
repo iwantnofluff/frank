@@ -1,6 +1,6 @@
 "use client";
 
-import { isLive } from "@/lib/post-live";
+import { isLive, isOverdue } from "@/lib/post-live";
 import { useMemo, useRef, useState } from "react";
 import { useCreatives, type CreativeListRow } from "@/hooks/use-creatives";
 import { FeedTileArt, EmptyTileArt } from "@/components/creative-review/FeedTileArt";
@@ -169,7 +169,7 @@ export function FeedPreviewGrid({
                 onMouseLeave={scheduleHide}
                 title={c.name}
               >
-                <FeedTileArt creative={c} timeLabel={timeLabel} />
+                <FeedTileArt creative={c} timeLabel={timeLabel} overdue={isOverdue(c, now)} />
                 {/* Its stage, as a review link's Feed shows it (direct
                     instruction: in place of "Planned", the two the same). */}
                 {isLive(c, now) ? <span className="stagepill stg live">Live</span> : <StagePill stage={c.stage} />}

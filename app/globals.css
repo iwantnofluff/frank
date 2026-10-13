@@ -2872,6 +2872,13 @@ a.fd-ref:hover {
   font-weight: 500;
   color: var(--ink);
 }
+/* A planned post past its date and not live (lib/post-live.ts isOverdue;
+   direct instruction): its date bold and red. */
+.pp-empty .pp-empty-date.overdue,
+.pp-art-time.overdue {
+  color: var(--rose);
+  font-weight: 700;
+}
 /* A post that's gone live (lib/post-live.ts), in place of its stage:
    dark, so it doesn't read as the green of 4. Approved. */
 .stagepill.live {
@@ -3085,6 +3092,49 @@ a.fd-ref:hover {
   flex-wrap: wrap;
   row-gap: 7px;
   gap: 5px;
+}
+/* Share for review, beside the stage pills (direct instruction). */
+.sharebtn {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  transition: background 0.15s, color 0.15s;
+}
+.sharebtn svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.sharebtn:hover,
+.sharebtn:focus-visible {
+  background: var(--line);
+  color: var(--ink);
+}
+.sharebtn-label {
+  position: absolute;
+  left: calc(100% + 4px);
+  top: 50%;
+  color: var(--ink);
+  font-size: 13.2px;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-10px, -50%);
+  transition: opacity 0.16s ease, transform 0.2s ease;
+}
+.sharebtn:hover .sharebtn-label,
+.sharebtn:focus-visible .sharebtn-label {
+  opacity: 1;
+  transform: translate(0, -50%);
 }
 .tool {
   width: 28px;

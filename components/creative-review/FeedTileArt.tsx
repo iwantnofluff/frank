@@ -22,9 +22,12 @@ import type { CreativeListRow } from "@/hooks/use-creatives";
 export function FeedTileArt({
   creative,
   timeLabel,
+  overdue = false,
 }: {
   creative: CreativeListRow;
   timeLabel: string;
+  // Past its date and not live (lib/post-live.ts): the date in bold red.
+  overdue?: boolean;
 }) {
   const { data: versions } = useCreativeVersions(creative.id);
   const latest = versions?.[0] ?? null;
@@ -36,7 +39,7 @@ export function FeedTileArt({
       <div className="pp-empty">
         <b>{creative.name}</b>
         {/* Its date too (direct instruction: only tiles with artwork had one). */}
-        {timeLabel !== "—" && <span className="pp-empty-date">{timeLabel}</span>}
+        {timeLabel !== "—" && <span className={`pp-empty-date${overdue ? " overdue" : ""}`}>{timeLabel}</span>}
         <span>No Creative</span>
       </div>
     );
@@ -56,7 +59,7 @@ export function FeedTileArt({
       )}
       <div className="pp-art-overlay">
         <div className="pp-art-title">{creative.name}</div>
-        <div className="pp-art-time">{timeLabel}</div>
+        <div className={`pp-art-time${overdue ? " overdue" : ""}`}>{timeLabel}</div>
       </div>
     </div>
   );

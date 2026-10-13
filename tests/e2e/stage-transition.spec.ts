@@ -25,7 +25,7 @@ test("staff advances a creative to Client Review, making it visible through a sh
   await page.click('.stagesw button:has-text("Client Review")');
   await expect(pressed).toContainText("Client Review");
 
-  await page.click('button[title="Share for review"]');
+  await page.getByRole("button", { name: "Share for review" }).click();
   await page.click('button[role="radio"]:has-text("Current Post")');
   await page.click('button:has-text("Create link")');
   await page.waitForSelector(".linkrow code");
@@ -62,21 +62,21 @@ test("a real client-role session has no entry point and cannot advance a creativ
   await clientSession.auth.signOut();
 });
 
-test("Share for review becomes enabled once a creative moves to Client Review", async ({ page, frank }) => {
+test("Share for review appears once a creative moves to Client Review", async ({ page, frank }) => {
   const creativeId = await frank.createCreativeAtStage(1);
   await frank.loginAsStaff(page);
   await page.goto(`/creatives/${creativeId}`);
   await page.waitForSelector(".stage-h");
 
-  await expect(page.locator('button[title="Only available in Client Review"]')).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Share for review" })).toHaveCount(0);
 
   await page.click('.stagesw button:has-text("Client Review")');
   await expect(page.locator('.stagesw button[aria-pressed="true"]')).toContainText("Client Review");
 
   // Reactive, not just correct after a reload — advancing the stage
-  // pill alone flips the button, still on the same page.
-  const shareButton = page.locator('button[title="Share for review"]');
-  await expect(shareButton).toBeEnabled();
+  // pill alone brings the button, still on the same page.
+  const shareButton = page.getByRole("button", { name: "Share for review" });
+  await expect(shareButton).toBeVisible();
   await shareButton.click();
   await page.click('button[role="radio"]:has-text("Current Post")');
   await expect(page.locator(".note.warn")).toHaveCount(0);

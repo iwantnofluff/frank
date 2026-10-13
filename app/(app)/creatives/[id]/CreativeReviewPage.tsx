@@ -355,6 +355,22 @@ export function CreativeReviewPage({ id }: { id: string }) {
                 </div>
               </>
             )}
+          {/* Share, beside the pills, only while the post is in Client
+              Review (direct instruction): grey on hover, "Share" sliding
+              out to its right. */}
+          {creative.stage === 3 && (
+            <button type="button" className="sharebtn" aria-label="Share for review" onClick={() => setShareOpen(true)}>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="18" cy="5" r="3" />
+                <circle cx="6" cy="12" r="3" />
+                <circle cx="18" cy="19" r="3" />
+                <path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" />
+              </svg>
+              <span className="sharebtn-label" aria-hidden="true">
+                Share
+              </span>
+            </button>
+          )}
           <div className="tools">
             <div className="vsel">
               <label htmlFor="vCreative">Creative</label>
@@ -404,20 +420,6 @@ export function CreativeReviewPage({ id }: { id: string }) {
               people={hereToo}
               describe={(p) => `${p.name}, ${p.editing ? "editing this post" : "on this post"}`}
             />
-            <button
-              type="button"
-              className="tool"
-              title={creative.stage === 3 ? "Share for review" : "Only available in Client Review"}
-              disabled={creative.stage !== 3}
-              onClick={() => setShareOpen(true)}
-            >
-              <svg viewBox="0 0 24 24">
-                <circle cx="18" cy="5" r="3" />
-                <circle cx="6" cy="12" r="3" />
-                <circle cx="18" cy="19" r="3" />
-                <path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" />
-              </svg>
-            </button>
             {isStaff && (
               <>
                 <span className="toolsep" />

@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.24.7",
+    date: "2026-10-13",
+    title: "Late posts stand out; Share by the pills",
+    changes: [
+      "In the Feed, a planned post that's past its date and not yet live shows its date in bold red.",
+      "On a post's page, Share sits beside the stage pills and appears only while the post is in Client Review, its name sliding out as you hover.",
+    ],
+  },
+  {
     version: "1.24.6",
     date: "2026-10-13",
     title: "A live post shows once in the Feed",
