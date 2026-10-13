@@ -29,43 +29,45 @@ async function seedAdmin(frank: Frank) {
   return { email, password, userId: data.user!.id, membershipId: m!.id as string };
 }
 
-test("an Owner invites a User and a Client while creating a client, and the Client joins through the link", async ({
+test("an Owner invites a User and a Client from Team, and the Client joins through the link", async ({
   page,
   browser,
   frank,
 }) => {
   test.setTimeout(120_000);
   await setStaffRole(frank, "owner");
+  await admin.from("clients").insert({ agency_id: frank.agencyId, name: "E2E Invite Client" });
   await frank.loginAsStaff(page);
-  await page.goto(`${APP_URL}/dashboard`);
-  await page.getByRole("button", { name: "New Client" }).click();
-  const modal = page.getByRole("dialog", { name: "New Client" });
-  await modal.locator("#cName").fill("E2E Invite Client");
-  await expect(modal).toContainText("team places left on your plan; Clients don't use one");
+  // Invites are Workspace Settings → Team's alone (direct instruction); the
+  // New Client window only picks Users already on the team.
+  await page.goto(`${APP_URL}/settings/team`);
 
   const userEmail = `e2e-inv-user-${Date.now()}@example.invalid`;
   const clientEmail = `e2e-inv-client-${Date.now()}@example.invalid`;
+  let clientLink = "";
   for (const [first, last, email, role] of [
     ["una", "user", userEmail, "user"],
     ["cleo", "client", clientEmail, "client"],
   ]) {
-    await modal.getByRole("button", { name: "+ Invite someone" }).click();
-    const row = modal.locator(".invrow").last();
-    await row.getByLabel("First name").fill(first);
-    await row.getByLabel("Last name").fill(last);
-    await row.getByLabel("Email").fill(email);
-    await row.getByLabel("Role").selectOption(role);
+    await page.getByRole("button", { name: "Invite Member" }).click();
+    const modal = page.getByRole("dialog", { name: "Invite Team Member" });
+    // Every role an Owner may give.
+    await expect(modal.getByLabel("Role").locator("option")).toHaveText(["Owner", "Admin", "User", "Client"]);
+    await modal.getByLabel("First Name").fill(first);
+    await modal.getByLabel("Last Name").fill(last);
+    await modal.getByLabel("Email Address").fill(email);
+    await modal.getByLabel("Role").selectOption(role);
+    if (role === "user") await modal.getByRole("checkbox", { name: "E2E Invite Client" }).click();
+    else await modal.getByLabel("Their Client").selectOption({ label: "E2E Invite Client" });
+    await modal.getByRole("button", { name: "Send Invite" }).click();
+    const sent = page.getByRole("dialog", { name: "Invite Sent" });
+    await expect(sent).toBeVisible({ timeout: 20_000 });
+    if (role === "client") {
+      clientLink = await sent.getByRole("textbox", { name: `Invite link for ${clientEmail}` }).inputValue();
+      expect(clientLink).toContain("/invite/");
+    }
+    await sent.getByRole("button", { name: "Done" }).click();
   }
-  // Every role an Owner may give.
-  await expect(modal.locator(".invrow").first().getByLabel("Role").locator("option")).toHaveText(["Owner", "Admin", "User", "Client"]);
-  await modal.getByRole("button", { name: "Create Client" }).click();
-
-  const done = page.getByRole("dialog", { name: "Client Created" });
-  // Two invites, one after another, each emailed: not instant.
-  await expect(done).toContainText("2 invites sent. You can also share the invite links below", { timeout: 20_000 });
-  const clientLink = await done.getByRole("textbox", { name: `Invite link for ${clientEmail}` }).inputValue();
-  expect(clientLink).toContain("/invite/");
-  await done.getByRole("button", { name: "Done" }).click();
 
   const { data: client } = await admin.from("clients").select("id").eq("agency_id", frank.agencyId).eq("name", "E2E Invite Client").single();
   // The User: staff, with this client.

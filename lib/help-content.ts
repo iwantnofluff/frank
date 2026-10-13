@@ -154,6 +154,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         items: [
           "Go to Clients and choose New Client.",
           "Give it a name, and if you like an industry, a description and a square logo.",
+          "Under Team, pick the Users on your team who'll work on it, if any. Owners and Admins see every client already.",
           "Choose Create Client. It appears in your clients list.",
         ],
       },
@@ -200,7 +201,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "Each person's projects are listed by name under them. Click one to open that project.",
           "Edit Projects opens a window to choose their projects. Save greys out with Saved once it's done.",
           "The User or Client tag is a dropdown: pick the other to switch them, straight away. A pending invite can be resent or removed from the same dropdown.",
-          "+ Invite People invites someone new, or gives a User already on your team this client, from A User on Your Team. Each one added brings you back to the window for the next.",
+          "+ Add People gives a User already on your team this client, from A User on Your Team. Each one added brings you back to the window for the next. Someone new, or one of the client's own people, is invited from Workspace Settings, under Team.",
         ],
       },
       {
@@ -567,7 +568,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       },
       {
         kind: "p",
-        text: "Invite people from Workspace Settings, under Team, or from a client's People page. Each person can change the type of, resend invites to, and remove only the people below them.",
+        text: "Invite people from Workspace Settings, under Team: it's the only place invites are sent from. A client's People page, and the New Client window, add Users already on your team. Each person can change the type of, resend invites to, and remove only the people below them.",
       },
       {
         kind: "note",

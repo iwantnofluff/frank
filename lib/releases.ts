@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.23.7",
+    date: "2026-10-13",
+    title: "Invites from Team only",
+    changes: [
+      "Invites are sent from Workspace Settings → Team only.",
+      "The New Client window has a Team dropdown of Users already on your team, who get the client as it's made, in place of inviting people.",
+      "A client's People page has + Add People, for Users already on your team, in place of + Invite People.",
+    ],
+  },
+  {
     version: "1.23.6",
     date: "2026-10-13",
     title: "A cleaner Story",

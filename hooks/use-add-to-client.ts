@@ -79,3 +79,31 @@ export function useAddPersonToClient(agencyId: string, clientId: string) {
     },
   });
 }
+
+// The same, for a client that's only just been made (the New Client
+// window: direct instruction, team Users picked from a dropdown rather
+// than invited), so its id comes with each call. Every project of the
+// client (none yet), as add_person_to_client does with no project list.
+export function useGiveNewClientTo(agencyId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ clientId, userId }: { clientId: string; userId: string }) => {
+      const supabase = createClient();
+      const { data, error } = await supabase.rpc("add_person_to_client", {
+        p_user_id: userId,
+        p_client_id: clientId,
+        p_project_ids: null,
+      });
+      if (error) throw error;
+      if (!data) throw new Error("Couldn't give them this client");
+      return data as string;
+    },
+    onSettled: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["team-members", agencyId] }),
+        queryClient.invalidateQueries({ queryKey: ["staff-client-access", agencyId] }),
+      ]);
+    },
+  });
+}

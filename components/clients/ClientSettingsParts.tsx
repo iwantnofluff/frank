@@ -146,7 +146,7 @@ export function ClientPeople({
         ))}
       {canInvite && (
         <button type="button" className="badd" onClick={onInvite}>
-          + Invite People
+          + Add People
         </button>
       )}
     </>

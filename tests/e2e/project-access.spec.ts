@@ -25,20 +25,21 @@ async function projectsOf(frank: Frank, email: string) {
   return (data ?? []).map((r) => r.project_id as string).sort();
 }
 
-test("inviting from a client's People puts a User on just the projects chosen", async ({ page, frank }) => {
+test("inviting a User from Team puts them on just the projects chosen", async ({ page, frank }) => {
   test.setTimeout(90_000);
   const second = await frank.createContinuousProject();
   await setStaffRole(frank, "owner");
   await frank.loginAsStaff(page);
-  await page.goto(`${APP_URL}/clients/${frank.clientId}/settings/people`);
-  await page.locator(".setmain").getByRole("button", { name: "+ Invite People" }).click();
+  // Invites are Team's alone (direct instruction).
+  await page.goto(`${APP_URL}/settings/team`);
+  await page.getByRole("button", { name: "Invite Member" }).click();
   const modal = page.getByRole("dialog", { name: "Invite Team Member" });
+  await modal.getByRole("checkbox", { name: "E2E Test Client" }).click();
 
   const email = `e2e-proj-user-${Date.now()}@example.invalid`;
   await modal.getByLabel("First Name").fill("Pia");
   await modal.getByLabel("Last Name").fill("Project");
   await modal.getByLabel("Email Address").fill(email);
-  // A User, with this client ticked already.
   await expect(modal.getByRole("checkbox", { name: "E2E Test Client" })).toHaveAttribute("aria-checked", "true");
   await modal.getByRole("button", { name: "Projects: All projects" }).click();
   const picker = page.getByRole("dialog", { name: "Projects" });
@@ -199,11 +200,11 @@ test("a client's profile lists its people with their projects, and an Owner chan
   await expect(person.locator(".pp-projs")).toContainText(/^E2E Continuous Project/);
   await expect.poll(() => projectsOf(frank, user.email)).toEqual([second]);
 
-  // Invite People starts with this client chosen.
-  await modal.getByRole("button", { name: "+ Invite People" }).click();
-  const invite = page.getByRole("dialog", { name: "Invite Team Member" });
-  await invite.getByLabel("Role").selectOption("client");
-  await expect(invite.getByLabel("Their Client")).toHaveValue(frank.clientId);
+  // Add People only adds Users already on the team; invites are Team's alone.
+  await modal.getByRole("button", { name: "+ Add People" }).click();
+  const add = page.getByRole("dialog", { name: "Add People" });
+  await expect(add.getByLabel("Email Address")).toHaveCount(0);
+  await expect(add).toContainText("invited from Workspace Settings → Team");
 });
 
 test("a User sees a client's details read-only; nobody changes a project's delivery", async ({ browser, frank }) => {

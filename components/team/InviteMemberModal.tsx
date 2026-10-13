@@ -66,6 +66,9 @@ export function InviteMemberModal({
   // What was just done, shown when the window comes back for the next one.
   const [done, setDone] = useState<string | null>(null);
   const clientName = activeClients.find((c) => c.id === presetClientId)?.name ?? "this client";
+  // Opened from a client, it only adds Users already on the team (direct
+  // instruction: invites happen in Workspace Settings → Team only).
+  const addOnly = !!presetClientId;
 
   // Back to the empty window (opened from a client).
   function startAgain(note: string) {
@@ -98,6 +101,7 @@ export function InviteMemberModal({
       startAgain(`${existing.name} added to ${clientName}.`);
       return;
     }
+    if (addOnly) return setValidation("Choose someone from your team");
     const trimmed = email.trim();
     if (!firstName.trim() || !lastName.trim()) return setValidation("Enter their first and last name");
     if (!trimmed || !trimmed.includes("@")) return setValidation("Enter a valid email");
@@ -142,13 +146,17 @@ export function InviteMemberModal({
   return (
     <Modal
       hideCloseButton
-      title="Invite Team Member"
+      title={addOnly ? "Add People" : "Invite Team Member"}
       size="sm"
       onClose={onClose}
       footer={
         <>
           <span className="grow">
-            {existing ? "They'll see this client next time they open Frank" : "Invite link expires in 48 hours"}
+            {existing
+              ? "They'll see this client next time they open Frank"
+              : addOnly
+                ? ""
+                : "Invite link expires in 48 hours"}
           </span>
           <button type="button" className="btn" onClick={onClose}>
             Cancel
@@ -159,7 +167,13 @@ export function InviteMemberModal({
             disabled={invite.isPending || add.isPending}
             onClick={() => handleSubmit().catch(() => {})}
           >
-            {existing ? (add.isPending ? "Adding…" : "Add to Client") : invite.isPending ? "Sending…" : "Send Invite"}
+            {existing || addOnly
+              ? add.isPending
+                ? "Adding…"
+                : "Add to Client"
+              : invite.isPending
+                ? "Sending…"
+                : "Send Invite"}
           </button>
         </>
       }
@@ -187,7 +201,7 @@ export function InviteMemberModal({
               {addableLoading
                 ? "Frank is working…"
                 : addable?.length
-                  ? "No, someone new"
+                  ? "Choose someone"
                   : "Every User on your team has this client"}
             </option>
             {(addable ?? []).map((p) => (
@@ -201,9 +215,14 @@ export function InviteMemberModal({
               {existing.email}. Given this client straight away, with no invite: they&apos;re on your team already.
             </div>
           )}
+          {!existing && (
+            <div className="hint" style={{ marginTop: 5 }}>
+              Someone new, or one of this client&apos;s own people, is invited from Workspace Settings &rarr; Team.
+            </div>
+          )}
         </div>
       )}
-      {!existing && (
+      {!existing && !addOnly && (
         <>
           <div className="frow">
             <div className="field">
@@ -262,7 +281,7 @@ export function InviteMemberModal({
           )}
         </>
       )}
-      {(existing || role === "user" || role === "client") && projectGroups.length > 0 && (
+      {(existing || (!addOnly && (role === "user" || role === "client"))) && projectGroups.length > 0 && (
         <div className="field">
           <label htmlFor="ivProjects">Projects</label>
           <ProjectPicker id="ivProjects" groups={projectGroups} value={projectIds} onChange={setProjectIds} />

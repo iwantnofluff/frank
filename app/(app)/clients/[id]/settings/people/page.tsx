@@ -12,7 +12,9 @@ import { rolesICanInvite, seesAllClients } from "@/lib/roles";
 
 // Client Settings → People (direct instruction: the Client Profile window's
 // People): the client's Users and Clients and which of its live projects
-// each is on, changed straight away by Owners and Admins, plus inviting.
+// each is on, changed straight away by Owners and Admins, plus adding Users
+// already on the team (direct instruction: inviting is Workspace Settings →
+// Team's alone).
 export default function ClientPeoplePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { data: client } = useClientDetail(id);

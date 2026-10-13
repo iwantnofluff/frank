@@ -2847,6 +2847,16 @@ a.fd-ref:hover {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* A team User picked in the New Client window. */
+.ncteam-who {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.2px;
+}
+.ncteam-who span {
+  color: var(--muted);
+  margin-left: 4px;
+}
 .pp-empty span {
   font-size: 10.2px;
   color: var(--muted);
