@@ -23,7 +23,7 @@ test("Feed Preview dates every tile, marks live posts, and doesn't show them twi
 
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
-  await page.getByRole("button", { name: "Feed Preview" }).click();
+  await page.getByRole("button", { name: "Feed", exact: true }).click();
   const tile = (name: string) => page.locator(".feedgrid-tile", { hasText: name });
   await expect(tile("Went Live Yesterday").locator(".stagepill")).toHaveText("Live");
   await expect(tile("Approved For Next Week").locator(".stagepill")).toContainText("Approved");
@@ -44,7 +44,7 @@ test("Feed Preview dates every tile, marks live posts, and doesn't show them twi
     }),
   );
   await page.reload();
-  await page.getByRole("button", { name: "Feed Preview" }).click();
+  await page.getByRole("button", { name: "Feed", exact: true }).click();
   await expect(tile("Approved For Next Week")).toBeVisible();
   await expect(tile("Went Live Yesterday")).toHaveCount(0);
 });
@@ -61,7 +61,7 @@ test("the Feed Preview and a review link's Feed put the newest post first, as In
 
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
-  await page.getByRole("button", { name: "Feed Preview" }).click();
+  await page.getByRole("button", { name: "Feed", exact: true }).click();
   await expect(page.locator(".feedgrid-tile .pp-empty b")).toHaveText(newestFirst);
 
   const token = await frank.createSharedLink();

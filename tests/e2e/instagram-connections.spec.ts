@@ -83,7 +83,7 @@ test("the Feed Preview says how to connect, or that the account needs reconnecti
   test.setTimeout(60_000);
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
-  await page.getByRole("button", { name: "Feed Preview" }).click();
+  await page.getByRole("button", { name: "Feed", exact: true }).click();
   await expect(page.locator(".fp-note")).toHaveText(
     "Connect E2E Test Client's Instagram in Settings → Connections to show its real posts here.",
   );
@@ -91,7 +91,7 @@ test("the Feed Preview says how to connect, or that the account needs reconnecti
 
   await seedConnection(frank, true);
   await page.reload();
-  await page.getByRole("button", { name: "Feed Preview" }).click();
+  await page.getByRole("button", { name: "Feed", exact: true }).click();
   await expect(page.locator(".fp-note")).toHaveText(
     "@e2e_brand needs reconnecting in Settings → Connections to show its real posts.",
   );

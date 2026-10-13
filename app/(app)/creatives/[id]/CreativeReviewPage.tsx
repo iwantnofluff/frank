@@ -30,7 +30,8 @@ import {
 } from "@/lib/annotations";
 import { BriefPanel } from "@/components/creative-review/BriefPanel";
 import { ChecksPanel } from "@/components/creative-review/ChecksPanel";
-import { ReviewNav, type ReviewSection } from "@/components/creative-review/ReviewNav";
+import { type ReviewSection } from "@/components/creative-review/ReviewNav";
+import { SectionRail } from "@/components/creative-review/SectionRail";
 import { FeedPreviewGrid } from "@/components/creative-review/FeedPreviewGrid";
 import { PhoneFrame } from "@/components/creative-review/PhoneFrame";
 import { PNAV_CURRENT_H, PostNeighbours } from "@/components/creative-review/PostNeighbours";
@@ -108,7 +109,6 @@ export function CreativeReviewPage({ id }: { id: string }) {
   // the three independent accordions (Brief/Content/Checks could each be
   // open at once) with a single selection, per direct instruction.
   const [activeSection, setActiveSection] = useState<ReviewSection>("content");
-  const [navCollapsed, setNavCollapsed] = useState(false);
   // Feed Preview → Content linking: the same creative just switches section
   // (no navigation needed), a different one is a real route change — this
   // page is scoped to one creative's id, so there's no other way to show it.
@@ -279,14 +279,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
     });
 
   return (
-    <div className={`review${navCollapsed ? " navcollapsed" : ""}`}>
-      <ReviewNav
-        active={activeSection}
-        onSelect={setActiveSection}
-        collapsed={navCollapsed}
-        onToggleCollapsed={() => setNavCollapsed((c) => !c)}
-      />
-      <div className="review-sep" aria-hidden="true" />
+    <div className="review">
 
       {/* Laid out, but not shown, until what decides its size is known —
           who's looking (the staff controls can add a header row, which
@@ -294,48 +287,9 @@ export function CreativeReviewPage({ id }: { id: string }) {
           at its real size (direct instruction: no jumping height). */}
       <div className={`stage${membershipLoading || creativeVersions === undefined ? " stage-wait" : ""}`}>
         <div className="stage-h">
-          <div className="tools">
-            <div className="vsel">
-              <label htmlFor="vCreative">Creative</label>
-              <select
-                id="vCreative"
-                value={activeCreativeVersion?.id ?? ""}
-                onChange={(e) => setCreativeVersionId(e.target.value)}
-                disabled={!creativeVersions?.length}
-              >
-                {creativeVersions?.length ? (
-                  creativeVersions.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      V{v.version_no}
-                    </option>
-                  ))
-                ) : (
-                  <option value="">—</option>
-                )}
-              </select>
-            </div>
-            <div className="vsel">
-              <label htmlFor="vCopy">Copy</label>
-              <select
-                id="vCopy"
-                value={activeCopyVersion?.id ?? ""}
-                onChange={(e) => setCopyVersionId(e.target.value)}
-                disabled={!copyVersions?.length}
-              >
-                {copyVersions?.length ? (
-                  copyVersions.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      V{v.version_no}
-                    </option>
-                  ))
-                ) : (
-                  <option value="">—</option>
-                )}
-              </select>
-            </div>
-            {isStaff && (
+          {/* The stage pills on the left (direct instruction). */}
+          {isStaff && (
               <>
-                <span className="toolsep" />
                 <div
                   // The table's Status pills (direct instruction): grey until
                   // picked, then solid in the stage's colour.
@@ -401,6 +355,46 @@ export function CreativeReviewPage({ id }: { id: string }) {
                 </div>
               </>
             )}
+          <div className="tools">
+            <div className="vsel">
+              <label htmlFor="vCreative">Creative</label>
+              <select
+                id="vCreative"
+                value={activeCreativeVersion?.id ?? ""}
+                onChange={(e) => setCreativeVersionId(e.target.value)}
+                disabled={!creativeVersions?.length}
+              >
+                {creativeVersions?.length ? (
+                  creativeVersions.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      V{v.version_no}
+                    </option>
+                  ))
+                ) : (
+                  <option value="">—</option>
+                )}
+              </select>
+            </div>
+            <div className="vsel">
+              <label htmlFor="vCopy">Copy</label>
+              <select
+                id="vCopy"
+                value={activeCopyVersion?.id ?? ""}
+                onChange={(e) => setCopyVersionId(e.target.value)}
+                disabled={!copyVersions?.length}
+              >
+                {copyVersions?.length ? (
+                  copyVersions.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      V{v.version_no}
+                    </option>
+                  ))
+                ) : (
+                  <option value="">—</option>
+                )}
+              </select>
+            </div>
+
             {editingNow.length > 0 && (
               <span className="presence-note">
                 {editingNow.join(" and ")} {editingNow.length === 1 ? "is" : "are"} editing
@@ -449,6 +443,10 @@ export function CreativeReviewPage({ id }: { id: string }) {
             )}
           </div>
         </div>
+        {/* The sections as icons in the centre panel's top-left corner
+            (direct instruction: in place of the left column). */}
+        <div className="canvas-wrap">
+        <SectionRail active={activeSection} onSelect={setActiveSection} />
         <div className="canvas">
           <div>
             {activeSection === "brief" && (
@@ -715,6 +713,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
               />
             )}
           </div>
+        </div>
         </div>
       </div>
       <div className="review-sep" aria-hidden="true" />

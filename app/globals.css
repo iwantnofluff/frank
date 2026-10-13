@@ -2659,9 +2659,9 @@ a.fd-ref:hover {
 
 .review {
   display: grid;
-  /* The section menu is as wide as it needs: icons only, or icons and
-     names (ReviewNav). */
-  grid-template-columns: max-content 1px minmax(0, 1fr) 1px 363px;
+  /* The centre and the comments: the sections are icons in the centre's
+     corner now (SectionRail; direct instruction), not a column. */
+  grid-template-columns: minmax(0, 1fr) 1px 363px;
   gap: 20px;
   min-height: 0;
   padding: 16px;
@@ -2670,7 +2670,7 @@ a.fd-ref:hover {
 }
 @media (min-width: 1700px) {
   .review {
-    grid-template-columns: max-content 1px minmax(0, 1fr) 1px 413px;
+    grid-template-columns: minmax(0, 1fr) 1px 413px;
   }
 }
 /* The two vertical rules between reviewnav/stage/comments. Plain grid
@@ -3075,13 +3075,9 @@ a.fd-ref:hover {
 .stage-h .tools {
   margin-left: auto;
 }
-@media (max-width: 1560px) {
-  .stage-h .tools {
-    margin-left: 0;
-    width: 100%;
-    justify-content: flex-end;
-  }
-}
+/* One row while it fits, the controls wrapping under the stage pills only
+   when there's no room (the left column that once forced a second row
+   below 1560px is gone). */
 .tools {
   margin-left: auto;
   display: flex;
@@ -3133,15 +3129,15 @@ a.fd-ref:hover {
 .stagesw {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 7.3px;
 }
 /* Larger than the table's, read on its own here: 5% (direct instruction),
-   then 5% again. */
+   5% again, then 10% more, twice. */
 .stagesw button {
-  gap: 4px;
-  padding: 2.2px 6.6px;
-  border-radius: 3.8px;
-  font-size: 11.45px;
+  gap: 4.8px;
+  padding: 2.7px 8px;
+  border-radius: 4.6px;
+  font-size: 13.9px;
   font-weight: 600;
   white-space: nowrap;
   background: var(--line);
@@ -3266,6 +3262,79 @@ select.sort:hover {
   background-size: 12px;
 }
 
+/* The canvas and the section icons in its top-left corner, which stay put
+   while it scrolls. */
+.canvas-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.secrail {
+  position: absolute;
+  top: 12px;
+  left: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+/* Plain icons; only the selected one has a square behind it, as the left
+   rail's does (direct instruction). */
+.secrail-item {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--muted);
+  background: none;
+  transition: background 0.15s, color 0.15s;
+}
+/* A little thicker than drawn (direct instruction): the filled shapes
+   outlined in their own colour too (on the icons' 1200 grid). */
+.secrail-item svg {
+  width: 17px;
+  height: 17px;
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 34;
+  stroke-linejoin: round;
+}
+.secrail-item:hover,
+.secrail-item:focus-visible {
+  color: var(--ink);
+}
+.secrail-item[aria-current="true"] {
+  color: var(--action);
+  background: var(--action-soft);
+}
+/* Its name as plain text, sliding out to the right only while hovered or
+   focused (direct instruction). */
+.secrail-label {
+  position: absolute;
+  left: calc(100% + 4px);
+  top: 50%;
+  color: var(--ink);
+  font-size: 13.2px;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-10px, -50%);
+  transition: opacity 0.16s ease, transform 0.2s ease;
+}
+/* The selected section's name stays shown (direct instruction). */
+.secrail-item[aria-current="true"] .secrail-label {
+  color: var(--action);
+}
+.secrail-item:hover .secrail-label,
+.secrail-item:focus-visible .secrail-label,
+.secrail-item[aria-current="true"] .secrail-label {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
 .canvas {
   flex: 1;
   overflow-y: auto;

@@ -7,7 +7,7 @@ export type ReviewSection = "brief" | "content" | "checks" | "feed";
 
 // Each section's icon, supplied directly (Brief.svg, Content.svg,
 // Check.svg, Grid.svg): filled shapes on a 1200 grid.
-const ICONS: Record<ReviewSection, ReactNode> = {
+export const ICONS: Record<ReviewSection, ReactNode> = {
   brief: (
     <>
       <path d="m1139.1 37.5h-1078.1c-12.941 0-23.438 10.492-23.438 23.438v1078.1c0 12.941 10.496 23.438 23.438 23.438h1078.1c12.945 0 23.438-10.496 23.438-23.438v-1078.1c0-12.945-10.492-23.438-23.438-23.438zm-23.438 1078.1h-1031.2v-1031.2h1031.2z" />
@@ -44,7 +44,7 @@ export const ALL_SECTIONS: { id: ReviewSection; label: string }[] = [
   { id: "brief", label: "Brief" },
   { id: "content", label: "Content" },
   { id: "checks", label: "Checks" },
-  { id: "feed", label: "Feed Preview" },
+  { id: "feed", label: "Feed" },
 ];
 
 // The review page's sections (direct instruction): icons only when

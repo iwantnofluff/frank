@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.24.5",
+    date: "2026-10-13",
+    title: "A roomier post page",
+    changes: [
+      "The post page's Brief, Content, Checks and Feed (was Feed Preview) are icons in the top-left corner of the centre, not a column of their own, giving the post more room. The chosen one shows its name; the others show theirs as you hover.",
+      "The stage pills sit at the left of the top bar, about a fifth larger.",
+    ],
+  },
+  {
     version: "1.24.4",
     date: "2026-10-13",
     title: "Moving projects is for Owners and Admins",
