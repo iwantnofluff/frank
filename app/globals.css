@@ -3251,12 +3251,20 @@ select.sort:hover {
    and format, which open it too, each with its own hover. 30px from the
    phone; an empty side keeps its width so the phone stays centred. Above
    the phone, the current post's date and title. */
+/* 50px from the phone to the post's details either side (direct
+   instruction): 42px here plus the details' own 8px padding. */
 .pnav-row {
   display: flex;
   align-items: center;
-  gap: 30px;
+  justify-content: center;
+  gap: 42px;
+}
+/* The row spans the canvas, so the sides can give way to the phone. */
+.canvas > div:has(> .pnav-row) {
+  width: 100%;
 }
 .pnav-mid {
+  flex: none;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -3280,11 +3288,17 @@ select.sort:hover {
   text-overflow: ellipsis;
   max-width: 100%;
 }
+/* 252px (direct instruction: 50% wider), giving way to the earlier 168px
+   where the canvas is narrower, before only the arrows show. */
 .pnav {
-  width: 168px;
-  flex: none;
+  width: 252px;
+  min-width: 168px;
+  flex: 0 1 auto;
   display: flex;
   align-items: center;
+  /* Packed against the phone, so a short title sits 50px from it rather
+     than out by the far edge (direct instruction). */
+  justify-content: flex-end;
   gap: 8px;
 }
 .pnav.next {
@@ -3357,6 +3371,7 @@ select.sort:hover {
 @container (max-width: 690px) {
   .pnav {
     width: 40px;
+    min-width: 40px;
   }
   .pnav-d {
     display: none;

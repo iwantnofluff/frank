@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.23.3",
+    date: "2026-10-13",
+    title: "Room for the previous and next titles",
+    changes: ["The previous and next post's details are half as wide again, so their titles wrap onto fewer lines, and sit 50px from the phone with their arrow beside them, however short the title."],
+  },
+  {
     version: "1.23.2",
     date: "2026-10-13",
     title: "Quicker, roomier previous and next",
