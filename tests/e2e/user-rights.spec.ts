@@ -9,7 +9,7 @@ const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SU
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
-test("a User can't change Format Directions, Reference Material, or archive a client or project; an Admin can", async ({ page, frank }) => {
+test("a User can't change Format Directions, Reference Material, or archive or move a client's project; an Admin can", async ({ page, frank }) => {
   test.setTimeout(120_000);
   const staffId = (await admin.from("users").select("id").eq("email", frank.staffEmail).single()).data!.id;
   const setRole = (role: string) => admin.from("memberships").update({ role }).eq("user_id", staffId).eq("agency_id", frank.agencyId).select("id").single();
@@ -34,8 +34,18 @@ test("a User can't change Format Directions, Reference Material, or archive a cl
   expect(await changed(u.from("agency_knowledge_entries").insert({ agency_id: frank.agencyId, title: "By a User", body: "x", kind: "text", created_by: staffId }).select("id"))).toBe(false);
   expect(await changed(u.from("clients").update({ archived_at: new Date().toISOString() }).eq("id", frank.clientId).select("id"))).toBe(false);
   expect(await changed(u.from("projects").update({ archived_at: new Date().toISOString() }).eq("id", frank.projectId).select("id"))).toBe(false);
+  // Moving a project to another client they've been given (phase95).
+  const { data: second } = await admin.from("clients").insert({ agency_id: frank.agencyId, name: "E2E Second Client" }).select("id").single();
+  await admin.from("staff_client_access").insert({ membership_id: m!.id, client_id: second!.id });
+  const moved = await u.rpc("move_project_to_client", { p_project_id: frank.projectId, p_client_id: second!.id });
+  expect(moved.error?.message).toBe("Only Owners and Admins can move a project to another client");
 
   await frank.loginAsStaff(page);
+  await page.goto(`${APP_URL}/projects/${frank.projectId}`);
+  await page.getByRole("button", { name: "Project options" }).click();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Move to Client" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Archive", exact: true })).toHaveCount(0);
   await page.goto(`${APP_URL}/settings/general/account-name`);
   await expect(page.locator(".srow-val")).toHaveText("E2E Test Agency");
   await expect(page.getByLabel("Workspace name")).toHaveCount(0);
@@ -54,6 +64,9 @@ test("a User can't change Format Directions, Reference Material, or archive a cl
   expect(await changed(u.from("agency_knowledge_entries").insert({ agency_id: frank.agencyId, title: "By an Admin", body: "x", kind: "text", created_by: staffId }).select("id"))).toBe(true);
   expect(await changed(u.from("projects").update({ archived_at: new Date().toISOString() }).eq("id", frank.projectId).select("id"))).toBe(true);
   expect(await changed(u.from("projects").update({ archived_at: null }).eq("id", frank.projectId).select("id"))).toBe(true);
+  expect((await u.rpc("move_project_to_client", { p_project_id: frank.projectId, p_client_id: second!.id })).error).toBeNull();
+  expect((await admin.from("projects").select("client_id").eq("id", frank.projectId).single()).data!.client_id).toBe(second!.id);
+  await admin.from("projects").update({ client_id: frank.clientId }).eq("id", frank.projectId);
   await page.goto(`${APP_URL}/settings/knowledge/format-directions`);
   await expect(page.locator(".fd-row .fbtn").first()).toBeVisible();
   await page.goto(`${APP_URL}/settings/knowledge/reference-material`);

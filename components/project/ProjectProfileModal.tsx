@@ -113,9 +113,12 @@ export function ProjectProfileModal({
           <button type="button" className="btn" onClick={onMoveToFolder}>
             Move to Folder
           </button>
-          <button type="button" className="btn" onClick={onMoveToClient}>
-            Move to Client
-          </button>
+          {/* Owners and Admins only (phase95). */}
+          {isAdmin && (
+            <button type="button" className="btn" onClick={onMoveToClient}>
+              Move to Client
+            </button>
+          )}
           {/* Owners and Admins only (phase94). */}
           {isAdmin && (
             <button type="button" className="btn" onClick={onArchive}>

@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.24.4",
+    date: "2026-10-13",
+    title: "Moving projects is for Owners and Admins",
+    changes: ["Only Owners and Admins can move a project to another client; Users no longer see Move to Client."],
+  },
+  {
     version: "1.24.3",
     date: "2026-10-13",
     title: "What a User can change",
