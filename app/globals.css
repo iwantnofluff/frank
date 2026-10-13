@@ -3555,17 +3555,24 @@ select.sort:hover {
   max-width: 100cqw;
   max-height: 100cqh;
 }
-/* A video Story: the video and its timeline (a set height, so the video
-   can be sized against what's left) as large as the screen allows. */
+/* A video Story fills the screen too, its timeline laid over its foot
+   (the screen is exactly 9:16, with no room below it). */
 .ig.story .vplayer {
+  position: relative;
   width: 100%;
 }
 .ig.story .vframe {
-  width: min(100cqw, calc((100cqh - 46px) * var(--vr)));
+  width: min(100cqw, calc(100cqh * var(--vr)));
 }
 .ig.story .vbar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
   height: 46px;
   box-sizing: border-box;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.6));
 }
 .ig.story .ig-hold {
   width: auto;
@@ -7532,6 +7539,11 @@ a.profproject:hover .pp-t b {
   background: #fff;
   box-sizing: border-box;
   flex-shrink: 0;
+}
+/* A Story's phone: shorter, its screen exactly 9:16, so the artwork fills
+   it edge to edge (direct instruction). */
+.phoneframe.story {
+  height: 718px;
 }
 /* "No artwork yet" in the phone reads at the comments panel's empty-state
    size whatever the phone's zoom (direct instruction): 15.2px and 13.7px

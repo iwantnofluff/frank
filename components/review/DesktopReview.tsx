@@ -159,7 +159,7 @@ export function DesktopReview({
               {/* In the same phone as the Review page (direct instruction:
                   desktop only; the phone layout is the phone itself). It
                   fits the window, and the post scrolls inside it. */}
-              <PhoneFrame reserve={RESERVE}>
+              <PhoneFrame reserve={RESERVE} story={isStoryFormat(active.format)}>
                 <div className="lpv-bar">
                   <b>Posts</b>
                 </div>

@@ -469,7 +469,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
               >
               {/* 15% smaller, with the post's date and title above it
                   (direct instruction), to make room beside it. */}
-              <PhoneFrame scale={0.85} reserve={PNAV_CURRENT_H}>
+              <PhoneFrame scale={0.85} reserve={PNAV_CURRENT_H} story={isStoryFormat(creative.format)}>
               <div className="lpv-bar">
                 <button
                   type="button"

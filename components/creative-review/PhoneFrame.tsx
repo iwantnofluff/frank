@@ -5,6 +5,9 @@ import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode }
 // The phone's drawn size (the user's iPhone template) and the most it's
 // scaled on screen: 10% up from the 0.85 it had (direct instruction).
 const HEIGHT = 876;
+// A Story's phone (direct instruction: the artwork should fill it): its
+// screen exactly 9:16, 390 × 693.3 inside the 12px frame.
+const STORY_HEIGHT = 718;
 const MOST = 0.935;
 const LEAST = 0.6;
 // The space kept above it (margin-top), and below so it isn't flush.
@@ -21,6 +24,7 @@ export function PhoneFrame({
   children,
   reserve = 0,
   scale = 1,
+  story = false,
 }: {
   children: ReactNode;
   // Height kept free beside it in the space it fits (a title above, a note
@@ -29,7 +33,10 @@ export function PhoneFrame({
   // A share of its usual size (direct instruction: 0.85 on a post's page,
   // to make room for the previous and next post beside it).
   scale?: number;
+  // Shaped to a Story (9:16 screen) rather than a modern iPhone's.
+  story?: boolean;
 }) {
+  const height = story ? STORY_HEIGHT : HEIGHT;
   const ref = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(MOST * scale);
 
@@ -46,17 +53,17 @@ export function PhoneFrame({
         ABOVE -
         BELOW -
         reserve;
-      setZoom(Math.max(LEAST * scale, Math.min(MOST * scale, room / HEIGHT)));
+      setZoom(Math.max(LEAST * scale, Math.min(MOST * scale, room / height)));
     }
     fit();
     const observer = new ResizeObserver(fit);
     observer.observe(canvas);
     return () => observer.disconnect();
-  }, [reserve, scale]);
+  }, [reserve, scale, height]);
 
   return (
     // --pf-zoom lets text inside be sized as seen, not as drawn.
-    <div className="phoneframe" ref={ref} style={{ zoom, "--pf-zoom": zoom } as CSSProperties}>
+    <div className={story ? "phoneframe story" : "phoneframe"} ref={ref} style={{ zoom, "--pf-zoom": zoom } as CSSProperties}>
       <span className="pf-notch" aria-hidden="true" />
       <span className="pf-btn pf-btn1" aria-hidden="true" />
       <span className="pf-btn pf-btn2" aria-hidden="true" />

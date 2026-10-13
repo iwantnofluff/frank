@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.23.8",
+    date: "2026-10-13",
+    title: "Stories fill the phone",
+    changes: ["A Story's phone is shaped to the story, so its artwork or video fills the screen edge to edge, with nothing cropped and no black below. A video's timeline sits over its foot. Feed posts keep the usual phone."],
+  },
+  {
     version: "1.23.7",
     date: "2026-10-13",
     title: "Invites from Team only",
