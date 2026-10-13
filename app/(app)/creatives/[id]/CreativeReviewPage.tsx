@@ -9,7 +9,7 @@ import { dayMonth, ARTWORK_KEEP_DAYS } from "@/lib/artwork-removal";
 import { useClientPreferences } from "@/hooks/use-client-preferences";
 import { useLiveUpdates } from "@/hooks/use-live-updates";
 import { useClientLogoUrl } from "@/hooks/use-client-logo-url";
-import { aspectRatioCss, formatRatio, isStoryFormat } from "@/lib/formats";
+import { aspectRatioCss, formatRatio, isStoryFormat, postFormats } from "@/lib/formats";
 import { useCopyVersions } from "@/hooks/use-copy-versions";
 import { useAssetSignedUrl, usePreloadAssets } from "@/hooks/use-asset-signed-url";
 import { useComments } from "@/hooks/use-comments";
@@ -32,7 +32,7 @@ import { ChecksPanel } from "@/components/creative-review/ChecksPanel";
 import { ReviewNav, type ReviewSection } from "@/components/creative-review/ReviewNav";
 import { FeedPreviewGrid } from "@/components/creative-review/FeedPreviewGrid";
 import { PhoneFrame } from "@/components/creative-review/PhoneFrame";
-import { PostNeighbours } from "@/components/creative-review/PostNeighbours";
+import { PNAV_CURRENT_H, PostNeighbours } from "@/components/creative-review/PostNeighbours";
 import { useClientInstagramFeed } from "@/hooks/use-instagram";
 import { CommentsPanel } from "@/components/creative-review/CommentsPanel";
 import { ShareModal } from "@/components/creative-review/ShareModal";
@@ -462,8 +462,14 @@ export function CreativeReviewPage({ id }: { id: string }) {
                 creativeId={creative.id}
                 projectId={creative.project_id}
                 delivery={creative.projects?.delivery}
+                name={creative.name}
+                scheduledAt={creative.scheduled_at}
+                dueOn={creative.due_on}
+                formats={postFormats(creative)}
               >
-              <PhoneFrame>
+              {/* 15% smaller, with the post's date and title above it
+                  (direct instruction), to make room beside it. */}
+              <PhoneFrame scale={0.85} reserve={PNAV_CURRENT_H}>
               <div className="lpv-bar">
                 <button
                   type="button"

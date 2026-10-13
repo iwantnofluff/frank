@@ -36,12 +36,18 @@ test("a post's page names the previous and next post beside the phone, and opens
   await expect(next.locator("b")).toHaveText("Three Days After");
   const expected = new Date(own + 3 * day).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "2-digit" });
   await expect(next.locator(".pnav-date")).toHaveText(expected);
+  // The current post's date, title and format above the phone.
+  await expect(page.locator(".pnav-cur b")).toHaveText("E2E Test Creative");
+  await expect(page.locator(".pnav-cur .pnav-fmt")).toHaveText("Instagram Feed");
 
-  await next.click();
+  // The arrow steps to the next post...
+  await next.locator(".pnav-arrow").click();
   await page.waitForURL(`**/creatives/${after}`);
   await expect(prev.locator("b")).toHaveText("E2E Test Creative");
   await expect(next.locator("b")).toHaveText("A Week After");
-  await next.click();
+  await expect(page.locator(".pnav-cur b")).toHaveText("Three Days After");
+  // ...and the post's details open it too.
+  await next.locator(".pnav-d").click();
   await page.waitForURL((u) => !u.pathname.endsWith(after));
   await expect(prev.locator("b")).toHaveText("Three Days After");
   // The last post: nothing after it, the phone still centred.

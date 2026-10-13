@@ -3247,21 +3247,45 @@ select.sort:hover {
   padding: 22px 20px;
 }
 /* The previous and next post either side of the phone on a post's page
-   (direct instruction): an arrow, then the post's date, title and format.
-   An empty side keeps its width so the phone stays centred. */
+   (direct instruction): an arrow that steps to it, and its date, title
+   and format, which open it too, each with its own hover. 30px from the
+   phone; an empty side keeps its width so the phone stays centred. Above
+   the phone, the current post's date and title. */
 .pnav-row {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 30px;
+}
+.pnav-mid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.pnav-cur {
+  height: 64px;
+  padding-bottom: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  text-align: center;
+  max-width: 100%;
+}
+.pnav-cur b {
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 .pnav {
-  width: 140px;
+  width: 168px;
   flex: none;
   display: flex;
   align-items: center;
-  gap: 10px;
-  color: var(--ink);
-  text-decoration: none;
+  gap: 8px;
 }
 .pnav.next {
   flex-direction: row-reverse;
@@ -3269,25 +3293,26 @@ select.sort:hover {
 }
 .pnav-arrow {
   flex: none;
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: grid;
   place-items: center;
+  color: var(--ink);
   background: var(--surface);
   box-shadow: inset 0 0 0 1px var(--line);
-  transition: background 0.15s, box-shadow 0.15s;
+  transition: background 0.15s, box-shadow 0.15s, color 0.15s;
 }
 .pnav-arrow svg {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   fill: none;
   stroke: currentColor;
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.pnav:hover .pnav-arrow {
+.pnav-arrow:hover {
   background: var(--action-soft);
   box-shadow: inset 0 0 0 1px var(--action);
   color: var(--action);
@@ -3297,10 +3322,23 @@ select.sort:hover {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  color: var(--ink);
+  text-decoration: none;
+  transition: background 0.15s;
 }
+.pnav-d:hover {
+  background: var(--surface);
+}
+.pnav-d:hover b {
+  color: var(--action);
+}
+/* The same size as the current post's heading above the phone (direct
+   instruction). */
 .pnav-d b {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 600;
   line-height: 1.3;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -3309,7 +3347,7 @@ select.sort:hover {
 }
 .pnav-date,
 .pnav-fmt {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted);
 }
 /* Where the canvas is too narrow for the details, just the arrows. */
@@ -3318,7 +3356,7 @@ select.sort:hover {
 }
 @container (max-width: 690px) {
   .pnav {
-    width: 34px;
+    width: 40px;
   }
   .pnav-d {
     display: none;

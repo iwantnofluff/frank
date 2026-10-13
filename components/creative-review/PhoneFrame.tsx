@@ -20,14 +20,18 @@ const BELOW = 16;
 export function PhoneFrame({
   children,
   reserve = 0,
+  scale = 1,
 }: {
   children: ReactNode;
   // Height kept free beside it in the space it fits (a title above, a note
   // below), on the review link (direct instruction: the Reel fits the screen).
   reserve?: number;
+  // A share of its usual size (direct instruction: 0.85 on a post's page,
+  // to make room for the previous and next post beside it).
+  scale?: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [zoom, setZoom] = useState(MOST);
+  const [zoom, setZoom] = useState(MOST * scale);
 
   useLayoutEffect(() => {
     // The Review page's canvas, or the review link's desktop middle.
@@ -42,13 +46,13 @@ export function PhoneFrame({
         ABOVE -
         BELOW -
         reserve;
-      setZoom(Math.max(LEAST, Math.min(MOST, room / HEIGHT)));
+      setZoom(Math.max(LEAST * scale, Math.min(MOST * scale, room / HEIGHT)));
     }
     fit();
     const observer = new ResizeObserver(fit);
     observer.observe(canvas);
     return () => observer.disconnect();
-  }, [reserve]);
+  }, [reserve, scale]);
 
   return (
     // --pf-zoom lets text inside be sized as seen, not as drawn.

@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.23.2",
+    date: "2026-10-13",
+    title: "Quicker, roomier previous and next",
+    changes: [
+      "The previous and next post sit further from the phone, a little bigger and wider, and open straight away: they're loaded before you click.",
+      "The arrow steps to the previous or next post, and the date, title and format open it too, each with its own hover.",
+      "The post's own date, title and format are above the phone, which is a little smaller and lower to make room, so the trail at the top no longer repeats the date. The previous and next post's titles match its size.",
+    ],
+  },
+  {
     version: "1.23.1",
     date: "2026-10-13",
     title: "Previous and next post beside the phone",

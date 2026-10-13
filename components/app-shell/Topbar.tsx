@@ -5,7 +5,6 @@ import { useRouter, usePathname } from "next/navigation";
 import { useClientDetail } from "@/hooks/use-client";
 import { useProject } from "@/hooks/use-project";
 import { useCreative } from "@/hooks/use-creative";
-import { publishDate } from "@/lib/publish-date";
 import { useNotifications, type NotificationRow } from "@/hooks/use-notifications";
 import { BellIcon, HelpIcon } from "./icons";
 import { GlobalSearch } from "./GlobalSearch";
@@ -96,8 +95,6 @@ function CreativeCrumb({ creativeId }: { creativeId: string }) {
   const router = useRouter();
   const { data: creative } = useCreative(creativeId);
   const project = creative?.projects;
-  // Its date after its name (lib/publish-date.ts).
-  const date = creative ? publishDate(project?.delivery, creative.scheduled_at, creative.due_on) : null;
 
   return (
     <>
@@ -125,10 +122,8 @@ function CreativeCrumb({ creativeId }: { creativeId: string }) {
         <b>—</b>
       )}
       <span className="sep">/</span>
-      <b>
-        {creative?.name ?? "—"}
-        {date && ` (${date})`}
-      </b>
+      {/* No date after it now (direct instruction): it's above the phone. */}
+      <b>{creative?.name ?? "—"}</b>
     </>
   );
 }
