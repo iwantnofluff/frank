@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.26.0",
+    date: "2026-10-14",
+    title: "Owners can delete comments",
+    changes: [
+      "The Primary Owner and Owners can delete any comment on a post, from the team or the client. Deleting a comment takes its replies with it; a reply can also be deleted on its own.",
+      "You're asked first. A deleted comment is gone for everyone, on the post and on any review link.",
+    ],
+  },
+  {
     version: "1.25.1",
     date: "2026-10-14",
     title: "Clearer section icons on a post",

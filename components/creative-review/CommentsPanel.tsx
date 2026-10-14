@@ -14,6 +14,8 @@ import { useComments, type CommentRow } from "@/hooks/use-comments";
 import { useCreateComment } from "@/hooks/use-create-comment";
 import { useToggleCommentResolved } from "@/hooks/use-toggle-comment-resolved";
 import { useEditComment } from "@/hooks/use-edit-comment";
+import { useDeleteComment } from "@/hooks/use-delete-comment";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useToggleCommentVisibility } from "@/hooks/use-toggle-comment-visibility";
 import {
   commentTime,
@@ -257,6 +259,7 @@ function CommentCard({
   onToggleResolved,
   onToggleVisibility,
   onEdit,
+  onDelete,
   photos,
   fromName,
 }: {
@@ -271,6 +274,9 @@ function CommentCard({
   onToggleVisibility: (commentId: string, next: "private" | "public") => void;
   // Your own comment's new words (phase75).
   onEdit: (commentId: string, body: string) => Promise<unknown>;
+  // Owners and the Primary Owner (phase97): asks first; a thread's
+  // replies go with it.
+  onDelete?: (comment: CommentRow, replyCount: number) => void;
   photos: Record<string, string> | undefined;
   // The agency's or the client's name, for after a comment's author.
   fromName: (c: CommentRow) => string | null;
@@ -343,6 +349,18 @@ function CommentCard({
               {thread.resolved_at ? "Reopen" : "Resolve"}
             </button>
           )}
+          {onDelete && (
+            <button
+              type="button"
+              aria-label="Delete comment"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(thread, replies.length);
+              }}
+            >
+              Delete
+            </button>
+          )}
         </div>
       </div>}
 
@@ -380,6 +398,19 @@ function CommentCard({
                   />
                   {r.author_id === currentUserId && !r.id.startsWith("pending-") && editingId !== r.id && (
                     <EditCommentButton className="cedit-btn" onClick={() => setEditingId(r.id)} />
+                  )}
+                  {onDelete && !r.id.startsWith("pending-") && (
+                    <button
+                      type="button"
+                      className="cedit-btn"
+                      aria-label="Delete reply"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete(r, 0);
+                      }}
+                    >
+                      Delete
+                    </button>
                   )}
                 </div>
               </div>
@@ -448,6 +479,9 @@ export function CommentsPanel({
   const toggleResolved = useToggleCommentResolved(creativeId);
   const editComment = useEditComment(creativeId);
   const toggleVisibility = useToggleCommentVisibility(creativeId);
+  const deleteComment = useDeleteComment(creativeId);
+  // The comment an Owner has asked to delete, and how many replies go too.
+  const [deleting, setDeleting] = useState<{ comment: CommentRow; replies: number } | null>(null);
 
   const [filter, setFilter] = useState<Filter>("all");
 
@@ -459,6 +493,8 @@ export function CommentsPanel({
   }, [highlightedCommentId]);
 
   const isStaff = membership ? membership.client_id === null : false;
+  // Owners and the Primary Owner delete any comment (phase97).
+  const canDelete = isStaff && (membership?.role === "owner" || membership?.role === "primary_owner");
 
   const { threads, repliesByParent, openCount } = useMemo(() => {
     const all = comments ?? [];
@@ -556,6 +592,7 @@ export function CommentsPanel({
               toggleVisibility.mutate({ commentId, visibility })
             }
             onEdit={(commentId, body) => editComment.mutateAsync({ commentId, body })}
+            onDelete={canDelete ? (comment, replies) => setDeleting({ comment, replies }) : undefined}
           />
         ))}
       </div>
@@ -610,6 +647,32 @@ export function CommentsPanel({
           })
         }
       />
+
+      {deleting && (
+        <ConfirmDialog
+          title={deleting.comment.parent_id ? "Delete Reply?" : "Delete Comment?"}
+          message={`${deleting.comment.parent_id ? "this reply" : "this comment"} from ${deleting.comment.author?.name ?? deleting.comment.guest_name ?? "someone"}${
+            deleting.replies > 0 ? ` and its ${deleting.replies === 1 ? "reply" : `${deleting.replies} replies`}` : ""
+          } will be gone for everyone, here and on any review link. It can't be undone.`}
+          confirmLabel="Delete"
+          pendingLabel="Deleting…"
+          isPending={deleteComment.isPending}
+          error={deleteComment.error}
+          errorFallback="Couldn't delete it"
+          onConfirm={() =>
+            deleteComment.mutate(deleting.comment.id, {
+              onSuccess: () => {
+                if (highlightedCommentId === deleting.comment.id) onHighlight?.(null);
+                setDeleting(null);
+              },
+            })
+          }
+          onClose={() => {
+            deleteComment.reset();
+            setDeleting(null);
+          }}
+        />
+      )}
     </aside>
   );
 }
