@@ -1311,7 +1311,7 @@ export function ProjectCalendarTable({
       )}
 
       <div className="callegend">
-        {Array.from({ length: 4 }, (_, i) => i + 1).map((stage) => (
+        {Array.from({ length: 5 }, (_, i) => i + 1).map((stage) => (
           <span key={stage}>
             <i style={{ background: stageColor(stage, null) }} />
             {stage} {stageLabel(stage, "scheduled")}

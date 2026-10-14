@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 // someone @mentioning them in a project's Discussion (phase84).
 export interface NotificationRow {
   id: string;
-  kind: "artwork_removal" | "client_comment" | "client_approval" | "discussion_mention";
+  kind: "artwork_removal" | "client_comment" | "client_approval" | "discussion_mention" | "live_unapproved";
   // For a comment: who, and what they said.
   comment: { id: string; body: string; who: string } | null;
   // For a mention: who, what they wrote, and the project.

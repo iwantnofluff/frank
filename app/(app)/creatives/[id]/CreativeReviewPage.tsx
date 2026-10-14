@@ -352,6 +352,22 @@ export function CreativeReviewPage({ id }: { id: string }) {
                     <span className="no">4.</span>
                     Approved
                   </button>
+                  {/* Live (phase99): Frank sets it when it finds the post on
+                      Instagram; set by hand, now is its live date. */}
+                  <button
+                    data-label="Live"
+                    aria-label="Live"
+                    type="button"
+                    className="sw-live"
+                    aria-pressed={creative.stage === 5}
+                    disabled={advanceStage.isPending}
+                    onClick={() => {
+                      if (creative.stage !== 5) advanceStage.mutate("to_live");
+                    }}
+                  >
+                    <span className="no">5.</span>
+                    Live
+                  </button>
                 </div>
               </>
             )}

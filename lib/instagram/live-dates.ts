@@ -7,8 +7,11 @@ import { EARLIEST_DAYS, LATEST_DAYS, matchLivePosts, type ScheduledPost } from "
 // for each client with a working Instagram connection, its recent posts on
 // Instagram against Frank's scheduled Instagram posts not yet found, by
 // caption (lib/live-match.ts). Each found is logged in post_live_dates
-// with when it went live and when it was due, for Analytics. Nothing on
-// the post itself changes. A connection that fails is noted and skipped.
+// with when it went live and when it was due, for Analytics, and moves to
+// 5. Live (phase99), its agency's Owners and Admins told if it wasn't yet
+// Approved. A post set Live by hand is still looked for, so Instagram's
+// time replaces the hand-set one. A connection that fails is noted and
+// skipped.
 
 const DAY = 86_400_000;
 const IG_FORMATS = ["ig_feed", "ig_carousel", "ig_reel"];
@@ -21,12 +24,14 @@ const MAX_PAGES = 4;
 export interface LiveDatesRun {
   accounts: number;
   logged: number;
+  // Of those, moved to Live by this run.
+  moved: number;
   failed: number;
 }
 
 // Every agency's, or one's (the tests', as run_artwork_housekeeping takes).
 export async function logLiveDates(admin: SupabaseClient, agencyId?: string): Promise<LiveDatesRun> {
-  const run: LiveDatesRun = { accounts: 0, logged: 0, failed: 0 };
+  const run: LiveDatesRun = { accounts: 0, logged: 0, moved: 0, failed: 0 };
   let q = admin.from("instagram_connections").select("id, client_id").is("needs_reconnect_at", null);
   if (agencyId) q = q.eq("agency_id", agencyId);
   const { data: conns, error } = await q;
@@ -69,12 +74,20 @@ export async function logLiveDates(admin: SupabaseClient, agencyId?: string): Pr
             permalink: m.permalink,
             live_at: m.liveAt,
             scheduled_at: m.scheduledAt,
+            source: "instagram",
           })),
-          { onConflict: "creative_id", ignoreDuplicates: true },
+          // A hand-set date gives way to Instagram's (candidatePosts
+          // leaves out any already found on Instagram).
+          { onConflict: "creative_id" },
         )
         .select("creative_id");
       if (writeError) throw new Error(writeError.message);
       run.logged += written?.length ?? 0;
+      const { data: moved, error: moveError } = await admin.rpc("mark_posts_live", {
+        p_creative_ids: matches.map((m) => m.postId),
+      });
+      if (moveError) throw new Error(moveError.message);
+      run.moved += (moved as number | null) ?? 0;
     } catch (e) {
       run.failed++;
       if (isTokenGone(e)) {
@@ -92,7 +105,7 @@ export async function logLiveDates(admin: SupabaseClient, agencyId?: string): Pr
 async function candidatePosts(admin: SupabaseClient, clientId: string, since: number): Promise<ScheduledPost[]> {
   const { data: rows, error } = await admin
     .from("creatives")
-    .select("id, formats, scheduled_at, projects!inner(client_id), post_live_dates(creative_id)")
+    .select("id, formats, scheduled_at, projects!inner(client_id), post_live_dates(source)")
     .eq("projects.client_id", clientId)
     .is("archived_at", null)
     .not("scheduled_at", "is", null)
@@ -100,7 +113,13 @@ async function candidatePosts(admin: SupabaseClient, clientId: string, since: nu
     .lte("scheduled_at", new Date(Date.now() + EARLIEST_DAYS * DAY).toISOString())
     .overlaps("formats", IG_FORMATS);
   if (error) throw new Error(error.message);
-  const open = (rows ?? []).filter((r) => !(r.post_live_dates as unknown[] | null)?.length);
+  // Not yet found on Instagram (a date set by hand doesn't count). One
+  // row a post, so the embed is an object or null.
+  const found = (r: { post_live_dates: unknown }) => {
+    const l = r.post_live_dates as { source: string } | { source: string }[] | null;
+    return (Array.isArray(l) ? l : l ? [l] : []).some((x) => x.source === "instagram");
+  };
+  const open = (rows ?? []).filter((r) => !found(r));
   if (!open.length) return [];
   const { data: copies, error: copyError } = await admin
     .from("copy_versions")

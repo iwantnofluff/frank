@@ -10,7 +10,7 @@ export function artworkRemovalDate(
   post: { stage: number; scheduled_at: string | null },
   keepDays: number = ARTWORK_KEEP_DAYS,
 ): Date | null {
-  if (post.stage !== 4 || !post.scheduled_at) return null;
+  if (post.stage < 4 || !post.scheduled_at) return null;
   return new Date(new Date(post.scheduled_at).getTime() + keepDays * DAY_MS);
 }
 

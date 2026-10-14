@@ -50,7 +50,9 @@ test("bandOf — stage 2-3 boundary itself, no exception", () => {
 
 test("bandOf — out-of-range stage falls back to stage 1's band, same shape as the prototype's STAGES[e.stage]||STAGES[1]", () => {
   assert.equal(bandOf(0, null), "internal");
-  assert.equal(bandOf(5, null), "internal");
+  assert.equal(bandOf(6, null), "internal");
+  // Live (phase99) is a real stage, done like Approved.
+  assert.equal(bandOf(5, null), "approved");
   assert.equal(bandOf(-1, null), "internal");
 });
 

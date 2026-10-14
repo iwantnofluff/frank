@@ -70,7 +70,7 @@ export function pickOtherPosts(
   }
   const when = (p: PostRow) => p.approved_at ?? p.updated_at;
   const ordered = posts
-    .filter((p) => p.stage === 4 && (!since || new Date(when(p)) >= since))
+    .filter((p) => p.stage >= 4 && (!since || new Date(when(p)) >= since))
     .sort((a, b) => when(b).localeCompare(when(a)));
   const out: OtherPost[] = [];
   for (const p of ordered) {

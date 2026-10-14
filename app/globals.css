@@ -72,6 +72,8 @@
   --stage-approved: #4caf50;
   --stage-approved-ink: #2e7d32;
   --stage-approved-bg: #4caf5026;
+  --stage-live: #2e7d32;
+  --stage-live-ink: #1b5e20;
 }
 
 * {
@@ -3214,6 +3216,10 @@ a.fd-ref:hover {
 .stagesw button.sw-approved:not([aria-pressed="true"]):hover {
   background: var(--stage-approved);
 }
+.stagesw button.sw-live[aria-pressed="true"],
+.stagesw button.sw-live:not([aria-pressed="true"]):hover {
+  background: var(--stage-live);
+}
 .stagesw button:not([aria-pressed="true"]):hover {
   opacity: 0.8;
 }
@@ -3441,6 +3447,16 @@ select.sort:hover {
   gap: 2px;
   text-align: center;
   max-width: 100%;
+}
+/* When it really went live (phase99, direct instruction): green on time,
+   red late. */
+.pnav-live.on_time {
+  color: var(--stage-approved-ink);
+  font-weight: 600;
+}
+.pnav-live.late {
+  color: #d32f2f;
+  font-weight: 600;
 }
 .pnav-cur b {
   font-size: 15px;

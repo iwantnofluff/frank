@@ -2,7 +2,7 @@
 // (or `npm run test:unit`).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { isLive, isOverdue } from "./post-live.ts";
+import { isLive, isOverdue, liveTiming } from "./post-live.ts";
 
 const now = Date.parse("2026-10-13T09:00:00Z");
 
@@ -34,3 +34,14 @@ test("isOverdue — a Live Date is late only from the day after; no date, never"
   assert.equal(isOverdue({ stage: 2, scheduled_at: null, due_on: null }, now), false);
 });
 
+
+test("liveTiming — on time that day or before, late from the next day", () => {
+  const planned = { scheduled_at: "2026-10-14T09:00:00" };
+  assert.equal(liveTiming(planned, "scheduled", "2026-10-14T21:00:00"), "on_time");
+  assert.equal(liveTiming(planned, "scheduled", "2026-10-13T08:00:00"), "on_time");
+  assert.equal(liveTiming(planned, "scheduled", "2026-10-15T00:30:00"), "late");
+  // A continuous project's Live Date, a plain date.
+  assert.equal(liveTiming({ scheduled_at: null, due_on: "2026-10-14" }, "continuous", "2026-10-14T23:00:00"), "on_time");
+  assert.equal(liveTiming({ scheduled_at: null, due_on: "2026-10-14" }, "continuous", "2026-10-15T10:00:00"), "late");
+  assert.equal(liveTiming({ scheduled_at: null }, "scheduled", "2026-10-15T10:00:00"), null);
+});

@@ -13,6 +13,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.30.0",
+    date: "2026-10-14",
+    title: "5. Live",
+    changes: [
+      "Posts have a fifth stage, 5. Live, in a darker green. Frank moves a post to Live when it finds it on the client's Instagram; the team can also set it by hand for posts Frank can't find (Stories, other platforms, clients without Instagram connected).",
+      "On a post's page, the date it really went live shows in brackets after its planned date: green if it went live that day or earlier, red if later.",
+      "If Frank finds a post live before it was approved, Owners and Admins are told in the bell.",
+      "The planner's status filter and legend include Live.",
+    ],
+  },
+  {
     version: "1.29.0",
     date: "2026-10-14",
     title: "Frank notes when posts really went live",

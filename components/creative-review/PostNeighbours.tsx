@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useCreatives, type CreativeListRow } from "@/hooks/use-creatives";
 import { formatsLabel, postFormats } from "@/lib/formats";
 import { publishDate } from "@/lib/publish-date";
+import { liveTiming } from "@/lib/post-live";
+import { usePostLiveDate } from "@/hooks/use-post-live-date";
 
 // The height of the current post's date, title and format above the phone,
 // kept free when the phone sizes itself to the canvas.
@@ -53,6 +55,11 @@ export function PostNeighbours({
   children: React.ReactNode;
 }) {
   const { data: rows } = useCreatives(projectId);
+  // When it really went live, after its planned date: green on time, red
+  // late (phase99, direct instruction).
+  const { data: live } = usePostLiveDate(creativeId);
+  const timing = live ? liveTiming({ scheduled_at: scheduledAt, due_on: dueOn }, delivery, live.live_at) : null;
+  const liveDate = live ? publishDate("scheduled", live.live_at, null) : null;
   const list = rows ? inDateOrder(rows, delivery) : [];
   const at = list.findIndex((c) => c.id === creativeId);
   const prev = at > 0 ? list[at - 1] : null;
@@ -90,7 +97,20 @@ export function PostNeighbours({
       {side(prev, "prev")}
       <div className="pnav-mid">
         <div className="pnav-cur">
-          <span className="pnav-date">{publishDate(delivery, scheduledAt, dueOn) ?? "No date"}</span>
+          <span className="pnav-date">
+            {publishDate(delivery, scheduledAt, dueOn) ?? "No date"}
+            {liveDate && (
+              <>
+                {" "}
+                <span
+                  className={`pnav-live${timing ? ` ${timing}` : ""}`}
+                  title={`Went live ${liveDate}${timing === "late" ? ", late" : timing === "on_time" ? ", on time" : ""}${live?.source === "manual" ? " (set by hand)" : ""}`}
+                >
+                  ({liveDate})
+                </span>
+              </>
+            )}
+          </span>
           <b>{name}</b>
           {/* Its type and format too (direct instruction). */}
           <span className="pnav-fmt">{formatsLabel(formats)}</span>

@@ -57,7 +57,7 @@ test("project calendar — status filter narrows the visible rows", async ({ pag
 
   // The four stages (direct instruction: the older bands went).
   const status = page.getByLabel("Status");
-  await expect(status.locator("option")).toHaveText(["All Statuses", "1. Concept", "2. Internal Review", "3. Client Review", "4. Approved"]);
+  await expect(status.locator("option")).toHaveText(["All Statuses", "1. Concept", "2. Internal Review", "3. Client Review", "4. Approved", "5. Live"]);
   await status.selectOption("3");
   await expect(page.locator(".pname", { hasText: "Concept-Stage E2E" })).toHaveCount(0);
   await expect(page.locator(".pname", { hasText: "E2E Test Creative" })).toBeVisible();

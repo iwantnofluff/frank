@@ -21,6 +21,9 @@ const STAGE_TABLE: { label: string; band: Band; color: string; ink: string }[] =
   { label: "Internal Review", band: "internal", color: "#F4A460", ink: "#A3570F" }, // 2
   { label: "Client Review", band: "review", color: "#F4A460", ink: "#A3570F" }, // 3
   { label: "Approved", band: "approved", color: "#4CAF50", ink: "#2E7D32" }, // 4
+  // Live (phase99, direct instruction): a darker green, found on Instagram
+  // by Frank or set by hand. In the approved band: done, and further.
+  { label: "Live", band: "approved", color: "#2E7D32", ink: "#1B5E20" }, // 5
 ];
 
 const EXCEPTION_TABLE: Record<Exception, { label: string; color: string; ink: string }> = {

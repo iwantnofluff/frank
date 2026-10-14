@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 
-export type StageDirection = "to_review" | "to_internal" | "to_approved";
+export type StageDirection = "to_review" | "to_internal" | "to_approved" | "to_live";
 
 // Staff-driven stage moves — Internal Review, Client Review, Approved,
 // any direction from any stage (phase13_simplify_stage_pipeline.sql).
@@ -43,6 +43,8 @@ export function useAdvanceCreativeStage(creativeId: string) {
         queryKey: ["creatives"],
         refetchType: "all",
       });
+      // Live set by hand records its live date; leaving Live takes it away.
+      await queryClient.invalidateQueries({ queryKey: ["post-live-date", creativeId] });
     },
   });
 }

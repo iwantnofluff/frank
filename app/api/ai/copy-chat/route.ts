@@ -284,7 +284,7 @@ async function clientContext(supabase: Awaited<ReturnType<typeof createClient>>,
           .from("creatives")
           .select("id, name, stage, format, formats, voiceover, slide_text, updated_at, approved_at")
           .in("project_id", projectIds)
-          .eq("stage", 4)
+          .gte("stage", 4)
           .is("archived_at", null)
           .neq("id", creativeId);
         if (postsFrom) q = q.gte("approved_at", postsFrom.toISOString());

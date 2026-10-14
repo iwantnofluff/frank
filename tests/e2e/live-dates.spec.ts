@@ -71,9 +71,9 @@ test("a scheduled post found live on Instagram by its caption is logged with its
   }) as typeof fetch;
   try {
     const run = await logLiveDates(admin, frank.agencyId);
-    expect(run).toEqual({ accounts: 1, logged: 1, failed: 0 });
+    expect(run).toEqual({ accounts: 1, logged: 1, moved: 1, failed: 0 });
     // Run again: nothing more, nothing twice.
-    expect(await logLiveDates(admin, frank.agencyId)).toEqual({ accounts: 1, logged: 0, failed: 0 });
+    expect(await logLiveDates(admin, frank.agencyId)).toEqual({ accounts: 1, logged: 0, moved: 0, failed: 0 });
   } finally {
     globalThis.fetch = realFetch;
   }
@@ -88,6 +88,16 @@ test("a scheduled post found live on Instagram by its caption is logged with its
   const late = (Date.parse(row.live_at) - Date.parse(row.scheduled_at)) / DAY;
   expect(late).toBeGreaterThan(1.99);
   expect(late).toBeLessThan(2.01);
+  expect(row.source).toBe("instagram");
+
+  // 5. Live (phase99); it was still in Client Review, so the agency's
+  // Admin (the fixture's staff) is told it went out unapproved.
+  const { data: post } = await admin.from("creatives").select("stage").eq("id", frank.creativeId).single();
+  expect(post!.stage).toBe(5);
+  const { data: told } = await admin.from("notifications").select("user_id").eq("kind", "live_unapproved").eq("creative_id", frank.creativeId);
+  expect(told!.map((t) => t.user_id)).toEqual([staffId]);
+  const { data: reelNow } = await admin.from("creatives").select("stage").eq("id", reel!.id).single();
+  expect(reelNow!.stage).not.toBe(5);
 
   // The team reads it; a client doesn't.
   const staff = await signIn(frank.staffEmail, frank.staffPassword);
@@ -129,4 +139,32 @@ test("an Approved post's artwork clock starts from when it really went live", as
   expect(runError).toBeNull();
   expect(keys as string[]).toContain(onTime.key);
   expect(keys as string[]).not.toContain(late.key);
+});
+
+test("the team sets Live by hand: its live date is now, shown after the planned date; back to Approved takes it away", async ({ page, frank }) => {
+  test.setTimeout(90_000);
+  // Approved, due two days ago: set Live now, it's late.
+  await admin.from("creatives").update({ stage: 4, approved_at: ago(3), approved_by_name: "Client Person", scheduled_at: ago(2) }).eq("id", frank.creativeId);
+  await frank.loginAsStaff(page);
+  await page.goto(`/creatives/${frank.creativeId}`);
+  await page.getByRole("button", { name: "Live", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Live", exact: true })).toHaveAttribute("aria-pressed", "true");
+  const { data: row } = await admin.from("post_live_dates").select("source, live_at").eq("creative_id", frank.creativeId).single();
+  expect(row!.source).toBe("manual");
+  expect(Date.now() - Date.parse(row!.live_at)).toBeLessThan(5 * 60_000);
+  // Planned date, then the live date in brackets, red as it's late.
+  const liveDate = page.locator(".pnav-cur .pnav-live");
+  await expect(liveDate).toHaveClass(/late/);
+  await expect(liveDate).toHaveText(/^\(\d{1,2} [A-Z][a-z]{2} \d{2}\)$/);
+  // Its approval is kept.
+  const { data: post } = await admin.from("creatives").select("stage, approved_by_name").eq("id", frank.creativeId).single();
+  expect(post).toEqual({ stage: 5, approved_by_name: "Client Person" });
+
+  // Back to Approved: the hand-set date goes, the approval stays.
+  await page.getByRole("button", { name: "Approved", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Approved", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(liveDate).toHaveCount(0);
+  expect((await admin.from("post_live_dates").select("creative_id").eq("creative_id", frank.creativeId)).data).toEqual([]);
+  const { data: back } = await admin.from("creatives").select("stage, approved_by_name").eq("id", frank.creativeId).single();
+  expect(back).toEqual({ stage: 4, approved_by_name: "Client Person" });
 });

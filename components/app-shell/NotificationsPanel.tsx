@@ -147,6 +147,11 @@ export function NotificationsPanel({
                 <b>{post?.approved_by_name ?? "The client"}</b> approved <b>{post?.name ?? "a post"}</b>
                 {client ? ` · ${client}` : ""}
               </>
+            ) : n.kind === "live_unapproved" ? (
+              <>
+                <b>{post?.name ?? "A post"}</b>
+                {client ? ` · ${client}` : ""} went live on Instagram before it was approved.
+              </>
             ) : (
               <>
                 <b>{post?.name ?? "A post"}</b>
