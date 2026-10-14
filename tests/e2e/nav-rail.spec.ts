@@ -85,7 +85,7 @@ test("outside a client the rail is just Clients, and Settings opens from your pi
   await expect.poll(() => railLinks(page)).toEqual(["Clients -> /dashboard"]);
   await expect(page.locator('a[href="/calendar"], a[href="/analytics"], a[href="/visibility"]')).toHaveCount(0);
   await page.getByRole("button", { name: "Your account" }).click();
-  await expect(page.getByRole("menu").getByRole("menuitem")).toHaveText(["My Profile", "Settings", "Sign out"]);
+  await expect(page.getByRole("menu").getByRole("menuitem")).toHaveText(["My Profile", "Workspace Settings", "Sign out"]);
   await page.getByRole("menu").getByRole("menuitem", { name: "Settings" }).click();
   await page.waitForURL(/\/settings\//);
   // Frank's logo goes back to the clients list.
