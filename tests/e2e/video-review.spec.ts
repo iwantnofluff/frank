@@ -347,29 +347,33 @@ test("a video is compressed to a 720p review copy before it's uploaded", async (
   expect((await input.getPrimaryAudioTrack())?.codec).toBe("aac");
 });
 
-// A Reel's full-screen button (direct instruction): over the video's top
-// right, on the post page and a review link; it fills the screen with the
-// player, timeline and all, and takes it back out.
-test("a Reel's video goes full screen and back, on the post page and a review link", async ({ page, frank }) => {
+// A Reel's expand button (direct instruction): over the video's top right,
+// on the post page and a review link; it fills the phone's screen with the
+// player, timeline and all — inside the phone, not the computer's screen
+// (direct instruction) — and puts it back.
+test("a Reel's video expands to fill the phone and back, on the post page and a review link", async ({ page, frank }) => {
   test.setTimeout(90_000);
   await seedReel(page, frank);
   await admin.from("creatives").update({ format: "ig_reel" }).eq("id", frank.creativeId);
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
-  const full = page.getByRole("button", { name: "Full screen", exact: true });
-  await expect(full).toBeVisible({ timeout: 20_000 });
-  await full.click();
-  await expect.poll(() => page.evaluate(() => document.fullscreenElement?.className ?? null)).toContain("vplayer");
-  // The video as tall as the screen leaves room for, its timeline under it.
-  const frame = (await page.locator(".vplayer.full .vframe").boundingBox())!;
-  const vh = page.viewportSize()!.height;
-  expect(frame.height).toBeGreaterThan(vh * 0.85);
+  const expand = page.getByRole("button", { name: "Expand video" });
+  await expect(expand).toBeVisible({ timeout: 20_000 });
+  await expand.click();
+  // Not the browser's full screen: the phone's screen, exactly.
+  expect(await page.evaluate(() => document.fullscreenElement)).toBeNull();
+  const player = (await page.locator(".vplayer.full").boundingBox())!;
+  const screen = (await page.locator(".pf-screen").boundingBox())!;
+  for (const k of ["x", "y", "width", "height"] as const) expect(Math.abs(player[k] - screen[k])).toBeLessThan(2);
   await expect(page.locator(".vplayer.full .vtrack")).toBeVisible();
-  await page.getByRole("button", { name: "Exit full screen" }).click();
-  await expect.poll(() => page.evaluate(() => document.fullscreenElement)).toBeNull();
+  await page.getByRole("button", { name: "Collapse video" }).click();
+  await expect(page.locator(".vplayer.full")).toHaveCount(0);
+  // Esc puts it back too.
+  await expand.click();
+  await page.keyboard.press("Escape");
   await expect(page.locator(".vplayer.full")).toHaveCount(0);
 
   const token = await frank.createSharedLink();
   await page.goto(`${APP_URL}/review/${token}`);
-  await expect(page.getByRole("button", { name: "Full screen", exact: true })).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole("button", { name: "Expand video" })).toBeVisible({ timeout: 20_000 });
 });

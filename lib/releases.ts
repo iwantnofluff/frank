@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.28.1",
+    date: "2026-10-14",
+    title: "A Reel expands inside the phone",
+    changes: [
+      "A Reel's expand button now fills the phone's screen with the video, as the app does, instead of your whole screen. Press it again, or Esc, to put it back.",
+    ],
+  },
+  {
     version: "1.28.0",
     date: "2026-10-14",
     title: "Watch a Reel full screen",

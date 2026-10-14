@@ -51,11 +51,11 @@ export function VideoPlayer({
   // takes over once known, if different.
   ratio: number;
   // A Reel's (direct instruction): a button over the frame's top right
-  // that fills the screen with it, as the app does.
+  // that fills the phone's screen with it, as the app does — the phone's,
+  // not the computer's (direct instruction).
   expandable?: boolean;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
-  const playerRef = useRef<HTMLDivElement>(null);
   const [full, setFull] = useState(false);
   const [ownRatio, setOwnRatio] = useState<number | null>(null);
   const r = ownRatio ?? ratio;
@@ -100,30 +100,20 @@ export function VideoPlayer({
     else v.pause();
   }
 
+  // Esc puts an expanded video back.
   useEffect(() => {
-    const onChange = () => setFull(document.fullscreenElement === playerRef.current && !!playerRef.current);
-    document.addEventListener("fullscreenchange", onChange);
-    return () => document.removeEventListener("fullscreenchange", onChange);
-  }, []);
-
-  // The whole player fills the screen, its timeline and comments with it.
-  // Where a page can't (an iPhone), the phone's own full-screen video.
-  function expand() {
-    const player = playerRef.current;
-    const v = ref.current as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null;
-    if (document.fullscreenElement) {
-      void document.exitFullscreen();
-    } else if (player?.requestFullscreen) {
-      void player.requestFullscreen().catch(() => v?.webkitEnterFullscreen?.());
-    } else {
-      v?.webkitEnterFullscreen?.();
-    }
-  }
+    if (!full) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setFull(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [full]);
 
   const pct = (t: number) => (duration ? `${(Math.min(t, duration) / duration) * 100}%` : "0%");
 
   return (
-    <div className={`vplayer${full ? " full" : ""}`} ref={playerRef} style={{ "--vr": r } as CSSProperties}>
+    <div className={`vplayer${full ? " full" : ""}`} style={{ "--vr": r } as CSSProperties}>
       {/* Sized from the shape, not from the loaded video (.vframe): as wide
           as fits, no taller than 62% of the screen, or a Story's screen. */}
       <div className="vframe" style={{ "--vr": r } as CSSProperties}>
@@ -153,11 +143,11 @@ export function VideoPlayer({
           <button
             type="button"
             className="vexpand"
-            aria-label={full ? "Exit full screen" : "Full screen"}
-            title={full ? "Exit full screen" : "Full screen"}
+            aria-label={full ? "Collapse video" : "Expand video"}
+            title={full ? "Collapse" : "Expand"}
             onClick={(e) => {
               e.stopPropagation();
-              expand();
+              setFull((f) => !f);
             }}
           >
             {full ? (

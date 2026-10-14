@@ -6705,26 +6705,27 @@ button.avatar {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-/* Full screen: the video as tall as the screen leaves room for, on black,
-   its timeline under it at the same width. */
+/* Expanded (direct instruction): the video fills the phone's screen, on
+   black, its timeline under it, over the post's header and caption. The
+   media box steps aside so the phone's screen is what it covers; outside
+   a drawn phone (a review link on a real phone), the window. */
 .vplayer.full {
-  /* The phone is shrunk with zoom (PhoneFrame), which the player would
-     keep on the full screen; this undoes it. */
-  zoom: calc(1 / var(--pf-zoom, 1));
+  position: fixed;
+  inset: 0;
+  z-index: 40;
   display: flex;
   flex-direction: column;
-  align-items: center;
   justify-content: center;
-  width: 100vw;
-  height: 100vh;
+}
+.pf-screen .vplayer.full {
+  position: absolute;
+}
+.ig-media:has(.vplayer.full) {
+  position: static;
 }
 .vplayer.full .vframe,
 .phoneframe .ig-media .vplayer.full .vframe {
-  width: min(100vw, calc((100vh - 52px) * var(--vr)));
-}
-.vplayer.full .vbar {
-  width: min(100vw, calc((100vh - 52px) * var(--vr)));
-  box-sizing: border-box;
+  width: 100%;
 }
 /* A little taller than at first (direct instruction): easier to hit. */
 .vbar {
@@ -7919,7 +7920,8 @@ a.profproject:hover .pp-t b {
   padding-top: 54px;
   background: #fff;
 }
-/* The Dynamic Island: 126 × 37, 11 below the top of the screen. */
+/* The Dynamic Island: 126 × 37, 11 below the top of the screen; above
+   anything on it, an expanded Reel included, as the hardware is. */
 .pf-notch {
   position: absolute;
   top: 11px;
@@ -7929,7 +7931,7 @@ a.profproject:hover .pp-t b {
   transform: translateX(-50%);
   background: #000;
   border-radius: 19px;
-  z-index: 2;
+  z-index: 50;
 }
 /* An iPhone 15's buttons: the side button on the right; the Action button
    and the volume buttons on the left. */
