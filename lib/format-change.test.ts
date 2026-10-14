@@ -42,3 +42,15 @@ test("media kinds", () => {
   assert.equal(mediaKind("sms"), "text");
   assert.equal(mediaKind("ig_feed"), "image");
 });
+
+test("artworkChangeReasons: stories", () => {
+  const story = (n: number | null) => ({ formats: ["ig_story"], slideCount: n });
+  assert.deepEqual(artworkChangeReasons(story(3), story(5), 3), []);
+  assert.deepEqual(artworkChangeReasons(story(3), story(2), 3), ["The stories go down to 2, and 3 are uploaded."]);
+  assert.deepEqual(artworkChangeReasons(story(3), story(3), 3), []);
+  // To a single piece of the same shape: fine with one, not with several.
+  assert.deepEqual(artworkChangeReasons(story(1), { formats: ["ig_reel"], slideCount: null }, 1), []);
+  assert.deepEqual(artworkChangeReasons(story(2), { formats: ["yt_short"], slideCount: null }, 2), [
+    "YouTube Short is a single piece, and 2 are uploaded.",
+  ]);
+});

@@ -636,7 +636,13 @@ export function CreativeReviewPage({ id }: { id: string }) {
                       />
                     </div>
                   )}
-                  <CarouselNav index={frameIndex} count={frames.length} onChange={goToSlide} overVideo={!!isVideo} />
+                  <CarouselNav
+                    index={frameIndex}
+                    count={frames.length}
+                    onChange={goToSlide}
+                    overVideo={!!isVideo}
+                    story={isStoryFormat(creative.format)}
+                  />
                 </div>
                 <div className="ig-acts">
                   <svg viewBox="0 0 24 24">

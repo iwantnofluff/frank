@@ -2,7 +2,7 @@
 // (or `npm run test:unit`).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { FORMATS, FORMAT_CATEGORIES, formatById, formatsByCategory, postFormats, formatsLabel, copyFieldsFor, copySummary, copySummaryParts, VIDEO_FORMAT_IDS, hasVideoFormat } from "./formats.ts";
+import { FORMATS, FORMAT_CATEGORIES, formatById, formatsByCategory, postFormats, formatsLabel, copyFieldsFor, copySummary, copySummaryParts, VIDEO_FORMAT_IDS, hasVideoFormat, frameLimits } from "./formats.ts";
 
 test("FORMATS has exactly 41 entries, matching the prototype's catalog", () => {
   assert.equal(FORMATS.length, 41);
@@ -66,4 +66,17 @@ test("a post has a VO when any of its formats is video (phase88)", () => {
   assert.equal(hasVideoFormat(["ig_feed", "yt_short"]), true);
   assert.equal(hasVideoFormat(["ig_feed", "ig_carousel"]), false);
   assert.equal(hasVideoFormat([]), false);
+});
+
+test("frameLimits: a carousel's slides, a story's stories, or a single piece", () => {
+  assert.deepEqual(frameLimits(["ig_carousel"]), { min: 2, max: 20, noun: "Slide" });
+  assert.deepEqual(frameLimits(["meta_carousel", "ig_carousel"]), { min: 2, max: 10, noun: "Slide" });
+  for (const id of ["ig_story", "fb_story", "wa_status"]) assert.deepEqual(frameLimits([id]), { min: 1, max: 20, noun: "Story" });
+  // A carousel among them wins.
+  assert.deepEqual(frameLimits(["ig_story", "ig_carousel"]), { min: 2, max: 20, noun: "Slide" });
+  // A story among single pieces still makes it a set.
+  assert.deepEqual(frameLimits(["ig_feed", "ig_story"]), { min: 1, max: 20, noun: "Story" });
+  assert.equal(frameLimits(["ig_feed"]), null);
+  // The Stories ad has its own copy and stays a single piece.
+  assert.equal(frameLimits(["meta_story"]), null);
 });

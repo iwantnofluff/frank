@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.27.0",
+    date: "2026-10-14",
+    title: "Several stories in one post",
+    changes: [
+      "An Instagram Story, Facebook Story or WhatsApp Status post has a number of stories, 1 to 20, chosen in the post window as a carousel's slides are.",
+      "Each story gets its own upload and its own Text on Image box. Story posts have no Copy section.",
+      "On the post's phone and on review links, several stories show Instagram's bars along the top, with arrows to move between them.",
+    ],
+  },
+  {
     version: "1.26.1",
     date: "2026-10-14",
     title: "A new comment shows once",

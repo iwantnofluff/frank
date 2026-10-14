@@ -44,8 +44,11 @@ export function CarouselSlots({
   onSave,
   onPendingChange,
   onError,
+  noun = "Slide",
 }: {
   slideCount: number;
+  // What each piece is called: a carousel's slides, or a story's stories.
+  noun?: "Slide" | "Story";
   // The version new work builds on (null before any artwork).
   latest: CreativeVersionRow | null;
   // An older version being looked at: shown, not editable.
@@ -60,6 +63,8 @@ export function CarouselSlots({
   onError: (message: string | null) => void;
 }) {
   const single = slideCount === 1;
+  const one = noun.toLowerCase();
+  const many = noun === "Story" ? "stories" : "slides";
   const baseline = useMemo(() => slotsFrom(latest, slideCount), [latest, slideCount]);
   const [slots, setSlots] = useState<Slot[]>(baseline);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -113,9 +118,11 @@ export function CarouselSlots({
     const left = files.length - placed;
     onError(
       left > 0
-        ? single
-          ? `This post has one image, so ${left} file${left === 1 ? " wasn't" : "s weren't"} added. Choose a carousel format on the Brief tab for more.`
-          : `This carousel has ${slideCount} slides, so ${left} file${left === 1 ? " wasn't" : "s weren't"} added. Raise the slide count on the Brief tab to add more.`
+        ? noun === "Story"
+          ? `This post has ${slideCount === 1 ? "one story" : `${slideCount} stories`}, so ${left} file${left === 1 ? " wasn't" : "s weren't"} added. Raise the number of stories on the Brief tab to add more.`
+          : single
+            ? `This post has one image, so ${left} file${left === 1 ? " wasn't" : "s weren't"} added. Choose a carousel format on the Brief tab for more.`
+            : `This carousel has ${slideCount} slides, so ${left} file${left === 1 ? " wasn't" : "s weren't"} added. Raise the slide count on the Brief tab to add more.`
         : null,
     );
     setSlots(next);
@@ -162,7 +169,7 @@ export function CarouselSlots({
       <p className="sub" style={{ marginBottom: 8 }}>
         {single
           ? `Drop an image or video on the slot, or click it to browse. JPG, PNG, WebP, GIF up to ${MAX_UPLOAD_MB}MB; MP4 and MOV are compressed to 720p. Then press Save to add it as a new version.`
-          : "Drop several images to fill the slides in order, or add them one at a time. Drag a slide onto another to swap them."}
+          : `Drop several images to fill the ${many} in order, or add them one at a time. Drag a ${one} onto another to swap them.`}
       </p>
       <div
         className="cslots"
@@ -203,7 +210,7 @@ export function CarouselSlots({
               <button
                 type="button"
                 className="cslot-add"
-                aria-label={single ? "Add the artwork" : `Add slide ${i + 1}`}
+                aria-label={single ? "Add the artwork" : `Add ${one} ${i + 1}`}
                 onClick={() => {
                   fillFrom.current = i;
                   inputRef.current?.click();
@@ -217,7 +224,7 @@ export function CarouselSlots({
               <div className="cslot-acts">
                 <button
                   type="button"
-                  aria-label={single ? "Replace the artwork" : `Replace slide ${i + 1}`}
+                  aria-label={single ? "Replace the artwork" : `Replace ${one} ${i + 1}`}
                   onClick={() => {
                     fillFrom.current = i;
                     inputRef.current?.click();
@@ -227,7 +234,7 @@ export function CarouselSlots({
                 </button>
                 <button
                   type="button"
-                  aria-label={single ? "Remove the artwork" : `Remove slide ${i + 1}`}
+                  aria-label={single ? "Remove the artwork" : `Remove ${one} ${i + 1}`}
                   onClick={() => {
                     const next = [...shown];
                     next[i] = null;

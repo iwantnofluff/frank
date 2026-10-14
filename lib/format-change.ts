@@ -1,4 +1,4 @@
-import { carouselMaxSlides, formatById } from "./formats.ts";
+import { carouselMaxSlides, formatById, frameLimits } from "./formats.ts";
 
 // Whether a format is made from images or video. The prototype's catalog
 // doesn't say, so this is a reading of its formats: "either" (stories,
@@ -33,6 +33,7 @@ function label(id: string) {
 // the artwork is removed: carousel to single or back, image to video or
 // back, a different shape (both fixed ratios), and fewer slides than were
 // uploaded. Compares the main (first) format; carousel-ness counts any.
+// Stories warn when fewer are left than are uploaded.
 export function artworkChangeReasons(
   before: { formats: string[]; slideCount: number | null },
   after: { formats: string[]; slideCount: number | null },
@@ -52,6 +53,18 @@ export function artworkChangeReasons(
     );
   } else if (isCarousel && after.slideCount !== null && uploadedSlides > after.slideCount) {
     reasons.push(`The carousel goes down to ${after.slideCount} slides, and ${uploadedSlides} are uploaded.`);
+  } else if (!isCarousel) {
+    // Stories (direct instruction): fewer than are uploaded, or a single
+    // piece after several.
+    const stories = frameLimits(after.formats);
+    const room = stories ? (after.slideCount ?? stories.min) : 1;
+    if (uploadedSlides > room) {
+      reasons.push(
+        stories
+          ? `The stories go down to ${room}, and ${uploadedSlides} are uploaded.`
+          : `${label(b)} is a single piece, and ${uploadedSlides} are uploaded.`,
+      );
+    }
   }
 
   const ka = mediaKind(a);

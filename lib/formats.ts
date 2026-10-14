@@ -174,6 +174,22 @@ export function carouselMaxSlides(ids: string[]): number | null {
   return limits.length ? Math.min(...limits) : null;
 }
 
+// Stories (direct instruction): Instagram Story, Facebook Story and
+// WhatsApp Status take a set of 1 to 20, each its own upload and Text on
+// Image, as a carousel's slides are.
+const STORY_MAX_FRAMES: Record<string, number> = { ig_story: 20, fb_story: 20, wa_status: 20 };
+export const STORY_MIN_FRAMES = 1;
+
+// How many pieces a post in these formats is made of, and what each is
+// called: a carousel's slides (2 up) or a story's stories (1 up); null
+// for a single piece. A carousel among them wins; the tightest limit wins.
+export function frameLimits(ids: string[]): { min: number; max: number; noun: "Slide" | "Story" } | null {
+  const carousel = carouselMaxSlides(ids);
+  if (carousel) return { min: CAROUSEL_MIN_SLIDES, max: carousel, noun: "Slide" };
+  const limits = ids.map((id) => STORY_MAX_FRAMES[id]).filter((n): n is number => !!n);
+  return limits.length ? { min: STORY_MIN_FRAMES, max: Math.min(...limits), noun: "Story" } : null;
+}
+
 // A format's shape as a CSS aspect-ratio ("4:5" → "4 / 5"); square for
 // the formats with none ("—", "varies").
 // The same shape as a number, width over height.

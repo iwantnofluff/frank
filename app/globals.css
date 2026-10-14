@@ -6526,6 +6526,28 @@ button.avatar {
   background: rgba(255, 255, 255, 0.16);
 }
 /* CarouselNav: arrows, count and dots over a carousel's image. */
+/* Several stories (direct instruction): Instagram's bars along the top,
+   one per story, those seen and the one showing filled. Above the
+   account's shade, as on Instagram. */
+.story-bars {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  z-index: 6;
+  display: flex;
+  gap: 3px;
+  pointer-events: none;
+}
+.story-bars i {
+  flex: 1;
+  height: 2.5px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.4);
+}
+.story-bars i.on {
+  background: #fff;
+}
 .car-arrow {
   position: absolute;
   top: 50%;

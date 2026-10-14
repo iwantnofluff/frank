@@ -5,7 +5,7 @@ import type { SharedCreative } from "@/hooks/use-shared-review";
 import type { ReviewController } from "@/hooks/use-review-controller";
 import { VideoPlayer, type TimelineMarker } from "@/components/creative-review/VideoPlayer";
 import { commentTime } from "@/lib/annotations";
-import { formatRatio, aspectRatioCss } from "@/lib/formats";
+import { formatRatio, aspectRatioCss, isStoryFormat } from "@/lib/formats";
 import { NoArtwork } from "@/components/creative-review/NoArtwork";
 import { dayMonth } from "@/lib/artwork-removal";
 import { CarouselNav } from "@/components/creative-review/CarouselNav";
@@ -128,6 +128,7 @@ export function ReviewMedia({
           controller.setVideoMoment(null);
         }}
         overVideo={!!slide?.mime_type.startsWith("video/")}
+        story={isStoryFormat(active.format)}
       />
     </>
   );

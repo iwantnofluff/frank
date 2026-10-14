@@ -42,9 +42,8 @@ import {
   formatsLabel,
   copyFieldsFor,
   postFormats,
-  carouselMaxSlides,
+  frameLimits,
   aspectRatioCss,
-  CAROUSEL_MIN_SLIDES,
   COPY_FIELD_LABELS,
   hasVideoFormat,
 } from "@/lib/formats";
@@ -462,14 +461,16 @@ export function CreativeModal(props: CreativeModalProps) {
     isCreate ? [formatsByCategory(FORMAT_CATEGORIES[0])[0]?.id ?? ""] : postFormats(props.creative),
   );
   const format = formats[0];
-  // Carousels (phase31): a Slides count appears when any chosen format is
-  // one, capped at the tightest of their limits. Text on Image then shows
-  // one field per slide.
-  const carouselMax = carouselMaxSlides(formats);
-  const [slideCountChoice, setSlideCountChoice] = useState<number>(
-    isCreate ? CAROUSEL_MIN_SLIDES : (props.creative.slide_count ?? CAROUSEL_MIN_SLIDES),
+  // Carousels (phase31) and stories (direct instruction): a count appears
+  // when any chosen format is one, Slides from 2 or Stories from 1, capped
+  // at the tightest of their limits. Each then has its own upload and Text
+  // on Image field. Unchosen, it starts at the least.
+  const frames = frameLimits(formats);
+  const [slideCountChoice, setSlideCountChoice] = useState<number | null>(
+    isCreate ? null : (props.creative.slide_count ?? null),
   );
-  const slideCount = carouselMax ? Math.min(Math.max(slideCountChoice, CAROUSEL_MIN_SLIDES), carouselMax) : null;
+  const slideCount = frames ? Math.min(Math.max(slideCountChoice ?? frames.min, frames.min), frames.max) : null;
+  const frameNoun = frames?.noun ?? "Slide";
   // Brief-time warning (docs/frank-data-intelligence.pdf, "Where it
   // surfaces — At the brief") — only meaningful while still choosing a
   // format for a new brief; an existing creative's format is fixed, so
@@ -1245,17 +1246,25 @@ export function CreativeModal(props: CreativeModalProps) {
             <FormatPicker id="nbFmt" value={formats} onChange={setFormats} />
           </div>
 
-          {carouselMax && (
+          {frames && (
             <div className="field">
               <label htmlFor="nbSlides">
-                Slides <span className="hint">how many slides this carousel has</span>
+                {frames.noun === "Story" ? (
+                  <>
+                    Stories <span className="hint">how many stories this post has</span>
+                  </>
+                ) : (
+                  <>
+                    Slides <span className="hint">how many slides this carousel has</span>
+                  </>
+                )}
               </label>
               <select
                 id="nbSlides"
-                value={slideCount ?? CAROUSEL_MIN_SLIDES}
+                value={slideCount ?? frames.min}
                 onChange={(e) => setSlideCountChoice(Number(e.target.value))}
               >
-                {Array.from({ length: carouselMax - CAROUSEL_MIN_SLIDES + 1 }, (_, i) => i + CAROUSEL_MIN_SLIDES).map((n) => (
+                {Array.from({ length: frames.max - frames.min + 1 }, (_, i) => i + frames.min).map((n) => (
                   <option key={n} value={n}>
                     {n}
                   </option>
@@ -1489,6 +1498,7 @@ export function CreativeModal(props: CreativeModalProps) {
                   carousel: the same layout either way (direct instruction). */}
               <CarouselSlots
                 slideCount={slideCount ?? 1}
+                noun={frameNoun}
                 latest={creativeVersions[0] ?? null}
                 readOnlyVersion={isViewingLatestCreative ? null : viewedCreativeVersion}
                 aspectRatio={aspectRatioCss(format)}
@@ -1572,10 +1582,12 @@ export function CreativeModal(props: CreativeModalProps) {
               on the post, not as a version (phase57). */}
           <div className="msection-h">Text on Image</div>
           <p className="msection-d">
-            {slideCount ? "The words on each slide's artwork, one entry per slide." : "The words on the artwork itself."}
+            {slideCount
+              ? `The words on each ${frameNoun.toLowerCase()}'s artwork, one entry per ${frameNoun.toLowerCase()}.`
+              : "The words on the artwork itself."}
           </p>
           <ListEditor
-            itemLabel={(i) => (slideCount ? `Slide ${i + 1}` : "Text on Image")}
+            itemLabel={(i) => (slideCount ? `${frameNoun} ${i + 1}` : "Text on Image")}
             values={slideFields(slideText, slideCount ?? 1)}
             onChange={(next) => {
               setSlideText(next);
@@ -1620,6 +1632,10 @@ export function CreativeModal(props: CreativeModalProps) {
             )}
           </div>
 
+          {/* Hidden when the formats have no copy, a story's (direct
+              instruction): their words are the Text on Image above. */}
+          {includesCopy && (
+          <>
           <div className="msection-h">Copy</div>
           <p className="msection-d">
             The caption and on-post text the chosen formats need, saved as versions.
@@ -1655,12 +1671,6 @@ export function CreativeModal(props: CreativeModalProps) {
 
           {isViewingLatestCopy && (
             <>
-              {!includesCopy && (
-                <p className="msection-empty">
-                  {formats.length > 1 ? "These formats have" : `${formatsLabel(formats)} has`} no caption fields, only Text on
-                  Image.
-                </p>
-              )}
 
               {copyFieldSpecs.map((spec) => (
                 <Fragment key={spec.key}>
@@ -1711,7 +1721,8 @@ export function CreativeModal(props: CreativeModalProps) {
               </div>
             </>
           )}
-
+          </>
+          )}
 
           {uploadError && <p className="autherr">{uploadError}</p>}
         </div>
@@ -1737,7 +1748,7 @@ export function CreativeModal(props: CreativeModalProps) {
                     <label>{spec.label}</label>
                     {text.map((t, i) => (
                       <p className="fd-d" key={i}>
-                        {slideCount ? <b>{`Slide ${i + 1}: `}</b> : null}
+                        {slideCount ? <b>{`${frameNoun} ${i + 1}: `}</b> : null}
                         {t || "—"}
                       </p>
                     ))}
