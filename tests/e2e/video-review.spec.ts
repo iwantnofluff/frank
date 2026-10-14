@@ -359,6 +359,22 @@ test("a Reel's video expands to fill the phone and back, on the post page and a 
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
   const expand = page.getByRole("button", { name: "Expand video" });
   await expect(expand).toBeVisible({ timeout: 20_000 });
+  // Sticky (direct instruction): scrolled until the video's top is under
+  // the phone's top bar, the button stays just below the bar.
+  const belowBar = () =>
+    page.evaluate(() => {
+      const sc = document.querySelector(".pf-scroll")!;
+      sc.scrollTo(0, 150);
+      return {
+        button: document.querySelector(".vexpand")!.getBoundingClientRect().top - sc.getBoundingClientRect().top,
+        video: document.querySelector(".vframe")!.getBoundingClientRect().top - sc.getBoundingClientRect().top,
+      };
+    });
+  await expect.poll(async () => (await belowBar()).video).toBeLessThan(0);
+  const at = await belowBar();
+  expect(at.button).toBeGreaterThan(0);
+  expect(at.button).toBeLessThan(15);
+  await page.evaluate(() => document.querySelector(".pf-scroll")!.scrollTo(0, 0));
   await expand.click();
   // Not the browser's full screen: the phone's screen, exactly.
   expect(await page.evaluate(() => document.fullscreenElement)).toBeNull();

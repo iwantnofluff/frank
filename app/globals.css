@@ -3597,7 +3597,9 @@ select.sort:hover {
   background: #fff;
   border: 1px solid var(--line);
   border-radius: 0;
-  overflow: hidden;
+  /* Clips as hidden did, without stopping a Reel's expand button from
+     sticking as the post scrolls. */
+  overflow: clip;
   height: max-content;
   box-shadow: 0 1px 2px rgba(20, 22, 26, 0.05);
 }
@@ -6678,13 +6680,20 @@ button.avatar {
   display: block;
   max-width: 100%;
 }
-/* A Reel's full-screen button (direct instruction), over the frame's top
-   right, above any pins. */
+/* A Reel's expand button (direct instruction), over the frame's top right,
+   above any pins. Its holder is sticky, with no height of its own, so the
+   button stays 10px below the phone's top bar as the video scrolls up
+   under it (direct instruction). */
+.vexpand-stick {
+  position: sticky;
+  top: 0;
+  height: 0;
+  z-index: 7;
+}
 .vexpand {
   position: absolute;
   top: 10px;
   right: 10px;
-  z-index: 7;
   width: 32px;
   height: 32px;
   display: grid;

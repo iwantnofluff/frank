@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.28.2",
+    date: "2026-10-14",
+    title: "The expand button stays in view",
+    changes: [
+      "Scrolling a Reel's post in the phone, the expand button stays just below the top bar once the video's edge reaches it.",
+    ],
+  },
+  {
     version: "1.28.1",
     date: "2026-10-14",
     title: "A Reel expands inside the phone",

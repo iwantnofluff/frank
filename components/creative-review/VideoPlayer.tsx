@@ -117,6 +117,32 @@ export function VideoPlayer({
       {/* Sized from the shape, not from the loaded video (.vframe): as wide
           as fits, no taller than 62% of the screen, or a Story's screen. */}
       <div className="vframe" style={{ "--vr": r } as CSSProperties}>
+        {/* Stays in view below the phone's top bar while the video
+            scrolls under it (direct instruction), until the video's gone. */}
+        {expandable && (
+          <div className="vexpand-stick">
+            <button
+              type="button"
+              className="vexpand"
+              aria-label={full ? "Collapse video" : "Expand video"}
+              title={full ? "Collapse" : "Expand"}
+              onClick={(e) => {
+                e.stopPropagation();
+                setFull((f) => !f);
+              }}
+            >
+              {full ? (
+                <svg viewBox="0 0 24 24">
+                  <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24">
+                  <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+                </svg>
+              )}
+            </button>
+          </div>
+        )}
         <video
           ref={ref}
           // Its first frame shows before it plays (reported directly: a black
@@ -139,28 +165,6 @@ export function VideoPlayer({
           onEnded={() => setPaused(true)}
         />
         {overlay?.(time, paused)}
-        {expandable && (
-          <button
-            type="button"
-            className="vexpand"
-            aria-label={full ? "Collapse video" : "Expand video"}
-            title={full ? "Collapse" : "Expand"}
-            onClick={(e) => {
-              e.stopPropagation();
-              setFull((f) => !f);
-            }}
-          >
-            {full ? (
-              <svg viewBox="0 0 24 24">
-                <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />
-              </svg>
-            ) : (
-              <svg viewBox="0 0 24 24">
-                <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
-              </svg>
-            )}
-          </button>
-        )}
       </div>
       <div className="vbar">
         <button type="button" className="vplay" aria-label="Back 10 seconds" title="Back 10 seconds" onClick={back10}>
