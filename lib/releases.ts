@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.27.1",
+    date: "2026-10-14",
+    title: "Stories sit better in the phone",
+    changes: [
+      "A story's top corners are square, as the phone's screen is there; its bottom corners stay rounded above the reply bar.",
+      "With several stories, the account sits clear of the bars above it, as on Instagram, with the back arrow level with it.",
+    ],
+  },
+  {
     version: "1.27.0",
     date: "2026-10-14",
     title: "Several stories in one post",

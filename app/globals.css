@@ -3658,11 +3658,19 @@ select.sort:hover {
   z-index: 3;
   border: 0;
   padding: 14px 12px 16px;
-  border-radius: 10px 10px 0 0;
+  border-radius: 0;
   background: linear-gradient(rgba(0, 0, 0, 0.35), transparent);
 }
 .pf-screen:has(.lpv-bar button) .ig.story .ig-h {
   padding-left: 36px;
+}
+/* Several stories: the account sits clear of the bars above it, as on
+   Instagram (direct instruction), and the back arrow with it. */
+.ig.story:has(.story-bars) .ig-h {
+  padding-top: 26px;
+}
+.pf-screen:has(.ig.story .story-bars) .lpv-bar {
+  top: 82px;
 }
 .ig.story .ig-h b,
 .ig.story .ig-h .dots {
@@ -3679,12 +3687,13 @@ select.sort:hover {
 .ig.story .ig-media {
   flex: none;
 }
-/* The artwork's corners rounded, not the box around it, so a comment box
-   opened on it isn't cut off. */
+/* The artwork's bottom corners rounded, not the box around it, so a
+   comment box opened on it isn't cut off. The top corners are square, as
+   the screen is there (direct instruction). */
 .ig.story .ig-media img,
 .ig.story .ig-media .vframe,
 .ig.story .ig-media .ig-hold {
-  border-radius: 10px;
+  border-radius: 0 0 10px 10px;
   overflow: hidden;
 }
 .ig.story .ig-media img {
