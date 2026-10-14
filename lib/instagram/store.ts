@@ -69,7 +69,7 @@ const DAY = 24 * 3600_000;
 
 // The connection's token, renewed first if it ends within a week (and is
 // old enough for Instagram to renew).
-async function usableToken(admin: SupabaseClient, connectionId: string): Promise<string | null> {
+export async function usableToken(admin: SupabaseClient, connectionId: string): Promise<string | null> {
   const { data: row } = await admin
     .from("instagram_tokens")
     .select("token_encrypted, expires_at, refreshed_at")

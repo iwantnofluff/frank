@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.29.0",
+    date: "2026-10-14",
+    title: "Frank notes when posts really went live",
+    changes: [
+      "Each night, for clients with Instagram connected, Frank finds scheduled Instagram posts on their account by caption, and notes when each one really went live and how late it was. Only near-exact caption matches count, so no wrong date gets in.",
+      "This is collected for Analytics: how often posts go out late, and by how much.",
+      "An Approved post's artwork is now kept for its usual time from when it really went live, where Frank has found it, rather than from its planned date.",
+    ],
+  },
+  {
     version: "1.28.2",
     date: "2026-10-14",
     title: "The expand button stays in view",

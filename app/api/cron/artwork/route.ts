@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { PREVIEW_SUFFIX, withPreviews } from "@/lib/artwork-preview";
+import { logLiveDates } from "@/lib/instagram/live-dates";
 
 // The daily artwork run (phase60), called by Vercel's cron (vercel.json)
 // with CRON_SECRET as its bearer token. Removes the artwork of Approved
 // posts live longer than their client keeps artwork (7 days unless its Preferences say otherwise, phase70), notifies Owners and Admins about
 // undated ones, then deletes the freed files from storage; and removes read
-// notifications older than their workspace keeps them (phase90).
+// notifications older than their workspace keeps them (phase90). First it
+// logs posts found live on Instagram (phase98).
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
   // Never open: without a secret set, nothing can run it.
@@ -15,6 +17,15 @@ export async function GET(request: Request) {
   }
 
   const admin = createServiceRoleClient();
+  // First, posts found live on their client's Instagram (phase98), so the
+  // artwork clock below starts from when they really went live. Its own
+  // step: a failure is logged, not a failed artwork run.
+  let live: Awaited<ReturnType<typeof logLiveDates>> | null = null;
+  try {
+    live = await logLiveDates(admin);
+  } catch (e) {
+    console.error("Live dates failed", e);
+  }
   const { data: keys, error } = await admin.rpc("run_artwork_housekeeping");
   if (error) {
     console.error("Artwork housekeeping failed", error);
@@ -35,5 +46,5 @@ export async function GET(request: Request) {
   // Its own step: a failure here is logged, not a failed artwork run.
   const { data: notificationsRemoved, error: purgeError } = await admin.rpc("purge_read_notifications");
   if (purgeError) console.error("Notification purge failed", purgeError);
-  return NextResponse.json({ ok: true, files: paths.length, filesRemoved, notificationsRemoved: notificationsRemoved ?? 0 });
+  return NextResponse.json({ ok: true, files: paths.length, filesRemoved, notificationsRemoved: notificationsRemoved ?? 0, live });
 }
