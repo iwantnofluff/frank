@@ -128,6 +128,13 @@ export function isStoryFormat(id: string | null | undefined): boolean {
   return !!id && STORY_FORMAT_IDS.has(id);
 }
 
+// Reels and their like (direct instruction): full-screen vertical video,
+// whose player gets a full-screen button.
+const REEL_FORMAT_IDS = new Set(["ig_reel", "yt_short", "meta_story"]);
+export function isReelFormat(id: string | null | undefined): boolean {
+  return !!id && REEL_FORMAT_IDS.has(id);
+}
+
 export function hasVideoFormat(ids: string[]): boolean {
   return ids.some((id) => VIDEO_FORMAT_IDS.has(id));
 }

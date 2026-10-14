@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.28.0",
+    date: "2026-10-14",
+    title: "Watch a Reel full screen",
+    changes: [
+      "A Reel, YouTube Short or Meta Stories / Reels Ad has a full-screen button at the top right of its video, on the post's page and on review links.",
+      "Full screen shows the video as tall as the screen allows, with its timeline and comment markers underneath. Press the button again, or Esc, to come back.",
+    ],
+  },
+  {
     version: "1.27.1",
     date: "2026-10-14",
     title: "Stories sit better in the phone",

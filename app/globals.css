@@ -6678,6 +6678,54 @@ button.avatar {
   display: block;
   max-width: 100%;
 }
+/* A Reel's full-screen button (direct instruction), over the frame's top
+   right, above any pins. */
+.vexpand {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 7;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(20, 22, 26, 0.55);
+  color: #fff;
+}
+.vexpand:hover {
+  background: rgba(20, 22, 26, 0.8);
+}
+.vexpand svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* Full screen: the video as tall as the screen leaves room for, on black,
+   its timeline under it at the same width. */
+.vplayer.full {
+  /* The phone is shrunk with zoom (PhoneFrame), which the player would
+     keep on the full screen; this undoes it. */
+  zoom: calc(1 / var(--pf-zoom, 1));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+}
+.vplayer.full .vframe,
+.phoneframe .ig-media .vplayer.full .vframe {
+  width: min(100vw, calc((100vh - 52px) * var(--vr)));
+}
+.vplayer.full .vbar {
+  width: min(100vw, calc((100vh - 52px) * var(--vr)));
+  box-sizing: border-box;
+}
 /* A little taller than at first (direct instruction): easier to hit. */
 .vbar {
   display: flex;

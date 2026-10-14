@@ -9,7 +9,7 @@ import { dayMonth, ARTWORK_KEEP_DAYS } from "@/lib/artwork-removal";
 import { useClientPreferences } from "@/hooks/use-client-preferences";
 import { useLiveUpdates } from "@/hooks/use-live-updates";
 import { useClientLogoUrl } from "@/hooks/use-client-logo-url";
-import { aspectRatioCss, formatRatio, isStoryFormat, postFormats } from "@/lib/formats";
+import { aspectRatioCss, formatRatio, isReelFormat, isStoryFormat, postFormats } from "@/lib/formats";
 import { useCopyVersions } from "@/hooks/use-copy-versions";
 import { useArtworkUrl, usePreloadAssets } from "@/hooks/use-asset-signed-url";
 import { useQueryClient } from "@tanstack/react-query";
@@ -564,6 +564,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
                       key={slidePosition}
                       src={signedUrl ?? undefined}
                       ratio={formatRatio(creative.format)}
+                      expandable={isReelFormat(creative.format)}
                       markers={videoMarkers}
                       highlightedCommentId={highlightedCommentId}
                       onMarker={setHighlightedCommentId}

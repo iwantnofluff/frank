@@ -30,6 +30,7 @@ export function VideoPlayer({
   onMoment,
   overlay,
   ratio,
+  expandable = false,
 }: {
   // Not yet known while the file's address is fetched: the player is
   // drawn at its size anyway, so nothing moves when the video arrives.
@@ -49,8 +50,13 @@ export function VideoPlayer({
   // (direct instruction: no jump to the real height). The video's own
   // takes over once known, if different.
   ratio: number;
+  // A Reel's (direct instruction): a button over the frame's top right
+  // that fills the screen with it, as the app does.
+  expandable?: boolean;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
+  const playerRef = useRef<HTMLDivElement>(null);
+  const [full, setFull] = useState(false);
   const [ownRatio, setOwnRatio] = useState<number | null>(null);
   const r = ownRatio ?? ratio;
   const [time, setTime] = useState(0);
@@ -94,10 +100,30 @@ export function VideoPlayer({
     else v.pause();
   }
 
+  useEffect(() => {
+    const onChange = () => setFull(document.fullscreenElement === playerRef.current && !!playerRef.current);
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  // The whole player fills the screen, its timeline and comments with it.
+  // Where a page can't (an iPhone), the phone's own full-screen video.
+  function expand() {
+    const player = playerRef.current;
+    const v = ref.current as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null;
+    if (document.fullscreenElement) {
+      void document.exitFullscreen();
+    } else if (player?.requestFullscreen) {
+      void player.requestFullscreen().catch(() => v?.webkitEnterFullscreen?.());
+    } else {
+      v?.webkitEnterFullscreen?.();
+    }
+  }
+
   const pct = (t: number) => (duration ? `${(Math.min(t, duration) / duration) * 100}%` : "0%");
 
   return (
-    <div className="vplayer">
+    <div className={`vplayer${full ? " full" : ""}`} ref={playerRef} style={{ "--vr": r } as CSSProperties}>
       {/* Sized from the shape, not from the loaded video (.vframe): as wide
           as fits, no taller than 62% of the screen, or a Story's screen. */}
       <div className="vframe" style={{ "--vr": r } as CSSProperties}>
@@ -123,6 +149,28 @@ export function VideoPlayer({
           onEnded={() => setPaused(true)}
         />
         {overlay?.(time, paused)}
+        {expandable && (
+          <button
+            type="button"
+            className="vexpand"
+            aria-label={full ? "Exit full screen" : "Full screen"}
+            title={full ? "Exit full screen" : "Full screen"}
+            onClick={(e) => {
+              e.stopPropagation();
+              expand();
+            }}
+          >
+            {full ? (
+              <svg viewBox="0 0 24 24">
+                <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24">
+                <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+              </svg>
+            )}
+          </button>
+        )}
       </div>
       <div className="vbar">
         <button type="button" className="vplay" aria-label="Back 10 seconds" title="Back 10 seconds" onClick={back10}>
