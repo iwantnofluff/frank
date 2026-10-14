@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.30.1",
+    date: "2026-10-14",
+    title: "A tidier view for clients",
+    changes: [
+      "Clients now see a post's stage pills, so they know where it is, but can't change them.",
+      "Clients no longer see Share for review, the Private comment filter, or the planner's controls for adding and saving views.",
+      "Analytics is for the team: a client opening it is taken to their dashboard.",
+    ],
+  },
+  {
     version: "1.30.0",
     date: "2026-10-14",
     title: "5. Live",

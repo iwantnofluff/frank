@@ -671,15 +671,18 @@ export function ProjectCalendarTable({
             )}
           </button>
         ))}
-        <span
-          className="vadd"
-          title="Save current layout as a new view"
-          onClick={() => setSaveModal({ mode: "create", initialName: "" })}
-        >
-          <svg viewBox="0 0 24 24">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-        </span>
+        {/* Saving a view is the team's (calendar_views is staff only). */}
+        {isStaff && (
+          <span
+            className="vadd"
+            title="Save current layout as a new view"
+            onClick={() => setSaveModal({ mode: "create", initialName: "" })}
+          >
+            <svg viewBox="0 0 24 24">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </span>
+        )}
       </div>
 
       {viewMenu.shown && activeView && (
@@ -778,7 +781,7 @@ export function ProjectCalendarTable({
             Columns {visibleColumnCount}/{totalColumnCount}
           </button>
         )}
-        {viewMode !== "calendar" && isDirty && (
+        {viewMode !== "calendar" && isStaff && isDirty && (
           <span className="split">
             <button
               type="button"

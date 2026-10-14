@@ -3798,3 +3798,17 @@ In the app: Live in lib/stage-labels.ts (band approved), the pills (5. Live, its
 **Not done**: Analytics doesn't use the live dates yet. A client's view doesn't show the live date. A post set Live by hand that Frank later finds keeps Live, its date replaced by Instagram's.
 
 **Verified**: phase99 rehearsed on staging and rolled back, then applied. Unit tests: liveTiming (same day and earlier on time, next day late, a continuous project's plain date), the status filter's five stages, Live's band. live-dates.spec.ts: the nightly run moves a matched post in Client Review to 5 and tells the agency's Admin, and leaves a post it didn't match alone; set Live by hand on the post page, a manual live date of now, the date in brackets red (late), its approval kept; back to Approved, the date gone and the approval kept. Checked by hand: a review link's approval of a Live post leaves it Live with the approver recorded; an on-time Live post reads "12 Oct 26 (12 Oct 26)" in green; the bell's notice; the planner legend lists 5 Live. Screenshots of the post page (pills, date) and the bell looked at.
+
+## What a client's login sees
+
+Asked to list what a client sees; checked by signing in as a real client and going through each page (the dashboard, their client, the planner, a post, Client Settings, Workspace Settings, Analytics, the account menu, the bell). Five things were worth fixing; all fixed (direct instruction), and the stage pills shown to them but not changeable (direct instruction):
+
+- **The stage pills**: shown to a client now (they weren't shown at all), the post's stage pressed, every pill aria-disabled, no hover, no pointer, a click doing nothing (.stagesw.ro); advance_creative_stage refuses a client anyway.
+- **Share for review**: showed to a client while the post was in Client Review (1.24.7 moved it beside the pills without the team-only check); the team's only now.
+- **The Private comment filter**: a client never sees a private comment, so it was always empty; the team's only.
+- **Adding and saving a planner view** (the + tab, and Save / Save as New View after changing columns): the team's only; calendar_views already refused a client's write (staff only).
+- **Analytics**: a placeholder a client could reach by its address; it now sends a client to the dashboard, as Visibility does.
+
+One finding retracted: the dashboard's Live Projects, Waiting on Approval and Feedback to Action looked stuck on "…" for a client; watched for ten seconds, they show their figures within the first second (the first look was taken before they'd loaded).
+
+**Verified**: new client-view.spec.ts as a real client: the pills shown with Client Review pressed and the rest aria-disabled, a forced click on Approved changing nothing in the database; no Share; the team's public comment shown, no Private filter; advance_creative_stage refused for the client; no + view tab; a client's calendar_views insert refused. placeholder-routes.spec.ts: Analytics sends a client to the dashboard (and Visibility still does). Screenshot of a client's post page looked at. creative-review.png and project-calendar.png updated for 5. Live (the pill, the legend), after looking at the diffs; the first creative-review.png written caught the page mid-load (no "E", no "No comments") and was written again and checked.

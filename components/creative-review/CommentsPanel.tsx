@@ -540,7 +540,8 @@ export function CommentsPanel({
       </div>
 
       <div className="cfilters">
-        {FILTERS.map((f) => (
+        {/* Private is the team's: a client never sees a private comment. */}
+        {FILTERS.filter((f) => isStaff || f.key !== "internal").map((f) => (
           <button
             key={f.key}
             type="button"

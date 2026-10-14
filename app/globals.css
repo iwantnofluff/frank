@@ -3223,6 +3223,16 @@ a.fd-ref:hover {
 .stagesw button:not([aria-pressed="true"]):hover {
   opacity: 0.8;
 }
+/* A client sees the pills but can't pick one (direct instruction): no
+   hover, no pointer, on any of them. */
+.stagesw.ro button {
+  cursor: default;
+}
+.stagesw.ro button:not([aria-pressed="true"]):hover {
+  background: var(--line);
+  color: var(--muted);
+  opacity: 1;
+}
 /* Concept is only ever shown, never picked: no hover, no pointer. */
 .stagesw button.sw-concept {
   cursor: default;

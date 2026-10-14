@@ -287,13 +287,14 @@ export function CreativeReviewPage({ id }: { id: string }) {
           at its real size (direct instruction: no jumping height). */}
       <div className={`stage${membershipLoading || creativeVersions === undefined ? " stage-wait" : ""}`}>
         <div className="stage-h">
-          {/* The stage pills on the left (direct instruction). */}
-          {isStaff && (
+          {/* The stage pills on the left (direct instruction); a client
+              sees them too, but can't change them (direct instruction). */}
+          {membership && (
               <>
                 <div
                   // The table's Status pills (direct instruction): grey until
                   // picked, then solid in the stage's colour.
-                  className="stagesw"
+                  className={`stagesw${isStaff ? "" : " ro"}`}
                   title="Whether this post is visible through a share link, and whether it's been approved"
                 >
                   {/* Concept is shown, not picked: a post leaves it by
@@ -317,8 +318,9 @@ export function CreativeReviewPage({ id }: { id: string }) {
                     type="button"
                     aria-pressed={creative.stage === 2}
                     disabled={advanceStage.isPending}
+                    aria-disabled={isStaff ? undefined : true}
                     onClick={() => {
-                      if (creative.stage >= 3) advanceStage.mutate("to_internal");
+                      if (isStaff && creative.stage >= 3) advanceStage.mutate("to_internal");
                     }}
                   >
                     <span className="no">2.</span>
@@ -331,8 +333,9 @@ export function CreativeReviewPage({ id }: { id: string }) {
                     className="sw-client"
                     aria-pressed={creative.stage === 3}
                     disabled={advanceStage.isPending}
+                    aria-disabled={isStaff ? undefined : true}
                     onClick={() => {
-                      if (creative.stage !== 3) advanceStage.mutate("to_review");
+                      if (isStaff && creative.stage !== 3) advanceStage.mutate("to_review");
                     }}
                   >
                     <span className="no">3.</span>
@@ -345,8 +348,9 @@ export function CreativeReviewPage({ id }: { id: string }) {
                     className="sw-approved"
                     aria-pressed={creative.stage === 4}
                     disabled={advanceStage.isPending}
+                    aria-disabled={isStaff ? undefined : true}
                     onClick={() => {
-                      if (creative.stage !== 4) advanceStage.mutate("to_approved");
+                      if (isStaff && creative.stage !== 4) advanceStage.mutate("to_approved");
                     }}
                   >
                     <span className="no">4.</span>
@@ -361,8 +365,9 @@ export function CreativeReviewPage({ id }: { id: string }) {
                     className="sw-live"
                     aria-pressed={creative.stage === 5}
                     disabled={advanceStage.isPending}
+                    aria-disabled={isStaff ? undefined : true}
                     onClick={() => {
-                      if (creative.stage !== 5) advanceStage.mutate("to_live");
+                      if (isStaff && creative.stage !== 5) advanceStage.mutate("to_live");
                     }}
                   >
                     <span className="no">5.</span>
@@ -371,10 +376,10 @@ export function CreativeReviewPage({ id }: { id: string }) {
                 </div>
               </>
             )}
-          {/* Share, beside the pills, only while the post is in Client
+          {/* Share, beside the pills, for the team only, only while the post is in Client
               Review (direct instruction): grey on hover, "Share" sliding
               out to its right. */}
-          {creative.stage === 3 && (
+          {isStaff && creative.stage === 3 && (
             <button type="button" className="sharebtn" aria-label="Share for review" onClick={() => setShareOpen(true)}>
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <circle cx="18" cy="5" r="3" />

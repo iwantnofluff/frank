@@ -39,3 +39,10 @@ test("Visibility redirects a real client-role session away", async ({ page, fran
   await page.goto("/visibility");
   await page.waitForURL(/\/dashboard$/, { timeout: 15000 });
 });
+
+// Analytics too (direct instruction: a client could reach it by its address).
+test("Analytics redirects a real client-role session away", async ({ page, frank }) => {
+  await frank.loginAsClient(page);
+  await page.goto("/analytics");
+  await page.waitForURL(/\/dashboard$/, { timeout: 15000 });
+});
