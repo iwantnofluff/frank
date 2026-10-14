@@ -6,7 +6,8 @@ import { usePresence } from "@/hooks/use-presence";
 export type ReviewSection = "brief" | "content" | "checks" | "feed";
 
 // Each section's icon, supplied directly (Brief.svg, Content.svg,
-// Check.svg, Grid.svg): filled shapes on a 1200 grid.
+// Check.svg, Grid.svg): filled shapes on a 1200 grid, Checks drawn as
+// lines of the same weight.
 export const ICONS: Record<ReviewSection, ReactNode> = {
   brief: (
     <>
@@ -20,9 +21,12 @@ export const ICONS: Record<ReviewSection, ReactNode> = {
     <path d="m1139.1 37.5h-1078.1c-12.941 0-23.438 10.492-23.438 23.438v1078.1c0 12.941 10.496 23.438 23.438 23.438h1078.1c12.945 0 23.438-10.496 23.438-23.438v-1078.1c0-12.945-10.492-23.438-23.438-23.438zm-1054.7 46.875h1031.2v187.5h-1031.2zm0 1031.2v-796.88h1031.2v796.88z" />
   ),
   checks: (
+    // A box with a tick through its open corner (Noun Project, "Check"
+    // 3835759, supplied directly), redrawn as lines on the others' box
+    // and line weight (.ic-line) so it matches them.
     <>
-      <path d="m1079.7 37.5h-959.38c-45.66 0-82.812 37.152-82.812 82.812v959.38c0 45.66 37.152 82.812 82.812 82.812h959.38c45.664 0 82.812-37.152 82.812-82.812v-959.38c0-45.66-37.148-82.812-82.809-82.812zm35.934 1042.2c0 19.816-16.121 35.938-35.934 35.938h-959.38c-19.816 0-35.938-16.121-35.938-35.938v-959.38c0-19.816 16.121-35.938 35.938-35.938h959.38c19.816 0 35.938 16.121 35.938 35.938z" />
-      <path d="m600 201.56c-219.7 0-398.44 178.74-398.44 398.44s178.74 398.44 398.44 398.44 398.44-178.74 398.44-398.44-178.74-398.44-398.44-398.44zm0 750c-193.85 0-351.56-157.71-351.56-351.56s157.71-351.56 351.56-351.56c193.86 0 351.56 157.71 351.56 351.56s-157.71 351.56-351.56 351.56z" />
+      <path className="ic-line" d="M890.3 60.94H60.94V1139.06H1139.06V517.1" />
+      <path className="ic-line" d="M309.7 600L517.1 807.3L1097.6 226.8" />
     </>
   ),
   feed: (

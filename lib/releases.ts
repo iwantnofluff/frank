@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.25.1",
+    date: "2026-10-14",
+    title: "Clearer section icons on a post",
+    changes: [
+      "The Brief, Content, Checks and Feed icons on a post's page are 10% larger and dark, lightening as you hover over one.",
+      "Checks has a new icon, a box with a tick, matching the others' size and line weight.",
+    ],
+  },
+  {
     version: "1.25.0",
     date: "2026-10-13",
     title: "Choose a project's columns",

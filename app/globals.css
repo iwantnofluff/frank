@@ -3330,31 +3330,47 @@ select.sort:hover {
   gap: 6px;
 }
 /* Plain icons; only the selected one has a square behind it, as the left
-   rail's does (direct instruction). */
+   rail's does (direct instruction). Dark, lightening on hover, and 10%
+   larger than first drawn (direct instruction). */
 .secrail-item {
   position: relative;
-  width: 38px;
-  height: 38px;
+  width: 42px;
+  height: 42px;
   display: grid;
   place-items: center;
-  border-radius: 10px;
-  color: var(--muted);
+  border-radius: 11px;
+  color: var(--ink);
   background: none;
   transition: background 0.15s, color 0.15s;
 }
 /* A little thicker than drawn (direct instruction): the filled shapes
    outlined in their own colour too (on the icons' 1200 grid). */
 .secrail-item svg {
-  width: 17px;
-  height: 17px;
+  width: 18.7px;
+  height: 18.7px;
   fill: currentColor;
   stroke: currentColor;
   stroke-width: 34;
   stroke-linejoin: round;
 }
+/* Lines drawn as strokes (the Checks icon): the filled icons' 46.9 on
+   the 1200 grid, plus the outline each place adds to them. */
+.ic-line {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 47;
+}
+.secrail-item svg .ic-line {
+  stroke-width: 81;
+}
+.rn-ic .ic-line {
+  stroke-width: 77;
+}
 .secrail-item:hover,
 .secrail-item:focus-visible {
-  color: var(--ink);
+  color: var(--muted);
 }
 .secrail-item[aria-current="true"] {
   color: var(--action);
