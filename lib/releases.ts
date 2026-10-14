@@ -19,6 +19,7 @@ export const RELEASES: Release[] = [
     changes: [
       "A Reel, YouTube Short or Meta Stories / Reels Ad has a full-screen button at the top right of its video, on the post's page and on review links.",
       "Full screen shows the video as tall as the screen allows, with its timeline and comment markers underneath. Press the button again, or Esc, to come back.",
+      "Adding a post, saving its Brief the first time takes you straight to the Content tab.",
     ],
   },
   {

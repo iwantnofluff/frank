@@ -631,6 +631,8 @@ export function CreativeModal(props: CreativeModalProps) {
       setSavedBrief({ formats, slideCount });
       setSavedFields({ funnel, designer_notes: designerNotes.trim() });
       props.onCreated?.(scheduledAt, delivery === "continuous" ? dueOn || null : null);
+      // Straight on to the artwork and copy (direct instruction).
+      setActiveTab("upload");
       return;
     }
 
