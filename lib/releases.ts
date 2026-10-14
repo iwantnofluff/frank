@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.30.2",
+    date: "2026-10-14",
+    title: "Late from today on",
+    changes: [
+      "A post only counts as late if it was planned from 14 Oct 2026 on. Anything planned before then is taken to have gone live on its planned day, so its live date shows in green.",
+      "Approved posts planned before 14 Oct 2026 have moved to 5. Live.",
+    ],
+  },
+  {
     version: "1.30.1",
     date: "2026-10-14",
     title: "A tidier view for clients",

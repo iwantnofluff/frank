@@ -16,6 +16,9 @@ const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SU
 });
 const DAY = 86_400_000;
 const ago = (days: number) => new Date(Date.now() - days * DAY).toISOString();
+// The late rule starts here (phase100): a post planned before it counts as
+// live on its planned day, whenever it was really found.
+const LATE_RULE_FROM = Date.parse("2026-10-14T00:00:00+05:30");
 const CAPTION = "The curve dates to 1908. The goal is not less pressure. It is knowing where you sit on the curve.";
 
 async function signIn(email: string, password: string) {
@@ -84,10 +87,14 @@ test("a scheduled post found live on Instagram by its caption is logged with its
   expect(row.creative_id).toBe(frank.creativeId);
   expect(row.instagram_media_id).toBe("m-live");
   expect(row.permalink).toBe("https://www.instagram.com/p/LIVE/");
-  // Two days late.
+  // Two days late, or, planned before the late rule, on its planned day.
   const late = (Date.parse(row.live_at) - Date.parse(row.scheduled_at)) / DAY;
-  expect(late).toBeGreaterThan(1.99);
-  expect(late).toBeLessThan(2.01);
+  if (Date.parse(row.scheduled_at) < LATE_RULE_FROM) {
+    expect(late).toBe(0);
+  } else {
+    expect(late).toBeGreaterThan(1.99);
+    expect(late).toBeLessThan(2.01);
+  }
   expect(row.source).toBe("instagram");
 
   // 5. Live (phase99); it was still in Client Review, so the agency's
@@ -138,24 +145,28 @@ test("an Approved post's artwork clock starts from when it really went live", as
   const { data: keys, error: runError } = await admin.rpc("run_artwork_housekeeping", { p_agency_id: frank.agencyId });
   expect(runError).toBeNull();
   expect(keys as string[]).toContain(onTime.key);
-  expect(keys as string[]).not.toContain(late.key);
+  // Planned before the late rule, its live date is its planned day, so its
+  // clock started then too (phase100).
+  if (Date.parse(ago(10)) < LATE_RULE_FROM) expect(keys as string[]).toContain(late.key);
+  else expect(keys as string[]).not.toContain(late.key);
 });
 
-test("the team sets Live by hand: its live date is now, shown after the planned date; back to Approved takes it away", async ({ page, frank }) => {
+test("the team sets Live by hand; a post planned before 14 Oct 2026 counts as live on its day, a later one can be late", async ({ page, frank }) => {
   test.setTimeout(90_000);
-  // Approved, due two days ago: set Live now, it's late.
-  await admin.from("creatives").update({ stage: 4, approved_at: ago(3), approved_by_name: "Client Person", scheduled_at: ago(2) }).eq("id", frank.creativeId);
+  // Planned before the late rule (phase100): set Live by hand, its live
+  // date is its planned day, so it's on time.
+  const before = "2026-10-01T03:30:00.000Z";
+  await admin.from("creatives").update({ stage: 4, approved_at: ago(20), approved_by_name: "Client Person", scheduled_at: before }).eq("id", frank.creativeId);
   await frank.loginAsStaff(page);
   await page.goto(`/creatives/${frank.creativeId}`);
   await page.getByRole("button", { name: "Live", exact: true }).click();
   await expect(page.getByRole("button", { name: "Live", exact: true })).toHaveAttribute("aria-pressed", "true");
   const { data: row } = await admin.from("post_live_dates").select("source, live_at").eq("creative_id", frank.creativeId).single();
   expect(row!.source).toBe("manual");
-  expect(Date.now() - Date.parse(row!.live_at)).toBeLessThan(5 * 60_000);
-  // Planned date, then the live date in brackets, red as it's late.
+  expect(Date.parse(row!.live_at)).toBe(Date.parse(before));
   const liveDate = page.locator(".pnav-cur .pnav-live");
-  await expect(liveDate).toHaveClass(/late/);
-  await expect(liveDate).toHaveText(/^\(\d{1,2} [A-Z][a-z]{2} \d{2}\)$/);
+  await expect(liveDate).toHaveClass(/on_time/);
+  await expect(liveDate).toHaveText("(1 Oct 26)");
   // Its approval is kept.
   const { data: post } = await admin.from("creatives").select("stage, approved_by_name").eq("id", frank.creativeId).single();
   expect(post).toEqual({ stage: 5, approved_by_name: "Client Person" });
@@ -167,4 +178,14 @@ test("the team sets Live by hand: its live date is now, shown after the planned 
   expect((await admin.from("post_live_dates").select("creative_id").eq("creative_id", frank.creativeId)).data).toEqual([]);
   const { data: back } = await admin.from("creatives").select("stage, approved_by_name").eq("id", frank.creativeId).single();
   expect(back).toEqual({ stage: 4, approved_by_name: "Client Person" });
+
+  // Planned from the rule on, found two days late: red.
+  const planned = "2026-10-20T03:30:00.000Z";
+  await admin.from("creatives").update({ stage: 5, scheduled_at: planned }).eq("id", frank.creativeId);
+  await admin
+    .from("post_live_dates")
+    .upsert({ creative_id: frank.creativeId, instagram_media_id: "m-late-2", live_at: "2026-10-22T05:00:00.000Z", scheduled_at: planned, source: "instagram" });
+  await page.reload();
+  await expect(liveDate).toHaveClass(/late/);
+  await expect(liveDate).toHaveText("(22 Oct 26)");
 });
