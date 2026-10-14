@@ -117,7 +117,7 @@ function Composer({
   // A video paused at this moment: the comment is attached to it unless
   // the chip is turned off. Receives the moment it was posted at, or null.
   moment?: number | null;
-  onSubmit: (body: string, visibility: "private" | "public", at?: number | null) => Promise<void>;
+  onSubmit: (body: string, visibility: "private" | "public", at?: number | null) => Promise<unknown>;
   showInternalToggle: boolean;
   lockedPrivate?: boolean;
   placeholder: string;
@@ -130,9 +130,11 @@ function Composer({
   const [error, setError] = useState<string | null>(null);
   const [atMoment, setAtMoment] = useState(true);
 
+  // Without the Private switch (a client), a comment is public, as the
+  // database makes it; its placeholder shouldn't say Private meanwhile.
   const visibility: "private" | "public" = lockedPrivate
     ? "private"
-    : internal
+    : showInternalToggle && internal
       ? "private"
       : "public";
 
@@ -269,7 +271,7 @@ function CommentCard({
   currentUserId: string | undefined;
   isHighlighted: boolean;
   onSelect: () => void;
-  onReply: (body: string, visibility: "private" | "public") => Promise<void>;
+  onReply: (body: string, visibility: "private" | "public") => Promise<unknown>;
   onToggleResolved: (resolve: boolean) => void;
   onToggleVisibility: (commentId: string, next: "private" | "public") => void;
   // Your own comment's new words (phase75).

@@ -114,6 +114,16 @@ export function applyLiveComment(
   const existing = list.find((c) => c.id === id);
   if (existing) return list.map((c) => (c.id === id ? { ...c, ...fields } : c));
   if (eventType !== "INSERT" || typeof fields.body !== "string") return list;
+  // Your own comment, still showing as its placeholder (useCreateComment):
+  // this is it saved, so it takes the placeholder's place, not a second one.
+  const placeholder = list.find(
+    (c) =>
+      c.id.startsWith("pending-") &&
+      c.author_id === fields.author_id &&
+      c.parent_id === fields.parent_id &&
+      c.body === fields.body,
+  );
+  if (placeholder) return list.map((c) => (c === placeholder ? { ...c, id, ...fields } : c));
   const same = fields.author_id ? list.find((c) => c.author_id === fields.author_id) : undefined;
   return [
     ...list,

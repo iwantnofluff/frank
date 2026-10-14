@@ -69,6 +69,7 @@ export function useCreateComment(creativeId: string) {
       classifyComment(data.id);
       // A client's own people comment here too (phase80).
       notifyClientActivity(creativeId);
+      return data.id as string;
     },
     // Shown at once (direct instruction: no wait for the comment to appear
     // where it was made), in place until the saved one replaces it; taken
@@ -105,7 +106,18 @@ export function useCreateComment(creativeId: string) {
         from: isClient ? "client" : "agency",
       };
       queryClient.setQueryData<CommentRow[]>(key, [...(previous ?? []), shown]);
-      return { previous };
+      return { previous, pendingId: shown.id };
+    },
+    // Saved: the placeholder becomes the comment at once, or goes if the
+    // live connection has already added it (applyLiveComment), so it never
+    // shows twice while the reload below catches up.
+    onSuccess: (id, _input, context) => {
+      queryClient.setQueryData<CommentRow[]>(["comments", creativeId], (list) => {
+        if (!list || !context?.pendingId) return list;
+        return list.some((c) => c.id === id)
+          ? list.filter((c) => c.id !== context.pendingId)
+          : list.map((c) => (c.id === context.pendingId ? { ...c, id } : c));
+      });
     },
     onError: (_error, _input, context) => {
       if (context?.previous) queryClient.setQueryData(["comments", creativeId], context.previous);

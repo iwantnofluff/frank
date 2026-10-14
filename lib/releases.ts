@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.26.1",
+    date: "2026-10-14",
+    title: "A new comment shows once",
+    changes: [
+      "A comment you post no longer shows twice for a moment while it saves.",
+      "A client's comment no longer shows as Private while it posts; a client's comments are always public.",
+      "Resolve and Reopen change the comment as soon as you click.",
+    ],
+  },
+  {
     version: "1.26.0",
     date: "2026-10-14",
     title: "Owners can delete comments",

@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import type { CommentRow } from "./use-comments";
 
 export function useToggleCommentResolved(creativeId: string) {
   const queryClient = useQueryClient();
@@ -47,8 +48,22 @@ export function useToggleCommentResolved(creativeId: string) {
         }
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["comments", creativeId] });
+    // Shown at once, as a new comment is (useCreateComment): the card
+    // turns resolved or open on the click, and back if the save fails.
+    onMutate: async ({ commentId, resolve }) => {
+      const key = ["comments", creativeId];
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<CommentRow[]>(key);
+      queryClient.setQueryData<CommentRow[]>(key, (list) =>
+        list?.map((c) => (c.id === commentId ? { ...c, resolved_at: resolve ? new Date().toISOString() : null } : c)),
+      );
+      return { previous };
+    },
+    onError: (_error, _input, context) => {
+      if (context?.previous) queryClient.setQueryData(["comments", creativeId], context.previous);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["comments", creativeId] });
     },
   });
 }
