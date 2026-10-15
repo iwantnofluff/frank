@@ -99,7 +99,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "A post is one piece of content: its brief, its artwork, its Text on Image and its copy.",
         ],
       },
-      { kind: "h", text: "The four stages" },
+      { kind: "h", text: "The five stages" },
       {
         kind: "steps",
         items: [
@@ -107,17 +107,16 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "Internal Review: your team makes and checks the artwork and copy.",
           "Client Review: the client sees it, through Frank or a review link, and comments.",
           "Approved: the client has signed it off.",
+          "Live: it's gone out. Frank sets it when it finds the post on the client's connected Instagram, and your team can set it by hand.",
         ],
       },
-      {
-        kind: "p",
-        text: "On a post, the stage switch shows all four as numbered pills, the post's own stage in its colour: Concept red, Internal Review and Client Review orange, Approved green. Concept is lit while a post has no artwork or copy, and moves to Internal Review by itself when the first is saved; pick Internal Review, Client Review or Approved to move it on.",
-      },
+      { kind: "p", text: "On a post, the stage switch shows all five as numbered pills, the post's own stage in its colour: Concept red, Internal Review and Client Review orange, Approved green, Live a darker green." },
+      { kind: "p", text: "Concept is lit while a post has no artwork or copy, and moves to Internal Review by itself when the first is saved; pick Internal Review, Client Review, Approved or Live to move it on." },
+      { kind: "p", text: "Once a post is Live, the date it really went live shows in brackets after its planned date, above the phone: green if it went live that day or earlier, red if later. Posts planned before 14 Oct 2026 count as live on their planned day." },
       { kind: "h", text: "Getting around" },
-      {
-        kind: "p",
-        text: "The left rail follows where you are, and names the client: anywhere inside a client you'll see Clients, the client's projects (Casa Carigar Projects, with a buildings icon, opening its page), and the client's Settings (Casa Carigar Settings); in a project and on its posts, the client's planner (Casa Carigar Planner) or Other Content as well. Frank's logo in the top left corner takes you back to Clients. Your picture at the top right holds My Profile, Settings for your whole workspace, and Sign out. If you belong to more than one workspace, it lists them too: pick one to switch, still signed in.",
-      },
+      { kind: "p", text: "The left rail follows where you are, and names the client: anywhere inside a client you'll see Clients, the client's projects (Casa Carigar Projects, with a buildings icon, opening its page), and the client's Settings (Casa Carigar Settings); in a project and on its posts, the client's planner (Casa Carigar Planner) or Other Content as well." },
+      { kind: "p", text: "Frank's logo in the top left corner takes you back to Clients. Your picture at the top right holds My Profile, Settings for your whole workspace, and Sign out." },
+      { kind: "p", text: "If you belong to more than one workspace, it lists them too: pick one to switch, still signed in." },
     ],
   },
   {
@@ -181,16 +180,16 @@ export const HELP_ARTICLES: HelpArticle[] = [
     blocks: [
       {
         kind: "p",
-        text: "Open a client's Settings from the left rail while you're in a client: it carries the client's name, Casa Carigar Settings, say. A project's own settings (its name, details, people, folder, archiving) open from the “…” menu at the top of the project's page, under Settings.",
+        text: "Open a client's Settings from the left rail while you're in a client: it carries the client's name, Casa Carigar Settings, say. A project's own settings (its name, details, people, folder, archiving) open from the settings icon (the cog) at the top of the project's page.",
       },
       {
         kind: "list",
         items: [
-          "Profile → About: the name, logo, industry and description, and archiving. Once a client is archived, the Primary Owner and Owners can delete it for good, with everything in it, by typing its name; an archived project can be deleted the same way from its Settings, in the “…” menu on its page.",
+          "Profile → About: the name, logo, industry and description, and archiving.\n\nOnce a client is archived, the Primary Owner and Owners can delete it for good, with everything in it, by typing its name; an archived project can be deleted the same way from its Settings, the cog at the top of its page.",
           "Profile → People: who's on this client and which of its projects each person works on, and inviting someone new.",
-          "Profile → Preferences: how long Approved artwork is kept (7, 14, 21 or 28 days) and what happens to Approved posts with no live date; whether the client can approve and whether a review link's Feed shows the project's other posts; and what a new review link starts with. Owners and Admins change them; each saves as it's picked. Notifications: whether the team hears in Frank's bell and by email when the client comments or approves, and who hears: the post's lead (everyone on the client when a post has no lead), everyone on the client, or Owners and Admins.",
+          "Profile → Preferences: how long Approved artwork is kept (7, 14, 21 or 28 days) and what happens to Approved posts with no live date; whether the client can approve and whether a review link's Feed shows the project's other posts; and what a new review link starts with. Owners and Admins change them; each saves as it's picked.\n\nNotifications: whether the team hears in Frank's bell and by email when the client comments or approves, and who hears: the post's lead (everyone on the client when a post has no lead), everyone on the client, or Owners and Admins.",
           "Knowledge → Discovery: what Frank knows about the client, used when copy is drafted and checked.",
-          "Knowledge → Strategy: what's been decided for each month (objective, key messages, themes and campaigns, offers, key dates, notes). Add a month with Add Month; archive one to tidy the list. Draft with Frank follows the month a post goes live in, archived or not; empty fields are left out.",
+          "Knowledge → Strategy: what's been decided for each month (objective, key messages, themes and campaigns, offers, key dates, notes).\n\nAdd a month with Add Month; archive one to tidy the list. Draft with Frank follows the month a post goes live in, archived or not; empty fields are left out.",
           "Connections → Instagram: the client's account, so a post's Feed shows its real posts.",
         ],
       },
@@ -216,18 +215,16 @@ export const HELP_ARTICLES: HelpArticle[] = [
     category: "clients",
     summary: "Tone of voice, audience, research and more, for better copy and checks.",
     blocks: [
-      {
-        kind: "p",
-        text: "A client's Knowledge is in its Client Settings, under Knowledge → Discovery. It has nine areas, from About (who the client is) to Moodboard and References. The more of them are filled in, the more Draft with Frank and the checks can draw on. An area with nothing in it yet says Content pending.",
-      },
+      { kind: "p", text: "A client's Knowledge is in its Client Settings, under Knowledge → Discovery. It has nine areas, from About (who the client is) to Moodboard and References." },
+      { kind: "p", text: "The more of them are filled in, the more Draft with Frank and the checks can draw on. An area with nothing in it yet says Content pending." },
       {
         kind: "p",
         text: "Its Tone of Voice, Target Audience and Prioritised Features also show on the client's page, under Strategy Overview, with this month's strategy beside them, so the brand is in front of you before you start. See All opens that area here.",
       },
-      {
-        kind: "p",
-        text: "Each of those boxes is a short overview Frank writes from everything in it, in a few paragraphs, as a snapshot. A longer one fades at the foot of its box; hover over it to read it in full. When something in it changes, Frank rewrites that box the next time someone on the team opens the client; until then the last one stays up. Each rewrite counts toward your workspace's monthly AI limit, and if the limit is reached a box shows its first entry instead. Frank reads notes in full, and links and files by their names only.",
-      },
+      { kind: "p", text: "Each of those boxes is a short overview Frank writes from everything in it, in a few paragraphs, as a snapshot. A longer one fades at the foot of its box; hover over it to read it in full." },
+      { kind: "p", text: "When something in it changes, Frank rewrites that box the next time someone on the team opens the client; until then the last one stays up." },
+      { kind: "p", text: "Each rewrite counts toward your workspace's monthly AI limit, and if the limit is reached a box shows its first entry instead." },
+      { kind: "p", text: "Frank reads notes in full, and links and files by their names only." },
       { kind: "h", text: "Add to an area" },
       {
         kind: "list",
@@ -281,16 +278,14 @@ export const HELP_ARTICLES: HelpArticle[] = [
     category: "posts",
     summary: "Brief a post, then add its artwork, Text on Image and copy.",
     blocks: [
-      {
-        kind: "p",
-        text: "In a Content Planner project, choose New Post. Use Window for the full form, or Row to type a quick post straight into the table. On a post's own page, New Post beside Edit opens the window for another post in the same project.",
-      },
+      { kind: "p", text: "In a Content Planner project, choose New Post. Use Window for the full form, or Row to type a quick post straight into the table." },
+      { kind: "p", text: "On a post's own page, New Post beside Edit opens the window for another post in the same project." },
       { kind: "h", text: "The brief" },
       {
         kind: "list",
         items: [
           "Post Name, and every Format it goes out as. A carousel asks how many slides it has.",
-          "Publish Date and Time, and its Team: as many people from your team as are working on it, picked one at a time with + Add someone and taken off with the × on their name. The table lists them all in its Team column, one a line, each with their role on the project in brackets if one's set in the project's Settings (Lead, Content, Designer…). If the client has chosen that the post's Team hears about their comments and approvals, everyone on it does.",
+          "Publish Date and Time, and its Team: as many people from your team as are working on it, picked one at a time with + Add someone and taken off with the × on their name.\n\nThe table lists them all in its Team column, one a line, each with their role on the project in brackets if one's set in the project's Settings (Lead, Content, Designer…).\n\nIf the client has chosen that the post's Team hears about their comments and approvals, everyone on it does.",
           "The Concept, and any References, each of which opens when clicked in the table.",
         ],
       },
@@ -301,14 +296,12 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "Creative: one slot per slide, or one for a single image or video, up to 300MB a file. A file dropped in isn't added until you press Save Creative V1 (then V2 and so on); closing first asks if you're sure.",
           "VO, for a video post (a Reel, Story, YouTube or other video format): the voiceover script, after the artwork, saved with Save VO. Like Text on Image, it stays with the post rather than becoming a version, and only your team sees it.",
           "Text on Image: the words on each slide, saved with Save Text on Image. It stays with the post rather than becoming a version.",
-          "Copy: the caption and anything else the formats need. Save Copy V1, then V2 and so on; it's greyed until there's a change to save. Copy Caption, under the caption, copies it with its line breaks and paragraphs, ready to paste into Instagram or another platform.",
-          "WIIFM Direction: each time copy is saved, Frank lists what's working in it, in 3 to 5 short points, each naming the psychology principle or bias the copy uses (curiosity gap, loss aversion and so on) and the words that use it. It never lists what isn't working. On the table, Copy Caption and Copy WIIFM copy either one, ready to paste.",
+          "Copy: the caption and anything else the formats need. Save Copy V1, then V2 and so on; it's greyed until there's a change to save.\n\nCopy Caption, under the caption, copies it with its line breaks and paragraphs, ready to paste into Instagram or another platform.",
+          "WIIFM Direction: each time copy is saved, Frank lists what's working in it, in 3 to 5 short points, each naming the psychology principle or bias the copy uses (curiosity gap, loss aversion and so on) and the words that use it. It never lists what isn't working.\n\nOn the table, Copy Caption and Copy WIIFM copy either one, ready to paste.",
         ],
       },
-      {
-        kind: "p",
-        text: "Saving shows each step: compressing a video, uploading, then saving the version. Keep the window open until it says the version is saved. A file goes up in pieces, so if the connection drops, Frank carries on from where it was once it's back; if it still can't, the reason shows under Save.",
-      },
+      { kind: "p", text: "Saving shows each step: compressing a video, uploading, then saving the version. Keep the window open until it says the version is saved." },
+      { kind: "p", text: "A file goes up in pieces, so if the connection drops, Frank carries on from where it was once it's back; if it still can't, the reason shows under Save." },
       {
         kind: "note",
         text: "Earlier versions stay in each section's tabs, read only, and can be deleted if nobody has commented on them.",
@@ -321,10 +314,8 @@ export const HELP_ARTICLES: HelpArticle[] = [
     category: "posts",
     summary: "Approved posts' artwork is removed 7 to 28 days after going live, as each client is set; copy and comments stay.",
     blocks: [
-      {
-        kind: "p",
-        text: "To keep your storage free for work in progress, an Approved post's artwork is removed some days after its live date: every version's files. It's 7 days unless the client's Preferences (Client Settings → Profile → Preferences) say 14, 21 or 28. The post, its copy and all its comments stay, and the post says when its artwork was removed.",
-      },
+      { kind: "p", text: "To keep your storage free for work in progress, an Approved post's artwork is removed some days after its live date: every version's files. It's 7 days unless the client's Preferences (Client Settings → Profile → Preferences) say 14, 21 or 28." },
+      { kind: "p", text: "The post, its copy and all its comments stay, and the post says when its artwork was removed." },
       {
         kind: "list",
         items: [
@@ -334,10 +325,8 @@ export const HELP_ARTICLES: HelpArticle[] = [
         ],
       },
       { kind: "h", text: "Posts with no live date" },
-      {
-        kind: "p",
-        text: "An Approved post with no live date, in Other Content say, isn't removed on its own unless the client's Preferences say to remove it. Otherwise, the same number of days after its due date, Owners and Admins get a notification under the bell in the header. Opening it shows the post with Keep Artwork or Remove Artwork. Keep is for good: you won't be asked about that post again.",
-      },
+      { kind: "p", text: "An Approved post with no live date, in Other Content say, isn't removed on its own unless the client's Preferences say to remove it. Otherwise, the same number of days after its due date, Owners and Admins get a notification under the bell in the header." },
+      { kind: "p", text: "Opening it shows the post with Keep Artwork or Remove Artwork. Keep is for good: you won't be asked about that post again." },
     ],
   },
   {
@@ -380,15 +369,13 @@ export const HELP_ARTICLES: HelpArticle[] = [
         kind: "note",
         text: "Only posts in Client Review can be shared. Posts still in Concept or Internal Review are greyed out when choosing several.",
       },
-      {
-        kind: "p",
-        text: "A link opens on the post or posts you sent it for, under Sent for review, even once the client has commented. Every link also lists the project's other posts in Client Review, after them, under Also waiting for your review. Approved posts come last, from recent days only (14 by default; set in Workspace Settings → General → Preferences), though a link always keeps the posts it was sent for. Each post shows its date above its name.",
-      },
+      { kind: "p", text: "A link opens on the post or posts you sent it for, under Sent for review, even once the client has commented. Every link also lists the project's other posts in Client Review, after them, under Also waiting for your review." },
+      { kind: "p", text: "Approved posts come last, from recent days only (14 by default; set in Workspace Settings → General → Preferences), though a link always keeps the posts it was sent for. Each post shows its date above its name." },
       { kind: "h", text: "What your client sees" },
-      {
-        kind: "p",
-        text: "It's one link for every device. On a phone it fills the screen like a post, scrolling down to the comments. On a computer the post sits in a phone, sized to the window, with the caption scrolling inside it. With the client's Instagram connected there's a Feed view of their real grid too. An approval counts once, however many times it's pressed.",
-      },
+      { kind: "p", text: "It's one link for every device." },
+      { kind: "p", text: "On a phone it fills the screen like a post, scrolling down to the comments. On a computer the post sits in a phone, sized to the window, with the caption scrolling inside it." },
+      { kind: "p", text: "With the client's Instagram connected there's a Feed view of their real grid too." },
+      { kind: "p", text: "An approval counts once, however many times it's pressed." },
       {
         kind: "p",
         text: "People you've invited as Clients of that client are listed under Who are you?, so they can comment under their own name straight away. Anyone else can choose Someone else and give a name and email.",
@@ -419,17 +406,17 @@ export const HELP_ARTICLES: HelpArticle[] = [
     category: "claude",
     summary: "Draft from the concept, or have your own draft reviewed.",
     blocks: [
-      {
-        kind: "p",
-        text: "In a post's Content tab, choose Draft with Frank at the foot of the window. Frank reads the brief, the WIIFM, each format's direction, and your workspace's and the client's Knowledge, files included. It also reads up to 8 of the client's Approved posts, to keep to their voice without repeating them, and up to 20 of the client's own comments, which it follows (not praise or approvals); if those clash with the Knowledge, Frank says so. How far back each reaches, or whether Frank reads it at all, is set in the client's Preferences (by default, Approved posts from the last 12 months and comments from the last 90 days). The window lists what Frank reads for that client.",
-      },
+      { kind: "p", text: "In a post's Content tab, choose Draft with Frank at the foot of the window." },
+      { kind: "p", text: "Frank reads the brief, the WIIFM, each format's direction, and your workspace's and the client's Knowledge, files included." },
+      { kind: "p", text: "It also reads up to 8 of the client's Approved posts, to keep to their voice without repeating them, and up to 20 of the client's own comments, which it follows (not praise or approvals); if those clash with the Knowledge, Frank says so." },
+      { kind: "p", text: "How far back each reaches, or whether Frank reads it at all, is set in the client's Preferences (by default, Approved posts from the last 12 months and comments from the last 90 days). The window lists what Frank reads for that client." },
       {
         kind: "list",
         items: [
           "Draft from the Concept: Frank offers a few drafts of the caption, the other copy fields, the VO for a video post, and the Text on Image.",
           "Review My Draft: Frank says what works in what you've written and how to improve it.",
           "Ask for changes in your own words: shorter, warmer, a different hook.",
-          "Each part of a draft has its own Use This: the Caption, the Alt Text and the Text on Image each go into the editor on their own, and the button says Added. Press Added again to take it back out (the editor goes back to what it had), or Use This on another draft's to swap it in. Open Draft with Frank again later and what you used still says Added; change any of it in the editor and it doesn't. Nothing is saved until you save it.",
+          "Each part of a draft has its own Use This: the Caption, the Alt Text and the Text on Image each go into the editor on their own, and the button says Added.\n\nPress Added again to take it back out (the editor goes back to what it had), or Use This on another draft's to swap it in.\n\nOpen Draft with Frank again later and what you used still says Added; change any of it in the editor and it doesn't. Nothing is saved until you save it.",
         ],
       },
       {
@@ -446,20 +433,16 @@ export const HELP_ARTICLES: HelpArticle[] = [
     blocks: [
       {
         kind: "p",
-        text: "At the top of a project's page, the chat icon after the Active and Archived pills opens its Discussion, and the “…” menu has its Activity Log and its Settings. Only your team sees them, never the client.",
+        text: "At the top of a project's page, three icons after the Active and Archived pills open its Discussion, its Activity Log and its Settings. Only your team sees them, never the client.",
       },
-      {
-        kind: "p",
-        text: "Settings lists everyone on the project under People: Owners and Admins first (they're on every project), then the Users and Clients given it. It also has Roles: what each person on the team does on this project. Owners and Admins fill them in; each shows after the person's name in the table's Team column, and a blank one shows nothing.",
-      },
-      {
-        kind: "p",
-        text: "The Activity Log lists what happened, newest first, with who did it and when: posts added, edited, moved between stages, approved, archived or deleted; artwork and copy versions; comments; review links shared; and changes to the project and who's on it. Click a post's name to open it.",
-      },
-      {
-        kind: "p",
-        text: "Discussion is for the team to talk about the project. Start a thread, or reply under one. Type @ to mention someone on the project's team: they get a notice in their bell that opens the Discussion. You can edit or delete your own messages, and new ones appear for everyone as they're posted.",
-      },
+      { kind: "p", text: "Settings lists everyone on the project under People: Owners and Admins first (they're on every project), then the Users and Clients given it." },
+      { kind: "p", text: "Tick New posts beside anyone on the team there to put them on every new post's Team. A new post starts with them, and its Team can still be changed. Owners and Admins choose." },
+      { kind: "p", text: "It also has Roles: what each person on the team does on this project. Owners and Admins fill them in; each shows after the person's name in the table's Team column, and a blank one shows nothing." },
+      { kind: "p", text: "The Activity Log lists what happened, newest first, with who did it and when: posts added, edited, moved between stages, approved, archived or deleted; artwork and copy versions; comments; review links shared; and changes to the project and who's on it." },
+      { kind: "p", text: "Click a post's name to open it." },
+      { kind: "p", text: "Discussion is for the team to talk about the project. Start a thread, or reply under one." },
+      { kind: "p", text: "Type @ to mention someone on the project's team: they get a notice in their bell that opens the Discussion." },
+      { kind: "p", text: "You can edit or delete your own messages, and new ones appear for everyone as they're posted." },
     ],
   },
   {
@@ -468,18 +451,16 @@ export const HELP_ARTICLES: HelpArticle[] = [
     category: "team",
     summary: "Who else is here, who's editing, and what happens if two of you save.",
     blocks: [
-      {
-        kind: "p",
-        text: "On a project's table and on a post, the pictures at the top are the others on your team who have it open right now. Hover one to see where they are. A green dot means they have the post's Edit window open.",
-      },
+      { kind: "p", text: "On a project's table and on a post, the pictures at the top are the others on your team who have it open right now." },
+      { kind: "p", text: "Hover one to see where they are. A green dot means they have the post's Edit window open." },
       {
         kind: "p",
         text: "When someone else is editing the post you're on, it says so beside the post's tools and at the top of your Edit window. Nothing is locked: you can both carry on.",
       },
-      {
-        kind: "p",
-        text: "If they save while you're editing, your save stops and tells you who changed it, when, and what. Keep Theirs takes their changes and keeps the rest of yours, ready to save. Use Mine saves yours over theirs. Text on Image works the same way, with Show Theirs. Changes to the post also appear on everyone's page as they're made, without a refresh.",
-      },
+      { kind: "p", text: "If they save while you're editing, your save stops and tells you who changed it, when, and what." },
+      { kind: "p", text: "Keep Theirs takes their changes and keeps the rest of yours, ready to save. Use Mine saves yours over theirs." },
+      { kind: "p", text: "Text on Image works the same way, with Show Theirs." },
+      { kind: "p", text: "Changes to the post also appear on everyone's page as they're made, without a refresh." },
     ],
   },
   {
@@ -566,10 +547,9 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "Clients are the brand's own people. They see their own projects, review posts and read their Knowledge.",
         ],
       },
-      {
-        kind: "p",
-        text: "Invite people from Workspace Settings, under Team: it's the only place invites are sent from. A client's People page, and the New Client window, add Users already on your team. Each person can change the type of, resend invites to, and remove only the people below them.",
-      },
+      { kind: "p", text: "Invite people from Workspace Settings, under Team: it's the only place invites are sent from." },
+      { kind: "p", text: "A client's People page, and the New Client window, add Users already on your team." },
+      { kind: "p", text: "Each person can change the type of, resend invites to, and remove only the people below them." },
       {
         kind: "note",
         text: "Someone is either on your team or at a client, never both. Inviting a team member as a Client, or a client's person onto your team, is refused with the reason. To move someone across, change their type instead. A Client can be on more than one of your clients.",
@@ -614,7 +594,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         kind: "list",
         items: [
-          "General: your Workspace Name and Workspace URL, Preferences (how long the bell keeps a notification once it's been read: 30, 60 or 90 days, unread ones always staying; and how far back a review link lists Approved posts: 7, 14, 21 or 28 days, or Always, 14 by default), anything Frank's support has done in your account, and Updates: every version of Frank and what changed. A new version also shows in the bell, and an open tab offers to reload when one goes live. The bell shows All, Unread and Read with how many of each; the funnel icon narrows it to certain people or clients; on the Read tab, read ones can be ticked, or all ticked at once with All, and deleted.",
+          "General: your Workspace Name and Workspace URL, Preferences (how long the bell keeps a notification once it's been read: 30, 60 or 90 days, unread ones always staying; and how far back a review link lists Approved posts: 7, 14, 21 or 28 days, or Always, 14 by default), anything Frank's support has done in your account, and Updates: every version of Frank and what changed.\n\nA new version also shows in the bell, and an open tab offers to reload when one goes live.\n\nThe bell shows All, Unread and Read with how many of each; the funnel icon narrows it to certain people or clients; on the Read tab, read ones can be ticked, or all ticked at once with All, and deleted.",
           "Customisation: your logo and brand colours, on plans that include branding. Your logo shows in the header, after Frank's; until there is one, Owners and Admins can choose Add Logo there.",
           "Team: your Users and Clients, and inviting people.",
           "AI Governance: the AI model Draft with Frank uses.",

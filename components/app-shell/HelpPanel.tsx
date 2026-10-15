@@ -51,6 +51,22 @@ const TOPIC_ICONS: Record<string, ReactNode> = {
   ),
 };
 
+// A list item in short paragraphs (direct instruction: no chunky blocks);
+// a blank line in its text starts the next.
+function Item({ text }: { text: string }) {
+  const parts = text.split("\n\n");
+  return (
+    <>
+      {parts[0]}
+      {parts.slice(1).map((p) => (
+        <span className="li-p" key={p}>
+          {p}
+        </span>
+      ))}
+    </>
+  );
+}
+
 function Blocks({ blocks }: { blocks: HelpBlock[] }) {
   return (
     <>
@@ -64,7 +80,9 @@ function Blocks({ blocks }: { blocks: HelpBlock[] }) {
             return (
               <ul key={i}>
                 {b.items.map((t) => (
-                  <li key={t}>{t}</li>
+                  <li key={t}>
+                    <Item text={t} />
+                  </li>
                 ))}
               </ul>
             );
@@ -72,7 +90,9 @@ function Blocks({ blocks }: { blocks: HelpBlock[] }) {
             return (
               <ol key={i}>
                 {b.items.map((t) => (
-                  <li key={t}>{t}</li>
+                  <li key={t}>
+                    <Item text={t} />
+                  </li>
                 ))}
               </ol>
             );

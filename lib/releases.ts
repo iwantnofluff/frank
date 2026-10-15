@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.31.1",
+    date: "2026-10-15",
+    title: "Easier help articles",
+    changes: [
+      "Help articles come in shorter paragraphs with more space between them, and long points are broken up too, so they're quicker to read.",
+      "Help now covers the Live stage and the live date, the New posts tick, and the project's three icons.",
+    ],
+  },
+  {
     version: "1.31.0",
     date: "2026-10-15",
     title: "A project's default post team",

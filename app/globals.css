@@ -8694,16 +8694,23 @@ button.feedgrid-live {
   line-height: 1.6;
   color: var(--ink);
 }
+/* Short paragraphs with room between them (direct instruction: easier
+   to take in than long blocks). */
 .help-article p {
-  margin: 0 0 10px;
+  margin: 0 0 14px;
 }
 .help-article ul,
 .help-article ol {
-  margin: 0 0 12px;
+  margin: 0 0 16px;
   padding-left: 20px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
+}
+/* A list item's later paragraphs (Item in HelpPanel). */
+.help-article li .li-p {
+  display: block;
+  margin-top: 6px;
 }
 .help-note {
   display: flex;
