@@ -6738,21 +6738,30 @@ button.avatar {
 .ig-media:has(.vplayer.full) {
   position: static;
 }
-/* As wide as the space allows, but never so tall the timeline (52px)
-   goes off the bottom (reported directly: on a phone it did); measured
-   against the player itself (a size container). */
+/* As large as the screen allows without cropping, filling it (reported
+   directly: with the timeline beneath, it left black either side on a
+   phone); the timeline lies over the video's foot instead, as on
+   Instagram. Measured against the player itself (a size container). */
 .vplayer.full {
   container-type: size;
 }
 .vplayer.full .vframe,
-.phoneframe .ig-media .vplayer.full .vframe {
-  width: min(100cqw, calc((100cqh - 52px) * var(--vr)));
+.phoneframe .ig-media .vplayer.full .vframe,
+.m-card .ig-media .vplayer.full .vframe {
+  width: min(100cqw, calc(100cqh * var(--vr)));
   margin: 0 auto;
 }
 .vplayer.full .vbar {
-  width: min(100cqw, calc((100cqh - 52px) * var(--vr)));
-  margin: 0 auto;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  /* The video's own foot, however much of the screen is left above and
+     below it. */
+  bottom: calc((100cqh - min(100cqh, 100cqw / var(--vr))) / 2);
+  z-index: 8;
+  width: min(100cqw, calc(100cqh * var(--vr)));
   box-sizing: border-box;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.65));
 }
 /* A little taller than at first (direct instruction): easier to hit. */
 .vbar {

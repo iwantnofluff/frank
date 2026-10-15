@@ -423,9 +423,13 @@ test.describe("on a phone", () => {
     // A shorter screen, as a phone's browser bars leave it.
     await page.setViewportSize({ width: 390, height: 640 });
     await page.locator(".vexpand").click();
+    // Expanded, the video as large as the screen allows (here its full
+    // height), the timeline over its foot (reported directly).
     const bar = page.locator(".vplayer.full .vbar");
     await expect(bar).toBeVisible();
     const b = (await bar.boundingBox())!;
-    expect(b.y + b.height).toBeLessThanOrEqual(641);
+    const f = (await page.locator(".vplayer.full .vframe").boundingBox())!;
+    expect(f.height === 640 || f.width === 390 ? true : `${f.width}x${f.height}`).toBe(true);
+    expect(Math.abs(b.y + b.height - (f.y + f.height))).toBeLessThan(2);
   });
 });
