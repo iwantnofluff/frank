@@ -7435,9 +7435,9 @@ button.avatar {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* Invited, before the name on its line (direct instruction). */
+/* Invited, after the name on its line (direct instruction). */
 .pt-name .pp-t b .tag {
-  margin-right: 6px;
+  margin-left: 6px;
   vertical-align: 1px;
 }
 .pt-name .pp-t > span {

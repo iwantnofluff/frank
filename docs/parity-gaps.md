@@ -3895,3 +3895,4 @@ Direct instruction: the client's name, the thin rule, then "Project Name Setting
 
 **Verified**: measured in a real session, 41px above both lines and the same below; screenshot of the window with an invited User on the project: the title, Details with only Project Name and Description, and Invited before the name. manage-clients-projects checks the new title and that Due Date and Delivery are gone, and passes.
 
+Then Invited moved after the name, on the same line (direct instruction, 1.33.2).

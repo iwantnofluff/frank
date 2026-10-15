@@ -285,7 +285,7 @@ function ProjectPeople({
   ]);
   const on = (people ?? []).filter((p) => p.projectIds.includes(projectId));
   const off = (people ?? []).filter((p) => !p.projectIds.includes(projectId));
-  // Invited goes before the name, on its line (direct instruction).
+  // Invited goes after the name, on its line (direct instruction).
   const nameCell = (name: string, email: string, asset: string | null, invited = false) => (
     <div className="pt-name" role="cell">
       <PersonAvatar
@@ -297,8 +297,8 @@ function ProjectPeople({
       />
       <div className="pp-t">
         <b>
-          {invited && <span className="tag grey">Invited</span>}
           {name}
+          {invited && <span className="tag grey">Invited</span>}
         </b>
         <span>{email}</span>
       </div>
