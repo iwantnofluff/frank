@@ -6681,6 +6681,12 @@ button.avatar {
   height: 0;
   z-index: 7;
 }
+/* On a phone, the post's header stays at the top as it scrolls (.m-card
+   .ig-h, 51px), over the video's top: the button stops below it, inside
+   the video (reported directly). */
+.m-card .vexpand-stick {
+  top: 51px;
+}
 .vexpand {
   position: absolute;
   top: 10px;
@@ -6711,7 +6717,11 @@ button.avatar {
    a drawn phone (a review link on a real phone), the window. */
 .vplayer.full {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* The screen you can see (a phone's browser bars excluded). */
+  height: 100dvh;
   z-index: 40;
   display: flex;
   flex-direction: column;
@@ -6719,13 +6729,27 @@ button.avatar {
 }
 .pf-screen .vplayer.full {
   position: absolute;
+  bottom: 0;
+  height: auto;
 }
 .ig-media:has(.vplayer.full) {
   position: static;
 }
+/* As wide as the space allows, but never so tall the timeline (52px)
+   goes off the bottom (reported directly: on a phone it did); measured
+   against the player itself (a size container). */
+.vplayer.full {
+  container-type: size;
+}
 .vplayer.full .vframe,
 .phoneframe .ig-media .vplayer.full .vframe {
-  width: 100%;
+  width: min(100cqw, calc((100cqh - 52px) * var(--vr)));
+  margin: 0 auto;
+}
+.vplayer.full .vbar {
+  width: min(100cqw, calc((100cqh - 52px) * var(--vr)));
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 /* A little taller than at first (direct instruction): easier to hit. */
 .vbar {

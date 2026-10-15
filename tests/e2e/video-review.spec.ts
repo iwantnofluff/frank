@@ -393,3 +393,35 @@ test("a Reel's video expands to fill the phone and back, on the post page and a 
   await page.goto(`${APP_URL}/review/${token}`);
   await expect(page.getByRole("button", { name: "Expand video" })).toBeVisible({ timeout: 20_000 });
 });
+
+// A Reel on a review link on a phone (reported directly): the expand
+// button stays inside the video below the post's sticky header as it
+// scrolls, and expanded, the timeline fits on the screen.
+test.describe("on a phone", () => {
+  test.use({ viewport: PHONE_VIEWPORT });
+  test("a Reel's expand button stays in the video, and its timeline fits when expanded", async ({ page, frank }) => {
+    test.setTimeout(90_000);
+    await seedReel(page, frank);
+    await admin.from("creatives").update({ format: "ig_reel" }).eq("id", frank.creativeId);
+    const token = await frank.createSharedLink();
+    await page.goto(`${APP_URL}/review/${token}`);
+    const expand = page.getByRole("button", { name: "Expand video" });
+    await expect(expand).toBeVisible({ timeout: 20_000 });
+    // Scrolled until the header sticks over the video's top.
+    await page.evaluate(() => document.querySelector(".ph-screen")!.scrollBy(0, 420));
+    const box = (s: string) => page.locator(s).first().boundingBox();
+    await expect.poll(async () => (await box(".m-card .ig-h"))!.y).toBeLessThan(2);
+    const head = (await box(".m-card .ig-h"))!;
+    const btn = (await box(".vexpand"))!;
+    const frame = (await box(".vframe"))!;
+    expect(btn.y).toBeGreaterThanOrEqual(head.y + head.height);
+    expect(btn.x + btn.width).toBeLessThanOrEqual(frame.x + frame.width);
+    // A shorter screen, as a phone's browser bars leave it.
+    await page.setViewportSize({ width: 390, height: 640 });
+    await page.locator(".vexpand").click();
+    const bar = page.locator(".vplayer.full .vbar");
+    await expect(bar).toBeVisible();
+    const b = (await bar.boundingBox())!;
+    expect(b.y + b.height).toBeLessThanOrEqual(641);
+  });
+});
