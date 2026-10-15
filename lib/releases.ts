@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.31.3",
+    date: "2026-10-15",
+    title: "Share as a pill",
+    changes: [
+      "On a post in Client Review, Share is a pill beside the stage pills, the same height, with its name showing, a new link icon, and a line before it.",
+      "Saving a project's settings no longer puts back the project's type as it was when the window opened.",
+    ],
+  },
+  {
     version: "1.31.2",
     date: "2026-10-15",
     title: "Project settings in one column",

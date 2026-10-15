@@ -380,17 +380,18 @@ export function CreativeReviewPage({ id }: { id: string }) {
               Review (direct instruction): grey on hover, "Share" sliding
               out to its right. */}
           {isStaff && creative.stage === 3 && (
-            <button type="button" className="sharebtn" aria-label="Share for review" onClick={() => setShareOpen(true)}>
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="18" cy="5" r="3" />
-                <circle cx="6" cy="12" r="3" />
-                <circle cx="18" cy="19" r="3" />
-                <path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" />
-              </svg>
-              <span className="sharebtn-label" aria-hidden="true">
+            <>
+              {/* A pill with its name showing, the icon supplied ("link",
+                  Noun Project 4462389), a separator before it (direct
+                  instruction). */}
+              <span className="toolsep sharesep" aria-hidden="true" />
+              <button type="button" className="sharebtn" aria-label="Share for review" onClick={() => setShareOpen(true)}>
+                <svg viewBox="0 0 1200 1200" aria-hidden="true">
+                  <path d="m712.5 750c9.9453 0 19.484-3.9492 26.516-10.984 7.0352-7.0312 10.984-16.57 10.984-26.516v-243.75c0-44.754-17.777-87.676-49.426-119.32-31.648-31.648-74.57-49.426-119.32-49.426s-87.676 17.777-119.32 49.426c-31.648 31.648-49.426 74.57-49.426 119.32v375c0 64.648 25.68 126.64 71.395 172.36 45.711 45.715 107.71 71.395 172.36 71.395s126.64-25.68 172.36-71.395c45.715-45.711 71.395-107.71 71.395-172.36v-412.5c0-84.539-33.582-165.61-93.359-225.39s-140.85-93.359-225.39-93.359-165.61 33.582-225.39 93.359-93.359 140.85-93.359 225.39v168.75c0 13.398 7.1484 25.777 18.75 32.477 11.602 6.6992 25.898 6.6992 37.5 0 11.602-6.6992 18.75-19.078 18.75-32.477v-168.75c0-64.648 25.68-126.64 71.395-172.36 45.711-45.715 107.71-71.395 172.36-71.395s126.64 25.68 172.36 71.395c45.715 45.711 71.395 107.71 71.395 172.36v412.5c0 44.754-17.777 87.676-49.426 119.32-31.648 31.648-74.57 49.426-119.32 49.426s-87.676-17.777-119.32-49.426c-31.648-31.648-49.426-74.57-49.426-119.32v-375c0-33.492 17.867-64.441 46.875-81.191 29.008-16.746 64.742-16.746 93.75 0 29.008 16.75 46.875 47.699 46.875 81.191v243.75c0 9.9453 3.9492 19.484 10.984 26.516 7.0312 7.0352 16.57 10.984 26.516 10.984z" />
+                </svg>
                 Share
-              </span>
-            </button>
+              </button>
+            </>
           )}
           <div className="tools">
             <div className="vsel">
