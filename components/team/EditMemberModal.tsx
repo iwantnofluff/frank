@@ -15,6 +15,7 @@ export function EditMemberModal({
   role: currentRole,
   roles,
   currentClientIds,
+  startRole,
   onClose,
   onSaved,
 }: {
@@ -25,13 +26,16 @@ export function EditMemberModal({
   // The roles below the editor's own (phase49).
   roles: InvitableRole[];
   currentClientIds: string[];
+  // Opened from the Role dropdown with a role already picked (User needs
+  // their clients chosen before it's saved).
+  startRole?: InvitableRole;
   onClose: () => void;
   onSaved: () => void;
 }) {
   const update = useUpdateMember(agencyId);
   const { data: clients } = useClients();
   const activeClients = (clients ?? []).filter((c) => !c.archived_at);
-  const [role, setRole] = useState<InvitableRole>(currentRole);
+  const [role, setRole] = useState<InvitableRole>(startRole ?? currentRole);
   const [clientIds, setClientIds] = useState<string[]>(currentClientIds);
 
   const unchanged =

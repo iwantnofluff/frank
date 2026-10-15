@@ -1659,22 +1659,6 @@ body.lightrail .search input::placeholder {
   gap: 5px;
   white-space: nowrap;
 }
-/* Project Settings → Roles (phase85): a name and its role, per line. */
-.profroles {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.profrole {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 220px;
-  align-items: center;
-  gap: 12px;
-  font-size: 13.2px;
-}
-.profrole input {
-  padding: 6px 9px;
-}
 @media (max-width: 560px) {
   .profrole {
     grid-template-columns: minmax(0, 1fr);
@@ -7347,57 +7331,97 @@ button.avatar {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 32px;
 }
-/* Project Settings: wider, a line down the middle (direct instruction). */
-.modal.lg:has(.profgrid.split) {
-  max-width: 1100px;
+/* Project Settings: one column, a quarter narrower than the two-column
+   1100px it replaced (direct instruction), a line between its parts. */
+.modal.lg:has(.profgrid.single) {
+  max-width: 825px;
 }
-.profgrid.split {
+.profgrid.single {
+  grid-template-columns: minmax(0, 1fr);
   gap: 0;
 }
-.profgrid.split > :first-child {
-  padding-right: 40px;
-  border-right: 1px solid var(--line);
+.profgrid.single > :first-child {
+  padding-bottom: 20px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--line);
 }
-.profgrid.split > :last-child {
-  padding-left: 40px;
+/* People as a table (direct instruction): name, workspace role, project
+   role, Post Default (who's on every new post's Team, phase101), and
+   taking someone off. */
+.proftable {
+  margin-bottom: 14px;
 }
-/* Owners and Admins in People: on every project, nothing to change. */
-.proflist.leaders {
-  margin-bottom: 0;
-}
-.profperson /* Who's on a new post's Team to start with (phase101). */
-.pp-def {
-  display: inline-flex;
+.pt-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 130px 150px 90px 32px;
   align-items: center;
-  gap: 5px;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line);
+}
+.pt-row.pt-head {
+  padding: 4px 0 6px;
   font-size: 12.2px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.pt-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.pt-name .pp-t {
+  flex: 1;
+  min-width: 0;
+}
+.pt-name .pp-t b {
+  display: block;
+  font-size: 14.2px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pt-name .pp-t span {
+  display: block;
+  font-size: 12.7px;
   color: var(--muted);
   white-space: nowrap;
-  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.pp-def:has(input:disabled) {
-  cursor: default;
+.pt-role {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
 }
-.pp-all {
-  font-size: 12.2px;
-  color: var(--muted);
-  white-space: nowrap;
+.pt-def {
+  text-align: center;
+}
+.pt-prole-in {
+  width: 100%;
+  min-height: 0;
+  padding: 5px 8px;
+  font-size: 13.2px;
+}
+.pt-prole {
+  font-size: 13.7px;
+}
+.pt-def input,
+.pt-head span:nth-child(4) {
+  text-align: center;
 }
 @media (max-width: 760px) {
   .profgrid {
     grid-template-columns: minmax(0, 1fr);
     gap: 8px;
   }
-  .profgrid.split > :first-child {
-    padding-right: 0;
-    border-right: 0;
-  }
-  .profgrid.split > :last-child {
-    padding-left: 0;
-  }
 }
+/* The five stages in a row (Live, phase99), the window one column now. */
 .stats.profstats {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   margin: 0 0 10px;
 }
 .profstats .stat {

@@ -13,6 +13,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.31.2",
+    date: "2026-10-15",
+    title: "Project settings in one column",
+    changes: [
+      "A project's settings window is called after the project (Social Media Planner Settings, say), a quarter narrower, in one column, and counts Live posts in its Progress too.",
+      "Its details read Project Name, Description, then Delivery and Due Date side by side. Type is chosen when a project is made and no longer changed here.",
+      "People is a table, with Name, Workspace Role, Project Role and Post Default columns. A User's or Client's role is a dropdown, with their invite options under it; Project Role replaces the separate Roles list.",
+      "In Workspace Settings, Team, each person's role is a dropdown too, holding their other options in place of the … menu. Picking User opens Edit to choose their clients.",
+    ],
+  },
+  {
     version: "1.31.1",
     date: "2026-10-15",
     title: "Easier help articles",

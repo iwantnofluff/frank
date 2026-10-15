@@ -17,7 +17,7 @@ test("a project's New posts tick puts someone on every new post's Team", async (
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${frank.projectId}`);
   await page.getByRole("button", { name: "Settings", exact: true }).click();
-  const tick = page.getByRole("dialog", { name: "E2E Test Project" }).getByLabel("Add E2E Staff to new posts");
+  const tick = page.getByRole("dialog", { name: "E2E Test Project" }).getByLabel("Post default for E2E Staff");
   await expect(tick).not.toBeChecked();
   await tick.click();
   await expect(tick).toBeChecked();

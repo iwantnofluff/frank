@@ -18,7 +18,8 @@ import { InviteSentModal } from "@/components/team/InviteSentModal";
 import { useResendInvite, type SentInvite } from "@/hooks/use-invite-member";
 import { EditMemberModal } from "@/components/team/EditMemberModal";
 import { RemoveMemberConfirm } from "@/components/team/RemoveMemberConfirm";
-import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
+import { RoleMenu } from "@/components/ui/RoleMenu";
+import { useUpdateMember } from "@/hooks/use-manage-member";
 import { errorMessage } from "@/lib/errors";
 import {
   ROLE_LABELS,
@@ -32,8 +33,10 @@ import {
 
 // Last column matches the dashboard's and client workspace's row menus
 // (70px, right-aligned) so the "..." sits in the same place on every list.
-const PEOPLE_COLUMNS_WITH_CLIENTS = "1fr 1.3fr 1fr 110px 110px 70px";
-const PEOPLE_COLUMNS = "1fr 1.3fr 110px 150px 70px";
+// The Role column holds the dropdown (direct instruction, in place of the
+// row's ⋮ menu), so there's no column after Status.
+const PEOPLE_COLUMNS_WITH_CLIENTS = "1fr 1.3fr 1fr 150px 110px";
+const PEOPLE_COLUMNS = "1fr 1.3fr 150px 150px";
 const CLIENT_VIEW_COLUMNS = "1fr 1.5fr 1.5fr 70px";
 
 export type View = "people" | "clients";
@@ -90,6 +93,10 @@ export function TeamSettings({ view }: { view: View }) {
   const [notice, setNotice] = useState<string | null>(null);
   const [removeTarget, setRemoveTarget] = useState<TeamMemberRow | null>(null);
   const [editTarget, setEditTarget] = useState<TeamMemberRow | null>(null);
+  // A role picked from the dropdown that needs the Edit window (User: which
+  // clients they see).
+  const [editStartRole, setEditStartRole] = useState<InvitableRole | undefined>(undefined);
+  const updateMember = useUpdateMember(agency?.agencyId ?? "");
 
   const activeClients = (clients ?? []).filter((c) => !c.archived_at);
   const clientName = new Map((clients ?? []).map((c) => [c.id, c.name]));
@@ -188,7 +195,12 @@ export function TeamSettings({ view }: { view: View }) {
   }
 
   const actionError =
-    setActive.error ?? revoke.error ?? resend.error ?? setCanInvite.error ?? (removeTarget ? null : remove.error);
+    setActive.error ??
+    revoke.error ??
+    resend.error ??
+    setCanInvite.error ??
+    updateMember.error ??
+    (removeTarget ? null : remove.error);
   const peopleColumns = canSeeAccess ? PEOPLE_COLUMNS_WITH_CLIENTS : PEOPLE_COLUMNS;
   // Restricted Users only — everyone above them sees every client anyway.
   const restrictedMembers = (members ?? []).filter((m) => m.role === "user" && !m.removed_at);
@@ -238,7 +250,6 @@ export function TeamSettings({ view }: { view: View }) {
             {canSeeAccess && <div>Clients</div>}
             <div>Role</div>
             <div>Status</div>
-            <div />
           </div>
           {members.map((m) => {
             const status = statusOf(m);
@@ -266,8 +277,43 @@ export function TeamSettings({ view }: { view: View }) {
                 </div>
                 <div style={{ fontSize: 14.2, color: "var(--muted)" }}>{m.user?.email ?? "—"}</div>
                 {canSeeAccess && <div style={{ fontSize: 14.2 }}>{clientsCell(m)}</div>}
-                <div>
-                  <span className="tag blue">{ROLE_LABELS[m.role] ?? m.role}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                  {actions ? (
+                    <RoleMenu
+                      name={displayName(m)}
+                      value={m.role as InvitableRole}
+                      current={ROLE_LABELS[m.role] ?? m.role}
+                      // A role can't be changed while invited or deactivated;
+                      // their other options are still here.
+                      options={
+                        m.accepted_at && !m.removed_at
+                          ? rolesBelow(myMembership).map((r) => ({ value: r, label: ROLE_LABELS[r] }))
+                          : []
+                      }
+                      onPick={(role) => {
+                        if (role === "user") {
+                          setEditStartRole("user");
+                          setEditTarget(m);
+                          return;
+                        }
+                        setNotice(null);
+                        updateMember.mutate(
+                          {
+                            membershipId: m.id,
+                            role,
+                            roleChanged: true,
+                            clientIds: [],
+                            currentClientIds: grantsFor(m.id),
+                          },
+                          { onSuccess: () => setNotice(`${displayName(m)} is now ${ROLE_LABELS[role]}`) },
+                        );
+                      }}
+                      extra={actions}
+                      disabled={updateMember.isPending}
+                    />
+                  ) : (
+                    <span className="tag blue">{ROLE_LABELS[m.role] ?? m.role}</span>
+                  )}
                   {m.role === "admin" && m.can_invite && (
                     <span className="tag" style={{ marginLeft: 6 }}>
                       Can invite
@@ -280,11 +326,6 @@ export function TeamSettings({ view }: { view: View }) {
                     const note = inviteNote(m, dataUpdatedAt);
                     return note && <div className={`invnote${note.late ? " late" : ""}`}>{note.text}</div>;
                   })()}
-                </div>
-                <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                  {actions && (
-                    <RowActionsMenu title={`Options for ${displayName(m)}`} items={actions} />
-                  )}
                 </div>
               </div>
             );
@@ -386,10 +427,15 @@ export function TeamSettings({ view }: { view: View }) {
           role={editTarget.role as InvitableRole}
           roles={editRoles}
           currentClientIds={grantsFor(editTarget.id)}
-          onClose={() => setEditTarget(null)}
+          startRole={editStartRole}
+          onClose={() => {
+            setEditTarget(null);
+            setEditStartRole(undefined);
+          }}
           onSaved={() => {
             setNotice(`${displayName(editTarget)} updated`);
             setEditTarget(null);
+            setEditStartRole(undefined);
           }}
         />
       )}

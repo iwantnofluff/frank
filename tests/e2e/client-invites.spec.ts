@@ -121,8 +121,8 @@ test("an Owner lets an Admin invite: Admins, Users and Clients, never an Owner â
   await setStaffRole(frank, "owner");
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/settings/team`);
-  await page.getByRole("button", { name: "Options for Second Admin" }).click();
-  await page.getByRole("button", { name: "Let Them Invite People" }).click();
+  await page.getByRole("button", { name: /^Second Admin: .+\. Change$/ }).click();
+  await page.getByRole("menuitem", { name: "Let Them Invite People" }).click();
   await expect(page.getByRole("status")).toHaveText("Second Admin can now invite Admins, Users and Clients");
   await expect(page.locator(".crow", { hasText: second.email })).toContainText("Can invite");
   expect((await admin.from("memberships").select("can_invite").eq("id", second.membershipId).single()).data!.can_invite).toBe(true);
@@ -178,8 +178,8 @@ test("an Owner lets an Admin invite: Admins, Users and Clients, never an Owner â
   expect(self.data ?? []).toHaveLength(0);
 
   // Switched off again: no button.
-  await page.getByRole("button", { name: "Options for Second Admin" }).click();
-  await page.getByRole("button", { name: "Stop Them Inviting People" }).click();
+  await page.getByRole("button", { name: /^Second Admin: .+\. Change$/ }).click();
+  await page.getByRole("menuitem", { name: "Stop Them Inviting People" }).click();
   await expect(page.getByRole("status")).toHaveText("Second Admin can no longer invite people");
   expect((await admin.from("memberships").select("can_invite").eq("id", second.membershipId).single()).data!.can_invite).toBe(false);
 });

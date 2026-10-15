@@ -68,7 +68,8 @@ async function signInAs(browser: Browser, email: string) {
 }
 
 async function openMenu(page: import("@playwright/test").Page, name: string) {
-  await page.getByRole("button", { name: `Options for ${name}` }).click();
+  // The Role dropdown holds the row's options now (direct instruction).
+  await page.getByRole("button", { name: new RegExp(`^${name}: .+\\. Change$`) }).click();
 }
 
 test("deactivating blocks sign-in with a clear message, and reactivating restores it", async ({
@@ -82,7 +83,7 @@ test("deactivating blocks sign-in with a clear message, and reactivating restore
   await page.goto(`${APP_URL}/settings/team`);
 
   await openMenu(page, "Dee Activated");
-  await page.getByRole("button", { name: "Deactivate" }).click();
+  await page.getByRole("menuitem", { name: "Deactivate" }).click();
   const row = page.locator(".crow", { hasText: member.email });
   await expect(row).toContainText("Deactivated");
   await expect(page.getByRole("status")).toHaveText("Dee Activated deactivated");
@@ -103,7 +104,7 @@ test("deactivating blocks sign-in with a clear message, and reactivating restore
   await blocked.context.close();
 
   await openMenu(page, "Dee Activated");
-  await page.getByRole("button", { name: "Reactivate" }).click();
+  await page.getByRole("menuitem", { name: "Reactivate" }).click();
   await expect(row).toContainText("Active");
 
   const back = await signInAs(browser, member.email);
@@ -124,7 +125,7 @@ test("someone already signed in is shown the message on their next page load", a
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/settings/team`);
   await openMenu(page, "Mid Session");
-  await page.getByRole("button", { name: "Deactivate" }).click();
+  await page.getByRole("menuitem", { name: "Deactivate" }).click();
   await expect(page.locator(".crow", { hasText: member.email })).toContainText("Deactivated");
 
   await session.page.reload();
@@ -143,7 +144,7 @@ test("removing a member asks first, then drops them from the team but keeps thei
   await page.goto(`${APP_URL}/settings/team`);
 
   await openMenu(page, "Gone Soon");
-  await page.getByRole("button", { name: "Remove from Team" }).click();
+  await page.getByRole("menuitem", { name: "Remove from Team" }).click();
   const confirm = page.getByRole("dialog", { name: "Remove from team?" });
   // Addressed to whoever is signed in (the staff fixture, first name "E2E").
   await expect(confirm.locator(".sub")).toHaveText(/^E2E, Gone Soon will lose all access to E2E Test Agency/);
@@ -151,7 +152,7 @@ test("removing a member asks first, then drops them from the team but keeps thei
   await expect(page.locator(".crow", { hasText: member.email })).toBeVisible();
 
   await openMenu(page, "Gone Soon");
-  await page.getByRole("button", { name: "Remove from Team" }).click();
+  await page.getByRole("menuitem", { name: "Remove from Team" }).click();
   await confirm.getByRole("button", { name: "Remove from Team" }).click();
   await expect(confirm).toHaveCount(0);
   await expect(page.locator(".crow", { hasText: member.email })).toHaveCount(0);
@@ -199,8 +200,8 @@ test("revoking a pending invite removes it and kills the link", async ({ page, f
     await expect(row).toContainText("Invited");
 
     await openMenu(page, "Not Yet");
-    await expect(page.getByRole("button", { name: "Deactivate" })).toHaveCount(0);
-    await page.getByRole("button", { name: "Revoke Invite" }).click();
+    await expect(page.getByRole("menuitem", { name: "Deactivate" })).toHaveCount(0);
+    await page.getByRole("menuitem", { name: "Revoke Invite" }).click();
     await expect(row).toHaveCount(0);
 
     await page.goto(`${APP_URL}/invite/${token}`);
@@ -223,13 +224,13 @@ test("everyone gets a menu only on the people below them (phase49)", async ({
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/settings/team`);
   await expect(page.locator(".crow", { hasText: po.email })).toContainText("Primary Owner");
-  await expect(page.getByRole("button", { name: "Options for The Primary" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Options for E2E Staff" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Options for Fellow Owner" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Options for Some User" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^The Primary: .+\. Change$/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /^E2E Staff: .+\. Change$/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /^Fellow Owner: .+\. Change$/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /^Some User: .+\. Change$/ })).toBeVisible();
   // An Owner gives Admin or User, never Owner.
   await openMenu(page, "Some Admin");
-  await page.getByRole("button", { name: "Edit", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Edit", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "Edit Some Admin" }).getByLabel("Role").locator("option")).toHaveText([
     "Admin",
     "User",
@@ -240,8 +241,8 @@ test("everyone gets a menu only on the people below them (phase49)", async ({
   await setStaffRole(frank, "admin");
   await page.reload();
   await expect(page.locator(".crow", { hasText: po.email })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Options for Some Admin" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Options for Fellow Owner" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /^Some Admin: .+\. Change$/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /^Fellow Owner: .+\. Change$/ })).toHaveCount(0);
   await openMenu(page, "Some User");
   await expect(page.locator(".colpop .cpr")).toHaveText(["Edit"]);
 });
@@ -284,7 +285,7 @@ test("an Owner edits a User's clients and role; the Clients column and Clients p
   await expect(page.locator(".crow", { hasText: frank.staffEmail })).toContainText("All clients");
 
   await openMenu(page, "Edit Me");
-  await page.getByRole("button", { name: "Edit", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Edit", exact: true }).click();
   const modal = page.getByRole("dialog", { name: "Edit Edit Me" });
   await expect(modal.getByRole("checkbox", { name: "E2E Test Client" })).toHaveAttribute("aria-checked", "true");
   await expect(modal.getByRole("button", { name: "Save" })).toBeDisabled();
@@ -311,7 +312,7 @@ test("an Owner edits a User's clients and role; the Clients column and Clients p
   await page.getByRole("navigation", { name: "Settings sections" }).getByRole("link", { name: "Users" }).click();
 
   await openMenu(page, "Edit Me");
-  await page.getByRole("button", { name: "Edit", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Edit", exact: true }).click();
   await modal.getByLabel("Role").selectOption("admin");
   await expect(modal.getByRole("group", { name: "Client access" })).toHaveCount(0);
   await modal.getByRole("button", { name: "Save" }).click();
@@ -335,7 +336,7 @@ test("an Admin sees who has which clients, and changes a User's", async ({ page,
   await expect(page.locator(".crow", { hasText: member.email })).toContainText("E2E Test Client");
   await expect(page.getByRole("button", { name: "Invite Member" })).toHaveCount(0);
   await openMenu(page, "Read Only");
-  await page.getByRole("button", { name: "Edit", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Edit", exact: true }).click();
   const modal = page.getByRole("dialog", { name: "Edit Read Only" });
   await expect(modal.getByLabel("Role").locator("option")).toHaveText(["User"]);
   await modal.getByRole("checkbox", { name: "E2E Test Client" }).click();

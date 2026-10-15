@@ -3,22 +3,20 @@
 import { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
-import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
 import { usePersonActions } from "@/components/team/PersonActions";
 import { useUpdateProject } from "@/hooks/use-update-project";
 import { useClientPeople, useSetProjectAccess } from "@/hooks/use-project-access";
+import { PersonTypeMenu } from "@/components/clients/PersonTypeMenu";
 import { useProject } from "@/hooks/use-project";
 import { useSetPostTeamDefault } from "@/hooks/use-set-post-team-default";
 import { useAvatarUrls } from "@/hooks/use-avatar-urls";
 import type { ProjectListRow } from "@/hooks/use-projects";
 import type { ProjectCreativeStats } from "@/hooks/use-project-creative-stats";
-import { PROJECT_TYPE_OPTS } from "@/lib/project-types";
 import { avatarColour } from "@/lib/avatar-colour";
 import { initials } from "@/lib/initials";
 import { errorMessage } from "@/lib/errors";
 import { DeletePermanentlyDialog } from "@/components/ui/DeletePermanentlyDialog";
 import { useMyMembership } from "@/hooks/use-my-membership";
-import { useProjectTeam } from "@/hooks/use-project-discussion";
 import { useProjectRoles, useSetProjectRole } from "@/hooks/use-project-roles";
 import { useTeamMembers } from "@/hooks/use-team-members";
 import { ROLE_LABELS, seesAllClients } from "@/lib/roles";
@@ -27,7 +25,7 @@ const DELIVERY_LABELS = {
   scheduled: "Content Planner",
   continuous: "Other Content",
 } as const;
-const STAGES = ["Concept", "Internal Review", "Client Review", "Approved"];
+const STAGES = ["Concept", "Internal Review", "Client Review", "Approved", "Live"];
 
 function formatDay(value: string | null) {
   if (!value) return "None yet";
@@ -76,15 +74,10 @@ export function ProjectProfileModal({
   const isOwner = !!me && !me.client_id && (me.role === "owner" || me.role === "primary_owner");
   const [deleting, setDeleting] = useState(false);
   const [name, setName] = useState(project.name);
-  const [type, setType] = useState(project.type ?? "");
   const [dueOn, setDueOn] = useState(project.due_on ?? "");
   const [description, setDescription] = useState(project.description ?? "");
   const [nameError, setNameError] = useState<string | null>(null);
 
-  // Delivery is fixed once a project is made (phase48), so only its own
-  // types are offered.
-  const options = PROJECT_TYPE_OPTS[project.delivery];
-  const keepsUnlistedType = !!project.type && !options.includes(project.type);
 
   async function save() {
     if (!name.trim()) return setNameError("Give it a name first.");
@@ -93,7 +86,8 @@ export function ProjectProfileModal({
       projectId: project.id,
       clientId,
       name,
-      type: type || null,
+      // Not changed here (direct instruction); kept as it was made.
+      type: project.type ?? null,
       due_on: dueOn || null,
       description: description.trim() || null,
     });
@@ -104,10 +98,9 @@ export function ProjectProfileModal({
     <>
     <Modal
       hideCloseButton
-      // Client, then project, as the review page reads. Projects have no
-      // picture now, just their name (direct instruction).
-      title={`${clientName} - ${project.name}`}
-      ariaLabel={`${clientName} - ${project.name}`}
+      // "Project Name Settings" (direct instruction).
+      title={`${project.name} Settings`}
+      ariaLabel={`${project.name} Settings`}
       size="lg"
       onClose={onClose}
       footer={
@@ -155,9 +148,9 @@ export function ProjectProfileModal({
         </>
       }
     >
-      {/* Wider, with a line down the middle (direct instruction: it felt
-          cramped). */}
-      <div className="profgrid split">
+      {/* One column, a quarter narrower than the two-column layout it
+          replaced (direct instruction), a line between its sections. */}
+      <div className="profgrid single">
         <div>
           <div className="msection-h">Details</div>
           <p className="msection-d">
@@ -167,8 +160,11 @@ export function ProjectProfileModal({
           </p>
           {isAdmin ? (
             <>
+              {/* Project Name, Description, then Delivery and Due Date
+                  side by side (direct instruction). Type isn't changed
+                  here; it's chosen when a project is made. */}
               <div className="field">
-                <label htmlFor="ppName">Project name</label>
+                <label htmlFor="ppName">Project Name</label>
                 <input
                   id="ppName"
                   value={name}
@@ -178,32 +174,6 @@ export function ProjectProfileModal({
                   }}
                 />
                 {nameError && <p className="autherr">{nameError}</p>}
-              </div>
-              <div className="frow">
-                <div className="field">
-                  <label>Delivery</label>
-                  <p className="profstatic" title="Fixed once a project is made">
-                    {DELIVERY_LABELS[project.delivery]}
-                  </p>
-                </div>
-                <div className="field">
-                  <label htmlFor="ppType">Type</label>
-                  <select id="ppType" value={type} onChange={(e) => setType(e.target.value)}>
-                    {!type && <option value="">—</option>}
-                    {keepsUnlistedType && <option value={project.type!}>{project.type}</option>}
-                    {options.map((o) => (
-                      <option key={o} value={o}>
-                        {o}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="field">
-                <label htmlFor="ppDue">
-                  Due date <span className="hint">optional</span>
-                </label>
-                <input id="ppDue" type="date" value={dueOn} onChange={(e) => setDueOn(e.target.value)} />
               </div>
               <div className="field">
                 <label htmlFor="ppDesc">
@@ -218,20 +188,32 @@ export function ProjectProfileModal({
                   placeholder="What this project covers, and anything the team should know"
                 />
               </div>
+              <div className="frow">
+                <div className="field">
+                  <label>Delivery</label>
+                  <p className="profstatic" title="Fixed once a project is made">
+                    {DELIVERY_LABELS[project.delivery]}
+                  </p>
+                </div>
+                <div className="field">
+                  <label htmlFor="ppDue">
+                    Due Date <span className="hint">optional</span>
+                  </label>
+                  <input id="ppDue" type="date" value={dueOn} onChange={(e) => setDueOn(e.target.value)} />
+                </div>
+              </div>
               {updateProject.error && (
                 <p className="autherr">{errorMessage(updateProject.error, "Couldn't save the project")}</p>
               )}
             </>
           ) : (
             <dl className="profdl">
-              <dt>Delivery</dt>
-              <dd>{DELIVERY_LABELS[project.delivery]}</dd>
-              <dt>Type</dt>
-              <dd>{project.type || "—"}</dd>
-              <dt>Due date</dt>
-              <dd>{project.due_on ? formatDay(`${project.due_on}T00:00`) : "None set"}</dd>
               <dt>Description</dt>
               <dd className="profdesc">{project.description || "No description yet."}</dd>
+              <dt>Delivery</dt>
+              <dd>{DELIVERY_LABELS[project.delivery]}</dd>
+              <dt>Due Date</dt>
+              <dd>{project.due_on ? formatDay(`${project.due_on}T00:00`) : "None set"}</dd>
             </dl>
           )}
         </div>
@@ -258,7 +240,6 @@ export function ProjectProfileModal({
             clientName={clientName}
             canManage={isAdmin}
           />
-          <ProjectRoles projectId={project.id} canManage={isAdmin} />
         </div>
       </div>
     </Modal>
@@ -300,17 +281,15 @@ function ProjectPeople({
   const { data: project } = useProject(projectId);
   const defaults = project?.default_team_user_ids ?? [];
   const setDefault = useSetPostTeamDefault(projectId);
-  const newPostsTick = (userId: string, name: string) => (
-    <label className="pp-def" title={`Add ${name} to new posts' Team`}>
-      <input
-        type="checkbox"
-        aria-label={`Add ${name} to new posts`}
-        checked={defaults.includes(userId)}
-        disabled={!canManage || setDefault.isPending || !project}
-        onChange={(e) => setDefault.mutate({ current: defaults, userId, on: e.target.checked })}
-      />
-      New posts
-    </label>
+  const postDefault = (userId: string, name: string) => (
+    <input
+      type="checkbox"
+      aria-label={`Post default for ${name}`}
+      title={`${name} on every new post's Team`}
+      checked={defaults.includes(userId)}
+      disabled={!canManage || setDefault.isPending || !project}
+      onChange={(e) => setDefault.mutate({ current: defaults, userId, on: e.target.checked })}
+    />
   );
   const { data: photos } = useAvatarUrls([
     ...(people ?? []).map((p) => p.avatarAssetId),
@@ -318,37 +297,120 @@ function ProjectPeople({
   ]);
   const on = (people ?? []).filter((p) => p.projectIds.includes(projectId));
   const off = (people ?? []).filter((p) => !p.projectIds.includes(projectId));
+  const nameCell = (name: string, email: string, asset: string | null) => (
+    <div className="pt-name" role="cell">
+      <PersonAvatar
+        className="who"
+        style={{ width: 28, height: 28, fontSize: 11.2, background: avatarColour(name) }}
+        initials={initials(name, email)}
+        photoUrl={asset ? photos?.[asset] : null}
+        hasPhoto={!!asset}
+      />
+      <div className="pp-t">
+        <b>{name}</b>
+        <span>{email}</span>
+      </div>
+    </div>
+  );
+  const shown = canManage && !isPending && !error;
+  // Each person's role on the project (phase85), a column of its own now
+  // (direct instruction): Lead, Content, Designer… The team's, not
+  // clients'. Saved as each box is left.
+  const { data: roles } = useProjectRoles(projectId);
+  const setRole = useSetProjectRole(projectId);
+  const projectRole = (userId: string, name: string) =>
+    !canManage ? (
+      <span className="pt-prole">{roles?.[userId] || "—"}</span>
+    ) : (
+      <input
+        className="bin one pt-prole-in"
+        // Keyed by the saved role, so a save elsewhere shows here.
+        key={roles?.[userId] ?? ""}
+        defaultValue={roles?.[userId] ?? ""}
+        placeholder="e.g. Designer"
+        maxLength={40}
+        aria-label={`${name}'s project role`}
+        onBlur={(e) => {
+          const value = e.target.value.trim();
+          if (value !== (roles?.[userId] ?? "")) setRole.mutate({ userId, role: value });
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") e.currentTarget.blur();
+        }}
+      />
+    );
 
   return (
     <>
       <div className="msection-h">People</div>
       <p className="msection-d">
         {canManage
-          ? "Everyone on this project. Owners and Admins are on every project; add Users and Clients here. Tick New posts for whoever should be on every new post's Team. Changes apply straight away."
+          ? "Everyone on this project. Owners and Admins are on every project; add Users and Clients here. A Project Role shows after the person's name in the table's Team column. Tick Post Default for whoever should be on every new post's Team. Changes apply straight away."
           : "Everyone on this project. Owners and Admins choose who's on it."}
       </p>
-      {leaders.length > 0 && (
-        <div className="proflist leaders">
-          {leaders.map((m) => (
-            <div className="profperson" key={m.id}>
-              <PersonAvatar
-                className="who"
-                style={{ width: 28, height: 28, fontSize: 11.2, background: avatarColour(m.user!.name) }}
-                initials={initials(m.user!.name, m.user!.email)}
-                photoUrl={m.user!.avatar_asset_id ? photos?.[m.user!.avatar_asset_id] : null}
-                hasPhoto={!!m.user!.avatar_asset_id}
-              />
-              <div className="pp-t">
-                <b>{m.user!.name}</b>
-                <span>{m.user!.email}</span>
-              </div>
+      {/* A table (direct instruction): its name, role (a dropdown for a User
+          or Client, as everywhere people are listed), and Post Default. */}
+      <div className="proftable" role="table" aria-label="People on this project">
+        <div className="pt-row pt-head" role="row">
+          <span role="columnheader">Name</span>
+          <span role="columnheader">Workspace Role</span>
+          <span role="columnheader">Project Role</span>
+          <span role="columnheader">Post Default</span>
+          <span role="columnheader" aria-label="Remove" />
+        </div>
+        {leaders.map((m) => (
+          <div className="pt-row" role="row" key={m.id}>
+            {nameCell(m.user!.name, m.user!.email, m.user!.avatar_asset_id)}
+            <div className="pt-role" role="cell">
               <span className="tag blue">{ROLE_LABELS[m.role]}</span>
-              {newPostsTick(m.user_id, m.user!.name)}
-              <span className="pp-all">Every project</span>
+            </div>
+            <div role="cell">{projectRole(m.user_id, m.user!.name)}</div>
+            <div className="pt-def" role="cell">
+              {postDefault(m.user_id, m.user!.name)}
+            </div>
+            <div role="cell" />
+          </div>
+        ))}
+        {shown &&
+          on.map((p) => (
+            <div className="pt-row" role="row" key={p.membershipId}>
+              {nameCell(p.name, p.email, p.avatarAssetId)}
+              <div className="pt-role" role="cell">
+                <PersonTypeMenu
+                  person={p}
+                  disabled={actions.switching}
+                  onSwitch={(to) => actions.switchType(p, to)}
+                  extra={actions.inviteItems(p)}
+                />
+                {!p.accepted && <span className="tag grey">Invited</span>}
+              </div>
+              <div role="cell">{p.kind === "user" && projectRole(p.userId, p.name)}</div>
+              <div className="pt-def" role="cell">
+                {p.kind === "user" && postDefault(p.userId, p.name)}
+              </div>
+              <div role="cell">
+                <button
+                  type="button"
+                  className="brx"
+                  title={`Take ${p.name} off this project`}
+                  disabled={setAccess.isPending}
+                  onClick={() =>
+                    setAccess.mutate({
+                      membershipId: p.membershipId,
+                      projectId,
+                      clientId,
+                      on: false,
+                    })
+                  }
+                >
+                  <svg viewBox="0 0 24 24">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
           ))}
-        </div>
-      )}
+      </div>
       {canManage &&
         (isPending ? (
           <p className="msection-d">Frank is working…</p>
@@ -357,50 +419,6 @@ function ProjectPeople({
         ) : (
           <>
             {on.length === 0 && <p className="msection-empty">No Users or Clients yet.</p>}
-            <div className="proflist">
-              {on.map((p) => (
-                <div className="profperson" key={p.membershipId}>
-                  <PersonAvatar
-                    className="who"
-                    style={{
-                      width: 28,
-                      height: 28,
-                      fontSize: 11.2,
-                      background: avatarColour(p.name),
-                    }}
-                    initials={initials(p.name, p.email)}
-                    photoUrl={p.avatarAssetId ? photos?.[p.avatarAssetId] : null}
-                    hasPhoto={!!p.avatarAssetId}
-                  />
-                  <div className="pp-t">
-                    <b>{p.name}</b>
-                    <span>{p.email}</span>
-                  </div>
-                  <span className="tag blue">{p.kind === "client" ? "Client" : "User"}</span>
-                  {!p.accepted && <span className="tag grey">Invited</span>}
-                  {p.kind === "user" && newPostsTick(p.userId, p.name)}
-                  <RowActionsMenu title={`Options for ${p.name}`} items={actions.itemsFor(p)} />
-                  <button
-                    type="button"
-                    className="brx"
-                    title={`Take ${p.name} off this project`}
-                    disabled={setAccess.isPending}
-                    onClick={() =>
-                      setAccess.mutate({
-                        membershipId: p.membershipId,
-                        projectId,
-                        clientId,
-                        on: false,
-                      })
-                    }
-                  >
-                    <svg viewBox="0 0 24 24">
-                      <path d="M18 6L6 18M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              ))}
-            </div>
             {off.length > 0 ? (
               <select
                 aria-label="Add someone to this project"
@@ -429,6 +447,12 @@ function ProjectPeople({
               )
             )}
             {actions.outcome}
+            {setRole.isSuccess && !setRole.isPending && (
+              <p className="msection-d" role="status">
+                Saved.
+              </p>
+            )}
+            {setRole.error && <p className="autherr">{errorMessage(setRole.error, "Couldn't save the role")}</p>}
             {setAccess.error && (
               <p className="autherr">{errorMessage(setAccess.error, "Couldn't change who's on this project")}</p>
             )}
@@ -438,59 +462,3 @@ function ProjectPeople({
   );
 }
 
-// Each person's role on the project (phase85, direct instruction): Lead,
-// Content, Designer… Blank shows nothing; filled in, it shows in brackets
-// after their name in the table's Team column. The whole team is listed,
-// Owners and Admins too, as they lead posts. Saved as each box is left.
-function ProjectRoles({ projectId, canManage }: { projectId: string; canManage: boolean }) {
-  const { data: team, isPending, error } = useProjectTeam(projectId, true);
-  const { data: roles } = useProjectRoles(projectId);
-  const setRole = useSetProjectRole(projectId);
-  return (
-    <>
-      <div className="msection-h">Roles</div>
-      <p className="msection-d">
-        {canManage
-          ? "What each person does on this project, shown after their name in the Team column. Leave blank for none."
-          : "What each person does on this project. Owners and Admins set them."}
-      </p>
-      {isPending ? (
-        <p className="msection-d">Frank is working…</p>
-      ) : error ? (
-        <p className="autherr">{errorMessage(error, "Couldn't load the project's team")}</p>
-      ) : (
-        <div className="profroles">
-          {(team ?? []).map((m) => (
-            <label className="profrole" key={m.user_id}>
-              <span>{m.name}</span>
-              {/* Text for anyone who can't set it (direct instruction: a
-                  disabled box read as editable to a User). */}
-              {!canManage ? (
-                <b className="srow-val">{roles?.[m.user_id] || "—"}</b>
-              ) : (
-              <input
-                className="bin one"
-                // Keyed by the saved role, so a save elsewhere shows here.
-                key={roles?.[m.user_id] ?? ""}
-                defaultValue={roles?.[m.user_id] ?? ""}
-                placeholder="Role, e.g. Designer"
-                maxLength={40}
-                aria-label={`${m.name}'s role`}
-                onBlur={(e) => {
-                  const value = e.target.value.trim();
-                  if (value !== (roles?.[m.user_id] ?? "")) setRole.mutate({ userId: m.user_id, role: value });
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") e.currentTarget.blur();
-                }}
-              />
-              )}
-            </label>
-          ))}
-        </div>
-      )}
-      {setRole.isSuccess && !setRole.isPending && <p className="msection-d" role="status">Saved.</p>}
-      {setRole.error && <p className="autherr">{errorMessage(setRole.error, "Couldn't save the role")}</p>}
-    </>
-  );
-}

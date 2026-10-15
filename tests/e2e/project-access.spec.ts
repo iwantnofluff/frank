@@ -111,10 +111,10 @@ test("an Owner takes a User off a project from its profile, and the User no long
   await page.goto(`${APP_URL}/projects/${frank.projectId}`);
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   const modal = page.getByRole("dialog", { name: "E2E Test Project" });
-  await expect(modal.locator(".profperson", { hasText: "Proj User" })).toBeVisible();
+  await expect(modal.locator(".pt-row", { hasText: "Proj User" })).toBeVisible();
   await page.screenshot({ path: `${process.env.SHOT_DIR ?? "test-results"}/project-profile.png` });
   await modal.getByRole("button", { name: "Take Proj User off this project" }).click();
-  await expect(modal.locator(".profperson", { hasText: "Proj User" })).toHaveCount(0);
+  await expect(modal.locator(".pt-row", { hasText: "Proj User" })).toHaveCount(0);
   await expect(modal.getByLabel("Add someone to this project").locator("option")).toHaveText([
     "+ Add someone from E2E Test Client",
     "Proj User (User)",
@@ -144,8 +144,8 @@ test("an Owner takes a User off a project from its profile, and the User no long
     await expect(theirs.getByRole("button", { name: "Save" })).toHaveCount(0);
     await expect(theirs).toContainText("Owners and Admins choose who's on it.");
     // Only the Owner, who's on every project; nobody to add or take off.
-    await expect(theirs.locator(".profperson")).toHaveCount(1);
-    await expect(theirs.locator(".proflist.leaders .profperson")).toContainText("Owner");
+    await expect(theirs.locator(".pt-row:not(.pt-head)")).toHaveCount(1);
+    await expect(theirs.locator(".pt-row:not(.pt-head)")).toContainText("Owner");
     await expect(theirs.getByRole("button", { name: /off this project/ })).toHaveCount(0);
   } finally {
     await ctx.close();
@@ -164,7 +164,7 @@ test("an Owner takes a User off a project from its profile, and the User no long
 
   // Back on.
   await modal.getByLabel("Add someone to this project").selectOption({ label: "Proj User (User)" });
-  await expect(modal.locator(".profperson", { hasText: "Proj User" })).toBeVisible();
+  await expect(modal.locator(".pt-row", { hasText: "Proj User" })).toBeVisible();
   expect(await projectsOf(frank, user.email)).toEqual([frank.projectId, second].sort());
 });
 
@@ -179,7 +179,7 @@ test("a client's profile lists its people with their projects, and an Owner chan
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/clients/${frank.clientId}/settings/people`);
   const modal = page.locator(".setmain");
-  const person = modal.locator(".profperson", { hasText: "Proj User" });
+  const person = modal.locator(".pt-row", { hasText: "Proj User" });
   // Their projects in words under their name, changed from Edit Projects.
   // Named one by one, even when they're on every project.
   await expect(person.locator(".pp-projs")).not.toContainText("All projects");

@@ -194,7 +194,7 @@ test("a client's people get no menu, and can't read the log or the discussion", 
 });
 
 // A person's role on the project (phase85, direct instruction): set in
-// Project Settings → Roles, shown in brackets after their name in the
+// Project Settings → People's Project Role column, shown in brackets after their name in the
 // Team column (the Lead column, renamed), nothing when blank. Owners and
 // Admins set them; a Client can't.
 test("a role set in Project Settings shows after the name in the Team column", async ({ page, frank }) => {
@@ -209,7 +209,7 @@ test("a role set in Project Settings shows after the name in the Team column", a
   await expect(cell).toHaveText("E2E Staff", { timeout: 20_000 });
   await expect(page.locator("th", { hasText: "Team" }).first()).toBeVisible();
   await page.getByRole("button", { name: "Settings", exact: true }).click();
-  const role = page.getByLabel("E2E Staff's role");
+  const role = page.getByLabel("E2E Staff's project role");
   await role.fill("Designer");
   await role.press("Enter");
   await expect(page.getByRole("status").filter({ hasText: "Saved." })).toBeVisible();
@@ -219,8 +219,8 @@ test("a role set in Project Settings shows after the name in the Team column", a
 
   // Cleared: nothing shows.
   await page.getByRole("button", { name: "Settings", exact: true }).click();
-  await page.getByLabel("E2E Staff's role").fill("");
-  await page.getByLabel("E2E Staff's role").press("Enter");
+  await page.getByLabel("E2E Staff's project role").fill("");
+  await page.getByLabel("E2E Staff's project role").press("Enter");
   await page.keyboard.press("Escape");
   await expect(cell.locator(".lead-role")).toHaveCount(0);
   expect((await admin.from("project_roles").select("role").eq("project_id", frank.projectId)).data).toEqual([]);

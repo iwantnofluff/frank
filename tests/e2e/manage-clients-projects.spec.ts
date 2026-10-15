@@ -1,4 +1,9 @@
+import { createClient } from "@supabase/supabase-js";
 import { test, expect } from "./fixtures";
+
+const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
 
 // Rename + archive/unarchive for clients and projects. "Delete" in the
 // original ask turned out to mean archive, not real removal — there's no
@@ -87,19 +92,13 @@ test("edit (name, type and details) and archive/unarchive a project from its pro
   };
   await openSettings();
   const modal = page.getByRole("dialog", { name: "E2E Test Project" });
-  // The fixture project has no type: it shows as "—" rather than silently
-  // becoming the first option, and only Content Planner types are offered.
-  await expect(modal.getByLabel("Type")).toHaveValue("");
-  await expect(modal.getByLabel("Type").locator("option")).toHaveText([
-    "—",
-    "Social Media",
-    "Paid Campaign",
-    "Launch",
-    "Other",
-  ]);
-  await modal.getByLabel("Project name").fill("E2E Renamed Project");
-  await modal.getByLabel("Type").selectOption("Paid Campaign");
-  await modal.getByLabel("Due date").fill("2026-12-15");
+  // "Project Name Settings"; Type isn't changed here any more (direct
+  // instruction), only chosen when a project is made.
+  await expect(modal.locator(".modal-h")).toContainText("E2E Test Project Settings");
+  await expect(modal.getByLabel("Type")).toHaveCount(0);
+  await admin.from("projects").update({ type: "Paid Campaign" }).eq("id", frank.projectId);
+  await modal.getByLabel("Project Name").fill("E2E Renamed Project");
+  await modal.getByLabel("Due Date").fill("2026-12-15");
   await modal.getByLabel("Description").fill("Festive season social");
   await modal.getByRole("button", { name: "Save" }).click();
   await expect(modal).toHaveCount(0);
@@ -112,9 +111,7 @@ test("edit (name, type and details) and archive/unarchive a project from its pro
 
   await openSettings();
   const renamed = page.getByRole("dialog", { name: "E2E Renamed Project" });
-  await expect(renamed.getByLabel("Type")).toHaveValue("Paid Campaign");
-  await expect(renamed.getByLabel("Type").locator("option")).toHaveCount(4);
-  await expect(renamed.getByLabel("Due date")).toHaveValue("2026-12-15");
+  await expect(renamed.getByLabel("Due Date")).toHaveValue("2026-12-15");
   await expect(renamed.getByLabel("Description")).toHaveValue("Festive season social");
   await renamed.getByRole("button", { name: "Archive" }).click();
   await expect(renamed).toHaveCount(0);
