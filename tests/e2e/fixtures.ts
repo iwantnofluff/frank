@@ -63,7 +63,7 @@ export interface Frank {
   createContinuousProject(): Promise<string>;
   /** Creates an extra creative on the default (scheduled) project at a
    * given stage — for share-eligibility.spec.ts, which needs creatives
-   * below Client Review (stage < 3) to exercise ShareModal's eligibility
+   * below Client Review (stage < 4) to exercise ShareModal's eligibility
    * preview. Cleaned up by the same agency_id-wide teardown. */
   createCreativeAtStage(stage: number, name?: string): Promise<string>;
   /** Creates a creative directly in a given (continuous-delivery) project —
@@ -91,6 +91,10 @@ export interface Frank {
     versionNo: number,
     fields: { caption: string },
   ): Promise<void>;
+  /** A creative version whose file is named `filename` — an assets row
+   * only, no file in storage (the table's Creative column shows the name;
+   * the preview just has nothing to draw). Same agency_id-wide teardown. */
+  createArtworkVersion(creativeId: string, versionNo: number, filename: string): Promise<void>;
 }
 
 async function signIn(email: string, password: string): Promise<SupabaseClient> {
@@ -164,8 +168,8 @@ export const test = base.extend<{ frank: Frank }>({
       .single();
     if (projectError) throw projectError;
 
-    // stage: 3 (Client Review) so the fixture creative is eligible for a
-    // shared link in any spec that needs one (stage < 3 is excluded from
+    // stage: 4 (Client Review) so the fixture creative is eligible for a
+    // shared link in any spec that needs one (stage < 4 is excluded from
     // shared review unconditionally — see shared_link_allowed_creative_ids).
     const { data: creative, error: creativeError } = await admin
       .from("creatives")
@@ -173,7 +177,7 @@ export const test = base.extend<{ frank: Frank }>({
         project_id: project.id,
         name: "E2E Test Creative",
         format: "ig_feed",
-        stage: 3,
+        stage: 4,
         // Fixed, not Date.now()-relative — the page renders this with
         // exact hour:minute via toLocaleString, so a relative timestamp
         // makes the screenshot's text non-deterministic between runs and
@@ -338,6 +342,26 @@ export const test = base.extend<{ frank: Frank }>({
           source: "in_app_edit",
           created_by: staffAuth.user.id,
         });
+        if (error) throw error;
+      },
+
+      async createArtworkVersion(creativeId, versionNo, filename) {
+        const { data: asset, error: assetError } = await admin
+          .from("assets")
+          .insert({
+            agency_id: agency.id,
+            storage_key: `${agency.id}/${creativeId}/${crypto.randomUUID()}-${filename}`,
+            filename,
+            mime_type: "image/png",
+            bytes: 1,
+            created_by: staffAuth.user.id,
+          })
+          .select("id")
+          .single();
+        if (assetError) throw assetError;
+        const { error } = await admin
+          .from("creative_versions")
+          .insert({ creative_id: creativeId, version_no: versionNo, asset_id: asset.id, created_by: staffAuth.user.id });
         if (error) throw error;
       },
     };
@@ -553,4 +577,14 @@ export async function goToMonth(page: Page, label: string) {
     await expect(header).not.toHaveText(current ?? "");
   }
   throw new Error(`Calendar never reached ${label}`);
+}
+
+// A new post starts with no format (direct instruction): tick one in the
+// post window's Format picker and close it with Done.
+export async function chooseFormat(page: import("@playwright/test").Page, label = "Instagram Post") {
+  await page.click("#nbFmt");
+  const pop = page.getByRole("dialog", { name: "Formats" });
+  await pop.getByRole("checkbox", { name: label }).click();
+  await pop.getByRole("button", { name: "Done" }).click();
+  await pop.waitFor({ state: "detached" });
 }

@@ -25,7 +25,7 @@ const DELIVERY_LABELS = {
   scheduled: "Content Planner",
   continuous: "Other Content",
 } as const;
-const STAGES = ["Concept", "Internal Review", "Client Review", "Approved", "Live"];
+const STAGES = ["Concept", "In Production", "Internal Review", "Client Review", "Approved", "Live"];
 
 function formatDay(value: string | null) {
   if (!value) return "None yet";

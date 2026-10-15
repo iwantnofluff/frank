@@ -114,7 +114,7 @@ test("shared review — no Make Changes button; Close is always present; Approve
   await expect(page.locator('button:has-text("Approve")')).toHaveCount(0);
 
   // A can_approve: true link — Approve is the only real action next to
-  // Close, and clicking it still does the real thing (stage 4).
+  // Close, and clicking it still does the real thing (stage 5, Approved).
   const token = await frank.createSharedLink({ canApprove: true });
   await page.goto(`/review/${token}`);
   await page.waitForSelector(".m-top");
@@ -128,7 +128,7 @@ test("shared review — no Make Changes button; Close is always present; Approve
   await expect(page.locator('button:has-text("Approved")').first()).toBeVisible();
 
   // "Approved" shows before the save finishes; the stage follows.
-  await expect.poll(async () => (await frank.getCreativeStatus()).stage).toBe(4);
+  await expect.poll(async () => (await frank.getCreativeStatus()).stage).toBe(5);
 });
 
 test("shared review — on a computer, the desktop layout fills the window", async ({ page, frank }) => {
@@ -162,7 +162,7 @@ test("shared review — Approve shows at once and counts once, even clicked twic
   await approveBtn.dblclick();
   // Before the page has reloaded the post.
   await expect(page.locator('button:has-text("Approved")').first()).toBeVisible({ timeout: 1_000 });
-  await expect.poll(async () => (await frank.getCreativeStatus()).stage).toBe(4);
+  await expect.poll(async () => (await frank.getCreativeStatus()).stage).toBe(5);
 
   // Straight at the database again: approved already, nothing added.
   const anon = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
@@ -194,7 +194,7 @@ test("shared review — Approve shows at once and counts once, even clicked twic
 // its tile and shows how many comments it has.
 test("shared review — the feed shows other posts by stage, and opens this link's posts", async ({ page, frank }) => {
   await frank.createCreativeAtStage(1, "Unshared concept post");
-  await frank.createCreativeAtStage(2, "Unshared internal post");
+  await frank.createCreativeAtStage(3, "Unshared internal post");
   await frank.insertCommentAsStaff("A public note", "public");
   const token = await frank.createSharedLink();
 
@@ -207,7 +207,7 @@ test("shared review — the feed shows other posts by stage, and opens this link
   const unshared = body.feed.filter((e) => e.id === null);
   expect(unshared.map((e) => [e.stage, e.name]).sort()).toEqual([
     [1, "Unshared concept post"],
-    [2, "Unshared internal post"],
+    [3, "Unshared internal post"],
   ]);
   expect(body.creatives.map((c) => c.name)).toEqual(["E2E Test Creative"]);
 
@@ -219,10 +219,10 @@ test("shared review — the feed shows other posts by stage, and opens this link
   const grid = page.locator(".dk-main .feedgrid");
   const stageTiles = grid.locator(".sharedfeed-stage");
   await expect(stageTiles).toHaveCount(2);
-  expect((await stageTiles.locator(".stagepill").allTextContents()).sort()).toEqual(["1.Concept", "2.Internal Review"]);
+  expect((await stageTiles.locator(".stagepill").allTextContents()).sort()).toEqual(["1.Concept", "3.Internal Review"]);
   expect((await stageTiles.locator(".sharedfeed-name").allTextContents()).sort()).toEqual(["Unshared concept post", "Unshared internal post"]);
   // The shared post: its stage pill (Client Review) and its comment count.
-  await expect(grid.locator(".sharedfeed-planned .stagepill")).toHaveText("3.Client Review");
+  await expect(grid.locator(".sharedfeed-planned .stagepill")).toHaveText("4.Client Review");
   await expect(grid.locator(".sharedfeed-planned .cmtcount")).toHaveText("1");
   // Its tile opens the post.
   await grid.locator(".sharedfeed-planned").click();
@@ -241,7 +241,7 @@ test("shared review — a name given on one client's link isn't assumed on anoth
   const staffId = (await admin.from("users").select("id").eq("email", frank.staffEmail).single()).data!.id;
   const { data: other } = await admin.from("clients").insert({ agency_id: frank.agencyId, name: "E2E Second Client" }).select("id").single();
   const { data: project } = await admin.from("projects").insert({ client_id: other!.id, name: "E2E Second Project", delivery: "scheduled" }).select("id").single();
-  const made = await admin.from("creatives").insert({ project_id: project!.id, name: "E2E Second Creative", format: "ig_feed", stage: 3, created_by: staffId, scheduled_at: new Date(Date.now() + 14 * 86_400_000).toISOString() }).select("id");
+  const made = await admin.from("creatives").insert({ project_id: project!.id, name: "E2E Second Creative", format: "ig_feed", stage: 4, created_by: staffId, scheduled_at: new Date(Date.now() + 14 * 86_400_000).toISOString() }).select("id");
   if (made.error) throw made.error;
   const otherToken = `e2e-other-${Date.now()}`;
   const { error } = await admin.from("shared_links").insert({ agency_id: frank.agencyId, project_id: project!.id, token: otherToken, scope: "all", requires_passcode: false, can_approve: false, created_by: staffId });
@@ -313,7 +313,7 @@ test("shared review — only the client's own people can comment", async ({ page
   const staffId = (await admin.from("users").select("id").eq("email", frank.staffEmail).single()).data!.id;
   const { data: empty } = await admin.from("clients").insert({ agency_id: frank.agencyId, name: "E2E Empty Client" }).select("id").single();
   const { data: project } = await admin.from("projects").insert({ client_id: empty!.id, name: "E2E Empty Project", delivery: "scheduled" }).select("id").single();
-  const made = await admin.from("creatives").insert({ project_id: project!.id, name: "E2E Empty Creative", format: "ig_feed", stage: 3, created_by: staffId, scheduled_at: new Date(Date.now() + 14 * 86_400_000).toISOString() }).select("id");
+  const made = await admin.from("creatives").insert({ project_id: project!.id, name: "E2E Empty Creative", format: "ig_feed", stage: 4, created_by: staffId, scheduled_at: new Date(Date.now() + 14 * 86_400_000).toISOString() }).select("id");
   if (made.error) throw made.error;
   const emptyToken = `e2e-empty-${Date.now()}`;
   const { error } = await admin.from("shared_links").insert({ agency_id: frank.agencyId, project_id: project!.id, token: emptyToken, scope: "all", requires_passcode: false, can_approve: true, created_by: staffId });
@@ -373,8 +373,8 @@ test("shared review — a link for one post opens on it, the project's other wai
   const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  await frank.createCreativeAtStage(3, "Aaa Other Post");
-  const sent = await frank.createCreativeAtStage(3, "Zzz Sent Post");
+  await frank.createCreativeAtStage(4, "Aaa Other Post");
+  const sent = await frank.createCreativeAtStage(4, "Zzz Sent Post");
   const { error: commentError } = await admin
     .from("comments")
     .insert({ creative_id: sent, body: "Looks good", visibility: "public", guest_name: "Client Person" });
@@ -425,7 +425,7 @@ test("shared review — the list's Approved goes back the workspace's days (14 b
   });
   const day = 86_400_000;
   const approvedAt = async (name: string, daysAgo: number) => {
-    const id = await frank.createCreativeAtStage(4, name);
+    const id = await frank.createCreativeAtStage(5, name);
     const { error } = await admin.from("creatives").update({ approved_at: new Date(Date.now() - daysAgo * day).toISOString() }).eq("id", id);
     if (error) throw error;
     return id;

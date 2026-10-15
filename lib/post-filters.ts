@@ -2,14 +2,15 @@ import { postFormats } from "./formats.ts";
 import { stageLabel } from "./stage-labels.ts";
 
 // The planner's filters (direct instruction): status by the stages a
-// post moves through (the older bands, In Production / Changes Requested /
-// Rejected, went), and platform by the formats a post goes out as.
-export type StatusFilter = "all" | "1" | "2" | "3" | "4" | "5";
+// post moves through (the older bands, Changes Requested / Rejected, went;
+// In Production is a stage again, phase102), and platform by the formats a
+// post goes out as.
+export type StatusFilter = "all" | "1" | "2" | "3" | "4" | "5" | "6";
 export type PlatformFilter = "all" | "meta" | "linkedin" | "pinterest" | "youtube";
 
 export const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "All Statuses" },
-  ...([1, 2, 3, 4, 5] as const).map((n) => ({ value: String(n) as StatusFilter, label: `${n}. ${stageLabel(n, "scheduled")}` })),
+  ...([1, 2, 3, 4, 5, 6] as const).map((n) => ({ value: String(n) as StatusFilter, label: `${n}. ${stageLabel(n, "scheduled")}` })),
 ];
 
 export const PLATFORM_FILTERS: { value: PlatformFilter; label: string }[] = [

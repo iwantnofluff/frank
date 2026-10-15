@@ -1,3 +1,4 @@
+import { STAGE } from "./stage-labels.ts";
 // An Approved post's artwork goes some days after its live date: 7 unless
 // its client's Preferences say 14, 21 or 28 (phase60, then phase70,
 // run_artwork_housekeeping); these say when, for the post's warning.
@@ -10,7 +11,7 @@ export function artworkRemovalDate(
   post: { stage: number; scheduled_at: string | null },
   keepDays: number = ARTWORK_KEEP_DAYS,
 ): Date | null {
-  if (post.stage < 4 || !post.scheduled_at) return null;
+  if (post.stage < STAGE.approved || !post.scheduled_at) return null;
   return new Date(new Date(post.scheduled_at).getTime() + keepDays * DAY_MS);
 }
 

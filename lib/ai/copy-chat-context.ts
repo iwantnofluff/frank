@@ -3,6 +3,7 @@
 // asked for lately. Pure, so the choosing and ordering can be tested; the
 // route reads the rows.
 import type { ClientFeedback, OtherPost } from "./copy-chat.ts";
+import { STAGE } from "../stage-labels.ts";
 
 export const OTHER_POSTS_MAX = 8;
 export const FEEDBACK_MAX = 20;
@@ -70,7 +71,7 @@ export function pickOtherPosts(
   }
   const when = (p: PostRow) => p.approved_at ?? p.updated_at;
   const ordered = posts
-    .filter((p) => p.stage >= 4 && (!since || new Date(when(p)) >= since))
+    .filter((p) => p.stage >= STAGE.approved && (!since || new Date(when(p)) >= since))
     .sort((a, b) => when(b).localeCompare(when(a)));
   const out: OtherPost[] = [];
   for (const p of ordered) {

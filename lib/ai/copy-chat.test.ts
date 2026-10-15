@@ -23,7 +23,7 @@ const context: CopyChatContext = {
   postName: "Gummy launch",
   concept: "Gummies that taste like dessert",
   approachNotes: ["Health without the chore"],
-  formatLabel: "Instagram Feed",
+  formatLabel: "Instagram Post",
   formatDirection: "Up to 150 characters.",
   agencyNotes: [{ title: "Voice", body: "Plain, warm, no exclamation marks" }],
   clientNotes: [{ title: "Audience", body: "Women 25 to 40" }],

@@ -24,7 +24,7 @@ test("a client sees a post's stage but can't change it, share it, or filter by P
   }
   await pills.getByRole("button", { name: "Approved", exact: true }).click({ force: true });
   await page.waitForTimeout(1500);
-  expect((await admin.from("creatives").select("stage").eq("id", frank.creativeId).single()).data!.stage).toBe(3);
+  expect((await admin.from("creatives").select("stage").eq("id", frank.creativeId).single()).data!.stage).toBe(4);
   await expect(page.getByRole("button", { name: "Share for review" })).toHaveCount(0);
   await expect(page.locator(".cmt", { hasText: "A public note from the team" })).toBeVisible();
   await expect(page.locator(".cfilters button", { hasText: "Private" })).toHaveCount(0);

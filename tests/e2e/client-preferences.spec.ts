@@ -29,7 +29,7 @@ async function approvedWithArtwork(frank: Frank, fields: Record<string, unknown>
   const staffId = (await admin.from("users").select("id").eq("email", frank.staffEmail).single()).data!.id;
   const { data: post, error } = await admin
     .from("creatives")
-    .insert({ project_id: projectId, format: "ig_feed", stage: 4, created_by: staffId, ...fields })
+    .insert({ project_id: projectId, format: "ig_feed", stage: 5, created_by: staffId, ...fields })
     .select("id")
     .single();
   if (error) throw error;
@@ -98,8 +98,8 @@ test("a review link follows the client: no approving, no other posts, and when A
   await admin
     .from("client_preferences")
     .insert({ client_id: frank.clientId, client_can_approve: false, feed_shows_other_posts: false, artwork_keep_days: 21 });
-  await frank.createCreativeAtStage(2, "Unshared internal post");
-  const approved = await frank.createCreativeAtStage(4, "Approved post");
+  await frank.createCreativeAtStage(3, "Unshared internal post");
+  const approved = await frank.createCreativeAtStage(5, "Approved post");
   const token = await frank.createSharedLink({ canApprove: true });
   await admin.from("shared_links").update({ scope: "all" }).eq("token", token);
 

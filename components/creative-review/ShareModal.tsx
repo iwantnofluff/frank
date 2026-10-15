@@ -13,6 +13,7 @@ import { useClientPreferences } from "@/hooks/use-client-preferences";
 import { errorMessage } from "@/lib/errors";
 import { FeedTileArt, EmptyTileArt } from "@/components/creative-review/FeedTileArt";
 import { FeedCaptionPopover } from "@/components/creative-review/FeedCaptionPopover";
+import { STAGE } from "@/lib/stage-labels";
 
 const GRID_SLOTS = 9;
 
@@ -182,7 +183,7 @@ export function ShareModal({
     });
   }
 
-  // Client-side preview of shared_link_allowed_creative_ids' stage >= 3
+  // Client-side preview of shared_link_allowed_creative_ids' Client Review and later
   // rule — not enforcement (the RPC is still the real gate), just telling
   // staff what this link will actually show before they hand it out.
   // Doesn't block creation: there are legitimate reasons to make a link
@@ -391,8 +392,8 @@ export function ShareModal({
                   key={c.id}
                   creative={c}
                   selected={selectedIds.has(c.id)}
-                  selectable={scope === "pick" && c.stage >= 3}
-                  ineligible={scope === "pick" && c.stage < 3}
+                  selectable={scope === "pick" && c.stage >= STAGE.review}
+                  ineligible={scope === "pick" && c.stage < STAGE.review}
                   onToggle={() => togglePiece(c.id)}
                   onHoverEnter={handleHoverEnter}
                   onHoverLeave={scheduleHoverHide}

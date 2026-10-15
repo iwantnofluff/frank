@@ -26,10 +26,10 @@ test("a change the artwork still fits says nothing", () => {
 
 test("shape, single to carousel, and fewer slides each warn on their own", () => {
   assert.deepEqual(artworkChangeReasons(post(["ig_feed"]), post(["meta_feed"]), 1), [
-    "Instagram Feed is 4:5 and Meta Feed Ad is 1:1.",
+    "Instagram Post is 4:5 and Meta Feed Ad is 1:1.",
   ]);
   assert.deepEqual(artworkChangeReasons(post(["ig_feed"]), post(["ig_carousel"], 3), 1), [
-    "Instagram Feed is a single piece and Instagram Carousel is a carousel.",
+    "Instagram Post is a single piece and Instagram Carousel is a carousel.",
   ]);
   assert.deepEqual(artworkChangeReasons(post(["ig_carousel"], 5), post(["ig_carousel"], 3), 5), [
     "The carousel goes down to 3 slides, and 5 are uploaded.",

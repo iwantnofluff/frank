@@ -11,6 +11,7 @@ import { ReviewMedia } from "./ReviewMedia";
 import { MomentBadge } from "./MomentBadge";
 import { SharedCommentText } from "./SharedCommentText";
 import { GuestComposer } from "./GuestComposer";
+import { STAGE } from "@/lib/stage-labels";
 
 export function MobileReview({
   controller,
@@ -115,7 +116,7 @@ export function MobileReview({
               <div className="m-meta">
                 {/* Not what this link was sent for, but waiting for review
                     too (direct instruction); it comes after the link's own. */}
-                {controller.hasSent && !controller.isSent(active) && active.stage < 4 && <div className="m-also">Also waiting for your review</div>}
+                {controller.hasSent && !controller.isSent(active) && active.stage < STAGE.approved && <div className="m-also">Also waiting for your review</div>}
                 {/* For the workspace's team, the post's own page in Frank. */}
                 <b>
                   {viewer?.isTeam ? (

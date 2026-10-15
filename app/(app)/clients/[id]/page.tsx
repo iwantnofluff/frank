@@ -14,6 +14,7 @@ import { FolderModal } from "@/components/project/FolderModal";
 import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
 import { BrandReminder } from "@/components/clients/BrandReminder";
 import { useProjectSortStore, type ProjectSort } from "@/store/project-sort-store";
+import { STAGE } from "@/lib/stage-labels";
 
 // How a client's projects can be ordered (direct instruction, in place of
 // searching them).
@@ -33,8 +34,9 @@ type ArchiveFilter = "active" | "archived";
 // identically-positioned slot regardless of which page it's on — true
 // regardless of how many columns sit in between, since the leading `1fr`
 // track absorbs any difference.
+// In Production (phase102) sits between Concept and Internal Review.
 // Status (128px) matches the dashboard's own Status column width.
-const PROJECT_ROW_COLUMNS = "1fr 74px 96px 90px 128px 92px";
+const PROJECT_ROW_COLUMNS = "1fr 74px 96px 96px 90px 128px 92px";
 
 function formatDate(value: string | null) {
   if (!value) return "—";
@@ -151,9 +153,11 @@ export default function ClientWorkspacePage({
             </span>
           </div>
         </div>
-        <div className="stagecount ago">{statsPending ? "…" : (s?.byStage[0] ?? 0)}</div>
-        <div className="stagecount ago">{statsPending ? "…" : (s?.byStage[1] ?? 0)}</div>
-        <div className="stagecount ago">{statsPending ? "…" : (s?.byStage[2] ?? 0)}</div>
+        {[STAGE.concept, STAGE.production, STAGE.internal, STAGE.review].map((stage) => (
+          <div key={stage} className="stagecount ago">
+            {statsPending ? "…" : (s?.byStage[stage - 1] ?? 0)}
+          </div>
+        ))}
         <div className="ago">
           <span className={`tag ${p.archived_at ? "grey" : "blue"}`}>
             <span className="dot" />
@@ -295,6 +299,7 @@ export default function ClientWorkspacePage({
           <div className="crow head" style={{ gridTemplateColumns: PROJECT_ROW_COLUMNS }}>
             <div>Project</div>
             <div className="ago">Concept</div>
+            <div className="ago">In Production</div>
             <div className="ago">Internal Review</div>
             <div className="ago">Client Review</div>
             <div className="ago">Status</div>

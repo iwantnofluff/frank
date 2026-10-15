@@ -11,10 +11,10 @@ const row = (kind: string, detail: Record<string, unknown> = {}, by_name: string
 });
 
 test("stage moves say what happened, and a client's approval names the client when no one's signed in", () => {
-  assert.deepEqual(activityLine(row("stage", { from: 2, to: 3 })), { who: "Raj", before: "moved ", after: " to Client Review" });
-  assert.deepEqual(activityLine(row("stage", { from: 3, to: 4 }, null)), { who: "The client", before: "approved " });
-  assert.deepEqual(activityLine(row("stage", { from: 4, to: 3 })), { who: "Raj", before: "took back the approval of " });
-  assert.equal(activityLine(row("stage", { from: 3, to: 3, exception: "changes_requested" })).before, "asked for changes on ");
+  assert.deepEqual(activityLine(row("stage", { from: 3, to: 4 })), { who: "Raj", before: "moved ", after: " to Client Review" });
+  assert.deepEqual(activityLine(row("stage", { from: 4, to: 5 }, null)), { who: "The client", before: "approved " });
+  assert.deepEqual(activityLine(row("stage", { from: 5, to: 4 })), { who: "Raj", before: "took back the approval of " });
+  assert.equal(activityLine(row("stage", { from: 4, to: 4, exception: "changes_requested" })).before, "asked for changes on ");
 });
 
 test("edits list the fields, comments quote their start, guests are named as guests", () => {
@@ -37,5 +37,5 @@ test("project changes don't name a post, and an unknown kind still reads", () =>
 
 test("a change nobody signed in made still reads as a sentence", () => {
   assert.deepEqual(activityLine(row("person_added", { person: "Asha" }, null, null)), { who: "Someone", before: "gave Asha access" });
-  assert.equal(activityLine(row("stage", { from: 2, to: 3 }, null)).who, "Someone");
+  assert.equal(activityLine(row("stage", { from: 3, to: 4 }, null)).who, "Someone");
 });

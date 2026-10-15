@@ -1,4 +1,5 @@
 import type { SharedCreative } from "@/hooks/use-shared-review";
+import { STAGE } from "@/lib/stage-labels";
 
 // Where a post sits in a review link's list (direct instruction): what the
 // client still has to look at first, then what they've commented on, then
@@ -6,7 +7,7 @@ import type { SharedCreative } from "@/hooks/use-shared-review";
 export type ReviewGroup = "to_review" | "commented" | "approved";
 
 export function reviewGroup(c: SharedCreative): ReviewGroup {
-  if (c.stage >= 4) return "approved";
+  if (c.stage >= STAGE.approved) return "approved";
   return c.comments.some((m) => m.from_client) ? "commented" : "to_review";
 }
 
@@ -40,10 +41,10 @@ export function reviewSections(
     ...list.filter((c) => reviewGroup(c) === "to_review"),
     ...list.filter((c) => reviewGroup(c) === "commented"),
   ];
-  const inReview = all.filter((c) => c.stage < 4);
+  const inReview = all.filter((c) => c.stage < STAGE.approved);
   const cutoff = approvedDays === null ? -Infinity : now - approvedDays * 86_400_000;
   const approved = all
-    .filter((c) => c.stage >= 4 && (sentIds.has(c.id) || c.approved_at === null || Date.parse(c.approved_at) >= cutoff))
+    .filter((c) => c.stage >= STAGE.approved && (sentIds.has(c.id) || c.approved_at === null || Date.parse(c.approved_at) >= cutoff))
     .sort((a, b) => (b.approved_at ?? "").localeCompare(a.approved_at ?? ""));
   const sections: ReviewSection[] = sentIds.size
     ? [

@@ -28,11 +28,12 @@ test("client workspace — project row creative stats", async ({ page, frank }) 
   await page.goto(`/clients/${frank.clientId}`);
   await page.waitForSelector(".clients, .empty");
   const row = page.locator(".crow:not(.head)").first();
-  // Fixture seeds exactly one project and one stage-3 (review-band)
+  // Fixture seeds exactly one project and one Client Review (review-band)
   // creative on it: waiting on the client's own approval.
   await expect(row.locator(".kbadge.sch")).toHaveText("Content Planner");
   const stageCounts = row.locator(".stagecount");
   await expect(stageCounts.nth(0)).toHaveText("0"); // Concept
-  await expect(stageCounts.nth(1)).toHaveText("0"); // Internal Review
-  await expect(stageCounts.nth(2)).toHaveText("1"); // Client Review
+  await expect(stageCounts.nth(1)).toHaveText("0"); // In Production
+  await expect(stageCounts.nth(2)).toHaveText("0"); // Internal Review
+  await expect(stageCounts.nth(3)).toHaveText("1"); // Client Review
 });

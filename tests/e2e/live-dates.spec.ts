@@ -97,14 +97,14 @@ test("a scheduled post found live on Instagram by its caption is logged with its
   }
   expect(row.source).toBe("instagram");
 
-  // 5. Live (phase99); it was still in Client Review, so the agency's
+  // 6. Live (phase99); it was still in Client Review, so the agency's
   // Admin (the fixture's staff) is told it went out unapproved.
   const { data: post } = await admin.from("creatives").select("stage").eq("id", frank.creativeId).single();
-  expect(post!.stage).toBe(5);
+  expect(post!.stage).toBe(6);
   const { data: told } = await admin.from("notifications").select("user_id").eq("kind", "live_unapproved").eq("creative_id", frank.creativeId);
   expect(told!.map((t) => t.user_id)).toEqual([staffId]);
   const { data: reelNow } = await admin.from("creatives").select("stage").eq("id", reel!.id).single();
-  expect(reelNow!.stage).not.toBe(5);
+  expect(reelNow!.stage).not.toBe(6);
 
   // The team reads it; a client doesn't.
   const staff = await signIn(frank.staffEmail, frank.staffPassword);
@@ -123,7 +123,7 @@ test("an Approved post's artwork clock starts from when it really went live", as
   const seed = async (name: string) => {
     const { data: post } = await admin
       .from("creatives")
-      .insert({ project_id: frank.projectId, format: "ig_feed", formats: ["ig_feed"], name, stage: 4, approved_at: ago(12), scheduled_at: ago(10), created_by: staffId })
+      .insert({ project_id: frank.projectId, format: "ig_feed", formats: ["ig_feed"], name, stage: 5, approved_at: ago(12), scheduled_at: ago(10), created_by: staffId })
       .select("id")
       .single();
     const key = `${frank.agencyId}/${post!.id}/${crypto.randomUUID()}-art.png`;
@@ -156,7 +156,7 @@ test("the team sets Live by hand; a post planned before 14 Oct 2026 counts as li
   // Planned before the late rule (phase100): set Live by hand, its live
   // date is its planned day, so it's on time.
   const before = "2026-10-01T03:30:00.000Z";
-  await admin.from("creatives").update({ stage: 4, approved_at: ago(20), approved_by_name: "Client Person", scheduled_at: before }).eq("id", frank.creativeId);
+  await admin.from("creatives").update({ stage: 5, approved_at: ago(20), approved_by_name: "Client Person", scheduled_at: before }).eq("id", frank.creativeId);
   await frank.loginAsStaff(page);
   await page.goto(`/creatives/${frank.creativeId}`);
   await page.getByRole("button", { name: "Live", exact: true }).click();
@@ -169,7 +169,7 @@ test("the team sets Live by hand; a post planned before 14 Oct 2026 counts as li
   await expect(liveDate).toHaveText("(1 Oct 26)");
   // Its approval is kept.
   const { data: post } = await admin.from("creatives").select("stage, approved_by_name").eq("id", frank.creativeId).single();
-  expect(post).toEqual({ stage: 5, approved_by_name: "Client Person" });
+  expect(post).toEqual({ stage: 6, approved_by_name: "Client Person" });
 
   // Back to Approved: the hand-set date goes, the approval stays.
   await page.getByRole("button", { name: "Approved", exact: true }).click();
@@ -177,11 +177,11 @@ test("the team sets Live by hand; a post planned before 14 Oct 2026 counts as li
   await expect(liveDate).toHaveCount(0);
   expect((await admin.from("post_live_dates").select("creative_id").eq("creative_id", frank.creativeId)).data).toEqual([]);
   const { data: back } = await admin.from("creatives").select("stage, approved_by_name").eq("id", frank.creativeId).single();
-  expect(back).toEqual({ stage: 4, approved_by_name: "Client Person" });
+  expect(back).toEqual({ stage: 5, approved_by_name: "Client Person" });
 
   // Planned from the rule on, found two days late: red.
   const planned = "2026-10-20T03:30:00.000Z";
-  await admin.from("creatives").update({ stage: 5, scheduled_at: planned }).eq("id", frank.creativeId);
+  await admin.from("creatives").update({ stage: 6, scheduled_at: planned }).eq("id", frank.creativeId);
   await admin
     .from("post_live_dates")
     .upsert({ creative_id: frank.creativeId, instagram_media_id: "m-late-2", live_at: "2026-10-22T05:00:00.000Z", scheduled_at: planned, source: "instagram" });

@@ -47,6 +47,7 @@ import { CaptionHighlighter } from "@/components/creative-review/CaptionHighligh
 import { CreativeModal } from "@/components/creative-review/CreativeModal";
 import { useProjectPresence } from "@/hooks/use-project-presence";
 import { PresenceAvatars } from "@/components/app-shell/PresenceAvatars";
+import { STAGE } from "@/lib/stage-labels";
 
 // How close, in seconds, the paused moment has to be to a pin's for it to
 // show on the frame — about a frame or two either side.
@@ -297,63 +298,78 @@ export function CreativeReviewPage({ id }: { id: string }) {
                   className={`stagesw${isStaff ? "" : " ro"}`}
                   title="Whether this post is visible through a share link, and whether it's been approved"
                 >
-                  {/* Concept is shown, not picked: a post leaves it by
-                      itself when its first artwork or copy is saved
-                      (phase13), and nothing moves one back. */}
+                  {/* Short words (direct instruction), so six fit beside
+                      the tools; each one's full name is its label.
+                      Concept and In Production are shown, not picked: a
+                      post moves to In Production by itself once its
+                      Concept is written, and on to Internal Review when
+                      its first artwork or copy is saved (phase102). */}
                   <button
                     data-label="Concept"
                     aria-label="Concept"
                     type="button"
                     className="sw-concept"
-                    aria-pressed={creative.stage === 1}
+                    aria-pressed={creative.stage === STAGE.concept}
                     aria-disabled="true"
-                    title="A post is in Concept until its first artwork or copy is saved"
+                    title="A post is in Concept until its Concept is written"
                   >
                     <span className="no">1.</span>
                     Concept
                   </button>
                   <button
+                    data-label="In Production"
+                    aria-label="In Production"
+                    type="button"
+                    className="sw-concept"
+                    aria-pressed={creative.stage === STAGE.production}
+                    aria-disabled="true"
+                    title="A post is In Production until its first artwork or copy is saved"
+                  >
+                    <span className="no">2.</span>
+                    Production
+                  </button>
+                  <button
                     data-label="Internal Review"
                     aria-label="Internal Review"
                     type="button"
-                    aria-pressed={creative.stage === 2}
+                    aria-pressed={creative.stage === STAGE.internal}
                     disabled={advanceStage.isPending}
                     aria-disabled={isStaff ? undefined : true}
                     onClick={() => {
-                      if (isStaff && creative.stage >= 3) advanceStage.mutate("to_internal");
+                      if (isStaff && creative.stage >= STAGE.review) advanceStage.mutate("to_internal");
                     }}
                   >
-                    <span className="no">2.</span>
-                    Internal Review
+                    <span className="no">3.</span>
+                    Internal
                   </button>
                   <button
                     data-label="Client Review"
                     aria-label="Client Review"
                     type="button"
                     className="sw-client"
-                    aria-pressed={creative.stage === 3}
+                    aria-pressed={creative.stage === STAGE.review}
                     disabled={advanceStage.isPending}
                     aria-disabled={isStaff ? undefined : true}
                     onClick={() => {
-                      if (isStaff && creative.stage !== 3) advanceStage.mutate("to_review");
+                      if (isStaff && creative.stage !== STAGE.review) advanceStage.mutate("to_review");
                     }}
                   >
-                    <span className="no">3.</span>
-                    Client Review
+                    <span className="no">4.</span>
+                    Client
                   </button>
                   <button
                     data-label="Approved"
                     aria-label="Approved"
                     type="button"
                     className="sw-approved"
-                    aria-pressed={creative.stage === 4}
+                    aria-pressed={creative.stage === STAGE.approved}
                     disabled={advanceStage.isPending}
                     aria-disabled={isStaff ? undefined : true}
                     onClick={() => {
-                      if (isStaff && creative.stage !== 4) advanceStage.mutate("to_approved");
+                      if (isStaff && creative.stage !== STAGE.approved) advanceStage.mutate("to_approved");
                     }}
                   >
-                    <span className="no">4.</span>
+                    <span className="no">5.</span>
                     Approved
                   </button>
                   {/* Live (phase99): Frank sets it when it finds the post on
@@ -363,14 +379,14 @@ export function CreativeReviewPage({ id }: { id: string }) {
                     aria-label="Live"
                     type="button"
                     className="sw-live"
-                    aria-pressed={creative.stage === 5}
+                    aria-pressed={creative.stage === STAGE.live}
                     disabled={advanceStage.isPending}
                     aria-disabled={isStaff ? undefined : true}
                     onClick={() => {
-                      if (isStaff && creative.stage !== 5) advanceStage.mutate("to_live");
+                      if (isStaff && creative.stage !== STAGE.live) advanceStage.mutate("to_live");
                     }}
                   >
-                    <span className="no">5.</span>
+                    <span className="no">6.</span>
                     Live
                   </button>
                 </div>
@@ -391,7 +407,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
                 <span className="toolsep" />
                 {/* Share for review, a button beside + Post (direct
                     instruction), only while the post is in Client Review. */}
-                {creative.stage === 3 && (
+                {creative.stage === STAGE.review && (
                   <button
                     type="button"
                     className="btn primary"

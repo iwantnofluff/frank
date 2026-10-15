@@ -17,10 +17,10 @@ test("Feed Preview dates every tile, marks live posts, and doesn't show them twi
     const { error } = await admin.from("creatives").update({ scheduled_at: new Date(Date.now() + offsetDays * day).toISOString() }).eq("id", id);
     if (error) throw error;
   };
-  await dated("Went Live Yesterday", 4, -1);
-  await dated("Approved For Next Week", 4, 7);
-  await dated("Still In Review", 2, 3);
-  await dated("Late In Review", 2, -2);
+  await dated("Went Live Yesterday", 5, -1);
+  await dated("Approved For Next Week", 5, 7);
+  await dated("Still In Review", 3, 3);
+  await dated("Late In Review", 3, -2);
 
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
@@ -54,7 +54,7 @@ test("Feed Preview dates every tile, marks live posts, and doesn't show them twi
 
   // Looking at a post that has itself gone live: its own tile goes too
   // (direct instruction: it showed beside the real one).
-  await admin.from("creatives").update({ stage: 4, scheduled_at: new Date(Date.now() - day).toISOString() }).eq("id", frank.creativeId);
+  await admin.from("creatives").update({ stage: 5, scheduled_at: new Date(Date.now() - day).toISOString() }).eq("id", frank.creativeId);
   await page.reload();
   await page.getByRole("button", { name: "Feed", exact: true }).click();
   await expect(tile("Approved For Next Week")).toBeVisible();
@@ -65,7 +65,7 @@ test("the Feed Preview and a review link's Feed put the newest post first, as In
   const own = Date.parse((await admin.from("creatives").select("scheduled_at").eq("id", frank.creativeId).single()).data!.scheduled_at as string);
   // Made in this order (the planner's), dated out of it.
   for (const [name, days] of [["Plus Five", 5], ["Plus One", 1], ["Plus Nine", 9]] as const) {
-    const id = await frank.createCreativeAtStage(3, name);
+    const id = await frank.createCreativeAtStage(4, name);
     const { error } = await admin.from("creatives").update({ scheduled_at: new Date(own + days * day).toISOString() }).eq("id", id);
     if (error) throw error;
   }

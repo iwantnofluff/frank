@@ -2,7 +2,7 @@
 // (or `npm run test:unit`).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { FORMATS, FORMAT_CATEGORIES, formatById, formatsByCategory, postFormats, formatsLabel, copyFieldsFor, copySummary, copySummaryParts, VIDEO_FORMAT_IDS, hasVideoFormat, frameLimits } from "./formats.ts";
+import { FORMATS, FORMAT_CATEGORIES, formatById, formatsByCategory, postFormats, formatsLabel, copyFieldsFor, copySummary, copySummaryParts, VIDEO_FORMAT_IDS, hasVideoFormat, frameLimits, expectedContent } from "./formats.ts";
 
 test("FORMATS has exactly 41 entries, matching the prototype's catalog", () => {
   assert.equal(FORMATS.length, 41);
@@ -33,12 +33,12 @@ test("every category has at least one format, and formatsByCategory covers all o
 });
 
 test("formatById finds a known format and returns undefined for an unknown one", () => {
-  assert.equal(formatById("ig_feed")?.label, "Instagram Feed");
+  assert.equal(formatById("ig_feed")?.label, "Instagram Post");
   assert.equal(formatById("not_a_real_format"), undefined);
 });
 
 test("several formats: labels joined, copy fields combined once each, older rows fall back", () => {
-  assert.equal(formatsLabel(["meta_feed", "ig_feed"]), "Meta Feed Ad + Instagram Feed");
+  assert.equal(formatsLabel(["meta_feed", "ig_feed"]), "Meta Feed Ad + Instagram Post");
   assert.deepEqual(copyFieldsFor(["ig_feed", "meta_feed", "lp"]), [
     "caption", "alt", "primary", "headline", "description", "cta", "body",
   ]);
@@ -79,4 +79,13 @@ test("frameLimits: a carousel's slides, a story's stories, or a single piece", (
   assert.equal(frameLimits(["ig_feed"]), null);
   // The Stories ad has its own copy and stays a single piece.
   assert.equal(frameLimits(["meta_story"]), null);
+});
+
+test("expectedContent: what a post's formats call for, so the table can say Pending", () => {
+  assert.deepEqual(expectedContent(["ig_feed"]), { slides: false, voiceover: false, copy: true, alt: true });
+  assert.deepEqual(expectedContent(["ig_carousel"]).slides, true);
+  // A story counts as video, so it has a VO, as in the New Post window.
+  assert.deepEqual(expectedContent(["ig_story"]), { slides: true, voiceover: true, copy: false, alt: false });
+  assert.equal(expectedContent(["ig_reel"]).voiceover, true);
+  assert.deepEqual(expectedContent(["amz_main"]), { slides: false, voiceover: false, copy: false, alt: false });
 });

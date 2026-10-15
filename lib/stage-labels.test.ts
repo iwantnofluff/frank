@@ -8,21 +8,23 @@ import { bandOf, stageLabel, stageColor, stageInk, exceptionLabel, type Exceptio
 
 const EXCEPTIONS: Exception[] = ["changes_requested", "rejected"];
 
-test("bandOf — all four stages, no exception", () => {
+test("bandOf — all six stages, no exception", () => {
   const expected: Record<number, string> = {
     1: "internal",
     2: "internal",
-    3: "review",
-    4: "approved",
+    3: "internal",
+    4: "review",
+    5: "approved",
+    6: "approved",
   };
   for (const [stage, band] of Object.entries(expected)) {
     assert.equal(bandOf(Number(stage), null), band, `stage ${stage}`);
   }
 });
 
-test("bandOf — every valid exception, at every stage the DB constraint allows it (1-3)", () => {
+test("bandOf — every valid exception, at every stage the DB constraint allows it (1-4)", () => {
   for (const exception of EXCEPTIONS) {
-    for (let stage = 1; stage <= 3; stage++) {
+    for (let stage = 1; stage <= 4; stage++) {
       assert.equal(
         bandOf(stage, exception),
         exception,
@@ -32,39 +34,41 @@ test("bandOf — every valid exception, at every stage the DB constraint allows 
   }
 });
 
-test("bandOf — exception wins unconditionally, even past the stage 1-3 constraint boundary", () => {
+test("bandOf — exception wins unconditionally, even past the stage 1-4 constraint boundary", () => {
   // creatives_exception_stage only allows exception to coexist with stage
-  // <= 3 at the database layer — this is a pure function with no database
+  // <= 4 at the database layer — this is a pure function with no database
   // in front of it, so it must not silently assume that constraint. It
   // should behave exactly like the prototype's `e.exc || STAGES[e.stage][2]`
   // (exception always wins) regardless of what a real row could contain.
   for (const exception of EXCEPTIONS) {
-    assert.equal(bandOf(4, exception), exception, `stage 4, exception ${exception}`);
+    assert.equal(bandOf(5, exception), exception, `stage 5, exception ${exception}`);
   }
 });
 
-test("bandOf — stage 2-3 boundary itself, no exception", () => {
-  assert.equal(bandOf(2, null), "internal"); // last internal stage
-  assert.equal(bandOf(3, null), "review"); // first review stage
+test("bandOf — stage 3-4 boundary itself, no exception", () => {
+  assert.equal(bandOf(3, null), "internal"); // last internal stage
+  assert.equal(bandOf(4, null), "review"); // first review stage
 });
 
 test("bandOf — out-of-range stage falls back to stage 1's band, same shape as the prototype's STAGES[e.stage]||STAGES[1]", () => {
   assert.equal(bandOf(0, null), "internal");
-  assert.equal(bandOf(6, null), "internal");
+  assert.equal(bandOf(7, null), "internal");
   // Live (phase99) is a real stage, done like Approved.
-  assert.equal(bandOf(5, null), "approved");
+  assert.equal(bandOf(6, null), "approved");
   assert.equal(bandOf(-1, null), "internal");
 });
 
 test("stageLabel — one label per stage, unaffected by delivery mode", () => {
   assert.equal(stageLabel(1, "scheduled"), "Concept");
-  assert.equal(stageLabel(2, "scheduled"), "Internal Review");
-  assert.equal(stageLabel(3, "scheduled"), "Client Review");
-  assert.equal(stageLabel(4, "scheduled"), "Approved");
+  assert.equal(stageLabel(2, "scheduled"), "In Production");
+  assert.equal(stageLabel(3, "scheduled"), "Internal Review");
+  assert.equal(stageLabel(4, "scheduled"), "Client Review");
+  assert.equal(stageLabel(5, "scheduled"), "Approved");
+  assert.equal(stageLabel(6, "scheduled"), "Live");
   // The scheduled/continuous split only ever mattered for the old
   // stage 7/8 rows (Scheduled/Published), both gone now — every
   // remaining stage reads identically either way.
-  for (let stage = 1; stage <= 4; stage++) {
+  for (let stage = 1; stage <= 6; stage++) {
     assert.equal(stageLabel(stage, "continuous"), stageLabel(stage, "scheduled"));
   }
 });
@@ -81,17 +85,19 @@ test("stageColor — exception always wins over stage, same precedence as bandOf
   }
 });
 
-test("stageColor — Frank's logo colours: Concept the red, both reviews the orange, Approved the green", () => {
+test("stageColor — Frank's logo colours: Concept and In Production the red, both reviews the orange, Approved and Live the green", () => {
   assert.equal(stageColor(1, null), "#E35336");
-  assert.equal(stageColor(2, null), "#F4A460");
-  assert.equal(stageColor(3, null), stageColor(2, null)); // Internal and Client Review share the orange
-  assert.equal(stageColor(4, null), "#4CAF50");
+  assert.equal(stageColor(2, null), stageColor(1, null)); // In Production in Concept's red
+  assert.equal(stageColor(3, null), "#F4A460");
+  assert.equal(stageColor(4, null), stageColor(3, null)); // Internal and Client Review share the orange
+  assert.equal(stageColor(5, null), "#4CAF50");
+  assert.equal(stageColor(6, null), stageColor(5, null)); // Live in Approved's green
 });
 
 test("stageInk — words in a darker shade of the same colour, exceptions too", () => {
-  assert.notEqual(stageInk(2, null), stageColor(2, null));
-  assert.equal(stageInk(3, null), stageInk(2, null));
-  assert.equal(stageInk(2, "rejected"), stageInk(4, "rejected"));
+  assert.notEqual(stageInk(3, null), stageColor(3, null));
+  assert.equal(stageInk(4, null), stageInk(3, null));
+  assert.equal(stageInk(3, "rejected"), stageInk(5, "rejected"));
 });
 
 test("exceptionLabel — human-readable text for both exception values", () => {

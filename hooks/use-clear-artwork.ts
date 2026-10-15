@@ -25,6 +25,7 @@ export function useClearArtwork(creativeId: string) {
         queryClient.invalidateQueries({ queryKey: ["creative-versions", creativeId] }),
         queryClient.invalidateQueries({ queryKey: ["comments", creativeId] }),
         queryClient.invalidateQueries({ queryKey: ["creatives"] }),
+        queryClient.invalidateQueries({ queryKey: ["artwork-by-creative"] }),
       ]);
     },
   });

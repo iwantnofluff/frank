@@ -76,7 +76,6 @@ test("a carousel gets a slide count, and Text on Image one field per slide", asy
   await page.click("#nbFmt");
   const pop = page.getByRole("dialog", { name: "Formats" });
   await pop.getByRole("checkbox", { name: "Instagram Carousel" }).click();
-  await pop.getByRole("checkbox", { name: "Instagram Feed" }).click();
   await page.keyboard.press("Escape");
   // 2 to 20 for Instagram…
   await expect(page.locator("#nbSlides option")).toHaveCount(19);

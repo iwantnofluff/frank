@@ -53,7 +53,8 @@ test("a Content Planner post can be added straight into the table", async ({ pag
     .single();
   expect(c!.format).toBe("ig_carousel");
   expect(c!.concept).toBe("Five slides on the new menu.");
-  expect(c!.stage).toBe(1);
+  // Its Concept is written, so it's In Production already (phase102).
+  expect(c!.stage).toBe(2);
   const when = new Date(c!.scheduled_at);
   expect([when.getFullYear(), when.getMonth(), when.getDate(), when.getHours(), when.getMinutes()]).toEqual([
     2027, 2, 20, 14, 30,

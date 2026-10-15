@@ -83,7 +83,7 @@ test("Share for review appears once a creative moves to Client Review", async ({
 });
 
 test("staff can approve a creative directly, and revoke that approval", async ({ page, frank }) => {
-  const creativeId = await frank.createCreativeAtStage(3, "Staff Approve Test");
+  const creativeId = await frank.createCreativeAtStage(4, "Staff Approve Test");
   await frank.loginAsStaff(page);
   await page.goto(`/creatives/${creativeId}`);
   await page.waitForSelector(".stage-h");
@@ -100,7 +100,7 @@ test("staff can approve a creative directly, and revoke that approval", async ({
     .select("stage, approved_at, approved_by_name")
     .eq("id", creativeId)
     .single();
-  expect(approved?.stage).toBe(4);
+  expect(approved?.stage).toBe(5);
   expect(approved?.approved_at).not.toBeNull();
   expect(approved?.approved_by_name).not.toBeNull();
 
@@ -112,13 +112,13 @@ test("staff can approve a creative directly, and revoke that approval", async ({
     .select("stage, approved_at, approved_by_name")
     .eq("id", creativeId)
     .single();
-  expect(revoked?.stage).toBe(3);
+  expect(revoked?.stage).toBe(4);
   expect(revoked?.approved_at).toBeNull();
   expect(revoked?.approved_by_name).toBeNull();
 });
 
 test("a real client-role session cannot call the staff approve direction either", async ({ frank }) => {
-  const creativeId = await frank.createCreativeAtStage(3);
+  const creativeId = await frank.createCreativeAtStage(4);
   const clientSession = createClient(SUPABASE_URL, ANON_KEY);
   const { error: signInError } = await clientSession.auth.signInWithPassword({
     email: frank.clientEmail,

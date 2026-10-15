@@ -14,8 +14,8 @@ const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SU
 test("the bell splits Unread and Read, and read ones go after the workspace's keep time", async ({ page, frank }) => {
   test.setTimeout(90_000);
   const staffId = (await admin.from("users").select("id").eq("email", frank.staffEmail).single()).data!.id;
-  const older = await frank.createCreativeAtStage(4, "Read long ago");
-  const recent = await frank.createCreativeAtStage(4, "Read lately");
+  const older = await frank.createCreativeAtStage(5, "Read long ago");
+  const recent = await frank.createCreativeAtStage(5, "Read lately");
   const day = 86_400_000;
   const { error } = await admin.from("notifications").insert([
     { agency_id: frank.agencyId, user_id: staffId, kind: "artwork_removal", creative_id: frank.creativeId, created_at: new Date(Date.now() - 100 * day).toISOString(), read_at: null },
@@ -59,9 +59,9 @@ test("the bell splits Unread and Read, and read ones go after the workspace's ke
 test("the bell counts, filters by person, and deletes selected read ones", async ({ page, frank }) => {
   test.setTimeout(90_000);
   const staffId = (await admin.from("users").select("id").eq("email", frank.staffEmail).single()).data!.id;
-  const a = await frank.createCreativeAtStage(4, "Asha's post");
-  const b = await frank.createCreativeAtStage(4, "Ben's post");
-  const c = await frank.createCreativeAtStage(4, "Cara's post");
+  const a = await frank.createCreativeAtStage(5, "Asha's post");
+  const b = await frank.createCreativeAtStage(5, "Ben's post");
+  const c = await frank.createCreativeAtStage(5, "Cara's post");
   await admin.from("creatives").update({ approved_by_name: "Asha Client" }).eq("id", a);
   await admin.from("creatives").update({ approved_by_name: "Ben Client" }).eq("id", b);
   await admin.from("creatives").update({ approved_by_name: "Asha Client" }).eq("id", c);
@@ -118,7 +118,7 @@ test("the bell counts, filters by person, and deletes selected read ones", async
 test("Preferences sets how far back a review link lists Approved posts (phase92)", async ({ page, frank }) => {
   // Direct instruction: 7, 14, 21 or 28 days, or Always; 14 by default.
   const approvedAgo = async (name: string, days: number) => {
-    const id = await frank.createCreativeAtStage(4, name);
+    const id = await frank.createCreativeAtStage(5, name);
     const { error } = await admin.from("creatives").update({ approved_at: new Date(Date.now() - days * 86_400_000).toISOString() }).eq("id", id);
     if (error) throw error;
   };

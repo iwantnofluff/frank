@@ -19,14 +19,14 @@ test("Share for review shows only in Client Review", async ({ page, frank }) => 
   await page.waitForSelector(".stage-h");
   await expect(page.getByRole("button", { name: "Share for review" })).toHaveCount(0);
 
-  await page.goto(`/creatives/${frank.creativeId}`); // fixture's own creative is stage 3
+  await page.goto(`/creatives/${frank.creativeId}`); // fixture's own creative is in Client Review
   await expect(page.getByRole("button", { name: "Share for review" })).toBeVisible();
 });
 
 test("ShareModal's Multiple Posts grid greys out posts still below Client Review", async ({ page, frank }) => {
   await frank.createCreativeAtStage(1);
   await frank.loginAsStaff(page);
-  await page.goto(`/creatives/${frank.creativeId}`); // fixture's own creative is stage 3, eligible
+  await page.goto(`/creatives/${frank.creativeId}`); // fixture's own creative is in Client Review, eligible
   await page.getByRole("button", { name: "Share for review" }).click();
   await page.click('button[role="radio"]:has-text("Multiple Posts")');
 

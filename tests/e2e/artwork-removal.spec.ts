@@ -67,9 +67,9 @@ async function fileExists(path: string) {
 
 test("an Approved post's artwork goes 7 days after going live, keeping its copy and comments", async ({ page, frank }) => {
   test.setTimeout(120_000);
-  const gone = await postWithArtwork(frank, frank.projectId, { name: "Live Ten Days", stage: 4, approved_at: daysAgo(12), scheduled_at: daysAgo(10) });
-  const inReview = await postWithArtwork(frank, frank.projectId, { name: "Still In Review", stage: 3, scheduled_at: daysAgo(10) });
-  const recent = await postWithArtwork(frank, frank.projectId, { name: "Live Two Days", stage: 4, approved_at: daysAgo(3), scheduled_at: daysAgo(2) });
+  const gone = await postWithArtwork(frank, frank.projectId, { name: "Live Ten Days", stage: 5, approved_at: daysAgo(12), scheduled_at: daysAgo(10) });
+  const inReview = await postWithArtwork(frank, frank.projectId, { name: "Still In Review", stage: 4, scheduled_at: daysAgo(10) });
+  const recent = await postWithArtwork(frank, frank.projectId, { name: "Live Two Days", stage: 5, approved_at: daysAgo(3), scheduled_at: daysAgo(2) });
 
   const { data: keys, error } = await admin.rpc("run_artwork_housekeeping", { p_agency_id: frank.agencyId });
   expect(error).toBeNull();
@@ -120,7 +120,7 @@ test("an Approved post's artwork goes 7 days after going live, keeping its copy 
 test("an undated Approved post waits on an Admin: the bell, then Keep or Remove", async ({ page, frank }) => {
   test.setTimeout(150_000);
   const project = await frank.createContinuousProject();
-  const base = { destination: "https://example.com/listing", stage: 4, approved_at: daysAgo(20) };
+  const base = { destination: "https://example.com/listing", stage: 5, approved_at: daysAgo(20) };
   const keepIt = await postWithArtwork(frank, project, { ...base, name: "Keep This One", due_on: dateAgo(10) });
   const removeIt = await postWithArtwork(frank, project, { ...base, name: "Remove This One", due_on: dateAgo(9) });
   await postWithArtwork(frank, project, { ...base, name: "Not Due Yet", due_on: dateAgo(2) });
@@ -172,7 +172,7 @@ test("only Owners and Admins decide, notifications are each person's own, and th
   const post = await postWithArtwork(frank, project, {
     name: "Undated",
     destination: "https://example.com/listing",
-    stage: 4,
+    stage: 5,
     approved_at: daysAgo(20),
     due_on: dateAgo(10),
   });

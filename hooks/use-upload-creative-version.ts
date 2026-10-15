@@ -222,7 +222,11 @@ export function useUploadCarouselVersion(
       return version.id as string;
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["creative-versions", creativeId] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["creative-versions", creativeId] }),
+        // The project table's Creative column (file names).
+        queryClient.invalidateQueries({ queryKey: ["artwork-by-creative"] }),
+      ]);
     },
   });
 }

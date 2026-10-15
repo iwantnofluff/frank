@@ -28,6 +28,7 @@ export function useDeletePostVersion(creativeId: string) {
         queryClient.invalidateQueries({ queryKey: [kind === "creative" ? "creative-versions" : "copy-versions", creativeId] }),
         queryClient.invalidateQueries({ queryKey: ["creatives"] }),
         queryClient.invalidateQueries({ queryKey: ["copy-versions-by-creative"] }),
+        queryClient.invalidateQueries({ queryKey: ["artwork-by-creative"] }),
       ]);
     },
   });

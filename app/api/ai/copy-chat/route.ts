@@ -23,6 +23,7 @@ import {
   type PostsSetting,
 } from "@/lib/ai/copy-chat-context";
 import { ISSUE_CATEGORIES } from "@/lib/ai/build-classify-comment-prompt";
+import { STAGE } from "@/lib/stage-labels";
 
 const fail = (error: string, status: number) => NextResponse.json({ error }, { status });
 
@@ -284,7 +285,7 @@ async function clientContext(supabase: Awaited<ReturnType<typeof createClient>>,
           .from("creatives")
           .select("id, name, stage, format, formats, voiceover, slide_text, updated_at, approved_at")
           .in("project_id", projectIds)
-          .gte("stage", 4)
+          .gte("stage", STAGE.approved)
           .is("archived_at", null)
           .neq("id", creativeId);
         if (postsFrom) q = q.gte("approved_at", postsFrom.toISOString());

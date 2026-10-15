@@ -1,4 +1,4 @@
-import { test, expect, goToMonth } from "./fixtures";
+import { test, expect, goToMonth, chooseFormat } from "./fixtures";
 
 // The saved-view Save button is a .split; so, now, is New Post's — this is
 // the one that saves the view.
@@ -36,6 +36,7 @@ test("project calendar — jumps to the month of a newly created brief", async (
   await page.click('button:has-text("New Post")');
   await page.fill("#nbName", "Calendar Jump E2E");
   await page.fill("#nbDate", "2027-06-10");
+  await chooseFormat(page);
   await page.click('button:has-text("Create Post")');
 
   await expect(page.locator(".calmonth")).toHaveText("June 2027");
@@ -43,7 +44,7 @@ test("project calendar — jumps to the month of a newly created brief", async (
 });
 
 test("project calendar — status filter narrows the visible rows", async ({ page, frank }) => {
-  // Fixture's default creative is stage 3 (Client Review), scheduled_at
+  // Fixture's default creative is stage 4 (Client Review), scheduled_at
   // 2027-03-15 — an extra stage-1 creative on the same date lets the
   // "Client Review" filter be checked against a real exclusion, not just
   // an empty vs. non-empty state.
@@ -55,17 +56,17 @@ test("project calendar — status filter narrows the visible rows", async ({ pag
   await goToMonth(page, "March 2027");
   await expect(page.locator(".pname", { hasText: "Concept-Stage E2E" })).toBeVisible();
 
-  // The four stages (direct instruction: the older bands went).
+  // The six stages (In Production, phase102).
   const status = page.getByLabel("Status");
-  await expect(status.locator("option")).toHaveText(["All Statuses", "1. Concept", "2. Internal Review", "3. Client Review", "4. Approved", "5. Live"]);
-  await status.selectOption("3");
+  await expect(status.locator("option")).toHaveText(["All Statuses", "1. Concept", "2. In Production", "3. Internal Review", "4. Client Review", "5. Approved", "6. Live"]);
+  await status.selectOption("4");
   await expect(page.locator(".pname", { hasText: "Concept-Stage E2E" })).toHaveCount(0);
   await expect(page.locator(".pname", { hasText: "E2E Test Creative" })).toBeVisible();
 });
 
 test("project calendar — platform filter shows posts going out on that platform", async ({ page, frank }) => {
-  // Fixture's post is Instagram Feed (Meta); one LinkedIn-only post beside it.
-  const li = await frank.createCreativeAtStage(3, "LinkedIn Only E2E");
+  // Fixture's post is Instagram Post (Meta); one LinkedIn-only post beside it.
+  const li = await frank.createCreativeAtStage(4, "LinkedIn Only E2E");
   const { createClient } = await import("@supabase/supabase-js");
   const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
   const { error } = await admin.from("creatives").update({ format: "li_image", formats: ["li_image"] }).eq("id", li);
@@ -115,7 +116,7 @@ test("project calendar — Columns picker hides and reshows a column", async ({ 
   await page.waitForSelector(".colpop");
   await page.getByRole("checkbox", { name: /^Show Concept/ }).click();
   await expect(page.locator("th", { hasText: "Concept" })).toHaveCount(0);
-  await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 15/16");
+  await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 16/17");
 
   await page.click('button:has-text("Columns")');
   await page.getByRole("checkbox", { name: /^Show Concept/ }).click();
@@ -142,13 +143,21 @@ test("project calendar — Week/Date/Day stay frozen while the table scrolls hor
 });
 
 test("project calendar — hovering a creative shows the real preview popover", async ({ page, frank }) => {
+  await frank.createArtworkVersion(frank.creativeId, 1, "march-hero.png");
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${frank.projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
   await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
+  // The Creative column shows the file's name, and hovering it shows the
+  // preview; Post Name no longer does (direct instruction).
+  await page.waitForSelector("td.skchk");
   await page.hover(".pname");
+  await page.waitForTimeout(500);
+  await expect(page.locator(".evpop.on")).toHaveCount(0);
+  await expect(page.locator(".artname")).toHaveText("march-hero.png");
+  await page.hover(".artname");
   await page.waitForSelector(".evpop.on");
   // The stage strip is just the table's Status pill; the name is below it.
   await expect(page.locator(".evpop .rvt")).toHaveCount(0);
@@ -161,6 +170,7 @@ test("project calendar — hover preview holds open while the pointer moves onto
   page,
   frank,
 }) => {
+  await frank.createArtworkVersion(frank.creativeId, 1, "march-hero.png");
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${frank.projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
@@ -171,8 +181,10 @@ test("project calendar — hover preview holds open while the pointer moves onto
   // arrives a moment after the table and shifts every column, which can
   // slide the name out from under a pointer already on it.
   await page.waitForSelector("td.skchk");
-  const pname = page.locator(".pname").first();
-  const box = (await pname.boundingBox())!;
+  const art = page.locator(".artname").first();
+  // Off to the right of a narrow viewport until scrolled to.
+  await art.scrollIntoViewIfNeeded();
+  const box = (await art.boundingBox())!;
   await page.mouse.move(box.x + 5, box.y + 5);
   await page.waitForSelector(".evpop.on");
 
@@ -195,10 +207,10 @@ test("project calendar — matches the real content-planner template's default c
   await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
-  await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 16/16");
+  await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 17/17");
   for (const label of [
     "Week", "Publish Date", "Day", "Time", "Status", "Format", "Slides", "Team",
-    "Post Name", "Concept and Reference", "VO", "Text on Image", "Copy", "Alt Text", "WIIFM Direction", "Client Feedback",
+    "Post Name", "Concept & Reference", "VO", "Creative", "Text on Image", "Copy", "Alt Text", "WIIFM Direction", "Client Feedback",
   ]) {
     // Anchored at the start: a th's text is always {label}{sub} with no
     // separator, and hasText's substring match is case-insensitive, so an

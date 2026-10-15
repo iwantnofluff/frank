@@ -38,8 +38,6 @@ import { useAgencyKnowledge } from "@/hooks/use-agency-knowledge";
 import { useKnowledgeEntries } from "@/hooks/use-knowledge-entries";
 import { useRepeatIssueCount } from "@/hooks/use-repeat-issues";
 import {
-  FORMAT_CATEGORIES,
-  formatsByCategory,
   formatsLabel,
   copyFieldsFor,
   postFormats,
@@ -459,7 +457,8 @@ export function CreativeModal(props: CreativeModalProps) {
   const [name, setName] = useState(isCreate ? "" : props.creative.name);
   // Every format the post goes out as; the first is the main one.
   const [formats, setFormats] = useState<string[]>(
-    isCreate ? [formatsByCategory(FORMAT_CATEGORIES[0])[0]?.id ?? ""] : postFormats(props.creative),
+    // A new post starts with none (direct instruction): chosen, not assumed.
+    isCreate ? [] : postFormats(props.creative),
   );
   const format = formats[0];
   // Carousels (phase31) and stories (direct instruction): a count appears
@@ -529,6 +528,7 @@ export function CreativeModal(props: CreativeModalProps) {
   const [savedFields, setSavedFields] = useState(savedTableFields);
 
   const [nameError, setNameError] = useState<string | null>(null);
+  const [formatError, setFormatError] = useState<string | null>(null);
   const [dateError, setDateError] = useState<string | null>(null);
   const [destinationError, setDestinationError] = useState<string | null>(null);
 
@@ -595,6 +595,11 @@ export function CreativeModal(props: CreativeModalProps) {
     artworkCleared = false,
     overBase,
   }: { artworkCleared?: boolean; overBase?: string } = {}) {
+    if (!formats.length) {
+      setFormatError("Choose at least one format.");
+      return;
+    }
+    setFormatError(null);
     if (!name.trim()) {
       setNameError("Give the brief a name.");
       return;
@@ -940,7 +945,7 @@ export function CreativeModal(props: CreativeModalProps) {
   );
 
   // The chosen formats' own copy fields (lib/formats.ts), combined — Meta
-  // Feed Ad needs primary/headline/description/cta, Instagram Feed just
+  // Feed Ad needs primary/headline/description/cta, Instagram Post just
   // caption/alt, so a post that's both gets all six, each once. Several
   // formats (Instagram Story, Packaging, ...) need none at all.
   const copyFieldSpecs: CopyFieldSpec[] = useMemo(
@@ -1257,7 +1262,16 @@ export function CreativeModal(props: CreativeModalProps) {
             <label htmlFor="nbFmt">
               Format <span className="hint">tick every format this goes out as</span>
             </label>
-            <FormatPicker id="nbFmt" value={formats} onChange={setFormats} />
+            <FormatPicker
+              id="nbFmt"
+              value={formats}
+              allowEmpty={isCreate && !creativeId}
+              onChange={(next) => {
+                setFormats(next);
+                if (next.length) setFormatError(null);
+              }}
+            />
+            {formatError && <p className="autherr">{formatError}</p>}
           </div>
 
           {frames && (

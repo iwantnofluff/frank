@@ -6,12 +6,12 @@ import { resolveShareEligibility, type EligibilityCreative } from "./shared-link
 
 const creatives: EligibilityCreative[] = [
   { id: "a", stage: 1 }, // concept
-  { id: "b", stage: 2 }, // internal review
-  { id: "c", stage: 3 }, // client review
-  { id: "d", stage: 4 }, // approved
+  { id: "b", stage: 3 }, // internal review
+  { id: "c", stage: 4 }, // client review
+  { id: "d", stage: 5 }, // approved
 ];
 
-test("all — every creative below stage 3 is excluded, the rest eligible", () => {
+test("all — every creative below Client Review is excluded, the rest eligible", () => {
   const r = resolveShareEligibility(creatives, "all");
   assert.equal(r.candidateCount, 4);
   assert.equal(r.eligibleCount, 2); // c, d
@@ -19,22 +19,22 @@ test("all — every creative below stage 3 is excluded, the rest eligible", () =
 });
 
 test("all — zero eligible when every creative is still internal", () => {
-  const internalOnly: EligibilityCreative[] = [{ id: "a", stage: 1 }, { id: "b", stage: 2 }];
+  const internalOnly: EligibilityCreative[] = [{ id: "a", stage: 1 }, { id: "b", stage: 3 }];
   const r = resolveShareEligibility(internalOnly, "all");
   assert.equal(r.candidateCount, 2);
   assert.equal(r.eligibleCount, 0);
   assert.equal(r.excludedCount, 2);
 });
 
-test("pending — only stage 3 candidates, which are always already eligible (can't itself exclude)", () => {
+test("pending — only Client Review candidates, which are always already eligible (can't itself exclude)", () => {
   const r = resolveShareEligibility(creatives, "pending");
   assert.equal(r.candidateCount, 1); // c
   assert.equal(r.eligibleCount, 1);
   assert.equal(r.excludedCount, 0);
 });
 
-test("pending — comes back with zero candidates, not an exclusion, when nothing is at stage 3", () => {
-  const noneInReview: EligibilityCreative[] = [{ id: "a", stage: 1 }, { id: "b", stage: 4 }];
+test("pending — comes back with zero candidates, not an exclusion, when nothing is in Client Review", () => {
+  const noneInReview: EligibilityCreative[] = [{ id: "a", stage: 1 }, { id: "b", stage: 5 }];
   const r = resolveShareEligibility(noneInReview, "pending");
   assert.equal(r.candidateCount, 0);
   assert.equal(r.eligibleCount, 0);
@@ -70,7 +70,7 @@ test("pick — nothing picked yet, zero candidates", () => {
 });
 
 test("every scope also shows the project's other Client Review posts (phase69)", () => {
-  const more: EligibilityCreative[] = [...creatives, { id: "e", stage: 3 }];
+  const more: EligibilityCreative[] = [...creatives, { id: "e", stage: 4 }];
   assert.equal(resolveShareEligibility(more, "one", { currentCreativeId: "d" }).alsoInClientReview, 2); // c, e
   assert.equal(resolveShareEligibility(more, "pick", { pickedIds: ["c"] }).alsoInClientReview, 1); // e
   assert.equal(resolveShareEligibility(more, "pending").alsoInClientReview, 0);

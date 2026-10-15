@@ -13,6 +13,39 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.33.0",
+    date: "2026-10-15",
+    title: "2. In Production",
+    changes: [
+      "A new stage between Concept and Internal Review: In Production, in Concept's red. A post moves to it by itself once its Concept is written, and on to Internal Review when its first creative or copy is saved.",
+      "The stages are now numbered 1 to 6: Concept, In Production, Internal Review, Client Review, Approved, Live. Every post kept its stage; only the numbers moved.",
+      "Posts already in Concept stay there until their content is added.",
+      "The client page and project settings count In Production posts too.",
+      "On a post, the stage buttons use short words so all six fit beside Share, + and Edit: Concept, Production, Internal, Client, Approved, Live.",
+    ],
+  },
+  {
+    version: "1.32.0",
+    date: "2026-10-15",
+    title: "What's still to come, in the post table",
+    changes: [
+      "A new Creative column, between VO and Text on Image, shows the name of the post's latest uploaded file. Hover it to see the post; Post Name no longer opens the preview.",
+      "Where a post is still missing something its format needs, such as its creative or copy, the cell says Pending in red. A dash now means the format doesn't take it, like Slides on a single image.",
+      "The Live status is now the same green as Approved.",
+      "Clearer column headings: Concept & Reference, and new descriptions under Post Name, Format, Slides, Concept & Reference, Text on Image, Copy and WIIFM Direction, all in sentence case.",
+    ],
+  },
+  {
+    version: "1.31.8",
+    date: "2026-10-15",
+    title: "Choosing a post's formats",
+    changes: [
+      "A new post starts with no format chosen; Create Post asks for one if none is.",
+      "The formats list has a Done button at its foot.",
+      "Instagram Feed is now Instagram Post, and Facebook Feed Post is Facebook Post.",
+    ],
+  },
+  {
     version: "1.31.7",
     date: "2026-10-15",
     title: "An expanded Reel fills the screen",

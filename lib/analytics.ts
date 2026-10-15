@@ -1,3 +1,4 @@
+import { STAGE } from "./stage-labels.ts";
 // Analytics (direct instruction, phase71): how long posts take from concept
 // to approval, what holds them up, and how feedback comes in, for the
 // agency's Owners and Admins. Pure functions over rows Frank already reads,
@@ -91,7 +92,7 @@ export function stageDurations(events: AEvent[]): Record<number, number[]> {
 
 // A post's first time with the client: when it first reached Client Review.
 export function firstSentAt(events: AEvent[]): string | null {
-  const sent = events.filter((e) => e.toStage === 3).map((e) => e.at).sort();
+  const sent = events.filter((e) => e.toStage === STAGE.review).map((e) => e.at).sort();
   return sent[0] ?? null;
 }
 
@@ -173,20 +174,27 @@ export function computeAnalytics(
   const eventsOf = byPost(events);
   const versionsOf = byPost(versions);
   const theComments = comments.filter((c) => ids.has(c.creativeId));
-  const approved = posts.filter((p) => p.stage >= 4 && p.approvedAt);
+  const approved = posts.filter((p) => p.stage >= STAGE.approved && p.approvedAt);
   const nowIso = now.toISOString();
 
   // Speed
   const stageTimes: Record<number, number[]> = {};
+  let conceptTimes: number[] | undefined;
   for (const p of posts) {
-    for (const [stage, list] of Object.entries(stageDurations(eventsOf.get(p.id) ?? []))) {
+    const own = stageDurations(eventsOf.get(p.id) ?? []);
+    for (const [stage, list] of Object.entries(own)) {
       (stageTimes[Number(stage)] ??= []).push(...list);
+    }
+    // In Concept counts In Production too (phase102): the time before the
+    // first content, as it was before In Production was its own stage.
+    if (own[STAGE.concept] || own[STAGE.production]) {
+      (conceptTimes ??= []).push((own[STAGE.concept]?.[0] ?? 0) + (own[STAGE.production]?.[0] ?? 0));
     }
   }
   const dated = approved.filter((p) => p.scheduledAt);
   const soon = new Date(now.getTime() + 7 * DAY_MS).toISOString();
   const atRisk = posts
-    .filter((p) => p.stage < 4 && p.scheduledAt && p.scheduledAt <= soon)
+    .filter((p) => p.stage < STAGE.approved && p.scheduledAt && p.scheduledAt <= soon)
     .sort((a, b) => a.scheduledAt!.localeCompare(b.scheduledAt!))
     .map((p) => ({ id: p.id, name: p.name, scheduledAt: p.scheduledAt!, overdue: p.scheduledAt! < nowIso }));
 
@@ -228,12 +236,12 @@ export function computeAnalytics(
   const onUs: { id: string; name: string; days: number }[] = [];
   const onClient: { id: string; name: string; days: number }[] = [];
   for (const p of posts) {
-    if (p.stage >= 4) continue;
+    if (p.stage >= STAGE.approved) continue;
     const ev = [...(eventsOf.get(p.id) ?? [])].sort((a, b) => a.at.localeCompare(b.at));
     const last = ev[ev.length - 1];
     const since = last?.at ?? p.createdAt;
     const row = { id: p.id, name: p.name, days: days(since, nowIso) };
-    if (p.stage === 3 && last?.exception !== "changes_requested") onClient.push(row);
+    if (p.stage === STAGE.review && last?.exception !== "changes_requested") onClient.push(row);
     else onUs.push(row);
   }
   onUs.sort((a, b) => b.days - a.days);
@@ -275,7 +283,7 @@ export function computeAnalytics(
         return before >= 0 && before < 2;
       }).length,
       approvedAfterLive: dated.filter((p) => p.approvedAt! > p.scheduledAt!).length,
-      missedLive: posts.filter((p) => p.stage < 4 && p.scheduledAt && p.scheduledAt < nowIso).length,
+      missedLive: posts.filter((p) => p.stage < STAGE.approved && p.scheduledAt && p.scheduledAt < nowIso).length,
       rework: {
         artwork: posts.reduce((n, p) => n + Math.max(0, rounds(p, "creative") - 1), 0),
         copy: posts.reduce((n, p) => n + Math.max(0, rounds(p, "copy") - 1), 0),
@@ -286,9 +294,9 @@ export function computeAnalytics(
     speed: {
       medianDaysToApproval: median(approved.map((p) => days(p.createdAt, p.approvedAt!))),
       medianDaysInStage: {
-        concept: median(stageTimes[1] ?? []),
-        internal: median(stageTimes[2] ?? []),
-        client: median(stageTimes[3] ?? []),
+        concept: median(conceptTimes ?? []),
+        internal: median(stageTimes[STAGE.internal] ?? []),
+        client: median(stageTimes[STAGE.review] ?? []),
       },
       approvedOnTime: pct(dated.filter((p) => p.approvedAt! <= p.scheduledAt!).length, dated.length),
       atRisk,
@@ -401,7 +409,7 @@ export function weeklyTrends(posts: APost[], events: AEvent[], now: Date = new D
   const byPost = new Map<string, AEvent[]>();
   for (const e of events) (byPost.get(e.creativeId) ?? byPost.set(e.creativeId, []).get(e.creativeId)!).push(e);
   for (const p of posts) {
-    if (p.stage >= 4 && p.approvedAt) {
+    if (p.stage >= STAGE.approved && p.approvedAt) {
       const w = weekOf(p.approvedAt);
       if (w >= 0) rows[w].approvals.push(days(p.createdAt, p.approvedAt));
     }
@@ -459,7 +467,7 @@ export function contractDelivery(
     const cell = row.months.find((m) => m.month === p.scheduledAt!.slice(0, 7));
     if (!cell) continue;
     cell.planned++;
-    if (p.stage >= 4 && p.approvedAt) cell.delivered++;
+    if (p.stage >= STAGE.approved && p.approvedAt) cell.delivered++;
   }
   return [...rows.values()];
 }

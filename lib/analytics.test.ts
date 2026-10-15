@@ -14,7 +14,7 @@ const post = (id: string, over: Partial<APost> = {}): APost => ({
   clientId: "c1",
   formats: ["ig_feed"],
   personId: "u1",
-  stage: 4,
+  stage: 5,
   createdAt: d(1),
   approvedAt: d(5),
   scheduledAt: d(10),
@@ -30,15 +30,15 @@ test("median: odd, even and none", () => {
 test("stageDurations: time between moves; no time across a filled-in starting point", () => {
   const ev: AEvent[] = [
     { creativeId: "a", fromStage: null, toStage: 1, exception: null, at: d(1) },
-    { creativeId: "a", fromStage: 1, toStage: 2, exception: null, at: d(3) },
-    { creativeId: "a", fromStage: 2, toStage: 3, exception: null, at: d(4) },
-    { creativeId: "a", fromStage: 3, toStage: 4, exception: null, at: d(6) },
+    { creativeId: "a", fromStage: 1, toStage: 3, exception: null, at: d(3) },
+    { creativeId: "a", fromStage: 3, toStage: 4, exception: null, at: d(4) },
+    { creativeId: "a", fromStage: 4, toStage: 5, exception: null, at: d(6) },
   ];
-  assert.deepEqual(stageDurations(ev), { 1: [2], 2: [1], 3: [2] });
+  assert.deepEqual(stageDurations(ev), { 1: [2], 3: [1], 4: [2] });
   // An older post: created, then approved (both filled in by phase71).
   const filled: AEvent[] = [
     { creativeId: "b", fromStage: null, toStage: 1, exception: null, at: d(1) },
-    { creativeId: "b", fromStage: null, toStage: 4, exception: null, at: d(9) },
+    { creativeId: "b", fromStage: null, toStage: 5, exception: null, at: d(9) },
   ];
   assert.deepEqual(stageDurations(filled), {});
 });
@@ -46,13 +46,13 @@ test("stageDurations: time between moves; no time across a filled-in starting po
 test("stageDurations: a post's whole time in a stage, across Changes Requested and returns", () => {
   const ev: AEvent[] = [
     { creativeId: "a", fromStage: null, toStage: 1, exception: null, at: d(1) },
-    { creativeId: "a", fromStage: 1, toStage: 3, exception: null, at: d(2) },
-    { creativeId: "a", fromStage: 3, toStage: 3, exception: "changes_requested", at: d(4) },
-    { creativeId: "a", fromStage: 3, toStage: 2, exception: null, at: d(5) },
-    { creativeId: "a", fromStage: 2, toStage: 3, exception: null, at: d(6) },
-    { creativeId: "a", fromStage: 3, toStage: 4, exception: null, at: d(8) },
+    { creativeId: "a", fromStage: 1, toStage: 4, exception: null, at: d(2) },
+    { creativeId: "a", fromStage: 4, toStage: 4, exception: "changes_requested", at: d(4) },
+    { creativeId: "a", fromStage: 4, toStage: 3, exception: null, at: d(5) },
+    { creativeId: "a", fromStage: 3, toStage: 4, exception: null, at: d(6) },
+    { creativeId: "a", fromStage: 4, toStage: 5, exception: null, at: d(8) },
   ];
-  assert.deepEqual(stageDurations(ev), { 1: [1], 2: [1], 3: [5] });
+  assert.deepEqual(stageDurations(ev), { 1: [1], 3: [1], 4: [5] });
 });
 
 test("filterPosts: client, project, person, format and date", () => {
@@ -68,10 +68,10 @@ test("computeAnalytics: speed, quality and at-risk posts", () => {
   const posts = [
     post("a"), // 4 days to approval, on time, one version each
     post("b", { approvedAt: d(12), scheduledAt: d(10) }), // late, two rounds, changes asked
-    post("c", { stage: 3, approvedAt: null, scheduledAt: d(22) }), // live in 2 days, not approved
-    post("d", { stage: 2, approvedAt: null, scheduledAt: d(18) }), // overdue
+    post("c", { stage: 4, approvedAt: null, scheduledAt: d(22) }), // live in 2 days, not approved
+    post("d", { stage: 3, approvedAt: null, scheduledAt: d(18) }), // overdue
   ];
-  const events: AEvent[] = [{ creativeId: "b", fromStage: 3, toStage: 3, exception: "changes_requested", at: d(6) }];
+  const events: AEvent[] = [{ creativeId: "b", fromStage: 4, toStage: 4, exception: "changes_requested", at: d(6) }];
   const versions: AVersion[] = [
     { creativeId: "a", kind: "creative", createdAt: d(2) },
     { creativeId: "a", kind: "copy", createdAt: d(2) },
@@ -115,7 +115,7 @@ test("computeAnalytics: feedback by side, issue, mood, resolution and repeats", 
 });
 
 test("groupAnalytics: one row per client, busiest first", () => {
-  const posts = [post("a"), post("b", { clientId: "c2" }), post("c", { clientId: "c2", stage: 3, approvedAt: null })];
+  const posts = [post("a"), post("b", { clientId: "c2" }), post("c", { clientId: "c2", stage: 4, approvedAt: null })];
   const rows = groupAnalytics(posts, (p) => p.clientId, [], [], [], NOW);
   assert.deepEqual(rows.map((r) => [r.id, r.posts, r.approved]), [["c2", 2, 1], ["c1", 1, 1]]);
 });
@@ -129,9 +129,9 @@ test("promise: days ahead of live when first sent to the client, against each cl
     post("ok", { createdAt: d(1), scheduledAt: d(31) }), // sent day 2: 29 days ahead
     post("short", { clientId: "c2", createdAt: d(1), scheduledAt: d(20) }), // sent day 5: 15 ahead, c2 promises 14
     post("late", { createdAt: d(1), scheduledAt: d(9) }), // sent day 5: 4 ahead
-    post("never", { stage: 2, approvedAt: null, createdAt: d(1), scheduledAt: d(40) }), // not sent yet
+    post("never", { stage: 3, approvedAt: null, createdAt: d(1), scheduledAt: d(40) }), // not sent yet
   ];
-  const events = [ev("ok", 2, 3, d(2)), ev("short", 2, 3, d(5)), ev("late", 2, 3, d(5)), ev("late", 3, 3, d(6), "changes_requested")];
+  const events = [ev("ok", 3, 4, d(2)), ev("short", 3, 4, d(5)), ev("late", 3, 4, d(5)), ev("late", 4, 4, d(6), "changes_requested")];
   const a = computeAnalytics(posts, events, [], [], NOW, (c) => (c === "c2" ? 14 : 28));
   assert.equal(a.promise.sent, 3);
   assert.equal(a.promise.medianDaysAhead, 15);
@@ -143,12 +143,12 @@ test("promise: days ahead of live when first sent to the client, against each cl
 
 test("ball in court: the client has it in Client Review until changes are asked", () => {
   const posts = [
-    post("withClient", { stage: 3, approvedAt: null }),
-    post("changes", { stage: 3, approvedAt: null }),
+    post("withClient", { stage: 4, approvedAt: null }),
+    post("changes", { stage: 4, approvedAt: null }),
     post("drafting", { stage: 1, approvedAt: null, createdAt: d(15) }),
     post("done"),
   ];
-  const events = [ev("withClient", 2, 3, d(18)), ev("changes", 2, 3, d(10)), ev("changes", 3, 3, d(16), "changes_requested")];
+  const events = [ev("withClient", 3, 4, d(18)), ev("changes", 3, 4, d(10)), ev("changes", 4, 4, d(16), "changes_requested")];
   const a = computeAnalytics(posts, events, [], [], NOW);
   assert.deepEqual(a.court.onClient.map((x) => [x.id, Math.round(x.days)]), [["withClient", 2]]);
   assert.deepEqual(a.court.onUs.map((x) => [x.id, Math.round(x.days)]), [["drafting", 5], ["changes", 4]]);
@@ -158,7 +158,7 @@ test("accountability: turnaround, last-minute and late approvals, missed live da
   const posts = [
     post("a", { approvedAt: d(9, 12), scheduledAt: d(10, 6) }), // approved 18 hours before live
     post("b", { approvedAt: d(12), scheduledAt: d(10) }), // after live
-    post("c", { stage: 3, approvedAt: null, scheduledAt: d(15) }), // missed
+    post("c", { stage: 4, approvedAt: null, scheduledAt: d(15) }), // missed
   ];
   const comments: AComment[] = [
     { creativeId: "a", clientSide: true, category: "scope_change", sentiment: null, createdAt: d(3, 9), resolvedAt: null, isReply: false },
@@ -174,7 +174,7 @@ test("accountability: turnaround, last-minute and late approvals, missed live da
     { creativeId: "b", kind: "creative", createdAt: d(4) },
     { creativeId: "b", kind: "copy", createdAt: d(4) },
   ];
-  const events = [ev("b", 4, 3, d(11)), ev("b", 3, 4, d(12))];
+  const events = [ev("b", 5, 4, d(11)), ev("b", 4, 5, d(12))];
   const a = computeAnalytics(posts, events, versions, comments, NOW);
   assert.equal(a.accountability.medianTurnaroundHours, 6); // the team's reply 6 hours on
   assert.equal(a.accountability.lastMinuteApprovals, 1);
@@ -190,7 +190,7 @@ test("weeklyTrends: approvals and sends grouped by the Monday they fell in", () 
     post("a", { createdAt: d(10), approvedAt: d(13), scheduledAt: d(30) }),
     post("b", { createdAt: d(10), approvedAt: d(19, 9), scheduledAt: d(22) }),
   ];
-  const events = [ev("a", 2, 3, d(12)), ev("b", 2, 3, d(19, 8))];
+  const events = [ev("a", 3, 4, d(12)), ev("b", 3, 4, d(19, 8))];
   const w = weeklyTrends(posts, events, NOW, 2);
   assert.deepEqual(w.map((r) => r.start), ["2026-10-12", "2026-10-19"]);
   assert.deepEqual(w.map((r) => r.approvals), [1, 1]);
@@ -202,7 +202,7 @@ test("contractDelivery: approved posts by live month against each client's contr
   const posts = [
     post("sep1", { scheduledAt: d(1).replace("-10-", "-09-") }), // Sept, approved
     post("oct1", { scheduledAt: d(25) }), // Oct, approved
-    post("oct2", { stage: 3, approvedAt: null, scheduledAt: d(28) }), // Oct, not yet
+    post("oct2", { stage: 4, approvedAt: null, scheduledAt: d(28) }), // Oct, not yet
     post("other", { clientId: "c9", scheduledAt: d(25) }), // no contract: left out
   ];
   const rows = contractDelivery(posts, (c) => (c === "c1" ? 12 : null), NOW, 2);

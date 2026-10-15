@@ -1,4 +1,4 @@
-import { stageLabel } from "./stage-labels.ts";
+import { STAGE, stageLabel } from "./stage-labels.ts";
 
 // One line of a project's Activity log (phase84): who did it, what they
 // did (around the post's name, which the panel links), in plain words.
@@ -32,8 +32,8 @@ export function activityLine(row: ActivityInput): ActivityLine {
       const to = Number(d.to);
       if (d.exception === "changes_requested") return { who, before: "asked for changes on " };
       if (d.exception === "rejected") return { who, before: "rejected " };
-      if (to === 4) return { who: row.by_name ?? "The client", before: "approved " };
-      if (Number(d.from) === 4) return { who, before: "took back the approval of " };
+      if (to === STAGE.approved) return { who: row.by_name ?? "The client", before: "approved " };
+      if (Number(d.from) === STAGE.approved) return { who, before: "took back the approval of " };
       return { who, before: "moved ", after: ` to ${stageLabel(to, "scheduled")}` };
     }
     case "artwork_version":

@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { test, expect, goToMonth } from "./fixtures";
+import { test, expect, goToMonth, chooseFormat } from "./fixtures";
 
 const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
   auth: { persistSession: false, autoRefreshToken: false },
@@ -30,11 +30,11 @@ test("continuous calendar — the template's columns, named as in the New Post w
   await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
-  // 17 toggleable (VO, phase88; Alt Text) + the frozen Live Date column = 18.
-  await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 18/18");
+  // 18 toggleable (VO, phase88; Alt Text; Creative) + the frozen Live Date column = 19.
+  await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 19/19");
   for (const label of [
     "Live Date", "Post Name", "Destination", "Funnel", "TG", "Format", "Slides", "Team", "Status",
-    "Concept and Reference", "Final Creative", "VO", "Text on Image", "Copy", "Alt Text", "Notes for Designer", "WIIFM Direction",
+    "Concept & Reference", "Final Creative", "VO", "Creative", "Text on Image", "Copy", "Alt Text", "Notes for Designer", "WIIFM Direction",
     "Principles",
   ]) {
     await expect(page.locator("th", { hasText: new RegExp(`^${label}`) })).toHaveCount(1);
@@ -52,13 +52,13 @@ test("continuous calendar — Funnel and Notes for Designer persist", async ({ p
 
   // Default column order's td indices: 0 the staff-only select-row
   // checkbox, 1 Live Date, 2 Post Name, 3 Destination, 4 Funnel, ...,
-  // 16 Notes for Designer (VO, phase88, is 12; Alt Text is 15).
+  // 17 Notes for Designer (VO, phase88, is 12; Creative 13; Alt Text 16).
   const row = page.locator("tr[data-row]", { hasText: "Chip Test Creative" });
   const cells = row.locator("td");
   // Each save lands before the reload (it used to race it).
   const saved = () => page.waitForResponse((r) => r.url().includes("update_creative_cx") && r.ok());
   await Promise.all([saved(), cells.nth(4).locator("select").selectOption("tof")]);
-  const notes = cells.nth(16).locator("input");
+  const notes = cells.nth(17).locator("input");
   await notes.fill("Keep the logo top left");
   await Promise.all([saved(), notes.blur()]);
   await page.reload();
@@ -68,7 +68,7 @@ test("continuous calendar — Funnel and Notes for Designer persist", async ({ p
   const reloadedCells = page.locator("tr[data-row]", { hasText: "Chip Test Creative" }).locator("td");
   await expect(reloadedCells.nth(4).locator("select")).toHaveValue("tof");
   await expect(reloadedCells.nth(4)).toContainText("TOF");
-  await expect(reloadedCells.nth(16).locator("input")).toHaveValue("Keep the logo top left");
+  await expect(reloadedCells.nth(17).locator("input")).toHaveValue("Keep the logo top left");
 });
 
 test("continuous calendar — Format, Text on Image and Copy come from the post itself", async ({ page, frank }) => {
@@ -85,21 +85,21 @@ test("continuous calendar — Format, Text on Image and Copy come from the post 
   await page.waitForSelector(".tbl");
 
   const cells = page.locator("tr[data-row]", { hasText: "Copy Test Creative" }).locator("td");
-  // 6 Format, 12 Text on Image (no versions), 13 Copy: the latest
+  // 6 Format, 14 Text on Image (no versions), 15 Copy: the latest
   // version, older on hover.
-  await expect(cells.nth(6)).toHaveText("Instagram Feed");
-  await expect(cells.nth(13)).toHaveText("On the artwork");
-  await expect(cells.nth(14)).toContainText("Second caption");
-  await expect(cells.nth(14)).toContainText("+1 earlier");
-  await cells.nth(14).locator(".cc-n").hover();
+  await expect(cells.nth(6)).toHaveText("Instagram Post");
+  await expect(cells.nth(14)).toHaveText("On the artwork");
+  await expect(cells.nth(15)).toContainText("Second caption");
+  await expect(cells.nth(15)).toContainText("+1 earlier");
+  await cells.nth(15).locator(".cc-n").hover();
   await expect(page.locator(".copypop")).toContainText("First caption");
   // Nothing to type into: the copy is written in the post's own window.
-  await expect(cells.nth(14).locator("textarea")).toHaveCount(0);
+  await expect(cells.nth(15).locator("textarea")).toHaveCount(0);
 });
 
 test("continuous calendar — status filter narrows the visible rows", async ({ page, frank }) => {
   const projectId = await frank.createContinuousProject();
-  await frank.createContinuousCreative(projectId, { name: "Client Review Creative", dueOn: "2027-03-15", stage: 3 });
+  await frank.createContinuousCreative(projectId, { name: "Client Review Creative", dueOn: "2027-03-15", stage: 4 });
   await frank.createContinuousCreative(projectId, { name: "Concept Stage Creative", dueOn: "2027-03-15", stage: 1 });
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${projectId}`);
@@ -108,7 +108,7 @@ test("continuous calendar — status filter narrows the visible rows", async ({ 
   await page.waitForSelector(".tbl");
   await expect(page.locator(".pname", { hasText: "Concept Stage Creative" })).toBeVisible();
 
-  await page.getByLabel("Status").selectOption("3");
+  await page.getByLabel("Status").selectOption("4");
   await expect(page.locator(".pname", { hasText: "Concept Stage Creative" })).toHaveCount(0);
   await expect(page.locator(".pname", { hasText: "Client Review Creative" })).toBeVisible();
 });
@@ -137,6 +137,7 @@ test("continuous calendar — jumps to the month of a newly created brief", asyn
   await page.fill("#nbName", "Continuous Calendar Jump E2E");
   await page.fill("#nbDest", "https://example.com/listing");
   await page.fill("#nbDue", "2027-06-10");
+  await chooseFormat(page, "A+ Content Module");
   await page.click('button:has-text("Create Post")');
 
   await expect(page.locator(".calmonth")).toHaveText("June 2027");

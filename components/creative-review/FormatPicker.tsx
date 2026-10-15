@@ -11,15 +11,20 @@ import { FORMAT_CATEGORIES, formatsByCategory, formatsLabel } from "@/lib/format
 // .cpr/.cbx rows as the table's Display Columns picker.
 //
 // Order is the order ticked, and the first one is the main format (Feed
-// Preview shape). At least one always stays ticked.
+// Preview shape). A new post starts with none ticked (direct instruction);
+// once a post exists, at least one always stays ticked. Done at the foot
+// closes it (direct instruction: clicking outside wasn't obvious).
 export function FormatPicker({
   id,
   value,
   onChange,
+  allowEmpty = false,
 }: {
   id?: string;
   value: string[];
   onChange: (next: string[]) => void;
+  // A new post's: the last one can be unticked too.
+  allowEmpty?: boolean;
 }) {
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
   // Opens and closes with motion (hooks/use-presence.ts).
@@ -53,7 +58,7 @@ export function FormatPicker({
 
   function toggle(fid: string) {
     if (value.includes(fid)) {
-      if (value.length > 1) onChange(value.filter((x) => x !== fid));
+      if (value.length > 1 || allowEmpty) onChange(value.filter((x) => x !== fid));
     } else {
       onChange([...value, fid]);
     }
@@ -76,7 +81,7 @@ export function FormatPicker({
           setAnchor((prev) => (prev ? null : rect));
         }}
       >
-        {formatsLabel(value)}
+        {value.length ? formatsLabel(value) : <span className="fmtpick-none">Choose formats</span>}
       </button>
       {pop.shown && (
         <div className={`colpop on fmtpop motion${pop.isOpen ? " is-open" : ""}`} ref={ref} role="dialog" aria-label="Formats" style={{ width: Math.max(pop.shown.width, 330) }}>
@@ -124,6 +129,11 @@ export function FormatPicker({
                 </div>
               );
             })}
+          </div>
+          <div className="fmtpop-f">
+            <button type="button" className="btn primary sm" onClick={() => setAnchor(null)}>
+              Done
+            </button>
           </div>
         </div>
       )}

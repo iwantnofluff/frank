@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { test, expect } from "./fixtures";
+import { test, expect, chooseFormat } from "./fixtures";
 
 // Who's on a new post by default (phase101, direct instruction): ticked in
 // the project's settings, they start every new post's Team, which can still
@@ -33,6 +33,7 @@ test("a project's New posts tick puts someone on every new post's Team", async (
   await expect(page.locator(".field", { has: page.locator('label[for="nbTeam"]') })).toContainText("E2E Staff");
   await page.fill("#nbName", "Default Team E2E");
   await page.fill("#nbDate", "2027-04-01");
+  await chooseFormat(page);
   await page.click('button:has-text("Create Post")');
   await expect
     .poll(async () => (await admin.from("creatives").select("team_user_ids").eq("project_id", frank.projectId).eq("name", "Default Team E2E").maybeSingle()).data?.team_user_ids)

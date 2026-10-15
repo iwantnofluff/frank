@@ -18,7 +18,7 @@ const post = (id: string, stage: number, approved_at: string | null, extra: Part
   id,
   name: `Post ${id}`,
   stage,
-  formatLabel: "Instagram Feed",
+  formatLabel: "Instagram Post",
   updated_at: approved_at ?? "2026-10-01",
   approved_at,
   voiceover: null,
@@ -28,12 +28,12 @@ const post = (id: string, stage: number, approved_at: string | null, extra: Part
 
 test("other posts: Approved only, since the chosen point, newest approval first, latest copy, up to 8", () => {
   const posts = [
-    post("a", 2, null), // not approved: never
-    post("b", 4, "2026-10-01"),
-    post("c", 4, "2026-10-05"),
-    post("d", 4, "2026-10-08"), // nothing written
-    post("e", 4, "2026-10-07", { voiceover: "Say it.", slide_text: ["ONE", "", "TWO"] }),
-    post("old", 4, "2025-01-01"),
+    post("a", 3, null), // not approved: never
+    post("b", 5, "2026-10-01"),
+    post("c", 5, "2026-10-05"),
+    post("d", 5, "2026-10-08"), // nothing written
+    post("e", 5, "2026-10-07", { voiceover: "Say it.", slide_text: ["ONE", "", "TWO"] }),
+    post("old", 5, "2025-01-01"),
   ];
   const copies = [
     { creative_id: "a", created_at: "2026-10-02", fields: { caption: "Draft words" } },
@@ -52,7 +52,7 @@ test("other posts: Approved only, since the chosen point, newest approval first,
   ]);
   // All time reaches the old one; at most 8.
   assert.ok(pickOtherPosts(posts, copies, { caption: "Caption" }, null).some((p) => p.name === "Post old"));
-  const many = Array.from({ length: 12 }, (_, i) => post(`p${i}`, 4, `2026-10-${10 + i}`));
+  const many = Array.from({ length: 12 }, (_, i) => post(`p${i}`, 5, `2026-10-${10 + i}`));
   const manyCopies = many.map((p) => ({ creative_id: p.id, created_at: "2026-10-01", fields: { caption: "x" } }));
   assert.equal(pickOtherPosts(many, manyCopies, {}, null).length, 8);
 });
@@ -99,7 +99,7 @@ test("the prompt carries the other posts and the feedback, with what to do with 
     postName: "Gummy launch",
     concept: null,
     approachNotes: [],
-    formatLabel: "Instagram Feed",
+    formatLabel: "Instagram Post",
     formatDirection: null,
     agencyNotes: [],
     clientNotes: [],

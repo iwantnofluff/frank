@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { bandOf } from "@/lib/stage-labels";
+import { STAGE_COUNT } from "@/lib/stage-labels";
 
 export interface ProjectCreativeStats {
   total: number;
@@ -20,7 +21,7 @@ export interface ProjectCreativeStats {
   // an exception (changes_requested/rejected) still counts under whichever
   // stage 1-3 it's sitting at, matching lib/stage-labels.ts's STAGE_TABLE
   // order exactly. Powers the client workspace table's 4 status columns.
-  byStage: [number, number, number, number, number];
+  byStage: [number, number, number, number, number, number];
 }
 
 // Per-project creative counts for the client workspace's project rows
@@ -59,7 +60,7 @@ export function useProjectCreativeStats(clientId: string) {
           feedbackToAction: 0,
           latestApprovedAt: null,
           latestActivityAt: null,
-          byStage: [0, 0, 0, 0, 0],
+          byStage: [0, 0, 0, 0, 0, 0],
         };
       }
       const projectIds = projects.map((p) => p.id);
@@ -76,7 +77,7 @@ export function useProjectCreativeStats(clientId: string) {
         const s = stats[c.project_id];
         if (!s) continue;
         s.total++;
-        if (c.stage >= 1 && c.stage <= 5) s.byStage[c.stage - 1]++;
+        if (c.stage >= 1 && c.stage <= STAGE_COUNT) s.byStage[c.stage - 1]++;
         const band = bandOf(c.stage, c.exception);
         if (band === "approved") {
           s.done++;

@@ -1,3 +1,4 @@
+import { STAGE } from "./stage-labels.ts";
 // Whether a post has gone live: Live (phase99), or Approved and its date
 // has passed (direct instruction, before Live was a stage). That's its Publish Date, or a
 // continuous project's Live Date (from the start of that day). The same
@@ -23,9 +24,9 @@ export function isLive(
   post: { stage: number; scheduled_at: string | null; due_on?: string | null },
   now: number = Date.now(),
 ): boolean {
-  if (post.stage < 4) return false;
+  if (post.stage < STAGE.approved) return false;
   // Live (phase99): found on Instagram or set by hand, whatever its date.
-  if (post.stage === 5) return true;
+  if (post.stage === STAGE.live) return true;
   const at = post.scheduled_at ?? (post.due_on ? `${post.due_on}T00:00:00` : null);
   return !!at && new Date(at).getTime() <= now;
 }

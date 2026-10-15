@@ -18,7 +18,9 @@ async function swapFormat(page: Page, from: string, to: string) {
   await page.click("#nbFmt");
   const pop = page.getByRole("dialog", { name: "Formats" });
   await pop.getByRole("checkbox", { name: to, exact: true }).click();
-  await pop.getByRole("checkbox", { name: from, exact: true }).click();
+  // A new post starts with nothing ticked, so "from" may not be.
+  const old = pop.getByRole("checkbox", { name: from, exact: true });
+  if ((await old.getAttribute("aria-checked")) === "true") await old.click();
   await page.keyboard.press("Escape");
 }
 
@@ -38,7 +40,7 @@ test("New Brief shows a repeat-issue warning scoped to the format being chosen",
       project_id: frank.projectId,
       name: "Second Story Creative",
       format: "ig_story",
-      stage: 3,
+      stage: 4,
       scheduled_at: "2027-03-16T14:00:00.000Z",
       created_by: staffUser!.id,
     })
@@ -72,14 +74,14 @@ test("New Brief shows a repeat-issue warning scoped to the format being chosen",
   await page.click('button:has-text("New Post")');
   await page.waitForSelector("#nbFmt");
 
-  await swapFormat(page, "Instagram Feed", "Instagram Story");
+  await swapFormat(page, "Instagram Post", "Instagram Story");
   const warning = page.locator(".note", { hasText: "Craft and Layout" });
   await expect(warning).toBeVisible();
   await expect(warning).toContainText("2");
   await expect(warning).toContainText("Instagram Story");
 
   // A format with no matching history shows nothing.
-  await swapFormat(page, "Instagram Story", "Instagram Feed");
+  await swapFormat(page, "Instagram Story", "Instagram Post");
   await expect(page.locator(".note", { hasText: "Craft and Layout" })).toHaveCount(0);
 });
 
@@ -102,7 +104,7 @@ test("New Brief shows no warning for a client with fewer than two matching issue
   await page.waitForSelector('button:has-text("New Post")');
   await page.click('button:has-text("New Post")');
   await page.waitForSelector("#nbFmt");
-  await swapFormat(page, "Instagram Feed", "Instagram Story");
+  await swapFormat(page, "Instagram Post", "Instagram Story");
   await page.waitForTimeout(800);
   await expect(page.locator(".note", { hasText: "Craft and Layout" })).toHaveCount(0);
 });

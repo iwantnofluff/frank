@@ -72,8 +72,6 @@
   --stage-approved: #4caf50;
   --stage-approved-ink: #2e7d32;
   --stage-approved-bg: #4caf5026;
-  --stage-live: #2e7d32;
-  --stage-live-ink: #1b5e20;
 }
 
 * {
@@ -1386,6 +1384,19 @@ body.lightrail .search input::placeholder {
   text-overflow: ellipsis;
   cursor: pointer;
 }
+/* The table's Creative column: the latest file's name on one line, a
+   carousel's count after it. Hovering it shows the post's preview. */
+.artname {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+  font-size: var(--d-fs);
+  white-space: nowrap;
+}
+.artname-f {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* Calendar table — both scheduled- and continuous-delivery projects'
    month/week view (ProjectCalendarTable.tsx / ContinuousCalendarTable.tsx),
@@ -2568,7 +2579,7 @@ body.lightrail .search input::placeholder {
   overflow: hidden;
 }
 /* The references under a concept, each on its own line and clickable
-   (phase58; the column is Concept and Reference in both tables). */
+   (phase58; the column is Concept & Reference in both tables). */
 .cc-ref {
   display: block;
   margin-top: 3px;
@@ -3166,7 +3177,8 @@ a.fd-ref:hover {
 }
 .stagesw button.sw-live[aria-pressed="true"],
 .stagesw button.sw-live:not([aria-pressed="true"]):hover {
-  background: var(--stage-live);
+  /* Approved's green (direct instruction). */
+  background: var(--stage-approved);
 }
 .stagesw button:not([aria-pressed="true"]):hover {
   opacity: 0.8;
@@ -6390,6 +6402,19 @@ button.avatar {
   font-size: 12.2px;
   color: var(--muted);
 }
+/* The formats' Done (direct instruction), across the foot. */
+.fmtpop-f {
+  padding: 8px;
+  border-top: 1px solid var(--line);
+}
+.fmtpop-f .btn {
+  width: 100%;
+  justify-content: center;
+}
+/* Nothing chosen yet, on a new post. */
+.fmtpick-none {
+  color: var(--muted);
+}
 .fmtpop-cat {
   padding: 8px 8px 3px;
   font-size: 11.2px;
@@ -7436,9 +7461,10 @@ button.avatar {
     gap: 8px;
   }
 }
-/* The five stages in a row (Live, phase99), the window one column now. */
+/* The six stages in a row (Live, phase99; In Production, phase102), the
+   window one column now. */
 .stats.profstats {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   margin: 0 0 10px;
 }
 .profstats .stat {
@@ -10812,4 +10838,11 @@ a.pj-post:hover {
   .pj-reply {
     margin-left: 18px;
   }
+}
+
+/* An empty table cell whose content the post's formats call for
+   (direct instruction): Pending, in Concept's red. */
+.tpending {
+  color: var(--stage-concept-ink);
+  font-size: var(--d-fs);
 }

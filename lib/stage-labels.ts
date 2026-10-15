@@ -18,13 +18,28 @@ export type Band = "internal" | "review" | "approved" | Exception;
 // with the --stage-* colours in app/globals.css.
 const STAGE_TABLE: { label: string; band: Band; color: string; ink: string }[] = [
   { label: "Concept", band: "internal", color: "#E35336", ink: "#B8371E" }, // 1
-  { label: "Internal Review", band: "internal", color: "#F4A460", ink: "#A3570F" }, // 2
-  { label: "Client Review", band: "review", color: "#F4A460", ink: "#A3570F" }, // 3
-  { label: "Approved", band: "approved", color: "#4CAF50", ink: "#2E7D32" }, // 4
-  // Live (phase99, direct instruction): a darker green, found on Instagram
-  // by Frank or set by hand. In the approved band: done, and further.
-  { label: "Live", band: "approved", color: "#2E7D32", ink: "#1B5E20" }, // 5
+  // In Production (phase102): its Concept is written, its content not yet
+  // saved. Concept's red (direct instruction).
+  { label: "In Production", band: "internal", color: "#E35336", ink: "#B8371E" }, // 2
+  { label: "Internal Review", band: "internal", color: "#F4A460", ink: "#A3570F" }, // 3
+  { label: "Client Review", band: "review", color: "#F4A460", ink: "#A3570F" }, // 4
+  { label: "Approved", band: "approved", color: "#4CAF50", ink: "#2E7D32" }, // 5
+  // Live (phase99): found on Instagram by Frank or set by hand. In the
+  // approved band, and Approved's green (direct instruction).
+  { label: "Live", band: "approved", color: "#4CAF50", ink: "#2E7D32" }, // 6
 ];
+
+// The stages by name (phase102 renumbered them, putting In Production in
+// at 2): compare against these, never a bare number.
+export const STAGE = {
+  concept: 1,
+  production: 2,
+  internal: 3,
+  review: 4,
+  approved: 5,
+  live: 6,
+} as const;
+export const STAGE_COUNT = STAGE_TABLE.length;
 
 const EXCEPTION_TABLE: Record<Exception, { label: string; color: string; ink: string }> = {
   changes_requested: { label: "Changes Requested", color: "#FF8A00", ink: "#B35F00" },
@@ -42,11 +57,11 @@ export function stageLabel(stage: number, _delivery: "scheduled" | "continuous")
 
 // Matches the prototype's bandOf(e) = e.exc || STAGES[e.stage][2] exactly:
 // an exception always wins over the stage, unconditionally — this function
-// doesn't enforce the DB's `exception is null or stage between 1 and 3`
+// doesn't enforce the DB's `exception is null or stage between 1 and 4`
 // constraint (that's the database's job, not a pure function's), it just
 // computes the band for whatever (stage, exception) it's given, the same
 // way the prototype's own bandOf() never checks that boundary either.
-// A stage outside 1-4 falls back to STAGE_TABLE[0] ("internal") — the same
+// A stage outside 1-6 falls back to STAGE_TABLE[0] ("internal") — the same
 // fallback shape as the prototype's `STAGES[e.stage]||STAGES[1]`.
 export function bandOf(stage: number, exception: Exception | null): Band {
   if (exception) return exception;

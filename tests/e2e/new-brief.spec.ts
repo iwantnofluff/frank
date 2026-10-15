@@ -1,4 +1,4 @@
-import { test, expect, goToMonth } from "./fixtures";
+import { test, expect, goToMonth, chooseFormat } from "./fixtures";
 
 // This is the first code path in the app that creates a creatives row —
 // verified empirically against real staff/client sessions before the form
@@ -13,6 +13,7 @@ test("creates a scheduled creative end to end", async ({ page, frank }) => {
   await page.click('button:has-text("New Post")');
   await page.fill("#nbName", "New Brief E2E — Scheduled");
   await page.fill("#nbDate", "2027-04-01");
+  await chooseFormat(page);
   await page.click('button:has-text("Create Post")');
 
   // CreativeModal stays open on success rather than closing — creating the
@@ -39,6 +40,7 @@ test("creates a continuous creative end to end", async ({ page, frank }) => {
   // (like ProjectCalendarTable's own scheduled_at) only shows a creative
   // that has one — fill it so this brief actually appears afterward.
   await page.fill("#nbDue", "2027-04-01");
+  await chooseFormat(page, "A+ Content Module");
   await page.click('button:has-text("Create Post")');
 
   await expect(page.getByRole("tab", { name: "Content" })).toBeEnabled();
@@ -54,6 +56,12 @@ test("missing publish date is caught before submit, not by the DB trigger", asyn
 
   await page.click('button:has-text("New Post")');
   await page.fill("#nbName", "Should Not Be Created");
+  // No format yet (a new post starts with none): asked for one first.
+  await expect(page.locator("#nbFmt")).toHaveText("Choose formats");
+  await page.click('button:has-text("Create Post")');
+  await expect(page.locator(".autherr", { hasText: "Choose at least one format." })).toBeVisible();
+  await chooseFormat(page);
+  await expect(page.locator(".autherr", { hasText: "Choose at least one format." })).toHaveCount(0);
   await page.click('button:has-text("Create Post")');
 
   // Field-level error, modal still open — the scheduled_at trigger never
@@ -84,20 +92,24 @@ test("a post can have several formats, with all their copy fields, and closes wi
   await page.click('button:has-text("New Post")');
   await page.fill("#nbName", "Multi Format E2E");
   await page.fill("#nbDate", "2027-04-01");
-  // Instagram Feed is ticked by default; add a format from another content type.
-  await expect(page.locator("#nbFmt")).toHaveText("Instagram Feed");
+  // Nothing ticked to start (direct instruction); formats from two content
+  // types, the first ticked the main one.
+  await expect(page.locator("#nbFmt")).toHaveText("Choose formats");
   await page.click("#nbFmt");
   const pop = page.getByRole("dialog", { name: "Formats" });
   await pop.getByRole("checkbox", { name: "Meta Feed Ad" }).click();
-  // The last one left can't be unticked.
-  await pop.getByRole("checkbox", { name: "Instagram Feed" }).click();
+  await pop.getByRole("checkbox", { name: "Instagram Post" }).click();
+  // On a new post the last one can be unticked too.
   await pop.getByRole("checkbox", { name: "Meta Feed Ad" }).click();
-  await expect(pop.getByRole("checkbox", { name: "Meta Feed Ad" })).toHaveAttribute("aria-checked", "true");
-  await pop.getByRole("checkbox", { name: "Instagram Feed" }).click();
-  await page.keyboard.press("Escape");
+  await pop.getByRole("checkbox", { name: "Instagram Post" }).click();
+  await expect(pop.getByRole("checkbox", { name: "Meta Feed Ad" })).toHaveAttribute("aria-checked", "false");
+  await pop.getByRole("checkbox", { name: "Meta Feed Ad" }).click();
+  await pop.getByRole("checkbox", { name: "Instagram Post" }).click();
+  // Done closes it (direct instruction).
+  await pop.getByRole("button", { name: "Done" }).click();
   await expect(pop).toHaveCount(0);
   await expect(page.locator(".scrim")).toHaveCount(1);
-  await expect(page.locator("#nbFmt")).toHaveText("Meta Feed Ad + Instagram Feed");
+  await expect(page.locator("#nbFmt")).toHaveText("Meta Feed Ad + Instagram Post");
   await page.click('button:has-text("Create Post")');
   await expect(page.getByRole("tab", { name: "Content" })).toBeEnabled();
 
@@ -119,7 +131,7 @@ test("a post can have several formats, with all their copy fields, and closes wi
   await page.getByRole("button", { name: "Save and Close" }).click();
   await expect(page.locator(".scrim")).toHaveCount(0);
 
-  await expect(page.locator("tr", { hasText: "Multi Format E2E" })).toContainText("Meta Feed Ad + Instagram Feed");
+  await expect(page.locator("tr", { hasText: "Multi Format E2E" })).toContainText("Meta Feed Ad + Instagram Post");
 });
 
 test("a post takes several references, each a link in the table and on its Brief", async ({ page, frank }) => {
@@ -139,6 +151,7 @@ test("a post takes several references, each a link in the table and on its Brief
   // A blank third one is dropped on save.
   await page.getByRole("button", { name: "+ Add Reference" }).click();
   await expect(page.getByRole("link", { name: "Open reference 1" })).toHaveAttribute("href", "https://example.com/first");
+  await chooseFormat(page);
   await page.click('button:has-text("Create Post")');
   await expect(page.getByRole("tab", { name: "Content" })).toBeEnabled();
   const { data: c } = await admin

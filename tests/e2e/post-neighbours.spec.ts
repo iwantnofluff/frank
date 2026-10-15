@@ -13,7 +13,7 @@ test("a post's page names the previous and next post beside the phone, and opens
   const day = 86_400_000;
   const own = Date.parse((await admin.from("creatives").select("scheduled_at").eq("id", frank.creativeId).single()).data!.scheduled_at as string);
   const at = async (name: string, offsetDays: number, archived = false) => {
-    const id = await frank.createCreativeAtStage(2, name);
+    const id = await frank.createCreativeAtStage(3, name);
     const { error } = await admin
       .from("creatives")
       .update({ scheduled_at: new Date(own + offsetDays * day).toISOString(), archived_at: archived ? new Date().toISOString() : null })
@@ -32,13 +32,13 @@ test("a post's page names the previous and next post beside the phone, and opens
   const prev = page.locator(".pnav.prev");
   const next = page.locator(".pnav.next");
   await expect(prev.locator("b")).toHaveText("Two Days Before");
-  await expect(prev.locator(".pnav-fmt")).toHaveText("Instagram Feed");
+  await expect(prev.locator(".pnav-fmt")).toHaveText("Instagram Post");
   await expect(next.locator("b")).toHaveText("Three Days After");
   const expected = new Date(own + 3 * day).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "2-digit" });
   await expect(next.locator(".pnav-date")).toHaveText(expected);
   // The current post's date, title and format above the phone.
   await expect(page.locator(".pnav-cur b")).toHaveText("E2E Test Creative");
-  await expect(page.locator(".pnav-cur .pnav-fmt")).toHaveText("Instagram Feed");
+  await expect(page.locator(".pnav-cur .pnav-fmt")).toHaveText("Instagram Post");
 
   // The arrow steps to the next post...
   await next.locator(".pnav-arrow").click();

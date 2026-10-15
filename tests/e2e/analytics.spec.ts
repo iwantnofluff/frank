@@ -23,20 +23,20 @@ async function seed(frank: Frank) {
   // Approved after Concept 2 days → Internal 1 → Client 3 (changes asked once).
   const a = await mk("Analytics Approved", 1, 2);
   // In Client Review, live in 3 days: at risk.
-  const b = await mk("Analytics At Risk", 3, -3);
+  const b = await mk("Analytics At Risk", 4, -3);
   const moves: [string, number | null, number, string | null, number][] = [
     [a, null, 1, null, 10],
-    [a, 1, 2, null, 8],
-    [a, 2, 3, null, 7],
-    [a, 3, 3, "changes_requested", 5],
-    [a, 3, 4, null, 4],
+    [a, 1, 3, null, 8],
+    [a, 3, 4, null, 7],
+    [a, 4, 4, "changes_requested", 5],
+    [a, 4, 5, null, 4],
   ];
   // Replace the trigger's own rows for A with a dated history.
   await admin.from("creative_stage_events").delete().eq("creative_id", a);
   await admin.from("creative_stage_events").insert(
     moves.map(([id, from, to, exception, ago]) => ({ agency_id: frank.agencyId, creative_id: id, from_stage: from, to_stage: to, exception, at: daysAgo(ago) })),
   );
-  await admin.from("creatives").update({ stage: 4, approved_at: daysAgo(4), created_at: daysAgo(10) }).eq("id", a);
+  await admin.from("creatives").update({ stage: 5, approved_at: daysAgo(4), created_at: daysAgo(10) }).eq("id", a);
   // Two artwork versions and one copy version for A.
   await admin.from("creative_versions").insert([
     { creative_id: a, version_no: 1, created_by: staffId },
@@ -111,7 +111,7 @@ test("the stage log is the agency's Owners' and Admins' only", async ({ frank })
   await staff.auth.signInWithPassword({ email: frank.staffEmail, password: frank.staffPassword });
   const { data: wrote } = await staff
     .from("creative_stage_events")
-    .insert({ agency_id: frank.agencyId, creative_id: frank.creativeId, to_stage: 4 })
+    .insert({ agency_id: frank.agencyId, creative_id: frank.creativeId, to_stage: 5 })
     .select("id");
   expect(wrote ?? []).toHaveLength(0);
 });

@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { CopyVersionHistoryPopover } from "@/components/project/CopyVersionHistoryPopover";
 import { CopyCaptionChip } from "@/components/project/CopyCaptionChip";
 import { ClampText } from "@/components/project/ClampText";
+import { MissingContent } from "@/components/project/MissingContent";
 
 // A table cell's latest copy version (the Copy column), with its
 // earlier versions on hover: the scheduled table's cell, for the
@@ -15,6 +16,7 @@ export function VersionedTextCell({
   rows,
   expanded,
   onToggle,
+  expected = false,
 }: {
   label: string;
   // node: the same, formatted (the Copy column's labels), when there is one.
@@ -22,6 +24,8 @@ export function VersionedTextCell({
   // Its row's Read more (ClampText): the table holds which row is open.
   expanded: boolean;
   onToggle: () => void;
+  // With no version yet: Pending (the formats call for it) or a dash.
+  expected?: boolean;
 }) {
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -40,7 +44,7 @@ export function VersionedTextCell({
     if (timeout.current) clearTimeout(timeout.current);
   }
 
-  if (!latest) return <span className="tdim">—</span>;
+  if (!latest) return <MissingContent expected={expected} />;
   return (
     <>
       <span className="copyc">

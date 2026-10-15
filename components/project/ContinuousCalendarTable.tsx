@@ -22,13 +22,15 @@ import { ColumnsPopover, type ToggleableColumn } from "@/components/project/Colu
 import { CreativePreviewPopover } from "@/components/project/CreativePreviewPopover";
 import { SaveViewModal } from "@/components/project/SaveViewModal";
 import { PermanentDeleteConfirm } from "@/components/project/PermanentDeleteConfirm";
-import { bandOf, stageLabel, stageColor, exceptionLabel } from "@/lib/stage-labels";
+import { bandOf, stageLabel, stageColor, exceptionLabel, STAGE_COUNT } from "@/lib/stage-labels";
 import { errorMessage } from "@/lib/errors";
 import { getMonthWeeks, getWeekDays, isoWeekNumber, dateKey } from "@/lib/calendar-weeks";
 import { useMyAgency } from "@/hooks/use-my-agency";
+import { useArtworkByCreative } from "@/hooks/use-artwork-by-creative";
 import { useCopyVersionsByCreative } from "@/hooks/use-copy-versions-by-creative";
 import { VersionedTextCell } from "@/components/project/VersionedTextCell";
-import { copySummary, copySummaryParts, formatsLabel, postFormats } from "@/lib/formats";
+import { copySummary, copySummaryParts, expectedContent, formatsLabel, postFormats } from "@/lib/formats";
+import { MissingContent } from "@/components/project/MissingContent";
 import { CopySummaryText } from "@/components/project/CopySummaryText";
 import { CopyCaptionChip } from "@/components/project/CopyCaptionChip";
 import { DraftEditBar, DraftField, useDraftPost } from "@/components/project/draft-post";
@@ -79,29 +81,32 @@ const CHECKBOX_COL_WIDTH = 36;
 // also in the window; it used to show the WIIFM direction, which now has
 // its own column.
 export const TOGGLABLE_COLUMNS = [
-  { key: "creative", label: "Post Name", sub: "Concept title", width: 196 },
+  { key: "creative", label: "Post Name", sub: "Post identifier", width: 196 },
   { key: "placement", label: "Destination", sub: "ASIN, URL or location", width: 140 },
   { key: "funnel", label: "Funnel", sub: "Funnel stage", width: 150 },
   { key: "tg", label: "TG", sub: "Target audience", width: 130 },
-  { key: "type", label: "Format", sub: "Where it goes out", width: 141 },
-  { key: "slides", label: "Slides", sub: "Carousels", width: 70 },
+  { key: "type", label: "Format", sub: "Platform and type", width: 141 },
+  { key: "slides", label: "Slides", sub: "#", width: 70 },
   // Renamed Team, then wider twice (direct instruction), for a role after
   // the name. Format, Slides and Status are as wide as their longest
   // words, as on the scheduled table.
   { key: "lead", label: "Team", sub: "Person and role", width: 154 },
   { key: "status", label: "Status", sub: "Workflow state", width: 132 },
-  { key: "conceptRef", label: "Concept and Reference", sub: "Visual brief", width: 260 },
+  { key: "conceptRef", label: "Concept & Reference", sub: "Directions for creative and copy", width: 260 },
   { key: "finalCreative", label: "Final Creative", sub: "Approved asset", width: 200 },
   // A video post's VO script (phase88), before its Text on Image.
   { key: "voiceover", label: "VO", sub: "Voiceover script", width: 220 },
-  { key: "imageOnText", label: "Text on Image", sub: "On the artwork", width: 220 },
-  { key: "copy", label: "Copy", sub: "Latest version", width: 330 },
+  // The latest creative version's file name, with its preview on hover
+  // (direct instruction; the preview moved here off Post Name).
+  { key: "artwork", label: "Creative", sub: "Latest post visual", width: 200 },
+  { key: "imageOnText", label: "Text on Image", sub: "Image text checked by Frank", width: 220 },
+  { key: "copy", label: "Copy", sub: "Post copy checked by Frank", width: 330 },
   // The latest copy's Alt Text, its own column after Copy (direct
   // instruction).
   { key: "altText", label: "Alt Text", sub: "For screen readers", width: 220 },
   { key: "notes", label: "Notes for Designer", sub: "Design feedback", width: 220 },
   // As wide as Copy (direct instruction), now that it's a few short points.
-  { key: "approach", label: "WIIFM Direction", sub: "What the reader gets", width: 330 },
+  { key: "approach", label: "WIIFM Direction", sub: "WIIFM of latest copy", width: 330 },
   { key: "principles", label: "Principles", sub: "Psychological angle", width: 180 },
 ] as const;
 
@@ -493,6 +498,7 @@ export function ContinuousCalendarTable({
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const toggleRow = (id: string) => setExpandedRow((r) => (r === id ? null : id));
   const { data: copyVersionsByCreative } = useCopyVersionsByCreative(creativeIds);
+  const { data: artworkByCreative } = useArtworkByCreative(creativeIds);
 
   const filtered = useMemo(() => {
     return creatives
@@ -1034,6 +1040,7 @@ export function ContinuousCalendarTable({
                           {dt.getDate()} {MONTH_ABBR[dt.getMonth()]} {String(dt.getFullYear()).slice(2)}
                         </td>
                         {visibleOrderedKeys.map((key) => {
+                          const exp = expectedContent(postFormats(c));
                           switch (key) {
                             case "creative":
                               return (
@@ -1045,8 +1052,6 @@ export function ContinuousCalendarTable({
                                       e.stopPropagation();
                                       router.push(`/creatives/${c.id}`);
                                     }}
-                                    onMouseEnter={(e) => handleEnter(c, e.currentTarget)}
-                                    onMouseLeave={scheduleHide}
                                   >
                                     {c.name}
                                   </button>
@@ -1089,7 +1094,7 @@ export function ContinuousCalendarTable({
                             case "slides":
                               return (
                                 <td key={key}>
-                                  {c.slide_count ? c.slide_count : <span className="tdim">—</span>}
+                                  {c.slide_count ? c.slide_count : <MissingContent expected={exp.slides} />}
                                 </td>
                               );
                             case "lead":
@@ -1107,7 +1112,7 @@ export function ContinuousCalendarTable({
                                       ))}
                                     </span>
                                   ) : (
-                                    <span className="tdim">—</span>
+                                    <MissingContent expected={true} />
                                   )}
                                 </td>
                               );
@@ -1135,7 +1140,7 @@ export function ContinuousCalendarTable({
                                       <ReferenceLinks urls={c.reference_urls ?? []} preview />
                                     </span>
                                   ) : (
-                                    <span className="tdim">—</span>
+                                    <MissingContent expected={true} />
                                   )}
                                 </td>
                               );
@@ -1162,7 +1167,27 @@ export function ContinuousCalendarTable({
                                       </ClampText>
                                     </span>
                                   ) : (
-                                    <span className="tdim">—</span>
+                                    <MissingContent expected={exp.voiceover} />
+                                  )}
+                                </td>
+                              );
+                            }
+                            case "artwork": {
+                              // The latest version's file names; a carousel's first, then a count.
+                              const names = artworkByCreative?.[c.id] ?? [];
+                              return (
+                                <td
+                                  key={key}
+                                  onMouseEnter={names.length ? (e) => handleEnter(c, e.currentTarget) : undefined}
+                                  onMouseLeave={names.length ? scheduleHide : undefined}
+                                >
+                                  {names.length ? (
+                                    <span className="artname">
+                                      <span className="artname-f">{names[0]}</span>
+                                      {names.length > 1 && <span className="tdim">+{names.length - 1}</span>}
+                                    </span>
+                                  ) : (
+                                    <MissingContent expected={!c.artwork_removed_at} />
                                   )}
                                 </td>
                               );
@@ -1177,7 +1202,7 @@ export function ContinuousCalendarTable({
                                       <ClampText expanded={expandedRow === c.id} onToggle={() => toggleRow(c.id)}>{lines.join("\n")}</ClampText>
                                     </span>
                                   ) : (
-                                    <span className="tdim">—</span>
+                                    <MissingContent expected={true} />
                                   )}
                                 </td>
                               );
@@ -1199,7 +1224,7 @@ export function ContinuousCalendarTable({
                                       </ClampText>
                                     </span>
                                   ) : (
-                                    <span className="tdim">—</span>
+                                    <MissingContent expected={exp.alt} />
                                   )}
                                 </td>
                               );
@@ -1218,6 +1243,7 @@ export function ContinuousCalendarTable({
                                   <VersionedTextCell
                                     label="Copy"
                                     rows={rows}
+                                    expected={exp.copy}
                                     expanded={expandedRow === c.id}
                                     onToggle={() => toggleRow(c.id)}
                                   />
@@ -1255,7 +1281,7 @@ export function ContinuousCalendarTable({
                                       </ClampText>
                                     </span>
                                   ) : (
-                                    <span className="tdim">—</span>
+                                    <MissingContent expected={true} />
                                   )}
                                 </td>
                               );
@@ -1297,7 +1323,7 @@ export function ContinuousCalendarTable({
       )}
 
       <div className="callegend">
-        {Array.from({ length: 5 }, (_, i) => i + 1).map((stage) => (
+        {Array.from({ length: STAGE_COUNT }, (_, i) => i + 1).map((stage) => (
           <span key={stage}>
             <i style={{ background: stageColor(stage, null) }} />
             {stage} {stageLabel(stage, "continuous")}

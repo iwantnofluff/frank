@@ -51,11 +51,11 @@ export const FORMAT_CATEGORIES = [
 
 export const FORMATS: FormatDefinition[] = [
   // Social — organic
-  { id: "ig_feed", category: "Social — organic", label: "Instagram Feed", aspectRatio: "4:5", copyFields: ["caption", "alt"] },
+  { id: "ig_feed", category: "Social — organic", label: "Instagram Post", aspectRatio: "4:5", copyFields: ["caption", "alt"] },
   { id: "ig_carousel", category: "Social — organic", label: "Instagram Carousel", aspectRatio: "4:5", copyFields: ["caption", "alt"] },
   { id: "ig_reel", category: "Social — organic", label: "Instagram Reel", aspectRatio: "9:16", copyFields: ["caption", "hook"] },
   { id: "ig_story", category: "Social — organic", label: "Instagram Story", aspectRatio: "9:16", copyFields: [] },
-  { id: "fb_feed", category: "Social — organic", label: "Facebook Feed Post", aspectRatio: "1.91:1", copyFields: ["caption"] },
+  { id: "fb_feed", category: "Social — organic", label: "Facebook Post", aspectRatio: "1.91:1", copyFields: ["caption"] },
   { id: "fb_story", category: "Social — organic", label: "Facebook Story", aspectRatio: "9:16", copyFields: [] },
   { id: "li_image", category: "Social — organic", label: "LinkedIn Single Image", aspectRatio: "1.91:1", copyFields: ["caption"] },
   { id: "li_doc", category: "Social — organic", label: "LinkedIn Carousel (Document)", aspectRatio: "1:1", copyFields: ["caption"] },
@@ -234,4 +234,14 @@ export function copySummaryParts(
 export function copySummary(fields: Record<string, string>, formatIds: string[]): string {
   const { caption, others } = copySummaryParts(fields, formatIds);
   return [caption, ...others.map((o) => `${o.label}: ${o.text}`)].filter(Boolean).join("\n\n");
+}
+
+// What a post in these formats is expected to have, for the project
+// table (direct instruction): a missing one reads Pending, in red; one the
+// formats don't take reads as a dash. Matches the New Post window: slides
+// for carousels and stories, VO for video, Copy and Alt Text where a
+// format has those fields.
+export function expectedContent(ids: string[]): { slides: boolean; voiceover: boolean; copy: boolean; alt: boolean } {
+  const fields = copyFieldsFor(ids);
+  return { slides: !!frameLimits(ids), voiceover: hasVideoFormat(ids), copy: fields.length > 0, alt: fields.includes("alt") };
 }

@@ -42,7 +42,7 @@ test("settings — edit a format direction inline", async ({ page, frank }) => {
   await page.goto("/settings/knowledge");
   await page.waitForSelector(".fd-cat");
 
-  const row = page.locator(".fd-row", { hasText: "Instagram Feed" });
+  const row = page.locator(".fd-row", { hasText: "Instagram Post" });
   await expect(row).toBeVisible();
   await expect(row.locator(".fd-m")).toContainText("no caption");
 
