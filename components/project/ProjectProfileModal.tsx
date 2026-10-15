@@ -21,10 +21,6 @@ import { useProjectRoles, useSetProjectRole } from "@/hooks/use-project-roles";
 import { useTeamMembers } from "@/hooks/use-team-members";
 import { ROLE_LABELS, seesAllClients } from "@/lib/roles";
 
-const DELIVERY_LABELS = {
-  scheduled: "Content Planner",
-  continuous: "Other Content",
-} as const;
 const STAGES = ["Concept", "In Production", "Internal Review", "Client Review", "Approved", "Live"];
 
 function formatDay(value: string | null) {
@@ -74,7 +70,6 @@ export function ProjectProfileModal({
   const isOwner = !!me && !me.client_id && (me.role === "owner" || me.role === "primary_owner");
   const [deleting, setDeleting] = useState(false);
   const [name, setName] = useState(project.name);
-  const [dueOn, setDueOn] = useState(project.due_on ?? "");
   const [description, setDescription] = useState(project.description ?? "");
   const [nameError, setNameError] = useState<string | null>(null);
 
@@ -87,8 +82,8 @@ export function ProjectProfileModal({
       clientId,
       name,
       // Type isn't changed here (direct instruction), so it isn't sent:
-      // a save never puts back what it was when the window opened.
-      due_on: dueOn || null,
+      // a save never puts back what it was when the window opened. Nor
+      // the Due Date, no longer shown here (direct instruction).
       description: description.trim() || null,
     });
     onClose();
@@ -98,9 +93,16 @@ export function ProjectProfileModal({
     <>
     <Modal
       hideCloseButton
-      // "Project Name Settings" (direct instruction).
-      title={`${project.name} Settings`}
-      ariaLabel={`${project.name} Settings`}
+      // "Client | Project Name Settings" (direct instruction), the rule
+      // as in the project's own title.
+      title={
+        <>
+          {clientName}
+          <span className="h1sep sm"> — </span>
+          {project.name} Settings
+        </>
+      }
+      ariaLabel={`${clientName} — ${project.name} Settings`}
       size="lg"
       onClose={onClose}
       footer={
@@ -155,14 +157,14 @@ export function ProjectProfileModal({
           <div className="msection-h">Details</div>
           <p className="msection-d">
             {isAdmin
-              ? "What this project is and when it’s due."
-              : "What this project is and when it’s due. Owners and Admins change these."}
+              ? "What this project is."
+              : "What this project is. Owners and Admins change these."}
           </p>
           {isAdmin ? (
             <>
-              {/* Project Name, Description, then Delivery and Due Date
-                  side by side (direct instruction). Type isn't changed
-                  here; it's chosen when a project is made. */}
+              {/* Project Name and Description (direct instruction: no
+                  Delivery or Due Date). Type isn't changed here; it's
+                  chosen when a project is made. */}
               <div className="field">
                 <label htmlFor="ppName">Project Name</label>
                 <input
@@ -188,20 +190,6 @@ export function ProjectProfileModal({
                   placeholder="What this project covers, and anything the team should know"
                 />
               </div>
-              <div className="frow">
-                <div className="field">
-                  <label>Delivery</label>
-                  <p className="profstatic" title="Fixed once a project is made">
-                    {DELIVERY_LABELS[project.delivery]}
-                  </p>
-                </div>
-                <div className="field">
-                  <label htmlFor="ppDue">
-                    Due Date <span className="hint">optional</span>
-                  </label>
-                  <input id="ppDue" type="date" value={dueOn} onChange={(e) => setDueOn(e.target.value)} />
-                </div>
-              </div>
               {updateProject.error && (
                 <p className="autherr">{errorMessage(updateProject.error, "Couldn't save the project")}</p>
               )}
@@ -210,10 +198,6 @@ export function ProjectProfileModal({
             <dl className="profdl">
               <dt>Description</dt>
               <dd className="profdesc">{project.description || "No description yet."}</dd>
-              <dt>Delivery</dt>
-              <dd>{DELIVERY_LABELS[project.delivery]}</dd>
-              <dt>Due Date</dt>
-              <dd>{project.due_on ? formatDay(`${project.due_on}T00:00`) : "None set"}</dd>
             </dl>
           )}
         </div>
@@ -232,7 +216,11 @@ export function ProjectProfileModal({
           <p className="profline">
             Latest approval: <b>{formatDay(stats?.latestApprovedAt ?? null)}</b>
           </p>
+        </div>
 
+        {/* Its own part, so its line above is spaced as Progress's is
+            (direct instruction). */}
+        <div>
           <ProjectPeople
             agencyId={agencyId}
             projectId={project.id}
@@ -297,7 +285,8 @@ function ProjectPeople({
   ]);
   const on = (people ?? []).filter((p) => p.projectIds.includes(projectId));
   const off = (people ?? []).filter((p) => !p.projectIds.includes(projectId));
-  const nameCell = (name: string, email: string, asset: string | null) => (
+  // Invited goes before the name, on its line (direct instruction).
+  const nameCell = (name: string, email: string, asset: string | null, invited = false) => (
     <div className="pt-name" role="cell">
       <PersonAvatar
         className="who"
@@ -307,7 +296,10 @@ function ProjectPeople({
         hasPhoto={!!asset}
       />
       <div className="pp-t">
-        <b>{name}</b>
+        <b>
+          {invited && <span className="tag grey">Invited</span>}
+          {name}
+        </b>
         <span>{email}</span>
       </div>
     </div>
@@ -374,7 +366,7 @@ function ProjectPeople({
         {shown &&
           on.map((p) => (
             <div className="pt-row" role="row" key={p.membershipId}>
-              {nameCell(p.name, p.email, p.avatarAssetId)}
+              {nameCell(p.name, p.email, p.avatarAssetId, !p.accepted)}
               <div className="pt-role" role="cell">
                 <PersonTypeMenu
                   person={p}
@@ -382,7 +374,6 @@ function ProjectPeople({
                   onSwitch={(to) => actions.switchType(p, to)}
                   extra={actions.inviteItems(p)}
                 />
-                {!p.accepted && <span className="tag grey">Invited</span>}
               </div>
               <div role="cell">{p.kind === "user" && projectRole(p.userId, p.name)}</div>
               <div className="pt-def" role="cell">

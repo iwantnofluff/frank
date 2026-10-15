@@ -13,6 +13,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.33.1",
+    date: "2026-10-15",
+    title: "A tidier project Settings",
+    changes: [
+      "A project's Settings window is titled with its client, then the project.",
+      "Delivery and Due Date are gone from it; Details is just the name and description.",
+      "Someone invited but not yet joined shows Invited before their name, on the same line.",
+      "Its sections are evenly spaced, with the same room around each dividing line.",
+    ],
+  },
+  {
     version: "1.33.0",
     date: "2026-10-15",
     title: "2. In Production",

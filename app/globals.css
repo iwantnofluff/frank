@@ -827,6 +827,11 @@ body.lightrail .search input::placeholder {
   font-size: 0;
   overflow: hidden;
 }
+/* The same rule in a window's title (a project's Settings). */
+.h1sep.sm {
+  height: 16px;
+  margin: 0 10px;
+}
 .sub {
   color: var(--muted);
   font-size: 14.2px;
@@ -7382,10 +7387,15 @@ button.avatar {
   grid-template-columns: minmax(0, 1fr);
   gap: 0;
 }
-.profgrid.single > :first-child {
-  padding-bottom: 20px;
+.profgrid.single > :not(:last-child) {
+  padding-bottom: 40px;
   margin-bottom: 4px;
   border-bottom: 1px solid var(--line);
+}
+/* The same space above every line (direct instruction: as above
+   Progress), whatever each part ends with. */
+.profgrid.single > :not(:last-child) > :last-child {
+  margin-bottom: 0;
 }
 /* People as a table (direct instruction): name, workspace role, project
    role, Post Default (who's on every new post's Team, phase101), and
@@ -7425,7 +7435,12 @@ button.avatar {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.pt-name .pp-t span {
+/* Invited, before the name on its line (direct instruction). */
+.pt-name .pp-t b .tag {
+  margin-right: 6px;
+  vertical-align: 1px;
+}
+.pt-name .pp-t > span {
   display: block;
   font-size: 12.7px;
   color: var(--muted);

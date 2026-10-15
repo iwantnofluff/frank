@@ -94,11 +94,14 @@ test("edit (name, type and details) and archive/unarchive a project from its pro
   const modal = page.getByRole("dialog", { name: "E2E Test Project" });
   // "Project Name Settings"; Type isn't changed here any more (direct
   // instruction), only chosen when a project is made.
-  await expect(modal.locator(".modal-h")).toContainText("E2E Test Project Settings");
+  // The client, a rule, then that (direct instruction); no Delivery or
+  // Due Date.
+  await expect(modal.locator(".modal-h")).toContainText("E2E Test Client — E2E Test Project Settings");
   await expect(modal.getByLabel("Type")).toHaveCount(0);
+  await expect(modal.getByLabel("Due Date")).toHaveCount(0);
+  await expect(modal.getByText("Delivery", { exact: true })).toHaveCount(0);
   await admin.from("projects").update({ type: "Paid Campaign" }).eq("id", frank.projectId);
   await modal.getByLabel("Project Name").fill("E2E Renamed Project");
-  await modal.getByLabel("Due Date").fill("2026-12-15");
   await modal.getByLabel("Description").fill("Festive season social");
   await modal.getByRole("button", { name: "Save" }).click();
   await expect(modal).toHaveCount(0);
@@ -111,7 +114,6 @@ test("edit (name, type and details) and archive/unarchive a project from its pro
 
   await openSettings();
   const renamed = page.getByRole("dialog", { name: "E2E Renamed Project" });
-  await expect(renamed.getByLabel("Due Date")).toHaveValue("2026-12-15");
   await expect(renamed.getByLabel("Description")).toHaveValue("Festive season social");
   await renamed.getByRole("button", { name: "Archive" }).click();
   await expect(renamed).toHaveCount(0);

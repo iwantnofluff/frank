@@ -138,7 +138,8 @@ test("an Owner takes a User off a project from its profile, and the User no long
     await up.getByRole("button", { name: "Settings", exact: true }).click();
     const theirs = up.getByRole("dialog", { name: /E2E Continuous Project/ });
     await expect(theirs).toContainText("Owners and Admins change these.");
-    await expect(theirs.locator(".profdl")).toContainText("Other Content");
+    // No Delivery or Due Date (direct instruction).
+    await expect(theirs.locator(".profdl")).not.toContainText("Other Content");
     await up.screenshot({ path: `${process.env.SHOT_DIR ?? "test-results"}/project-profile-user.png`, animations: "disabled" });
     await expect(theirs.getByRole("textbox")).toHaveCount(0);
     await expect(theirs.getByRole("button", { name: "Save" })).toHaveCount(0);
