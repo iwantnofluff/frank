@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 // see every project.
 export interface ClientPerson {
   membershipId: string;
+  userId: string;
   name: string;
   email: string;
   avatarAssetId: string | null;
@@ -35,7 +36,7 @@ export function useClientPeople(clientId: string, enabled: boolean) {
       const granted = (grants ?? []).map((g) => g.membership_id as string);
       let people = supabase
         .from("memberships")
-        .select("id, role, client_id, accepted_at, user:users!memberships_user_id_fkey(name, email, avatar_asset_id)")
+        .select("id, user_id, role, client_id, accepted_at, user:users!memberships_user_id_fkey(name, email, avatar_asset_id)")
         .is("removed_at", null);
       people = granted.length
         ? people.or(`client_id.eq.${clientId},and(client_id.is.null,role.eq.user,id.in.(${granted.join(",")}))`)
@@ -57,6 +58,7 @@ export function useClientPeople(clientId: string, enabled: boolean) {
 
       type Member = {
         id: string;
+        user_id: string;
         client_id: string | null;
         accepted_at: string | null;
         user: { name: string; email: string; avatar_asset_id: string | null } | null;
@@ -64,6 +66,7 @@ export function useClientPeople(clientId: string, enabled: boolean) {
       return (members as unknown as Member[])
         .map((m) => ({
           membershipId: m.id,
+          userId: m.user_id,
           name: m.user?.name || m.user?.email || "Someone",
           email: m.user?.email ?? "",
           avatarAssetId: m.user?.avatar_asset_id ?? null,

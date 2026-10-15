@@ -7,6 +7,8 @@ import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
 import { usePersonActions } from "@/components/team/PersonActions";
 import { useUpdateProject } from "@/hooks/use-update-project";
 import { useClientPeople, useSetProjectAccess } from "@/hooks/use-project-access";
+import { useProject } from "@/hooks/use-project";
+import { useSetPostTeamDefault } from "@/hooks/use-set-post-team-default";
 import { useAvatarUrls } from "@/hooks/use-avatar-urls";
 import type { ProjectListRow } from "@/hooks/use-projects";
 import type { ProjectCreativeStats } from "@/hooks/use-project-creative-stats";
@@ -293,6 +295,23 @@ function ProjectPeople({
   const leaders = (team ?? []).filter((m) => seesAllClients(m.role) && m.accepted_at && !m.removed_at && m.user);
   const setAccess = useSetProjectAccess();
   const actions = usePersonActions(agencyId, clientId);
+  // Ticked: on every new post's Team to start with (phase101, direct
+  // instruction). Owners and Admins choose; the team, not clients.
+  const { data: project } = useProject(projectId);
+  const defaults = project?.default_team_user_ids ?? [];
+  const setDefault = useSetPostTeamDefault(projectId);
+  const newPostsTick = (userId: string, name: string) => (
+    <label className="pp-def" title={`Add ${name} to new posts' Team`}>
+      <input
+        type="checkbox"
+        aria-label={`Add ${name} to new posts`}
+        checked={defaults.includes(userId)}
+        disabled={!canManage || setDefault.isPending || !project}
+        onChange={(e) => setDefault.mutate({ current: defaults, userId, on: e.target.checked })}
+      />
+      New posts
+    </label>
+  );
   const { data: photos } = useAvatarUrls([
     ...(people ?? []).map((p) => p.avatarAssetId),
     ...leaders.map((m) => m.user!.avatar_asset_id),
@@ -305,7 +324,7 @@ function ProjectPeople({
       <div className="msection-h">People</div>
       <p className="msection-d">
         {canManage
-          ? "Everyone on this project. Owners and Admins are on every project; add Users and Clients here. Changes apply straight away."
+          ? "Everyone on this project. Owners and Admins are on every project; add Users and Clients here. Tick New posts for whoever should be on every new post's Team. Changes apply straight away."
           : "Everyone on this project. Owners and Admins choose who's on it."}
       </p>
       {leaders.length > 0 && (
@@ -324,6 +343,7 @@ function ProjectPeople({
                 <span>{m.user!.email}</span>
               </div>
               <span className="tag blue">{ROLE_LABELS[m.role]}</span>
+              {newPostsTick(m.user_id, m.user!.name)}
               <span className="pp-all">Every project</span>
             </div>
           ))}
@@ -358,6 +378,7 @@ function ProjectPeople({
                   </div>
                   <span className="tag blue">{p.kind === "client" ? "Client" : "User"}</span>
                   {!p.accepted && <span className="tag grey">Invited</span>}
+                  {p.kind === "user" && newPostsTick(p.userId, p.name)}
                   <RowActionsMenu title={`Options for ${p.name}`} items={actions.itemsFor(p)} />
                   <button
                     type="button"

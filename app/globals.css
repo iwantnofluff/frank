@@ -7365,7 +7365,20 @@ button.avatar {
 .proflist.leaders {
   margin-bottom: 0;
 }
-.profperson .pp-all {
+.profperson /* Who's on a new post's Team to start with (phase101). */
+.pp-def {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.2px;
+  color: var(--muted);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.pp-def:has(input:disabled) {
+  cursor: default;
+}
+.pp-all {
   font-size: 12.2px;
   color: var(--muted);
   white-space: nowrap;

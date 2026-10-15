@@ -15,6 +15,8 @@ export interface ProjectRow {
   default_hidden_columns: string[];
   default_column_order: string[] | null;
   column_labels: Record<string, string>;
+  // Who's on a new post's Team to start with (phase101).
+  default_team_user_ids: string[];
   clients: { name: string } | null;
 }
 
@@ -25,7 +27,7 @@ export function useProject(projectId: string) {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("projects")
-        .select("id, client_id, name, delivery, type, due_on, archived_at, default_hidden_columns, default_column_order, column_labels, clients(name)")
+        .select("id, client_id, name, delivery, type, due_on, archived_at, default_hidden_columns, default_column_order, column_labels, default_team_user_ids, clients(name)")
         .eq("id", projectId)
         .single();
 

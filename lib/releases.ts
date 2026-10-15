@@ -15,8 +15,9 @@ export const RELEASES: Release[] = [
   {
     version: "1.31.0",
     date: "2026-10-15",
-    title: "A project's icons side by side",
+    title: "A project's default post team",
     changes: [
+      "In a project's settings, tick New posts beside anyone on the team (Owners, Admins and Users) to put them on every new post's Team. A new post starts with them, and its Team can still be changed.",
       "On a project's page, Discussion, Activity Log and Settings are now three icons side by side, in place of the … menu.",
     ],
   },

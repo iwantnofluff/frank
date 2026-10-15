@@ -15,6 +15,7 @@ import { useUpdateCreativeCx } from "@/hooks/use-update-creative-cx";
 import { FUNNEL_COLUMN } from "@/components/project/ContinuousCalendarTable";
 import { PostChangedError, useUpdateBrief, type BriefFields } from "@/hooks/use-update-brief";
 import { useTeamMembers } from "@/hooks/use-team-members";
+import { useProject } from "@/hooks/use-project";
 import { TeamPicker } from "@/components/ui/TeamPicker";
 import { useMyAgency } from "@/hooks/use-my-agency";
 import { useCustomColumns } from "@/hooks/use-custom-columns";
@@ -477,6 +478,17 @@ export function CreativeModal(props: CreativeModalProps) {
   // there's nothing to warn about changing.
   const { data: repeatIssue } = useRepeatIssueCount(isCreate ? clientId : undefined, isCreate ? format : undefined);
   const [teamUserIds, setTeamUserIds] = useState<string[]>(isCreate ? [] : (props.creative.team_user_ids ?? []));
+  // A new post's Team starts with whoever's ticked in the project's settings
+  // (phase101, direct instruction), once both are known and only if it
+  // hasn't been touched; anyone not yet joined or since removed is left out.
+  const { data: projectRow } = useProject(projectId);
+  const [teamPrefilled, setTeamPrefilled] = useState(!isCreate);
+  if (!teamPrefilled && projectRow && teamMembers) {
+    setTeamPrefilled(true);
+    const active = new Set(teamMembers.filter((m) => m.accepted_at && !m.removed_at).map((m) => m.user_id));
+    const defaults = (projectRow.default_team_user_ids ?? []).filter((id) => active.has(id));
+    if (defaults.length && teamUserIds.length === 0) setTeamUserIds(defaults);
+  }
   const [date, setDate] = useState(isCreate ? "" : isoToDateInput(props.creative.scheduled_at));
   const [time, setTime] = useState(isCreate ? "09:00" : isoToTimeInput(props.creative.scheduled_at));
   const [destination, setDestination] = useState(isCreate ? "" : (props.creative.destination ?? ""));
@@ -1366,7 +1378,10 @@ export function CreativeModal(props: CreativeModalProps) {
                 .filter((m) => (m.accepted_at && !m.removed_at) || teamUserIds.includes(m.user_id))
                 .map((m) => ({ id: m.user_id, name: m.user?.name ?? m.user?.email ?? "—" }))}
               value={teamUserIds}
-              onChange={setTeamUserIds}
+              onChange={(next) => {
+                setTeamPrefilled(true);
+                setTeamUserIds(next);
+              }}
             />
           </div>
 
