@@ -83,7 +83,6 @@ test("edit (name, type and details) and archive/unarchive a project from its pro
   // arrow on its row went).
   const openSettings = async () => {
     await page.goto(`/projects/${frank.projectId}`);
-    await page.getByRole("button", { name: "Project options" }).click();
     await page.getByRole("button", { name: "Settings", exact: true }).click();
   };
   await openSettings();

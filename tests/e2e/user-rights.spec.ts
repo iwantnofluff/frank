@@ -42,7 +42,6 @@ test("a User can't change Format Directions, Reference Material, or archive or m
 
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/projects/${frank.projectId}`);
-  await page.getByRole("button", { name: "Project options" }).click();
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   await expect(page.getByRole("button", { name: "Move to Client" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Archive", exact: true })).toHaveCount(0);

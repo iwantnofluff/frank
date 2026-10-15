@@ -10458,6 +10458,13 @@ button.hbrand-add:hover {
     background-color var(--dur-fast) var(--ease-std),
     color var(--dur-fast) var(--ease-std);
 }
+/* A line icon (Settings, the rail's, on a 24 grid): no fill, its stroke
+   weighed to match the filled ones beside it. */
+.pjlink.line svg {
+  fill: none;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+}
 .pjlink:hover {
   background: rgba(0, 0, 0, 0.09);
   color: var(--ink);

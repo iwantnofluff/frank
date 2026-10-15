@@ -66,12 +66,13 @@ test("the Activity Log shows what happened, by whom, from the record and the new
   await frank.loginAsStaff(page);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`${APP_URL}/projects/${frank.projectId}`);
-  // Discussion is a link beside the pills; the menu has the rest.
-  await expect(page.locator(".pjlink")).toHaveAccessibleName("Discussion");
-  await page.getByRole("button", { name: "Project options" }).click();
-  for (const item of ["Activity Log", "Settings"]) {
-    await expect(page.getByRole("button", { name: item, exact: true })).toBeVisible();
+  // Discussion, Activity Log and Settings: three icons, in that order, in
+  // place of the "…" menu (direct instruction).
+  await expect(page.locator(".pjlink")).toHaveCount(3);
+  for (const [i, item] of ["Discussion", "Activity Log", "Settings"].entries()) {
+    await expect(page.locator(".pjlink").nth(i)).toHaveAccessibleName(item);
   }
+  await expect(page.getByRole("button", { name: "Project options" })).toHaveCount(0);
   await page.getByRole("button", { name: "Activity Log", exact: true }).click();
   const panel = page.getByRole("complementary", { name: "Activity log" });
   await expect(panel).toBeVisible();
@@ -92,7 +93,6 @@ test("the Activity Log shows what happened, by whom, from the record and the new
   await expect(panel).toHaveCount(0);
 
   // Settings opens the project's settings.
-  await page.getByRole("button", { name: "Project options" }).click();
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "Renamed Project" })).toBeVisible();
 });
@@ -190,7 +190,7 @@ test("a client's people get no menu, and can't read the log or the discussion", 
   await frank.loginAsClient(page);
   await page.goto(`${APP_URL}/projects/${frank.projectId}`);
   await expect(page.locator(".h1")).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByRole("button", { name: "Project options" })).toHaveCount(0);
+  await expect(page.locator(".pjlink")).toHaveCount(0);
 });
 
 // A person's role on the project (phase85, direct instruction): set in
@@ -208,8 +208,6 @@ test("a role set in Project Settings shows after the name in the Team column", a
   const cell = page.locator("tr[data-row] .lead").first();
   await expect(cell).toHaveText("E2E Staff", { timeout: 20_000 });
   await expect(page.locator("th", { hasText: "Team" }).first()).toBeVisible();
-
-  await page.getByRole("button", { name: "Project options" }).click();
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   const role = page.getByLabel("E2E Staff's role");
   await role.fill("Designer");
@@ -220,7 +218,6 @@ test("a role set in Project Settings shows after the name in the Team column", a
   expect((await admin.from("project_roles").select("role").eq("project_id", frank.projectId)).data).toEqual([{ role: "Designer" }]);
 
   // Cleared: nothing shows.
-  await page.getByRole("button", { name: "Project options" }).click();
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByLabel("E2E Staff's role").fill("");
   await page.getByLabel("E2E Staff's role").press("Enter");

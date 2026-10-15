@@ -20,7 +20,6 @@ import { ProjectCalendarTable } from "@/components/project/ProjectCalendarTable"
 import { ContinuousCalendarTable } from "@/components/project/ContinuousCalendarTable";
 import { ProjectSettings } from "@/components/project/ProjectSettings";
 import { ProjectPanel, type ProjectPanelView } from "@/components/project/ProjectPanel";
-import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
 
 type ArchiveFilter = "active" | "archived";
 
@@ -167,35 +166,52 @@ export default function ProjectPage({
               </button>
             </div>
           )}
-          {/* Discussion after Archived: just the chat icon, in the "…"
-              menu's grey, the rail's icon size (direct instruction; the
-              icon supplied, "chatting" from the Noun Project). */}
+          {/* The project's own icons in a space of their own, separators
+              either side (direct instruction, in place of the "…" menu):
+              Discussion (the chat icon, "chatting" from the Noun Project),
+              Activity Log ("textleft", Noun Project 1879085, supplied) and
+              Settings (the rail's). The team only. */}
           {confirmedStaff && project && (
-            <button
-              type="button"
-              className="pjlink"
-              aria-label="Discussion"
-              title="Discussion"
-              onClick={() => setPanel("discussion")}
-            >
-              <svg viewBox="0 0 1200 1200" aria-hidden="true">
-                <path d="m1089.8 75.918h-979.59c-53.879 0-97.961 44.082-97.961 97.961v646.53c0 53.879 44.082 97.961 97.961 97.961h68.57v183.67c0 9.7969 4.8984 17.145 12.246 22.039 2.4492 2.4492 7.3477 2.4492 12.246 2.4492s9.7969-2.4492 14.695-4.8984l276.73-203.27h597.55c53.879 0 97.961-44.082 97.961-97.961l-0.003906-646.53c-2.4492-53.879-46.531-97.961-100.41-97.961zm48.98 742.04c0 26.938-22.039 48.98-48.98 48.98l-604.9-0.003906c-4.8984 0-9.7969 2.4492-14.695 4.8984l-244.9 181.22v-159.18c0-14.695-9.7969-24.488-24.488-24.488h-90.613c-26.938 0-48.98-22.039-48.98-48.98v-646.53c0-26.938 22.039-48.98 48.98-48.98h982.04c26.938 0 48.98 22.039 48.98 48.98v644.08z" />
-                <path d="m960 325.71h-720c-14.695 0-24.488 9.7969-24.488 24.488 0 14.695 9.7969 24.488 24.488 24.488h720c14.695 0 24.488-9.7969 24.488-24.488s-9.793-24.488-24.488-24.488z" />
-                <path d="m960 470.2h-720c-14.695 0-24.488 9.7969-24.488 24.488 0 14.695 9.7969 24.488 24.488 24.488h720c14.695 0 24.488-9.7969 24.488-24.488s-9.793-24.488-24.488-24.488z" />
-                <path d="m960 617.14h-720c-14.695 0-24.488 9.7969-24.488 24.488 0 14.695 9.7969 24.488 24.488 24.488h720c14.695 0 24.488-9.7969 24.488-24.488 0-14.695-9.793-24.488-24.488-24.488z" />
-              </svg>
-            </button>
-          )}
-          {/* The project's own menu (direct instruction, after monday.com's
-              board options): its Activity Log and Settings. The team only. */}
-          {confirmedStaff && project && (
-            <RowActionsMenu
-              title="Project options"
-              items={[
-                { label: "Activity Log", onClick: () => setPanel("activity") },
-                { label: "Settings", onClick: () => setSettingsOpen(true) },
-              ]}
-            />
+            <>
+              <span className="toolsep" />
+              <button
+                type="button"
+                className="pjlink"
+                aria-label="Discussion"
+                title="Discussion"
+                onClick={() => setPanel("discussion")}
+              >
+                <svg viewBox="0 0 1200 1200" aria-hidden="true">
+                  <path d="m1089.8 75.918h-979.59c-53.879 0-97.961 44.082-97.961 97.961v646.53c0 53.879 44.082 97.961 97.961 97.961h68.57v183.67c0 9.7969 4.8984 17.145 12.246 22.039 2.4492 2.4492 7.3477 2.4492 12.246 2.4492s9.7969-2.4492 14.695-4.8984l276.73-203.27h597.55c53.879 0 97.961-44.082 97.961-97.961l-0.003906-646.53c-2.4492-53.879-46.531-97.961-100.41-97.961zm48.98 742.04c0 26.938-22.039 48.98-48.98 48.98l-604.9-0.003906c-4.8984 0-9.7969 2.4492-14.695 4.8984l-244.9 181.22v-159.18c0-14.695-9.7969-24.488-24.488-24.488h-90.613c-26.938 0-48.98-22.039-48.98-48.98v-646.53c0-26.938 22.039-48.98 48.98-48.98h982.04c26.938 0 48.98 22.039 48.98 48.98v644.08z" />
+                  <path d="m960 325.71h-720c-14.695 0-24.488 9.7969-24.488 24.488 0 14.695 9.7969 24.488 24.488 24.488h720c14.695 0 24.488-9.7969 24.488-24.488s-9.793-24.488-24.488-24.488z" />
+                  <path d="m960 470.2h-720c-14.695 0-24.488 9.7969-24.488 24.488 0 14.695 9.7969 24.488 24.488 24.488h720c14.695 0 24.488-9.7969 24.488-24.488s-9.793-24.488-24.488-24.488z" />
+                  <path d="m960 617.14h-720c-14.695 0-24.488 9.7969-24.488 24.488 0 14.695 9.7969 24.488 24.488 24.488h720c14.695 0 24.488-9.7969 24.488-24.488 0-14.695-9.793-24.488-24.488-24.488z" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                className="pjlink"
+                aria-label="Activity Log"
+                title="Activity Log"
+                onClick={() => setPanel("activity")}
+              >
+                <svg viewBox="140 140 920 920" aria-hidden="true">
+                  <path d="m222.14 788.93v-53.98h755.71v53.98h-755.71zm0-377.86h701.73v53.977h-701.73zm0-161.94h539.8v53.98h-539.8zm593.78 377.86h-593.78v-53.98h593.78v53.98zm-107.96 323.88h-485.82v-53.977h485.82v53.977z" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                className="pjlink line"
+                aria-label="Settings"
+                title="Settings"
+                onClick={() => setSettingsOpen(true)}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-3-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H2.5a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.2-3l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V2.5a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 3 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1h.2a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
+                </svg>
+              </button>
+            </>
           )}
           {confirmedStaff && showNewBrief && <span className="toolsep" />}
           {showNewBrief && project && (

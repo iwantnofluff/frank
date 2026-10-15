@@ -139,7 +139,6 @@ test("a project moves to another client, leaving its folder behind and its share
   await expect(row).toContainText("Active");
   // The project's profile opens from its own page (direct instruction).
   await page.goto(`${APP_URL}/projects/${frank.projectId}`);
-  await page.getByRole("button", { name: "Project options" }).click();
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("dialog", { name: "E2E Test Project" }).getByRole("button", { name: "Move to Client" }).click();
   const modal = page.getByRole("dialog", { name: "Move E2E Test Project to another client" });

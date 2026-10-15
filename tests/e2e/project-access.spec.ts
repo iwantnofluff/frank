@@ -109,7 +109,6 @@ test("an Owner takes a User off a project from its profile, and the User no long
   await frank.loginAsStaff(page);
   // The profile opens from the project's own page (the row's arrow went).
   await page.goto(`${APP_URL}/projects/${frank.projectId}`);
-  await page.getByRole("button", { name: "Project options" }).click();
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   const modal = page.getByRole("dialog", { name: "E2E Test Project" });
   await expect(modal.locator(".profperson", { hasText: "Proj User" })).toBeVisible();
@@ -136,7 +135,6 @@ test("an Owner takes a User off a project from its profile, and the User no long
     await expect(up.locator(".crow", { hasText: "E2E Test Project" })).toHaveCount(0);
     // A User sees a profile read-only (phase47): no fields, no Save, no people.
     await up.goto(`${APP_URL}/projects/${second}`);
-    await up.getByRole("button", { name: "Project options" }).click();
     await up.getByRole("button", { name: "Settings", exact: true }).click();
     const theirs = up.getByRole("dialog", { name: /E2E Continuous Project/ });
     await expect(theirs).toContainText("Owners and Admins change these.");

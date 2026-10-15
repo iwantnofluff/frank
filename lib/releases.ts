@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.31.0",
+    date: "2026-10-15",
+    title: "A project's icons side by side",
+    changes: [
+      "On a project's page, Discussion, Activity Log and Settings are now three icons side by side, in place of the … menu.",
+    ],
+  },
+  {
     version: "1.30.2",
     date: "2026-10-14",
     title: "Late from today on",

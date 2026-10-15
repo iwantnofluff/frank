@@ -86,7 +86,6 @@ test("an Owner deletes an archived project from its profile window", async ({ pa
   await frank.loginAsStaff(page);
   // From the project's own page (direct instruction), archived as it is.
   await page.goto(`${APP_URL}/projects/${frank.projectId}`);
-  await page.getByRole("button", { name: "Project options" }).click();
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "Delete Permanently" }).click();
   const dialog = page.getByRole("dialog", { name: "Delete E2E Test Project for good?" });
