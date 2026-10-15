@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.31.4",
+    date: "2026-10-15",
+    title: "More room in a post's top bar",
+    changes: [
+      "On a post's page, the Creative and Copy versions sit stacked in the top-right corner of the middle panel, opposite Brief, Content, Checks and Feed.",
+      "New Post beside Edit now reads + Post (just + on narrower screens), so the bar fits on one line.",
+      "Share is a button beside + Post, reading just Share, shown while the post is in Client Review.",
+    ],
+  },
+  {
     version: "1.31.3",
     date: "2026-10-15",
     title: "Share as a pill",

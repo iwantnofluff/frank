@@ -376,63 +376,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
                 </div>
               </>
             )}
-          {/* Share, beside the pills, for the team only, only while the post is in Client
-              Review (direct instruction): grey on hover, "Share" sliding
-              out to its right. */}
-          {isStaff && creative.stage === 3 && (
-            <>
-              {/* A pill with its name showing, the icon supplied ("link",
-                  Noun Project 4462389), a separator before it (direct
-                  instruction). */}
-              <span className="toolsep sharesep" aria-hidden="true" />
-              <button type="button" className="sharebtn" aria-label="Share for review" onClick={() => setShareOpen(true)}>
-                <svg viewBox="0 0 1200 1200" aria-hidden="true">
-                  <path d="m712.5 750c9.9453 0 19.484-3.9492 26.516-10.984 7.0352-7.0312 10.984-16.57 10.984-26.516v-243.75c0-44.754-17.777-87.676-49.426-119.32-31.648-31.648-74.57-49.426-119.32-49.426s-87.676 17.777-119.32 49.426c-31.648 31.648-49.426 74.57-49.426 119.32v375c0 64.648 25.68 126.64 71.395 172.36 45.711 45.715 107.71 71.395 172.36 71.395s126.64-25.68 172.36-71.395c45.715-45.711 71.395-107.71 71.395-172.36v-412.5c0-84.539-33.582-165.61-93.359-225.39s-140.85-93.359-225.39-93.359-165.61 33.582-225.39 93.359-93.359 140.85-93.359 225.39v168.75c0 13.398 7.1484 25.777 18.75 32.477 11.602 6.6992 25.898 6.6992 37.5 0 11.602-6.6992 18.75-19.078 18.75-32.477v-168.75c0-64.648 25.68-126.64 71.395-172.36 45.711-45.715 107.71-71.395 172.36-71.395s126.64 25.68 172.36 71.395c45.715 45.711 71.395 107.71 71.395 172.36v412.5c0 44.754-17.777 87.676-49.426 119.32-31.648 31.648-74.57 49.426-119.32 49.426s-87.676-17.777-119.32-49.426c-31.648-31.648-49.426-74.57-49.426-119.32v-375c0-33.492 17.867-64.441 46.875-81.191 29.008-16.746 64.742-16.746 93.75 0 29.008 16.75 46.875 47.699 46.875 81.191v243.75c0 9.9453 3.9492 19.484 10.984 26.516 7.0312 7.0352 16.57 10.984 26.516 10.984z" />
-                </svg>
-                Share
-              </button>
-            </>
-          )}
           <div className="tools">
-            <div className="vsel">
-              <label htmlFor="vCreative">Creative</label>
-              <select
-                id="vCreative"
-                value={activeCreativeVersion?.id ?? ""}
-                onChange={(e) => setCreativeVersionId(e.target.value)}
-                disabled={!creativeVersions?.length}
-              >
-                {creativeVersions?.length ? (
-                  creativeVersions.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      V{v.version_no}
-                    </option>
-                  ))
-                ) : (
-                  <option value="">—</option>
-                )}
-              </select>
-            </div>
-            <div className="vsel">
-              <label htmlFor="vCopy">Copy</label>
-              <select
-                id="vCopy"
-                value={activeCopyVersion?.id ?? ""}
-                onChange={(e) => setCopyVersionId(e.target.value)}
-                disabled={!copyVersions?.length}
-              >
-                {copyVersions?.length ? (
-                  copyVersions.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      V{v.version_no}
-                    </option>
-                  ))
-                ) : (
-                  <option value="">—</option>
-                )}
-              </select>
-            </div>
-
             {editingNow.length > 0 && (
               <span className="presence-note">
                 {editingNow.join(" and ")} {editingNow.length === 1 ? "is" : "are"} editing
@@ -445,6 +389,18 @@ export function CreativeReviewPage({ id }: { id: string }) {
             {isStaff && (
               <>
                 <span className="toolsep" />
+                {/* Share for review, a button beside + Post (direct
+                    instruction), only while the post is in Client Review. */}
+                {creative.stage === 3 && (
+                  <button
+                    type="button"
+                    className="btn primary"
+                    aria-label="Share for review"
+                    onClick={() => setShareOpen(true)}
+                  >
+                    Share
+                  </button>
+                )}
                 {creative.projects && (
                   <button
                     type="button"
@@ -453,7 +409,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
                     aria-label="New Post"
                     onClick={() => setNewPostOpen(true)}
                   >
-                    +<span className="newpost-l"> New Post</span>
+                    +<span className="newpost-l"> Post</span>
                   </button>
                 )}
                 <button
@@ -471,6 +427,49 @@ export function CreativeReviewPage({ id }: { id: string }) {
             (direct instruction: in place of the left column). */}
         <div className="canvas-wrap">
         <SectionRail active={activeSection} onSelect={setActiveSection} />
+        {/* The Creative and Copy versions in the centre panel's top-right
+            corner, opposite the sections (direct instruction: to give the
+            pills and buttons room). */}
+        <div className="vselbar">
+              <div className="vsel">
+                <label htmlFor="vCreative">Creative</label>
+                <select
+                  id="vCreative"
+                  value={activeCreativeVersion?.id ?? ""}
+                  onChange={(e) => setCreativeVersionId(e.target.value)}
+                  disabled={!creativeVersions?.length}
+                >
+                  {creativeVersions?.length ? (
+                    creativeVersions.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        V{v.version_no}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="">—</option>
+                  )}
+                </select>
+              </div>
+              <div className="vsel">
+                <label htmlFor="vCopy">Copy</label>
+                <select
+                  id="vCopy"
+                  value={activeCopyVersion?.id ?? ""}
+                  onChange={(e) => setCopyVersionId(e.target.value)}
+                  disabled={!copyVersions?.length}
+                >
+                  {copyVersions?.length ? (
+                    copyVersions.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        V{v.version_no}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="">—</option>
+                  )}
+                </select>
+              </div>
+        </div>
         <div className="canvas">
           <div>
             {activeSection === "brief" && (

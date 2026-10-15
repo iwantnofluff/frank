@@ -3048,12 +3048,19 @@ a.fd-ref:hover {
 .review .cmts-h {
   min-height: 54.8px;
 }
-/* New Post beside Edit (direct instruction): just "+" where the toolbar
-   would otherwise wrap, its name in its tooltip. */
-@media (max-width: 1560px) {
+/* "+ Post" beside Edit (direct instruction), its name always showing now
+   the versions have moved to the panel's corner. */
+/* Only where the bar would otherwise wrap (narrower than 1300px), just
+   "+", its name in its tooltip. */
+@media (max-width: 1300px) {
   .stage-h .newpost .newpost-l {
     display: none;
   }
+}
+/* With the versions moved out, the separator before "+ Post" divides it
+   from the people here; with nobody else here it has nothing to divide. */
+.stage-h .tools > .toolsep:first-child {
+  display: none;
 }
 .stage-h b.ph,
 .cmts-h b {
@@ -3078,43 +3085,6 @@ a.fd-ref:hover {
   flex-wrap: wrap;
   row-gap: 7px;
   gap: 5px;
-}
-/* Share for review, beside the stage pills (direct instruction). */
-/* Share for review, beside the pills while a post is in Client Review: a
-   pill with its name showing, the pills' height and type, a separator
-   before it (direct instruction). */
-.sharesep {
-  height: 22px;
-  margin: 0 4px 0 6px;
-}
-.sharebtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  /* The pills' 2.7px less its 1px border, so it's their height (direct
-     instruction: it read taller), and not as bold as them. */
-  padding: 1.7px 10px 1.7px 8px;
-  border-radius: 4.6px;
-  border: 1px solid var(--line-2);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: 13.9px;
-  font-weight: 500;
-  line-height: inherit;
-  white-space: nowrap;
-  transition: background 0.15s, border-color 0.15s;
-}
-.sharebtn svg {
-  width: 15px;
-  height: 15px;
-  fill: currentColor;
-  stroke: currentColor;
-  stroke-width: 24;
-  stroke-linejoin: round;
-}
-.sharebtn:hover,
-.sharebtn:focus-visible {
-  background: var(--line);
 }
 .tool {
   width: 28px;
@@ -3313,6 +3283,23 @@ select.sort:hover {
   flex: 1;
   min-height: 0;
   display: flex;
+}
+/* The Creative and Copy versions, top-right of the centre panel, level
+   with the sections' icons opposite (direct instruction). */
+.vselbar {
+  position: absolute;
+  /* Stacked (direct instruction), level with the first section icon. */
+  top: 16px;
+  right: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+/* The stacked selects line up on their right edge, labels before them. */
+.vselbar .vsel + .vsel {
+  margin-left: 0;
 }
 .secrail {
   position: absolute;
