@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.31.6",
+    date: "2026-10-15",
+    title: "Reels full width on a phone",
+    changes: ["On a phone's review link, a Reel fills the post's width, as on Instagram, with no black bars either side."],
+  },
+  {
     version: "1.31.5",
     date: "2026-10-15",
     title: "Reels on a phone's review link",

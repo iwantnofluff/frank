@@ -407,6 +407,10 @@ test.describe("on a phone", () => {
     await page.goto(`${APP_URL}/review/${token}`);
     const expand = page.getByRole("button", { name: "Expand video" });
     await expect(expand).toBeVisible({ timeout: 20_000 });
+    // The video fills the post's width, as on Instagram (no black bars).
+    const media = (await page.locator(".m-card .ig-media").first().boundingBox())!;
+    const video = (await page.locator(".m-card .vframe").first().boundingBox())!;
+    expect(Math.abs(video.width - media.width)).toBeLessThan(2);
     // Scrolled until the header sticks over the video's top.
     await page.evaluate(() => document.querySelector(".ph-screen")!.scrollBy(0, 420));
     const box = (s: string) => page.locator(s).first().boundingBox();

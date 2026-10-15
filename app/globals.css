@@ -6663,8 +6663,11 @@ button.avatar {
 }
 /* In the phone, a video fills its width as on Instagram (direct
    instruction: a Reel had a gutter each side, held to 62% of the window's
-   height, which is for the page, not the phone, whose post scrolls). */
-.phoneframe .ig-media .vframe {
+   height, which is for the page, not the phone, whose post scrolls).
+   And a review link on a real phone (.m-card), its post scrolling too
+   (reported directly: black bars either side). */
+.phoneframe .ig-media .vframe,
+.m-card .ig-media .vframe {
   width: 100%;
 }
 .vframe video {
