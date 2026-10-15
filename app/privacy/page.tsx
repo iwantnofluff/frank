@@ -14,7 +14,7 @@ export default function PrivacyPage() {
       <article className="authcard legal">
         <div className="mark authmark">F</div>
         <div className="welcomehead">
-          <h1 className="h1">Privacy policy</h1>
+          <h1 className="h1">Privacy Policy</h1>
           <p className="sub">Last updated 7 October 2026</p>
         </div>
 
@@ -25,14 +25,14 @@ export default function PrivacyPage() {
           with, and the choices you have.
         </p>
 
-        <h2>Who is responsible for your data</h2>
+        <h2>Who Is Responsible for Your Data</h2>
         <p>
           We are responsible for the accounts people use to sign in to Frank. The content an agency puts into Frank (its
           clients&rsquo; briefs, artwork, captions and comments) belongs to that agency, which decides what goes in and
           who sees it. We process that content on the agency&rsquo;s behalf, to provide Frank to them.
         </p>
 
-        <h2>What we collect</h2>
+        <h2>What We Collect</h2>
         <ul>
           <li>
             <b>Account details:</b> your name, email address, password (stored only as a secure hash by our
@@ -61,7 +61,7 @@ export default function PrivacyPage() {
           </li>
         </ul>
 
-        <h2>Instagram data</h2>
+        <h2>Instagram Data</h2>
         <p>
           An agency can connect a client&rsquo;s Instagram Business or Creator account, through Instagram&rsquo;s own
           sign-in, so Frank can show planned posts among the account&rsquo;s real ones. Frank only reads; it never
@@ -89,7 +89,7 @@ export default function PrivacyPage() {
           </li>
         </ul>
 
-        <h2>How we use it</h2>
+        <h2>How We Use It</h2>
         <ul>
           <li>To provide Frank: sign-in, planning, reviews, approvals and comments.</li>
           <li>To send emails Frank needs to: invitations, sign-up confirmations, password resets and notifications.</li>
@@ -102,7 +102,7 @@ export default function PrivacyPage() {
           below. Frank has no advertising or analytics trackers.
         </p>
 
-        <h2>Service providers</h2>
+        <h2>Service Providers</h2>
         <p>These companies process data for us, only to provide their service to Frank:</p>
         <ul>
           <li><b>Vercel</b>: hosts the Frank app.</li>
@@ -120,7 +120,7 @@ export default function PrivacyPage() {
           purposes in this policy.
         </p>
 
-        <h2>How long we keep it</h2>
+        <h2>How Long We Keep It</h2>
         <ul>
           <li>Account and agency data: while the agency uses Frank, and deleted on request after that.</li>
           <li>
@@ -137,14 +137,14 @@ export default function PrivacyPage() {
           short-lived links. Access tokens for connected accounts are encrypted.
         </p>
 
-        <h2>Cookies and storage</h2>
+        <h2>Cookies and Storage</h2>
         <p>
           Frank uses cookies only to keep you signed in. It also keeps a few things in your browser&rsquo;s storage,
           such as recent picture links, so pages load quickly; this is cleared when you sign out. There are no
           advertising or tracking cookies.
         </p>
 
-        <h2>Your rights</h2>
+        <h2>Your Rights</h2>
         <p>
           Under India&rsquo;s Digital Personal Data Protection Act, 2023, you can ask to see the personal data we hold
           about you, correct or update it, or have it erased, and you can withdraw consent where we rely on it. You can
@@ -162,7 +162,7 @@ export default function PrivacyPage() {
           change.
         </p>
 
-        <h2>Contact and grievances</h2>
+        <h2>Contact and Grievances</h2>
         <p>
           For any question, request or complaint about your data, email{" "}
           <a href="mailto:raj@nofluff.in">raj@nofluff.in</a> or write to No Fluff Pvt Ltd, 501 Labernam, 17 D&rsquo;Monte

@@ -67,7 +67,7 @@ function ResetPassword() {
       }}
     >
       <div className="mark authmark">F</div>
-      <h1 className="h1">Choose a new password</h1>
+      <h1 className="h1">Choose a New Password</h1>
       <label className="authfield">
         <span>New password</span>
         <input type="password" required autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />

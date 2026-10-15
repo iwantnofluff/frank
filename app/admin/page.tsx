@@ -123,7 +123,7 @@ export default function AdminOverviewPage() {
                 />
               )}
 
-              <div className="msection-h">This month</div>
+              <div className="msection-h">This Month</div>
               <p className="msection-d">
                 {plural(o.signups.month, "workspace", "workspaces")} signed up this month, {o.signups.week} this week.{" "}
                 {o.counts.agencies} in all, {o.counts.readOnly} read-only after their trial
@@ -150,7 +150,7 @@ export default function AdminOverviewPage() {
             </div>
 
             <div>
-              <div className="msection-h">Needs a look</div>
+              <div className="msection-h">Needs a Look</div>
               <p className="msection-d">
                 {nothingToSee ? "Nothing right now." : "Workspaces worth a message or a check."}
               </p>

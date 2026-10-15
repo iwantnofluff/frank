@@ -21,6 +21,7 @@ export const RELEASES: Release[] = [
       "Its details read Project Name, Description, then Delivery and Due Date side by side. Type is chosen when a project is made and no longer changed here.",
       "People is a table, with Name, Workspace Role, Project Role and Post Default columns. A User's or Client's role is a dropdown, with their invite options under it; Project Role replaces the separate Roles list.",
       "In Workspace Settings, Team, each person's role is a dropdown too, holding their other options in place of the … menu. Picking User opens Edit to choose their clients.",
+      "Section headings and Help's titles and categories are in Title Case throughout.",
     ],
   },
   {

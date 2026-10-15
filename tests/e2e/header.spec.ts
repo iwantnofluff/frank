@@ -77,24 +77,24 @@ test("Help opens from the header: topics, categories, articles and search", asyn
   await page.goto(`${APP_URL}/dashboard`);
   await page.getByRole("button", { name: "Help", exact: true }).click();
   const help = page.getByRole("complementary", { name: "Help" });
-  await expect(help).toContainText("Explore help topics");
+  await expect(help).toContainText("Explore Help Topics");
 
   // A topic opens its article; Back returns.
-  await help.getByRole("button", { name: "Draft copy with Frank" }).click();
-  await expect(help.getByRole("heading", { name: "Draft copy with Frank" })).toBeVisible();
+  await help.getByRole("button", { name: "Draft Copy with Frank" }).click();
+  await expect(help.getByRole("heading", { name: "Draft Copy with Frank" })).toBeVisible();
   await help.getByRole("button", { name: "Back" }).click();
-  await expect(help).toContainText("Help categories");
+  await expect(help).toContainText("Help Categories");
 
   // A category lists its articles, each of which opens.
   await help.getByRole("button", { name: "Clients and Client Settings" }).click();
-  await help.getByRole("button", { name: /Connect a client's Instagram/ }).click();
+  await help.getByRole("button", { name: /Connect a Client's Instagram/ }).click();
   await expect(help.getByRole("heading", { name: "Two ways to connect" })).toBeVisible();
   await help.getByRole("button", { name: "Back" }).click();
   await help.getByRole("button", { name: "Back" }).click();
 
   // Search finds articles by what's in them.
   await help.getByRole("searchbox", { name: "Search help" }).fill("passcode");
-  await expect(help.getByRole("button", { name: /Send posts to your client for review/ })).toBeVisible();
+  await expect(help.getByRole("button", { name: /Send Posts to Your Client for Review/ })).toBeVisible();
 
   await help.getByRole("button", { name: "Close help" }).click();
   await expect(help).toHaveCount(0);

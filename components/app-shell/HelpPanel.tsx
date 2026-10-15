@@ -190,7 +190,7 @@ export function HelpPanel({ open, onClose }: { open: boolean; onClose: () => voi
       <div className="help-b" ref={body}>
         {view.kind === "home" && (
           <>
-            <p className="help-k">Find answers quickly</p>
+            <p className="help-k">Find Answers Quickly</p>
             <label className="help-search">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <circle cx="11" cy="11" r="7" />
@@ -215,7 +215,7 @@ export function HelpPanel({ open, onClose }: { open: boolean; onClose: () => voi
               </div>
             ) : (
               <>
-                <p className="help-k">Explore help topics</p>
+                <p className="help-k">Explore Help Topics</p>
                 <div className="help-topics">
                   {HELP_TOPICS.map((id) => {
                     const a = helpArticle(id);
@@ -230,7 +230,7 @@ export function HelpPanel({ open, onClose }: { open: boolean; onClose: () => voi
                   })}
                 </div>
 
-                <p className="help-k">Help categories</p>
+                <p className="help-k">Help Categories</p>
                 <div className="help-cats">
                   {HELP_CATEGORIES.map((c) => (
                     <button type="button" className="help-cat" key={c.id} onClick={() => push({ kind: "category", id: c.id })}>

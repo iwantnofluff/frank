@@ -27,7 +27,7 @@ export default function ForgotPasswordPage() {
         }}
       >
         <div className="mark authmark">F</div>
-        <h1 className="h1">Reset your password</h1>
+        <h1 className="h1">Reset Your Password</h1>
         {sent ? (
           <p className="sub">
             If {email} has a Frank account, a link to set a new password is on its way. It works for an hour.

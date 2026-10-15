@@ -172,7 +172,7 @@ export default function AnalyticsPage() {
                 </p>
                 {view.a.speed.atRisk.length > 0 && (
                   <>
-                    <h3 className="an-h">At risk: live within 7 days, not approved</h3>
+                    <h3 className="an-h">At Risk: Live Within 7 Days, Not Approved</h3>
                     <ul className="an-list">
                       {view.a.speed.atRisk.slice(0, 8).map((r) => (
                         <li key={r.id}>

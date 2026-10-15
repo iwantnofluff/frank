@@ -193,7 +193,7 @@ function ThisMonth({
   const head = (
     <div className="brandrem-h">
       {/* "Oct 2026 Strategy" here only (direct instruction). */}
-      <b>{query.data ? monthBoxLabel(month) : "This month"}</b>
+      <b>{query.data ? monthBoxLabel(month) : "This Month"}</b>
       {filled.length > 0 && (
         <Link href={href} className="brandrem-all">
           See All

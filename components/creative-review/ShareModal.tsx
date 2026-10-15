@@ -419,7 +419,7 @@ export function ShareModal({
             </div>
           )}
 
-          <div className="msection-h">Link settings</div>
+          <div className="msection-h">Link Settings</div>
           <p className="msection-d">How long it lasts, whether it needs a passcode, and what they can do with it.</p>
 
           <div className="frow">

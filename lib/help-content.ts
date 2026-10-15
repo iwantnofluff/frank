@@ -26,13 +26,13 @@ export interface HelpCategory {
 }
 
 export const HELP_CATEGORIES: HelpCategory[] = [
-  { id: "start", label: "Getting started" },
+  { id: "start", label: "Getting Started" },
   { id: "clients", label: "Clients and Client Settings" },
-  { id: "posts", label: "Projects and posts" },
-  { id: "reviews", label: "Reviews and approvals" },
+  { id: "posts", label: "Projects and Posts" },
+  { id: "reviews", label: "Reviews and Approvals" },
   { id: "claude", label: "Drafting with Frank" },
-  { id: "team", label: "Your team" },
-  { id: "account", label: "Settings and billing" },
+  { id: "team", label: "Your Team" },
+  { id: "account", label: "Settings and Billing" },
 ];
 
 // The cards at the top of the panel, in order.
@@ -42,7 +42,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
   // From "Frank Logo Concepts Brief" (the brand story, supplied directly).
   {
     id: "the-frank-mark",
-    title: "The Frank mark",
+    title: "The Frank Mark",
     category: "start",
     summary: "Three lines: the work, the review, the approval. The whole job in one mark.",
     blocks: [
@@ -82,7 +82,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
   },
   {
     id: "how-frank-works",
-    title: "How Frank works",
+    title: "How Frank Works",
     category: "start",
     summary: "Clients, projects and posts, and the stages a post moves through.",
     blocks: [
@@ -121,7 +121,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
   },
   {
     id: "search",
-    title: "Find a page, client or project fast",
+    title: "Find a Page, Client or Project Fast",
     category: "start",
     summary: "Search from the header, or press ⌘K.",
     blocks: [
@@ -143,7 +143,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
   },
   {
     id: "create-client",
-    title: "Create a client and its first project",
+    title: "Create a Client and Its First Project",
     category: "clients",
     summary: "Add a client, then the project its work will live in.",
     blocks: [
@@ -211,7 +211,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
   },
   {
     id: "knowledge",
-    title: "Build a client's Knowledge",
+    title: "Build a Client's Knowledge",
     category: "clients",
     summary: "Tone of voice, audience, research and more, for better copy and checks.",
     blocks: [
@@ -242,7 +242,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
   },
   {
     id: "connect-instagram",
-    title: "Connect a client's Instagram",
+    title: "Connect a Client's Instagram",
     category: "clients",
     summary: "Show the client's real posts beside the planned ones.",
     blocks: [
@@ -274,7 +274,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
   },
   {
     id: "plan-posts",
-    title: "Plan posts in the Content Planner",
+    title: "Plan Posts in the Content Planner",
     category: "posts",
     summary: "Brief a post, then add its artwork, Text on Image and copy.",
     blocks: [
@@ -310,7 +310,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
   },
   {
     id: "artwork-after-live",
-    title: "Artwork after a post goes live",
+    title: "Artwork After a Post Goes Live",
     category: "posts",
     summary: "Approved posts' artwork is removed 7 to 28 days after going live, as each client is set; copy and comments stay.",
     blocks: [
@@ -351,7 +351,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
   },
   {
     id: "send-for-review",
-    title: "Send posts to your client for review",
+    title: "Send Posts to Your Client for Review",
     category: "reviews",
     summary: "Move posts to Client Review and share a review link.",
     blocks: [
@@ -384,7 +384,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
   },
   {
     id: "comments",
-    title: "Comment, pin and resolve",
+    title: "Comment, Pin and Resolve",
     category: "reviews",
     summary: "Talk about a post right where the point is.",
     blocks: [
@@ -402,7 +402,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
   },
   {
     id: "write-with-claude",
-    title: "Draft copy with Frank",
+    title: "Draft Copy with Frank",
     category: "claude",
     summary: "Draft from the concept, or have your own draft reviewed.",
     blocks: [
@@ -447,7 +447,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
   },
   {
     id: "working-together",
-    title: "Working on the same post as someone else",
+    title: "Working on the Same Post as Someone Else",
     category: "team",
     summary: "Who else is here, who's editing, and what happens if two of you save.",
     blocks: [
@@ -465,7 +465,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
   },
   {
     id: "roles",
-    title: "Roles: who can do what",
+    title: "Roles: Who Can Do What",
     category: "team",
     summary: "Primary Owner, Owner, Admin, User and Client, and what a review link's guest can do.",
     blocks: [
@@ -535,7 +535,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
   },
   {
     id: "team",
-    title: "Invite your team and your clients",
+    title: "Invite Your Team and Your Clients",
     category: "team",
     summary: "Roles, and who can see and change what.",
     blocks: [
@@ -558,7 +558,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
   },
   {
     id: "analytics",
-    title: "Analytics: from concept to approval",
+    title: "Analytics: From Concept to Approval",
     category: "account",
     summary: "How long posts take, what holds them up, and what the feedback says. For Owners and Admins.",
     blocks: [
