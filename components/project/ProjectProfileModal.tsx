@@ -86,8 +86,8 @@ export function ProjectProfileModal({
       projectId: project.id,
       clientId,
       name,
-      // Not changed here (direct instruction); kept as it was made.
-      type: project.type ?? null,
+      // Type isn't changed here (direct instruction), so it isn't sent:
+      // a save never puts back what it was when the window opened.
       due_on: dueOn || null,
       description: description.trim() || null,
     });

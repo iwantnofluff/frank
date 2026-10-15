@@ -179,7 +179,7 @@ test("a client's profile lists its people with their projects, and an Owner chan
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/clients/${frank.clientId}/settings/people`);
   const modal = page.locator(".setmain");
-  const person = modal.locator(".pt-row", { hasText: "Proj User" });
+  const person = modal.locator(".profperson", { hasText: "Proj User" });
   // Their projects in words under their name, changed from Edit Projects.
   // Named one by one, even when they're on every project.
   await expect(person.locator(".pp-projs")).not.toContainText("All projects");

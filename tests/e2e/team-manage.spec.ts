@@ -244,7 +244,10 @@ test("everyone gets a menu only on the people below them (phase49)", async ({
   await expect(page.getByRole("button", { name: /^Some Admin: .+\. Change$/ })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /^Fellow Owner: .+\. Change$/ })).toHaveCount(0);
   await openMenu(page, "Some User");
-  await expect(page.locator(".colpop .cpr")).toHaveText(["Edit"]);
+  // The Role dropdown (direct instruction): the one role an Admin gives,
+  // ticked, then only Edit.
+  await expect(page.getByRole("menuitemradio")).toHaveText(["User"]);
+  await expect(page.getByRole("menuitem")).toHaveText(["Edit"]);
 });
 
 test("inviting someone who was deactivated points to Reactivate instead", async ({ page, frank }) => {
