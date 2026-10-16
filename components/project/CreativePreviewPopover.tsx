@@ -130,7 +130,15 @@ export function CreativePreviewPopover({
             page's own "no artwork yet" while there isn't any (direct
             instruction). */}
         {art?.mime_type.startsWith("video/") && artUrl ? (
-          <video src={`${artUrl}#t=0.1`} muted playsInline preload="metadata" />
+          // Its format's shape from the start (direct instruction: a Reel's
+          // phone drew small, then grew once the video had loaded).
+          <video
+            src={`${artUrl}#t=0.1`}
+            muted
+            playsInline
+            preload="metadata"
+            style={{ aspectRatio: aspectRatioCss(creative.format), objectFit: "cover" }}
+          />
         ) : art && artUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
           <img src={artUrl} alt={creative.name} />

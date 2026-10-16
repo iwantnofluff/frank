@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.35.5",
+    date: "2026-10-16",
+    title: "Reel previews at full size at once",
+    changes: ["Hovering a Reel in a project's table shows it at its full shape straight away, rather than small until its video loads."],
+  },
+  {
     version: "1.35.4",
     date: "2026-10-16",
     title: "Previews as the post page draws them",
