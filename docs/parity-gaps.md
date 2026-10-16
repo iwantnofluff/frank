@@ -3903,3 +3903,5 @@ Direct instruction: the Content and Feed switch under the header is gone; they'r
 
 **Verified**: screenshots at a phone's size on Content and Feed, with two posts: the icons beside the logos, the three lines under them, the arrows measured at 32px, the card straight under the header. shared-review-phone.png updated after looking at it; shared-review-public, video-review and stories pass.
 
+Then the client's name a little bigger on a phone (direct instruction: hierarchy under the logos), 14.2px to 17.2px; the desktop link's unchanged. shared-review-phone.png updated after looking at it (1.33.4).
+

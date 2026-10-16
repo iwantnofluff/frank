@@ -5554,8 +5554,13 @@ textarea.cxin {
   background: var(--action-soft);
   color: var(--action);
 }
-/* The post's name under the client's, as strong as it (direct
-   instruction), its format below. */
+/* On a phone the client's name leads (direct instruction: a little
+   bigger, so the three lines under the logos read in order). */
+.m-top .rv-client-t b {
+  font-size: 17.2px;
+  line-height: 1.3;
+}
+/* The post's name under the client's, its format below. */
 .rv-client-t .rv-post {
   font-size: 14.2px;
   font-weight: 600;
