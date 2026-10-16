@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.35.3",
+    date: "2026-10-16",
+    title: "Room for Add Slides",
+    changes: ["In a project's table, the Slides column starts wide enough for its Add Slides button."],
+  },
+  {
     version: "1.35.2",
     date: "2026-10-16",
     title: "Better spaced Users list",

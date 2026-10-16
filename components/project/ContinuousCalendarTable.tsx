@@ -102,7 +102,8 @@ export const TOGGLABLE_COLUMNS = [
   { key: "funnel", label: "Funnel", sub: "Funnel stage", width: 150 },
   { key: "tg", label: "TG", sub: "Target audience", width: 130 },
   { key: "type", label: "Format", sub: "Platform and type", width: 141 },
-  { key: "slides", label: "Slides", sub: "#", width: 70 },
+  // Wide enough for its "Add Slides" button (direct instruction).
+  { key: "slides", label: "Slides", sub: "#", width: 108 },
   // Renamed Team, then wider twice (direct instruction), for a role after
   // the name. Format, Slides and Status are as wide as their longest
   // words, as on the scheduled table.

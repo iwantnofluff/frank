@@ -99,7 +99,8 @@ export const TOGGLABLE_COLUMNS = [
   { key: "time", label: "Time", sub: "Time of post", width: 84 },
   { key: "status", label: "Status", sub: "Status of post", width: 132 },
   { key: "type", label: "Format", sub: "Platform and type", width: 141 },
-  { key: "slides", label: "Slides", sub: "#", width: 70 },
+  // Wide enough for its "Add Slides" button (direct instruction).
+  { key: "slides", label: "Slides", sub: "#", width: 108 },
   // Renamed Team, then wider twice (direct instruction), for a role after
   // the name.
   { key: "lead", label: "Team", sub: "Person and role", width: 154 },
