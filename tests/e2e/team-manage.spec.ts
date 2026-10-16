@@ -431,6 +431,8 @@ test("Users lists each client's people, invited ones with Resend and Revoke", as
     // All, the team and the clients' people.
     await expect(page.getByRole("heading", { name: "E2E Test Agency Team Members" })).toBeVisible({ timeout: 15_000 });
     await expect(page.locator(".secthead .chip")).toHaveText(["All (3)", "E2E Test Agency (1)", "Client (2)"]);
+    // Oldest first to begin with (direct instruction).
+    await expect(page.getByLabel("Sort people")).toHaveValue("date-asc");
     await page.getByRole("button", { name: "Client (2)" }).click();
     await expect(page.locator(".crow:not(.head)")).toHaveCount(2);
     await page.getByRole("button", { name: "All (3)" }).click();

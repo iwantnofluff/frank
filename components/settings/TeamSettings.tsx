@@ -115,7 +115,8 @@ export function TeamSettings({ view }: { view: View }) {
 
   const [inviting, setInviting] = useState(false);
   const [peopleFilter, setPeopleFilter] = useState<"all" | "team" | "client">("all");
-  const [peopleSort, setPeopleSort] = useState<PeopleSort>("default");
+  // Oldest first to begin with (direct instruction).
+  const [peopleSort, setPeopleSort] = useState<PeopleSort>("date-asc");
   const [notice, setNotice] = useState<string | null>(null);
   const [removeTarget, setRemoveTarget] = useState<TeamMemberRow | null>(null);
   const updateMember = useUpdateMember(agency?.agencyId ?? "");

@@ -3968,3 +3968,5 @@ Direct instruction: the page named for the workspace ("No Fluff Team Members"; t
 
 **Verified**: in a real session with the team, a joined and an invited client person: the title, the pills' counts and filtering (Client 2, the workspace 1), Name A–Z and Newest first, the dates. team-manage checks the title, pills, filtering, a sort and the column; team-manage, people-below and client-invites pass. settings-team.png updated after looking at it (at 1280px a long test email wraps in its column; nothing overlaps).
 
+Then Oldest first by default (direct instruction, 1.35.1); Team first stays in the sort. team-manage checks the default; settings-team.png updated after looking at its diff (the sort's label).
+

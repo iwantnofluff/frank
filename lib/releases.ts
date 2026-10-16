@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.35.1",
+    date: "2026-10-16",
+    title: "Oldest first",
+    changes: ["Workspace Settings, Users lists everyone oldest first to begin with. Team first (your team by role, then each client's people) is still in the sort."],
+  },
+  {
     version: "1.35.0",
     date: "2026-10-16",
     title: "One list of everyone",
