@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.33.8",
+    date: "2026-10-16",
+    title: "Long PDFs in Knowledge",
+    changes: [
+      "Draft with Frank and Checks no longer fail when Knowledge holds very long PDFs: Frank reads up to 550 pages of them per message, the shortest first, and names any it had to leave out.",
+    ],
+  },
+  {
     version: "1.33.7",
     date: "2026-10-16",
     title: "A User's clients in the Users list",

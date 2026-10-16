@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { runAiTask } from "@/lib/ai/run-ai-task";
-import type { Attachment } from "@/lib/ai/attachment";
+import { withinPdfPageBudget, type Attachment } from "@/lib/ai/attachment";
 
 interface AttachmentRef {
   storageKey: string;
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Staff access required" }, { status: 403 });
   }
 
-  const attachments: Attachment[] = [];
+  const loaded: { title: string; mediaType: "application/pdf"; bytes: Uint8Array }[] = [];
   let combinedBytes = 0;
   for (const ref of attachmentRefs ?? []) {
     if (ref.mimeType !== "application/pdf") continue;
@@ -72,9 +72,15 @@ export async function POST(request: Request) {
     }
     if (combinedBytes + blob.size > MAX_COMBINED_ATTACHMENT_BYTES) continue;
     combinedBytes += blob.size;
-    const base64 = Buffer.from(await blob.arrayBuffer()).toString("base64");
-    attachments.push({ base64, mediaType: "application/pdf", title: ref.title });
+    loaded.push({ title: ref.title, mediaType: "application/pdf", bytes: new Uint8Array(await blob.arrayBuffer()) });
   }
+  // Within the provider's PDF page limit, as the size cap above: what
+  // doesn't fit is left out.
+  const attachments: Attachment[] = withinPdfPageBudget(loaded).kept.map((f) => ({
+    base64: Buffer.from(f.bytes).toString("base64"),
+    mediaType: f.mediaType,
+    title: f.title,
+  }));
 
   const result = await runAiTask(supabase, agencyId, user.id, prompt, attachments);
   if (!result.ok) {

@@ -3921,3 +3921,10 @@ Direct instruction: "+ Add Clients" below a User's clients in the Clients column
 
 Then Team's Clients page (direct instruction): Agency, Client and People renamed Internal Members, Client Members and Total Members, with the explainer to match; Total Members 16px in from the edge (its column 70px to 130px for the longer name); 24px more between the two lists of members; each client's name a link to its page. Screenshot checked; team-manage checks the three headings and the link (1.33.7).
 
+
+## Long PDFs in Knowledge
+
+Reported directly: Draft with Frank failed with the provider's "A maximum of 600 PDF pages may be provided". Knowledge files were capped by number (10) and size (8MB each, 24MB in all), not pages; No Fluff's five PDFs came to about 866 pages (Thinking, Fast and Slow alone 538). Now each PDF's pages are counted once it's downloaded (lib/ai/attachment.ts pdfPageCount: its page objects; else its page tree's /Count; else an estimate from its size that errs high), and up to 550 pages go per message (decided directly, of 100, 300 or 550: the cost of a message grows with its pages), the shortest first so the most files fit. Draft with Frank names the rest as skipped, as it does files over the size caps; Checks leaves them out, as it does files over its size cap. Images aren't counted. A budget this large can still meet the model's own reading limit with a different error; not seen yet.
+
+**Verified**: unit tests for the count (page objects over an outline's /Count, the tree's /Count, the estimate) and the budget (shortest first, the book left out, images kept); live's PDFs run through it read-only gave 28, 18, 35 and 247 pages, all kept (the 538-page book had been taken out of Knowledge in the meantime). Not checked against a real AI call, so as not to spend a request on it.
+

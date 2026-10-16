@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { runAiTask } from "@/lib/ai/run-ai-task";
-import { IMAGE_TYPES, type Attachment } from "@/lib/ai/attachment";
+import { IMAGE_TYPES, withinPdfPageBudget, type Attachment } from "@/lib/ai/attachment";
 import {
   buildCopyChatPromptParts,
   openingMessage,
@@ -183,13 +183,21 @@ export async function POST(request: Request) {
       chosen.push({ title, key: asset.storage_key as string, mediaType: asset.mime_type as Attachment["mediaType"] });
     }
     const blobs = await Promise.all(chosen.map((c) => supabase.storage.from("assets").download(c.key)));
+    const loaded: { title: string; mediaType: Attachment["mediaType"]; bytes: Uint8Array }[] = [];
     for (const [i, c] of chosen.entries()) {
       const blob = blobs[i].data;
       if (!blob) {
         skipped.push(c.title);
         continue;
       }
-      attachments.push({ base64: Buffer.from(await blob.arrayBuffer()).toString("base64"), mediaType: c.mediaType, title: c.title });
+      loaded.push({ title: c.title, mediaType: c.mediaType, bytes: new Uint8Array(await blob.arrayBuffer()) });
+    }
+    // Within the provider's PDF page limit (reported directly: a long book
+    // among the files failed every message).
+    const { kept, skipped: tooLong } = withinPdfPageBudget(loaded);
+    skipped.push(...tooLong.map((f) => f.title));
+    for (const f of kept) {
+      attachments.push({ base64: Buffer.from(f.bytes).toString("base64"), mediaType: f.mediaType, title: f.title });
     }
   }
 
