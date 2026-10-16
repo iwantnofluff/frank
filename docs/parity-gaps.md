@@ -3905,3 +3905,9 @@ Direct instruction: the Content and Feed switch under the header is gone; they'r
 
 Then the client's name a little bigger on a phone (direct instruction: hierarchy under the logos), 14.2px to 17.2px; the desktop link's unchanged. shared-review-phone.png updated after looking at it (1.33.4).
 
+## A Reel's expand button: larger, and at the top when expanded
+
+Direct instruction: the button a little larger (32px to 36px, its icon 16px to 18px), and expanded, as near the video's top as before (reported directly: it floated lower). On a phone's review link its sticky holder stops 51px down to clear the post's header (.m-card .vexpand-stick); expanded there's no header over the video, so the holder's offset is now 0 there, and the button sits 10px in from the video's top in both states.
+
+**Verified**: video-review's phone test measures the expanded button 10px below the video's top and 36px across, and the screenshot shows it in the top right; both Reel tests pass.
+

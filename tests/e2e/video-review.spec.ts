@@ -431,5 +431,11 @@ test.describe("on a phone", () => {
     const f = (await page.locator(".vplayer.full .vframe").boundingBox())!;
     expect(f.height === 640 || f.width === 390 ? true : `${f.width}x${f.height}`).toBe(true);
     expect(Math.abs(b.y + b.height - (f.y + f.height))).toBeLessThan(2);
+    // The button as near the video's top as before it expanded (reported
+    // directly: it floated lower), 10px in, and 36px across.
+    const c = (await page.getByRole("button", { name: "Collapse video" }).boundingBox())!;
+    expect(Math.round(c.y - f.y)).toBe(10);
+    expect(Math.round(c.width)).toBe(36);
+    await page.screenshot({ path: `${process.env.SHOT_DIR ?? "test-results"}/reel-expanded-phone.png` });
   });
 });

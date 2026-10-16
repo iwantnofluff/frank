@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.33.5",
+    date: "2026-10-16",
+    title: "A Reel's expand button",
+    changes: [
+      "A Reel's expand button is a little larger.",
+      "Expanded, it sits near the top of the video, where it is before expanding, rather than lower down.",
+    ],
+  },
+  {
     version: "1.33.4",
     date: "2026-10-16",
     title: "The client's name leads",
