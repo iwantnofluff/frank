@@ -5535,9 +5535,10 @@ textarea.cxin {
   display: flex;
   gap: 4px;
 }
+/* 15% bigger (direct instruction; was 36px, the icons 18px). */
 .m-view {
-  width: 36px;
-  height: 36px;
+  width: 41px;
+  height: 41px;
   border-radius: 8px;
   display: grid;
   place-items: center;
@@ -5547,8 +5548,8 @@ textarea.cxin {
     color var(--dur-fast) var(--ease-std);
 }
 .m-view .rn-ic {
-  width: 18px;
-  height: 18px;
+  width: 21px;
+  height: 21px;
 }
 .m-view[aria-pressed="true"] {
   background: var(--action-soft);

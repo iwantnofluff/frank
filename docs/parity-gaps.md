@@ -3911,3 +3911,5 @@ Direct instruction: the button a little larger (32px to 36px, its icon 16px to 1
 
 **Verified**: video-review's phone test measures the expanded button 10px below the video's top and 36px across, and the screenshot shows it in the top right; both Reel tests pass.
 
+Then the Content and Feed icons 15% bigger (direct instruction): buttons 36px to 41px, icons 18px to 21px; measured at 41px on a phone, shared-review-phone.png updated after looking at it (1.33.6).
+
