@@ -34,6 +34,7 @@ import { MissingContent } from "@/components/project/MissingContent";
 import { isOverdue } from "@/lib/post-live";
 import { EditPostWindow } from "@/components/project/EditPostWindow";
 import type { FocusTarget } from "@/components/creative-review/CreativeModal";
+
 import { CopySummaryText } from "@/components/project/CopySummaryText";
 import { CopyCaptionChip } from "@/components/project/CopyCaptionChip";
 import { DraftEditBar, DraftField, useDraftPost } from "@/components/project/draft-post";
@@ -44,6 +45,18 @@ import {
   useDeleteCalendarView,
   type CalendarViewRow,
 } from "@/hooks/use-calendar-views";
+
+// What a Pending button says it adds (direct instruction): "Add Creative".
+const ADD_LABELS: Record<FocusTarget, string> = {
+  team: "Team",
+  concept: "Concept",
+  slides: "Slides",
+  voiceover: "VO",
+  artwork: "Creative",
+  imageOnText: "Text on Image",
+  copy: "Copy",
+  alt: "Alt Text",
+};
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -505,7 +518,11 @@ export function ContinuousCalendarTable({
   // A Pending cell's button (direct instruction): the post's Edit window,
   // here on the table, at that field. The team only.
   const [editPost, setEditPost] = useState<{ id: string; focus: FocusTarget } | null>(null);
-  const fill = (c: CreativeListRow, focus: FocusTarget) => (isStaff ? () => setEditPost({ id: c.id, focus }) : undefined);
+  const fill = (c: CreativeListRow, focus: FocusTarget) => ({
+    onFill: isStaff ? () => setEditPost({ id: c.id, focus }) : undefined,
+    // What the button says it adds (direct instruction): "Add Creative".
+    addLabel: ADD_LABELS[focus],
+  });
 
   const filtered = useMemo(() => {
     return creatives
@@ -1102,7 +1119,7 @@ export function ContinuousCalendarTable({
                             case "slides":
                               return (
                                 <td key={key}>
-                                  {c.slide_count ? c.slide_count : <MissingContent expected={exp.slides} onFill={fill(c, "slides")} />}
+                                  {c.slide_count ? c.slide_count : <MissingContent expected={exp.slides} {...fill(c, "slides")} />}
                                 </td>
                               );
                             case "lead":
@@ -1120,7 +1137,7 @@ export function ContinuousCalendarTable({
                                       ))}
                                     </span>
                                   ) : (
-                                    <MissingContent expected={true} onFill={fill(c, "team")} />
+                                    <MissingContent expected={true} {...fill(c, "team")} />
                                   )}
                                 </td>
                               );
@@ -1148,7 +1165,7 @@ export function ContinuousCalendarTable({
                                       <ReferenceLinks urls={c.reference_urls ?? []} preview />
                                     </span>
                                   ) : (
-                                    <MissingContent expected={true} onFill={fill(c, "concept")} />
+                                    <MissingContent expected={true} {...fill(c, "concept")} />
                                   )}
                                 </td>
                               );
@@ -1175,7 +1192,7 @@ export function ContinuousCalendarTable({
                                       </ClampText>
                                     </span>
                                   ) : (
-                                    <MissingContent expected={exp.voiceover} onFill={fill(c, "voiceover")} />
+                                    <MissingContent expected={exp.voiceover} {...fill(c, "voiceover")} />
                                   )}
                                 </td>
                               );
@@ -1195,7 +1212,7 @@ export function ContinuousCalendarTable({
                                       {names.length > 1 && <span className="tdim">+{names.length - 1}</span>}
                                     </span>
                                   ) : (
-                                    <MissingContent expected={!c.artwork_removed_at} onFill={fill(c, "artwork")} />
+                                    <MissingContent expected={!c.artwork_removed_at} {...fill(c, "artwork")} />
                                   )}
                                 </td>
                               );
@@ -1210,7 +1227,7 @@ export function ContinuousCalendarTable({
                                       <ClampText expanded={expandedRow === c.id} onToggle={() => toggleRow(c.id)}>{lines.join("\n")}</ClampText>
                                     </span>
                                   ) : (
-                                    <MissingContent expected={true} onFill={fill(c, "imageOnText")} />
+                                    <MissingContent expected={true} {...fill(c, "imageOnText")} />
                                   )}
                                 </td>
                               );
@@ -1232,7 +1249,7 @@ export function ContinuousCalendarTable({
                                       </ClampText>
                                     </span>
                                   ) : (
-                                    <MissingContent expected={exp.alt} onFill={fill(c, "alt")} />
+                                    <MissingContent expected={exp.alt} {...fill(c, "alt")} />
                                   )}
                                 </td>
                               );
@@ -1252,7 +1269,7 @@ export function ContinuousCalendarTable({
                                     label="Copy"
                                     rows={rows}
                                     expected={exp.copy}
-                                    onFill={fill(c, "copy")}
+                                    {...fill(c, "copy")}
                                     expanded={expandedRow === c.id}
                                     onToggle={() => toggleRow(c.id)}
                                   />
@@ -1290,7 +1307,7 @@ export function ContinuousCalendarTable({
                                       </ClampText>
                                     </span>
                                   ) : (
-                                    <MissingContent expected={true} onFill={fill(c, "copy")} />
+                                    <MissingContent expected={true} {...fill(c, "copy")} />
                                   )}
                                 </td>
                               );

@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.34.1",
+    date: "2026-10-16",
+    title: "Pending buttons say what they add",
+    changes: ["In a project's table, each Pending button now says what it adds: Add Team, Add Concept, Add Creative, Add Text on Image, Add Copy, Add Alt Text and so on."],
+  },
+  {
     version: "1.34.0",
     date: "2026-10-16",
     title: "Fill in what's Pending from the table",

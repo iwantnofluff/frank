@@ -342,6 +342,7 @@ test("project calendar — a post past its date is red, and Pending opens its Ed
   const past = await frank.createCreativeAtStage(4, "Past Due Post");
   await admin.from("creatives").update({ scheduled_at: early.toISOString() }).eq("id", past);
   await frank.loginAsStaff(page);
+  await page.setViewportSize({ width: 2600, height: 700 });
   await page.goto(`/projects/${frank.projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
   // A future post's date isn't red.
@@ -356,8 +357,17 @@ test("project calendar — a post past its date is red, and Pending opens its Ed
 
   // Pending is a button for the team (direct instruction): the Edit window,
   // on the table, with the cursor in the Concept.
-  const concept = row.locator("td").filter({ has: page.locator(".tpending-btn") }).nth(1);
-  await concept.locator(".tpending-btn").click();
+  // Each says what it adds (direct instruction).
+  await expect(row.locator(".tpending-btn")).toHaveText([
+    "Add Team",
+    "Add Concept",
+    "Add Creative",
+    "Add Text on Image",
+    "Add Copy",
+    "Add Alt Text",
+    "Add Copy",
+  ]);
+  await row.getByRole("button", { name: "Add Concept", exact: true }).click();
   await expect(page.locator("#nbConcept")).toBeFocused();
   expect(page.url()).toContain(`/projects/${frank.projectId}`);
 });

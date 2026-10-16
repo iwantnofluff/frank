@@ -3946,3 +3946,5 @@ Direct instruction, on both project tables: a post past its date shows it in red
 
 **Verified**: in a real session, each Pending button clicked in turn put the cursor in its field (Team picker, Concept, the artwork's add slot, Text on Image, Copy, Alt Text, and Copy for WIIFM); screenshots of the red date and the buttons, and the window open at the Team. project-calendar checks a post past today is red and a future one isn't (dated early today, so it holds whenever it runs), that Concept's Pending opens the window on the table with the Concept focused, and that a client gets words, not buttons; both table specs pass.
 
+Then each button says what it adds (direct instruction, 1.34.1): Add Team, Add Concept, Add Slides, Add VO, Add Creative, Add Text on Image, Add Copy, Add Alt Text; WIIFM Direction's says Add Copy, since that's where it opens. Clients still see the word Pending. project-calendar checks the labels in order.
+
