@@ -313,6 +313,8 @@ test("an Owner edits a User's clients and role; the Clients column and Clients p
   expect(grants).toEqual([{ client_id: second!.id }]);
 
   await page.getByRole("navigation", { name: "Settings sections" }).getByRole("link", { name: "Clients" }).click();
+  // On the Clients page before reading its rows (Users lists clients' people too).
+  await expect(page.getByRole("heading", { name: "Client Access" })).toBeVisible();
   await expect(page.locator(".crow", { hasText: "Second Client" })).toContainText("Edit Me");
   await expect(page.locator(".crow", { hasText: "E2E Test Client" })).toContainText("No Users");
   // Beside the team's Users, the client's own people (direct instruction).
@@ -357,6 +359,8 @@ test("an Admin sees who has which clients, and changes a User's", async ({ page,
   await admin.from("staff_client_access").insert({ membership_id: member.membershipId, client_id: frank.clientId });
   await page.reload();
   await page.getByRole("navigation", { name: "Settings sections" }).getByRole("link", { name: "Clients" }).click();
+  // On the Clients page before reading its rows (Users lists clients' people too).
+  await expect(page.getByRole("heading", { name: "Client Access" })).toBeVisible();
   await expect(page.locator(".crow", { hasText: "E2E Test Client" })).toContainText("Read Only");
 });
 
@@ -396,5 +400,45 @@ test("a pending invite says until when its link works, or that it's expired", as
     await expect(page.locator(".crow", { hasText: "Fresh Invite" }).locator(".invnote")).toContainText(/^Link works until /);
   } finally {
     await deleteAccount(a.userId); await deleteAccount(b.userId);
+  }
+});
+
+// Each client's own people on Users too, under the team (direct
+// instruction): joined or invited, their client linked, an invite's Resend
+// and Revoke in its dropdown.
+test("Users lists each client's people, invited ones with Resend and Revoke", async ({ page, frank }) => {
+  test.setTimeout(90_000);
+  const email = `e2e-cm-${Date.now()}@example.invalid`;
+  const { data: u } = await admin.auth.admin.createUser({ email, email_confirm: true });
+  try {
+    await admin.from("users").insert({ id: u.user!.id, email, name: "Ivy Invitee" });
+    const { data: m, error } = await admin
+      .from("memberships")
+      .insert({ agency_id: frank.agencyId, user_id: u.user!.id, role: "user", client_id: frank.clientId, accepted_at: null, invited_at: new Date().toISOString() })
+      .select("id")
+      .single();
+    if (error) throw error;
+    const { error: inviteError } = await admin.from("invites").insert({
+      membership_id: m!.id,
+      token_hash: `e2e-cm-${Date.now()}`,
+      expires_at: new Date(Date.now() + 5 * 86_400e3).toISOString(),
+      created_by: await staffUserId(frank),
+    });
+    if (inviteError) throw inviteError;
+    await frank.loginAsStaff(page);
+    await page.goto(`${APP_URL}/settings/team`);
+    await expect(page.getByRole("heading", { name: "Client Members" })).toBeVisible({ timeout: 15_000 });
+    const joined = page.locator(".crow", { hasText: frank.clientEmail });
+    await expect(joined).toContainText("Active");
+    await expect(joined.getByRole("link", { name: "E2E Test Client" })).toHaveAttribute("href", `/clients/${frank.clientId}`);
+    const invited = page.locator(".crow", { hasText: email });
+    await expect(invited).toContainText("Invited");
+    await expect(invited.locator(".invnote")).toContainText("Link works until");
+    await invited.getByRole("button", { name: /^Ivy Invitee: Client\. Change$/ }).click();
+    await expect(page.getByRole("menuitem")).toHaveText(["Resend Invite", "Revoke Invite"]);
+    await page.getByRole("menuitem", { name: "Revoke Invite" }).click();
+    await expect(invited).toHaveCount(0);
+  } finally {
+    await deleteAccount(u.user!.id);
   }
 });

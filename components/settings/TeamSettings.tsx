@@ -36,7 +36,9 @@ import {
 // (70px, right-aligned) so the "..." sits in the same place on every list.
 // The Role column holds the dropdown (direct instruction, in place of the
 // row's ⋮ menu), so there's no column after Status.
-const PEOPLE_COLUMNS_WITH_CLIENTS = "1fr 1.3fr 1fr 150px 110px";
+// Clients further left, Email narrower for it, and room after it before
+// Role (direct instruction).
+const PEOPLE_COLUMNS_WITH_CLIENTS = "1fr 0.95fr 1.35fr 150px 110px";
 const PEOPLE_COLUMNS = "1fr 1.3fr 150px 150px";
 // Total Members a little in from the edge, and more room between the two
 // lists of members (direct instruction).
@@ -47,7 +49,10 @@ export type View = "people" | "clients";
 // Under "Invited" (direct instruction: say when someone hasn't joined): until
 // when their link works, or that it's expired and needs resending. Only
 // for viewers allowed to see invites (Owners, and whoever manages them).
-function inviteNote(m: TeamMemberRow, now: number): { text: string; late: boolean } | null {
+function inviteNote(
+  m: Pick<TeamMemberRow, "accepted_at" | "invite"> & { removed_at?: string | null },
+  now: number,
+): { text: string; late: boolean } | null {
   if (m.accepted_at || m.removed_at) return null;
   if (!m.invite) return null;
   const day = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
@@ -80,7 +85,9 @@ export function TeamSettings({ view }: { view: View }) {
   const canSeeAccess = isStaff && seesAllClients(myMembership?.role);
 
   const { data: members, isLoading, isError, dataUpdatedAt } = useTeamMembers(agencyId);
-  const { data: clientMembers } = useClientMembers(agencyId, view === "clients");
+  // Read on both pages now: Users lists them under the team (direct
+  // instruction). Admins and above only, as Team → Clients is.
+  const { data: clientMembers, refetch: refetchClientMembers } = useClientMembers(agencyId, canSeeAccess);
   const { data: clients } = useClients();
   const { data: access } = useStaffClientAccess(agencyId, canSeeAccess);
   const { data: photos } = useAvatarUrls((members ?? []).map((m) => m.user?.avatar_asset_id));
@@ -250,7 +257,7 @@ export function TeamSettings({ view }: { view: View }) {
       <h1 className="h1">{view === "people" ? "Users" : "Clients"}</h1>
       <p className="sub">
         {view === "people"
-          ? `Everyone with staff access at ${agency?.name ?? "this workspace"}.`
+          ? `Everyone with access to ${agency?.name ?? "this workspace"}: your team, then each client's own people.`
           : "Who can see each client: your team, and the client's own people."}
       </p>
 
@@ -316,7 +323,7 @@ export function TeamSettings({ view }: { view: View }) {
                   </div>
                 </div>
                 <div style={{ fontSize: 14.2, color: "var(--muted)" }}>{m.user?.email ?? "—"}</div>
-                {canSeeAccess && <div style={{ fontSize: 14.2 }}>{clientsCell(m)}</div>}
+                {canSeeAccess && <div style={{ fontSize: 14.2, paddingRight: 32 }}>{clientsCell(m)}</div>}
                 <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                   {actions ? (
                     <RoleMenu
@@ -368,6 +375,103 @@ export function TeamSettings({ view }: { view: View }) {
             );
           })}
         </div>
+      )}
+
+      {/* Each client's own people, under the team (direct instruction):
+          invited or joined, their client linked; an invite's Resend and
+          Revoke in its dropdown, as the team's. Invited from the client's
+          own People. */}
+      {view === "people" && canSeeAccess && (clientMembers?.length ?? 0) > 0 && (
+        <>
+          <div className="secthead" style={{ marginTop: 28 }}>
+            <h2>Client Members</h2>
+            <span className="count">
+              {clientMembers!.length} member{clientMembers!.length === 1 ? "" : "s"}
+            </span>
+          </div>
+          <p className="sub" style={{ marginTop: 0, marginBottom: 12 }}>
+            Each client&rsquo;s own people. Invite them from the client&rsquo;s Settings, People.
+          </p>
+          <div className="clients">
+            <div className="crow head" style={{ gridTemplateColumns: peopleColumns }}>
+              <div>Name</div>
+              <div>Email</div>
+              <div>Client</div>
+              <div>Role</div>
+              <div>Status</div>
+            </div>
+            {[...clientMembers!]
+              .sort(
+                (a, b) =>
+                  (clientName.get(a.client_id) ?? "").localeCompare(clientName.get(b.client_id) ?? "") ||
+                  (a.user?.name ?? "").localeCompare(b.user?.name ?? ""),
+              )
+              .map((m) => {
+                const name = m.user?.name || m.user?.email || "Someone";
+                const email = m.user?.email ?? "";
+                const note = inviteNote(m, dataUpdatedAt);
+                return (
+                  <div className="crow" key={m.id} style={{ gridTemplateColumns: peopleColumns, cursor: "default" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                      <PersonAvatar
+                        className="who"
+                        style={{ width: 32, height: 32, fontSize: 12.2, background: avatarColour(name) }}
+                        initials={initials(m.user?.name, email || "?")}
+                        photoUrl={null}
+                        hasPhoto={false}
+                      />
+                      <div style={{ fontSize: 14.7, fontWeight: 500, minWidth: 0 }}>{m.user?.name ?? "—"}</div>
+                    </div>
+                    <div style={{ fontSize: 14.2, color: "var(--muted)" }}>{email || "—"}</div>
+                    <div style={{ fontSize: 14.2, paddingRight: 32 }}>
+                      <Link className="clientlink" href={`/clients/${m.client_id}`}>
+                        {clientName.get(m.client_id) ?? "—"}
+                      </Link>
+                    </div>
+                    <div>
+                      {m.accepted_at ? (
+                        <span className="tag blue">Client</span>
+                      ) : (
+                        <RoleMenu
+                          name={name}
+                          value="client"
+                          current="Client"
+                          options={[]}
+                          onPick={() => {}}
+                          extra={[
+                            {
+                              label: "Resend Invite",
+                              onClick: () =>
+                                resend.mutate(
+                                  { membershipId: m.id, email, name },
+                                  {
+                                    onSuccess: (sent) => {
+                                      setNotice(null);
+                                      setResent(sent);
+                                      void refetchClientMembers();
+                                    },
+                                  },
+                                ),
+                            },
+                            {
+                              label: "Revoke Invite",
+                              tone: "danger" as const,
+                              onClick: () =>
+                                revoke.mutate(m.id, { onSuccess: () => setNotice(`Invite to ${email} revoked`) }),
+                            },
+                          ]}
+                        />
+                      )}
+                    </div>
+                    <div>
+                      <span className={`tag ${m.accepted_at ? "green" : "grey"}`}>{m.accepted_at ? "Active" : "Invited"}</span>
+                      {note && <div className={`invnote${note.late ? " late" : ""}`}>{note.text}</div>}
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        </>
       )}
 
       {view === "clients" && !canSeeAccess && (

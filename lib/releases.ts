@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.34.3",
+    date: "2026-10-16",
+    title: "Client people on Users",
+    changes: [
+      "Workspace Settings, Users now lists each client's own people under your team, in Client Members: joined or invited, with their client linked. An invite's Resend and Revoke are in its Client dropdown.",
+      "In Team Members, the Clients column sits further left, with more room before Role.",
+    ],
+  },
+  {
     version: "1.34.2",
     date: "2026-10-16",
     title: "Clients comment in Client Review",

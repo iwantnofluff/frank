@@ -83,6 +83,7 @@ export function useRevokeInvite(agencyId: string) {
     onSettled: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["team-members", agencyId] }),
+        queryClient.invalidateQueries({ queryKey: ["client-members", agencyId] }),
         queryClient.invalidateQueries({ queryKey: ["project-access"] }),
       ]);
     },
