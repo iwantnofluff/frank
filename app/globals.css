@@ -2675,6 +2675,11 @@ a.fd-ref:hover {
     grid-template-columns: minmax(0, 1fr) 1px 413px;
   }
 }
+/* A client's view of a post outside Client Review: no comments column
+   (direct instruction), the post across the whole width. */
+.review.nocomments {
+  grid-template-columns: minmax(0, 1fr);
+}
 /* The two vertical rules between reviewnav/stage/comments. Plain grid
    items, not borders on their neighbours — `gap: 20px` above already gives
    each one at least 20px of padding on both sides for free. */

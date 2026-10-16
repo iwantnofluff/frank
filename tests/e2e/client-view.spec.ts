@@ -44,3 +44,30 @@ test("a client sees a post's stage but can't change it, share it, or filter by P
   const saved = await client.from("calendar_views").insert({ agency_id: frank.agencyId, table_type: "scheduled", name: "Client View" }).select("id");
   expect(saved.data ?? []).toHaveLength(0);
 });
+
+// A client sees the comments only while the post is in Client Review
+// (direct instruction): not before it's sent, nor once it's Approved or
+// Live. The team always sees them.
+test("a client sees a post's comments only in Client Review", async ({ page, frank }) => {
+  test.setTimeout(90_000);
+  await frank.insertCommentAsStaff("A public note from the team", "public");
+  const panel = page.locator(".cfilters");
+  await frank.loginAsClient(page);
+  await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
+  await expect(page.locator(".stagesw.ro")).toBeVisible({ timeout: 15_000 });
+  // In Client Review (the fixture's own stage): shown.
+  await expect(page.locator(".cmt", { hasText: "A public note from the team" })).toBeVisible();
+  for (const stage of [3, 5, 6]) {
+    await admin.from("creatives").update({ stage }).eq("id", frank.creativeId);
+    await page.reload();
+    await expect(page.locator(".stagesw.ro")).toBeVisible({ timeout: 15_000 });
+    await expect(panel).toHaveCount(0);
+    await expect(page.locator(".review")).toHaveClass(/nocomments/);
+  }
+  // The team, at the same stage: shown.
+  await page.context().clearCookies();
+  await frank.loginAsStaff(page);
+  await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
+  await expect(page.locator(".cmt", { hasText: "A public note from the team" })).toBeVisible({ timeout: 15_000 });
+  await admin.from("creatives").update({ stage: 4 }).eq("id", frank.creativeId);
+});

@@ -3948,3 +3948,8 @@ Direct instruction, on both project tables: a post past its date shows it in red
 
 Then each button says what it adds (direct instruction, 1.34.1): Add Team, Add Concept, Add Slides, Add VO, Add Creative, Add Text on Image, Add Copy, Add Alt Text; WIIFM Direction's says Add Copy, since that's where it opens. Clients still see the word Pending. project-calendar checks the labels in order.
 
+## A client's comments only in Client Review
+
+Direct instruction: signed in, a client's people see a post's comments only while it's in Client Review. At any other stage (Concept, In Production, Internal Review, and Approved or Live, read literally as "not in the Client stage") the comments column is gone and the post takes the page's width (.review.nocomments), and the comments' pins on the artwork and marks on a video's timeline go with it, since they'd point at comments that aren't there. Hidden until it's known who's looking, so a client never glimpses them while the page loads. The team always sees them. Only the post page in Frank: a review link already shows a client only what it covers, from Client Review on, and is unchanged. Nothing in the database changes: a client can still read public comments on their posts (comments_select), so this is what the page shows, not a permission.
+
+**Verified**: client-view checks a client sees the comments in Client Review and not at Internal Review, Approved or Live, and that the team sees them at a stage the client doesn't; screenshot of a client's post at Internal Review with no comments column. client-view passes.

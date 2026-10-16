@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.34.2",
+    date: "2026-10-16",
+    title: "Clients comment in Client Review",
+    changes: ["Signed in, a client sees a post's comments only while it's in Client Review: before it's sent to them, and once it's Approved or Live, the comments are hidden and the post fills the page. Your team always sees them."],
+  },
+  {
     version: "1.34.1",
     date: "2026-10-16",
     title: "Pending buttons say what they add",

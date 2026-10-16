@@ -128,7 +128,12 @@ export function CreativeReviewPage({ id }: { id: string }) {
   // clicking a marker here and clicking a comment there both read and write
   // the same "which thread is highlighted" state.
   const queryClient = useQueryClient();
-  const { data: allComments } = useComments(id);
+  const { data: fetchedComments } = useComments(id);
+  // A client sees the comments only while the post is in Client Review
+  // (direct instruction): no panel, pins or timeline marks before or after.
+  // Hidden until we know who's looking, so a client never glimpses them.
+  const showComments = !!membership && (membership.client_id === null || creative?.stage === STAGE.review);
+  const allComments = showComments ? fetchedComments : [];
   const clientLogoUrl = useClientLogoUrl(creative?.projects?.client_id);
   // A comment made anywhere, on any device, shows here at once (direct
   // instruction): the panel, the pins and the counts all read this.
@@ -280,7 +285,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
     });
 
   return (
-    <div className="review">
+    <div className={`review${showComments ? "" : " nocomments"}`}>
 
       {/* Laid out, but not shown, until what decides its size is known —
           who's looking (the staff controls can add a header row, which
@@ -762,8 +767,9 @@ export function CreativeReviewPage({ id }: { id: string }) {
         </div>
         </div>
       </div>
-      <div className="review-sep" aria-hidden="true" />
+      {showComments && <div className="review-sep" aria-hidden="true" />}
 
+      {showComments && (
       <CommentsPanel
         creativeId={id}
         highlightedCommentId={highlightedCommentId}
@@ -775,6 +781,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
         videoSlide={isVideo && frames.length > 1 ? slidePosition : null}
         creativeVersionId={activeCreativeVersion?.id ?? null}
       />
+      )}
 
       {shareOpen && (
         <ShareModal
