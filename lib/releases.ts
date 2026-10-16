@@ -13,6 +13,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.33.7",
+    date: "2026-10-16",
+    title: "A User's clients in the Users list",
+    changes: [
+      "In Workspace Settings, Users, each of a User's clients opens that client's page.",
+      "+ Add Clients under them gives or takes away clients, with All Clients to pick every one; it saves when you press Done or click away.",
+      "Edit has gone from the role dropdown; choosing User there now happens straight away.",
+      "On the Clients page, the columns are Internal Members, Client Members and Total Members, a little more spaced, and each client's name opens its page.",
+    ],
+  },
+  {
     version: "1.33.6",
     date: "2026-10-16",
     title: "Bigger Content and Feed icons",

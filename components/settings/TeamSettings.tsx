@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useClients } from "@/hooks/use-clients";
 import { useCurrentUser } from "@/hooks/use-current-user";
@@ -16,7 +17,7 @@ import { useRemoveMember, useRevokeInvite, useSetCanInvite, useSetMemberActive }
 import { InviteMemberModal } from "@/components/team/InviteMemberModal";
 import { InviteSentModal } from "@/components/team/InviteSentModal";
 import { useResendInvite, type SentInvite } from "@/hooks/use-invite-member";
-import { EditMemberModal } from "@/components/team/EditMemberModal";
+import { ClientAccessMenu } from "@/components/team/ClientAccessMenu";
 import { RemoveMemberConfirm } from "@/components/team/RemoveMemberConfirm";
 import { RoleMenu } from "@/components/ui/RoleMenu";
 import { useUpdateMember } from "@/hooks/use-manage-member";
@@ -37,7 +38,9 @@ import {
 // row's ⋮ menu), so there's no column after Status.
 const PEOPLE_COLUMNS_WITH_CLIENTS = "1fr 1.3fr 1fr 150px 110px";
 const PEOPLE_COLUMNS = "1fr 1.3fr 150px 150px";
-const CLIENT_VIEW_COLUMNS = "1fr 1.5fr 1.5fr 70px";
+// Total Members a little in from the edge, and more room between the two
+// lists of members (direct instruction).
+const CLIENT_VIEW_COLUMNS = "1fr 1.5fr 1.5fr 130px";
 
 export type View = "people" | "clients";
 
@@ -70,7 +73,6 @@ export function TeamSettings({ view }: { view: View }) {
   // Everyone acts on the people below them (phase49). Deactivating,
   // removing and the "Can invite" switch stay an Owner's.
   const isOwner = isStaff && isOwnerOrAbove(myMembership?.role);
-  const editRoles = rolesBelow(myMembership);
   // Who may invite, and as what (phase44): Owners, and Admins they've let.
   const inviteRoles = rolesICanInvite(myMembership);
   // Client grants are only readable by Admin and above (RLS), so the Clients
@@ -92,10 +94,6 @@ export function TeamSettings({ view }: { view: View }) {
   const [inviting, setInviting] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [removeTarget, setRemoveTarget] = useState<TeamMemberRow | null>(null);
-  const [editTarget, setEditTarget] = useState<TeamMemberRow | null>(null);
-  // A role picked from the dropdown that needs the Edit window (User: which
-  // clients they see).
-  const [editStartRole, setEditStartRole] = useState<InvitableRole | undefined>(undefined);
   const updateMember = useUpdateMember(agency?.agencyId ?? "");
 
   const activeClients = (clients ?? []).filter((c) => !c.archived_at);
@@ -109,10 +107,10 @@ export function TeamSettings({ view }: { view: View }) {
 
   function actionsFor(m: TeamMemberRow) {
     if (!myMembership || m.user_id === me?.id || !canManageMember(myMembership, m)) return null;
-    const edit = { label: "Edit", onClick: () => setEditTarget(m) };
+    // No Edit (direct instruction): a User's clients are added under their
+    // names in the Clients column, and a role is picked straight away.
     if (!m.accepted_at && !m.removed_at) {
       return [
-        edit,
         {
           label: "Resend Invite",
           onClick: () =>
@@ -134,7 +132,7 @@ export function TeamSettings({ view }: { view: View }) {
         },
       ];
     }
-    if (!isOwner) return [edit];
+    if (!isOwner) return [];
     if (m.removed_at) {
       return [
         {
@@ -170,7 +168,6 @@ export function TeamSettings({ view }: { view: View }) {
           ]
         : [];
     return [
-      edit,
       ...inviteSwitch,
       {
         label: "Deactivate",
@@ -186,12 +183,55 @@ export function TeamSettings({ view }: { view: View }) {
 
   function clientsCell(m: TeamMemberRow) {
     if (seesAllClients(m.role)) return <span style={{ color: "var(--muted)" }}>All clients</span>;
-    const names = grantsFor(m.id)
-      .map((id) => clientName.get(id))
-      .filter((n): n is string => !!n)
-      .sort((a, b) => a.localeCompare(b));
-    if (names.length === 0) return <span style={{ color: "var(--muted)" }}>No clients</span>;
-    return names.join(", ");
+    const grants = grantsFor(m.id);
+    // Each opens its client's page, its projects (direct instruction).
+    const named = grants
+      .map((id) => ({ id, name: clientName.get(id) }))
+      .filter((c): c is { id: string; name: string } => !!c.name)
+      .sort((a, b) => a.name.localeCompare(b.name));
+    const activeIds = new Set(activeClients.map((c) => c.id));
+    return (
+      <>
+        <div>
+          {named.length === 0 ? (
+            <span style={{ color: "var(--muted)" }}>No clients</span>
+          ) : (
+            named.map((c, i) => (
+              <span key={c.id}>
+                {i > 0 && ", "}
+                <Link className="clientlink" href={`/clients/${c.id}`}>
+                  {c.name}
+                </Link>
+              </span>
+            ))
+          )}
+        </div>
+        {/* "+ Add Clients" under them (direct instruction), for whoever
+            manages them; a deactivated User's stay as they are. */}
+        {!!myMembership && canManageMember(myMembership, m) && m.user_id !== me?.id && !m.removed_at && (
+          <ClientAccessMenu
+            name={displayName(m)}
+            clients={activeClients}
+            selected={grants.filter((id) => activeIds.has(id))}
+            disabled={updateMember.isPending}
+            onSave={(ids) => {
+              setNotice(null);
+              updateMember.mutate(
+                {
+                  membershipId: m.id,
+                  role: "user",
+                  roleChanged: false,
+                  // An archived client's grant isn't in the list, so it stays.
+                  clientIds: [...ids, ...grants.filter((id) => !activeIds.has(id))],
+                  currentClientIds: grants,
+                },
+                { onSuccess: () => setNotice(`${displayName(m)}'s clients updated`) },
+              );
+            }}
+          />
+        )}
+      </>
+    );
   }
 
   const actionError =
@@ -290,12 +330,9 @@ export function TeamSettings({ view }: { view: View }) {
                           ? rolesBelow(myMembership).map((r) => ({ value: r, label: ROLE_LABELS[r] }))
                           : []
                       }
+                      // Straight away, User too: their clients are then
+                      // added in the Clients column.
                       onPick={(role) => {
-                        if (role === "user") {
-                          setEditStartRole("user");
-                          setEditTarget(m);
-                          return;
-                        }
                         setNotice(null);
                         updateMember.mutate(
                           {
@@ -342,8 +379,8 @@ export function TeamSettings({ view }: { view: View }) {
       {view === "clients" && canSeeAccess && (
         <>
           <p className="sub" style={{ marginTop: 0, marginBottom: 12 }}>
-            Agency is your team&rsquo;s Users given access to the client (the Primary Owner, Owners and
-            Admins see every client). Client is the client&rsquo;s own people.
+            Internal Members are your team&rsquo;s Users given access to the client (the Primary Owner,
+            Owners and Admins see every client). Client Members are the client&rsquo;s own people.
           </p>
           {activeClients.length === 0 ? (
             <div className="empty">
@@ -353,9 +390,12 @@ export function TeamSettings({ view }: { view: View }) {
             <div className="clients">
               <div className="crow head" style={{ gridTemplateColumns: CLIENT_VIEW_COLUMNS }}>
                 <div>Name</div>
-                <div>Agency</div>
-                <div>Client</div>
-                <div className="ago">People</div>
+                {/* Named as members (direct instruction). */}
+                <div style={{ paddingRight: 24 }}>Internal Members</div>
+                <div>Client Members</div>
+                <div className="ago" style={{ paddingRight: 16 }}>
+                  Total Members
+                </div>
               </div>
               {activeClients.map((c) => {
                 const withAccess = restrictedMembers
@@ -372,8 +412,13 @@ export function TeamSettings({ view }: { view: View }) {
                     key={c.id}
                     style={{ gridTemplateColumns: CLIENT_VIEW_COLUMNS, cursor: "default" }}
                   >
-                    <div style={{ fontSize: 14.7, fontWeight: 500 }}>{c.name}</div>
-                    <div style={{ fontSize: 14.2 }}>
+                    {/* Opens the client's page, its projects (direct instruction). */}
+                    <div style={{ fontSize: 14.7, fontWeight: 500 }}>
+                      <Link className="clientlink" href={`/clients/${c.id}`}>
+                        {c.name}
+                      </Link>
+                    </div>
+                    <div style={{ fontSize: 14.2, paddingRight: 24 }}>
                       {withAccess.length === 0 ? (
                         <span style={{ color: "var(--muted)" }}>No Users</span>
                       ) : (
@@ -389,7 +434,9 @@ export function TeamSettings({ view }: { view: View }) {
                         theirs.map((p) => (p.joined ? p.name : `${p.name} (invited)`)).join(", ")
                       )}
                     </div>
-                    <div className="ago">{withAccess.length + theirs.length}</div>
+                    <div className="ago" style={{ paddingRight: 16 }}>
+                      {withAccess.length + theirs.length}
+                    </div>
                   </div>
                 );
               })}
@@ -416,27 +463,6 @@ export function TeamSettings({ view }: { view: View }) {
           onClose={() => setInviting(false)}
           // The modal stays open on its links; the list notes it meanwhile.
           onSent={(email) => setNotice(`Invite sent to ${email}`)}
-        />
-      )}
-
-      {editTarget && agency && (
-        <EditMemberModal
-          agencyId={agency.agencyId}
-          membershipId={editTarget.id}
-          name={displayName(editTarget)}
-          role={editTarget.role as InvitableRole}
-          roles={editRoles}
-          currentClientIds={grantsFor(editTarget.id)}
-          startRole={editStartRole}
-          onClose={() => {
-            setEditTarget(null);
-            setEditStartRole(undefined);
-          }}
-          onSaved={() => {
-            setNotice(`${displayName(editTarget)} updated`);
-            setEditTarget(null);
-            setEditStartRole(undefined);
-          }}
         />
       )}
 

@@ -228,16 +228,13 @@ test("everyone gets a menu only on the people below them (phase49)", async ({
   await expect(page.getByRole("button", { name: /^E2E Staff: .+\. Change$/ })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /^Fellow Owner: .+\. Change$/ })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /^Some User: .+\. Change$/ })).toBeVisible();
-  // An Owner gives Admin or User, never Owner.
+  // An Owner gives Admin or User, never Owner; no Edit (direct instruction).
   await openMenu(page, "Some Admin");
-  await page.getByRole("menuitem", { name: "Edit", exact: true }).click();
-  await expect(page.getByRole("dialog", { name: "Edit Some Admin" }).getByLabel("Role").locator("option")).toHaveText([
-    "Admin",
-    "User",
-  ]);
-  await page.getByRole("dialog", { name: "Edit Some Admin" }).getByRole("button", { name: "Cancel" }).click();
+  await expect(page.getByRole("menuitemradio")).toHaveText(["Admin", "User"]);
+  await expect(page.getByRole("menuitem", { name: "Edit", exact: true })).toHaveCount(0);
+  await page.keyboard.press("Escape");
 
-  // An Admin: Users only, and only Edit for an active one.
+  // An Admin: Users only.
   await setStaffRole(frank, "admin");
   await page.reload();
   await expect(page.locator(".crow", { hasText: po.email })).toBeVisible();
@@ -245,9 +242,9 @@ test("everyone gets a menu only on the people below them (phase49)", async ({
   await expect(page.getByRole("button", { name: /^Fellow Owner: .+\. Change$/ })).toHaveCount(0);
   await openMenu(page, "Some User");
   // The Role dropdown (direct instruction): the one role an Admin gives,
-  // ticked, then only Edit.
+  // ticked, and nothing else (no Edit).
   await expect(page.getByRole("menuitemradio")).toHaveText(["User"]);
-  await expect(page.getByRole("menuitem")).toHaveText(["Edit"]);
+  await expect(page.getByRole("menuitem")).toHaveCount(0);
 });
 
 test("inviting someone who was deactivated points to Reactivate instead", async ({ page, frank }) => {
@@ -287,17 +284,27 @@ test("an Owner edits a User's clients and role; the Clients column and Clients p
   await expect(row).toContainText("E2E Test Client");
   await expect(page.locator(".crow", { hasText: frank.staffEmail })).toContainText("All clients");
 
-  await openMenu(page, "Edit Me");
-  await page.getByRole("menuitem", { name: "Edit", exact: true }).click();
-  const modal = page.getByRole("dialog", { name: "Edit Edit Me" });
-  await expect(modal.getByRole("checkbox", { name: "E2E Test Client" })).toHaveAttribute("aria-checked", "true");
-  await expect(modal.getByRole("button", { name: "Save" })).toBeDisabled();
-  await modal.getByRole("checkbox", { name: "E2E Test Client" }).click();
-  await modal.getByRole("checkbox", { name: "Second Client" }).click();
-  await modal.getByRole("button", { name: "Save" }).click();
-  await expect(modal).toHaveCount(0);
+  // Each client opens its page (direct instruction).
+  await expect(row.getByRole("link", { name: "E2E Test Client" })).toHaveAttribute("href", `/clients/${frank.clientId}`);
+  // "+ Add Clients" under them (direct instruction): ticks, saved when it
+  // closes.
+  await row.getByRole("button", { name: "Add clients for Edit Me" }).click();
+  const pick = page.getByRole("dialog", { name: "Edit Me's clients" });
+  await expect(pick.getByRole("checkbox", { name: "E2E Test Client" })).toHaveAttribute("aria-checked", "true");
+  await pick.getByRole("checkbox", { name: "E2E Test Client" }).click();
+  await pick.getByRole("checkbox", { name: "Second Client" }).click();
+  await pick.getByRole("button", { name: "Done" }).click();
+  await expect(pick).toHaveCount(0);
   await expect(row).toContainText("Second Client");
   await expect(row).not.toContainText("E2E Test Client");
+  // All Clients ticks every one.
+  await row.getByRole("button", { name: "Add clients for Edit Me" }).click();
+  await pick.getByRole("checkbox", { name: "All Clients" }).click();
+  await expect(pick.getByRole("checkbox", { name: "E2E Test Client" })).toHaveAttribute("aria-checked", "true");
+  await pick.getByRole("checkbox", { name: "All Clients" }).click();
+  await pick.getByRole("checkbox", { name: "Second Client" }).click();
+  await pick.getByRole("button", { name: "Done" }).click();
+  await expect(row).toContainText("Second Client");
 
   const { data: grants } = await admin
     .from("staff_client_access")
@@ -309,17 +316,19 @@ test("an Owner edits a User's clients and role; the Clients column and Clients p
   await expect(page.locator(".crow", { hasText: "Second Client" })).toContainText("Edit Me");
   await expect(page.locator(".crow", { hasText: "E2E Test Client" })).toContainText("No Users");
   // Beside the team's Users, the client's own people (direct instruction).
-  await expect(page.locator(".crow.head").first()).toContainText("Agency");
+  await expect(page.locator(".crow.head").first()).toContainText("Internal Members");
+  await expect(page.locator(".crow.head").first()).toContainText("Client Members");
+  await expect(page.locator(".crow.head").first()).toContainText("Total Members");
+  // Each client's name opens its page (direct instruction).
+  await expect(page.getByRole("link", { name: "Second Client" })).toHaveAttribute("href", `/clients/${second!.id}`);
   await expect(page.locator(".crow", { hasText: "E2E Test Client" })).toContainText("E2E Client User");
   await expect(page.locator(".vdots")).toHaveCount(0);
   await page.getByRole("navigation", { name: "Settings sections" }).getByRole("link", { name: "Users" }).click();
 
+  // Made an Admin straight from the Role dropdown: every client, so their
+  // grants go.
   await openMenu(page, "Edit Me");
-  await page.getByRole("menuitem", { name: "Edit", exact: true }).click();
-  await modal.getByLabel("Role").selectOption("admin");
-  await expect(modal.getByRole("group", { name: "Client access" })).toHaveCount(0);
-  await modal.getByRole("button", { name: "Save" }).click();
-  await expect(modal).toHaveCount(0);
+  await page.getByRole("menuitemradio", { name: "Admin" }).click();
   await expect(row).toContainText("Admin");
   await expect(row).toContainText("All clients");
   const { data: after } = await admin
@@ -338,13 +347,12 @@ test("an Admin sees who has which clients, and changes a User's", async ({ page,
   await page.goto(`${APP_URL}/settings/team`);
   await expect(page.locator(".crow", { hasText: member.email })).toContainText("E2E Test Client");
   await expect(page.getByRole("button", { name: "Invite Member" })).toHaveCount(0);
-  await openMenu(page, "Read Only");
-  await page.getByRole("menuitem", { name: "Edit", exact: true }).click();
-  const modal = page.getByRole("dialog", { name: "Edit Read Only" });
-  await expect(modal.getByLabel("Role").locator("option")).toHaveText(["User"]);
-  await modal.getByRole("checkbox", { name: "E2E Test Client" }).click();
-  await modal.getByRole("button", { name: "Save" }).click();
-  await expect(modal).toHaveCount(0);
+  await page.getByRole("button", { name: "Add clients for Read Only" }).click();
+  const pick = page.getByRole("dialog", { name: "Read Only's clients" });
+  await pick.getByRole("checkbox", { name: "E2E Test Client" }).click();
+  // Closing it saves too.
+  await page.keyboard.press("Escape");
+  await expect(pick).toHaveCount(0);
   await expect(page.locator(".crow", { hasText: member.email })).toContainText("No clients");
   await admin.from("staff_client_access").insert({ membership_id: member.membershipId, client_id: frank.clientId });
   await page.reload();

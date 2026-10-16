@@ -3986,6 +3986,16 @@ select.sort:hover {
   fill: none;
   stroke-width: 2;
 }
+/* A User's clients in Workspace Settings, each opening its client's page
+   (direct instruction). */
+.clientlink {
+  color: inherit;
+  text-decoration: none;
+}
+.clientlink:hover {
+  color: var(--action);
+  text-decoration: underline;
+}
 .badd {
   font-size: 12.7px;
   font-weight: 500;

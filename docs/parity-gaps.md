@@ -3913,3 +3913,11 @@ Direct instruction: the button a little larger (32px to 36px, its icon 16px to 1
 
 Then the Content and Feed icons 15% bigger (direct instruction): buttons 36px to 41px, icons 18px to 21px; measured at 41px on a phone, shared-review-phone.png updated after looking at it (1.33.6).
 
+## Workspace Settings, Users: a User's clients, linked and added in place
+
+Direct instruction: "+ Add Clients" below a User's clients in the Clients column; Edit out of the role dropdown; each client a link to its page (its projects). The Edit window (EditMemberModal, role and clients) is gone: a role is picked straight from the dropdown, User too (they then get their clients under "+ Add Clients", starting with none if they had none), and clients are given and taken away in "+ Add Clients"'s checklist (ClientAccessMenu), every active client with All Clients at the top, saved once when it closes with something changed, so quick ticks can't race. An archived client's grant isn't in the list and is kept on save. A deactivated User's clients show but can't be changed until they're back. Owners and Admins still read "All clients". Resend, Revoke, Deactivate, Reactivate, Remove from Team and the invite switch are where they were.
+
+**Verified**: screenshots of a User row with two clients as links and "+ Add Clients" under them, its checklist open, and the role dropdown without Edit. team-manage checks the link's address, adding and taking away clients, All Clients, closing to save, an Admin changing a User's clients, and an Owner making a User an Admin straight from the dropdown (their grants cleared); team-manage, people-below and client-invites pass. settings-team.png is its known flake (column widths from the random email), unchanged by this.
+
+Then Team's Clients page (direct instruction): Agency, Client and People renamed Internal Members, Client Members and Total Members, with the explainer to match; Total Members 16px in from the edge (its column 70px to 130px for the longer name); 24px more between the two lists of members; each client's name a link to its page. Screenshot checked; team-manage checks the three headings and the link (1.33.7).
+
