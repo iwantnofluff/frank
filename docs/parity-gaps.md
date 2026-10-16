@@ -3928,3 +3928,9 @@ Reported directly: Draft with Frank failed with the provider's "A maximum of 600
 
 **Verified**: unit tests for the count (page objects over an outline's /Count, the tree's /Count, the estimate) and the budget (shortest first, the book left out, images kept); live's PDFs run through it read-only gave 28, 18, 35 and 247 pages, all kept (the 538-page book had been taken out of Knowledge in the meantime). Not checked against a real AI call, so as not to spend a request on it.
 
+## A stuck API connection, cleared by itself
+
+Reported directly (16 Oct 2026): a share link was made but never shown, and a sign-in said its person wasn't in the workspace. On live, one of PostgREST's pooled connections had been left "idle in transaction (aborted)" after a failed request, and every request handed to it failed with 25P02, about one in eight (100 parallel reads: 13 failed; 40 one after another: 6). It cleared itself within minutes, before it could be closed by hand. Supabase's status page showed nothing; staging had shown the same errors earlier the same day. Not Frank's code: no pre-request hook, nothing per request of ours. phase104 (decided directly) switches on pg_cron and, every 10 seconds, closes any PostgREST connection stuck like that for over 10 seconds, logging each to api_connection_resets (no policies: SQL editor or service role only) for a report to Supabase; pg_cron's own run log is trimmed to a day, nightly. Not done: reporting it to Supabase (offered).
+
+**Verified**: on staging, a connection named as PostgREST's names its own and left in an aborted transaction was closed by the job 12 seconds later and logged; the job runs every 10 seconds and succeeds. On live, before phase104, the stuck connection was seen five times in a row as the same one, and after it went, 200 reads in a row succeeded and no connection was stuck.
+
