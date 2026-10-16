@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.35.2",
+    date: "2026-10-16",
+    title: "Better spaced Users list",
+    changes: ["Workspace Settings, Users' columns are evenly spaced: the same gap between each, more room for a User's clients (two lines for six), and Date Added, Role and Status sharing the width rather than bunched at the right."],
+  },
+  {
     version: "1.35.1",
     date: "2026-10-16",
     title: "Oldest first",

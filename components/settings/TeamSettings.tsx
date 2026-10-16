@@ -40,8 +40,15 @@ import {
 // Role (direct instruction).
 // Date Added after Clients (direct instruction), Clients narrower for it,
 // and Role and Status further right.
-const PEOPLE_COLUMNS_WITH_CLIENTS = "1.1fr 1fr 1fr 104px 132px 104px";
-const PEOPLE_COLUMNS = "1fr 1.3fr 104px 150px 140px";
+// Evenly spaced (direct instruction): one wider gap between every column
+// (PEOPLE_GAP), Clients the largest share so a list of them sits on two
+// lines, and the last three as wide as what they hold.
+// The last three share the width too (down to what they hold), so on a
+// narrower screen they give room to the names rather than sit half empty.
+const PEOPLE_COLUMNS_WITH_CLIENTS =
+  "minmax(0, 1fr) minmax(0, 0.85fr) minmax(0, 1.5fr) minmax(96px, 0.55fr) minmax(112px, 0.7fr) minmax(84px, 0.55fr)";
+const PEOPLE_COLUMNS = "minmax(0, 1fr) minmax(0, 1.2fr) minmax(96px, 0.55fr) minmax(112px, 0.7fr) minmax(84px, 0.6fr)";
+const PEOPLE_GAP = "clamp(16px, 1.8vw, 28px)";
 // Total Members a little in from the edge, and more room between the two
 // lists of members (direct instruction).
 const CLIENT_VIEW_COLUMNS = "1fr 1.5fr 1.5fr 130px";
@@ -401,7 +408,7 @@ export function TeamSettings({ view }: { view: View }) {
           Admins and above, who can read them (as Team, Clients). */}
       {view === "people" && !isError && members && members.length > 0 && (
         <div className="clients">
-          <div className="crow head" style={{ gridTemplateColumns: peopleColumns }}>
+          <div className="crow head" style={{ gridTemplateColumns: peopleColumns, columnGap: PEOPLE_GAP }}>
             <div>Name</div>
             <div>Email</div>
             {canSeeAccess && <div>Clients</div>}
@@ -419,7 +426,7 @@ export function TeamSettings({ view }: { view: View }) {
                 className="crow"
                 key={m.id}
                 data-kind="team"
-                style={{ gridTemplateColumns: peopleColumns, cursor: "default" }}
+                style={{ gridTemplateColumns: peopleColumns, columnGap: PEOPLE_GAP, cursor: "default" }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
                   <PersonAvatar
@@ -437,7 +444,7 @@ export function TeamSettings({ view }: { view: View }) {
                   </div>
                 </div>
                 <div style={{ fontSize: 14.2, color: "var(--muted)", minWidth: 0, overflowWrap: "anywhere" }}>{m.user?.email ?? "—"}</div>
-                {canSeeAccess && <div style={{ fontSize: 14.2, paddingRight: 32 }}>{clientsCell(m)}</div>}
+                {canSeeAccess && <div style={{ fontSize: 14.2 }}>{clientsCell(m)}</div>}
                 <div style={{ fontSize: 14.2, color: "var(--muted)" }}>{addedOn(m)}</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                   {actions ? (
@@ -494,7 +501,7 @@ export function TeamSettings({ view }: { view: View }) {
             const email = m.user?.email ?? "";
             const note = inviteNote(m, dataUpdatedAt);
             return (
-              <div className="crow" data-kind="client" key={m.id} style={{ gridTemplateColumns: peopleColumns, cursor: "default" }}>
+              <div className="crow" data-kind="client" key={m.id} style={{ gridTemplateColumns: peopleColumns, columnGap: PEOPLE_GAP, cursor: "default" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
                   <PersonAvatar
                     className="who"
@@ -506,7 +513,7 @@ export function TeamSettings({ view }: { view: View }) {
                   <div style={{ fontSize: 14.7, fontWeight: 500, minWidth: 0 }}>{m.user?.name ?? "—"}</div>
                 </div>
                 <div style={{ fontSize: 14.2, color: "var(--muted)", minWidth: 0, overflowWrap: "anywhere" }}>{email || "—"}</div>
-                <div style={{ fontSize: 14.2, paddingRight: 32 }}>
+                <div style={{ fontSize: 14.2 }}>
                   <Link className="clientlink" href={`/clients/${m.client_id}`}>
                     {clientName.get(m.client_id) ?? "—"}
                   </Link>

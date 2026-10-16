@@ -3970,3 +3970,5 @@ Direct instruction: the page named for the workspace ("No Fluff Team Members"; t
 
 Then Oldest first by default (direct instruction, 1.35.1); Team first stays in the sort. team-manage checks the default; settings-team.png updated after looking at its diff (the sort's label).
 
+Then evenly spaced (direct instruction, 1.35.2): one gap between every column (16-28px with the screen) in place of a padding on Clients alone; Clients the largest share (1.5fr) so six fit on two lines; Email a little less (0.85fr); and Date Added, Role and Status sharing the width down to what they hold (96, 112 and 84px), so on a narrower screen they give room to the names rather than sit half empty. Looked at at 1728px with real-length emails and at 1280px (settings-team.png, updated after looking at it); team-manage passes.
+
