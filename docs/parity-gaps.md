@@ -3982,3 +3982,5 @@ Direct instruction: a Story's hover preview didn't fit the phone, and every form
 
 Then a Reel's preview at its shape at once (reported directly: the phone drew small, then filled once the video loaded). A video has no size until its first frame, so it showed at the browser's default (150px tall) until then; it now takes its format's shape (aspectRatioCss) from the start. Verified with a Reel whose video can't load at all: 300 by 533 at once. The post page's and the review link's phones were measured from first paint while a real Reel loaded (1440 and 1728 wide): each appears once, at its final size, and holds it (1.35.5).
 
+Then the story to the phone's foot (reported directly: it stopped short, black below). The preview phone for a Story is now as tall as the story (height auto, 599px, against 660 for other formats), so the 9:16 artwork, whole and uncropped (300 by 533), runs to the frame's bottom edge, its corners following the frame's. Measured: no gap below it but the frame's own 9px border (1.35.6).
+

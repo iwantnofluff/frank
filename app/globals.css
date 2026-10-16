@@ -8998,13 +8998,16 @@ button.feedgrid-live {
 }
 /* A Story fills the screen under the stage strip, its account laid over
    the top on a shade, with no likes or caption (as .ig.story). */
+/* As tall as the story itself (direct instruction: it didn't reach the
+   frame's foot), so it runs right to the bottom, whole. */
+.evpop.phonepop.story {
+  height: auto;
+}
 .phonepop.story .phonepop-scroll {
   overflow: hidden;
   padding-bottom: 0;
   background: #000;
-}
-.phonepop.story .pp-media {
-  height: 100%;
+  flex: none;
 }
 /* The whole story, full width and uncropped as the Review page shows it
    (direct instruction), the screen's black below where its reply bar sits. */
@@ -9015,7 +9018,11 @@ button.feedgrid-live {
   aspect-ratio: 9 / 16;
   height: auto;
   object-fit: cover;
-  border-radius: 0 0 10px 10px;
+  /* The frame's own corners, inside its border. */
+  border-radius: 0 0 29px 29px;
+}
+.phonepop.story .pp-media {
+  height: auto;
 }
 .phonepop.story .pp-h {
   position: absolute;
