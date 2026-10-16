@@ -3973,3 +3973,10 @@ Then Oldest first by default (direct instruction, 1.35.1); Team first stays in t
 Then evenly spaced (direct instruction, 1.35.2): one gap between every column (16-28px with the screen) in place of a padding on Clients alone; Clients the largest share (1.5fr) so six fit on two lines; Email a little less (0.85fr); and Date Added, Role and Status sharing the width down to what they hold (96, 112 and 84px), so on a narrower screen they give room to the names rather than sit half empty. Looked at at 1728px with real-length emails and at 1280px (settings-team.png, updated after looking at it); team-manage passes.
 
 Then the Slides column 70px to 108px by default (direct instruction, 1.35.3): "Add Slides" and its arrow were cut off. Measured: the button is 75px and its cell now holds 85px at the compact density, with room left for the comfortable one. No saved view on live holds a Slides width of its own, so every table gets it; one that's been resized keeps its own. Both table specs pass.
+
+## The table's preview drawn as the post page does
+
+Direct instruction: a Story's hover preview didn't fit the phone, and every format should look as the Review page draws it. A Story now fills the preview phone under the stage strip, whole and uncropped at 9:16 (the phone is a little taller, so the screen's black sits below it where the Review page's reply bar is), its account laid over the top on a shade, and no likes, caption or published line (as .ig.story). Everything else shows its artwork whole, in its own shape: the 4:5 cap for tall formats (an earlier direct instruction, to keep the copy in view) is gone, so a Reel's copy now sits below it in the phone's scroll, as on the Review page.
+
+**Verified**: hover previews screenshotted with a real 9:16 story image (300 by 533, uncropped, account over it) and a 4:5 feed image (whole, likes and "Not published yet" below); the table's hover tests pass.
+

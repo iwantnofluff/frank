@@ -8988,15 +8988,53 @@ button.feedgrid-live {
 .evpop.phonepop .rv {
   background: #fff;
 }
-/* Tall formats (a Reel's 9:16) show at most 4:5 in the preview, as
-   Instagram's feed shows them, cropped to fill, so the copy stays in view. */
+/* Each format as the Review page draws it (direct instruction): the
+   artwork whole, in its own shape, the copy below it in the scroll. */
 .phonepop .pp-media > img,
 .phonepop .pp-media > video,
 .phonepop .pp-media > .ig-noart,
 .phonepop .pp-media > .pp-loading {
   width: 100%;
-  max-height: 375px;
+}
+/* A Story fills the screen under the stage strip, its account laid over
+   the top on a shade, with no likes or caption (as .ig.story). */
+.phonepop.story .phonepop-scroll {
+  overflow: hidden;
+  padding-bottom: 0;
+  background: #000;
+}
+.phonepop.story .pp-media {
+  height: 100%;
+}
+/* The whole story, full width and uncropped as the Review page shows it
+   (direct instruction), the screen's black below where its reply bar sits. */
+.phonepop.story .pp-media > img,
+.phonepop.story .pp-media > video,
+.phonepop.story .pp-media > .ig-noart,
+.phonepop.story .pp-media > .pp-loading {
+  aspect-ratio: 9 / 16;
+  height: auto;
   object-fit: cover;
+  border-radius: 0 0 10px 10px;
+}
+.phonepop.story .pp-h {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  border: 0;
+  background: linear-gradient(rgba(0, 0, 0, 0.4), transparent);
+}
+.phonepop.story .pp-h b,
+.phonepop.story .pp-h span {
+  color: #fff;
+}
+.phonepop.story .pp-acts,
+.phonepop.story .pp-published,
+.phonepop.story .pp-pending,
+.phonepop.story .pp-cap {
+  display: none;
 }
 
 /* A reference link's preview card (LinkPreviewCard): the page's image,

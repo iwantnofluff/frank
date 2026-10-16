@@ -5,7 +5,7 @@ import { useCopyVersions } from "@/hooks/use-copy-versions";
 import { useViewportFit } from "@/hooks/use-viewport-fit";
 import { useComments } from "@/hooks/use-comments";
 import { stageColor, stageLabel, exceptionLabel } from "@/lib/stage-labels";
-import { aspectRatioCss, formatsLabel, postFormats } from "@/lib/formats";
+import { aspectRatioCss, formatsLabel, isStoryFormat, postFormats } from "@/lib/formats";
 import { useCreativeVersions, versionSlides } from "@/hooks/use-creative-versions";
 import { useArtworkUrl } from "@/hooks/use-asset-signed-url";
 import { NoArtwork } from "@/components/creative-review/NoArtwork";
@@ -61,6 +61,9 @@ export function CreativePreviewPopover({
   const caption = latestCopy?.fields?.caption;
   const openComments = comments?.filter((c) => !c.resolved_at).length ?? 0;
   const color = stageColor(creative.stage, creative.exception);
+  // A Story fills the phone's screen, its account laid over it, as the
+  // Review page draws one (direct instruction); everything else as there too.
+  const story = isStoryFormat(creative.format);
 
   // Positioned from its real measured size, re-measured as the caption and
   // comments load in — a fixed 340px guess ran it off the bottom of the
@@ -68,10 +71,32 @@ export function CreativePreviewPopover({
   const ref = useRef<HTMLDivElement>(null);
   useViewportFit(ref, anchorRect, { side: "beside" });
 
+  const header = (
+    <div className="pp-h">
+      <span className="pp-av">
+        {clientLogoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
+          <img src={clientLogoUrl} alt="" />
+        ) : (
+          <i />
+        )}
+      </span>
+      <div>
+        <b>{creative.name}</b>
+        <span>{formatsLabel(postFormats(creative))}</span>
+      </div>
+    </div>
+  );
+
   return (
     // In the phone (direct instruction): a small version of the Feed
     // Preview's frame, the stage strip at the top of its screen.
-    <div ref={ref} className="evpop on phonepop" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
+    <div
+      ref={ref}
+      className={`evpop on phonepop${story ? " story" : ""}`}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
       <span className="phonepop-notch" aria-hidden="true" />
       <div className="rv">
         {/* Just the stage, as the table's Status pill: the post's name is
@@ -98,21 +123,9 @@ export function CreativePreviewPopover({
       {/* Everything under the stage strip scrolls inside the phone, which
           keeps a fixed height (direct instruction). */}
       <div className="phonepop-scroll">
-      <div className="pp-h">
-        <span className="pp-av">
-          {clientLogoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
-            <img src={clientLogoUrl} alt="" />
-          ) : (
-            <i />
-          )}
-        </span>
-        <div>
-          <b>{creative.name}</b>
-          <span>{formatsLabel(postFormats(creative))}</span>
-        </div>
-      </div>
+      {!story && header}
       <div className="pp-media">
+        {story && header}
         {/* The post's latest artwork (its first slide), or the review
             page's own "no artwork yet" while there isn't any (direct
             instruction). */}

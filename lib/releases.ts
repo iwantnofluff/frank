@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.35.4",
+    date: "2026-10-16",
+    title: "Previews as the post page draws them",
+    changes: [
+      "Hovering a post's Creative in a project's table shows it as its own page does: a Story fills the phone, all of it, with the account over the top; a post or Reel shows its artwork whole, in its own shape, the copy below.",
+    ],
+  },
+  {
     version: "1.35.3",
     date: "2026-10-16",
     title: "Room for Add Slides",
