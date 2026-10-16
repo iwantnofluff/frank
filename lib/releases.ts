@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.33.3",
+    date: "2026-10-16",
+    title: "More room on a phone's review link",
+    changes: [
+      "On a phone, Content and Feed are icons in the top right, beside the logos, as on the post page.",
+      "Under the logos: the client, then the post's name, then its format, so the post itself starts higher up.",
+      "The previous and next arrows are a little bigger.",
+    ],
+  },
+  {
     version: "1.33.2",
     date: "2026-10-15",
     title: "Invited after the name",

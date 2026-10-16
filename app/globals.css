@@ -5519,9 +5519,48 @@ textarea.cxin {
   gap: 8px;
   flex-shrink: 0;
 }
+/* 15% bigger (direct instruction; was 28px). */
 .m-step .m-arrow {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
+}
+.m-step .m-arrow svg {
+  width: 17px;
+  height: 17px;
+}
+/* Content and Feed as the Review page's icons, at the logos' end (direct
+   instruction), in place of the switch under the header. */
+.m-views {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+}
+.m-view {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  transition:
+    background-color var(--dur-fast) var(--ease-std),
+    color var(--dur-fast) var(--ease-std);
+}
+.m-view .rn-ic {
+  width: 18px;
+  height: 18px;
+}
+.m-view[aria-pressed="true"] {
+  background: var(--action-soft);
+  color: var(--action);
+}
+/* The post's name under the client's, as strong as it (direct
+   instruction), its format below. */
+.rv-client-t .rv-post {
+  font-size: 14.2px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-top: 2px;
 }
 .m-arrow {
   width: 30px;
@@ -5576,25 +5615,10 @@ textarea.cxin {
   z-index: 3;
   background: var(--surface);
 }
-/* The post's name and format, above its card on a phone (direct
-   instruction: the card starts with the logo and handle). */
+/* Above a post's card on a phone: "Also waiting for your review". Its
+   name and format are in the header now (direct instruction). */
 .m-meta {
   padding: 2px 4px 12px;
-}
-.m-meta b {
-  display: block;
-  font-size: 16.2px;
-  font-weight: 600;
-  margin-bottom: 5px;
-  line-height: 1.3;
-}
-.m-meta .mm {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-  align-items: center;
-  font-size: 12.7px;
-  color: var(--muted);
 }
 .m-decide {
   display: flex;
@@ -7898,17 +7922,7 @@ a.profproject:hover .pp-t b {
   color: var(--muted);
   padding: 10px 12px 12px;
 }
-/* A review link's Post / Feed switch and Feed view (phase54). */
-.seg2.reviewviews {
-  display: flex;
-  /* A little more room under the header (direct instruction). */
-  margin: 14px 14px 4px;
-  /* Its full height in the phone layout's column, never squashed. */
-  flex-shrink: 0;
-}
-.seg2.reviewviews button {
-  flex: 1;
-}
+/* A review link's Feed view (phase54). */
 .sharedfeed {
   margin: 10px;
 }

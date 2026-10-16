@@ -403,7 +403,8 @@ test("shared review — a link for one post opens on it, the project's other wai
   // On a phone: the link's post first; the next is labelled as the extra.
   await page.setViewportSize(PHONE_VIEWPORT);
   await page.reload();
-  await expect(page.locator(".m-meta b")).toHaveText("Zzz Sent Post");
+  // The post's name is in the header now (direct instruction).
+  await expect(page.locator(".rv-post")).toHaveText("Zzz Sent Post");
   await expect(page.locator(".m-also")).toHaveCount(0);
   await page.getByRole("button", { name: "Next post" }).click();
   await expect(page.locator(".m-also")).toHaveText("Also waiting for your review");

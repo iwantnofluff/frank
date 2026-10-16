@@ -3896,3 +3896,10 @@ Direct instruction: the client's name, the thin rule, then "Project Name Setting
 **Verified**: measured in a real session, 41px above both lines and the same below; screenshot of the window with an invited User on the project: the title, Details with only Project Name and Description, and Invited before the name. manage-clients-projects checks the new title and that Due Date and Delivery are gone, and passes.
 
 Then Invited moved after the name, on the same line (direct instruction, 1.33.2).
+
+## A phone's review link: view icons in the header
+
+Direct instruction: the Content and Feed switch under the header is gone; they're the post page's own Content and Feed icons (ReviewNav's ICONS) at the end of the logos' row, the current one shaded as the rail's is. Under the logos, the client, then the post's name (a link into Frank for the workspace's team, as before) and its format (and a continuous post's destination), taking the project's line; the name and format above the card went, so the card starts just under the header. "Also waiting for your review" stays above the card. The arrows beside "1 / 2" are 15% bigger (28px to 32px, their chevrons 15px to 17px). The desktop review link is unchanged. ReviewViewSwitch and its CSS are removed (nothing else used them).
+
+**Verified**: screenshots at a phone's size on Content and Feed, with two posts: the icons beside the logos, the three lines under them, the arrows measured at 32px, the card straight under the header. shared-review-phone.png updated after looking at it; shared-review-public, video-review and stories pass.
+

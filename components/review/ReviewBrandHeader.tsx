@@ -8,7 +8,9 @@ import { GatedLink } from "./GatedLink";
 // instruction), and the project and how many posts it holds. The agency's
 // logo is round, as everywhere in Frank; without one, its initial. The
 // client's and project's names open their pages in Frank (direct
-// instruction), asking anyone signed out to sign in first.
+// instruction), asking anyone signed out to sign in first. On a phone the
+// view's icons sit at the logos' end, and the post and its format take the
+// project's line (direct instruction).
 export function ReviewBrandHeader({
   agencyName,
   agencyLogoUrl,
@@ -18,6 +20,8 @@ export function ReviewBrandHeader({
   projectId,
   count,
   aside,
+  tools,
+  detail,
 }: {
   agencyName: string;
   agencyLogoUrl: string | null;
@@ -29,6 +33,10 @@ export function ReviewBrandHeader({
   count?: string;
   // Anything at the end of the client's row (the phone's "1 / 3").
   aside?: ReactNode;
+  // Anything at the end of the logos' row (the phone's Content and Feed).
+  tools?: ReactNode;
+  // In place of the project's line, under the client's name.
+  detail?: ReactNode;
 }) {
   return (
     <div className="rv-head">
@@ -37,6 +45,7 @@ export function ReviewBrandHeader({
         <img className="rv-frank" src={BRAND.headerStrapline} alt="Frank" />
         <span className="rv-sep" aria-hidden="true" />
         <Round url={agencyLogoUrl} name={agencyName} className="rv-agency" />
+        {tools}
       </div>
       <div className="rv-client">
         <div className="rv-client-t">
@@ -49,6 +58,7 @@ export function ReviewBrandHeader({
               clientName
             )}
           </b>
+          {detail ?? (
           <span>
             {projectId ? (
               <GatedLink href={`/projects/${projectId}`} what={projectName} workspaceName={agencyName}>
@@ -59,6 +69,7 @@ export function ReviewBrandHeader({
             )}
             {count && ` · ${count}`}
           </span>
+          )}
         </div>
         {aside}
       </div>

@@ -118,17 +118,3 @@ export function SharedFeedGrid({ controller, brandName }: { controller: ReviewCo
     </div>
   );
 }
-
-// Content or Feed, on a phone, named as the desktop's menu names them.
-export function ReviewViewSwitch({ controller }: { controller: ReviewController }) {
-  return (
-    <div className="seg2 reviewviews" role="group" aria-label="View">
-      <button type="button" aria-pressed={controller.view === "post"} onClick={() => controller.setView("post")}>
-        Content
-      </button>
-      <button type="button" aria-pressed={controller.view === "feed"} onClick={() => controller.setView("feed")}>
-        Feed
-      </button>
-    </div>
-  );
-}

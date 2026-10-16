@@ -1,7 +1,8 @@
 "use client";
 
 import type { ReviewController } from "@/hooks/use-review-controller";
-import { ReviewViewSwitch, SharedFeedGrid } from "./SharedFeedGrid";
+import { SharedFeedGrid } from "./SharedFeedGrid";
+import { ICONS } from "@/components/creative-review/ReviewNav";
 import { ReviewBrandHeader } from "./ReviewBrandHeader";
 import { useReviewViewer } from "@/hooks/use-review-viewer";
 import { CommentWhen } from "@/components/creative-review/CommentWhen";
@@ -55,6 +56,58 @@ export function MobileReview({
             clientId={controller.data?.status === "ok" ? controller.data.client_id : null}
             projectName={projectName}
             projectId={controller.data?.status === "ok" ? controller.data.project.id : null}
+            // Content and Feed as the Review page's icons, in line with the
+            // logos (direct instruction), in place of the switch under it.
+            tools={
+              <div className="m-views" role="group" aria-label="View">
+                <button
+                  type="button"
+                  className="m-view"
+                  aria-label="Content"
+                  title="Content"
+                  aria-pressed={controller.view === "post"}
+                  onClick={() => controller.setView("post")}
+                >
+                  <svg className="rn-ic" viewBox="0 0 1200 1200" aria-hidden="true">
+                    {ICONS.content}
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  className="m-view"
+                  aria-label="Feed"
+                  title="Feed"
+                  aria-pressed={controller.view === "feed"}
+                  onClick={() => controller.setView("feed")}
+                >
+                  <svg className="rn-ic" viewBox="0 0 1200 1200" aria-hidden="true">
+                    {ICONS.feed}
+                  </svg>
+                </button>
+              </div>
+            }
+            // The client, then the post and its format under it (direct
+            // instruction), so the post itself starts higher.
+            detail={
+              active ? (
+                <>
+                  <span className="rv-post">
+                    {/* For the workspace's team, the post's own page in Frank. */}
+                    {viewer?.isTeam ? (
+                      <a className="rv-link" href={`/creatives/${active.id}`}>
+                        {active.name}
+                      </a>
+                    ) : (
+                      active.name
+                    )}
+                  </span>
+                  <span>
+                    {formatsLabel(postFormats(active))}
+                    {active.destination && ` · ${active.destination}`}
+                  </span>
+                </>
+              ) : undefined
+            }
             aside={
               // Which post of how many, with the arrows beside it (direct
               // instruction: in place of the bar under the switch).
@@ -93,8 +146,6 @@ export function MobileReview({
           />
         </div>
 
-        <ReviewViewSwitch controller={controller} />
-
         <div className="m-scroll">
           {controller.view === "feed" ? (
             // In the same frame as a post on Content (direct instruction:
@@ -111,27 +162,13 @@ export function MobileReview({
               </div>
             ) : (
               <>
-              {/* The post's name and format above it, so the card itself
-                  starts with the logo and handle, as an Instagram post does. */}
-              <div className="m-meta">
-                {/* Not what this link was sent for, but waiting for review
-                    too (direct instruction); it comes after the link's own. */}
-                {controller.hasSent && !controller.isSent(active) && active.stage < STAGE.approved && <div className="m-also">Also waiting for your review</div>}
-                {/* For the workspace's team, the post's own page in Frank. */}
-                <b>
-                  {viewer?.isTeam ? (
-                    <a className="rv-link" href={`/creatives/${active.id}`}>
-                      {active.name}
-                    </a>
-                  ) : (
-                    active.name
-                  )}
-                </b>
-                <div className="mm">
-                  <span>{formatsLabel(postFormats(active))}</span>
-                  {active.destination && <span>· {active.destination}</span>}
+              {/* Not what this link was sent for, but waiting for review
+                  too (direct instruction); it comes after the link's own. */}
+              {controller.hasSent && !controller.isSent(active) && active.stage < STAGE.approved && (
+                <div className="m-meta">
+                  <div className="m-also">Also waiting for your review</div>
                 </div>
-              </div>
+              )}
               <div className="m-card">
                 <div className="ig-h">
                   <div className="ig-av">
