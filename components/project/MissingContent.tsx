@@ -27,6 +27,10 @@ export function MissingContent({
       }}
     >
       {addLabel ? `Add ${addLabel}` : "Pending"}
+      {/* It opens somewhere: a small diagonal arrow (direct instruction). */}
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M7 17L17 7M9 7h8v8" />
+      </svg>
     </button>
   );
 }

@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.34.4",
+    date: "2026-10-16",
+    title: "An arrow on the Add buttons",
+    changes: ["In a project's table, each Add button ends in a small diagonal arrow, as it opens the post's Edit window."],
+  },
+  {
     version: "1.34.3",
     date: "2026-10-16",
     title: "Client people on Users",

@@ -3960,3 +3960,5 @@ Direct instruction: client people, invited or joined, belonged on Users too; cho
 
 **Verified**: screenshots of both sections, one joined and one invited client person, and of a User with six clients in the moved column. team-manage checks the joined person's client link, the invite's Invited, link date and dropdown (Resend, Revoke), and that revoking removes the row; team-manage, people-below and client-invites pass (one test now waits for the Clients page before reading it, since Users shows clients' names too).
 
+Then a small diagonal arrow after each Add button's words (direct instruction, 1.34.4): inline, 10px, the label's white, so it reads as going somewhere; screenshotted in a row of them, which stays one line.
+

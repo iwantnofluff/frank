@@ -10919,6 +10919,16 @@ td.tlate {
 .tpending-btn:hover {
   filter: brightness(1.1);
 }
+.tpending-btn svg {
+  width: 10px;
+  height: 10px;
+  margin-left: 3px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 /* An empty table cell whose content the post's formats call for
    (direct instruction): Pending, in Concept's red. */
 .tpending {
