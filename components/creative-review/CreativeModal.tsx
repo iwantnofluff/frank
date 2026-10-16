@@ -70,6 +70,20 @@ const KNOWLEDGE_SECTION_LABELS: Record<string, string> = Object.fromEntries(
 
 type Tab = "brief" | "upload" | "checks";
 
+// Where the cursor goes when the window opens from a table's Pending
+// cell (direct instruction): that field, on its tab, ready for input.
+export type FocusTarget = "team" | "concept" | "slides" | "voiceover" | "artwork" | "imageOnText" | "copy" | "alt";
+const FOCUS: Record<FocusTarget, { tab: Tab; selector: string }> = {
+  team: { tab: "brief", selector: "#nbTeam" },
+  concept: { tab: "brief", selector: "#nbConcept" },
+  slides: { tab: "brief", selector: "#nbSlides" },
+  voiceover: { tab: "upload", selector: "#nbVo" },
+  artwork: { tab: "upload", selector: ".mtabbody .cslot-add" },
+  imageOnText: { tab: "upload", selector: '[data-focus="imageOnText"] textarea' },
+  copy: { tab: "upload", selector: '[data-focus="copy"] textarea, [data-focus="copy"] input' },
+  alt: { tab: "upload", selector: '[data-focus="alt"] textarea, [data-focus="alt"] input' },
+};
+
 // Long-form fields get a textarea, short ones a single-line input — same
 // split the prototype's own capField rendering makes (frank-prototype.html).
 const LONG_COPY_FIELDS = new Set(["caption", "description", "body", "notes", "primary"]);
@@ -112,6 +126,7 @@ type CreativeModalProps =
       creativeVersions: CreativeVersionRow[];
       copyVersions: CopyVersionRow[];
       initialTab?: Tab;
+      initialFocus?: FocusTarget;
       // Others on the team with this post's Edit window open (phase82).
       othersEditing?: string[];
       onCreativeVersionCreated: (versionId: string) => void;
@@ -578,9 +593,20 @@ export function CreativeModal(props: CreativeModalProps) {
   const updateCx = useUpdateCreativeCx(projectId);
   const delivery = isCreate ? props.delivery : (props.creative.projects?.delivery ?? "scheduled");
 
+  const initialFocus = isCreate ? undefined : props.initialFocus;
   const [activeTab, setActiveTab] = useState<Tab>(
-    isCreate ? "brief" : (props.initialTab ?? "upload"),
+    isCreate ? "brief" : initialFocus ? FOCUS[initialFocus].tab : (props.initialTab ?? "upload"),
   );
+  // Once, as it opens: the cursor in the field asked for, scrolled to.
+  useEffect(() => {
+    if (!initialFocus) return;
+    const t = setTimeout(() => {
+      const el = document.querySelector<HTMLElement>(FOCUS[initialFocus].selector);
+      el?.scrollIntoView({ block: "center" });
+      el?.focus();
+    }, 50);
+    return () => clearTimeout(t);
+  }, [initialFocus]);
 
   // The format and slide count as last saved — what the artwork was made
   // for — to tell whether a change means it no longer fits.
@@ -1617,6 +1643,7 @@ export function CreativeModal(props: CreativeModalProps) {
               ? `The words on each ${frameNoun.toLowerCase()}'s artwork, one entry per ${frameNoun.toLowerCase()}.`
               : "The words on the artwork itself."}
           </p>
+          <div data-focus="imageOnText">
           <ListEditor
             itemLabel={(i) => (slideCount ? `${frameNoun} ${i + 1}` : "Text on Image")}
             values={slideFields(slideText, slideCount ?? 1)}
@@ -1627,6 +1654,7 @@ export function CreativeModal(props: CreativeModalProps) {
             fixed
             bare
           />
+          </div>
           <div className="field btnrow">
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <button
@@ -1703,9 +1731,10 @@ export function CreativeModal(props: CreativeModalProps) {
           {isViewingLatestCopy && (
             <>
 
-              {copyFieldSpecs.map((spec) => (
+              {copyFieldSpecs.map((spec, i) => (
                 <Fragment key={spec.key}>
-                <div className="field">
+                {/* The first field is where Copy's Pending lands; Alt Text's its own. */}
+                <div className="field" data-focus={spec.key === "alt" ? "alt" : i === 0 ? "copy" : undefined}>
                   <label>{spec.label}</label>
                   {LONG_COPY_FIELDS.has(spec.key) ? (
                     <textarea

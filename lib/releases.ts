@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.34.0",
+    date: "2026-10-16",
+    title: "Fill in what's Pending from the table",
+    changes: [
+      "In a project's table, Pending is a small blue button for your team. Clicking it opens the post's Edit window right there, with the cursor in that field: its Team, Concept, Slides, VO, Creative, Text on Image, Copy or Alt Text. WIIFM Direction's opens at the Copy, which it's written from.",
+      "A post past its Publish Date (or Live Date) that hasn't gone live has its date in red.",
+      "Clients still see Pending as red words.",
+    ],
+  },
+  {
     version: "1.33.9",
     date: "2026-10-16",
     title: "Faster pages",

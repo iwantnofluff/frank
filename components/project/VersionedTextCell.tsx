@@ -17,6 +17,7 @@ export function VersionedTextCell({
   expanded,
   onToggle,
   expected = false,
+  onFill,
 }: {
   label: string;
   // node: the same, formatted (the Copy column's labels), when there is one.
@@ -26,6 +27,8 @@ export function VersionedTextCell({
   onToggle: () => void;
   // With no version yet: Pending (the formats call for it) or a dash.
   expected?: boolean;
+  // Pending's button, for the team: the post's Edit window at Copy.
+  onFill?: () => void;
 }) {
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -44,7 +47,7 @@ export function VersionedTextCell({
     if (timeout.current) clearTimeout(timeout.current);
   }
 
-  if (!latest) return <MissingContent expected={expected} />;
+  if (!latest) return <MissingContent expected={expected} onFill={onFill} />;
   return (
     <>
       <span className="copyc">

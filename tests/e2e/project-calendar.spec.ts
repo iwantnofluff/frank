@@ -327,3 +327,47 @@ test("project calendar — hiding a column via the Columns picker also marks the
 
   await expect(viewSaveSplit(page).locator(".btn.primary").first()).toHaveText("Save as New View");
 });
+
+test("project calendar — a post past its date is red, and Pending opens its Edit window at that field", async ({ page, frank }) => {
+  const { createClient } = await import("@supabase/supabase-js");
+  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  // Past its Publish Date, in Client Review: not live (direct instruction: red).
+  // Early today, so it's past whenever this runs and in the month the
+  // table opens on.
+  const early = new Date();
+  early.setHours(0, 1, 0, 0);
+  const thisMonth = early.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+  const past = await frank.createCreativeAtStage(4, "Past Due Post");
+  await admin.from("creatives").update({ scheduled_at: early.toISOString() }).eq("id", past);
+  await frank.loginAsStaff(page);
+  await page.goto(`/projects/${frank.projectId}`);
+  await page.waitForSelector(".tblwrap, .empty");
+  // A future post's date isn't red.
+  await goToMonth(page, "March 2027");
+  await expect(page.locator("tr[data-row]", { hasText: "E2E Test Creative" }).locator("td.sk2")).not.toHaveClass(/tlate/);
+  await page.reload();
+  await page.waitForSelector(".tblwrap, .empty");
+  await goToMonth(page, thisMonth);
+  await page.waitForSelector("td.skchk");
+  const row = page.locator("tr[data-row]", { hasText: "Past Due Post" });
+  await expect(row.locator("td.sk2")).toHaveClass(/tlate/);
+
+  // Pending is a button for the team (direct instruction): the Edit window,
+  // on the table, with the cursor in the Concept.
+  const concept = row.locator("td").filter({ has: page.locator(".tpending-btn") }).nth(1);
+  await concept.locator(".tpending-btn").click();
+  await expect(page.locator("#nbConcept")).toBeFocused();
+  expect(page.url()).toContain(`/projects/${frank.projectId}`);
+});
+
+test("project calendar — a client sees Pending as words, not a button", async ({ page, frank }) => {
+  await frank.loginAsClient(page);
+  await page.goto(`/projects/${frank.projectId}`);
+  await page.waitForSelector(".tblwrap, .empty");
+  await goToMonth(page, "March 2027");
+  await page.waitForSelector(".tbl");
+  await expect(page.locator(".tpending").first()).toBeVisible();
+  await expect(page.locator(".tpending-btn")).toHaveCount(0);
+});

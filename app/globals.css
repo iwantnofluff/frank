@@ -10892,6 +10892,28 @@ a.pj-post:hover {
   }
 }
 
+/* A post past its date and not live yet (direct instruction). */
+td.tlate {
+  color: var(--rose);
+  font-weight: 600;
+}
+/* Pending, for the team: a small button as the Status pills are (.stg),
+   in the action blue, opening the post's Edit window at that field. */
+.tpending-btn {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10.4px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 3.4px;
+  background: var(--action);
+  color: #fff;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.tpending-btn:hover {
+  filter: brightness(1.1);
+}
 /* An empty table cell whose content the post's formats call for
    (direct instruction): Pending, in Concept's red. */
 .tpending {
