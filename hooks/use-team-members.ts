@@ -12,6 +12,8 @@ export interface TeamMemberRow {
   // An Admin an Owner has let invite people (phase44).
   can_invite: boolean;
   accepted_at: string | null;
+  // When they were invited (Date Added, with accepted_at for the founder).
+  invited_at: string | null;
   removed_at: string | null;
   // For someone who hasn't joined: their latest invite link's dates, when
   // the viewer may see them (Owners, and whoever manages the person).
@@ -35,7 +37,7 @@ export function useTeamMembers(agencyId: string | undefined) {
       // relationship was found"). Disambiguate explicitly.
       const { data, error } = await supabase
         .from("memberships")
-        .select("id, user_id, role, client_id, can_invite, accepted_at, removed_at, user:users!memberships_user_id_fkey(name, email, designation, avatar_asset_id)")
+        .select("id, user_id, role, client_id, can_invite, accepted_at, invited_at, removed_at, user:users!memberships_user_id_fkey(name, email, designation, avatar_asset_id)")
         .eq("agency_id", agencyId!)
         .is("client_id", null) // agency staff only — client contacts aren't "the team"
         // Deactivated members stay listed (with Reactivate); Removed ones don't.

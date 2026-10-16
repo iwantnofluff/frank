@@ -6,7 +6,7 @@ import { useClients } from "@/hooks/use-clients";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useMyAgency } from "@/hooks/use-my-agency";
 import { useMyMembership } from "@/hooks/use-my-membership";
-import { useClientMembers } from "@/hooks/use-client-members";
+import { useClientMembers, type ClientMemberRow } from "@/hooks/use-client-members";
 import { useTeamMembers, type TeamMemberRow } from "@/hooks/use-team-members";
 import { useStaffClientAccess } from "@/hooks/use-staff-client-access";
 import { useAvatarUrls } from "@/hooks/use-avatar-urls";
@@ -38,13 +38,28 @@ import {
 // row's ⋮ menu), so there's no column after Status.
 // Clients further left, Email narrower for it, and room after it before
 // Role (direct instruction).
-const PEOPLE_COLUMNS_WITH_CLIENTS = "1fr 0.95fr 1.35fr 150px 110px";
-const PEOPLE_COLUMNS = "1fr 1.3fr 150px 150px";
+// Date Added after Clients (direct instruction), Clients narrower for it,
+// and Role and Status further right.
+const PEOPLE_COLUMNS_WITH_CLIENTS = "1.1fr 1fr 1fr 104px 132px 104px";
+const PEOPLE_COLUMNS = "1fr 1.3fr 104px 150px 140px";
 // Total Members a little in from the edge, and more room between the two
 // lists of members (direct instruction).
 const CLIENT_VIEW_COLUMNS = "1fr 1.5fr 1.5fr 130px";
 
 export type View = "people" | "clients";
+
+type PeopleSort = "default" | "name-asc" | "name-desc" | "date-asc" | "date-desc";
+
+// When someone was added (direct instruction: a Date Added column): when
+// they were invited, or, for whoever wasn't (the workspace's founder),
+// when they joined.
+function addedAt(m: { invited_at?: string | null; accepted_at: string | null }): string | null {
+  return m.invited_at ?? m.accepted_at ?? null;
+}
+function addedOn(m: { invited_at?: string | null; accepted_at: string | null }): string {
+  const at = addedAt(m);
+  return at ? new Date(at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—";
+}
 
 // Under "Invited" (direct instruction: say when someone hasn't joined): until
 // when their link works, or that it's expired and needs resending. Only
@@ -99,6 +114,8 @@ export function TeamSettings({ view }: { view: View }) {
   const setCanInvite = useSetCanInvite(agencyId ?? "");
 
   const [inviting, setInviting] = useState(false);
+  const [peopleFilter, setPeopleFilter] = useState<"all" | "team" | "client">("all");
+  const [peopleSort, setPeopleSort] = useState<PeopleSort>("default");
   const [notice, setNotice] = useState<string | null>(null);
   const [removeTarget, setRemoveTarget] = useState<TeamMemberRow | null>(null);
   const updateMember = useUpdateMember(agency?.agencyId ?? "");
@@ -249,26 +266,115 @@ export function TeamSettings({ view }: { view: View }) {
     updateMember.error ??
     (removeTarget ? null : remove.error);
   const peopleColumns = canSeeAccess ? PEOPLE_COLUMNS_WITH_CLIENTS : PEOPLE_COLUMNS;
+
+  // The one list (direct instruction): the team in role order, then each
+  // client's people by client and name; or as picked.
+  const teamCount = members?.length ?? 0;
+  const clientCount = canSeeAccess ? (clientMembers?.length ?? 0) : 0;
+  type PeopleRow =
+    | { kind: "team"; m: TeamMemberRow; name: string; added: string | null }
+    | { kind: "client"; m: ClientMemberRow; name: string; added: string | null };
+  const peopleRows: PeopleRow[] = (() => {
+    const team: PeopleRow[] = (members ?? []).map((m) => ({
+      kind: "team",
+      m,
+      name: m.user?.name || m.user?.email || "",
+      added: addedAt(m),
+    }));
+    const theirs: PeopleRow[] = (canSeeAccess ? (clientMembers ?? []) : [])
+      .slice()
+      .sort(
+        (a, b) =>
+          (clientName.get(a.client_id) ?? "").localeCompare(clientName.get(b.client_id) ?? "") ||
+          (a.user?.name ?? "").localeCompare(b.user?.name ?? ""),
+      )
+      .map((m) => ({ kind: "client", m, name: m.user?.name || m.user?.email || "", added: addedAt(m) }));
+    const rows = peopleFilter === "team" ? team : peopleFilter === "client" ? theirs : [...team, ...theirs];
+    if (peopleSort === "default") return rows;
+    const byName = (a: PeopleRow, b: PeopleRow) => a.name.localeCompare(b.name);
+    // Undated last either way.
+    const byDate = (a: PeopleRow, b: PeopleRow) =>
+      (a.added ?? "9999").localeCompare(b.added ?? "9999");
+    return [...rows].sort((a, b) =>
+      peopleSort === "name-asc"
+        ? byName(a, b)
+        : peopleSort === "name-desc"
+          ? byName(b, a)
+          : peopleSort === "date-asc"
+            ? byDate(a, b)
+            : !a.added ? 1 : !b.added ? -1 : byDate(b, a),
+    );
+  })();
   // Restricted Users only — everyone above them sees every client anyway.
   const restrictedMembers = (members ?? []).filter((m) => m.role === "user" && !m.removed_at);
 
   return (
     <div className="pad">
-      <h1 className="h1">{view === "people" ? "Users" : "Clients"}</h1>
+      {/* The workspace's own name (direct instruction): "No Fluff Team Members". */}
+      <h1 className="h1">{view === "people" ? `${agency?.name ?? "Workspace"} Team Members` : "Clients"}</h1>
       <p className="sub">
         {view === "people"
-          ? `Everyone with access to ${agency?.name ?? "this workspace"}: your team, then each client's own people.`
+          ? `Everyone with access to ${agency?.name ?? "this workspace"}: your team and each client's own people.`
           : "Who can see each client: your team, and the client's own people."}
       </p>
 
       <div className="secthead" style={{ marginTop: 16 }}>
-        <h2>{view === "people" ? "Team Members" : "Client Access"}</h2>
-        <span className="count">
-          {view === "people"
-            ? `${members?.length ?? 0} member${members?.length === 1 ? "" : "s"}`
-            : `${activeClients.length} client${activeClients.length === 1 ? "" : "s"}`}
-        </span>
+        {view === "people" ? (
+          // All, the workspace's own team, or the clients' people (direct
+          // instruction), with how many in each.
+          canSeeAccess ? (
+            <div className="filters" style={{ marginLeft: 0 }}>
+              {(
+                [
+                  ["all", "All", teamCount + clientCount],
+                  ["team", agency?.name ?? "Workspace", teamCount],
+                  ["client", "Client", clientCount],
+                ] as const
+              ).map(([value, label, count]) => (
+                <button
+                  key={value}
+                  type="button"
+                  className="chip"
+                  aria-pressed={peopleFilter === value}
+                  onClick={() => setPeopleFilter(value)}
+                >
+                  {label} ({count})
+                </button>
+              ))}
+            </div>
+          ) : (
+            <>
+              <h2>Team Members</h2>
+              <span className="count">
+                {teamCount} member{teamCount === 1 ? "" : "s"}
+              </span>
+            </>
+          )
+        ) : (
+          <>
+            <h2>Client Access</h2>
+            <span className="count">
+              {activeClients.length} client{activeClients.length === 1 ? "" : "s"}
+            </span>
+          </>
+        )}
         <div className="filters">
+          {view === "people" && (
+            // Name or date added (direct instruction), as the client page's
+            // projects are sorted.
+            <select
+              className="sortsel"
+              aria-label="Sort people"
+              value={peopleSort}
+              onChange={(e) => setPeopleSort(e.target.value as PeopleSort)}
+            >
+              <option value="default">Team first</option>
+              <option value="name-asc">Name A–Z</option>
+              <option value="name-desc">Name Z–A</option>
+              <option value="date-desc">Newest first</option>
+              <option value="date-asc">Oldest first</option>
+            </select>
+          )}
           {inviteRoles.length > 0 && agency && view === "people" && (
             <button type="button" className="btn sm" onClick={() => setInviting(true)}>
               Invite Member
@@ -289,22 +395,29 @@ export function TeamSettings({ view }: { view: View }) {
         </div>
       )}
 
+      {/* One list (direct instruction): the team, then each client's own
+          people, with pills for either and a sort. Clients' people only for
+          Admins and above, who can read them (as Team, Clients). */}
       {view === "people" && !isError && members && members.length > 0 && (
         <div className="clients">
           <div className="crow head" style={{ gridTemplateColumns: peopleColumns }}>
             <div>Name</div>
             <div>Email</div>
             {canSeeAccess && <div>Clients</div>}
+            <div>Date Added</div>
             <div>Role</div>
             <div>Status</div>
           </div>
-          {members.map((m) => {
+          {peopleRows.map((row) => {
+            if (row.kind === "team") {
+              const m = row.m;
             const status = statusOf(m);
             const actions = actionsFor(m);
             return (
               <div
                 className="crow"
                 key={m.id}
+                data-kind="team"
                 style={{ gridTemplateColumns: peopleColumns, cursor: "default" }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
@@ -322,8 +435,9 @@ export function TeamSettings({ view }: { view: View }) {
                     )}
                   </div>
                 </div>
-                <div style={{ fontSize: 14.2, color: "var(--muted)" }}>{m.user?.email ?? "—"}</div>
+                <div style={{ fontSize: 14.2, color: "var(--muted)", minWidth: 0, overflowWrap: "anywhere" }}>{m.user?.email ?? "—"}</div>
                 {canSeeAccess && <div style={{ fontSize: 14.2, paddingRight: 32 }}>{clientsCell(m)}</div>}
+                <div style={{ fontSize: 14.2, color: "var(--muted)" }}>{addedOn(m)}</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                   {actions ? (
                     <RoleMenu
@@ -373,105 +487,73 @@ export function TeamSettings({ view }: { view: View }) {
                 </div>
               </div>
             );
+            }
+            const m = row.m;
+            const name = m.user?.name || m.user?.email || "Someone";
+            const email = m.user?.email ?? "";
+            const note = inviteNote(m, dataUpdatedAt);
+            return (
+              <div className="crow" data-kind="client" key={m.id} style={{ gridTemplateColumns: peopleColumns, cursor: "default" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                  <PersonAvatar
+                    className="who"
+                    style={{ width: 32, height: 32, fontSize: 12.2, background: avatarColour(name) }}
+                    initials={initials(m.user?.name, email || "?")}
+                    photoUrl={null}
+                    hasPhoto={false}
+                  />
+                  <div style={{ fontSize: 14.7, fontWeight: 500, minWidth: 0 }}>{m.user?.name ?? "—"}</div>
+                </div>
+                <div style={{ fontSize: 14.2, color: "var(--muted)", minWidth: 0, overflowWrap: "anywhere" }}>{email || "—"}</div>
+                <div style={{ fontSize: 14.2, paddingRight: 32 }}>
+                  <Link className="clientlink" href={`/clients/${m.client_id}`}>
+                    {clientName.get(m.client_id) ?? "—"}
+                  </Link>
+                </div>
+                <div style={{ fontSize: 14.2, color: "var(--muted)" }}>{addedOn(m)}</div>
+                <div>
+                  {m.accepted_at ? (
+                    <span className="tag blue">Client</span>
+                  ) : (
+                    <RoleMenu
+                      name={name}
+                      value="client"
+                      current="Client"
+                      options={[]}
+                      onPick={() => {}}
+                      extra={[
+                        {
+                          label: "Resend Invite",
+                          onClick: () =>
+                            resend.mutate(
+                              { membershipId: m.id, email, name },
+                              {
+                                onSuccess: (sent) => {
+                                  setNotice(null);
+                                  setResent(sent);
+                                  void refetchClientMembers();
+                                },
+                              },
+                            ),
+                        },
+                        {
+                          label: "Revoke Invite",
+                          tone: "danger" as const,
+                          onClick: () =>
+                            revoke.mutate(m.id, { onSuccess: () => setNotice(`Invite to ${email} revoked`) }),
+                        },
+                      ]}
+                    />
+                  )}
+                </div>
+                <div>
+                  <span className={`tag ${m.accepted_at ? "green" : "grey"}`}>{m.accepted_at ? "Active" : "Invited"}</span>
+                  {note && <div className={`invnote${note.late ? " late" : ""}`}>{note.text}</div>}
+                </div>
+              </div>
+            );
           })}
         </div>
-      )}
-
-      {/* Each client's own people, under the team (direct instruction):
-          invited or joined, their client linked; an invite's Resend and
-          Revoke in its dropdown, as the team's. Invited from the client's
-          own People. */}
-      {view === "people" && canSeeAccess && (clientMembers?.length ?? 0) > 0 && (
-        <>
-          <div className="secthead" style={{ marginTop: 28 }}>
-            <h2>Client Members</h2>
-            <span className="count">
-              {clientMembers!.length} member{clientMembers!.length === 1 ? "" : "s"}
-            </span>
-          </div>
-          <p className="sub" style={{ marginTop: 0, marginBottom: 12 }}>
-            Each client&rsquo;s own people. Invite them from the client&rsquo;s Settings, People.
-          </p>
-          <div className="clients">
-            <div className="crow head" style={{ gridTemplateColumns: peopleColumns }}>
-              <div>Name</div>
-              <div>Email</div>
-              <div>Client</div>
-              <div>Role</div>
-              <div>Status</div>
-            </div>
-            {[...clientMembers!]
-              .sort(
-                (a, b) =>
-                  (clientName.get(a.client_id) ?? "").localeCompare(clientName.get(b.client_id) ?? "") ||
-                  (a.user?.name ?? "").localeCompare(b.user?.name ?? ""),
-              )
-              .map((m) => {
-                const name = m.user?.name || m.user?.email || "Someone";
-                const email = m.user?.email ?? "";
-                const note = inviteNote(m, dataUpdatedAt);
-                return (
-                  <div className="crow" key={m.id} style={{ gridTemplateColumns: peopleColumns, cursor: "default" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-                      <PersonAvatar
-                        className="who"
-                        style={{ width: 32, height: 32, fontSize: 12.2, background: avatarColour(name) }}
-                        initials={initials(m.user?.name, email || "?")}
-                        photoUrl={null}
-                        hasPhoto={false}
-                      />
-                      <div style={{ fontSize: 14.7, fontWeight: 500, minWidth: 0 }}>{m.user?.name ?? "—"}</div>
-                    </div>
-                    <div style={{ fontSize: 14.2, color: "var(--muted)" }}>{email || "—"}</div>
-                    <div style={{ fontSize: 14.2, paddingRight: 32 }}>
-                      <Link className="clientlink" href={`/clients/${m.client_id}`}>
-                        {clientName.get(m.client_id) ?? "—"}
-                      </Link>
-                    </div>
-                    <div>
-                      {m.accepted_at ? (
-                        <span className="tag blue">Client</span>
-                      ) : (
-                        <RoleMenu
-                          name={name}
-                          value="client"
-                          current="Client"
-                          options={[]}
-                          onPick={() => {}}
-                          extra={[
-                            {
-                              label: "Resend Invite",
-                              onClick: () =>
-                                resend.mutate(
-                                  { membershipId: m.id, email, name },
-                                  {
-                                    onSuccess: (sent) => {
-                                      setNotice(null);
-                                      setResent(sent);
-                                      void refetchClientMembers();
-                                    },
-                                  },
-                                ),
-                            },
-                            {
-                              label: "Revoke Invite",
-                              tone: "danger" as const,
-                              onClick: () =>
-                                revoke.mutate(m.id, { onSuccess: () => setNotice(`Invite to ${email} revoked`) }),
-                            },
-                          ]}
-                        />
-                      )}
-                    </div>
-                    <div>
-                      <span className={`tag ${m.accepted_at ? "green" : "grey"}`}>{m.accepted_at ? "Active" : "Invited"}</span>
-                      {note && <div className={`invnote${note.late ? " late" : ""}`}>{note.text}</div>}
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
-        </>
       )}
 
       {view === "clients" && !canSeeAccess && (

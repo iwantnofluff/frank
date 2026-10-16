@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.35.0",
+    date: "2026-10-16",
+    title: "One list of everyone",
+    changes: [
+      "Workspace Settings, Users is now titled with your workspace (No Fluff Team Members) and shows one list: your team and each client's own people, with pills for All, your workspace and Client.",
+      "A Date Added column shows when each person was invited (or joined).",
+      "Sort the list by name or by date added.",
+    ],
+  },
+  {
     version: "1.34.4",
     date: "2026-10-16",
     title: "An arrow on the Add buttons",

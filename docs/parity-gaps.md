@@ -3962,3 +3962,9 @@ Direct instruction: client people, invited or joined, belonged on Users too; cho
 
 Then a small diagonal arrow after each Add button's words (direct instruction, 1.34.4): inline, 10px, the label's white, so it reads as going somewhere; screenshotted in a row of them, which stays one line.
 
+## One list on Users
+
+Direct instruction: the page named for the workspace ("No Fluff Team Members"; the menu item stays Users); its two sections one list, with pills for All, the workspace's own team (by its name) and Client, each with its count, as the client page's Active and Archived pills; a Date Added column; Clients narrower and Role and Status further right; a sort for name and date (the client page's sort dropdown: Team first, the default, then Name A–Z and Z–A, Newest and Oldest first, undated last). Date Added is when they were invited, or, where nobody invited them (the workspace's founder), when they joined: memberships has no creation date of its own, so nothing new was added. The pills and client people show for Admins and above, who can read clients' people (as Team, Clients); anyone else sees the team alone, as before. Columns 1.1fr 1fr 1fr 104px 132px 104px, a long email wrapping in its own column rather than over the next.
+
+**Verified**: in a real session with the team, a joined and an invited client person: the title, the pills' counts and filtering (Client 2, the workspace 1), Name A–Z and Newest first, the dates. team-manage checks the title, pills, filtering, a sort and the column; team-manage, people-below and client-invites pass. settings-team.png updated after looking at it (at 1280px a long test email wraps in its column; nothing overlaps).
+

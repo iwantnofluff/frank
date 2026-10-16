@@ -427,7 +427,17 @@ test("Users lists each client's people, invited ones with Resend and Revoke", as
     if (inviteError) throw inviteError;
     await frank.loginAsStaff(page);
     await page.goto(`${APP_URL}/settings/team`);
-    await expect(page.getByRole("heading", { name: "Client Members" })).toBeVisible({ timeout: 15_000 });
+    // One list (direct instruction): its title the workspace's, pills for
+    // All, the team and the clients' people.
+    await expect(page.getByRole("heading", { name: "E2E Test Agency Team Members" })).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator(".secthead .chip")).toHaveText(["All (3)", "E2E Test Agency (1)", "Client (2)"]);
+    await page.getByRole("button", { name: "Client (2)" }).click();
+    await expect(page.locator(".crow:not(.head)")).toHaveCount(2);
+    await page.getByRole("button", { name: "All (3)" }).click();
+    // Sorted by name; each with the date they were added.
+    await page.getByLabel("Sort people").selectOption("name-desc");
+    await expect(page.locator(".crow:not(.head)").first()).toContainText("Ivy Invitee");
+    await expect(page.locator(".crow.head")).toContainText("Date Added");
     const joined = page.locator(".crow", { hasText: frank.clientEmail });
     await expect(joined).toContainText("Active");
     await expect(joined.getByRole("link", { name: "E2E Test Client" })).toHaveAttribute("href", `/clients/${frank.clientId}`);
