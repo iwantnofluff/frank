@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.33.9",
+    date: "2026-10-16",
+    title: "Faster pages",
+    changes: [
+      "Posts, their versions, copy, comments, projects, clients and files load much faster: the checks on who can see them now run once for each page, not once for every item on it.",
+      "Fewer pages half-loading or failing on a busy moment.",
+    ],
+  },
+  {
     version: "1.33.8",
     date: "2026-10-16",
     title: "Long PDFs in Knowledge",

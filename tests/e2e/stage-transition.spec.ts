@@ -22,8 +22,10 @@ test("staff advances a creative to Client Review, making it visible through a sh
   await expect(pressed).toHaveText("1.Concept");
   await expect(page.locator(".stagesw").getByRole("button", { name: "Concept", exact: true })).toHaveAttribute("aria-disabled", "true");
 
-  await page.click('.stagesw button:has-text("Client Review")');
-  await expect(pressed).toContainText("Client Review");
+  // By its full name: the pill itself reads "4. Client" (1.33.0).
+  await page.locator(".stagesw").getByRole("button", { name: "Client Review", exact: true }).click();
+  // Its full name is its label; the pill reads "4. Client" (1.33.0).
+  await expect(pressed).toHaveAttribute("aria-label", "Client Review");
 
   await page.getByRole("button", { name: "Share for review" }).click();
   await page.click('button[role="radio"]:has-text("Current Post")');
@@ -70,8 +72,9 @@ test("Share for review appears once a creative moves to Client Review", async ({
 
   await expect(page.getByRole("button", { name: "Share for review" })).toHaveCount(0);
 
-  await page.click('.stagesw button:has-text("Client Review")');
-  await expect(page.locator('.stagesw button[aria-pressed="true"]')).toContainText("Client Review");
+  // By its full name: the pill itself reads "4. Client" (1.33.0).
+  await page.locator(".stagesw").getByRole("button", { name: "Client Review", exact: true }).click();
+  await expect(page.locator('.stagesw button[aria-pressed="true"]')).toHaveAttribute("aria-label", "Client Review");
 
   // Reactive, not just correct after a reload — advancing the stage
   // pill alone brings the button, still on the same page.
@@ -88,8 +91,8 @@ test("staff can approve a creative directly, and revoke that approval", async ({
   await page.goto(`/creatives/${creativeId}`);
   await page.waitForSelector(".stage-h");
 
-  await page.click('.stagesw button:has-text("Approved")');
-  await expect(page.locator('.stagesw button[aria-pressed="true"]')).toContainText("Approved");
+  await page.locator(".stagesw").getByRole("button", { name: "Approved", exact: true }).click();
+  await expect(page.locator('.stagesw button[aria-pressed="true"]')).toHaveAttribute("aria-label", "Approved");
 
   // Real attribution recorded, same shape as a guest approval gets.
   const admin = createClient(SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
@@ -105,8 +108,9 @@ test("staff can approve a creative directly, and revoke that approval", async ({
   expect(approved?.approved_by_name).not.toBeNull();
 
   // Revoke — moving back to Client Review clears the approval record.
-  await page.click('.stagesw button:has-text("Client Review")');
-  await expect(page.locator('.stagesw button[aria-pressed="true"]')).toContainText("Client Review");
+  // By its full name: the pill itself reads "4. Client" (1.33.0).
+  await page.locator(".stagesw").getByRole("button", { name: "Client Review", exact: true }).click();
+  await expect(page.locator('.stagesw button[aria-pressed="true"]')).toHaveAttribute("aria-label", "Client Review");
   const { data: revoked } = await admin
     .from("creatives")
     .select("stage, approved_at, approved_by_name")
