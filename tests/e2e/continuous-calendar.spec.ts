@@ -88,7 +88,9 @@ test("continuous calendar — Format, Text on Image and Copy come from the post 
   // 6 Format, 14 Text on Image (no versions), 15 Copy: the latest
   // version, older on hover.
   await expect(cells.nth(6)).toHaveText("Instagram Post");
-  await expect(cells.nth(14)).toHaveText("On the artwork");
+  // The text, then its Edit (direct instruction).
+  await expect(cells.nth(14).locator(".cc-t")).toHaveText("On the artwork");
+  await expect(cells.nth(14).locator(".tedit-btn")).toHaveText("Edit");
   await expect(cells.nth(15)).toContainText("Second caption");
   await expect(cells.nth(15)).toContainText("+1 earlier");
   await cells.nth(15).locator(".cc-n").hover();

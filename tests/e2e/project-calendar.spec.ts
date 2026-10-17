@@ -425,7 +425,7 @@ test("project calendar — a post's date and time change from the table", async 
   const cal = page.locator(".caldrop");
   await expect(cal.locator(".cal-title")).toHaveText("March 2027");
   expect(await cal.evaluate((e) => getComputedStyle(e).fontFamily)).toMatch(/^Urbanist/);
-  await cal.getByRole("button", { name: /^Monday 22 March 2027$/ }).click();
+  await cal.getByRole("button", { name: "Monday, 22 March 2027" }).click();
   await expect(cal).toHaveCount(0);
   await expect(third.getByLabel("Publish Date")).toHaveValue("2027-03-22");
   await third.getByLabel("Time").click();
