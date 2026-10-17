@@ -34,3 +34,26 @@ export function MissingContent({
     </button>
   );
 }
+
+// A filled cell's Edit (direct instruction): beside its Copy, the same
+// small grey chip, with the Add buttons' arrow, opening the post's Edit
+// window at that field. The team only: nothing for anyone else.
+export function EditContent({ onFill, label }: { onFill?: () => void; label?: string }) {
+  if (!onFill) return null;
+  return (
+    <button
+      type="button"
+      className="copychip tedit-btn"
+      title={label ? `Edit the ${label}` : "Edit it"}
+      onClick={(e) => {
+        e.stopPropagation();
+        onFill();
+      }}
+    >
+      Edit
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M7 17L17 7M9 7h8v8" />
+      </svg>
+    </button>
+  );
+}

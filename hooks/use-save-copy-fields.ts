@@ -43,9 +43,14 @@ export function useSaveCopyFields(creativeId: string) {
     },
     // Awaited so the caller's own onSuccess (selecting the new version as
     // active) only runs once the list actually contains it — same fix as
-    // the creative-version upload hook.
+    // the creative-version upload hook. The table's Caption column reads
+    // its own list, refreshed with it (reported directly: a new caption
+    // only showed in the table after a reload).
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["copy-versions", creativeId] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["copy-versions", creativeId] }),
+        queryClient.invalidateQueries({ queryKey: ["copy-versions-by-creative"], refetchType: "all" }),
+      ]);
     },
   });
 }

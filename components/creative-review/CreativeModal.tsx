@@ -3,7 +3,6 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { DateTimePicker } from "@/components/ui/DateTimePicker";
 import { CxCell } from "@/components/project/CxCell";
 import type { CreativeRow } from "@/hooks/use-creative";
 import { useCopyVersions, type CopyVersionRow } from "@/hooks/use-copy-versions";
@@ -17,6 +16,7 @@ import { PostChangedError, useUpdateBrief, type BriefFields } from "@/hooks/use-
 import { useTeamMembers } from "@/hooks/use-team-members";
 import { useProject } from "@/hooks/use-project";
 import { TeamPicker } from "@/components/ui/TeamPicker";
+import { DateField, TimeField } from "@/components/ui/DateField";
 import { useMyAgency } from "@/hooks/use-my-agency";
 import { useCustomColumns } from "@/hooks/use-custom-columns";
 import {
@@ -74,8 +74,9 @@ type Tab = "brief" | "upload" | "checks";
 
 // Where the cursor goes when the window opens from a table's Pending
 // cell (direct instruction): that field, on its tab, ready for input.
-export type FocusTarget = "team" | "concept" | "slides" | "voiceover" | "artwork" | "imageOnText" | "copy" | "alt";
+export type FocusTarget = "name" | "team" | "concept" | "slides" | "voiceover" | "artwork" | "imageOnText" | "copy" | "alt";
 const FOCUS: Record<FocusTarget, { tab: Tab; selector: string }> = {
+  name: { tab: "brief", selector: "#nbName" },
   team: { tab: "brief", selector: "#nbTeam" },
   concept: { tab: "brief", selector: "#nbConcept" },
   slides: { tab: "brief", selector: "#nbSlides" },
@@ -396,6 +397,7 @@ function CheckSection({
 // browser's own local time, not the ISO string's UTC digits — reading the
 // UTC fields directly would silently shift a piece scheduled at, say,
 // 11pm local into the next day for anyone west of it.
+
 function isoToDateInput(iso: string | null): string {
   if (!iso) return "";
   const d = new Date(iso);
@@ -1373,13 +1375,14 @@ export function CreativeModal(props: CreativeModalProps) {
             <div className="frow dtrow">
               <div className="field">
                 <label htmlFor="nbDate">Publish Date</label>
-                <input
+                {/* Frank's own calendar, opened by a click anywhere on the
+                    field, as the table's dates are (direct instruction). */}
+                <DateField
                   id="nbDate"
                   className="bin one"
-                  type="date"
                   value={date}
-                  onChange={(e) => {
-                    setDate(e.target.value);
+                  onChange={(v) => {
+                    setDate(v);
                     if (dateError) setDateError(null);
                   }}
                 />
@@ -1387,24 +1390,7 @@ export function CreativeModal(props: CreativeModalProps) {
               </div>
               <div className="field">
                 <label htmlFor="nbTime">Time</label>
-                <div className="dtrow-time">
-                  <input
-                    id="nbTime"
-                    className="bin one"
-                    type="time"
-                    value={time}
-                    onChange={(e) => setTime(e.target.value)}
-                  />
-                  <DateTimePicker
-                    date={date}
-                    time={time}
-                    onChangeDate={(v) => {
-                      setDate(v);
-                      if (dateError) setDateError(null);
-                    }}
-                    onChangeTime={setTime}
-                  />
-                </div>
+                <TimeField id="nbTime" className="bin one" value={time} onChange={setTime} />
               </div>
             </div>
           ) : (
@@ -1425,13 +1411,7 @@ export function CreativeModal(props: CreativeModalProps) {
               </div>
               <div className="field">
                 <label htmlFor="nbDue">Live Date</label>
-                <input
-                  id="nbDue"
-                  className="bin one"
-                  type="date"
-                  value={dueOn}
-                  onChange={(e) => setDueOn(e.target.value)}
-                />
+                <DateField id="nbDue" className="bin one" value={dueOn} onChange={setDueOn} />
               </div>
             </div>
           )}

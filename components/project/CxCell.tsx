@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { CustomColumnRow } from "@/hooks/use-custom-columns";
+import { DateField } from "@/components/ui/DateField";
 
 export function CxCell({
   column,
@@ -53,18 +54,17 @@ export function CxCell({
     );
   }
 
-  // Date: the browser's own date picker, kept as YYYY-MM-DD (phase96).
+  // Date: Frank's own date dropdown, kept as YYYY-MM-DD (phase96).
   if (column.type === "date") {
     return (
       <div onClick={stop}>
-        <input
+        <DateField
           className="cxin"
-          type="date"
           value={draft}
           disabled={readOnly}
-          onChange={(e) => {
-            setDraft(e.target.value);
-            onSave(e.target.value || null);
+          onChange={(v) => {
+            setDraft(v);
+            onSave(v || null);
           }}
         />
       </div>

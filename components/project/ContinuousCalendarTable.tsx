@@ -29,10 +29,12 @@ import { useMyAgency } from "@/hooks/use-my-agency";
 import { useArtworkByCreative } from "@/hooks/use-artwork-by-creative";
 import { useCopyVersionsByCreative } from "@/hooks/use-copy-versions-by-creative";
 import { VersionedTextCell } from "@/components/project/VersionedTextCell";
-import { copySummary, copySummaryParts, expectedContent, formatsLabel, postFormats } from "@/lib/formats";
-import { MissingContent } from "@/components/project/MissingContent";
+import { copySummary, expectedContent, formatsLabel, postFormats } from "@/lib/formats";
+import { EditContent, MissingContent } from "@/components/project/MissingContent";
 import { isOverdue } from "@/lib/post-live";
 import { EditPostWindow } from "@/components/project/EditPostWindow";
+import { usePrefetchPost } from "@/hooks/use-prefetch-post";
+import { DatePopover } from "@/components/project/DatePopover";
 import type { FocusTarget } from "@/components/creative-review/CreativeModal";
 
 import { CopySummaryText } from "@/components/project/CopySummaryText";
@@ -48,13 +50,14 @@ import {
 
 // What a Pending button says it adds (direct instruction): "Add Creative".
 const ADD_LABELS: Record<FocusTarget, string> = {
+  name: "Post Name",
   team: "Team",
   concept: "Concept",
   slides: "Slides",
   voiceover: "VO",
   artwork: "Creative",
   imageOnText: "Text on Image",
-  copy: "Copy",
+  copy: "Caption",
   alt: "Alt Text",
 };
 
@@ -117,7 +120,7 @@ export const TOGGLABLE_COLUMNS = [
   // (direct instruction; the preview moved here off Post Name).
   { key: "artwork", label: "Creative", sub: "Latest post visual", width: 200 },
   { key: "imageOnText", label: "Text on Image", sub: "Image text checked by Frank", width: 220 },
-  { key: "copy", label: "Copy", sub: "Post copy checked by Frank", width: 330 },
+  { key: "copy", label: "Caption/Copy", sub: "Post copy checked by Frank", width: 330 },
   // The latest copy's Alt Text, its own column after Copy (direct
   // instruction).
   { key: "altText", label: "Alt Text", sub: "For screen readers", width: 220 },
@@ -245,6 +248,7 @@ export function ContinuousCalendarTable({
     onCreated: (d) => draftRow?.onCreated(d),
   });
   const router = useRouter();
+  const prefetchPost = usePrefetchPost();
   // Each person's role here, after their name in the Team column (phase85).
   const { data: roles } = useProjectRoles(projectId);
   const today = useMemo(() => new Date(), []);
@@ -516,6 +520,17 @@ export function ContinuousCalendarTable({
   const toggleRow = (id: string) => setExpandedRow((r) => (r === id ? null : id));
   const { data: copyVersionsByCreative } = useCopyVersionsByCreative(creativeIds);
   const { data: artworkByCreative } = useArtworkByCreative(creativeIds);
+  // A post's date changed from the table (direct instruction): its date
+  // or time a button for the team, opening the pickers right there.
+  const [datePick, setDatePick] = useState<{ c: CreativeListRow; rect: DOMRect; focus: "date" | "time" } | null>(null);
+  const pickDate = (c: CreativeListRow, focus: "date" | "time") =>
+    isStaff
+      ? (e: React.MouseEvent<HTMLElement>) => {
+          e.stopPropagation();
+          setDatePick({ c, rect: e.currentTarget.getBoundingClientRect(), focus });
+        }
+      : undefined;
+
   // A Pending cell's button (direct instruction): the post's Edit window,
   // here on the table, at that field. The team only.
   const [editPost, setEditPost] = useState<{ id: string; focus: FocusTarget } | null>(null);
@@ -1050,6 +1065,10 @@ export function ContinuousCalendarTable({
                         className={rowClasses}
                         key={c.id}
                         onClick={() => router.push(`/creatives/${c.id}`)}
+                        // Warmed while the pointer rests here, so its page
+                        // and Edit window open quicker.
+                        onMouseEnter={() => prefetchPost.start(c.id)}
+                        onMouseLeave={prefetchPost.stop}
                       >
                         {isStaff && (
                           <td className="skchk" style={{ left: 0 }} onClick={(e) => e.stopPropagation()}>
@@ -1063,7 +1082,15 @@ export function ContinuousCalendarTable({
                         )}
                         {/* Past its Live Date and not live: red (direct instruction). */}
                         <td className={`sk1${isOverdue(c) ? " tlate" : ""}`} style={{ left: skOffset }}>
-                          {dt.getDate()} {MONTH_ABBR[dt.getMonth()]} {String(dt.getFullYear()).slice(2)}
+                          {isStaff ? (
+                            <button type="button" className="tdate-btn" title="Change the date" onClick={pickDate(c, "date")}>
+                              {dt.getDate()} {MONTH_ABBR[dt.getMonth()]} {String(dt.getFullYear()).slice(2)}
+                            </button>
+                          ) : (
+                            <>
+                              {dt.getDate()} {MONTH_ABBR[dt.getMonth()]} {String(dt.getFullYear()).slice(2)}
+                            </>
+                          )}
                         </td>
                         {visibleOrderedKeys.map((key) => {
                           const exp = expectedContent(postFormats(c));
@@ -1081,6 +1108,11 @@ export function ContinuousCalendarTable({
                                   >
                                     {c.name}
                                   </button>
+                                  {isStaff && (
+                                    <span className="cc-after">
+                                      <EditContent onFill={fill(c, "name").onFill} label="Post Name" />
+                                    </span>
+                                  )}
                                 </td>
                               );
                             case "placement":
@@ -1164,6 +1196,13 @@ export function ContinuousCalendarTable({
                                     <span className="copyc">
                                       {c.concept && <ClampText expanded={expandedRow === c.id} onToggle={() => toggleRow(c.id)}>{c.concept}</ClampText>}
                                       <ReferenceLinks urls={c.reference_urls ?? []} preview />
+                                      {/* After the references, so a long concept's
+                                          Read more stays with it. */}
+                                      {isStaff && (
+                                        <span className="cc-after">
+                                          <EditContent onFill={fill(c, "concept").onFill} label="Concept" />
+                                        </span>
+                                      )}
                                     </span>
                                   ) : (
                                     <MissingContent expected={true} {...fill(c, "concept")} />
@@ -1188,7 +1227,11 @@ export function ContinuousCalendarTable({
                                 <td key={key} className="cellw">
                                   {vo ? (
                                     <span className="copyc">
-                                      <ClampText expanded={expandedRow === c.id} onToggle={() => toggleRow(c.id)}>
+                                      <ClampText
+                                        expanded={expandedRow === c.id}
+                                        onToggle={() => toggleRow(c.id)}
+                                        after={<EditContent onFill={fill(c, "voiceover").onFill} label="VO" />}
+                                      >
                                         {vo}
                                       </ClampText>
                                     </span>
@@ -1225,7 +1268,13 @@ export function ContinuousCalendarTable({
                                 <td key={key} className="cellw">
                                   {lines.length ? (
                                     <span className="copyc">
-                                      <ClampText expanded={expandedRow === c.id} onToggle={() => toggleRow(c.id)}>{lines.join("\n")}</ClampText>
+                                      <ClampText
+                                        expanded={expandedRow === c.id}
+                                        onToggle={() => toggleRow(c.id)}
+                                        after={<EditContent onFill={fill(c, "imageOnText").onFill} label="Text on Image" />}
+                                      >
+                                        {lines.join("\n")}
+                                      </ClampText>
                                     </span>
                                   ) : (
                                     <MissingContent expected={true} {...fill(c, "imageOnText")} />
@@ -1244,7 +1293,12 @@ export function ContinuousCalendarTable({
                                       <ClampText
                                         expanded={expandedRow === c.id}
                                         onToggle={() => toggleRow(c.id)}
-                                        after={<CopyCaptionChip caption={alt} label="Copy Alt Text" title="Copy the Alt Text" />}
+                                        after={
+                                          <>
+                                            <CopyCaptionChip caption={alt} title="Copy the Alt Text" />
+                                            <EditContent onFill={fill(c, "alt").onFill} label="Alt Text" />
+                                          </>
+                                        }
                                       >
                                         {alt}
                                       </ClampText>
@@ -1261,13 +1315,12 @@ export function ContinuousCalendarTable({
                                   versionNo: v.versionNo,
                                   text: copySummary(v.fields, postFormats(c)),
                                   node: <CopySummaryText fields={v.fields} formatIds={postFormats(c)} />,
-                                  caption: copySummaryParts(v.fields, postFormats(c)).caption,
                                 }))
                                 .filter((v) => v.text);
                               return (
                                 <td key={key} className="cellw">
                                   <VersionedTextCell
-                                    label="Copy"
+                                    label="Caption/Copy"
                                     rows={rows}
                                     expected={exp.copy}
                                     {...fill(c, "copy")}
@@ -1299,7 +1352,6 @@ export function ContinuousCalendarTable({
                                         after={
                                           <CopyCaptionChip
                                             caption={c.approach_notes.map((a) => `• ${a}`).join("\n")}
-                                            label="Copy WIIFM"
                                             title="Copy the WIIFM Direction, one point a line"
                                           />
                                         }
@@ -1394,6 +1446,17 @@ export function ContinuousCalendarTable({
         />
       )}
 
+      {datePick && (
+        <DatePopover
+          creativeId={datePick.c.id}
+          name={datePick.c.name}
+          anchorRect={datePick.rect}
+          delivery="continuous"
+          value={datePick.c.due_on as string}
+          focus={datePick.focus}
+          onClose={() => setDatePick(null)}
+        />
+      )}
       {editPost && (
         <EditPostWindow creativeId={editPost.id} focus={editPost.focus} onClose={() => setEditPost(null)} />
       )}

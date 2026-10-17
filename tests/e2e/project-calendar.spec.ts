@@ -210,7 +210,7 @@ test("project calendar — matches the real content-planner template's default c
   await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 17/17");
   for (const label of [
     "Week", "Publish Date", "Day", "Time", "Status", "Format", "Slides", "Team",
-    "Post Name", "Concept & Reference", "VO", "Creative", "Text on Image", "Copy", "Alt Text", "WIIFM Direction", "Client Feedback",
+    "Post Name", "Concept & Reference", "VO", "Creative", "Text on Image", "Caption/Copy", "Alt Text", "WIIFM Direction", "Client Feedback",
   ]) {
     // Anchored at the start: a th's text is always {label}{sub} with no
     // separator, and hasText's substring match is case-insensitive, so an
@@ -363,9 +363,9 @@ test("project calendar — a post past its date is red, and Pending opens its Ed
     "Add Concept",
     "Add Creative",
     "Add Text on Image",
-    "Add Copy",
+    "Add Caption",
     "Add Alt Text",
-    "Add Copy",
+    "Add Caption",
   ]);
   await row.getByRole("button", { name: "Add Concept", exact: true }).click();
   await expect(page.locator("#nbConcept")).toBeFocused();
@@ -380,4 +380,105 @@ test("project calendar — a client sees Pending as words, not a button", async 
   await page.waitForSelector(".tbl");
   await expect(page.locator(".tpending").first()).toBeVisible();
   await expect(page.locator(".tpending-btn")).toHaveCount(0);
+});
+
+test("project calendar — a post's date and time change from the table", async ({ page, frank }) => {
+  const { createClient } = await import("@supabase/supabase-js");
+  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  await frank.loginAsStaff(page);
+  await page.goto(`/projects/${frank.projectId}`);
+  await page.waitForSelector(".tblwrap, .empty");
+  await goToMonth(page, "March 2027");
+  const row = page.locator("tr[data-row]", { hasText: "E2E Test Creative" });
+  // Click the date (direct instruction): its pickers open under it.
+  await row.getByRole("button", { name: "15 Mar 27" }).click();
+  const pop = page.getByRole("dialog", { name: "E2E Test Creative's Publish Date" });
+  await expect(pop.getByLabel("Publish Date")).toBeFocused();
+  await pop.getByLabel("Publish Date").fill("2027-03-18");
+  await pop.getByLabel("Time").fill("10:15");
+  await pop.getByRole("button", { name: "Save" }).click();
+  await expect(pop).toHaveCount(0);
+  await expect(row.locator("td.sk2")).toHaveText("18 Mar 27");
+  await expect(row).toContainText("10:15");
+  const { data } = await admin.from("creatives").select("scheduled_at").eq("id", frank.creativeId).single();
+  const at = new Date(data!.scheduled_at as string);
+  expect([at.getDate(), at.getHours(), at.getMinutes()]).toEqual([18, 10, 15]);
+  // Clicking the time opens it at the time; Cancel leaves it as it was.
+  await row.getByRole("button", { name: "10:15" }).click();
+  const again = page.getByRole("dialog", { name: "E2E Test Creative's Publish Date" });
+  await expect(again.getByLabel("Time")).toBeFocused();
+  // Its dropdown opens with it, over the buttons as the browser's did;
+  // Escape closes only the dropdown.
+  await expect(page.locator(".caldrop.caltime")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".caldrop")).toHaveCount(0);
+  await again.getByRole("button", { name: "Cancel" }).click();
+  await expect(page.getByRole("dialog", { name: /Publish Date/ })).toHaveCount(0);
+  await expect(row).toContainText("10:15");
+  // Frank's own dropdowns in the app's font (direct instruction): a day
+  // from the calendar, a minute from the time's columns. Escape closes only
+  // the dropdown.
+  await row.getByRole("button", { name: "18 Mar 27" }).click();
+  const third = page.getByRole("dialog", { name: "E2E Test Creative's Publish Date" });
+  const cal = page.locator(".caldrop");
+  await expect(cal.locator(".cal-title")).toHaveText("March 2027");
+  expect(await cal.evaluate((e) => getComputedStyle(e).fontFamily)).toMatch(/^Urbanist/);
+  await cal.getByRole("button", { name: /^Monday 22 March 2027$/ }).click();
+  await expect(cal).toHaveCount(0);
+  await expect(third.getByLabel("Publish Date")).toHaveValue("2027-03-22");
+  await third.getByLabel("Time").click();
+  await cal.locator(".cal-col[aria-label=Minute]").getByRole("button", { name: "40", exact: true }).click();
+  await expect(third.getByLabel("Time")).toHaveValue("10:40");
+  await third.getByLabel("Publish Date").click();
+  await expect(cal).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(cal).toHaveCount(0);
+  await third.getByRole("button", { name: "Save" }).click();
+  await expect(third).toHaveCount(0);
+  await expect(row.locator("td.sk2")).toHaveText("22 Mar 27");
+  await expect(row).toContainText("10:40");
+});
+
+test("project calendar — a client's dates aren't buttons", async ({ page, frank }) => {
+  await frank.loginAsClient(page);
+  await page.goto(`/projects/${frank.projectId}`);
+  await page.waitForSelector(".tblwrap, .empty");
+  await goToMonth(page, "March 2027");
+  await expect(page.locator("td.sk2").first()).toHaveText("15 Mar 27");
+  await expect(page.locator(".tdate-btn")).toHaveCount(0);
+});
+
+test("project calendar — a filled cell's Edit opens the post at that field", async ({ page, frank }) => {
+  const { createClient } = await import("@supabase/supabase-js");
+  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  await admin
+    .from("creatives")
+    .update({ format: "ig_feed", formats: ["ig_feed", "ig_reel"], concept: "A dad on the night feed.", voiceover: "It's 3am.", slide_text: ["Night feeds"] })
+    .eq("id", frank.creativeId);
+  await frank.createCopyVersion(frank.creativeId, 1, { caption: "Testing" });
+  await frank.loginAsStaff(page);
+  await page.setViewportSize({ width: 2600, height: 800 });
+  await page.goto(`/projects/${frank.projectId}`);
+  await page.waitForSelector(".tblwrap, .empty");
+  await goToMonth(page, "March 2027");
+  const row = page.locator("tr[data-row]", { hasText: "E2E Test Creative" });
+  // Post Name, Concept, VO, Text on Image and Caption/Copy (direct
+  // instruction); the copy's own button just says Copy.
+  await expect(row.locator(".tedit-btn")).toHaveCount(5);
+  await expect(row.locator(".copychip:not(.tedit-btn)")).toHaveText(["Copy"]);
+  for (const [title, field] of [
+    ["Edit the Post Name", "#nbName"],
+    ["Edit the VO", "#nbVo"],
+    ["Edit the Caption/Copy", '[data-focus="copy"] textarea'],
+  ]) {
+    await row.locator(`.tedit-btn[title="${title}"]`).click();
+    await expect(page.locator(field).first()).toBeFocused();
+    expect(page.url()).toContain(`/projects/${frank.projectId}`);
+    await page.getByRole("button", { name: "Cancel" }).last().click();
+    await expect(page.locator(".scrim")).toHaveCount(0);
+  }
 });

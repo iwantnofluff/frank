@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 
 export interface CopyVersionRow {
@@ -12,8 +12,9 @@ export interface CopyVersionRow {
   created_at: string;
 }
 
-export function useCopyVersions(creativeId: string) {
-  return useQuery({
+// The query itself, for usePrefetchPost to warm ahead of a click.
+export function copyVersionsQuery(creativeId: string) {
+  return queryOptions({
     queryKey: ["copy-versions", creativeId],
     queryFn: async (): Promise<CopyVersionRow[]> => {
       const supabase = createClient();
@@ -28,4 +29,8 @@ export function useCopyVersions(creativeId: string) {
     },
     enabled: !!creativeId,
   });
+}
+
+export function useCopyVersions(creativeId: string) {
+  return useQuery(copyVersionsQuery(creativeId));
 }

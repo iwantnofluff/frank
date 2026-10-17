@@ -2068,117 +2068,6 @@ body.lightrail .search input::placeholder {
   padding-bottom: 10px;
 }
 
-/* DateTimePicker — a calendar-icon button beside the existing native
-   date/time inputs that opens a .colpop-shell month calendar, ported from
-   the reference picker, as an additional way to set the same two values
-   rather than replacing those inputs. */
-.dtp-icon {
-  border-color: var(--line-2);
-}
-.dtp-pop {
-  width: 300px;
-  padding: 12px;
-}
-.dtp-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-.dtp-input {
-  flex: 1;
-  min-width: 0;
-}
-.dtp-nav {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 10px;
-}
-.dtp-nav select {
-  border: 1px solid var(--line-2);
-  border-radius: 5px;
-  padding: 5px 6px;
-  font-size: 13.2px;
-  background: var(--surface);
-  /* The global `select` rule's own appearance:none — combined with its
-     custom chevron background-image — inflates this element's intrinsic
-     "auto" width to well past its actual option text (confirmed directly:
-     ~182px for a 4-digit year), which starves the month select's own
-     flex:1 down to almost nothing. Explicit widths sidestep that quirk
-     rather than fight flexbox's auto-sizing to explain it. */
-  flex: 0 0 auto;
-}
-.dtp-nav select:first-child {
-  flex: 1 1 0;
-  min-width: 90px;
-}
-.dtp-nav select:last-of-type {
-  width: 72px;
-}
-.dtp-nav-arrows {
-  display: flex;
-  gap: 2px;
-}
-.dtp-nav-arrows button {
-  width: 26px;
-  height: 26px;
-  display: grid;
-  place-items: center;
-  border-radius: 5px;
-  color: var(--muted);
-}
-.dtp-nav-arrows button:hover {
-  background: var(--canvas);
-  color: var(--ink);
-}
-.dtp-nav-arrows svg {
-  width: 15px;
-  height: 15px;
-  stroke: currentColor;
-  fill: none;
-  stroke-width: 2.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.dtp-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
-}
-.dtp-dow {
-  text-align: center;
-  font-size: 11.2px;
-  font-weight: 600;
-  color: var(--muted);
-  padding: 4px 0;
-}
-.dtp-day {
-  aspect-ratio: 1;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  font-size: 13.2px;
-  color: var(--ink);
-}
-.dtp-day:hover {
-  background: var(--canvas);
-}
-.dtp-day.out {
-  color: var(--muted);
-  opacity: 0.5;
-}
-.dtp-day.today {
-  font-weight: 700;
-  color: var(--action);
-}
-.dtp-day.selected {
-  background: var(--ink);
-  color: #fff;
-}
-.dtp-day.selected.today {
-  color: #fff;
-}
 .cbx {
   width: 17px;
   height: 17px;
@@ -8443,22 +8332,11 @@ button.feedgrid-live {
   box-sizing: border-box;
 }
 
-/* Publish Date and Time (direct instruction): closer together, without
-   the browser's own pickers inside the fields, the one picker at the end
-   of the row. The picker's own date and time boxes lose theirs too. */
+/* Publish Date and Time, closer together; each opens the browser's own
+   picker, as the table's dates do (direct instruction: the table's is the
+   preferred one, in place of the calendar icon's own). */
 .frow.dtrow {
   gap: 8px;
-}
-.dtrow-time {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.dtrow input[type="date"]::-webkit-calendar-picker-indicator,
-.dtrow input[type="time"]::-webkit-calendar-picker-indicator,
-.dtp-pop input[type="date"]::-webkit-calendar-picker-indicator,
-.dtp-pop input[type="time"]::-webkit-calendar-picker-indicator {
-  display: none;
 }
 
 /* Client Settings' panels (direct instruction: Settings' structure). A
@@ -11054,4 +10932,264 @@ td.tlate {
 }
 .voicepost-i {
   color: var(--muted);
+}
+
+/* A post's date or time in a project's table, for the team (direct
+   instruction): as it reads, until hovered, then a soft box saying it can
+   be changed. Red when it's late, as the cell is. */
+.tdate-btn {
+  font: inherit;
+  color: inherit;
+  padding: 2px 5px;
+  margin: -2px -5px;
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color var(--dur-fast) var(--ease-std);
+}
+.tdate-btn:hover,
+.tdate-btn:focus-visible {
+  background: var(--action-soft);
+  color: var(--action);
+}
+td.tlate .tdate-btn:hover {
+  color: var(--rose);
+}
+/* The time stays grey, as it was. */
+.tdate-btn.tdim {
+  color: var(--muted);
+}
+/* The date and time pickers, under the cell clicked. */
+.datepop {
+  width: 320px;
+  padding: 12px;
+}
+.datepop-b {
+  display: flex;
+  gap: 8px;
+}
+.datepop-f {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12.2px;
+  color: var(--muted);
+}
+/* The New Post window's own date and time fields' type (direct
+   instruction: the same font as there). */
+.datepop-f input {
+  font: inherit;
+  font-size: 14.2px;
+  color: var(--ink);
+  padding: 9px 12px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r);
+  background: var(--surface);
+}
+.datepop-f input:focus {
+  outline: none;
+  border-color: var(--action);
+  box-shadow: 0 0 0 3px var(--action-soft);
+}
+.datepop-acts {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+/* Frank's own date and time dropdowns (components/ui/DateField), in the
+   app's font, laid out as the browser's own (direct instruction: the
+   browser's can't take the app's font). The field's own picker icon is
+   hidden: a click anywhere on the field opens the dropdown. */
+.pickfield::-webkit-calendar-picker-indicator {
+  display: none;
+}
+.pickfield {
+  cursor: pointer;
+}
+.caldrop {
+  position: fixed;
+  z-index: 300;
+  font-family: var(--font-urbanist), system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  box-shadow: 0 16px 48px rgba(20, 22, 26, 0.22);
+  animation: rise-in var(--dur-fast) var(--ease-out);
+  transform-origin: top;
+}
+.caldrop button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.caldate {
+  width: 268px;
+  padding: 10px 10px 6px;
+}
+.cal-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.caldrop .cal-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 6px;
+  border-radius: 6px;
+  font-size: 14.2px;
+  font-weight: 650;
+}
+.cal-title svg,
+.cal-arrows svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.cal-title[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+.cal-arrows {
+  display: flex;
+}
+.caldrop .cal-arrows button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: var(--muted);
+}
+.caldrop .cal-title:hover,
+.caldrop .cal-arrows button:hover,
+.caldrop .cal-day:hover,
+.caldrop .cal-months button:hover,
+.caldrop .cal-col button:hover {
+  background: var(--action-soft);
+}
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.cal-dow {
+  padding: 4px 0;
+  font-size: 12.2px;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: center;
+}
+.caldrop .cal-day {
+  height: 32px;
+  border-radius: 6px;
+  font-size: 13.4px;
+  font-variant-numeric: tabular-nums;
+}
+.caldrop .cal-day.out {
+  color: var(--muted);
+  opacity: 0.6;
+}
+.caldrop .cal-day.today {
+  box-shadow: inset 0 0 0 1px var(--action);
+}
+.caldrop .cal-day[aria-pressed="true"],
+.caldrop .cal-months button[aria-pressed="true"],
+.caldrop .cal-col button[aria-pressed="true"] {
+  background: var(--action);
+  color: #fff;
+  opacity: 1;
+}
+.cal-months {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 4px 0;
+}
+.caldrop .cal-months button {
+  height: 40px;
+  border-radius: 6px;
+  font-size: 13.4px;
+}
+.cal-f {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--line);
+}
+.caldrop .cal-f button {
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 13.4px;
+  font-weight: 600;
+  color: var(--action);
+}
+.caldrop .cal-f button:hover {
+  background: var(--action-soft);
+}
+.caltime {
+  padding: 6px;
+}
+.cal-cols {
+  display: flex;
+  gap: 4px;
+}
+.cal-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 52px;
+  height: 236px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.caldrop .cal-col button {
+  flex: none;
+  height: 30px;
+  border-radius: 6px;
+  font-size: 13.4px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A filled cell's Edit, beside its Copy (direct instruction): the Copy
+   chip's look, with the Add buttons' arrow. A cell's buttons sit at its
+   foot (direct instruction), as far from the bottom as the text is from
+   the left, so they line up across the row however long each cell is;
+   the cell keeps room for them under its text. */
+.cc-after {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.tbl td:has(.cc-after) {
+  position: relative;
+  padding-bottom: calc(var(--d-cell-x) * 2 + 21px);
+}
+.tbl td .cc-after {
+  position: absolute;
+  left: var(--d-cell-x);
+  right: var(--d-cell-x);
+  bottom: var(--d-cell-x);
+  margin: 0;
+}
+.tedit-btn svg {
+  width: 9px;
+  height: 9px;
+  margin-left: 3px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }

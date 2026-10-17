@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { CREATIVE_SELECT } from "@/lib/creative-queries";
 
@@ -46,8 +46,9 @@ export interface CreativeRow {
   } | null;
 }
 
-export function useCreative(creativeId: string) {
-  return useQuery({
+// The query itself, for usePrefetchPost to warm ahead of a click.
+export function creativeQuery(creativeId: string) {
+  return queryOptions({
     queryKey: ["creative", creativeId],
     queryFn: async (): Promise<CreativeRow> => {
       const supabase = createClient();
@@ -62,4 +63,8 @@ export function useCreative(creativeId: string) {
     },
     enabled: !!creativeId,
   });
+}
+
+export function useCreative(creativeId: string) {
+  return useQuery(creativeQuery(creativeId));
 }

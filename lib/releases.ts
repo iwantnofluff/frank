@@ -13,6 +13,20 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.36.1",
+    date: "2026-10-17",
+    title: "Dates, captions and editing from the table",
+    changes: [
+      "In a project's table, click a post's date or time to change it there: the date and time pickers open under it. Save, or Cancel to leave it.",
+      "In the New Post window, the date and time fields open the same pickers when clicked, in place of the separate calendar icon, and both read in the same type.",
+      "Frank's own calendar and time pickers, in the app's font, wherever a date or time is picked: the month with arrows, the days, Clear and Today; or hour and minute columns. A date or time can still be typed straight in.",
+      "The table's Copy column is now called Caption/Copy, and a caption added from it shows in the table straight away, without reloading the page.",
+      "The Caption/Copy column shows a post's copy without field names (no \"Primary Text:\" before a LinkedIn post's copy), each field on its own line, with a Copy button for every post.",
+      "Post Name, Concept, VO, Text on Image, Caption/Copy and Alt Text have an Edit button once filled in, which opens the post's Edit window at that field. The Copy buttons in the table now just say Copy.",
+      "Opening a post from the table shows it's on its way straight away, and resting the pointer on a row starts loading that post, so its Edit window opens quicker.",
+    ],
+  },
+  {
     version: "1.36.0",
     date: "2026-10-17",
     title: "Make a post by speaking",

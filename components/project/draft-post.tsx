@@ -5,6 +5,7 @@ import { useCreateCreative } from "@/hooks/use-create-creative";
 import { useMyAgency } from "@/hooks/use-my-agency";
 import { useTeamMembers } from "@/hooks/use-team-members";
 import { TeamPicker } from "@/components/ui/TeamPicker";
+import { DateField, TimeField } from "@/components/ui/DateField";
 import { errorMessage } from "@/lib/errors";
 import { FORMAT_CATEGORIES, formatsByCategory } from "@/lib/formats";
 
@@ -181,29 +182,13 @@ export function DraftField({
       );
     case "date":
       return (
-        <input
-          type="date"
-          className="ecell one when"
-          aria-label="Date"
-          value={values.date}
-          onChange={(e) => set("date", e.target.value)}
-          // Its picker opens from anywhere in the box: the icon is hidden to
-          // fit the column's snug width.
-          onClick={(e) => e.currentTarget.showPicker?.()}
-        />
+        // Frank's own dropdown, opened from anywhere in the box.
+        <DateField className="ecell one when" aria-label="Date" value={values.date} onChange={(v) => set("date", v)} />
       );
     case "time":
       return (
-        <input
-          type="time"
-          className="ecell one when"
-          aria-label="Time"
-          value={values.time}
-          onChange={(e) => set("time", e.target.value)}
-          // Its picker opens from anywhere in the box: the icon is hidden to
-          // fit the column's snug width.
-          onClick={(e) => e.currentTarget.showPicker?.()}
-        />
+        // Frank's own dropdown, opened from anywhere in the box.
+        <TimeField className="ecell one when" aria-label="Time" value={values.time} onChange={(v) => set("time", v)} />
       );
     case "destination":
       return (

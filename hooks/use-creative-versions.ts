@@ -1,13 +1,14 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { CREATIVE_VERSIONS_SELECT, type CreativeVersionRow } from "@/lib/creative-queries";
 
 export { versionSlides, type CreativeVersionRow, type VersionAsset } from "@/lib/creative-queries";
 
-export function useCreativeVersions(creativeId: string) {
-  return useQuery({
+// The query itself, for usePrefetchPost to warm ahead of a click.
+export function creativeVersionsQuery(creativeId: string) {
+  return queryOptions({
     queryKey: ["creative-versions", creativeId],
     queryFn: async (): Promise<CreativeVersionRow[]> => {
       const supabase = createClient();
@@ -22,4 +23,8 @@ export function useCreativeVersions(creativeId: string) {
     },
     enabled: !!creativeId,
   });
+}
+
+export function useCreativeVersions(creativeId: string) {
+  return useQuery(creativeVersionsQuery(creativeId));
 }

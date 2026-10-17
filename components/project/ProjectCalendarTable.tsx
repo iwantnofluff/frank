@@ -25,10 +25,12 @@ import { SaveViewModal } from "@/components/project/SaveViewModal";
 import { PermanentDeleteConfirm } from "@/components/project/PermanentDeleteConfirm";
 import { bandOf, stageLabel, stageColor, exceptionLabel, STAGE_COUNT } from "@/lib/stage-labels";
 import { errorMessage } from "@/lib/errors";
-import { copySummary, copySummaryParts, expectedContent, formatsLabel, postFormats } from "@/lib/formats";
-import { MissingContent } from "@/components/project/MissingContent";
+import { copySummary, expectedContent, formatsLabel, postFormats } from "@/lib/formats";
+import { EditContent, MissingContent } from "@/components/project/MissingContent";
 import { isOverdue } from "@/lib/post-live";
 import { EditPostWindow } from "@/components/project/EditPostWindow";
+import { usePrefetchPost } from "@/hooks/use-prefetch-post";
+import { DatePopover } from "@/components/project/DatePopover";
 import type { FocusTarget } from "@/components/creative-review/CreativeModal";
 
 import { CopySummaryText } from "@/components/project/CopySummaryText";
@@ -49,13 +51,14 @@ import {
 
 // What a Pending button says it adds (direct instruction): "Add Creative".
 const ADD_LABELS: Record<FocusTarget, string> = {
+  name: "Post Name",
   team: "Team",
   concept: "Concept",
   slides: "Slides",
   voiceover: "VO",
   artwork: "Creative",
   imageOnText: "Text on Image",
-  copy: "Copy",
+  copy: "Caption",
   alt: "Alt Text",
 };
 
@@ -115,7 +118,7 @@ export const TOGGLABLE_COLUMNS = [
   // (direct instruction; the preview moved here off Post Name).
   { key: "artwork", label: "Creative", sub: "Latest post visual", width: 200 },
   { key: "imageOnText", label: "Text on Image", sub: "Image text checked by Frank", width: 220 },
-  { key: "postCopy", label: "Copy", sub: "Post copy checked by Frank", width: 330 },
+  { key: "postCopy", label: "Caption/Copy", sub: "Post copy checked by Frank", width: 330 },
   // The latest copy's Alt Text, its own column after Copy (direct
   // instruction).
   { key: "altText", label: "Alt Text", sub: "For screen readers", width: 220 },
@@ -221,6 +224,7 @@ export function ProjectCalendarTable({
   draftRow?: { onClose: () => void; onCreated: (focusDate: string | null) => void } | null;
 }) {
   const router = useRouter();
+  const prefetchPost = usePrefetchPost();
   // Each person's role here, after their name in the Team column (phase85).
   const { data: roles } = useProjectRoles(projectId);
   const draft = useDraftPost({
@@ -501,6 +505,17 @@ export function ProjectCalendarTable({
   const toggleRow = (id: string) => setExpandedRow((r) => (r === id ? null : id));
   const { data: copyVersionsByCreative } = useCopyVersionsByCreative(creativeIds);
   const { data: artworkByCreative } = useArtworkByCreative(creativeIds);
+  // A post's date changed from the table (direct instruction): its date
+  // or time a button for the team, opening the pickers right there.
+  const [datePick, setDatePick] = useState<{ c: CreativeListRow; rect: DOMRect; focus: "date" | "time" } | null>(null);
+  const pickDate = (c: CreativeListRow, focus: "date" | "time") =>
+    isStaff
+      ? (e: React.MouseEvent<HTMLElement>) => {
+          e.stopPropagation();
+          setDatePick({ c, rect: e.currentTarget.getBoundingClientRect(), focus });
+        }
+      : undefined;
+
   // A Pending cell's button (direct instruction): the post's Edit window,
   // here on the table, at that field. The team only.
   const [editPost, setEditPost] = useState<{ id: string; focus: FocusTarget } | null>(null);
@@ -540,14 +555,13 @@ export function ProjectCalendarTable({
   function versionRows(
     versions: CopyVersionSummary[] | undefined,
     formatIds: string[],
-  ): { versionNo: number; text: string; node: React.ReactNode; caption: string | null }[] {
+  ): { versionNo: number; text: string; node: React.ReactNode }[] {
     if (!versions) return [];
     return versions
       .map((v) => ({
         versionNo: v.versionNo,
         text: copySummary(v.fields, formatIds),
         node: <CopySummaryText fields={v.fields} formatIds={formatIds} />,
-        caption: copySummaryParts(v.fields, formatIds).caption,
       }))
       .filter((v) => v.text);
   }
@@ -1081,6 +1095,10 @@ export function ProjectCalendarTable({
                         className={rowClasses}
                         key={c.id}
                         onClick={() => router.push(`/creatives/${c.id}`)}
+                        // Warmed while the pointer rests here, so its page
+                        // and Edit window open quicker.
+                        onMouseEnter={() => prefetchPost.start(c.id)}
+                        onMouseLeave={prefetchPost.stop}
                       >
                         {isStaff && (
                           <td className="skchk" style={{ left: 0 }} onClick={(e) => e.stopPropagation()}>
@@ -1097,7 +1115,15 @@ export function ProjectCalendarTable({
                         </td>
                         {/* Past its date and not live: red (direct instruction). */}
                         <td className={`sk2${isOverdue(c) ? " tlate" : ""}`} style={{ left: WEEK_W + skOffset }}>
-                          {dt.getDate()} {MONTH_ABBR[dt.getMonth()]} {String(dt.getFullYear()).slice(2)}
+                          {isStaff ? (
+                            <button type="button" className="tdate-btn" title="Change the date" onClick={pickDate(c, "date")}>
+                              {dt.getDate()} {MONTH_ABBR[dt.getMonth()]} {String(dt.getFullYear()).slice(2)}
+                            </button>
+                          ) : (
+                            <>
+                              {dt.getDate()} {MONTH_ABBR[dt.getMonth()]} {String(dt.getFullYear()).slice(2)}
+                            </>
+                          )}
                         </td>
                         <td className="sk3" style={{ left: WEEK_W + DATE_W + skOffset }}>
                           {DAY_ABBR[(dt.getDay() + 6) % 7]}
@@ -1108,7 +1134,13 @@ export function ProjectCalendarTable({
                             case "time":
                               return (
                                 <td key={key}>
-                                  <span className="tdim">{timeOf(dt)}</span>
+                                  {isStaff ? (
+                                    <button type="button" className="tdate-btn tdim" title="Change the time" onClick={pickDate(c, "time")}>
+                                      {timeOf(dt)}
+                                    </button>
+                                  ) : (
+                                    <span className="tdim">{timeOf(dt)}</span>
+                                  )}
                                 </td>
                               );
                             case "status":
@@ -1170,6 +1202,11 @@ export function ProjectCalendarTable({
                                   >
                                     {c.name}
                                   </button>
+                                  {isStaff && (
+                                    <span className="cc-after">
+                                      <EditContent onFill={fill(c, "name").onFill} label="Post Name" />
+                                    </span>
+                                  )}
                                 </td>
                               );
                             case "concept":
@@ -1183,6 +1220,13 @@ export function ProjectCalendarTable({
                                         </ClampText>
                                       )}
                                       <ReferenceLinks urls={c.reference_urls ?? []} preview />
+                                      {/* After the references, so a long concept's
+                                          Read more stays with it. */}
+                                      {isStaff && (
+                                        <span className="cc-after">
+                                          <EditContent onFill={fill(c, "concept").onFill} label="Concept" />
+                                        </span>
+                                      )}
                                     </span>
                                   ) : (
                                     <MissingContent expected={true} {...fill(c, "concept")} />
@@ -1200,7 +1244,6 @@ export function ProjectCalendarTable({
                                         after={
                                           <CopyCaptionChip
                                             caption={c.approach_notes.map((a) => `• ${a}`).join("\n")}
-                                            label="Copy WIIFM"
                                             title="Copy the WIIFM Direction, one point a line"
                                           />
                                         }
@@ -1220,7 +1263,11 @@ export function ProjectCalendarTable({
                                 <td key={key} className="cellw">
                                   {vo ? (
                                     <span className="copyc">
-                                      <ClampText expanded={expandedRow === c.id} onToggle={() => toggleRow(c.id)}>
+                                      <ClampText
+                                        expanded={expandedRow === c.id}
+                                        onToggle={() => toggleRow(c.id)}
+                                        after={<EditContent onFill={fill(c, "voiceover").onFill} label="VO" />}
+                                      >
                                         {vo}
                                       </ClampText>
                                     </span>
@@ -1257,7 +1304,11 @@ export function ProjectCalendarTable({
                                 <td key={key} className="cellw">
                                   {lines.length ? (
                                     <span className="copyc">
-                                      <ClampText expanded={expandedRow === c.id} onToggle={() => toggleRow(c.id)}>
+                                      <ClampText
+                                        expanded={expandedRow === c.id}
+                                        onToggle={() => toggleRow(c.id)}
+                                        after={<EditContent onFill={fill(c, "imageOnText").onFill} label="Text on Image" />}
+                                      >
                                         {lines.join(" · ")}
                                       </ClampText>
                                     </span>
@@ -1278,7 +1329,12 @@ export function ProjectCalendarTable({
                                       <ClampText
                                         expanded={expandedRow === c.id}
                                         onToggle={() => toggleRow(c.id)}
-                                        after={<CopyCaptionChip caption={alt} label="Copy Alt Text" title="Copy the Alt Text" />}
+                                        after={
+                                          <>
+                                            <CopyCaptionChip caption={alt} title="Copy the Alt Text" />
+                                            <EditContent onFill={fill(c, "alt").onFill} label="Alt Text" />
+                                          </>
+                                        }
                                       >
                                         {alt}
                                       </ClampText>
@@ -1292,7 +1348,7 @@ export function ProjectCalendarTable({
                             case "postCopy": {
                               const rows = versionRows(copyVersionsByCreative?.[c.id], postFormats(c));
                               const latest = rows[0];
-                              const label = "Copy";
+                              const label = "Caption/Copy";
                               return (
                                 <td key={key} className="cellw">
                                   {latest ? (
@@ -1301,7 +1357,12 @@ export function ProjectCalendarTable({
                                       <ClampText
                                         expanded={expandedRow === c.id}
                                         onToggle={() => toggleRow(c.id)}
-                                        after={latest.caption ? <CopyCaptionChip caption={latest.caption} /> : null}
+                                        after={
+                                          <>
+                                            <CopyCaptionChip caption={latest.text} title="Copy it, paragraphs and all" />
+                                            <EditContent onFill={fill(c, "copy").onFill} label="Caption/Copy" />
+                                          </>
+                                        }
                                       >
                                         {latest.node}
                                       </ClampText>
@@ -1410,6 +1471,17 @@ export function ProjectCalendarTable({
         />
       )}
 
+      {datePick && (
+        <DatePopover
+          creativeId={datePick.c.id}
+          name={datePick.c.name}
+          anchorRect={datePick.rect}
+          delivery="scheduled"
+          value={datePick.c.scheduled_at as string}
+          focus={datePick.focus}
+          onClose={() => setDatePick(null)}
+        />
+      )}
       {editPost && (
         <EditPostWindow creativeId={editPost.id} focus={editPost.focus} onClose={() => setEditPost(null)} />
       )}

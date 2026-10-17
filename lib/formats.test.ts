@@ -47,12 +47,14 @@ test("several formats: labels joined, copy fields combined once each, older rows
   assert.deepEqual(postFormats({ format: "meta_feed", formats: ["meta_feed", "ig_feed"] }), ["meta_feed", "ig_feed"]);
 });
 
-test("copySummary: the caption plain, never labelled; other fields labelled after a blank line, in the formats' order", () => {
+test("copySummary: every field plain, never labelled, a blank line apart, in the formats' order", () => {
   assert.equal(copySummary({ caption: " Hello " }, ["ig_feed"]), "Hello");
   // Not Alt Text (direct instruction).
   assert.equal(copySummary({ alt: "A bottle", caption: "Hello\n\nMore" }, ["ig_feed"]), "Hello\n\nMore");
-  assert.equal(copySummary({ caption: "Hi", hook: "Wait for it" }, ["ig_reel"]), "Hi\n\nOn-screen Hook: Wait for it");
-  assert.equal(copySummary({ hook: "Wait", headline: "Not this format" }, ["ig_reel"]), "On-screen Hook: Wait");
+  // No field names (direct instruction: no "Primary Text:").
+  assert.equal(copySummary({ caption: "Hi", hook: "Wait for it" }, ["ig_reel"]), "Hi\n\nWait for it");
+  assert.equal(copySummary({ hook: "Wait", headline: "Not this format" }, ["ig_reel"]), "Wait");
+  assert.equal(copySummary({ primary: "Another test" }, ["li_sponsored"]), "Another test");
   assert.equal(copySummary({}, ["ig_feed"]), "");
   assert.deepEqual(copySummaryParts({ hook: "Wait", caption: "Hello" }, ["ig_reel"]), {
     caption: "Hello",

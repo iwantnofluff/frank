@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { CopyVersionHistoryPopover } from "@/components/project/CopyVersionHistoryPopover";
 import { CopyCaptionChip } from "@/components/project/CopyCaptionChip";
 import { ClampText } from "@/components/project/ClampText";
-import { MissingContent } from "@/components/project/MissingContent";
+import { EditContent, MissingContent } from "@/components/project/MissingContent";
 
 // A table cell's latest copy version (the Copy column), with its
 // earlier versions on hover: the scheduled table's cell, for the
@@ -21,8 +21,9 @@ export function VersionedTextCell({
   addLabel,
 }: {
   label: string;
-  // node: the same, formatted (the Copy column's labels), when there is one.
-  rows: { versionNo: number; text: string; node?: React.ReactNode; caption?: string | null }[];
+  // node: the same, formatted, when there is one. Copy copies the text;
+// Edit (the team's) opens the post at it.
+  rows: { versionNo: number; text: string; node?: React.ReactNode }[];
   // Its row's Read more (ClampText): the table holds which row is open.
   expanded: boolean;
   onToggle: () => void;
@@ -57,7 +58,12 @@ export function VersionedTextCell({
         <ClampText
           expanded={expanded}
           onToggle={onToggle}
-          after={latest.caption ? <CopyCaptionChip caption={latest.caption} /> : null}
+          after={
+            <>
+              <CopyCaptionChip caption={latest.text} title="Copy it, paragraphs and all" />
+              <EditContent onFill={onFill} label={label} />
+            </>
+          }
         >
           {latest.node ?? latest.text}
         </ClampText>

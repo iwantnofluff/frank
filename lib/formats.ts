@@ -210,12 +210,11 @@ export function aspectRatioCss(id: string): string {
   return m ? `${m[1]} / ${m[2]}` : "1 / 1";
 }
 
-// A copy version for the calendar tables' Copy column (direct instruction:
-// every copy field, not just the caption). Only the fields the post's
-// formats use, in their order. The caption reads as itself, never
-// labelled; each other field comes after it, labelled ("Alt Text") and
-// set apart by a blank line (direct instruction: "Caption:" ran on into
-// the rest). Alt Text isn't shown.
+// A copy version for the calendar tables' Caption/Copy column (direct
+// instruction: every copy field, not just the caption). Only the fields the
+// post's formats use, in their order, each set apart by a blank line and
+// never labelled (direct instruction: no "Primary Text:" before a
+// LinkedIn post's copy). Alt Text isn't shown.
 export function copySummaryParts(
   fields: Record<string, string>,
   formatIds: string[],
@@ -229,11 +228,10 @@ export function copySummaryParts(
   };
 }
 
-// The same as plain text (for whether there's anything, and where plain
-// text is all there is).
+// The same as one text, as the cell shows it and its Copy button copies.
 export function copySummary(fields: Record<string, string>, formatIds: string[]): string {
   const { caption, others } = copySummaryParts(fields, formatIds);
-  return [caption, ...others.map((o) => `${o.label}: ${o.text}`)].filter(Boolean).join("\n\n");
+  return [caption, ...others.map((o) => o.text)].filter(Boolean).join("\n\n");
 }
 
 // What a post in these formats is expected to have, for the project

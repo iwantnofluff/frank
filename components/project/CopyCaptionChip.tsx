@@ -9,7 +9,7 @@ import { copyCaption } from "@/lib/copy-text";
 // the post.
 export function CopyCaptionChip({
   caption,
-  label = "Copy Caption",
+  label = "Copy",
   title = "Copy the caption, paragraphs and all",
 }: {
   caption: string;

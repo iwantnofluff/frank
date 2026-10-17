@@ -34,7 +34,7 @@ test("continuous calendar — the template's columns, named as in the New Post w
   await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 19/19");
   for (const label of [
     "Live Date", "Post Name", "Destination", "Funnel", "TG", "Format", "Slides", "Team", "Status",
-    "Concept & Reference", "Final Creative", "VO", "Creative", "Text on Image", "Copy", "Alt Text", "Notes for Designer", "WIIFM Direction",
+    "Concept & Reference", "Final Creative", "VO", "Creative", "Text on Image", "Caption/Copy", "Alt Text", "Notes for Designer", "WIIFM Direction",
     "Principles",
   ]) {
     await expect(page.locator("th", { hasText: new RegExp(`^${label}`) })).toHaveCount(1);
