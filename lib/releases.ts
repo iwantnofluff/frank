@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.36.0",
+    date: "2026-10-17",
+    title: "Make a post by speaking",
+    changes: [
+      "In the New Post window, press Speak It and say what the post is: its format, when it goes out, how many slides, who's on it, any links. Frank fills in the fields from what you said, for you to check before Create Post. It uses one of your monthly AI requests.",
+      "Works in Chrome and Safari, on a computer or a phone. Firefox, and some apps' built-in browsers, can't turn speech into text.",
+    ],
+  },
+  {
     version: "1.35.7",
     date: "2026-10-17",
     title: "+ New",

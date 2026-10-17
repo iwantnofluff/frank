@@ -63,6 +63,8 @@ import { buildCheckPrompt, parseCheckFindings, type CheckFinding } from "@/lib/a
 import { KNOWLEDGE_SECTIONS } from "@/lib/knowledge-sections";
 import { modelById } from "@/lib/ai/models";
 import { errorMessage } from "@/lib/errors";
+import { VoicePost } from "@/components/creative-review/VoicePost";
+import type { VoicePostFields } from "@/lib/ai/voice-post";
 
 const KNOWLEDGE_SECTION_LABELS: Record<string, string> = Object.fromEntries(
   KNOWLEDGE_SECTIONS.map((s) => [s.key, s.label]),
@@ -544,6 +546,26 @@ export function CreativeModal(props: CreativeModalProps) {
 
   const [nameError, setNameError] = useState<string | null>(null);
   const [formatError, setFormatError] = useState<string | null>(null);
+  // What was said (VoicePost), into the fields it covers; the rest stay as
+  // they were, and nothing is saved until Create Post.
+  function applyVoice(f: VoicePostFields) {
+    if (f.name) setName(f.name);
+    if (f.formats) {
+      setFormats(f.formats);
+      setFormatError(null);
+    }
+    if (f.slideCount) setSlideCountChoice(f.slideCount);
+    if (f.date) setDate(f.date);
+    if (f.time) setTime(f.time);
+    if (f.dueOn) setDueOn(f.dueOn);
+    if (f.destination) setDestination(f.destination);
+    if (f.concept) setConcept(f.concept);
+    if (f.referenceUrls) setReferenceUrls(f.referenceUrls);
+    if (f.teamUserIds) {
+      setTeamPrefilled(true);
+      setTeamUserIds(f.teamUserIds);
+    }
+  }
   const [dateError, setDateError] = useState<string | null>(null);
   const [destinationError, setDestinationError] = useState<string | null>(null);
 
@@ -1266,6 +1288,10 @@ export function CreativeModal(props: CreativeModalProps) {
 
       {activeTab === "brief" && (
         <div className="mtabbody">
+          {/* Made by speaking (direct instruction): a new post only. */}
+          {isCreate && !creativeId && agencyId && (
+            <VoicePost agencyId={agencyId} delivery={delivery} onFill={applyVoice} />
+          )}
           <div className="msection-h">Details</div>
           <p className="msection-d">The basics — what this is, its format, when it&rsquo;s due, and who&rsquo;s on it.</p>
 

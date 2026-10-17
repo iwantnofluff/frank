@@ -196,3 +196,68 @@ test("a post page's + New opens the New Post window on its project's table", asy
   await page.getByRole("button", { name: "How to add it" }).click();
   await expect(page.getByRole("menuitem", { name: /^Row/ })).toContainText("Quick add in row");
 });
+
+// Made by speaking (direct instruction). The browser's speech-to-text is
+// stood in for (a test browser has no microphone), and so is the AI's
+// reply (never a live one in a permanent test): what's checked is that
+// what was heard goes to Frank, and what comes back fills the form, with
+// nothing saved until Create Post.
+test("a post made by speaking fills in the New Post window", async ({ page, frank }) => {
+  const said = "A carousel on the twentieth of November at nine, five slides, a dad doing the night feed";
+  await page.addInitScript((words) => {
+    class FakeRecognition {
+      lang = "";
+      continuous = false;
+      interimResults = false;
+      onresult: ((e: unknown) => void) | null = null;
+      onerror: ((e: unknown) => void) | null = null;
+      onend: (() => void) | null = null;
+      start() {
+        setTimeout(() => this.onresult?.({ resultIndex: 0, results: [Object.assign([{ transcript: words }], { isFinal: true })] }), 200);
+      }
+      stop() {
+        setTimeout(() => this.onend?.(), 50);
+      }
+      abort() {}
+    }
+    (window as unknown as Record<string, unknown>).SpeechRecognition = FakeRecognition;
+    (window as unknown as Record<string, unknown>).webkitSpeechRecognition = FakeRecognition;
+  }, said);
+  let sent: { transcript?: string; delivery?: string } = {};
+  await page.route("**/api/ai/voice-post", async (route) => {
+    sent = route.request().postDataJSON();
+    await route.fulfill({
+      json: {
+        fields: {
+          name: "Dad Does the Night Feed",
+          formats: ["ig_carousel"],
+          slideCount: 5,
+          date: "2026-11-20",
+          time: "09:00",
+          concept: "A dad doing the night feed.",
+        },
+      },
+    });
+  });
+  await frank.loginAsStaff(page);
+  await page.goto(`/projects/${frank.projectId}`);
+  await page.getByRole("button", { name: "New Post", exact: true }).click();
+  await page.getByRole("button", { name: "Speak It" }).click();
+  await expect(page.locator(".voicepost-live")).toContainText("night feed");
+  await page.getByRole("button", { name: "Done" }).click();
+  await expect(page.locator(".voicepost-note")).toContainText("Filled in from what you said");
+  expect(sent).toMatchObject({ transcript: said, delivery: "scheduled" });
+  await expect(page.locator("#nbName")).toHaveValue("Dad Does the Night Feed");
+  await expect(page.locator("#nbFmt")).toHaveText("Instagram Carousel");
+  await expect(page.locator("#nbSlides")).toHaveValue("5");
+  await expect(page.locator("#nbDate")).toHaveValue("2026-11-20");
+  await expect(page.locator("#nbTime")).toHaveValue("09:00");
+  await expect(page.locator("#nbConcept")).toHaveValue("A dad doing the night feed.");
+  // Nothing saved yet.
+  const { createClient } = await import("@supabase/supabase-js");
+  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data } = await admin.from("creatives").select("id").eq("project_id", frank.projectId).eq("name", "Dad Does the Night Feed");
+  expect(data).toEqual([]);
+});

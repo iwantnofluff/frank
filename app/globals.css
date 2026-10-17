@@ -10980,3 +10980,78 @@ td.tlate {
   color: var(--stage-concept-ink);
   font-size: var(--d-fs);
 }
+
+/* Making a post by speaking (VoicePost, direct instruction), above the
+   New Post window's Details: a button and a note, then, while listening,
+   what's been heard so far. */
+/* The line under it is Details' own (.msection-h). */
+.voicepost {
+  margin-bottom: 4px;
+}
+.voicepost-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.voicepost-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.voicepost-btn svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.voicepost-note {
+  font-size: 12.7px;
+  color: var(--muted);
+}
+.voicepost-live {
+  border: 1px solid var(--action);
+  border-radius: var(--r);
+  background: var(--action-soft);
+  padding: 10px 12px;
+}
+.voicepost-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.7px;
+}
+.voicepost-acts {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+.voicepost-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--rose);
+  animation: voicepost-pulse 1.2s ease-in-out infinite;
+}
+@keyframes voicepost-pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .voicepost-dot {
+    animation: none;
+  }
+}
+.voicepost-t {
+  margin-top: 8px;
+  font-size: 14.2px;
+  line-height: 1.45;
+  min-height: 40px;
+}
+.voicepost-i {
+  color: var(--muted);
+}
