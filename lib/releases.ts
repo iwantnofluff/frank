@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.36.2",
+    date: "2026-10-17",
+    title: "The calendar opens by its date",
+    changes: ["Changing a date from the table, the calendar now opens against the date field, not at the top of the page."],
+  },
+  {
     version: "1.36.1",
     date: "2026-10-17",
     title: "Dates, captions and editing from the table",

@@ -36,10 +36,16 @@ function useDrop(autoOpen: boolean | undefined) {
   };
   const close = () => setAnchor(null);
 
-  useLayoutEffect(() => {
+  // Measured a frame later, once whatever holds the field has moved into
+  // place: the table's date popover positions itself after its fields
+  // appear, and flips above its row near the foot of the window, so a
+  // measurement straight away found the field where the popover started
+  // (reported directly: the calendar opened at the top of the page).
+  useEffect(() => {
     if (!autoOpen) return;
     input.current?.focus();
-    open();
+    const frame = requestAnimationFrame(open);
+    return () => cancelAnimationFrame(frame);
   }, [autoOpen]);
 
   useEffect(() => {
