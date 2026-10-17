@@ -29,7 +29,7 @@ test("a project's New posts tick puts someone on every new post's Team", async (
   // A new post starts with them on its Team, and it saves that way.
   await page.goto(`/projects/${frank.projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
-  await page.click('button:has-text("New Post")');
+  await page.getByRole("button", { name: "New Post", exact: true }).click();
   await expect(page.locator(".field", { has: page.locator('label[for="nbTeam"]') })).toContainText("E2E Staff");
   await page.fill("#nbName", "Default Team E2E");
   await page.fill("#nbDate", "2027-04-01");

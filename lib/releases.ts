@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.35.7",
+    date: "2026-10-17",
+    title: "+ New",
+    changes: [
+      "A project's New Post button now reads + New; in its menu, Row is a Quick add in row.",
+      "On a post's page, + New takes you to its project's table with the New Post window open.",
+    ],
+  },
+  {
     version: "1.35.6",
     date: "2026-10-16",
     title: "Stories fill the preview",

@@ -19,7 +19,7 @@ test("project calendar", async ({ page, frank }) => {
   // this wait the screenshot races ahead and can land on that hidden
   // state under worker concurrency, same shape as the dashboard's stat
   // cards needing their own explicit wait.
-  await page.waitForSelector('button:has-text("New Post")');
+  await page.getByRole("button", { name: "New Post", exact: true }).waitFor();
   // The view opens on the current month, so its name (and the empty
   // state's sentence naming it) changes every month — masked so the
   // baseline doesn't go stale on the 1st.
@@ -33,7 +33,7 @@ test("project calendar — jumps to the month of a newly created brief", async (
   await page.goto(`/projects/${frank.projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
 
-  await page.click('button:has-text("New Post")');
+  await page.getByRole("button", { name: "New Post", exact: true }).click();
   await page.fill("#nbName", "Calendar Jump E2E");
   await page.fill("#nbDate", "2027-06-10");
   await chooseFormat(page);

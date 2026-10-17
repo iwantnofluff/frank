@@ -70,8 +70,8 @@ test("New Brief shows a repeat-issue warning scoped to the format being chosen",
 
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${frank.projectId}`);
-  await page.waitForSelector('button:has-text("New Post")');
-  await page.click('button:has-text("New Post")');
+  await page.getByRole("button", { name: "New Post", exact: true }).waitFor();
+  await page.getByRole("button", { name: "New Post", exact: true }).click();
   await page.waitForSelector("#nbFmt");
 
   await swapFormat(page, "Instagram Post", "Instagram Story");
@@ -101,8 +101,8 @@ test("New Brief shows no warning for a client with fewer than two matching issue
 
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${frank.projectId}`);
-  await page.waitForSelector('button:has-text("New Post")');
-  await page.click('button:has-text("New Post")');
+  await page.getByRole("button", { name: "New Post", exact: true }).waitFor();
+  await page.getByRole("button", { name: "New Post", exact: true }).click();
   await page.waitForSelector("#nbFmt");
   await swapFormat(page, "Instagram Post", "Instagram Story");
   await page.waitForTimeout(800);

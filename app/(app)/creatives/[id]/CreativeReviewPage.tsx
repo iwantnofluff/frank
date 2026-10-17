@@ -90,7 +90,6 @@ export function CreativeReviewPage({ id }: { id: string }) {
   const [shareOpen, setShareOpen] = useState(false);
   // A new post in the same project, from here (direct instruction): the
   // window only, not the table's Row option.
-  const [newPostOpen, setNewPostOpen] = useState(false);
   // null = closed. CreativeModal replaced the separate Upload or Edit /
   // Draft from Brief entry points with one window — this just remembers
   // which tab it should open on for whichever button was clicked.
@@ -428,9 +427,11 @@ export function CreativeReviewPage({ id }: { id: string }) {
                     className="btn primary newpost"
                     title="New Post"
                     aria-label="New Post"
-                    onClick={() => setNewPostOpen(true)}
+                    // To the project's table, the New Post window open there
+                    // (direct instruction).
+                    onClick={() => router.push(`/projects/${creative.projects!.id}?new=1`)}
                   >
-                    +<span className="newpost-l"> Post</span>
+                    +<span className="newpost-l"> New</span>
                   </button>
                 )}
                 <button
@@ -804,15 +805,6 @@ export function CreativeReviewPage({ id }: { id: string }) {
           onClose={() => setCreativeModalTab(null)}
           onCreativeVersionCreated={setCreativeVersionId}
           onCopyVersionCreated={setCopyVersionId}
-        />
-      )}
-      {newPostOpen && creative.projects && (
-        <CreativeModal
-          mode="create"
-          projectId={creative.projects.id}
-          clientId={creative.projects.client_id}
-          delivery={creative.projects.delivery}
-          onClose={() => setNewPostOpen(false)}
         />
       )}
     </div>

@@ -10,7 +10,7 @@ test("creates a scheduled creative end to end", async ({ page, frank }) => {
   await page.goto(`/projects/${frank.projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
 
-  await page.click('button:has-text("New Post")');
+  await page.getByRole("button", { name: "New Post", exact: true }).click();
   await page.fill("#nbName", "New Brief E2E — Scheduled");
   await page.fill("#nbDate", "2027-04-01");
   await chooseFormat(page);
@@ -33,7 +33,7 @@ test("creates a continuous creative end to end", async ({ page, frank }) => {
   await page.goto(`/projects/${continuousProjectId}`);
   await page.waitForSelector(".tblwrap, .empty");
 
-  await page.click('button:has-text("New Post")');
+  await page.getByRole("button", { name: "New Post", exact: true }).click();
   await page.fill("#nbName", "New Brief E2E — Continuous");
   await page.fill("#nbDest", "https://example.com/listing");
   // due_on is optional at the schema/form level, but ContinuousCalendarTable
@@ -54,7 +54,7 @@ test("missing publish date is caught before submit, not by the DB trigger", asyn
   await page.goto(`/projects/${frank.projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
 
-  await page.click('button:has-text("New Post")');
+  await page.getByRole("button", { name: "New Post", exact: true }).click();
   await page.fill("#nbName", "Should Not Be Created");
   // No format yet (a new post starts with none): asked for one first.
   await expect(page.locator("#nbFmt")).toHaveText("Choose formats");
@@ -76,7 +76,7 @@ test("a real client-role session has no New Brief entry point", async ({ page, f
   await page.goto(`/projects/${frank.projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
 
-  await expect(page.locator('button:has-text("New Post")')).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "New Post", exact: true })).toHaveCount(0);
 });
 
 test("a post can have several formats, with all their copy fields, and closes with copy only", async ({ page, frank }) => {
@@ -89,7 +89,7 @@ test("a post can have several formats, with all their copy fields, and closes wi
   await page.goto(`/projects/${frank.projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
 
-  await page.click('button:has-text("New Post")');
+  await page.getByRole("button", { name: "New Post", exact: true }).click();
   await page.fill("#nbName", "Multi Format E2E");
   await page.fill("#nbDate", "2027-04-01");
   // Nothing ticked to start (direct instruction); formats from two content
@@ -142,7 +142,7 @@ test("a post takes several references, each a link in the table and on its Brief
   });
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${frank.projectId}`);
-  await page.click('button:has-text("New Post")');
+  await page.getByRole("button", { name: "New Post", exact: true }).click();
   await page.fill("#nbName", "References E2E");
   await page.fill("#nbDate", "2027-03-16");
   await page.getByRole("textbox", { name: "Reference 1" }).fill("example.com/first");
@@ -177,4 +177,22 @@ test("a post takes several references, each a link in the table and on its Brief
   await page.goto(`/creatives/${c!.id}`);
   await page.getByRole("button", { name: "Brief", exact: true }).click();
   await expect(page.getByRole("link", { name: "https://example.com/second" })).toHaveAttribute("href", "https://example.com/second");
+});
+
+test("a post page's + New opens the New Post window on its project's table", async ({ page, frank }) => {
+  await frank.loginAsStaff(page);
+  await page.goto(`/creatives/${frank.creativeId}`);
+  const button = page.getByRole("button", { name: "New Post", exact: true });
+  await expect(button).toHaveText("+ New");
+  await button.click();
+  // The table, with the window open (direct instruction), the address
+  // back to the project's own so a reload doesn't open it again.
+  await expect(page.locator("#nbName")).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator(".tblwrap, .empty").first()).toBeAttached();
+  await expect(page).toHaveURL(new RegExp(`/projects/${frank.projectId}$`));
+  // The table's own button says + New too, its menu's Row Quick add in row.
+  await page.getByRole("button", { name: "Cancel" }).click();
+  await expect(page.getByRole("button", { name: "New Post", exact: true })).toHaveText("+ New");
+  await page.getByRole("button", { name: "How to add it" }).click();
+  await expect(page.getByRole("menuitem", { name: /^Row/ })).toContainText("Quick add in row");
 });

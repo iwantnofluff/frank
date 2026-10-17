@@ -3984,3 +3984,9 @@ Then a Reel's preview at its shape at once (reported directly: the phone drew sm
 
 Then the story to the phone's foot (reported directly: it stopped short, black below). The preview phone for a Story is now as tall as the story (height auto, 599px, against 660 for other formats), so the 9:16 artwork, whole and uncropped (300 by 533), runs to the frame's bottom edge, its corners following the frame's. Measured: no gap below it but the frame's own 9px border (1.35.6).
 
+## + New
+
+Direct instruction: the project's "+ New Post" reads "+ New" (its accessible name still New Post, so a screen reader says what it makes; SplitButton's ariaLabel), its menu's Row hint "Quick add in row"; and a post page's "+ Post" reads "+ New" and goes to the project's table with the New Post window open (?new=1, opened once and taken off the address, so a reload doesn't open it again), in place of opening the window over the post. The post page's own New Post window is gone. Tests find the button by its name rather than its words.
+
+**Verified**: new-brief checks a post page's + New lands on the table with the window open and the address clean, and the table's + New and Quick add in row; the post-creation specs (new-brief, quick-add-row, carousel, brief-time-warning, post-team-default) and both table specs pass. project-calendar.png and upload-artwork-modal.png updated after looking at their diffs (the shorter button, and a pixel under Text on Image from 1.34.0's focus wrapper).
+

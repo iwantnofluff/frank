@@ -12,8 +12,11 @@ export function SplitButton({
   onClick,
   menuLabel,
   items,
+  ariaLabel,
 }: {
   label: string;
+  // Its full name where the label is short ("+ New" is "New Post").
+  ariaLabel?: string;
   onClick: () => void;
   menuLabel: string;
   items: { label: string; hint?: string; onClick: () => void }[];
@@ -42,7 +45,7 @@ export function SplitButton({
 
   return (
     <span className="split">
-      <button type="button" className="btn primary" onClick={onClick}>
+      <button type="button" className="btn primary" aria-label={ariaLabel} onClick={onClick}>
         {label}
       </button>
       <button

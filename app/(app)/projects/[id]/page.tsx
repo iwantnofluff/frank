@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useProject } from "@/hooks/use-project";
 import { useLiveUpdates } from "@/hooks/use-live-updates";
@@ -77,6 +77,18 @@ export default function ProjectPage({
   }
   const [movedNotice, setMovedNotice] = useState<string | null>(null);
   const router = useRouter();
+  // From a post's page, "+ New" comes here with the New Post window open
+  // (direct instruction: ?new=1), taken off the address so a reload
+  // doesn't open it again.
+  const askedNew = useSearchParams().get("new") === "1";
+  const [newHandled, setNewHandled] = useState(false);
+  if (askedNew && !newHandled) {
+    setNewHandled(true);
+    setNewBriefOpen(true);
+  }
+  useEffect(() => {
+    if (askedNew) router.replace(`/projects/${id}`, { scroll: false });
+  }, [askedNew, id, router]);
 
   const isLoading = projectLoading || creativesLoading;
   const columns = customColumns ?? [];
@@ -216,14 +228,16 @@ export default function ProjectPage({
           {confirmedStaff && showNewBrief && <span className="toolsep" />}
           {showNewBrief && project && (
             <SplitButton
-              label="+ New Post"
+              // "+ New" (direct instruction), its full name for screen readers.
+              label="+ New"
+              ariaLabel="New Post"
               onClick={() => setNewBriefOpen(true)}
               menuLabel="How to add it"
               items={[
                 { label: "Window", hint: "The full form", onClick: () => setNewBriefOpen(true) },
                 {
                   label: "Row",
-                  hint: "Type it straight into the table",
+                  hint: "Quick add in row",
                   onClick: () => {
                     setArchiveFilter("active");
                     setDraftRowOpen(true);

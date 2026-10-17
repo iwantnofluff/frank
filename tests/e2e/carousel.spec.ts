@@ -65,7 +65,7 @@ test("a carousel gets a slide count, and Text on Image one field per slide", asy
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/projects/${frank.projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
-  await page.click('button:has-text("New Post")');
+  await page.getByRole("button", { name: "New Post", exact: true }).click();
   await page.fill("#nbName", "Carousel Brief E2E");
   await page.fill("#nbDate", "2027-03-12");
 

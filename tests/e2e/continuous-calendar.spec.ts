@@ -133,7 +133,7 @@ test("continuous calendar — jumps to the month of a newly created brief", asyn
   await page.goto(`/projects/${projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
 
-  await page.click('button:has-text("New Post")');
+  await page.getByRole("button", { name: "New Post", exact: true }).click();
   await page.fill("#nbName", "Continuous Calendar Jump E2E");
   await page.fill("#nbDest", "https://example.com/listing");
   await page.fill("#nbDue", "2027-06-10");
@@ -212,7 +212,7 @@ test("a real client-role session sees the continuous table read-only", async ({ 
   await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
-  await expect(page.locator('button:has-text("New Post")')).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "New Post", exact: true })).toHaveCount(0);
   const row = page.locator("tr[data-row]", { hasText: "Client View Creative" });
   await expect(row.locator("select").first()).toBeDisabled();
   // Notes for Designer, a text field.
