@@ -4057,3 +4057,9 @@ phase106 is on live too (the user ran it): read back there, the date rule gone a
 Reported directly: in the New Post window, the Formats dropdown's Done sat below the window's edge. When the window has less room than the list needs, the dropdown is capped to fit (useViewportFit) and scrolled as a whole, Done with it. It's now a column whose list (.cp-b) takes up the slack and scrolls, so the heading, search and Done stay in view.
 
 **Verified**: a throwaway spec opened the Formats list in windows 700, 800 and 1000 tall: Done fully in view each time (the shorter two open above the field); screenshot of the 1000 one, opening below as reported, with the list scrolling above Done.
+
+## Add Date's arrow
+
+Direct instruction: an Idea's Add Date button (both tables) gets the small diagonal arrow every other Add button carries, the same path as MissingContent's.
+
+**Verified**: in the demo planner, the Christmas Gift Guide Idea's Add Date shows the arrow, matching Add Slides beside it; screenshot.

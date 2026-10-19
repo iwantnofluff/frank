@@ -1102,6 +1102,10 @@ export function ContinuousCalendarTable({
                             isStaff && (
                               <button type="button" className="tpending-btn" title="Give it a Live Date" onClick={pickDate(c, "date")}>
                                 Add Date
+                                {/* The Add buttons' small diagonal arrow (direct instruction). */}
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                  <path d="M7 17L17 7M9 7h8v8" />
+                                </svg>
                               </button>
                             )
                           ) : isStaff ? (
