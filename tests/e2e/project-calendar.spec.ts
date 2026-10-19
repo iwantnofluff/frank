@@ -1,4 +1,4 @@
-import { test, expect, goToMonth, chooseFormat } from "./fixtures";
+import { test, expect, goToMonth, chooseFormat, showStatuses } from "./fixtures";
 
 // The saved-view Save button is a .split; so, now, is New Post's — this is
 // the one that saves the view.
@@ -56,12 +56,85 @@ test("project calendar — status filter narrows the visible rows", async ({ pag
   await goToMonth(page, "March 2027");
   await expect(page.locator(".pname", { hasText: "Concept-Stage E2E" })).toBeVisible();
 
-  // The six stages (In Production, phase102).
-  const status = page.getByLabel("Status");
-  await expect(status.locator("option")).toHaveText(["All Statuses", "1. Concept", "2. In Production", "3. Internal Review", "4. Client Review", "5. Approved", "6. Live"]);
-  await status.selectOption("4");
+  // Idea, then the six stages (In Production, phase102), any combination.
+  await page.getByRole("button", { name: "Status" }).click();
+  await expect(page.getByRole("dialog", { name: "Statuses" }).getByRole("checkbox")).toHaveText([
+    "All Statuses", "Idea", "1. Concept", "2. In Production", "3. Internal Review", "4. Client Review", "5. Approved", "6. Live",
+  ]);
+  await page.keyboard.press("Escape");
+  await showStatuses(page, ["4. Client Review"]);
+  await expect(page.getByRole("button", { name: "Status" })).toHaveText("4. Client Review");
   await expect(page.locator(".pname", { hasText: "Concept-Stage E2E" })).toHaveCount(0);
   await expect(page.locator(".pname", { hasText: "E2E Test Creative" })).toBeVisible();
+  await showStatuses(page, ["1. Concept", "4. Client Review"]);
+  await expect(page.getByRole("button", { name: "Status" })).toHaveText("2 Statuses");
+  await expect(page.locator(".pname", { hasText: "Concept-Stage E2E" })).toBeVisible();
+});
+
+test("project calendar — a post with no date is an Idea, the team's only, under the weeks", async ({ page, frank }) => {
+  const { createClient } = await import("@supabase/supabase-js");
+  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data: me } = await admin.from("creatives").select("created_by").eq("id", frank.creativeId).single();
+  const { error } = await admin
+    .from("creatives")
+    .insert({ project_id: frank.projectId, name: "Loyalty Card Idea", format: "ig_feed", formats: ["ig_feed"], stage: 1, created_by: me!.created_by });
+  if (error) throw error;
+  await frank.loginAsStaff(page);
+  await page.goto(`/projects/${frank.projectId}`);
+  await page.waitForSelector(".tblwrap, .empty");
+  // In any month, under the weeks (direct instruction).
+  await goToMonth(page, "March 2027");
+  const band = page.locator("tr.ideaband");
+  await expect(band).toHaveText(/No Scheduled Date\s*1 Idea/);
+  const row = page.locator("tr[data-row]", { hasText: "Loyalty Card Idea" });
+  await expect(row.locator(".stg.idea")).toHaveText("Idea");
+  // Not shown when Idea isn't among the statuses.
+  await showStatuses(page, ["4. Client Review"]);
+  await expect(band).toHaveCount(0);
+  await showStatuses(page, ["Idea"]);
+  await expect(band).toBeVisible();
+  await expect(page.locator(".pname", { hasText: "E2E Test Creative" })).toHaveCount(0);
+  // Not on the Review page: a click opens its Edit window here.
+  await row.locator("td.sk3").click();
+  await expect(page.locator("#nbName")).toBeFocused();
+  expect(page.url()).toContain(`/projects/${frank.projectId}`);
+  await page.getByRole("button", { name: "Cancel" }).last().click();
+  // A date makes it a post like any other, at its own stage.
+  await row.getByRole("button", { name: "Add Date" }).click();
+  const pop = page.getByRole("dialog", { name: /Publish Date/ });
+  await pop.getByLabel("Publish Date").fill("2027-03-17");
+  await page.keyboard.press("Escape");
+  await pop.getByRole("button", { name: "Save" }).click();
+  await expect(pop).toHaveCount(0);
+  await showStatuses(page, ["Idea", "1. Concept", "2. In Production", "3. Internal Review", "4. Client Review", "5. Approved", "6. Live"]);
+  await expect(band).toHaveCount(0);
+  await expect(page.locator("tr[data-row]", { hasText: "Loyalty Card Idea" }).locator("td.sk2")).toHaveText("17 Mar 27");
+});
+
+test("project calendar — a client never sees an Idea", async ({ page, frank }) => {
+  const { createClient } = await import("@supabase/supabase-js");
+  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data: me } = await admin.from("creatives").select("created_by").eq("id", frank.creativeId).single();
+  const { data: idea, error } = await admin
+    .from("creatives")
+    .insert({ project_id: frank.projectId, name: "Secret Idea", format: "ig_feed", formats: ["ig_feed"], stage: 4, created_by: me!.created_by })
+    .select("id")
+    .single();
+  if (error) throw error;
+  await frank.loginAsClient(page);
+  await page.goto(`/projects/${frank.projectId}`);
+  await page.waitForSelector(".tblwrap, .empty");
+  await goToMonth(page, "March 2027");
+  await expect(page.locator(".pname", { hasText: "E2E Test Creative" })).toBeVisible();
+  await expect(page.getByText("Secret Idea")).toHaveCount(0);
+  await expect(page.locator("tr.ideaband")).toHaveCount(0);
+  // Nor by its address.
+  await page.goto(`/creatives/${idea!.id}`);
+  await expect(page.getByText("Couldn’t load this creative")).toBeVisible();
 });
 
 test("project calendar — platform filter shows posts going out on that platform", async ({ page, frank }) => {

@@ -24,19 +24,21 @@ export function DatePopover({
   name: string;
   anchorRect: DOMRect;
   delivery: "scheduled" | "continuous";
-  // A scheduled post's scheduled_at (ISO), or a continuous one's due_on.
+  // A scheduled post's scheduled_at (ISO), or a continuous one's due_on;
+  // empty for an Idea, which gets its first date here.
   value: string;
   // Which was clicked: its picker opens first.
   focus: "date" | "time";
   onClose: () => void;
 }) {
   const scheduled = delivery === "scheduled";
-  const at = scheduled ? new Date(value) : null;
+  const at = scheduled && value ? new Date(value) : null;
   const pad = (n: number) => String(n).padStart(2, "0");
   const [date, setDate] = useState(
     at ? `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}` : value.slice(0, 10),
   );
-  const [time, setTime] = useState(at ? `${pad(at.getHours())}:${pad(at.getMinutes())}` : "");
+  // An Idea's first time: 9am, as a new post's is.
+  const [time, setTime] = useState(at ? `${pad(at.getHours())}:${pad(at.getMinutes())}` : scheduled ? "09:00" : "");
   const reschedule = useReschedulePost();
   const ref = useRef<HTMLDivElement>(null);
   useViewportFit(ref, anchorRect, { side: "below", gap: 4, align: "start" });

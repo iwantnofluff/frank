@@ -64,10 +64,9 @@ export function useDraftPost({
   async function save() {
     // Same checks, in the same order, as the window's handleSaveBrief.
     if (!values.name.trim()) return setProblem("Give the post a name");
-    if (delivery === "scheduled" && !values.date) return setProblem("Pick a publish date");
     if (delivery === "continuous" && !values.destination.trim()) return setProblem("Say where this goes");
     const scheduledAt =
-      delivery === "scheduled" ? new Date(`${values.date}T${values.time || "09:00"}:00`).toISOString() : null;
+      delivery === "scheduled" && values.date ? new Date(`${values.date}T${values.time || "09:00"}:00`).toISOString() : null;
     try {
       await createCreative.mutateAsync({
         name: values.name.trim(),

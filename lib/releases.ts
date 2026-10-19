@@ -13,6 +13,18 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.37.0",
+    date: "2026-10-19",
+    title: "Ideas",
+    changes: [
+      "A post with no date yet is an Idea, in bright mango. Ideas sit in their own section under the table, No Scheduled Date, whatever month you're looking at.",
+      "Create a post without a date to start it as an Idea; Add Date gives it one, and it carries on at its own stage.",
+      "Ideas are your team's only: clients don't see them, and they're left out of the post page's next and previous, its feed and review links. Clicking one opens its Edit window.",
+      "The status filter now takes any combination of statuses, Idea included.",
+      "The Formats list in the New Post window keeps its Done button in view; the list scrolls instead.",
+    ],
+  },
+  {
     version: "1.36.2",
     date: "2026-10-17",
     title: "The calendar opens by its date",

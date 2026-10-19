@@ -1,5 +1,6 @@
 "use client";
 
+import { isIdea } from "@/lib/stage-labels";
 import Link from "next/link";
 import { useCreatives, type CreativeListRow } from "@/hooks/use-creatives";
 import { formatsLabel, postFormats } from "@/lib/formats";
@@ -60,7 +61,8 @@ export function PostNeighbours({
   const { data: live } = usePostLiveDate(creativeId);
   const timing = live ? liveTiming({ scheduled_at: scheduledAt, due_on: dueOn }, delivery, live.live_at) : null;
   const liveDate = live ? publishDate("scheduled", live.live_at, null) : null;
-  const list = rows ? inDateOrder(rows, delivery) : [];
+  // Ideas aren't on the Review page (direct instruction): only dated posts.
+  const list = rows ? inDateOrder(rows.filter((c) => !isIdea(c)), delivery) : [];
   const at = list.findIndex((c) => c.id === creativeId);
   const prev = at > 0 ? list[at - 1] : null;
   const next = at >= 0 && at < list.length - 1 ? list[at + 1] : null;

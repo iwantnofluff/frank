@@ -568,7 +568,6 @@ export function CreativeModal(props: CreativeModalProps) {
       setTeamUserIds(f.teamUserIds);
     }
   }
-  const [dateError, setDateError] = useState<string | null>(null);
   const [destinationError, setDestinationError] = useState<string | null>(null);
 
   // A brief flash beside Cancel after a successful "Update" (never shown
@@ -655,11 +654,8 @@ export function CreativeModal(props: CreativeModalProps) {
       return;
     }
     setNameError(null);
-    if (delivery === "scheduled" && !date) {
-      setDateError("Pick a publish date.");
-      return;
-    }
-    setDateError(null);
+    // No date is fine: the post is an Idea until it has one (direct
+    // instruction).
     if (delivery === "continuous" && !destination.trim()) {
       setDestinationError("Say where this goes.");
       return;
@@ -667,7 +663,7 @@ export function CreativeModal(props: CreativeModalProps) {
     setDestinationError(null);
 
     const scheduledAt =
-      delivery === "scheduled" ? new Date(`${date}T${time || "09:00"}:00`).toISOString() : null;
+      delivery === "scheduled" && date ? new Date(`${date}T${time || "09:00"}:00`).toISOString() : null;
 
     // Only the very first save creates the row — `isCreate` alone stays
     // true for as long as this modal is open (it's fixed at mount from
@@ -1381,12 +1377,8 @@ export function CreativeModal(props: CreativeModalProps) {
                   id="nbDate"
                   className="bin one"
                   value={date}
-                  onChange={(v) => {
-                    setDate(v);
-                    if (dateError) setDateError(null);
-                  }}
+                  onChange={setDate}
                 />
-                {dateError && <p className="autherr">{dateError}</p>}
               </div>
               <div className="field">
                 <label htmlFor="nbTime">Time</label>

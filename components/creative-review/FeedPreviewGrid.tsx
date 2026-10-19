@@ -1,5 +1,6 @@
 "use client";
 
+import { isIdea } from "@/lib/stage-labels";
 import { isLive, isOverdue } from "@/lib/post-live";
 import { useMemo, useRef, useState } from "react";
 import { useCreatives, type CreativeListRow } from "@/hooks/use-creatives";
@@ -53,15 +54,15 @@ export function FeedPreviewGrid({
   // returns them too, for the project page's own Active/Archived toggle.
   // Newest first, as Instagram's grid reads (direct instruction: they were
   // in the planner's order, oldest first): by Publish Date, or a continuous
-  // project's Live Date; posts with no date yet first, as the furthest out,
-  // in the planner's order.
+  // project's Live Date. Ideas (no date yet) are left out.
   const creatives = useMemo(() => {
     const when = (c: CreativeListRow) => {
       const at = c.scheduled_at ?? (c.due_on ? `${c.due_on}T00:00:00` : null);
       return at ? new Date(at).getTime() : Infinity;
     };
+    // Ideas aren't on the Review page (direct instruction).
     return (allCreatives ?? [])
-      .filter((c) => !c.archived_at)
+      .filter((c) => !c.archived_at && !isIdea(c))
       .map((c, i) => ({ c, i, t: when(c) }))
       .sort((a, b) => (a.t === b.t ? a.i - b.i : b.t - a.t))
       .map(({ c }) => c);

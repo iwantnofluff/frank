@@ -13,7 +13,7 @@ import { useClientPreferences } from "@/hooks/use-client-preferences";
 import { errorMessage } from "@/lib/errors";
 import { FeedTileArt, EmptyTileArt } from "@/components/creative-review/FeedTileArt";
 import { FeedCaptionPopover } from "@/components/creative-review/FeedCaptionPopover";
-import { STAGE } from "@/lib/stage-labels";
+import { STAGE, isIdea } from "@/lib/stage-labels";
 
 const GRID_SLOTS = 9;
 
@@ -134,7 +134,8 @@ export function ShareModal({
   const { data: allCreatives } = useCreatives(projectId);
   // Deleted (archived_at) posts are never shareable — useCreatives now
   // returns them too, for the project page's own Active/Archived toggle.
-  const creatives = useMemo(() => (allCreatives ?? []).filter((c) => !c.archived_at), [allCreatives]);
+  // Nor are Ideas (direct instruction): the link never carries one (phase106).
+  const creatives = useMemo(() => (allCreatives ?? []).filter((c) => !c.archived_at && !isIdea(c)), [allCreatives]);
   const createLink = useCreateSharedLink();
 
   // Same hover-preview pattern as ProjectCalendarTable's own creative rows

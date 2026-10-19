@@ -6341,6 +6341,22 @@ button.avatar {
   font-size: 12.2px;
   color: var(--muted);
 }
+/* When the window has less room than the list needs, the list scrolls,
+   not the whole dropdown, so the heading, search and Done stay in view
+   (reported directly: Done sat below the window's edge). */
+.fmtpop {
+  display: flex;
+  flex-direction: column;
+}
+.fmtpop .cp-b {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.fmtpop .cp-h,
+.fmtpop .cp-s,
+.fmtpop-f {
+  flex: none;
+}
 /* The formats' Done (direct instruction), across the foot. */
 .fmtpop-f {
   padding: 8px;
@@ -11192,4 +11208,40 @@ td.tlate .tdate-btn:hover {
   stroke-width: 2.6;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+/* The tables' status filter (components/project/StatusFilterMenu): a
+   button that reads like the Platform select beside it, opening a list of
+   ticks with each status's colour. */
+button.sortbtn {
+  display: inline-flex;
+  align-items: center;
+  font: inherit;
+  font-size: 13.2px;
+  font-weight: 500;
+  min-height: 28px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r);
+  padding: 4px 28px 4px 10px;
+  color: var(--ink);
+  background-color: var(--surface);
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2314161A' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 12px;
+  cursor: pointer;
+}
+button.sortbtn:hover {
+  background-color: var(--canvas);
+}
+.sfdot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+/* An Idea (direct instruction): a post with no date yet, bright mango. */
+.stg.idea {
+  background: #ffb30f;
 }

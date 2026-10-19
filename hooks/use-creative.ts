@@ -62,6 +62,10 @@ export function creativeQuery(creativeId: string) {
       return data as unknown as CreativeRow;
     },
     enabled: !!creativeId,
+    // No such post for this person (PostgREST's no-row answer: deleted,
+    // or an Idea a client can't see) won't change on a retry, so the page
+    // says so straight away rather than after three.
+    retry: (count, error) => (error as { code?: string })?.code !== "PGRST116" && count < 3,
   });
 }
 

@@ -588,3 +588,16 @@ export async function chooseFormat(page: import("@playwright/test").Page, label 
   await pop.getByRole("button", { name: "Done" }).click();
   await pop.waitFor({ state: "detached" });
 }
+
+// The tables' status filter (multi-choice, direct instruction): shows only
+// the statuses named, by their labels ("Idea", "4. Client Review").
+export async function showStatuses(page: import("@playwright/test").Page, labels: string[]) {
+  await page.getByRole("button", { name: "Status" }).click();
+  const pop = page.getByRole("dialog", { name: "Statuses" });
+  const all = pop.getByRole("checkbox", { name: "All Statuses" });
+  // From none: tick All (if it isn't already) and untick it again.
+  if ((await all.getAttribute("aria-checked")) !== "true") await all.click();
+  await all.click();
+  for (const l of labels) await pop.getByRole("checkbox", { name: l, exact: true }).click();
+  await pop.getByRole("button", { name: "Done" }).click();
+}

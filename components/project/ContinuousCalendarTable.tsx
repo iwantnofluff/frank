@@ -4,7 +4,8 @@ import { useRenameColumn } from "@/hooks/use-rename-column";
 import { columnTypeLabel } from "@/lib/column-types";
 import { AddColumnForm } from "@/components/project/AddColumnForm";
 import { useCreateCustomColumn } from "@/hooks/use-create-custom-column";
-import { matchesFilter, PLATFORM_FILTERS, STATUS_FILTERS, type PlatformFilter, type PostFilter, type StatusFilter } from "@/lib/post-filters";
+import { ALL_STATUSES, matchesFilter, PLATFORM_FILTERS, type PlatformFilter, type PostFilter, type StatusKey } from "@/lib/post-filters";
+import { StatusFilterMenu } from "@/components/project/StatusFilterMenu";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { usePresence } from "@/hooks/use-presence";
 import { useViewportFit } from "@/hooks/use-viewport-fit";
@@ -22,7 +23,7 @@ import { ColumnsPopover, type ToggleableColumn } from "@/components/project/Colu
 import { CreativePreviewPopover } from "@/components/project/CreativePreviewPopover";
 import { SaveViewModal } from "@/components/project/SaveViewModal";
 import { PermanentDeleteConfirm } from "@/components/project/PermanentDeleteConfirm";
-import { bandOf, stageLabel, stageColor, exceptionLabel, STAGE_COUNT } from "@/lib/stage-labels";
+import { bandOf, stageLabel, stageColor, exceptionLabel, STAGE_COUNT, IDEA, isIdea } from "@/lib/stage-labels";
 import { errorMessage } from "@/lib/errors";
 import { getMonthWeeks, getWeekDays, isoWeekNumber, dateKey } from "@/lib/calendar-weeks";
 import { useMyAgency } from "@/hooks/use-my-agency";
@@ -256,9 +257,9 @@ export function ContinuousCalendarTable({
   const [viewMode, setViewMode] = useState<ViewMode>("month");
   if (draftRow && viewMode === "calendar") setViewMode("month");
   // Status and platform (lib/post-filters.ts; direct instruction).
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusKey[]>(ALL_STATUSES);
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>("all");
-  const filter = useMemo<PostFilter>(() => ({ status: statusFilter, platform: platformFilter }), [statusFilter, platformFilter]);
+  const filter = useMemo<PostFilter>(() => ({ statuses: statusFilter, platform: platformFilter }), [statusFilter, platformFilter]);
 
   // Checkbox multi-select — table views only (Week/Month), not the
   // Calendar grid. Cleared whenever the underlying row set changes (the
@@ -559,10 +560,22 @@ export function ContinuousCalendarTable({
       .filter((w) => w.items.length > 0);
   }, [filtered, anchor, viewMode]);
 
+  // Ideas (direct instruction): posts with no Live Date yet, in their own
+  // section under the weeks whatever the month, while Idea is among the
+  // statuses shown. Only the team ever gets them (phase106).
+  const ideas = useMemo(() => creatives.filter((c) => isIdea(c) && matchesFilter(c, filter)), [creatives, filter]);
+  const sections = useMemo(
+    () => [
+      ...weeks.map((w) => ({ key: dateKey(w.days[0]), days: w.days as Date[] | null, items: w.items as { c: CreativeListRow; dt: Date | null }[] })),
+      ...(ideas.length ? [{ key: "ideas", days: null, items: ideas.map((c) => ({ c, dt: null })) }] : []),
+    ],
+    [weeks, ideas],
+  );
+
   const totalShown = weeks.reduce((n, w) => n + w.items.length, 0);
   const allVisibleIds = useMemo(
-    () => weeks.flatMap((w) => w.items.map(({ c }) => c.id)),
-    [weeks],
+    () => sections.flatMap((w) => w.items.map(({ c }) => c.id)),
+    [sections],
   );
   const allVisibleSelected = allVisibleIds.length > 0 && allVisibleIds.every((id) => selected.has(id));
   function toggleSelectAll() {
@@ -649,7 +662,8 @@ export function ContinuousCalendarTable({
   return (
     <>
       <p className="sub" style={{ marginTop: 14, marginBottom: 14 }}>
-        {totalShown} creative{totalShown === 1 ? "" : "s"} due in this view.
+        {totalShown} creative{totalShown === 1 ? "" : "s"} due in this view
+        {ideas.length > 0 && `, and ${ideas.length} idea${ideas.length === 1 ? "" : "s"}`}.
       </p>
 
       <div className="viewbar">
@@ -767,18 +781,7 @@ export function ContinuousCalendarTable({
           </button>
         </div>
         <div style={{ flex: 1 }} />
-        <select
-          className="sort"
-          value={statusFilter}
-          aria-label="Status"
-          onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-        >
-          {STATUS_FILTERS.map((f) => (
-            <option key={f.value} value={f.value}>
-              {f.label}
-            </option>
-          ))}
-        </select>
+        <StatusFilterMenu value={statusFilter} onChange={setStatusFilter} />
         <select
           className="sort"
           value={platformFilter}
@@ -942,7 +945,7 @@ export function ContinuousCalendarTable({
           creatives={creatives}
           filter={filter}
         />
-      ) : weeks.length === 0 && !draftRow ? (
+      ) : weeks.length === 0 && ideas.length === 0 && !draftRow ? (
         <div className="empty">
           <b>Nothing due</b>
           <span>
@@ -1034,9 +1037,20 @@ export function ContinuousCalendarTable({
                   })}
                 </tr>
               )}
-              {weeks.map(({ days, items }) => (
-                <Fragment key={dateKey(days[0])}>
-                  {viewMode === "month" && (
+              {sections.map(({ key: sectionKey, days, items }) => (
+                <Fragment key={sectionKey}>
+                  {!days ? (
+                    <tr className="wkband ideaband">
+                      <td colSpan={columns.length + (isStaff ? 1 : 0)}>
+                        <span className="bandin">
+                          No Scheduled Date
+                          <span className="cnt">
+                            {items.length} Idea{items.length === 1 ? "" : "s"}
+                          </span>
+                        </span>
+                      </td>
+                    </tr>
+                  ) : viewMode === "month" && (
                     <tr className="wkband">
                       <td colSpan={columns.length + (isStaff ? 1 : 0)}>
                         <span className="bandin">
@@ -1055,7 +1069,7 @@ export function ContinuousCalendarTable({
                     const color = stageColor(c.stage, c.exception);
                     const rowClasses = [
                       band === "approved" ? "done" : "",
-                      dateKey(dt) === todayKey ? "istoday" : "",
+                      dt && dateKey(dt) === todayKey ? "istoday" : "",
                     ]
                       .filter(Boolean)
                       .join(" ");
@@ -1064,7 +1078,9 @@ export function ContinuousCalendarTable({
                         data-row=""
                         className={rowClasses}
                         key={c.id}
-                        onClick={() => router.push(`/creatives/${c.id}`)}
+                        // An Idea isn't on the Review page (direct instruction):
+                        // its Edit window opens here instead.
+                        onClick={() => (dt ? router.push(`/creatives/${c.id}`) : setEditPost({ id: c.id, focus: "name" }))}
                         // Warmed while the pointer rests here, so its page
                         // and Edit window open quicker.
                         onMouseEnter={() => prefetchPost.start(c.id)}
@@ -1082,7 +1098,13 @@ export function ContinuousCalendarTable({
                         )}
                         {/* Past its Live Date and not live: red (direct instruction). */}
                         <td className={`sk1${isOverdue(c) ? " tlate" : ""}`} style={{ left: skOffset }}>
-                          {isStaff ? (
+                          {!dt ? (
+                            isStaff && (
+                              <button type="button" className="tpending-btn" title="Give it a Live Date" onClick={pickDate(c, "date")}>
+                                Add Date
+                              </button>
+                            )
+                          ) : isStaff ? (
                             <button type="button" className="tdate-btn" title="Change the date" onClick={pickDate(c, "date")}>
                               {dt.getDate()} {MONTH_ABBR[dt.getMonth()]} {String(dt.getFullYear()).slice(2)}
                             </button>
@@ -1103,7 +1125,8 @@ export function ContinuousCalendarTable({
                                     className="pname"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      router.push(`/creatives/${c.id}`);
+                                      if (dt) router.push(`/creatives/${c.id}`);
+                                      else setEditPost({ id: c.id, focus: "name" });
                                     }}
                                   >
                                     {c.name}
@@ -1177,16 +1200,20 @@ export function ContinuousCalendarTable({
                             case "status":
                               return (
                                 <td key={key}>
-                                  <span className="stg" style={{ background: color }}>
-                                    {c.exception ? (
-                                      exceptionLabel(c.exception)
-                                    ) : (
-                                      <>
-                                        <span className="no">{c.stage}.</span>
-                                        {stageLabel(c.stage, "continuous")}
-                                      </>
-                                    )}
-                                  </span>
+                                  {!dt ? (
+                                    <span className="stg idea">{IDEA.label}</span>
+                                  ) : (
+                                    <span className="stg" style={{ background: color }}>
+                                      {c.exception ? (
+                                        exceptionLabel(c.exception)
+                                      ) : (
+                                        <>
+                                          <span className="no">{c.stage}.</span>
+                                          {stageLabel(c.stage, "continuous")}
+                                        </>
+                                      )}
+                                    </span>
+                                  )}
                                 </td>
                               );
                             case "conceptRef":
@@ -1402,6 +1429,10 @@ export function ContinuousCalendarTable({
       )}
 
       <div className="callegend">
+        <span>
+          <i style={{ background: IDEA.color }} />
+          {IDEA.label}
+        </span>
         {Array.from({ length: STAGE_COUNT }, (_, i) => i + 1).map((stage) => (
           <span key={stage}>
             <i style={{ background: stageColor(stage, null) }} />
@@ -1452,7 +1483,7 @@ export function ContinuousCalendarTable({
           name={datePick.c.name}
           anchorRect={datePick.rect}
           delivery="continuous"
-          value={datePick.c.due_on as string}
+          value={datePick.c.due_on ?? ""}
           focus={datePick.focus}
           onClose={() => setDatePick(null)}
         />

@@ -49,13 +49,13 @@ test("creates a continuous creative end to end", async ({ page, frank }) => {
   await expect(page.locator(".pname", { hasText: "New Brief E2E — Continuous" })).toBeVisible();
 });
 
-test("missing publish date is caught before submit, not by the DB trigger", async ({ page, frank }) => {
+test("a post saved with no publish date is made as an Idea", async ({ page, frank }) => {
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${frank.projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
 
   await page.getByRole("button", { name: "New Post", exact: true }).click();
-  await page.fill("#nbName", "Should Not Be Created");
+  await page.fill("#nbName", "Pumpkin Bread Idea");
   // No format yet (a new post starts with none): asked for one first.
   await expect(page.locator("#nbFmt")).toHaveText("Choose formats");
   await page.click('button:has-text("Create Post")');
@@ -64,11 +64,14 @@ test("missing publish date is caught before submit, not by the DB trigger", asyn
   await expect(page.locator(".autherr", { hasText: "Choose at least one format." })).toHaveCount(0);
   await page.click('button:has-text("Create Post")');
 
-  // Field-level error, modal still open — the scheduled_at trigger never
-  // gets a chance to be the thing the user meets.
-  await expect(page.locator(".autherr", { hasText: "Pick a publish date" })).toBeVisible();
-  await expect(page.locator(".scrim")).toHaveCount(1);
-  await expect(page.locator(".pname", { hasText: "Should Not Be Created" })).toHaveCount(0);
+  // No Publish Date is fine: it's made as an Idea (direct instruction),
+  // under the weeks.
+  await expect(page.getByRole("tab", { name: "Content" })).toHaveAttribute("aria-selected", "true");
+  await page.click('button:has-text("Cancel")');
+  await expect(page.locator(".scrim")).toHaveCount(0);
+  const row = page.locator("tr[data-row]", { hasText: "Pumpkin Bread Idea" });
+  await expect(row.locator(".stg.idea")).toHaveText("Idea");
+  await expect(page.locator("tr.ideaband")).toContainText("1 Idea");
 });
 
 test("a real client-role session has no New Brief entry point", async ({ page, frank }) => {

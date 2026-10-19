@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { test, expect, goToMonth, chooseFormat } from "./fixtures";
+import { test, expect, goToMonth, chooseFormat, showStatuses } from "./fixtures";
 
 const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
   auth: { persistSession: false, autoRefreshToken: false },
@@ -110,7 +110,7 @@ test("continuous calendar — status filter narrows the visible rows", async ({ 
   await page.waitForSelector(".tbl");
   await expect(page.locator(".pname", { hasText: "Concept Stage Creative" })).toBeVisible();
 
-  await page.getByLabel("Status").selectOption("4");
+  await showStatuses(page, ["4. Client Review"]);
   await expect(page.locator(".pname", { hasText: "Concept Stage Creative" })).toHaveCount(0);
   await expect(page.locator(".pname", { hasText: "Client Review Creative" })).toBeVisible();
 });

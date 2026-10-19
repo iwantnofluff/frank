@@ -41,6 +41,15 @@ export const STAGE = {
 } as const;
 export const STAGE_COUNT = STAGE_TABLE.length;
 
+// An Idea (direct instruction): a post with no date yet, no Publish Date
+// (or Live Date). Not a stage: the post keeps its own underneath, which
+// shows the moment a date goes on. The team's only (phase106). Bright
+// mango, set apart from the stages' reds and oranges.
+export const IDEA = { label: "Idea", color: "#FFB30F", ink: "#A66F00" } as const;
+export function isIdea(post: { scheduled_at?: string | null; due_on?: string | null }): boolean {
+  return !post.scheduled_at && !post.due_on;
+}
+
 const EXCEPTION_TABLE: Record<Exception, { label: string; color: string; ink: string }> = {
   changes_requested: { label: "Changes Requested", color: "#FF8A00", ink: "#B35F00" },
   rejected: { label: "Rejected", color: "#FF0000", ink: "#C40000" },
