@@ -4063,3 +4063,7 @@ Reported directly: in the New Post window, the Formats dropdown's Done sat below
 Direct instruction: an Idea's Add Date button (both tables) gets the small diagonal arrow every other Add button carries, the same path as MissingContent's.
 
 **Verified**: in the demo planner, the Christmas Gift Guide Idea's Add Date shows the arrow, matching Add Slides beside it; screenshot.
+
+Then, direct instruction, an Idea's Day cell shows a dash, as its Week and Time do (the continuous table has no Day column).
+
+**Verified**: the planner's Idea rows read — in Week, Day and Time, with Add Date between; screenshot.

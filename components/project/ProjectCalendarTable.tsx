@@ -1152,7 +1152,7 @@ export function ProjectCalendarTable({
                           )}
                         </td>
                         <td className="sk3" style={{ left: WEEK_W + DATE_W + skOffset }}>
-                          {dt ? DAY_ABBR[(dt.getDay() + 6) % 7] : null}
+                          {dt ? DAY_ABBR[(dt.getDay() + 6) % 7] : <span className="tdim">—</span>}
                         </td>
                         {visibleOrderedKeys.map((key) => {
                           const exp = expectedContent(postFormats(c));
