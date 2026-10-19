@@ -4075,3 +4075,27 @@ Reported directly: a post's Team dropdown offered everyone on the agency's team,
 A User can only read their own project_access rows, so the app couldn't work out a project's team for them: supabase/migrations/phase107_project_team.sql adds project_team_user_ids(project), SECURITY DEFINER with search_path pinned, answering only for someone on the team who can see that project, user ids only (hooks/use-project-team.ts).
 
 **Verified**: phase107 rehearsed on staging in a transaction as real users before applying: Priya (a User) and Maya (an Owner) both got Maya, Leo, Priya and Sam for the demo planner; Ruth (a client) got nothing; with Sam taken off the project he dropped out. new-brief has a test that makes two Users who've joined, one given the client and one not, and finds only the Admin and the first offered; run against the old code it fails (the second was offered), against the new it passes. new-brief, post-team-default and quick-add-row pass.
+
+## Listing Image Set (Amazon)
+
+Asked directly whether an Amazon product page's several listing images were covered: they weren't (every Amazon format took one image, and the Listing formats had no copy fields). Agreed with the user: one new format, Listing Image Set (amz_gallery), in Amazon. A carousel's slides (lib/formats.ts CAROUSEL_MAX_SLIDES), 2 to 9 square images, Amazon's usual gallery of a main image and eight more; each image its own Text on Image, pins and comments, as a carousel's slides are. Its copy is the listing's: Title, Bullet Points (a new copy field, long) and Description. A deliberate difference from the prototype, whose catalog had 41 formats; now 42. Listing Main Image and Listing Infographic stay as single images for one-off changes. The slides are called slides, as for every carousel.
+
+Every format previews in the phone frame, Instagram-style; there's no Amazon product-page preview. To review the listing's words with its images, a post with no caption now shows its other copy fields under the image, each under its name (components/creative-review/CopyFieldsPreview.tsx), on the post page and both review link layouts; before, the post page said "No caption on this copy version" and the review link showed nothing. Highlighting words for a comment still works on captions only.
+
+**Verified**: lib/formats.test.ts checks the format, its 2 to 9 slides, its fields and that it expects slides and copy. carousel.spec makes one: 8 slide counts offered (2 to 9), Text on Image for each of 3, and Title, Bullet Points and Description in place of Caption. A throwaway spec uploaded three demo images and wrote the listing's text: the post page's phone stepped 1/3 through them with Title, Bullet Points and Description under them, and a review link showed the same on desktop and phone; screenshots.
+
+Seen while checking, not from this change: the post page logs a hydration mismatch in development (the dev "1 Issue" badge, there before today), server and browser rendering something differently.
+
+## Table cells wrap
+
+Direct instruction: cell content always wraps; a long Post Name was cut off with "…". In both tables, every cell's text now runs onto further lines, breaking a long word, link or file name if it must, instead of being clipped: Post Name, the Creative column's file name, Team names and their project roles, and dim text such as Format. Status pills and the small Add, Edit and Copy buttons stay whole, so each reads as one tag.
+
+**Verified**: a throwaway spec gave a post a 66-character name and a 66-character file name: the name took three lines in its column with nothing hidden (its scroll width equal to its width), and the file name three lines, breaking at its hyphens; screenshots. Both table specs pass, screenshots included.
+
+Also: a post with no copy at all no longer leaves an empty copy area under its image on a review link (seen in shared-review-public's phone and Approve tests, which pass again).
+
+## Review My Draft: only what's written
+
+Direct instruction: a Review My Draft conversation reviews and suggests only the fields that have been filled in. Its opening message already quoted only those, but Frank was told the post's every field and could propose copy for empty ones. lib/ai/copy-chat.ts chatFields() now gives a review conversation only the fields with something in them, as filled when each message is sent (so a field written mid-conversation joins), for the prompt's field list and for reading Frank's drafts, which can't then carry an empty field. Draft from the Concept still covers every field. A review with nothing written is refused, as before, now on later messages too.
+
+**Verified**: lib/ai/copy-chat.test.ts checks a review covers only the written caption and second slide, drafting covers all, and a reply's copy for empty fields is dropped. By hand, one real request in a throwaway spec: Morning Ritual (Caption and Alt Text) reviewed with only its caption written; Frank's reply was about the caption and its three drafts were captions only, no Alt Text.

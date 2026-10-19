@@ -28,6 +28,7 @@ export const COPY_FIELD_LABELS: Record<string, string> = {
   alt: "Alt Text",
   hook: "On-screen Hook",
   title: "Title",
+  bullets: "Bullet Points",
   description: "Description",
   primary: "Primary Text",
   headline: "Headline",
@@ -81,6 +82,10 @@ export const FORMATS: FormatDefinition[] = [
   { id: "apl_premium", category: "Amazon", label: "A+ Premium Module", aspectRatio: "2.4:1", copyFields: ["headline", "body"] },
   { id: "amz_main", category: "Amazon", label: "Listing Main Image", aspectRatio: "1:1", copyFields: [] },
   { id: "amz_info", category: "Amazon", label: "Listing Infographic", aspectRatio: "1:1", copyFields: [] },
+  // A product page's image gallery (direct instruction: a listing has several
+  // images, updated together with its text): up to 9 square images, a
+  // carousel's slides, with the listing's own copy. Not in the prototype.
+  { id: "amz_gallery", category: "Amazon", label: "Listing Image Set", aspectRatio: "1:1", copyFields: ["title", "bullets", "description"] },
   { id: "amz_sb", category: "Amazon", label: "Sponsored Brands Banner", aspectRatio: "1.91:1", copyFields: ["headline"] },
   { id: "amz_store", category: "Amazon", label: "Storefront Tile", aspectRatio: "2:1", copyFields: ["headline"] },
 
@@ -171,7 +176,7 @@ export function copyFieldsFor(ids: string[]): string[] {
 // Carousels (phase31). Decided directly: 2–20 slides, with Meta Carousel Ad
 // held to Meta's own limit of 10. LinkedIn's document carousel works the
 // same way, with slide images rather than a PDF.
-const CAROUSEL_MAX_SLIDES: Record<string, number> = { ig_carousel: 20, li_doc: 20, meta_carousel: 10 };
+const CAROUSEL_MAX_SLIDES: Record<string, number> = { ig_carousel: 20, li_doc: 20, meta_carousel: 10, amz_gallery: 9 };
 export const CAROUSEL_MIN_SLIDES = 2;
 
 // The most slides the chosen formats allow, or null when none is a

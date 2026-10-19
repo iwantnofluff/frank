@@ -116,6 +116,31 @@ test("a carousel gets a slide count, and Text on Image one field per slide", asy
   expect(error?.message).toContain("needs some copy");
 });
 
+test("a Listing Image Set takes up to 9 images, Text on Image for each, and the listing's copy", async ({ page, frank }) => {
+  test.setTimeout(60_000);
+  await frank.loginAsStaff(page);
+  await page.goto(`${APP_URL}/projects/${frank.projectId}`);
+  await page.waitForSelector(".tblwrap, .empty");
+  await page.getByRole("button", { name: "New Post", exact: true }).click();
+  await page.fill("#nbName", "Listing Gallery E2E");
+  await page.fill("#nbDate", "2027-03-12");
+  await page.click("#nbFmt");
+  await page.getByRole("dialog", { name: "Formats" }).getByRole("checkbox", { name: "Listing Image Set" }).click();
+  await page.keyboard.press("Escape");
+  // 2 to 9, an Amazon gallery's main image and eight more (direct instruction).
+  await expect(page.locator("#nbSlides option")).toHaveCount(8);
+  await page.selectOption("#nbSlides", "3");
+  await page.click('button:has-text("Create Post")');
+  await page.getByRole("tab", { name: "Content" }).click();
+  await expect(page.locator(".brow textarea")).toHaveCount(3);
+  // The listing's own text, to review with its images.
+  const labels = page.locator(".mtabbody .field > label");
+  for (const l of ["Title", "Bullet Points", "Description"]) {
+    await expect(labels.filter({ hasText: new RegExp(`^${l}$`) })).toHaveCount(1);
+  }
+  await expect(labels.filter({ hasText: /^Caption$/ })).toHaveCount(0);
+});
+
 test("carousel artwork is saved as a set, and replacing one slide keeps the rest", async ({ page, frank }) => {
   test.setTimeout(90_000);
   await admin.from("creatives").update({ formats: ["ig_carousel"], slide_count: 3 }).eq("id", frank.creativeId);

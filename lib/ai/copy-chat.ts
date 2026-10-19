@@ -122,6 +122,13 @@ export function applySlideDraft(slideText: string[], fields: Record<string, stri
 
 // What the person asked when they started, in their own words, so the
 // conversation reads naturally afterwards.
+// The fields a conversation covers (direct instruction): reviewing a draft
+// reads, reviews and suggests only what's been written; drafting covers
+// every field.
+export function chatFields(mode: CopyChatMode, fields: CopyChatField[], currentFields: Record<string, string>): CopyChatField[] {
+  return mode === "review" ? fields.filter((f) => currentFields[f.key]?.trim()) : fields;
+}
+
 export function openingMessage(mode: CopyChatMode, currentFields: Record<string, string>, fields: CopyChatField[]): string {
   if (mode === "draft") return "Draft some copy for this post from the concept.";
   const draft = fields

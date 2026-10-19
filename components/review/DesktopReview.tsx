@@ -1,5 +1,6 @@
 "use client";
 
+import { CopyFieldsPreview } from "@/components/creative-review/CopyFieldsPreview";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReviewController } from "@/hooks/use-review-controller";
 import { SharedFeedGrid } from "./SharedFeedGrid";
@@ -9,7 +10,7 @@ import { ReviewBrandHeader } from "./ReviewBrandHeader";
 import { CommentJump } from "./mobile-gestures";
 import { reviewGroup } from "./review-group";
 import { ReviewNav, type ReviewSection } from "@/components/creative-review/ReviewNav";
-import { formatsLabel, postFormats, isStoryFormat } from "@/lib/formats";
+import { copySummaryParts, formatsLabel, postFormats, isStoryFormat } from "@/lib/formats";
 import { ReviewMedia } from "./ReviewMedia";
 import { MomentBadge } from "./MomentBadge";
 import { SharedCommentText } from "./SharedCommentText";
@@ -199,12 +200,18 @@ export function DesktopReview({
                       </svg>
                     </div>
                     {isStoryFormat(active.format) && <StoryReplyBar />}
-                    {active.copy?.fields?.caption && (
+                    {active.copy?.fields?.caption ? (
                       <div className="ig-cap">
                         <b>{clientName}</b>
                         <span>{active.copy.fields.caption}</span>
                       </div>
-                    )}
+                    ) : active.copy?.fields && copySummaryParts(active.copy.fields, postFormats(active)).others.length ? (
+                      // No caption: the post's other copy (a listing's Title, Bullet
+                      // Points and Description), under the images.
+                      <div className="ig-cap">
+                        <CopyFieldsPreview fields={active.copy.fields} formatIds={postFormats(active)} />
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               </PhoneFrame>

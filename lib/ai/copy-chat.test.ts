@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import {
   applySlideDraft,
   buildCopyChatPrompt,
+  chatFields,
   cleanReplyBody,
   openingMessage,
   parseCopyChatReply,
@@ -119,4 +120,18 @@ test("a video post's VO is its own field, explained in the prompt and kept from 
   assert.match(prompt, /"voiceover" \(VO\)/);
   // Without it, nothing about VO.
   assert.doesNotMatch(buildCopyChatPrompt(context, [{ role: "user", body: "Draft" }], {}), /voiceover/);
+});
+
+test("chatFields: reviewing a draft covers only the fields written; drafting covers them all", () => {
+  const all = [...fields, VO_FIELD, ...slideTextFields(2)];
+  const written = { caption: "Hello there", alt: "  ", slide_2: "Second slide" };
+  assert.deepEqual(chatFields("review", all, written).map((f) => f.key), ["caption", "slide_2"]);
+  assert.deepEqual(chatFields("draft", all, written).map((f) => f.key), all.map((f) => f.key));
+  assert.deepEqual(chatFields("review", all, {}), []);
+  // A reply can't then propose copy for an empty field.
+  const reply = parseCopyChatReply(
+    'Tightened it.\n```json\n{"drafts":[{"label":"Shorter","fields":{"caption":"Hi","alt":"A bottle","voiceover":"Hello","slide_2":"Two"}}]}\n```',
+    chatFields("review", all, written),
+  );
+  assert.deepEqual(reply.drafts[0].fields, { caption: "Hi", slide_2: "Two" });
 });

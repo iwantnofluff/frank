@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { runAiTask } from "@/lib/ai/run-ai-task";
 import { IMAGE_TYPES, withinPdfPageBudget, type Attachment } from "@/lib/ai/attachment";
 import {
+  chatFields,
   buildCopyChatPromptParts,
   openingMessage,
   parseCopyChatReply,
@@ -99,9 +100,11 @@ export async function POST(request: Request) {
   let chatId = body.chatId ?? null;
   let history: CopyChatTurn[] = [];
   let message: string;
+  let mode: CopyChatMode;
   if (chatId) {
-    const { data: chat } = await supabase.from("copy_chats").select("id, creative_id").eq("id", chatId).maybeSingle();
+    const { data: chat } = await supabase.from("copy_chats").select("id, creative_id, mode").eq("id", chatId).maybeSingle();
     if (!chat || chat.creative_id !== creative.id) return fail("Conversation not found", 404);
+    mode = chat.mode as CopyChatMode;
     const { data: past } = await supabase
       .from("copy_chat_messages")
       .select("role, body")
@@ -113,11 +116,15 @@ export async function POST(request: Request) {
     if (message.length > 4000) return fail("Keep a message under 4,000 characters", 400);
   } else {
     if (body.mode !== "draft" && body.mode !== "review") return fail("Choose to draft or review", 400);
-    if (body.mode === "review" && !fields.some((f) => currentFields[f.key]?.trim())) {
-      return fail("Write a first draft to review", 400);
-    }
+    mode = body.mode;
     message = openingMessage(body.mode, currentFields, fields);
   }
+  // Reviewing a draft covers only what's been written (direct
+  // instruction): Frank reads, reviews and suggests the filled fields, not
+  // the empty ones, for the whole conversation, as filled when each message
+  // is sent. Drafting covers every field.
+  const covered = chatFields(mode, fields, currentFields);
+  if (mode === "review" && !covered.length) return fail("Write a first draft to review", 400);
 
   // The context. The client's strategy is the month the post goes live in,
   // or this month without a live date (decided directly, phase78).
@@ -216,7 +223,7 @@ export async function POST(request: Request) {
       strategy: strategyForPrompt(strategyMonth, strategy.data as Partial<StrategyFields> | null),
       otherPosts,
       clientFeedback,
-      fields,
+      fields: covered,
     },
     [...history, { role: "user", body: message }],
     currentFields,
@@ -224,7 +231,7 @@ export async function POST(request: Request) {
 
   const result = await runAiTask(supabase, agencyId, user.id, prompt, attachments);
   if (!result.ok || !result.text) return fail(result.error ?? "Frank didn't answer", result.status || 502);
-  const reply = parseCopyChatReply(result.text, fields);
+  const reply = parseCopyChatReply(result.text, covered);
 
   // Saved now Claude has answered.
   if (!chatId) {

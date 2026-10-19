@@ -13,6 +13,18 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.38.0",
+    date: "2026-10-19",
+    title: "Amazon listing image sets",
+    changes: [
+      "A new Amazon format, Listing Image Set: a product page's gallery of up to 9 square images in one post, each with its own Text on Image, reviewed like a carousel.",
+      "It carries the listing's text too, Title, Bullet Points and Description, shown under the images on the post and on review links, so images and words are approved together.",
+      "Any post without a caption now shows its other copy under the image instead of saying there's no caption.",
+      "Text in the table always wraps: a long Post Name, file name or team name runs onto more lines instead of being cut off.",
+      "Review My Draft now reviews and suggests only the fields you've written, not the empty ones.",
+    ],
+  },
+  {
     version: "1.37.3",
     date: "2026-10-19",
     title: "A post's team is the project's",

@@ -11245,3 +11245,49 @@ button.sortbtn:hover {
 .stg.idea {
   background: #ffb30f;
 }
+
+/* A post's copy other than a caption, under its images (direct
+   instruction: a listing's Title, Bullet Points and Description). */
+.ig-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ig-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ig-field b {
+  font-size: 10.4px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.ig-field span {
+  white-space: pre-line;
+}
+
+/* Table cells always wrap their words (direct instruction: a long Post
+   Name was cut off with "…"). Any text in a cell runs onto further lines,
+   breaking a long word or link if it must, rather than being clipped;
+   pills and buttons stay whole. */
+.tbl td {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.tbl td .pname,
+.tbl td .artname,
+.tbl td .artname-f,
+.tbl td .lead,
+.tbl td .lead-role,
+.tbl td .tdim {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+}
+.tbl td .pname {
+  text-align: left;
+}

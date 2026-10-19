@@ -90,7 +90,7 @@ const FOCUS: Record<FocusTarget, { tab: Tab; selector: string }> = {
 
 // Long-form fields get a textarea, short ones a single-line input — same
 // split the prototype's own capField rendering makes (frank-prototype.html).
-const LONG_COPY_FIELDS = new Set(["caption", "description", "body", "notes", "primary"]);
+const LONG_COPY_FIELDS = new Set(["caption", "description", "body", "notes", "primary", "bullets"]);
 
 // Saving used to insert a new copy_versions row unconditionally, even when
 // nothing about the fields had actually changed (e.g. opening the modal and

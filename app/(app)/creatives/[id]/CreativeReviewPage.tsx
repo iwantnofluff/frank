@@ -9,7 +9,8 @@ import { dayMonth, ARTWORK_KEEP_DAYS } from "@/lib/artwork-removal";
 import { useClientPreferences } from "@/hooks/use-client-preferences";
 import { useLiveUpdates } from "@/hooks/use-live-updates";
 import { useClientLogoUrl } from "@/hooks/use-client-logo-url";
-import { aspectRatioCss, formatRatio, isReelFormat, isStoryFormat, postFormats } from "@/lib/formats";
+import { aspectRatioCss, copySummaryParts, formatRatio, isReelFormat, isStoryFormat, postFormats } from "@/lib/formats";
+import { CopyFieldsPreview } from "@/components/creative-review/CopyFieldsPreview";
 import { useCopyVersions } from "@/hooks/use-copy-versions";
 import { useArtworkUrl, usePreloadAssets } from "@/hooks/use-asset-signed-url";
 import { useQueryClient } from "@tanstack/react-query";
@@ -721,6 +722,8 @@ export function CreativeReviewPage({ id }: { id: string }) {
                         });
                       }}
                     />
+                  ) : copySummaryParts(activeCopyVersion?.fields ?? {}, postFormats(creative)).others.length ? (
+                    <CopyFieldsPreview fields={activeCopyVersion?.fields} formatIds={postFormats(creative)} />
                   ) : (
                     <span className="ig-nocopy">
                       {copyVersions?.length

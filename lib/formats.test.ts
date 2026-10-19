@@ -4,8 +4,17 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { FORMATS, FORMAT_CATEGORIES, formatById, formatsByCategory, postFormats, formatsLabel, copyFieldsFor, copySummary, copySummaryParts, VIDEO_FORMAT_IDS, hasVideoFormat, frameLimits, expectedContent } from "./formats.ts";
 
-test("FORMATS has exactly 41 entries, matching the prototype's catalog", () => {
-  assert.equal(FORMATS.length, 41);
+test("FORMATS has the prototype's 41 entries, plus Listing Image Set", () => {
+  assert.equal(FORMATS.length, 42);
+});
+
+test("Listing Image Set: up to 9 square images, as a carousel's slides, with the listing's copy", () => {
+  const set = formatById("amz_gallery")!;
+  assert.equal(set.category, "Amazon");
+  assert.equal(set.aspectRatio, "1:1");
+  assert.deepEqual(frameLimits(["amz_gallery"]), { min: 2, max: 9, noun: "Slide" });
+  assert.deepEqual(copyFieldsFor(["amz_gallery"]), ["title", "bullets", "description"]);
+  assert.deepEqual(expectedContent(["amz_gallery"]), { slides: true, voiceover: false, copy: true, alt: false });
 });
 
 test("every id is unique", () => {

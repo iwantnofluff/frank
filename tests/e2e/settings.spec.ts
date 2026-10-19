@@ -34,7 +34,7 @@ test("settings — team roster", async ({ page, frank }) => {
   });
 });
 
-// Format Directions now lists the whole 41-format catalog up front, grouped
+// Format Directions now lists the whole format catalog up front, grouped
 // by category (lib/formats.ts) — there's no more opt-in "+ Add format"
 // picker (docs/parity-gaps.md). Only the first category starts open.
 test("settings — edit a format direction inline", async ({ page, frank }) => {
