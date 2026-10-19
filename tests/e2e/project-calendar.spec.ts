@@ -110,7 +110,19 @@ test("project calendar — a post with no date is an Idea, the team's only, unde
   await expect(pop).toHaveCount(0);
   await showStatuses(page, ["Idea", "1. Concept", "2. In Production", "3. Internal Review", "4. Client Review", "5. Approved", "6. Live"]);
   await expect(band).toHaveCount(0);
-  await expect(page.locator("tr[data-row]", { hasText: "Loyalty Card Idea" }).locator("td.sk2")).toHaveText("17 Mar 27");
+  const dated = page.locator("tr[data-row]", { hasText: "Loyalty Card Idea" });
+  await expect(dated.locator("td.sk2")).toHaveText("17 Mar 27");
+  // Clearing the date and saving takes it off again (reported directly:
+  // Save stayed greyed): back under No Scheduled Date.
+  await dated.getByRole("button", { name: "17 Mar 27" }).click();
+  const again = page.getByRole("dialog", { name: /Publish Date/ });
+  await again.getByLabel("Publish Date").fill("");
+  await page.keyboard.press("Escape");
+  await expect(again.getByRole("button", { name: "Save" })).toBeEnabled();
+  await again.getByRole("button", { name: "Save" }).click();
+  await expect(again).toHaveCount(0);
+  await expect(band).toHaveText(/No Scheduled Date\s*1 Idea/);
+  await expect(page.locator("tr[data-row]", { hasText: "Loyalty Card Idea" }).locator(".stg.idea")).toHaveText("Idea");
 });
 
 test("project calendar — a client never sees an Idea", async ({ page, frank }) => {

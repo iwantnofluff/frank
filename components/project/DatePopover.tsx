@@ -60,13 +60,16 @@ export function DatePopover({
     };
   }, [onClose]);
 
-  const ready = !!date && (!scheduled || !!time);
+  // A date cleared and saved takes it off (reported directly: Save stayed
+  // greyed): the post becomes an Idea, under the weeks. Nothing to save
+  // when an Idea is left without one.
+  const ready = date ? !scheduled || !!time : !!value;
   function save() {
     if (!ready || reschedule.isPending) return;
     reschedule.mutate(
       scheduled
-        ? { creativeId, scheduledAt: new Date(`${date}T${time}`).toISOString() }
-        : { creativeId, dueOn: date },
+        ? { creativeId, scheduledAt: date ? new Date(`${date}T${time}`).toISOString() : null }
+        : { creativeId, dueOn: date || null },
       { onSuccess: onClose },
     );
   }

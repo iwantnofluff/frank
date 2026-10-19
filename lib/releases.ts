@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.39.1",
+    date: "2026-10-19",
+    title: "Clearing a date",
+    changes: ["Clearing a post's date in the table and saving now takes the date off, making it an Idea; Save no longer stays greyed out."],
+  },
+  {
     version: "1.39.0",
     date: "2026-10-19",
     title: "Notes for Designer, image by image",
