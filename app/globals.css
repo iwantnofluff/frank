@@ -11291,3 +11291,17 @@ button.sortbtn:hover {
 .tbl td .pname {
   text-align: left;
 }
+
+/* Each image's Notes for Designer under the post's overall note, in the
+   continuous table's Notes for Designer column (phase108). */
+.slidenotes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+  font-size: var(--d-fs);
+  line-height: 1.4;
+}
+.slidenotes b {
+  font-weight: 600;
+}

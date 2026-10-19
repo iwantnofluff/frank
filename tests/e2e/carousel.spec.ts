@@ -71,7 +71,7 @@ test("a carousel gets a slide count, and Text on Image one field per slide", asy
 
   // Not a carousel: no Slides. Text on Image isn't on the Brief any more.
   await expect(page.locator("#nbSlides")).toHaveCount(0);
-  await expect(page.locator(".brow textarea")).toHaveCount(0);
+  await expect(page.locator('[data-focus="imageOnText"] .brow textarea')).toHaveCount(0);
 
   await page.click("#nbFmt");
   const pop = page.getByRole("dialog", { name: "Formats" });
@@ -102,9 +102,9 @@ test("a carousel gets a slide count, and Text on Image one field per slide", asy
 
   // Text on Image is its own section after the artwork on Content.
   await page.getByRole("tab", { name: "Content" }).click();
-  await expect(page.locator(".brow textarea")).toHaveCount(3);
+  await expect(page.locator('[data-focus="imageOnText"] .brow textarea')).toHaveCount(3);
   // Slide 2 written, slide 1 left blank: positions are kept.
-  await page.locator(".brow textarea").nth(1).fill("Second slide words");
+  await page.locator('[data-focus="imageOnText"] .brow textarea').nth(1).fill("Second slide words");
   // Its own Save: on the post, never a copy version (phase57).
   await page.getByRole("button", { name: "Save Text on Image" }).click();
   await expect(page.getByRole("button", { name: "Save Text on Image" })).toBeDisabled();
@@ -132,13 +132,35 @@ test("a Listing Image Set takes up to 9 images, Text on Image for each, and the 
   await page.selectOption("#nbSlides", "3");
   await page.click('button:has-text("Create Post")');
   await page.getByRole("tab", { name: "Content" }).click();
-  await expect(page.locator(".brow textarea")).toHaveCount(3);
+  await expect(page.locator('[data-focus="imageOnText"] .brow textarea')).toHaveCount(3);
   // The listing's own text, to review with its images.
   const labels = page.locator(".mtabbody .field > label");
   for (const l of ["Title", "Bullet Points", "Description"]) {
     await expect(labels.filter({ hasText: new RegExp(`^${l}$`) })).toHaveCount(1);
   }
   await expect(labels.filter({ hasText: /^Caption$/ })).toHaveCount(0);
+});
+
+test("a multi-image post takes Notes for Designer for each image", async ({ page, frank }) => {
+  test.setTimeout(60_000);
+  await admin.from("creatives").update({ format: "amz_gallery", formats: ["amz_gallery"], slide_count: 3 }).eq("id", frank.creativeId);
+  await frank.loginAsStaff(page);
+  await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
+  await page.getByRole("button", { name: "Edit", exact: true }).first().click();
+  await page.getByRole("tab", { name: "Content" }).click();
+  // One per image (direct instruction), after Text on Image.
+  const notes = page.locator('[data-focus="slideNotes"] .brow textarea');
+  await expect(notes).toHaveCount(3);
+  await notes.nth(1).fill("Brighter crop, badge top right");
+  await page.getByRole("button", { name: "Save Notes for Designer" }).click();
+  await expect(page.getByRole("button", { name: "Save Notes for Designer" })).toBeDisabled();
+  await expect
+    .poll(async () => (await admin.from("creatives").select("slide_notes").eq("id", frank.creativeId).single()).data?.slide_notes)
+    .toEqual(["", "Brighter crop, badge top right"]);
+  // On the post's Brief, by its slide.
+  await page.getByRole("button", { name: "Cancel" }).last().click();
+  await page.getByRole("button", { name: "Brief", exact: true }).click();
+  await expect(page.locator(".bsec", { hasText: "Notes for Designer" })).toContainText("Slide 2: Brighter crop, badge top right");
 });
 
 test("carousel artwork is saved as a set, and replacing one slide keeps the rest", async ({ page, frank }) => {

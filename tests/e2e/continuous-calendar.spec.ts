@@ -58,7 +58,8 @@ test("continuous calendar — Funnel and Notes for Designer persist", async ({ p
   // Each save lands before the reload (it used to race it).
   const saved = () => page.waitForResponse((r) => r.url().includes("update_creative_cx") && r.ok());
   await Promise.all([saved(), cells.nth(4).locator("select").selectOption("tof")]);
-  const notes = cells.nth(17).locator("input");
+  // Several lines, wrapping (direct instruction).
+  const notes = cells.nth(17).locator("textarea");
   await notes.fill("Keep the logo top left");
   await Promise.all([saved(), notes.blur()]);
   await page.reload();
@@ -68,7 +69,7 @@ test("continuous calendar — Funnel and Notes for Designer persist", async ({ p
   const reloadedCells = page.locator("tr[data-row]", { hasText: "Chip Test Creative" }).locator("td");
   await expect(reloadedCells.nth(4).locator("select")).toHaveValue("tof");
   await expect(reloadedCells.nth(4)).toContainText("TOF");
-  await expect(reloadedCells.nth(17).locator("input")).toHaveValue("Keep the logo top left");
+  await expect(reloadedCells.nth(17).locator("textarea")).toHaveValue("Keep the logo top left");
 });
 
 test("continuous calendar — Format, Text on Image and Copy come from the post itself", async ({ page, frank }) => {

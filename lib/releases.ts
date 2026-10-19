@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.39.0",
+    date: "2026-10-19",
+    title: "Notes for Designer, image by image",
+    changes: [
+      "A post with several images (a Listing Image Set, carousel or Story) has a Notes for Designer box for each image on its Content tab, with its own Save.",
+      "The post's overall Notes for Designer stays for direction that covers the whole set. Both show on the post's Brief and in the table's Notes for Designer column, which now wraps.",
+    ],
+  },
+  {
     version: "1.38.0",
     date: "2026-10-19",
     title: "Amazon listing image sets",

@@ -24,6 +24,10 @@ export function BriefPanel({
   const delivery = creative.projects?.delivery ?? "scheduled";
   // On the post itself (phase57), not a copy version.
   const slideText = creative.slide_text ?? [];
+  // Notes for Designer (direct instruction): the post's overall note, and
+  // one per image on a multi-image post (phase108).
+  const overallNote = String(creative.cx?.designer_notes ?? "").trim();
+  const slideNotes = creative.slide_notes ?? [];
 
   return (
     <div className="brief open reviewpanel">
@@ -104,6 +108,21 @@ export function BriefPanel({
           <p className="fd-d">—</p>
         )}
       </div>
+
+      {(overallNote || slideNotes.some((n) => n.trim())) && (
+        <div className="bsec">
+          <div className="bl">Notes for Designer</div>
+          {overallNote && <p className="fd-d">{overallNote}</p>}
+          {slideNotes.map((note, i) =>
+            note.trim() ? (
+              <p className="fd-d" key={i}>
+                <b>Slide {i + 1}: </b>
+                {note}
+              </p>
+            ) : null,
+          )}
+        </div>
+      )}
       </div>
     </div>
   );

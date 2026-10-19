@@ -149,7 +149,8 @@ const FUNNEL_OPTIONS = [
 // reading and writing through the same creatives.cx blob and the same
 // onCxSave callback the page already wires up for real custom columns.
 export const FUNNEL_COLUMN: CustomColumnRow = { id: "funnel", key: "funnel", label: "Funnel", type: "status", options: FUNNEL_OPTIONS, position: 0 };
-export const DESIGNER_NOTES_COLUMN: CustomColumnRow = { id: "designer_notes", key: "designer_notes", label: "Notes for Designer", type: "text", options: null, position: 0 };
+// Several lines, wrapping (direct instruction: cell content always wraps).
+export const DESIGNER_NOTES_COLUMN: CustomColumnRow = { id: "designer_notes", key: "designer_notes", label: "Notes for Designer", type: "long_text", options: null, position: 0 };
 const TG_COLUMN: CustomColumnRow = { id: "tg", key: "tg", label: "TG", type: "text", options: null, position: 0 };
 const FINAL_CREATIVE_COLUMN: CustomColumnRow = { id: "final_creative", key: "final_creative", label: "Final Creative", type: "text", options: null, position: 0 };
 const PRINCIPLES_COLUMN: CustomColumnRow = { id: "principles", key: "principles", label: "Principles", type: "text", options: null, position: 0 };
@@ -1370,6 +1371,18 @@ export function ContinuousCalendarTable({
                                     onSave={(value) => onCxSave(c.id, "designer_notes", value)}
                                     readOnly={cxReadOnly}
                                   />
+                                  {/* Each image's own note (phase108), under the overall one. */}
+                                  {(c.slide_notes ?? []).some((n) => n.trim()) && (
+                                    <span className="slidenotes">
+                                      {(c.slide_notes ?? []).map((n, i) =>
+                                        n.trim() ? (
+                                          <span key={i}>
+                                            <b>Slide {i + 1}:</b> {n}
+                                          </span>
+                                        ) : null,
+                                      )}
+                                    </span>
+                                  )}
                                 </td>
                               );
                             case "approach":

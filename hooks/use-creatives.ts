@@ -20,6 +20,8 @@ export interface CreativeListRow {
   slide_count: number | null; // carousels only (phase31)
   // Text on Image, one entry per slide (phase57: on the post, not versions).
   slide_text: string[];
+  // Notes for Designer, one per image (phase108).
+  slide_notes: string[];
   // A video post's VO script (phase88).
   voiceover: string | null;
   approach_notes: string[] | null;
@@ -55,7 +57,7 @@ export function useCreatives(projectId: string) {
       const { data: rows, error } = await supabase
         .from("creatives")
         .select(
-          "id, name, format, stage, exception, lead_user_id, team_user_ids, concept, reference_url, reference_urls, slide_count, slide_text, voiceover, approach_notes, scheduled_at, formats, destination, added_on, due_on, published_at, artwork_removed_at, cx, archived_at",
+          "id, name, format, stage, exception, lead_user_id, team_user_ids, concept, reference_url, reference_urls, slide_count, slide_text, slide_notes, voiceover, approach_notes, scheduled_at, formats, destination, added_on, due_on, published_at, artwork_removed_at, cx, archived_at",
         )
         .eq("project_id", projectId)
         .order("position");

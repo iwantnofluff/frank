@@ -48,6 +48,7 @@ import {
   hasVideoFormat,
 } from "@/lib/formats";
 import { slideFields, tidySlideText } from "@/lib/slide-text";
+import { SlideNotesChangedError, useSaveSlideNotes } from "@/hooks/use-save-slide-notes";
 import { copyCaption } from "@/lib/copy-text";
 import { ListEditor } from "@/components/ui/ListEditor";
 import { linkHref, tidyReferences } from "@/lib/links";
@@ -528,6 +529,11 @@ export function CreativeModal(props: CreativeModalProps) {
   const initialSlideText = isCreate ? [] : (props.creative.slide_text ?? []);
   const [slideText, setSlideText] = useState<string[]>(initialSlideText);
   const [savedSlideText, setSavedSlideText] = useState<string[]>(tidySlideText(initialSlideText));
+  // Notes for Designer, one per image (phase108, direct instruction), on
+  // the post with their own Save, as Text on Image is.
+  const initialSlideNotes = isCreate ? [] : (props.creative.slide_notes ?? []);
+  const [slideNotes, setSlideNotes] = useState<string[]>(initialSlideNotes);
+  const [savedSlideNotes, setSavedSlideNotes] = useState<string[]>(tidySlideText(initialSlideNotes));
   // A video post's VO script (phase88): on the post, with its own Save,
   // as Text on Image is.
   const initialVoiceover = isCreate ? "" : (props.creative.voiceover ?? "");
@@ -933,6 +939,18 @@ export function CreativeModal(props: CreativeModalProps) {
       // Shown via saveSlideText.error below.
     }
   }
+  const saveSlideNotes = useSaveSlideNotes(creativeId ?? "", projectId);
+  const [notesSaveNote, setNotesSaveNote] = useState<string | null>(null);
+  async function handleSaveSlideNotes() {
+    setNotesSaveNote(null);
+    try {
+      await saveSlideNotes.mutateAsync({ slideNotes: draftSlideNotes, known: savedSlideNotes });
+      setSavedSlideNotes(draftSlideNotes);
+      setNotesSaveNote("Saved.");
+    } catch {
+      // Shown via saveSlideNotes.error below.
+    }
+  }
   const saveVoiceover = useSaveVoiceover(creativeId ?? "", projectId);
   const [voSaveNote, setVoSaveNote] = useState<string | null>(null);
   async function handleSaveVoiceover() {
@@ -1030,6 +1048,8 @@ export function CreativeModal(props: CreativeModalProps) {
   // Text on Image, saved on its own (not a version).
   const draftSlideText = tidySlideText(slideFields(slideText, slideCount));
   const pendingSlideChange = JSON.stringify(draftSlideText) !== JSON.stringify(savedSlideText);
+  const draftSlideNotes = tidySlideText(slideFields(slideNotes, slideCount));
+  const pendingNotesChange = !!slideCount && JSON.stringify(draftSlideNotes) !== JSON.stringify(savedSlideNotes);
   const isVideo = hasVideoFormat(formats);
   const pendingVoChange = isVideo && voiceover.trim() !== savedVoiceover;
   const pendingCreativeChange = carouselPending;
@@ -1232,11 +1252,17 @@ export function CreativeModal(props: CreativeModalProps) {
               type="button"
               className="btn primary"
               disabled={
-                uploadSaving || !creativeId || pendingCopyChange || pendingCreativeChange || pendingSlideChange || pendingVoChange
+                uploadSaving ||
+                !creativeId ||
+                pendingCopyChange ||
+                pendingCreativeChange ||
+                pendingSlideChange ||
+                pendingNotesChange ||
+                pendingVoChange
               }
               title={
-                pendingCopyChange || pendingCreativeChange || pendingSlideChange || pendingVoChange
-                  ? "Save the copy, VO, Text on Image or creative changes above first"
+                pendingCopyChange || pendingCreativeChange || pendingSlideChange || pendingNotesChange || pendingVoChange
+                  ? "Save the copy, VO, Text on Image, Notes for Designer or creative changes above first"
                   : undefined
               }
               onClick={handleSaveUpload}
@@ -1699,6 +1725,64 @@ export function CreativeModal(props: CreativeModalProps) {
               )
             )}
           </div>
+
+          {/* Notes for Designer, one per image (phase108, direct instruction:
+              each image of a multi-image post is its own creative). The
+              post's overall note stays on the Brief. */}
+          {!!slideCount && (
+            <>
+              <div className="msection-h">Notes for Designer</div>
+              <p className="msection-d">
+                What the designer needs for each {frameNoun.toLowerCase()}: its own direction, alongside the post&rsquo;s overall note.
+              </p>
+              <div data-focus="slideNotes">
+                <ListEditor
+                  itemLabel={(i) => `${frameNoun} ${i + 1}`}
+                  values={slideFields(slideNotes, slideCount)}
+                  onChange={(next) => {
+                    setSlideNotes(next);
+                    setNotesSaveNote(null);
+                  }}
+                  fixed
+                  bare
+                />
+              </div>
+              <div className="field btnrow">
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <button
+                    type="button"
+                    className="btn sm primary"
+                    disabled={!creativeId || !pendingNotesChange || saveSlideNotes.isPending}
+                    onClick={handleSaveSlideNotes}
+                  >
+                    {saveSlideNotes.isPending ? "Saving…" : "Save Notes for Designer"}
+                  </button>
+                  {notesSaveNote && !pendingNotesChange && <span className="bsaved">{notesSaveNote}</span>}
+                </div>
+                {saveSlideNotes.error instanceof SlideNotesChangedError ? (
+                  <p className="autherr">
+                    {saveSlideNotes.error.message}{" "}
+                    <button
+                      type="button"
+                      className="linkbtn"
+                      onClick={() => {
+                        const theirs = (saveSlideNotes.error as SlideNotesChangedError).theirs;
+                        setSlideNotes(theirs);
+                        setSavedSlideNotes(tidySlideText(theirs));
+                        saveSlideNotes.reset();
+                      }}
+                    >
+                      Show Theirs
+                    </button>
+                  </p>
+                ) : (
+                  saveSlideNotes.error && (
+                    <p className="autherr">{errorMessage(saveSlideNotes.error, "Couldn't save the Notes for Designer")}</p>
+                  )
+                )}
+              </div>
+            </>
+          )}
 
           {/* Hidden when the formats have no copy, a story's (direct
               instruction): their words are the Text on Image above. */}
