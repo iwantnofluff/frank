@@ -264,3 +264,40 @@ test("a post made by speaking fills in the New Post window", async ({ page, fran
   const { data } = await admin.from("creatives").select("id").eq("project_id", frank.projectId).eq("name", "Dad Does the Night Feed");
   expect(data).toEqual([]);
 });
+
+test("a post's Team offers only the project's team: a User not added to it isn't offered", async ({ page, frank }) => {
+  const { createClient } = await import("@supabase/supabase-js");
+  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  // Two Users who've joined the agency (the reserved .invalid domain, so
+  // the fixture's teardown sweeps them): one given this client, so on its
+  // projects; one not.
+  const stamp = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const make = async (name: string) => {
+    const email = `e2e-user-${name.toLowerCase()}-${stamp}@example.invalid`;
+    const { data, error } = await admin.auth.admin.createUser({ email, password: "E2e-User-Test-1234!", email_confirm: true });
+    if (error) throw error;
+    await admin.from("users").insert({ id: data.user.id, email, name: `${name} User` });
+    const { data: m, error: mError } = await admin
+      .from("memberships")
+      .insert({ agency_id: frank.agencyId, user_id: data.user.id, role: "user", accepted_at: new Date().toISOString() })
+      .select("id")
+      .single();
+    if (mError) throw mError;
+    return m.id as string;
+  };
+  const onClient = await make("Onproject");
+  await make("Offproject");
+  const { error } = await admin.from("staff_client_access").insert({ agency_id: frank.agencyId, membership_id: onClient, client_id: frank.clientId });
+  if (error) throw error;
+
+  await frank.loginAsStaff(page);
+  await page.goto(`/projects/${frank.projectId}`);
+  await page.waitForSelector(".tblwrap, .empty");
+  await page.getByRole("button", { name: "New Post", exact: true }).click();
+  // The fixture's Admin (on every project) and the User added to it; never
+  // the one who isn't (direct instruction).
+  const add = page.getByLabel("Add someone to this post's team");
+  await expect(add.locator("option")).toHaveText(["Nobody yet: + Add someone", "E2E Staff", "Onproject User"]);
+});

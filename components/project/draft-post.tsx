@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useCreateCreative } from "@/hooks/use-create-creative";
 import { useMyAgency } from "@/hooks/use-my-agency";
 import { useTeamMembers } from "@/hooks/use-team-members";
+import { useProjectTeam } from "@/hooks/use-project-team";
 import { TeamPicker } from "@/components/ui/TeamPicker";
 import { DateField, TimeField } from "@/components/ui/DateField";
 import { errorMessage } from "@/lib/errors";
@@ -43,6 +44,8 @@ export function useDraftPost({
   const createCreative = useCreateCreative(projectId);
   const { data: agency } = useMyAgency();
   const { data: team } = useTeamMembers(agency?.agencyId);
+  // Only the project's own team (direct instruction).
+  const { data: projectTeam } = useProjectTeam(projectId);
   const [values, setValues] = useState<DraftPostValues>({
     name: "",
     format: DEFAULT_FORMAT,
@@ -92,7 +95,7 @@ export function useDraftPost({
     save,
     saving: createCreative.isPending,
     problem,
-    team: (team ?? []).filter((m) => m.accepted_at && !m.removed_at),
+    team: (team ?? []).filter((m) => m.accepted_at && !m.removed_at && !!projectTeam?.includes(m.user_id)),
   };
 }
 

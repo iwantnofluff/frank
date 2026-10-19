@@ -4067,3 +4067,11 @@ Direct instruction: an Idea's Add Date button (both tables) gets the small diago
 Then, direct instruction, an Idea's Day cell shows a dash, as its Week and Time do (the continuous table has no Day column).
 
 **Verified**: the planner's Idea rows read — in Week, Day and Time, with Add Date between; screenshot.
+
+## A post's Team, from the project's team
+
+Reported directly: a post's Team dropdown offered everyone on the agency's team, so a User who wasn't on the client, or the project, could be put on a post. It now offers exactly who the project's People panel lists from the team side (decided with the user, keeping the panel as it is): every Owner and Admin, who are on every project, and the Users added to this one. A client's people were never offered (the team list is agency staff only). Anyone already on a post's Team stays listed until taken off, so nothing goes quietly (the user chose the picker only, no database check on saving). The same in the table's quick-add row, the project's default team pre-fill, and Make a Post by Speaking (whose team list, server-side, now takes the project).
+
+A User can only read their own project_access rows, so the app couldn't work out a project's team for them: supabase/migrations/phase107_project_team.sql adds project_team_user_ids(project), SECURITY DEFINER with search_path pinned, answering only for someone on the team who can see that project, user ids only (hooks/use-project-team.ts).
+
+**Verified**: phase107 rehearsed on staging in a transaction as real users before applying: Priya (a User) and Maya (an Owner) both got Maya, Leo, Priya and Sam for the demo planner; Ruth (a client) got nothing; with Sam taken off the project he dropped out. new-brief has a test that makes two Users who've joined, one given the client and one not, and finds only the Admin and the first offered; run against the old code it fails (the second was offered), against the new it passes. new-brief, post-team-default and quick-add-row pass.

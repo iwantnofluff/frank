@@ -14,6 +14,7 @@ import { useUpdateCreativeCx } from "@/hooks/use-update-creative-cx";
 import { FUNNEL_COLUMN } from "@/components/project/ContinuousCalendarTable";
 import { PostChangedError, useUpdateBrief, type BriefFields } from "@/hooks/use-update-brief";
 import { useTeamMembers } from "@/hooks/use-team-members";
+import { useProjectTeam } from "@/hooks/use-project-team";
 import { useProject } from "@/hooks/use-project";
 import { TeamPicker } from "@/components/ui/TeamPicker";
 import { DateField, TimeField } from "@/components/ui/DateField";
@@ -500,10 +501,14 @@ export function CreativeModal(props: CreativeModalProps) {
   // (phase101, direct instruction), once both are known and only if it
   // hasn't been touched; anyone not yet joined or since removed is left out.
   const { data: projectRow } = useProject(projectId);
+  // Only the project's own team can be put on its posts (direct instruction).
+  const { data: projectTeam } = useProjectTeam(projectId);
   const [teamPrefilled, setTeamPrefilled] = useState(!isCreate);
-  if (!teamPrefilled && projectRow && teamMembers) {
+  if (!teamPrefilled && projectRow && teamMembers && projectTeam) {
     setTeamPrefilled(true);
-    const active = new Set(teamMembers.filter((m) => m.accepted_at && !m.removed_at).map((m) => m.user_id));
+    const active = new Set(
+      teamMembers.filter((m) => m.accepted_at && !m.removed_at && projectTeam.includes(m.user_id)).map((m) => m.user_id),
+    );
     const defaults = (projectRow.default_team_user_ids ?? []).filter((id) => active.has(id));
     if (defaults.length && teamUserIds.length === 0) setTeamUserIds(defaults);
   }
@@ -1288,7 +1293,7 @@ export function CreativeModal(props: CreativeModalProps) {
         <div className="mtabbody">
           {/* Made by speaking (direct instruction): a new post only. */}
           {isCreate && !creativeId && agencyId && (
-            <VoicePost agencyId={agencyId} delivery={delivery} onFill={applyVoice} />
+            <VoicePost agencyId={agencyId} projectId={projectId} delivery={delivery} onFill={applyVoice} />
           )}
           <div className="msection-h">Details</div>
           <p className="msection-d">The basics — what this is, its format, when it&rsquo;s due, and who&rsquo;s on it.</p>
@@ -1412,8 +1417,14 @@ export function CreativeModal(props: CreativeModalProps) {
             <label htmlFor="nbTeam">Team</label>
             <TeamPicker
               id="nbTeam"
+              // The project's team only (direct instruction); anyone already on
+              // the post stays listed until taken off, so nothing goes quietly.
               options={(teamMembers ?? [])
-                .filter((m) => (m.accepted_at && !m.removed_at) || teamUserIds.includes(m.user_id))
+                .filter(
+                  (m) =>
+                    (m.accepted_at && !m.removed_at && !!projectTeam?.includes(m.user_id)) ||
+                    teamUserIds.includes(m.user_id),
+                )
                 .map((m) => ({ id: m.user_id, name: m.user?.name ?? m.user?.email ?? "—" }))}
               value={teamUserIds}
               onChange={(next) => {

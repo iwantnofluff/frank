@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.37.3",
+    date: "2026-10-19",
+    title: "A post's team is the project's",
+    changes: ["A post's Team now offers only the project's team: its Owners and Admins, and the Users added to it, as its People list shows. The same in the table's quick-add row and when you make a post by speaking."],
+  },
+  {
     version: "1.37.2",
     date: "2026-10-19",
     title: "An Idea's Day",

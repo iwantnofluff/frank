@@ -29,10 +29,13 @@ type Phase = "idle" | "listening" | "thinking" | "done";
 // request (app/api/ai/voice-post), for checking before Create Post.
 export function VoicePost({
   agencyId,
+  projectId,
   delivery,
   onFill,
 }: {
   agencyId: string;
+  // For its team: only the project's can be put on the post.
+  projectId: string;
   delivery: "scheduled" | "continuous";
   onFill: (fields: VoicePostFields) => void;
 }) {
@@ -131,6 +134,7 @@ export function VoicePost({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           agencyId,
+          projectId,
           transcript,
           delivery,
           today: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`,
