@@ -59,7 +59,7 @@ test("project calendar — status filter narrows the visible rows", async ({ pag
   // Idea, then the six stages (In Production, phase102), any combination.
   await page.getByRole("button", { name: "Status" }).click();
   await expect(page.getByRole("dialog", { name: "Statuses" }).getByRole("checkbox")).toHaveText([
-    "All Statuses", "Idea", "1. Concept", "2. In Production", "3. Internal Review", "4. Client Review", "5. Approved", "6. Live",
+    "All Statuses", "0. Idea", "1. Concept", "2. In Production", "3. Internal Review", "4. Client Review", "5. Approved", "6. Live",
   ]);
   await page.keyboard.press("Escape");
   await showStatuses(page, ["4. Client Review"]);
@@ -89,11 +89,11 @@ test("project calendar — a post with no date is an Idea, the team's only, unde
   const band = page.locator("tr.ideaband");
   await expect(band).toHaveText(/No Scheduled Date\s*1 Idea/);
   const row = page.locator("tr[data-row]", { hasText: "Loyalty Card Idea" });
-  await expect(row.locator(".stg.idea")).toHaveText("Idea");
+  await expect(row.locator(".stg.idea")).toHaveText(/^0\.\s*Idea$/);
   // Not shown when Idea isn't among the statuses.
   await showStatuses(page, ["4. Client Review"]);
   await expect(band).toHaveCount(0);
-  await showStatuses(page, ["Idea"]);
+  await showStatuses(page, ["0. Idea"]);
   await expect(band).toBeVisible();
   await expect(page.locator(".pname", { hasText: "E2E Test Creative" })).toHaveCount(0);
   // Not on the Review page: a click opens its Edit window here.
@@ -108,7 +108,7 @@ test("project calendar — a post with no date is an Idea, the team's only, unde
   await page.keyboard.press("Escape");
   await pop.getByRole("button", { name: "Save" }).click();
   await expect(pop).toHaveCount(0);
-  await showStatuses(page, ["Idea", "1. Concept", "2. In Production", "3. Internal Review", "4. Client Review", "5. Approved", "6. Live"]);
+  await showStatuses(page, ["0. Idea", "1. Concept", "2. In Production", "3. Internal Review", "4. Client Review", "5. Approved", "6. Live"]);
   await expect(band).toHaveCount(0);
   const dated = page.locator("tr[data-row]", { hasText: "Loyalty Card Idea" });
   await expect(dated.locator("td.sk2")).toHaveText("17 Mar 27");
@@ -122,7 +122,7 @@ test("project calendar — a post with no date is an Idea, the team's only, unde
   await again.getByRole("button", { name: "Save" }).click();
   await expect(again).toHaveCount(0);
   await expect(band).toHaveText(/No Scheduled Date\s*1 Idea/);
-  await expect(page.locator("tr[data-row]", { hasText: "Loyalty Card Idea" }).locator(".stg.idea")).toHaveText("Idea");
+  await expect(page.locator("tr[data-row]", { hasText: "Loyalty Card Idea" }).locator(".stg.idea")).toHaveText(/^0\.\s*Idea$/);
 });
 
 test("project calendar — a client never sees an Idea", async ({ page, frank }) => {

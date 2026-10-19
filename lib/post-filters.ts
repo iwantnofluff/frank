@@ -10,7 +10,7 @@ export type StatusKey = "idea" | "1" | "2" | "3" | "4" | "5" | "6";
 export type PlatformFilter = "all" | "meta" | "linkedin" | "pinterest" | "youtube";
 
 export const STATUS_OPTIONS: { value: StatusKey; label: string }[] = [
-  { value: "idea", label: IDEA.label },
+  { value: "idea", label: `0. ${IDEA.label}` },
   ...([1, 2, 3, 4, 5, 6] as const).map((n) => ({ value: String(n) as StatusKey, label: `${n}. ${stageLabel(n, "scheduled")}` })),
 ];
 export const ALL_STATUSES: StatusKey[] = STATUS_OPTIONS.map((o) => o.value);

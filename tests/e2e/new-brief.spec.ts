@@ -70,7 +70,7 @@ test("a post saved with no publish date is made as an Idea", async ({ page, fran
   await page.click('button:has-text("Cancel")');
   await expect(page.locator(".scrim")).toHaveCount(0);
   const row = page.locator("tr[data-row]", { hasText: "Pumpkin Bread Idea" });
-  await expect(row.locator(".stg.idea")).toHaveText("Idea");
+  await expect(row.locator(".stg.idea")).toHaveText(/^0\.\s*Idea$/);
   await expect(page.locator("tr.ideaband")).toContainText("1 Idea");
 });
 

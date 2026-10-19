@@ -590,7 +590,7 @@ export async function chooseFormat(page: import("@playwright/test").Page, label 
 }
 
 // The tables' status filter (multi-choice, direct instruction): shows only
-// the statuses named, by their labels ("Idea", "4. Client Review").
+// the statuses named, by their labels ("0. Idea", "4. Client Review").
 export async function showStatuses(page: import("@playwright/test").Page, labels: string[]) {
   await page.getByRole("button", { name: "Status" }).click();
   const pop = page.getByRole("dialog", { name: "Statuses" });

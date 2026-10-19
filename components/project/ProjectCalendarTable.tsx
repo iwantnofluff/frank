@@ -1175,7 +1175,10 @@ export function ProjectCalendarTable({
                               return (
                                 <td key={key}>
                                   {!dt ? (
-                                    <span className="stg idea">{IDEA.label}</span>
+                                    <span className="stg idea">
+                                      <span className="no">0.</span>
+                                      {IDEA.label}
+                                    </span>
                                   ) : (
                                     <span className="stg" style={{ background: color }}>
                                       {c.exception ? (
@@ -1462,12 +1465,12 @@ export function ProjectCalendarTable({
       <div className="callegend">
         <span>
           <i style={{ background: IDEA.color }} />
-          {IDEA.label}
+          0. {IDEA.label}
         </span>
         {Array.from({ length: STAGE_COUNT }, (_, i) => i + 1).map((stage) => (
           <span key={stage}>
             <i style={{ background: stageColor(stage, null) }} />
-            {stage} {stageLabel(stage, "scheduled")}
+            {stage}. {stageLabel(stage, "scheduled")}
           </span>
         ))}
       </div>

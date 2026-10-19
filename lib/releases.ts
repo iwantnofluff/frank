@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.39.2",
+    date: "2026-10-19",
+    title: "0. Idea",
+    changes: ["Idea is numbered like the stages, 0. Idea, in Concept and In Production's red, and the statuses under the table read 0. Idea, 1. Concept and so on."],
+  },
+  {
     version: "1.39.1",
     date: "2026-10-19",
     title: "Clearing a date",

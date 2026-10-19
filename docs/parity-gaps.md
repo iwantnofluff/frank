@@ -4111,3 +4111,9 @@ Direct instruction: each image of a listing is different creative, so Notes for 
 Reported directly: in the table's date popover, clearing the date left Save greyed out. Save needed a date. Now a cleared date saves as none (hooks/use-reschedule-post.ts takes null), so the post becomes an Idea and moves under No Scheduled Date, as the Ideas decision has it (taking the date off makes it an Idea again). Save is only greyed with nothing to save: a scheduled date without a time, or an Idea left without a date.
 
 **Verified**: project-calendar's Idea test now also clears the date it gave, finds Save enabled, saves, and sees the post back under No Scheduled Date with its Idea pill; the date tests pass.
+
+## 0. Idea
+
+Direct instruction: the Idea pill in Concept and In Production's red (#E35336, replacing the mango), numbered 0 like the stages ("0. Idea", in the pill, the status filter and the legend), and the legend under both tables with full stops: "0. Idea", "1. Concept" … "6. Live".
+
+**Verified**: project-calendar's screenshot differed only in the legend (looked at before updating it); the Idea, status filter and New Post Idea tests pass with the new words.

@@ -11241,9 +11241,10 @@ button.sortbtn:hover {
   border-radius: 2px;
 }
 
-/* An Idea (direct instruction): a post with no date yet, bright mango. */
+/* An Idea (direct instruction): a post with no date yet, in Concept and
+   In Production's red. */
 .stg.idea {
-  background: #ffb30f;
+  background: #e35336;
 }
 
 /* A post's copy other than a caption, under its images (direct

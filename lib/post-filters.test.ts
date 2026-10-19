@@ -5,7 +5,7 @@ import { ALL_STATUSES, matchesFilter, platformOf, STATUS_OPTIONS, statusFilterLa
 
 test("status filter: Idea, then the six stages, In Production second (phase102), Live last", () => {
   assert.deepEqual(STATUS_OPTIONS.map((f) => f.value), ["idea", "1", "2", "3", "4", "5", "6"]);
-  assert.equal(STATUS_OPTIONS[0].label, "Idea");
+  assert.equal(STATUS_OPTIONS[0].label, "0. Idea");
   assert.equal(STATUS_OPTIONS[2].label, "2. In Production");
   assert.equal(STATUS_OPTIONS.at(-1)!.label, "6. Live");
   const dated = { stage: 3, format: "ig_feed", scheduled_at: "2026-10-20T09:00:00Z" };
@@ -22,7 +22,7 @@ test("an Idea is a post with no date yet, whatever its stage underneath", () => 
   assert.equal(matchesFilter(idea, { statuses: ["3"], platform: "all" }), false);
   assert.equal(matchesFilter(idea, { statuses: ["idea"], platform: "all" }), true);
   assert.equal(statusFilterLabel(ALL_STATUSES), "All Statuses");
-  assert.equal(statusFilterLabel(["idea"]), "Idea");
+  assert.equal(statusFilterLabel(["idea"]), "0. Idea");
   assert.equal(statusFilterLabel(["idea", "4"]), "2 Statuses");
 });
 
