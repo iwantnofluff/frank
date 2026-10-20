@@ -1278,8 +1278,8 @@ export function CreativeModal(props: CreativeModalProps) {
         activeTab === "brief" ? (
           <>
             {/* Design with Frank (phase110) in the Brief's footer, as Draft
-                with Frank is in Content's (direct instruction), with a
-                small two-line note beside it. */}
+                with Frank is in Content's (direct instruction); its note is
+                under the notes fields, not beside it (direct instruction). */}
             <button
               type="button"
               className="btn primary btn-frank"
@@ -1292,27 +1292,6 @@ export function CreativeModal(props: CreativeModalProps) {
               </svg>
               Design with Frank
             </button>
-            <span className="ddir-foot">
-              {!creativeId ? (
-                <>
-                  Once the brief is saved, Frank
-                  <br />
-                  can suggest how to design it.
-                </>
-              ) : directionRuns?.length ? (
-                <>
-                  {directionRuns.length === 1 ? "1 direction" : `${directionRuns.length} directions`} from Frank,
-                  <br />
-                  latest by {directionRuns[0].author ?? "someone"}, {new Date(directionRuns[0].created_at).toLocaleDateString(undefined, { day: "numeric", month: "short" })}
-                </>
-              ) : (
-                <>
-                  Frank reads the concept and references,
-                  <br />
-                  and suggests how to design this post.
-                </>
-              )}
-            </span>
             <div className="grow" />
             {showUpdatedNote && <span className="bsaved">Post updated.</span>}
             <button type="button" className="btn" onClick={requestClose}>
@@ -1654,6 +1633,16 @@ export function CreativeModal(props: CreativeModalProps) {
             </div>
           )}
 
+          {/* What Design with Frank does, or how many directions it's
+              written and when, under the notes it fills (direct
+              instruction: not in the footer). */}
+          <p className="ddir-note">
+            {!creativeId
+              ? "Once the brief is saved, Design with Frank can suggest how to design this post."
+              : directionRuns?.length
+                ? `${directionRuns.length === 1 ? "1 direction" : `${directionRuns.length} directions`} from Design with Frank, the latest by ${directionRuns[0].author ?? "someone"} on ${new Date(directionRuns[0].created_at).toLocaleDateString(undefined, { day: "numeric", month: "short" })}.`
+                : "Design with Frank reads the concept and references, and suggests how to design this post."}
+          </p>
           {saveNotes.error instanceof DesignerNotesChangedError ? (
             <p className="autherr">
               {saveNotes.error.message}{" "}

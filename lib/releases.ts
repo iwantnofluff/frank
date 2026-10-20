@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.42.1",
+    date: "2026-10-20",
+    title: "Design with Frank's note moves",
+    changes: ["The note on what Design with Frank does, or when it last suggested a direction, now sits under the Brief's notes instead of in the footer beside the button."],
+  },
+  {
     version: "1.42.0",
     date: "2026-10-20",
     title: "Notes for Designer, for the team",

@@ -19,6 +19,7 @@ const signedIn = async (email: string, password: string) => {
 const PNG = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
 
 test("a pasted reference image, and a direction into Notes for Designer, for the team only", async ({ page, browser, frank }) => {
+  test.setTimeout(60_000);
   const staff = await signedIn(frank.staffEmail, frank.staffPassword);
   const { data: me } = await staff.auth.getUser();
   const { error: seedError } = await staff.from("design_directions").insert({

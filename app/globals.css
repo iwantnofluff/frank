@@ -7996,13 +7996,13 @@ a.profproject:hover .pp-t b {
   border-color: var(--action);
   background: var(--action-soft);
 }
-/* Beside Design with Frank in the Brief's footer: what it does, or how
-   many directions Frank has written and when, small, on two lines. */
-.ddir-foot {
-  font-size: 11.7px;
-  line-height: 1.35;
+/* Under the Brief's notes fields: what Design with Frank does, or how
+   many directions it's written and when. Small, as a field's hint. */
+.ddir-note {
+  margin: -4px 0 16px;
+  font-size: 12.2px;
+  line-height: 1.4;
   color: var(--muted);
-  margin-left: 2px;
 }
 /* The post page's Design Direction keeps its lines and lists. */
 .fd-d.fd-pre {
