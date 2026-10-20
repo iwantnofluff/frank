@@ -141,22 +141,29 @@ test("a Listing Image Set takes up to 9 images, Text on Image for each, and the 
   await expect(labels.filter({ hasText: /^Caption$/ })).toHaveCount(0);
 });
 
-test("a multi-image post takes Notes for Designer for each image", async ({ page, frank }) => {
+test("a multi-image post takes Notes for Designer for each image, on its Brief", async ({ page, frank }) => {
   test.setTimeout(60_000);
   await admin.from("creatives").update({ format: "amz_gallery", formats: ["amz_gallery"], slide_count: 3 }).eq("id", frank.creativeId);
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
   await page.getByRole("button", { name: "Edit", exact: true }).first().click();
-  await page.getByRole("tab", { name: "Content" }).click();
-  // One per image (direct instruction), after Text on Image.
+  // On the Brief, one per slide (direct instruction), more opening as the
+  // count goes up.
+  await page.getByRole("tab", { name: "Brief" }).click();
   const notes = page.locator('[data-focus="slideNotes"] .brow textarea');
   await expect(notes).toHaveCount(3);
+  await page.selectOption("#nbSlides", "4");
+  await expect(notes).toHaveCount(4);
   await notes.nth(1).fill("Brighter crop, badge top right");
-  await page.getByRole("button", { name: "Save Notes for Designer" }).click();
-  await expect(page.getByRole("button", { name: "Save Notes for Designer" })).toBeDisabled();
+  // Saved with the brief.
+  await page.getByRole("button", { name: "Update" }).click();
+  await expect(page.getByText("Post updated.")).toBeVisible();
   await expect
-    .poll(async () => (await admin.from("creatives").select("slide_notes").eq("id", frank.creativeId).single()).data?.slide_notes)
-    .toEqual(["", "Brighter crop, badge top right"]);
+    .poll(async () => (await admin.from("creatives").select("slide_notes, slide_count").eq("id", frank.creativeId).single()).data)
+    .toEqual({ slide_notes: ["", "Brighter crop, badge top right"], slide_count: 4 });
+  // Not on the Content tab any more.
+  await page.getByRole("tab", { name: "Content" }).click();
+  await expect(page.getByRole("button", { name: "Save Notes for Designer" })).toHaveCount(0);
   // On the post's Brief, by its slide.
   await page.getByRole("button", { name: "Cancel" }).last().click();
   await page.getByRole("button", { name: "Brief", exact: true }).click();

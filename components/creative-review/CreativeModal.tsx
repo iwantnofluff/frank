@@ -692,10 +692,12 @@ export function CreativeModal(props: CreativeModalProps) {
         scheduledAt,
         destination: delivery === "continuous" ? destination.trim() || null : null,
         dueOn: delivery === "continuous" ? dueOn || null : null,
+        slideNotes: slideCount ? draftSlideNotes : [],
       });
       setCreatedCreativeId(newId);
       setSavedBrief({ formats, slideCount });
       setSavedFields({ designer_notes: designerNotes.trim() });
+      setSavedSlideNotes(slideCount ? draftSlideNotes : []);
       props.onCreated?.(scheduledAt, delivery === "continuous" ? dueOn || null : null);
       // Straight on to the artwork and copy (direct instruction).
       setActiveTab("upload");
@@ -746,6 +748,15 @@ export function CreativeModal(props: CreativeModalProps) {
       return;
     }
     setBriefBase(savedAt);
+    // Notes for Designer by slide, from the Brief (phase108), when changed.
+    if (pendingNotesChange && creativeId) {
+      try {
+        await saveSlideNotes.mutateAsync({ slideNotes: draftSlideNotes, known: savedSlideNotes });
+        setSavedSlideNotes(draftSlideNotes);
+      } catch {
+        return; // Shown under the notes.
+      }
+    }
     knowBrief({
       name: name.trim(),
       formats,
@@ -932,17 +943,6 @@ export function CreativeModal(props: CreativeModalProps) {
     }
   }
   const saveSlideNotes = useSaveSlideNotes(creativeId ?? "", projectId);
-  const [notesSaveNote, setNotesSaveNote] = useState<string | null>(null);
-  async function handleSaveSlideNotes() {
-    setNotesSaveNote(null);
-    try {
-      await saveSlideNotes.mutateAsync({ slideNotes: draftSlideNotes, known: savedSlideNotes });
-      setSavedSlideNotes(draftSlideNotes);
-      setNotesSaveNote("Saved.");
-    } catch {
-      // Shown via saveSlideNotes.error below.
-    }
-  }
   const saveVoiceover = useSaveVoiceover(creativeId ?? "", projectId);
   const [voSaveNote, setVoSaveNote] = useState<string | null>(null);
   async function handleSaveVoiceover() {
@@ -1249,12 +1249,11 @@ export function CreativeModal(props: CreativeModalProps) {
                 pendingCopyChange ||
                 pendingCreativeChange ||
                 pendingSlideChange ||
-                pendingNotesChange ||
                 pendingVoChange
               }
               title={
-                pendingCopyChange || pendingCreativeChange || pendingSlideChange || pendingNotesChange || pendingVoChange
-                  ? "Save the copy, VO, Text on Image, Notes for Designer or creative changes above first"
+                pendingCopyChange || pendingCreativeChange || pendingSlideChange || pendingVoChange
+                  ? "Save the copy, VO, Text on Image or creative changes above first"
                   : undefined
               }
               onClick={handleSaveUpload}
@@ -1494,22 +1493,59 @@ export function CreativeModal(props: CreativeModalProps) {
             </button>
           </div>
 
+          {/* Notes for Designer on the Brief (direct instruction): the post's
+              overall note on an Other Content post, and one per slide or
+              story once there are several, opening as the count goes up,
+              saved with the brief (phase108). */}
           {delivery === "continuous" && (
-            <>
-              <div className="field">
-                <label htmlFor="nbNotes">
-                  Notes for Designer <span className="bnote">optional</span>
-                </label>
-                <textarea
-                  id="nbNotes"
-                  className="bin"
-                  rows={3}
-                  value={designerNotes}
-                  onChange={(e) => setDesignerNotes(e.target.value)}
-                  placeholder="What the designer should know: sizes, references, things to avoid."
-                />
-              </div>
-            </>
+            <div className="field">
+              <label htmlFor="nbNotes">
+                Notes for Designer <span className="bnote">optional</span>
+              </label>
+              <textarea
+                id="nbNotes"
+                className="bin"
+                rows={3}
+                value={designerNotes}
+                onChange={(e) => setDesignerNotes(e.target.value)}
+                placeholder="What the designer should know: sizes, references, things to avoid."
+              />
+            </div>
+          )}
+          {!!slideCount && (
+            <div className="field" data-focus="slideNotes">
+              <label>
+                Notes for Designer, by {frameNoun.toLowerCase()} <span className="bnote">optional</span>
+              </label>
+              <ListEditor
+                itemLabel={(i) => `${frameNoun} ${i + 1}`}
+                values={slideFields(slideNotes, slideCount)}
+                onChange={setSlideNotes}
+                fixed
+                bare
+              />
+              {saveSlideNotes.error instanceof SlideNotesChangedError ? (
+                <p className="autherr">
+                  {saveSlideNotes.error.message}{" "}
+                  <button
+                    type="button"
+                    className="linkbtn"
+                    onClick={() => {
+                      const theirs = (saveSlideNotes.error as SlideNotesChangedError).theirs;
+                      setSlideNotes(theirs);
+                      setSavedSlideNotes(tidySlideText(theirs));
+                      saveSlideNotes.reset();
+                    }}
+                  >
+                    Show Theirs
+                  </button>
+                </p>
+              ) : (
+                saveSlideNotes.error && (
+                  <p className="autherr">{errorMessage(saveSlideNotes.error, "Couldn't save the Notes for Designer")}</p>
+                )
+              )}
+            </div>
           )}
 
           {customColumns && customColumns.length > 0 && (
@@ -1690,64 +1726,6 @@ export function CreativeModal(props: CreativeModalProps) {
               )
             )}
           </div>
-
-          {/* Notes for Designer, one per image (phase108, direct instruction:
-              each image of a multi-image post is its own creative). The
-              post's overall note stays on the Brief. */}
-          {!!slideCount && (
-            <>
-              <div className="msection-h">Notes for Designer</div>
-              <p className="msection-d">
-                What the designer needs for each {frameNoun.toLowerCase()}: its own direction, alongside the post&rsquo;s overall note.
-              </p>
-              <div data-focus="slideNotes">
-                <ListEditor
-                  itemLabel={(i) => `${frameNoun} ${i + 1}`}
-                  values={slideFields(slideNotes, slideCount)}
-                  onChange={(next) => {
-                    setSlideNotes(next);
-                    setNotesSaveNote(null);
-                  }}
-                  fixed
-                  bare
-                />
-              </div>
-              <div className="field btnrow">
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <button
-                    type="button"
-                    className="btn sm primary"
-                    disabled={!creativeId || !pendingNotesChange || saveSlideNotes.isPending}
-                    onClick={handleSaveSlideNotes}
-                  >
-                    {saveSlideNotes.isPending ? "Saving…" : "Save Notes for Designer"}
-                  </button>
-                  {notesSaveNote && !pendingNotesChange && <span className="bsaved">{notesSaveNote}</span>}
-                </div>
-                {saveSlideNotes.error instanceof SlideNotesChangedError ? (
-                  <p className="autherr">
-                    {saveSlideNotes.error.message}{" "}
-                    <button
-                      type="button"
-                      className="linkbtn"
-                      onClick={() => {
-                        const theirs = (saveSlideNotes.error as SlideNotesChangedError).theirs;
-                        setSlideNotes(theirs);
-                        setSavedSlideNotes(tidySlideText(theirs));
-                        saveSlideNotes.reset();
-                      }}
-                    >
-                      Show Theirs
-                    </button>
-                  </p>
-                ) : (
-                  saveSlideNotes.error && (
-                    <p className="autherr">{errorMessage(saveSlideNotes.error, "Couldn't save the Notes for Designer")}</p>
-                  )
-                )}
-              </div>
-            </>
-          )}
 
           {/* Hidden when the formats have no copy, a story's (direct
               instruction): their words are the Text on Image above. */}

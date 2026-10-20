@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.40.1",
+    date: "2026-10-20",
+    title: "Notes for Designer on the Brief",
+    changes: ["Notes for Designer for each slide are now on the post window's Brief, under the overall note, opening as you choose more slides, and saved with the brief."],
+  },
+  {
     version: "1.40.0",
     date: "2026-10-20",
     title: "A simpler Other Content table",
