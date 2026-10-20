@@ -76,7 +76,14 @@ export function useRequestDesignDirection(creativeId: string | null) {
       slideCount: number | null;
       newPost?: { projectId: string; name: string; formats: string[]; images: File[] };
       // From the Concept, or a rework of these notes.
-      mode: "concept" | "rework";
+      mode: "concept" | "rework" | "followup";
+      // The conversation this belongs to; for a follow-up, the new message,
+      // the earlier ones with Frank's replies, and the direction as it
+      // last stood.
+      thread: string;
+      ask?: string;
+      conversation?: { ask: string; reply: string }[];
+      previous?: Body | null;
       notes: { overall: string; slides: string[] };
       // The VO and copy as they are in the window.
       voiceover: string;

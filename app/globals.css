@@ -7806,6 +7806,24 @@ a.profproject:hover .pp-t b {
 .ddir .cchat-head {
   margin-top: 4px;
 }
+/* A conversation (direct instruction, as Draft with Frank's): each turn
+   your message, then Frank's answer, a line between turns. */
+.ddir-turn,
+.ddir-run {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ddir-turn + .ddir-turn {
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.ddir-turn .cchat-msg.user {
+  align-self: flex-end;
+}
+.ddir-turn .cchat-msg.assistant {
+  align-self: flex-start;
+}
 .ddir-summary {
   margin: 0;
   font-size: 14.7px;

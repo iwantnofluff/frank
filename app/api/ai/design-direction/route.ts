@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { runAiTask } from "@/lib/ai/run-ai-task";
 import { IMAGE_TYPES, type Attachment } from "@/lib/ai/attachment";
-import { buildDesignDirectionPrompt, parseDesignDirection, type DesignReference } from "@/lib/ai/design-direction";
+import {
+  buildDesignDirectionPrompt,
+  parseDesignDirection,
+  type DesignDirection as DesignDirectionBody,
+  type DesignReference,
+} from "@/lib/ai/design-direction";
 import { clientContext, loadKnowledgeFiles } from "@/lib/ai/client-context";
 import { fetchImage, readPreview } from "@/lib/link-fetch";
 import { fetchableUrl } from "@/lib/link-preview";
@@ -47,6 +52,13 @@ export async function POST(request: Request) {
     // The VO and copy as they are in the window (direct instruction).
     voiceover?: unknown;
     copy?: unknown;
+    // Its conversation, and for a follow-up (direct instruction, as Draft
+    // with Frank's): the new message, the earlier ones with Frank's
+    // replies, and the direction as it last stood.
+    thread?: unknown;
+    ask?: unknown;
+    conversation?: unknown;
+    previous?: unknown;
     name?: string;
     formats?: unknown;
     images?: unknown;
@@ -169,7 +181,15 @@ export async function POST(request: Request) {
       })
     : sentImages.map((img) => ({ key: null, mediaType: img.mediaType, load: async () => Buffer.from(img.base64, "base64") }));
   if (!concept && !urls.length && !pastedFiles.length) return fail("Write a concept or add a reference first", 400);
-  const mode = body.mode === "rework" ? "rework" : "concept";
+  const mode = body.mode === "rework" ? "rework" : body.mode === "followup" ? "followup" : "concept";
+  const thread = typeof body.thread === "string" && /^[\w-]{8,64}$/.test(body.thread) ? body.thread : crypto.randomUUID();
+  const askText = typeof body.ask === "string" ? body.ask.trim() : "";
+  if (mode === "followup" && !askText) return fail("Write a message", 400);
+  if (askText.length > 2000) return fail("Keep a message under 2,000 characters", 400);
+  const conversation = (Array.isArray(body.conversation) ? body.conversation : [])
+    .filter((t): t is { ask: string; reply: string } => !!t && typeof t.ask === "string" && typeof t.reply === "string")
+    .slice(-10);
+  const previous = body.previous && typeof body.previous === "object" ? (body.previous as DesignDirectionBody) : null;
   const notes = {
     overall: typeof body.notes?.overall === "string" ? body.notes.overall : "",
     slides: (Array.isArray(body.notes?.slides) ? body.notes.slides : []).filter((t): t is string => typeof t === "string"),
@@ -329,6 +349,9 @@ export async function POST(request: Request) {
     references,
     mode,
     notes,
+    ask: askText,
+    conversation,
+    previous,
     voiceover: isVideo ? (typeof body.voiceover === "string" ? body.voiceover : post.voiceover) : null,
     copy: await copyFor(),
   });
@@ -349,8 +372,20 @@ export async function POST(request: Request) {
           send({ type: "error", error: result.error ?? "Frank didn't answer" });
           return;
         }
-        const parsed = parseDesignDirection(result.text, slideCount, isVideo);
-        const direction = parsed && { ...parsed, mode };
+        const parsed = parseDesignDirection(result.text, slideCount, isVideo, mode === "followup");
+        // A revised direction Frank left untitled keeps the title it had.
+        if (parsed && mode === "followup") {
+          parsed.directions = parsed.directions.map((d, i) =>
+            /^Direction \d+$/.test(d.title) && previous?.directions?.[i]?.title ? { ...d, title: previous.directions[i].title } : d,
+          );
+        }
+        const direction = parsed && {
+          ...parsed,
+          mode,
+          thread,
+          at: new Date().toISOString(),
+          ...(mode === "followup" ? { ask: askText } : {}),
+        };
         if (!direction) {
           send({ type: "error", error: "Frank's answer couldn't be read. Try again." });
           return;

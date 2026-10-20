@@ -111,8 +111,8 @@ test("a rework reads the team's notes and asks to keep what they decided", () =>
   assert.match(p, /Notes for Designer for this post, to rework:\nBig pumpkin, orange/);
   assert.match(p, /Slide 1: Cover\n- Slide 3: End/);
   assert.match(p, /Rework the team's notes rather than starting again/);
-  assert.doesNotMatch(p, /Offer two or three directions/);
-  assert.match(buildDesignDirectionPrompt(context), /Offer two or three directions/);
+  assert.doesNotMatch(p, /Offer two directions/);
+  assert.match(buildDesignDirectionPrompt(context), /Offer two directions/);
 });
 
 test("a direction's placement is named apart from the Content tab's Text on Image", () => {
@@ -126,4 +126,45 @@ test("the copy and a video's VO go in, so the visual fits them", () => {
   assert.match(p, /The copy that goes with it[^\n]*\n- Caption: Slow mornings/);
   assert.match(p, /The VO script[^\n]*\nNobody misses on purpose\./);
   assert.doesNotMatch(buildDesignDirectionPrompt(context), /The VO script|The copy that goes with it/);
+});
+
+test("a follow-up carries the direction as it stood, the conversation and the new ask", () => {
+  const previous = parseDesignDirection('{"summary":"Warm","directions":[{"title":"Steam","idea":"Steam rising"}]}', null, false)!;
+  const p = buildDesignDirectionPrompt({
+    ...context,
+    mode: "followup",
+    previous,
+    conversation: [{ ask: "Warmer?", reply: "Made it warmer." }],
+    ask: "Fewer props please",
+  });
+  assert.match(p, /Your direction as it last stood, as JSON:\n\{"summary":"Warm","directions":\[\{"title":"Steam"/);
+  assert.match(p, /Colleague: Warmer\?\nYou: Made it warmer\./);
+  assert.match(p, /Your colleague now asks: Fewer props please/);
+  assert.match(p, /leave directions as an empty list/);
+  assert.doesNotMatch(p, /Offer two directions/);
+});
+
+test("an answer with no directions reads only when allowed", () => {
+  assert.equal(parseDesignDirection('{"summary":"Because the brand is warm.","directions":[]}', null, false), null);
+  assert.equal(parseDesignDirection('{"summary":"Because the brand is warm.","directions":[]}', null, false, true)?.summary, "Because the brand is warm.");
+});
+
+test("a first direction is broad and short, leaving the execution to the designer", () => {
+  const p = buildDesignDirectionPrompt(context);
+  assert.match(p, /leave the execution to them/);
+  assert.match(p, /Offer two directions, each a genuinely different idea\./);
+  assert.match(p, /one short sentence or less/);
+  assert.doesNotMatch(p, /say what goes where, how big/);
+});
+
+test("the reader keeps it short: two lessons a reference, three points a list", () => {
+  const many = Array.from({ length: 8 }, (_, i) => `p${i}`);
+  const d = parseDesignDirection(
+    JSON.stringify({ summary: "s", references: [{ n: 1, lessons: many }], worked: many, directions: [{ title: "T", idea: "I" }], guardrails: { format: many, client: many, avoid: many } }),
+    null,
+    false,
+  )!;
+  assert.equal(d.references[0].lessons.length, 2);
+  assert.equal(d.worked.length, 3);
+  assert.deepEqual([d.guardrails.format.length, d.guardrails.client.length, d.guardrails.avoid.length], [3, 3, 3]);
 });

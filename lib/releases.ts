@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.44.0",
+    date: "2026-10-20",
+    title: "Talk it through with Design with Frank",
+    changes: [
+      "Design with Frank is now a conversation, as Draft with Frank is: ask for changes and Frank revises the direction, saying what changed; ask why and it explains. Each reply has its own Use This.",
+      "Frank's directions are broader and shorter: an idea, a feeling and what must hold, leaving the execution to the designer. Two directions, a few words on each slide's role, and only the essential guardrails.",
+    ],
+  },
+  {
     version: "1.43.1",
     date: "2026-10-20",
     title: "A clearer Brief, and the two Franks in step",

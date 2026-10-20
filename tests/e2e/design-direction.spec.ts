@@ -137,3 +137,50 @@ test("Save Concept, References and Notes: on a new post it locks the Concept in 
   await page.locator("#nbConcept").fill("A newer idea");
   await expect(designWithFrank).toBeDisabled();
 });
+
+test("Design with Frank is a conversation: a follow-up carries the direction and comes back under it", async ({ page, frank }) => {
+  test.setTimeout(60_000);
+  const staff = await signedIn(frank.staffEmail, frank.staffPassword);
+  const { data: me } = await staff.auth.getUser();
+  const steam = { title: "Steam", idea: "Steam rising off the cup", layout: "Cup centred", style: "", palette: "Browns", textOnImage: "", slides: [], reel: null };
+  const guardrails = { format: [], client: [], avoid: [] };
+  const thread = "e2e-thread-0001";
+  await staff.from("creatives").update({ concept: "Warm and slow." }).eq("id", frank.creativeId);
+  const { error } = await staff.from("design_directions").insert({
+    creative_id: frank.creativeId,
+    created_by: me.user!.id,
+    body: { mode: "concept", thread, at: "2026-10-20T10:00:00.000Z", summary: "Make it warm.", references: [], worked: [], directions: [steam], guardrails },
+  });
+  expect(error).toBeNull();
+
+  // No live AI: the follow-up is answered here, as the route would answer
+  // it, after checking what the window sent.
+  let sent: Record<string, unknown> = {};
+  await page.route("**/api/ai/design-direction", async (route) => {
+    sent = JSON.parse(route.request().postData() ?? "{}");
+    const body = { mode: "followup", thread, ask: sent.ask, at: "2026-10-20T10:05:00.000Z", summary: "Made the steam bigger.", references: [], worked: [], directions: [{ ...steam, title: "Steam, bolder", idea: "Big steam" }], guardrails };
+    const { data: row } = await staff.from("design_directions").insert({ creative_id: frank.creativeId, created_by: me.user!.id, body }).select("id").single();
+    await route.fulfill({
+      contentType: "application/x-ndjson",
+      body: [{ type: "refs", refs: [] }, { type: "text", text: JSON.stringify(body) }, { type: "done", id: row!.id, skippedFiles: [] }].map((e) => JSON.stringify(e)).join("\n") + "\n",
+    });
+  });
+
+  await frank.loginAsStaff(page);
+  await page.goto(`/creatives/${frank.creativeId}`);
+  await page.getByRole("button", { name: "Edit", exact: true }).click();
+  await page.getByRole("tab", { name: "Brief" }).click();
+  await page.getByRole("button", { name: "Design with Frank" }).click();
+  await page.getByLabel("Message to Frank").fill("Bolder please");
+  await page.getByRole("button", { name: "Send" }).click();
+
+  await expect(page.locator(".cchat-msg.user", { hasText: "Bolder please" })).toBeVisible();
+  await expect(page.locator(".cchat-msg.assistant", { hasText: "Made the steam bigger." })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("button", { name: "Use This: Steam, bolder" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Use This: Steam", exact: true })).toBeVisible();
+  await expect(page.locator(".cchat-past", { hasText: "1 reply" })).toBeVisible();
+  expect(sent.mode).toBe("followup");
+  expect(sent.thread).toBe(thread);
+  expect(sent.ask).toBe("Bolder please");
+  expect((sent.previous as { directions: { title: string }[] }).directions[0].title).toBe("Steam");
+});

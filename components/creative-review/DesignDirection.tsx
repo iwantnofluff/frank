@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Modal } from "@/components/ui/Modal";
 import {
@@ -42,11 +42,19 @@ function List({ items }: { items: string[] }) {
   );
 }
 
+// A conversation (direct instruction, as Draft with Frank's): its first
+// direction, then each follow-up, by when they were written. A direction
+// from before conversations is one on its own.
+const threadOf = (r: DesignDirectionRow) => r.body.thread ?? r.id;
+const writtenAt = (r: DesignDirectionRow) => r.body.at ?? r.created_at;
+
 // Design with Frank (phase110): Frank reads the post's concept and its
 // reference links, and writes the designer a direction: what the
 // references teach, two or three ways to design this post, and guardrails.
-// Use This puts a direction into the post's Design Direction box (and each
-// slide's line into its Notes for Designer), and marks it as chosen. Kept with the post, for the team.
+// Then a conversation about it, as Draft with Frank's: asked for changes,
+// Frank revises the whole direction; asked a question, it answers. Use
+// This puts a direction into Notes for Designer (each slide's line into its
+// own) and marks it as chosen. Kept with the post, for the team.
 // Portalled to the page: it opens over the post window.
 export function DesignDirection({
   creativeId,
@@ -96,7 +104,7 @@ export function DesignDirection({
   onClose: () => void;
 }) {
   const { data: savedRows, isLoading: loadingSaved } = useDesignDirections(creativeId);
-  const rows = [...unsavedRuns, ...(savedRows ?? [])];
+  const rows = useMemo(() => [...unsavedRuns, ...(savedRows ?? [])], [unsavedRuns, savedRows]);
   const isLoading = !!creativeId && loadingSaved;
   const request = useRequestDesignDirection(creativeId);
   const choose = useChooseDesignDirection(creativeId ?? "");
@@ -108,9 +116,25 @@ export function DesignDirection({
   const { data: client } = useClientDetail(clientId ?? "");
   const { data: prefs } = useClientPreferences(clientId);
   const theirs = client?.name ? `${client.name}’s` : "the client’s";
-  const [openId, setOpenId] = useState<string | null>(null);
   const [skipped, setSkipped] = useState<string[]>([]);
-  const row: DesignDirectionRow | undefined = rows.find((r) => r.id === openId) ?? rows[0];
+  const [draft, setDraft] = useState("");
+  const endRef = useRef<HTMLDivElement>(null);
+
+  // The conversations, newest first, each in the order it was written.
+  const threads = useMemo(() => {
+    const byThread = new Map<string, DesignDirectionRow[]>();
+    for (const r of rows) byThread.set(threadOf(r), [...(byThread.get(threadOf(r)) ?? []), r]);
+    return [...byThread.entries()]
+      .map(([key, runs]) => ({ key, runs: runs.sort((a, b) => writtenAt(a).localeCompare(writtenAt(b))) }))
+      .sort((a, b) => writtenAt(b.runs[b.runs.length - 1]).localeCompare(writtenAt(a.runs[a.runs.length - 1])));
+  }, [rows]);
+  const [openThread, setOpenThread] = useState<string | null>(null);
+  // Asking: which conversation it goes in, and the message, until Frank
+  // has answered.
+  const [asking, setAsking] = useState<{ thread: string; ask?: string } | null>(null);
+  const current = threads.find((t) => t.key === (asking?.thread ?? openThread)) ?? (asking ? null : threads[0]) ?? null;
+  const currentKey = asking?.thread ?? current?.key ?? null;
+
   const { data: pastedImages } = useReferenceImages(creativeId);
   const pastedUrl = (ref: DesignDirectionRef) =>
     ref.pendingIndex !== undefined
@@ -120,23 +144,46 @@ export function DesignDirection({
   // While Frank writes (direct instruction: shown as it's written): the
   // references it's reading, and what it has written so far.
   const [progress, setProgress] = useState<{ refs: DesignDirectionRef[]; text: string }>({ refs: [], text: "" });
-  const shown: { body: Body; refs: DesignDirectionRef[]; chosen: number | null; live: boolean } | null = request.isPending
-    ? { body: parsePartialDesignDirection(progress.text, slideCount, isVideo), refs: progress.refs, chosen: null, live: true }
-    : row
-      ? { body: row.body, refs: row.refs, chosen: row.chosen, live: false }
-      : null;
+  const live = request.isPending
+    ? { body: parsePartialDesignDirection(progress.text, slideCount, isVideo), refs: progress.refs }
+    : null;
 
   const hasNotes = !!notes.overall.trim() || notes.slides.some((t) => t.trim());
 
-  function ask(mode: "concept" | "rework") {
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ block: "end" });
+  }, [current?.runs.length, request.isPending]);
+
+  function send(mode: "concept" | "rework" | "followup", ask?: string) {
+    const thread = mode === "followup" && currentKey ? currentKey : crypto.randomUUID();
+    const before = mode === "followup" ? (current?.runs ?? []) : [];
+    const previous = [...before].reverse().find((r) => r.body.directions.length)?.body ?? null;
+    const conversation = before
+      .filter((r) => r.body.mode === "followup" && r.body.ask)
+      .map((r) => ({ ask: r.body.ask!, reply: r.body.summary }));
     setProgress({ refs: [], text: "" });
+    setAsking({ thread, ask });
     request.mutate(
-      { concept, referenceUrls, slideCount, newPost: newPost ?? undefined, mode, notes, voiceover, copy, onProgress: setProgress },
+      {
+        concept,
+        referenceUrls,
+        slideCount,
+        newPost: newPost ?? undefined,
+        mode,
+        notes,
+        voiceover,
+        copy,
+        thread,
+        ask,
+        conversation,
+        previous,
+        onProgress: setProgress,
+      },
       {
         onSuccess: (r) => {
           setSkipped(r.skippedFiles);
-          if (r.id) return setOpenId(r.id);
-          if (!r.direction) return;
+          setOpenThread(thread);
+          if (r.id || !r.direction) return;
           // Kept by the window until Create Post.
           const run: DesignDirectionRow = {
             id: crypto.randomUUID(),
@@ -147,22 +194,223 @@ export function DesignDirection({
             author: "You",
           };
           onUnsavedRunsChange([run, ...unsavedRuns]);
-          setOpenId(run.id);
         },
+        // Back in the box if Frank doesn't answer.
+        onError: () => {
+          if (ask) setDraft(ask);
+        },
+        onSettled: () => setAsking(null),
       },
     );
   }
 
-  function use(i: number) {
-    if (!row) return;
-    const added = row.chosen === i;
-    if (unsavedRuns.some((r) => r.id === row.id)) {
-      onUnsavedRunsChange(unsavedRuns.map((r) => (r.id === row.id ? { ...r, chosen: added ? null : i } : r)));
-    } else {
-      choose.mutate({ id: row.id, chosen: added ? null : i });
-    }
-    onUse(added ? null : row.body.directions[i], row.body.guardrails);
+  function reply() {
+    const message = draft.trim();
+    if (!message || !current) return;
+    setDraft("");
+    send("followup", message);
   }
+
+  function use(run: DesignDirectionRow, i: number) {
+    const added = run.chosen === i;
+    if (unsavedRuns.some((r) => r.id === run.id)) {
+      onUnsavedRunsChange(unsavedRuns.map((r) => (r.id === run.id ? { ...r, chosen: added ? null : i } : r)));
+    } else {
+      choose.mutate({ id: run.id, chosen: added ? null : i });
+    }
+    onUse(added ? null : run.body.directions[i], run.body.guardrails);
+  }
+
+  // One of Frank's answers: the summary (the whole reply, for a question),
+  // then on a conversation's first direction the references, then the
+  // directions, each with Use This, and the guardrails.
+  const answer = (
+    key: string,
+    b: Body,
+    refs: DesignDirectionRef[],
+    opts: { run?: DesignDirectionRow; first: boolean; live: boolean },
+  ) => (
+    <div className="ddir-run" key={key}>
+      {b.summary &&
+        (opts.first ? (
+          <p className="ddir-summary">{b.summary}</p>
+        ) : (
+          <div className="cchat-msg assistant">
+            <div className="cchat-who">Frank</div>
+            <div className="cchat-body">{b.summary}</div>
+          </div>
+        ))}
+
+      {opts.first && refs.length > 0 && (
+        <section>
+          <div className="cchat-head">What the references teach</div>
+          <div className="ddir-refs">
+            {refs.map((ref) => {
+              const lessons = b.references.find((r) => r.n === ref.n)?.lessons ?? [];
+              return (
+                <div className="ddir-ref" key={ref.n}>
+                  {ref.url ? (
+                    <a href={ref.url} target="_blank" rel="noreferrer" aria-label={`Open reference ${ref.n}`}>
+                      <RefThumb src={ref.image} />
+                    </a>
+                  ) : (
+                    <RefThumb src={pastedUrl(ref)} />
+                  )}
+                  <div className="ddir-ref-b">
+                    <div className="ddir-ref-h">
+                      <b>Reference {ref.n}</b>
+                      {ref.title && <span>{ref.title}</span>}
+                    </div>
+                    {lessons.length ? (
+                      <List items={lessons} />
+                    ) : (
+                      <p className="cchat-note">
+                        {opts.live
+                          ? "Reading…"
+                          : ref.read
+                            ? "Nothing particular to take from this one."
+                            : ref.url
+                              ? "Couldn’t be read: the page needs a sign-in or refused."
+                              : "Too large to include this time."}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {opts.first && b.worked.length > 0 && (
+        <section>
+          <div className="cchat-head">What has worked</div>
+          <List items={b.worked} />
+        </section>
+      )}
+
+      {b.directions.length > 0 && (
+        <section>
+          <div className="cchat-head">{opts.first ? "Directions" : "Revised"}</div>
+          {opts.first && <p className="cchat-note">Use This puts a direction into {notesHome}.</p>}
+          {b.directions.map((d, i) => {
+            const added = opts.run?.chosen === i;
+            return (
+              <div className="cchat-draft ddir-dir" key={i}>
+                <div className="cchat-draft-h">
+                  <b>{d.title}</b>
+                  {!opts.live && opts.run && (
+                    <button
+                      type="button"
+                      className={`btn sm${added ? " added" : ""}`}
+                      aria-pressed={added}
+                      aria-label={added ? `Added: ${d.title}` : `Use This: ${d.title}`}
+                      disabled={choose.isPending}
+                      onClick={() => use(opts.run!, i)}
+                    >
+                      {added ? "Added" : "Use This"}
+                    </button>
+                  )}
+                </div>
+                <dl className="ddir-fields">
+                  {(
+                    [
+                      ["Idea", d.idea],
+                      ["Layout", d.layout],
+                      ["Style", d.style],
+                      ["Palette", d.palette],
+                      ["Type and placement", d.textOnImage],
+                    ] as const
+                  ).map(([label, text]) =>
+                    text ? (
+                      <div key={label}>
+                        <dt>{label}</dt>
+                        <dd>{text}</dd>
+                      </div>
+                    ) : null,
+                  )}
+                  {d.slides.length > 0 && (
+                    <div>
+                      <dt>By {frameNoun.toLowerCase()}</dt>
+                      <dd>
+                        <ol className="ddir-slides">
+                          {d.slides.map((s, k) => (
+                            <li key={k}>{s}</li>
+                          ))}
+                        </ol>
+                      </dd>
+                    </div>
+                  )}
+                  {isVideo && d.reel && (
+                    <>
+                      {d.reel.hook && (
+                        <div>
+                          <dt>First three seconds</dt>
+                          <dd>{d.reel.hook}</dd>
+                        </div>
+                      )}
+                      {d.reel.shots.length > 0 && (
+                        <div>
+                          <dt>Shots</dt>
+                          <dd>
+                            <ol className="ddir-slides">
+                              {d.reel.shots.map((s, k) => (
+                                <li key={k}>{s}</li>
+                              ))}
+                            </ol>
+                          </dd>
+                        </div>
+                      )}
+                      {d.reel.end && (
+                        <div>
+                          <dt>End frame</dt>
+                          <dd>{d.reel.end}</dd>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </dl>
+              </div>
+            );
+          })}
+        </section>
+      )}
+
+      {b.directions.length > 0 &&
+        (b.guardrails.format.length > 0 || b.guardrails.client.length > 0 || b.guardrails.avoid.length > 0) && (
+          <section>
+            <div className="cchat-head">Guardrails</div>
+            <div className="ddir-guard">
+              {b.guardrails.format.length > 0 && (
+                <div>
+                  <b>The format</b>
+                  <List items={b.guardrails.format} />
+                </div>
+              )}
+              {b.guardrails.client.length > 0 && (
+                <div>
+                  <b>{client?.name ? `${client.name}’s brand` : "The brand"}</b>
+                  <List items={b.guardrails.client} />
+                </div>
+              )}
+              {b.guardrails.avoid.length > 0 && (
+                <div>
+                  <b>Avoid</b>
+                  <List items={b.guardrails.avoid} />
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+      {opts.run && !opts.live && (
+        <p className="cchat-note">
+          {opts.run.author ?? "Someone"} asked Frank · {when(opts.run.created_at)}
+        </p>
+      )}
+    </div>
+  );
+
+  const label = (t: { runs: DesignDirectionRow[] }) => (t.runs[0].body.mode === "rework" ? "Reworked the notes" : "From the Concept");
 
   const body = (
     <Modal
@@ -176,14 +424,37 @@ export function DesignDirection({
       size="lg"
       onClose={onClose}
       footer={
-        <>
-          <span className="grow">
-            {newPost ? "Kept with the post when you Create Post. " : ""}Each direction uses one of {agency?.name ? `${agency.name}’s` : "the workspace’s"} monthly AI requests.
-          </span>
-          <button type="button" className="btn" onClick={onClose}>
-            Close
-          </button>
-        </>
+        current ? (
+          <>
+            <textarea
+              className="cchat-input"
+              rows={2}
+              value={draft}
+              placeholder="Ask for changes: bolder, fewer props, another palette… or ask why."
+              aria-label="Message to Frank"
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  reply();
+                }
+              }}
+            />
+            <button type="button" className="btn primary" disabled={!draft.trim() || request.isPending} onClick={reply}>
+              Send
+            </button>
+          </>
+        ) : (
+          <>
+            <span className="grow">
+              {newPost ? "Kept with the post when you Create Post. " : ""}Each direction, and each message after it, uses one of{" "}
+              {agency?.name ? `${agency.name}’s` : "the workspace’s"} monthly AI requests.
+            </span>
+            <button type="button" className="btn" onClick={onClose}>
+              Close
+            </button>
+          </>
+        )
       }
     >
       <div className="cchat">
@@ -195,7 +466,7 @@ export function DesignDirection({
             className="btn primary sm"
             disabled={request.isPending || !canAsk}
             title={canAsk ? undefined : "Write a concept or add a reference first"}
-            onClick={() => ask("concept")}
+            onClick={() => send("concept")}
           >
             Direction from the Concept
           </button>
@@ -204,7 +475,7 @@ export function DesignDirection({
             className="btn sm"
             disabled={request.isPending || !hasNotes}
             title={hasNotes ? undefined : "Write some Notes for Designer first"}
-            onClick={() => ask("rework")}
+            onClick={() => send("rework")}
           >
             Rework My Notes
           </button>
@@ -224,225 +495,81 @@ export function DesignDirection({
                   ? `Not ${theirs} comments: off in ${theirs} Preferences.`
                   : `${theirs.charAt(0).toUpperCase() + theirs.slice(1)} own comments ${feedbackReach(prefs.frank_feedback)}, for what to avoid.`}
               </li>
+              <li>This conversation, and the direction as it last stood.</li>
             </ul>
           </div>
-          {rows.length > 0 && (
+          {threads.length > 0 && (
             <>
-              <div className="cchat-head">Earlier directions</div>
+              <div className="cchat-head">Earlier conversations</div>
               <div className="cchat-pastlist">
-                {rows.map((r) => (
-                  <button
-                    type="button"
-                    key={r.id}
-                    className="cchat-past"
-                    aria-pressed={r.id === row?.id}
-                    onClick={() => setOpenId(r.id)}
-                  >
-                    <b>{r.body.mode === "rework" ? "Reworked the notes" : "From the Concept"}</b>
-                    <span>{r.body.directions.map((d) => d.title).join(", ")}</span>
-                    <span>
-                      {r.author ?? "Someone"} · {when(r.created_at)}
-                    </span>
-                  </button>
-                ))}
+                {threads.map((t) => {
+                  const last = t.runs[t.runs.length - 1];
+                  const replies = t.runs.length - 1;
+                  return (
+                    <button
+                      type="button"
+                      key={t.key}
+                      className="cchat-past"
+                      aria-pressed={t.key === currentKey}
+                      onClick={() => setOpenThread(t.key)}
+                    >
+                      <b>{label(t)}</b>
+                      <span>{t.runs[0].body.directions.map((d) => d.title).join(", ")}</span>
+                      <span>
+                        {last.author ?? "Someone"} · {when(writtenAt(last))}
+                        {replies > 0 ? ` · ${replies} ${replies === 1 ? "reply" : "replies"}` : ""}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </>
           )}
         </div>
 
         <div className="cchat-main ddir" aria-live="polite">
-          {!shown ? (
+          {!current && !live && (
             <div className="cchat-empty">
-              {isLoading
-                ? "Loading…"
-                : "Start with a direction from the Concept, or ask Frank to rework your Notes for Designer."}
+              {isLoading ? "Loading…" : "Start with a direction from the Concept, or ask Frank to rework your Notes for Designer."}
             </div>
-          ) : (
-            <>
-              {shown.body.summary && <p className="ddir-summary">{shown.body.summary}</p>}
-
-              {shown.refs.length > 0 && (
-                <section>
-                  <div className="cchat-head">What the references teach</div>
-                  <div className="ddir-refs">
-                    {shown.refs.map((ref) => {
-                      const lessons = shown.body.references.find((r) => r.n === ref.n)?.lessons ?? [];
-                      return (
-                        <div className="ddir-ref" key={ref.n}>
-                          {ref.url ? (
-                            <a href={ref.url} target="_blank" rel="noreferrer" aria-label={`Open reference ${ref.n}`}>
-                              <RefThumb src={ref.image} />
-                            </a>
-                          ) : (
-                            <RefThumb src={pastedUrl(ref)} />
-                          )}
-                          <div className="ddir-ref-b">
-                            <div className="ddir-ref-h">
-                              <b>Reference {ref.n}</b>
-                              {ref.title && <span>{ref.title}</span>}
-                            </div>
-                            {lessons.length ? (
-                              <List items={lessons} />
-                            ) : (
-                              <p className="cchat-note">
-                                {shown.live
-                                  ? "Reading\u2026"
-                                  : ref.read
-                                    ? "Nothing particular to take from this one."
-                                    : ref.url
-                                      ? "Couldn\u2019t be read: the page needs a sign-in or refused."
-                                      : "Too large to include this time."}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </section>
-              )}
-
-              {shown.body.worked.length > 0 && (
-                <section>
-                  <div className="cchat-head">What has worked</div>
-                  <List items={shown.body.worked} />
-                </section>
-              )}
-
-              <section>
-                <div className="cchat-head">Directions</div>
-                <p className="cchat-note">Use This puts a direction into {notesHome}.</p>
-                {shown.body.directions.map((d, i) => {
-                  const added = shown.chosen === i;
-                  return (
-                    <div className="cchat-draft ddir-dir" key={i}>
-                      <div className="cchat-draft-h">
-                        <b>{d.title}</b>
-                        {!shown.live && <button
-                          type="button"
-                          className={`btn sm${added ? " added" : ""}`}
-                          aria-pressed={added}
-                          aria-label={added ? `Added: ${d.title}` : `Use This: ${d.title}`}
-                          disabled={choose.isPending}
-                          onClick={() => use(i)}
-                        >
-                          {added ? "Added" : "Use This"}
-                        </button>}
-                      </div>
-                      <dl className="ddir-fields">
-                        {(
-                          [
-                            ["Idea", d.idea],
-                            ["Layout", d.layout],
-                            ["Style", d.style],
-                            ["Palette", d.palette],
-                            ["Type and placement", d.textOnImage],
-                          ] as const
-                        ).map(([label, text]) =>
-                          text ? (
-                            <div key={label}>
-                              <dt>{label}</dt>
-                              <dd>{text}</dd>
-                            </div>
-                          ) : null,
-                        )}
-                        {d.slides.length > 0 && (
-                          <div>
-                            <dt>By {frameNoun.toLowerCase()}</dt>
-                            <dd>
-                              <ol className="ddir-slides">
-                                {d.slides.map((s, k) => (
-                                  <li key={k}>{s}</li>
-                                ))}
-                              </ol>
-                            </dd>
-                          </div>
-                        )}
-                        {isVideo && d.reel && (
-                          <>
-                            {d.reel.hook && (
-                              <div>
-                                <dt>First three seconds</dt>
-                                <dd>{d.reel.hook}</dd>
-                              </div>
-                            )}
-                            {d.reel.shots.length > 0 && (
-                              <div>
-                                <dt>Shots</dt>
-                                <dd>
-                                  <ol className="ddir-slides">
-                                    {d.reel.shots.map((s, k) => (
-                                      <li key={k}>{s}</li>
-                                    ))}
-                                  </ol>
-                                </dd>
-                              </div>
-                            )}
-                            {d.reel.end && (
-                              <div>
-                                <dt>End frame</dt>
-                                <dd>{d.reel.end}</dd>
-                              </div>
-                            )}
-                          </>
-                        )}
-                      </dl>
-                    </div>
-                  );
-                })}
-              </section>
-
-              {(shown.body.guardrails.format.length > 0 ||
-                shown.body.guardrails.client.length > 0 ||
-                shown.body.guardrails.avoid.length > 0) && (
-                <section>
-                  <div className="cchat-head">Guardrails</div>
-                  <div className="ddir-guard">
-                    {shown.body.guardrails.format.length > 0 && (
-                      <div>
-                        <b>The format</b>
-                        <List items={shown.body.guardrails.format} />
-                      </div>
-                    )}
-                    {shown.body.guardrails.client.length > 0 && (
-                      <div>
-                        <b>{client?.name ? `${client.name}’s brand` : "The brand"}</b>
-                        <List items={shown.body.guardrails.client} />
-                      </div>
-                    )}
-                    {shown.body.guardrails.avoid.length > 0 && (
-                      <div>
-                        <b>Avoid</b>
-                        <List items={shown.body.guardrails.avoid} />
-                      </div>
-                    )}
-                  </div>
-                </section>
-              )}
-              {shown.live ? (
-                <div className="cchat-msg assistant pending" role="status">
-                  <div className="cchat-who">Frank</div>
-                  <div className="cchat-thinking">
-                    {progress.text ? "Frank is writing" : "Frank is reading the references"}
-                    <span className="cchat-dots" aria-hidden="true">
-                      <i />
-                      <i />
-                      <i />
-                    </span>
-                  </div>
+          )}
+          {current?.runs.map((run, i) => (
+            <div key={run.id} className="ddir-turn">
+              {run.body.mode === "followup" && run.body.ask && (
+                <div className="cchat-msg user">
+                  <div className="cchat-who">You</div>
+                  <div className="cchat-body">{run.body.ask}</div>
                 </div>
-              ) : (
-                row && (
-                  <p className="cchat-note">
-                    {row.author ?? "Someone"} asked Frank · {when(row.created_at)}
-                  </p>
-                )
               )}
-            </>
+              {answer(run.id, run.body, run.refs, { run, first: i === 0, live: false })}
+            </div>
+          ))}
+          {live && (
+            <div className="ddir-turn">
+              {asking?.ask && (
+                <div className="cchat-msg user">
+                  <div className="cchat-who">You</div>
+                  <div className="cchat-body">{asking.ask}</div>
+                </div>
+              )}
+              {answer("live", live.body, live.refs, { first: !asking?.ask, live: true })}
+              <div className="cchat-msg assistant pending" role="status">
+                <div className="cchat-who">Frank</div>
+                <div className="cchat-thinking">
+                  {progress.text ? "Frank is writing" : asking?.ask ? "Frank is thinking" : "Frank is reading the references"}
+                  <span className="cchat-dots" aria-hidden="true">
+                    <i />
+                    <i />
+                    <i />
+                  </span>
+                </div>
+              </div>
+            </div>
           )}
           {request.error && <p className="autherr">{errorMessage(request.error, "Frank didn't answer")}</p>}
           {choose.error && <p className="autherr">{errorMessage(choose.error, "Couldn't mark this direction")}</p>}
           {skipped.length > 0 && <p className="cchat-note">Too large to include this time: {skipped.join(", ")}.</p>}
+          <div ref={endRef} />
         </div>
       </div>
     </Modal>
