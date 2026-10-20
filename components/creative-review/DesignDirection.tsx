@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Modal } from "@/components/ui/Modal";
 import {
@@ -50,6 +50,9 @@ function List({ items }: { items: string[] }) {
 // Portalled to the page: it opens over the post window.
 export function DesignDirection({
   creativeId,
+  newPost,
+  unsavedRuns,
+  onUnsavedRunsChange,
   postName,
   clientId,
   concept,
@@ -57,11 +60,19 @@ export function DesignDirection({
   slideCount,
   frameNoun,
   isVideo,
+  notes,
   notesHome,
   onUse,
   onClose,
 }: {
-  creativeId: string;
+  // Null on a post not yet made (direct instruction: Save Concept locks
+  // the concept in before Create Post): then its project, name, formats
+  // and pasted images go with each request, and the directions stay in
+  // unsavedRuns, kept by the post's window until Create Post saves them.
+  creativeId: string | null;
+  newPost: { projectId: string; name: string; formats: string[]; images: File[] } | null;
+  unsavedRuns: DesignDirectionRow[];
+  onUnsavedRunsChange: (runs: DesignDirectionRow[]) => void;
   postName: string;
   clientId: string | null;
   // The brief as it is in the window, saved or not.
@@ -70,25 +81,36 @@ export function DesignDirection({
   slideCount: number | null;
   frameNoun: string;
   isVideo: boolean;
+  // The window's Notes for Designer, for Rework My Notes.
+  notes: { overall: string; slides: string[] };
   // Where Use This puts a direction, in words, for the note under it.
   notesHome: string;
   // A direction into the notes, or null to put back what was there.
   onUse: (direction: DesignDirectionOption | null, guardrails?: Body["guardrails"]) => void;
   onClose: () => void;
 }) {
-  const { data: rows, isLoading } = useDesignDirections(creativeId);
+  const { data: savedRows, isLoading: loadingSaved } = useDesignDirections(creativeId);
+  const rows = [...unsavedRuns, ...(savedRows ?? [])];
+  const isLoading = !!creativeId && loadingSaved;
   const request = useRequestDesignDirection(creativeId);
-  const choose = useChooseDesignDirection(creativeId);
+  const choose = useChooseDesignDirection(creativeId ?? "");
+  // A new post's pasted images, shown from this computer.
+  const newImages = newPost?.images;
+  const newImageUrls = useMemo(() => (newImages ?? []).map((f) => URL.createObjectURL(f)), [newImages]);
+  useEffect(() => () => newImageUrls.forEach((u) => URL.revokeObjectURL(u)), [newImageUrls]);
   const { data: agency } = useMyAgency();
   const { data: client } = useClientDetail(clientId ?? "");
   const { data: prefs } = useClientPreferences(clientId);
   const theirs = client?.name ? `${client.name}’s` : "the client’s";
   const [openId, setOpenId] = useState<string | null>(null);
   const [skipped, setSkipped] = useState<string[]>([]);
-  const row: DesignDirectionRow | undefined = rows?.find((r) => r.id === openId) ?? rows?.[0];
+  const row: DesignDirectionRow | undefined = rows.find((r) => r.id === openId) ?? rows[0];
   const { data: pastedImages } = useReferenceImages(creativeId);
-  const pastedUrl = (key: string | undefined) => pastedImages?.find((p) => p.storageKey === key)?.url ?? null;
-  const canAsk = !!concept.trim() || referenceUrls.length > 0 || !!pastedImages?.length;
+  const pastedUrl = (ref: DesignDirectionRef) =>
+    ref.pendingIndex !== undefined
+      ? (newImageUrls[ref.pendingIndex] ?? null)
+      : (pastedImages?.find((p) => p.storageKey === ref.assetKey)?.url ?? null);
+  const canAsk = !!concept.trim() || referenceUrls.length > 0 || !!pastedImages?.length || !!newPost?.images.length;
   // While Frank writes (direct instruction: shown as it's written): the
   // references it's reading, and what it has written so far.
   const [progress, setProgress] = useState<{ refs: DesignDirectionRef[]; text: string }>({ refs: [], text: "" });
@@ -98,14 +120,28 @@ export function DesignDirection({
       ? { body: row.body, refs: row.refs, chosen: row.chosen, live: false }
       : null;
 
-  function ask() {
+  const hasNotes = !!notes.overall.trim() || notes.slides.some((t) => t.trim());
+
+  function ask(mode: "concept" | "rework") {
     setProgress({ refs: [], text: "" });
     request.mutate(
-      { concept, referenceUrls, slideCount, onProgress: setProgress },
+      { concept, referenceUrls, slideCount, newPost: newPost ?? undefined, mode, notes, onProgress: setProgress },
       {
         onSuccess: (r) => {
-          setOpenId(r.id);
           setSkipped(r.skippedFiles);
+          if (r.id) return setOpenId(r.id);
+          if (!r.direction) return;
+          // Kept by the window until Create Post.
+          const run: DesignDirectionRow = {
+            id: crypto.randomUUID(),
+            body: r.direction,
+            refs: r.refs ?? [],
+            chosen: null,
+            created_at: new Date().toISOString(),
+            author: "You",
+          };
+          onUnsavedRunsChange([run, ...unsavedRuns]);
+          setOpenId(run.id);
         },
       },
     );
@@ -114,7 +150,11 @@ export function DesignDirection({
   function use(i: number) {
     if (!row) return;
     const added = row.chosen === i;
-    choose.mutate({ id: row.id, chosen: added ? null : i });
+    if (unsavedRuns.some((r) => r.id === row.id)) {
+      onUnsavedRunsChange(unsavedRuns.map((r) => (r.id === row.id ? { ...r, chosen: added ? null : i } : r)));
+    } else {
+      choose.mutate({ id: row.id, chosen: added ? null : i });
+    }
     onUse(added ? null : row.body.directions[i], row.body.guardrails);
   }
 
@@ -132,7 +172,7 @@ export function DesignDirection({
       footer={
         <>
           <span className="grow">
-            Each direction uses one of {agency?.name ? `${agency.name}’s` : "the workspace’s"} monthly AI requests.
+            {newPost ? "Kept with the post when you Create Post. " : ""}Each direction uses one of {agency?.name ? `${agency.name}’s` : "the workspace’s"} monthly AI requests.
           </span>
           <button type="button" className="btn" onClick={onClose}>
             Close
@@ -142,19 +182,31 @@ export function DesignDirection({
     >
       <div className="cchat">
         <div className="cchat-side">
+          {/* Two ways in, as Draft with Frank's (direct instruction): a
+              direction from the Concept alone, or a rework of the notes. */}
           <button
             type="button"
             className="btn primary sm"
             disabled={request.isPending || !canAsk}
             title={canAsk ? undefined : "Write a concept or add a reference first"}
-            onClick={ask}
+            onClick={() => ask("concept")}
           >
-            {rows?.length ? "Write a New Direction" : "Write a Direction"}
+            Direction from the Concept
+          </button>
+          <button
+            type="button"
+            className="btn sm"
+            disabled={request.isPending || !hasNotes}
+            title={hasNotes ? undefined : "Write some Notes for Designer first"}
+            onClick={() => ask("rework")}
+          >
+            Rework My Notes
           </button>
           <div className="cchat-head">Frank reads</div>
           <div className="cchat-note">
             <ul className="cchat-reads">
               <li>This post&rsquo;s Concept, format, WIIFM and Text on Image, as they are in the window.</li>
+              <li>For a rework, your Notes for Designer as they are in the window: kept where they work, sharpened where they don&rsquo;t.</li>
               <li>
                 Each reference link&rsquo;s page and preview image, up to 8, and the images pasted into References. A public
                 Instagram post&rsquo;s likes and comments show which did best.
@@ -168,7 +220,7 @@ export function DesignDirection({
               </li>
             </ul>
           </div>
-          {rows && rows.length > 1 && (
+          {rows.length > 0 && (
             <>
               <div className="cchat-head">Earlier directions</div>
               <div className="cchat-pastlist">
@@ -180,7 +232,8 @@ export function DesignDirection({
                     aria-pressed={r.id === row?.id}
                     onClick={() => setOpenId(r.id)}
                   >
-                    <b>{r.body.directions.map((d) => d.title).join(", ")}</b>
+                    <b>{r.body.mode === "rework" ? "Reworked the notes" : "From the Concept"}</b>
+                    <span>{r.body.directions.map((d) => d.title).join(", ")}</span>
                     <span>
                       {r.author ?? "Someone"} · {when(r.created_at)}
                     </span>
@@ -196,7 +249,7 @@ export function DesignDirection({
             <div className="cchat-empty">
               {isLoading
                 ? "Loading…"
-                : "Frank reads the concept and the references, and suggests how to design this post: what the references do well, two or three directions, and what to avoid."}
+                : "Start with a direction from the Concept, or ask Frank to rework your Notes for Designer."}
             </div>
           ) : (
             <>
@@ -215,7 +268,7 @@ export function DesignDirection({
                               <RefThumb src={ref.image} />
                             </a>
                           ) : (
-                            <RefThumb src={pastedUrl(ref.assetKey)} />
+                            <RefThumb src={pastedUrl(ref)} />
                           )}
                           <div className="ddir-ref-b">
                             <div className="ddir-ref-h">

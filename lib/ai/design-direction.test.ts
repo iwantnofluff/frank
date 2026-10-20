@@ -105,3 +105,12 @@ test("a direction part-written reads as far as it goes", () => {
   assert.equal(later.directions[0].idea, "Ste");
   assert.deepEqual(parsePartialDesignDirection("", null, false).directions, []);
 });
+
+test("a rework reads the team's notes and asks to keep what they decided", () => {
+  const p = buildDesignDirectionPrompt({ ...context, mode: "rework", notes: { overall: "Big pumpkin, orange", slides: ["Cover", "", "End"] } });
+  assert.match(p, /Notes for Designer for this post, to rework:\nBig pumpkin, orange/);
+  assert.match(p, /Slide 1: Cover\n- Slide 3: End/);
+  assert.match(p, /Rework the team's notes rather than starting again/);
+  assert.doesNotMatch(p, /Offer two or three directions/);
+  assert.match(buildDesignDirectionPrompt(context), /Offer two or three directions/);
+});

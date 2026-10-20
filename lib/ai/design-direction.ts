@@ -36,7 +36,13 @@ export interface DesignContext {
   fileTitles: string[];
   clientFeedback: { post: string; body: string; category: string | null }[];
   references: DesignReference[];
+  // From the Concept alone, or a rework of the team's own Notes for
+  // Designer (direct instruction, as Draft with Frank drafts or reviews).
+  mode?: DesignMode;
+  notes?: { overall: string; slides: string[] };
 }
+
+export type DesignMode = "concept" | "rework";
 
 export interface DesignDirectionOption {
   title: string;
@@ -52,6 +58,8 @@ export interface DesignDirectionOption {
 }
 
 export interface DesignDirection {
+  // How it was asked for; from the Concept when not said (phase110's).
+  mode?: DesignMode;
   summary: string;
   references: { n: number; lessons: string[] }[];
   worked: string[];
@@ -85,6 +93,19 @@ function referencesBlock(refs: DesignReference[]): string {
         .join("\n"),
     ),
   ].join("\n");
+}
+
+function notesBlock(notes: { overall: string; slides: string[] }, multi: number | null, frameNoun: string): string {
+  const slides = notes.slides
+    .map((t, i) => (t.trim() ? `- ${frameNoun} ${i + 1}: ${clip(t, 600)}` : null))
+    .filter(Boolean);
+  return [
+    "The team's Notes for Designer for this post, to rework:",
+    notes.overall.trim() ? clip(notes.overall, 3000) : "(no overall note)",
+    multi && slides.length ? `By ${frameNoun.toLowerCase()}:\n${slides.join("\n")}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 export function buildDesignDirectionPrompt(context: DesignContext): string {
@@ -124,7 +145,12 @@ export function buildDesignDirectionPrompt(context: DesignContext): string {
         ].join("\n")
       : null,
     referencesBlock(context.references),
-    `Offer two or three directions, each genuinely different.${
+    context.mode === "rework" && context.notes ? notesBlock(context.notes, multi, context.frameNoun) : null,
+    `${
+      context.mode === "rework"
+        ? "Rework the team's notes rather than starting again: keep what they decided, make it specific and visual, fill what's missing, and correct anything that goes against the brand or the client's feedback, saying so in the summary. Offer one or two reworked versions: the first stays closest to their notes, the second may go further. Each direction's title says how it differs."
+        : "Offer two or three directions, each genuinely different."
+    }${
       multi
         ? ` Each direction gives exactly ${multi} lines in slides, one per ${context.frameNoun.toLowerCase()}, in order: what to design on it. The Text on Image is already written: say where it sits, don't repeat it.`
         : ""

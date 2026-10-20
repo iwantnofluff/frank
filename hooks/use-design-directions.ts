@@ -11,6 +11,8 @@ export interface DesignDirectionRef {
   title: string | null;
   image: string | null;
   assetKey?: string;
+  // A new post's pasted image, by its place, until Create Post saves it.
+  pendingIndex?: number;
   read: boolean;
 }
 
@@ -59,7 +61,10 @@ export function useDesignDirections(creativeId: string | null | undefined) {
 // streamed (direct instruction: shown as it's written): onProgress hears
 // the references Frank is reading, then all the text so far each time
 // more arrives.
-export function useRequestDesignDirection(creativeId: string) {
+// On a new post (creativeId null) the window sends its project, name,
+// formats and pasted images, and the direction comes back unsaved, for the
+// window to keep until Create Post.
+export function useRequestDesignDirection(creativeId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({
@@ -69,12 +74,29 @@ export function useRequestDesignDirection(creativeId: string) {
       concept: string;
       referenceUrls: string[];
       slideCount: number | null;
+      newPost?: { projectId: string; name: string; formats: string[]; images: File[] };
+      // From the Concept, or a rework of these notes.
+      mode: "concept" | "rework";
+      notes: { overall: string; slides: string[] };
       onProgress?: (progress: { refs: DesignDirectionRef[]; text: string }) => void;
-    }): Promise<{ id: string; skippedFiles: string[] }> => {
+    }): Promise<{ id: string | null; direction?: Body; refs?: DesignDirectionRef[]; skippedFiles: string[] }> => {
+      const { newPost, ...brief } = input;
+      const images = newPost
+        ? await Promise.all(
+            newPost.images.map(async (f) => ({
+              mediaType: f.type,
+              base64: btoa(Array.from(new Uint8Array(await f.arrayBuffer()), (b) => String.fromCharCode(b)).join("")),
+            })),
+          )
+        : undefined;
       const res = await fetch("/api/ai/design-direction", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ creativeId, ...input }),
+        body: JSON.stringify(
+          newPost
+            ? { ...brief, projectId: newPost.projectId, name: newPost.name, formats: newPost.formats, images }
+            : { creativeId, ...brief },
+        ),
       });
       if (!res.ok || !res.body) {
         const data = await res.json().catch(() => ({}));
@@ -93,11 +115,20 @@ export function useRequestDesignDirection(creativeId: string) {
         let changed = false;
         for (const line of lines) {
           if (!line.trim()) continue;
-          const event = JSON.parse(line) as { type: string; refs?: DesignDirectionRef[]; text?: string; id?: string; skippedFiles?: string[]; error?: string };
+          const event = JSON.parse(line) as {
+            type: string;
+            refs?: DesignDirectionRef[];
+            text?: string;
+            id?: string | null;
+            direction?: Body;
+            skippedFiles?: string[];
+            error?: string;
+          };
           if (event.type === "refs") refs = event.refs ?? [];
           else if (event.type === "text") text += event.text ?? "";
           else if (event.type === "error") throw new Error(event.error ?? "Frank didn't answer");
-          else if (event.type === "done") return { id: event.id!, skippedFiles: event.skippedFiles ?? [] };
+          else if (event.type === "done")
+            return { id: event.id ?? null, direction: event.direction, refs: event.refs, skippedFiles: event.skippedFiles ?? [] };
           changed = true;
         }
         if (changed) onProgress?.({ refs, text });
@@ -105,9 +136,37 @@ export function useRequestDesignDirection(creativeId: string) {
       throw new Error("Frank stopped before finishing. Try again.");
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["design-directions", creativeId] });
+      if (creativeId) await queryClient.invalidateQueries({ queryKey: ["design-directions", creativeId] });
     },
   });
+}
+
+// A new post's directions, written before it was made, saved with it once
+// Create Post makes it: oldest first, each with the one chosen, and a
+// pasted image's file once the post's images are saved (by their place).
+export async function saveDirectionsForNewPost(
+  creativeId: string,
+  runs: { body: Body; refs: DesignDirectionRef[]; chosen: number | null }[],
+  pastedKeys: string[],
+) {
+  if (!runs.length) return;
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+  const { error } = await supabase.from("design_directions").insert(
+    [...runs].reverse().map((r) => ({
+      creative_id: creativeId,
+      body: r.body,
+      chosen: r.chosen,
+      created_by: user.id,
+      refs: r.refs.map(({ pendingIndex, ...ref }) =>
+        pendingIndex !== undefined && pastedKeys[pendingIndex] ? { ...ref, assetKey: pastedKeys[pendingIndex] } : ref,
+      ),
+    })),
+  );
+  if (error) throw error;
 }
 
 // Which direction the team chose (Use This), or none. A blocked update

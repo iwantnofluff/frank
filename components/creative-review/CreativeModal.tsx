@@ -69,7 +69,9 @@ import { DesignDirection } from "@/components/creative-review/DesignDirection";
 import { directionAsDesignNote, type DesignDirection as DesignDirectionBody, type DesignDirectionOption } from "@/lib/ai/design-direction";
 import { ReferenceImages, imageFiles } from "@/components/creative-review/ReferenceImages";
 import { uploadReferenceImages } from "@/hooks/use-reference-images";
-import { useDesignDirections } from "@/hooks/use-design-directions";
+import { ConceptChangedError, useSaveConcept } from "@/hooks/use-save-concept";
+import { saveDirectionsForNewPost, type DesignDirectionRow } from "@/hooks/use-design-directions";
+import { useQueryClient } from "@tanstack/react-query";
 import type { VoicePostFields } from "@/lib/ai/voice-post";
 
 const KNOWLEDGE_SECTION_LABELS: Record<string, string> = Object.fromEntries(
@@ -548,6 +550,12 @@ export function CreativeModal(props: CreativeModalProps) {
   const [destination, setDestination] = useState(isCreate ? "" : (props.creative.destination ?? ""));
   const [dueOn, setDueOn] = useState(isCreate ? "" : (props.creative.due_on ?? ""));
   const [concept, setConcept] = useState(isCreate ? "" : (props.creative.concept ?? ""));
+  // The Concept as last saved with Save Concept, Update or Create Post; on
+  // a new post, as locked in by Save Concept (direct instruction: nothing
+  // is made until Create Post). Design with Frank waits for it.
+  const [savedConcept, setSavedConcept] = useState<string | null>(isCreate ? null : (props.creative.concept ?? "").trim());
+  const [conceptNote, setConceptNote] = useState<string | null>(null);
+  const conceptReady = !!concept.trim() && savedConcept !== null && concept.trim() === savedConcept;
   // Every reference link (phase58), at least one box to type into.
   const [referenceUrls, setReferenceUrls] = useState<string[]>(() => {
     const saved = isCreate ? [] : (props.creative.reference_urls ?? []);
@@ -715,11 +723,20 @@ export function CreativeModal(props: CreativeModalProps) {
       });
       setCreatedCreativeId(newId);
       setSavedBrief({ formats, slideCount });
-      // The new post's reference images and Design Direction (phase111).
+      setSavedConcept(concept.trim());
+      setConceptNote(null);
+      // The new post's reference images, and any directions Design with
+      // Frank wrote before it was made (phase111).
       try {
+        let pastedKeys: string[] = [];
         if (pendingRefImages.length && agencyId) {
-          await uploadReferenceImages(agencyId, newId, pendingRefImages);
+          pastedKeys = (await uploadReferenceImages(agencyId, newId, pendingRefImages)).map((r) => r.key);
           setPendingRefImages([]);
+        }
+        if (unsavedRuns.length) {
+          await saveDirectionsForNewPost(newId, unsavedRuns, pastedKeys);
+          setUnsavedRuns([]);
+          await queryClient.invalidateQueries({ queryKey: ["design-directions", newId] });
         }
         // Notes for Designer, the team's own (phase112).
         if (!sameNotes(draftNotes, EMPTY_NOTES)) {
@@ -727,7 +744,7 @@ export function CreativeModal(props: CreativeModalProps) {
           setKnownNotes(draftNotes);
         }
       } catch (e) {
-        setRefSaveError(errorMessage(e, "The post was made, but its reference images or Notes for Designer couldn't be saved"));
+        setRefSaveError(errorMessage(e, "The post was made, but its reference images, Notes for Designer or directions couldn't be saved"));
       }
       setSavedFields({ principles: principles.trim() });
       props.onCreated?.(scheduledAt, delivery === "continuous" ? dueOn || null : null);
@@ -780,6 +797,8 @@ export function CreativeModal(props: CreativeModalProps) {
       return;
     }
     setBriefBase(savedAt);
+    setSavedConcept(concept.trim());
+    setConceptNote(null);
     // Notes for Designer, overall and by slide (phase112), when changed.
     if (pendingNotesChange && creativeId) {
       try {
@@ -937,6 +956,38 @@ export function CreativeModal(props: CreativeModalProps) {
   // Design with Frank (phase110), and what Notes for Designer held before
   // a direction went in, so pressing Added puts it back.
   const [designOpen, setDesignOpen] = useState(false);
+  // Directions Design with Frank wrote for a post not yet made, newest
+  // first, kept here until Create Post saves them with it.
+  const [unsavedRuns, setUnsavedRuns] = useState<DesignDirectionRow[]>([]);
+  const queryClient = useQueryClient();
+  const saveConcept = useSaveConcept(creativeId ?? "");
+  // Save Concept and Notes (direct instruction, as Save Content): on a
+  // saved post, the Concept and Notes for Designer; on a new one, the
+  // Concept locked in for Design with Frank, both saved by Create Post.
+  async function handleSaveConcept() {
+    const text = concept.trim();
+    if (!text) return;
+    if (!creativeId) {
+      setSavedConcept(text);
+      setConceptNote("Saved. Create Post adds them to the post.");
+      return;
+    }
+    try {
+      if (text !== savedConcept) {
+        const at = await saveConcept.mutateAsync({ concept: text, expectedUpdatedAt: briefBase });
+        setBriefBase(at);
+        setOpened((o) => (o ? { ...o, concept: text } : o));
+        setSavedConcept(text);
+      }
+      if (pendingNotesChange) {
+        await saveNotes.mutateAsync({ creativeId, notes: draftNotes, known: knownNotesNow });
+        setKnownNotes(draftNotes);
+      }
+      setConceptNote("Saved.");
+    } catch {
+      // Shown under the button, or under the notes.
+    }
+  }
   const [notesBefore, setNotesBefore] = useState<{ overall: string; slides: string[] } | null>(null);
   // Notes for Designer (phase112, direct instruction): the team's own,
   // overall and one per image, from their own table. What's shown is the
@@ -954,7 +1005,6 @@ export function CreativeModal(props: CreativeModalProps) {
   const setDesignerNotes = setOverallDraft;
   const setSlideNotes = (next: string[]) => setSlideNotesDraft(next);
   const saveNotes = useSaveDesignerNotes(projectId);
-  const { data: directionRuns } = useDesignDirections(creativeId);
   // Reference images (phase111): a new post's wait here until it's made;
   // what's pasted into a link box is handed to ReferenceImages.
   const [pendingRefImages, setPendingRefImages] = useState<File[]>([]);
@@ -1278,13 +1328,13 @@ export function CreativeModal(props: CreativeModalProps) {
         activeTab === "brief" ? (
           <>
             {/* Design with Frank (phase110) in the Brief's footer, as Draft
-                with Frank is in Content's (direct instruction); its note is
-                under the notes fields, not beside it (direct instruction). */}
+                with Frank is in Content's (direct instruction), with no note
+                beside or under it (direct instruction). */}
             <button
               type="button"
               className="btn primary btn-frank"
-              disabled={!modelLabel || !creativeId}
-              title={creativeId ? undefined : "Save the brief first"}
+              disabled={!modelLabel || !conceptReady}
+              title={conceptReady ? undefined : "Save the Concept first"}
               onClick={() => setDesignOpen(true)}
             >
               <svg className="aicon" viewBox="0 0 24 24">
@@ -1599,7 +1649,7 @@ export function CreativeModal(props: CreativeModalProps) {
                 rows={designerNotes ? 6 : 3}
                 value={designerNotes}
                 onChange={(e) => setDesignerNotes(e.target.value)}
-                placeholder="What the designer should know: the idea, layout, style, things to avoid. Use This in Design with Frank fills it."
+                placeholder="What the designer should know: the idea, layout, style, things to avoid."
               />
           </div>
           {/* Other Content's Principles, here now no cell is edited in
@@ -1633,16 +1683,30 @@ export function CreativeModal(props: CreativeModalProps) {
             </div>
           )}
 
-          {/* What Design with Frank does, or how many directions it's
-              written and when, under the notes it fills (direct
-              instruction: not in the footer). */}
-          <p className="ddir-note">
-            {!creativeId
-              ? "Once the brief is saved, Design with Frank can suggest how to design this post."
-              : directionRuns?.length
-                ? `${directionRuns.length === 1 ? "1 direction" : `${directionRuns.length} directions`} from Design with Frank, the latest by ${directionRuns[0].author ?? "someone"} on ${new Date(directionRuns[0].created_at).toLocaleDateString(undefined, { day: "numeric", month: "short" })}.`
-                : "Design with Frank reads the concept and references, and suggests how to design this post."}
-          </p>
+          {/* Save Concept and Notes (direct instruction, as Save Content
+              is on the Content tab), under the notes: on a saved post, the
+              Concept and Notes for Designer; on a new one, the Concept
+              locked in for Design with Frank, both saved by Create Post. */}
+          <div className="field btnrow">
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <button
+                type="button"
+                className="btn sm primary"
+                disabled={!concept.trim() || (conceptReady && !(creativeId && pendingNotesChange)) || saveConcept.isPending || saveNotes.isPending}
+                onClick={handleSaveConcept}
+              >
+                {saveConcept.isPending || saveNotes.isPending ? "Saving…" : "Save Concept and Notes"}
+              </button>
+              {conceptNote && conceptReady && !(creativeId && pendingNotesChange) && <span className="bsaved">{conceptNote}</span>}
+            </div>
+            {saveConcept.error && (
+              <p className="autherr">
+                {saveConcept.error instanceof ConceptChangedError
+                  ? saveConcept.error.message
+                  : errorMessage(saveConcept.error, "Couldn't save the Concept")}
+              </p>
+            )}
+          </div>
           {saveNotes.error instanceof DesignerNotesChangedError ? (
             <p className="autherr">
               {saveNotes.error.message}{" "}
@@ -2127,9 +2191,12 @@ export function CreativeModal(props: CreativeModalProps) {
         }}
       />
     )}
-    {designOpen && creativeId && (
+    {designOpen && (
       <DesignDirection
         creativeId={creativeId}
+        newPost={creativeId ? null : { projectId, name: name.trim(), formats, images: pendingRefImages }}
+        unsavedRuns={unsavedRuns}
+        onUnsavedRunsChange={setUnsavedRuns}
         postName={name || (isCreate ? "New post" : props.creative.name)}
         clientId={clientId ?? null}
         concept={concept}
@@ -2137,6 +2204,7 @@ export function CreativeModal(props: CreativeModalProps) {
         slideCount={slideCount}
         frameNoun={frameNoun}
         isVideo={isVideo}
+        notes={draftNotes}
         notesHome={
           slideCount
             ? `Notes for Designer, overall and by ${frameNoun.toLowerCase()}, saved when you Update`

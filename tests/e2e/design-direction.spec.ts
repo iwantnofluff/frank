@@ -54,9 +54,19 @@ test("a pasted reference image, and a direction into Notes for Designer, for the
   await expect(page.locator(".refimg img")).toHaveCount(1, { timeout: 15_000 });
   await expect.poll(async () => (await staff.from("reference_images").select("id").eq("creative_id", frank.creativeId)).data?.length).toBe(1);
 
-  // Design with Frank, from the footer: the seeded direction's Use This
-  // fills Notes for Designer with it and its guardrails; Update saves it.
-  await page.getByRole("button", { name: "Design with Frank" }).click();
+  // Design with Frank waits for a saved Concept (direct instruction).
+  const designWithFrank = page.getByRole("button", { name: "Design with Frank" });
+  await expect(designWithFrank).toBeDisabled();
+  await page.locator("#nbConcept").fill("Warm and slow.");
+  await page.getByRole("button", { name: "Save Concept and Notes" }).click();
+  await expect(page.locator(".bsaved", { hasText: "Saved." })).toBeVisible({ timeout: 15_000 });
+  await expect(designWithFrank).toBeEnabled();
+  // Then, from the footer: the seeded direction's Use This fills Notes for
+  // Designer with it and its guardrails; Update saves it.
+  await designWithFrank.click();
+  // Two ways in, as Draft with Frank's: Rework My Notes needs notes.
+  await expect(page.getByRole("button", { name: "Direction from the Concept" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Rework My Notes" })).toBeDisabled();
   await page.getByRole("button", { name: "Use This: Steam" }).click();
   await expect(page.getByRole("button", { name: "Added: Steam" })).toBeVisible();
   await page.getByRole("button", { name: "Close" }).last().click();
@@ -82,4 +92,47 @@ test("a pasted reference image, and a direction into Notes for Designer, for the
   expect((await client.from("reference_images").select("id")).data).toEqual([]);
   expect((await client.from("designer_notes").select("creative_id")).data).toEqual([]);
   expect((await client.from("design_directions").select("id")).data).toEqual([]);
+});
+
+test("Save Concept and Notes: on a new post it locks the Concept in for Design with Frank; on a saved one it saves the Concept and notes only", async ({ page, frank }) => {
+  test.setTimeout(60_000);
+  await frank.loginAsStaff(page);
+
+  // A saved post: only the Concept is saved, and Update after it isn't
+  // taken for someone else's change.
+  await page.goto(`/creatives/${frank.creativeId}`);
+  await page.getByRole("button", { name: "Edit", exact: true }).click();
+  await page.getByRole("tab", { name: "Brief" }).click();
+  await page.locator("#nbConcept").fill("Saved on its own");
+  await page.locator("#nbNotes").fill("Pumpkin top left");
+  await page.locator("#nbName").fill("Renamed Later");
+  await page.getByRole("button", { name: "Save Concept and Notes" }).click();
+  await expect(page.locator(".bsaved", { hasText: "Saved." })).toBeVisible({ timeout: 15_000 });
+  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
+  const after = (await admin.from("creatives").select("name, concept").eq("id", frank.creativeId).single()).data;
+  expect(after).toEqual({ name: "E2E Test Creative", concept: "Saved on its own" });
+  expect((await admin.from("designer_notes").select("overall").eq("creative_id", frank.creativeId).maybeSingle()).data?.overall).toBe("Pumpkin top left");
+  // With notes in the window, Rework My Notes is there to ask for.
+  await page.getByRole("button", { name: "Design with Frank" }).click();
+  await expect(page.getByRole("button", { name: "Rework My Notes" })).toBeEnabled();
+  await page.getByRole("button", { name: "Close" }).last().click();
+  await page.getByRole("button", { name: "Update" }).click();
+  await expect(page.getByText("Post updated.")).toBeVisible({ timeout: 15_000 });
+  expect((await admin.from("creatives").select("name").eq("id", frank.creativeId).single()).data?.name).toBe("Renamed Later");
+  await page.keyboard.press("Escape");
+
+  // A new post: Save Concept saves nothing yet, but Design with Frank
+  // opens; changing the Concept closes it again until it's saved.
+  await page.goto(`/projects/${frank.projectId}`);
+  await page.getByRole("button", { name: "New Post", exact: true }).click();
+  const designWithFrank = page.getByRole("button", { name: "Design with Frank" });
+  await expect(page.getByRole("button", { name: "Save Concept and Notes" })).toBeDisabled();
+  await page.locator("#nbConcept").fill("A new idea");
+  await expect(designWithFrank).toBeDisabled();
+  await page.getByRole("button", { name: "Save Concept and Notes" }).click();
+  await expect(page.getByText("Saved. Create Post adds them to the post.")).toBeVisible();
+  await expect(designWithFrank).toBeEnabled();
+  expect((await admin.from("creatives").select("id").eq("concept", "A new idea")).data).toEqual([]);
+  await page.locator("#nbConcept").fill("A newer idea");
+  await expect(designWithFrank).toBeDisabled();
 });

@@ -13,6 +13,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.43.0",
+    date: "2026-10-20",
+    title: "Design with Frank, two ways in",
+    changes: [
+      "Design with Frank now opens with two choices, as Draft with Frank does: Direction from the Concept, for fresh directions, or Rework My Notes, which keeps what you've written in Notes for Designer and sharpens it.",
+      "A Save Concept and Notes button under Notes for Designer saves both. Design with Frank is ready once the Concept is saved.",
+      "On a new post, Design with Frank works before the post is made: save the Concept, ask Frank, and Create Post keeps its directions with the post.",
+      "The Brief no longer carries notes about Design with Frank; just its button.",
+    ],
+  },
+  {
     version: "1.42.1",
     date: "2026-10-20",
     title: "Design with Frank's note moves",

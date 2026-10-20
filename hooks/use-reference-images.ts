@@ -71,15 +71,19 @@ export function useReferenceImages(creativeId: string | null | undefined) {
 // Pasted or dropped images onto a post's references: each uploaded as an
 // asset (the storage limit applies), then linked to the post. A link that
 // fails takes its file back out.
-// Returns each new link's id, in the order given.
-export async function uploadReferenceImages(agencyId: string, creativeId: string, files: File[]): Promise<string[]> {
+// Returns each new link's id and its file's key, in the order given.
+export async function uploadReferenceImages(
+  agencyId: string,
+  creativeId: string,
+  files: File[],
+): Promise<{ id: string; key: string }[]> {
   const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not signed in");
   await assertCanUpload(agencyId, files.reduce((n, f) => n + f.size, 0));
-  const ids: string[] = [];
+  const saved: { id: string; key: string }[] = [];
   for (const file of files) {
     const problem = referenceImageProblem(file);
     if (problem) throw new Error(problem);
@@ -105,9 +109,9 @@ export async function uploadReferenceImages(agencyId: string, creativeId: string
       await supabase.storage.from("assets").remove([path]);
       throw linkError ?? new Error("Couldn't keep the image");
     }
-    ids.push(link.id as string);
+    saved.push({ id: link.id as string, key: path });
   }
-  return ids;
+  return saved;
 }
 
 export function useAddReferenceImages(creativeId: string | null | undefined) {
@@ -116,8 +120,8 @@ export function useAddReferenceImages(creativeId: string | null | undefined) {
     mutationFn: async ({ agencyId, creativeId: id, files }: { agencyId: string; creativeId?: string; files: File[] }) => {
       const target = id ?? creativeId;
       if (!target) throw new Error("Save the brief first");
-      const ids = await uploadReferenceImages(agencyId, target, files);
-      return { target, ids };
+      const saved = await uploadReferenceImages(agencyId, target, files);
+      return { target, ids: saved.map((s) => s.id) };
     },
     onSuccess: async ({ target }) => {
       await queryClient.invalidateQueries({ queryKey: ["reference-images", target] });
