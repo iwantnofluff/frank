@@ -7795,6 +7795,136 @@ a.profproject:hover .pp-t b {
   border: 1px solid var(--line-2);
   border-radius: var(--r);
 }
+/* Design with Frank (phase110): in Draft with Frank's window, the
+   direction on the right: the references as cards, then the directions,
+   then the guardrails. */
+.ddir section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ddir .cchat-head {
+  margin-top: 4px;
+}
+.ddir-summary {
+  margin: 0;
+  font-size: 14.7px;
+  line-height: 1.5;
+}
+.ddir-refs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+}
+.ddir-ref {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface);
+  min-width: 0;
+}
+.ddir-thumb {
+  width: 72px;
+  height: 90px;
+  flex-shrink: 0;
+  object-fit: cover;
+  border-radius: 6px;
+  display: block;
+  background: var(--canvas);
+}
+.ddir-thumb.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 11.2px;
+  color: var(--muted);
+}
+.ddir-ref-b {
+  min-width: 0;
+  flex: 1;
+}
+.ddir-ref-h {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 13.2px;
+  margin-bottom: 4px;
+}
+.ddir-ref-h span {
+  font-size: 12.2px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ddir-list {
+  margin: 0;
+  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 13.7px;
+  line-height: 1.45;
+}
+.ddir-dir {
+  margin-top: 0;
+}
+.ddir-dir .btn {
+  flex-shrink: 0;
+  min-width: 78px;
+  justify-content: center;
+}
+.ddir-dir .btn.added {
+  background: var(--stage-approved);
+  border-color: var(--stage-approved);
+  color: #fff;
+}
+.ddir-fields {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13.7px;
+  line-height: 1.45;
+}
+.ddir-fields dt {
+  font-size: 11.7px;
+  color: var(--muted);
+}
+.ddir-fields dd {
+  margin: 1px 0 0;
+}
+.ddir-slides {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ddir-guard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+.ddir-guard b {
+  display: block;
+  font-size: 13.2px;
+  margin-bottom: 4px;
+}
+/* On the Brief tab: the button, and a line on what it does. */
+.ddir-ask {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.ddir-ask .hint {
+  flex: 1;
+  min-width: 200px;
+}
 /* The review page's copy, before there is any (direct instruction). */
 .ig-nocopy {
   display: inline-flex;

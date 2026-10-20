@@ -13,6 +13,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.41.0",
+    date: "2026-10-20",
+    title: "Design with Frank",
+    changes: [
+      "A Design with Frank button on the post window's Brief: Frank reads the concept and each reference link, picture included, and suggests how to design the post.",
+      "You get what each reference does well, what has worked (using a public Instagram post's likes and comments), two or three directions with a line for each slide or the Reel's opening, shots and end frame, and guardrails from the client's brand and their past feedback.",
+      "Use This puts a direction into Notes for Designer, and the chosen one shows on the post's Brief. The team only; clients never see it. Each direction uses one AI request.",
+      "Previews of Pinterest pins, which had stopped showing, are back.",
+    ],
+  },
+  {
     version: "1.40.1",
     date: "2026-10-20",
     title: "Notes for Designer on the Brief",

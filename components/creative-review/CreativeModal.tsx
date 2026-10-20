@@ -65,6 +65,8 @@ import { KNOWLEDGE_SECTIONS } from "@/lib/knowledge-sections";
 import { modelById } from "@/lib/ai/models";
 import { errorMessage } from "@/lib/errors";
 import { VoicePost } from "@/components/creative-review/VoicePost";
+import { DesignDirection } from "@/components/creative-review/DesignDirection";
+import { directionAsNote, type DesignDirectionOption } from "@/lib/ai/design-direction";
 import type { VoicePostFields } from "@/lib/ai/voice-post";
 
 const KNOWLEDGE_SECTION_LABELS: Record<string, string> = Object.fromEntries(
@@ -902,6 +904,10 @@ export function CreativeModal(props: CreativeModalProps) {
 
   // "Write with Claude" (phase52), over this window.
   const [chatOpen, setChatOpen] = useState(false);
+  // Design with Frank (phase110), and what Notes for Designer held before
+  // a direction went in, so pressing Added puts it back.
+  const [designOpen, setDesignOpen] = useState(false);
+  const [notesBefore, setNotesBefore] = useState<{ overall: string; slides: string[] } | null>(null);
   // What each field held before a Draft with Frank suggestion went in, so
   // Added pressed again puts it back, even after the chat window was
   // closed and opened again.
@@ -1493,6 +1499,31 @@ export function CreativeModal(props: CreativeModalProps) {
             </button>
           </div>
 
+          {/* Design with Frank (phase110): a direction for the designer
+              from the concept and the references. */}
+          <div className="field">
+            <label>Design Direction</label>
+            <div className="ddir-ask">
+              <button
+                type="button"
+                className="btn primary btn-frank sm"
+                disabled={!modelLabel || !creativeId}
+                title={creativeId ? undefined : "Save the brief first"}
+                onClick={() => setDesignOpen(true)}
+              >
+                <svg className="aicon" viewBox="0 0 24 24">
+                  <path d="M12 3l1.8 6.2L20 11l-6.2 1.8L12 19l-1.8-6.2L4 11l6.2-1.8L12 3z" />
+                </svg>
+                Design with Frank
+              </button>
+              <span className="hint">
+                {creativeId
+                  ? "Frank reads the concept and references, and suggests how to design this post."
+                  : "Once the brief is saved, Frank can suggest how to design this post."}
+              </span>
+            </div>
+          </div>
+
           {/* Notes for Designer on the Brief (direct instruction): the post's
               overall note on an Other Content post, and one per slide or
               story once there are several, opening as the count goes up,
@@ -2009,6 +2040,51 @@ export function CreativeModal(props: CreativeModalProps) {
           setDeleteTarget(null);
           deleteVersion.reset();
         }}
+      />
+    )}
+    {designOpen && creativeId && (
+      <DesignDirection
+        creativeId={creativeId}
+        postName={name || (isCreate ? "New post" : props.creative.name)}
+        clientId={clientId ?? null}
+        concept={concept}
+        referenceUrls={tidyReferences(referenceUrls)}
+        slideCount={slideCount}
+        frameNoun={frameNoun}
+        isVideo={isVideo}
+        notesHome={
+          delivery === "continuous" && slideCount
+            ? `Notes for Designer, overall and by ${frameNoun.toLowerCase()}, saved when you Update`
+            : delivery === "continuous"
+              ? "Notes for Designer, saved when you Update"
+              : slideCount
+                ? `Notes for Designer by ${frameNoun.toLowerCase()}, saved when you Update`
+                : null
+        }
+        onUse={(d: DesignDirectionOption | null) => {
+          if (!d) {
+            // Added pressed again: the notes go back to what they were.
+            if (notesBefore) {
+              setDesignerNotes(notesBefore.overall);
+              setSlideNotes(notesBefore.slides);
+            }
+            setNotesBefore(null);
+            return;
+          }
+          if (!notesBefore) setNotesBefore({ overall: designerNotes, slides: slideNotes });
+          const note = directionAsNote(d);
+          if (delivery === "continuous") setDesignerNotes(note);
+          if (slideCount) {
+            setSlideNotes(
+              d.slides.length
+                ? slideFields(d.slides, slideCount)
+                : delivery === "continuous"
+                  ? slideNotes
+                  : slideFields([note], slideCount),
+            );
+          }
+        }}
+        onClose={() => setDesignOpen(false)}
       />
     )}
     {chatOpen && creativeId && (

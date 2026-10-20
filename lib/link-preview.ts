@@ -95,7 +95,7 @@ function meta(html: string, keys: string[]): string | null {
 // card tags, then the plain <title> and description. Relative image
 // addresses are resolved against the page's own address.
 export function parsePreview(html: string, pageUrl: string): LinkPreview {
-  // All of what was read (up to 1MB): some pages put their preview tags
+  // All of what was read (up to 2.5MB): some pages put their preview tags
   // far down (YouTube's sit about 700KB in).
   const head = html;
   const titleTag = head.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1];
