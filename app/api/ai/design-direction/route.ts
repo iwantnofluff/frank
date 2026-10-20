@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { runAiTask } from "@/lib/ai/run-ai-task";
-import type { Attachment } from "@/lib/ai/attachment";
+import { IMAGE_TYPES, type Attachment } from "@/lib/ai/attachment";
 import { buildDesignDirectionPrompt, parseDesignDirection, type DesignReference } from "@/lib/ai/design-direction";
 import { clientContext, loadKnowledgeFiles } from "@/lib/ai/client-context";
 import { fetchImage, readPreview } from "@/lib/link-fetch";
@@ -11,8 +11,12 @@ import { formatsLabel, frameLimits, hasVideoFormat, postFormats } from "@/lib/fo
 
 const fail = (error: string, status: number) => NextResponse.json({ error }, { status });
 
-// References read in one request: the first 8.
+// References read in one request: the first 8 links, and the post's
+// pasted images (up to 8, phase111). Their images together stay within
+// 15MB, so the request stays within the provider's size limit; the rest
+// are named as skipped.
 const MAX_REFERENCES = 8;
+const MAX_REFERENCE_IMAGE_BYTES = 15 * 1024 * 1024;
 
 type Row = Record<string, unknown>;
 
@@ -60,7 +64,20 @@ export async function POST(request: Request) {
   const urls = (Array.isArray(body.referenceUrls) ? body.referenceUrls : ((creative.reference_urls as string[] | null) ?? []))
     .filter((u): u is string => typeof u === "string" && !!u.trim())
     .map((u) => u.trim());
-  if (!concept && !urls.length) return fail("Write a concept or add a reference first", 400);
+  // The post's pasted reference images (phase111), oldest first.
+  const { data: pasted } = await supabase
+    .from("reference_images")
+    .select("asset_id, created_at")
+    .eq("creative_id", creative.id)
+    .order("created_at");
+  const { data: pastedAssets } = pasted?.length
+    ? await supabase.from("assets").select("id, storage_key, mime_type, bytes").in("id", pasted.map((p) => p.asset_id))
+    : { data: [] as Row[] };
+  const pastedFiles = (pasted ?? []).flatMap((p) => {
+    const a = (pastedAssets ?? []).find((x) => x.id === p.asset_id);
+    return a ? [{ key: a.storage_key as string, mediaType: a.mime_type as string, bytes: Number(a.bytes) }] : [];
+  });
+  if (!concept && !urls.length && !pastedFiles.length) return fail("Write a concept or add a reference first", 400);
 
   const formats = postFormats(creative as { format: string; formats: string[] | null });
   const frames = frameLimits(formats);
@@ -72,16 +89,61 @@ export async function POST(request: Request) {
   const chosenUrls = urls.slice(0, MAX_REFERENCES);
   const previews = await Promise.all(chosenUrls.map((u) => readPreview(fetchableUrl(u) ? u : `https://${u}`)));
   const images = await Promise.all(previews.map((p) => (p?.image ? fetchImage(p.image) : Promise.resolve(null))));
-  const references: DesignReference[] = chosenUrls.map((url, i) => ({
-    n: i + 1,
-    url,
-    title: previews[i]?.title ?? null,
-    description: previews[i]?.description ?? null,
-    siteName: previews[i]?.siteName ?? null,
-    hasImage: !!images[i],
-  }));
-  const referenceImages: Attachment[] = images.flatMap((img, i) =>
-    img ? [{ base64: img.bytes.toString("base64"), mediaType: img.mediaType, title: `Reference ${i + 1}` }] : [],
+  const pastedBlobs = await Promise.all(pastedFiles.map((f) => supabase.storage.from("assets").download(f.key)));
+  // Every image, links' first, within the size budget.
+  let budget = MAX_REFERENCE_IMAGE_BYTES;
+  const skippedRefs: string[] = [];
+  const fits = (bytes: number, name: string) => {
+    if (bytes > budget) {
+      skippedRefs.push(name);
+      return false;
+    }
+    budget -= bytes;
+    return true;
+  };
+  const linkImages = images.map((img, i) => (img && fits(img.bytes.length, `Reference ${i + 1}`) ? img : null));
+  const pastedImages = await Promise.all(
+    pastedFiles.map(async (f, i) => {
+      const blob = pastedBlobs[i].data;
+      if (!blob || !IMAGE_TYPES.includes(f.mediaType as (typeof IMAGE_TYPES)[number])) return null;
+      const n = chosenUrls.length + i + 1;
+      return fits(blob.size, `Reference ${n}`) ? Buffer.from(await blob.arrayBuffer()) : null;
+    }),
+  );
+  const references: DesignReference[] = [
+    ...chosenUrls.map((url, i) => ({
+      n: i + 1,
+      url,
+      title: previews[i]?.title ?? null,
+      description: previews[i]?.description ?? null,
+      siteName: previews[i]?.siteName ?? null,
+      hasImage: !!linkImages[i],
+    })),
+    ...pastedFiles.map((_, i) => ({
+      n: chosenUrls.length + i + 1,
+      url: null,
+      title: null,
+      description: null,
+      siteName: null,
+      hasImage: !!pastedImages[i],
+    })),
+  ];
+  const referenceImages: Attachment[] = [
+    ...linkImages.flatMap((img, i) =>
+      img ? [{ base64: img.bytes.toString("base64"), mediaType: img.mediaType, title: `Reference ${i + 1}` }] : [],
+    ),
+    ...pastedImages.flatMap((bytes, i) =>
+      bytes
+        ? [{ base64: bytes.toString("base64"), mediaType: pastedFiles[i].mediaType as Attachment["mediaType"], title: `Reference ${chosenUrls.length + i + 1}` }]
+        : [],
+    ),
+  ];
+  // What's saved with the direction, for its cards: a link's page and
+  // image, or a pasted image's file.
+  const refs = references.map((r, i) =>
+    r.url
+      ? { n: r.n, url: r.url, title: r.title, image: previews[i]?.image ?? null, read: !!(previews[i] || images[i]) }
+      : { n: r.n, url: null, title: "Pasted image", image: null, assetKey: pastedFiles[i - chosenUrls.length].key, read: r.hasImage },
   );
 
   const strategyMonth = monthOf((creative.scheduled_at as string | null) ?? (creative.due_on as string | null) ?? new Date());
@@ -138,24 +200,43 @@ export async function POST(request: Request) {
     references,
   });
 
-  const result = await runAiTask(supabase, agencyId, user.id, prompt, [...referenceImages, ...knowledgeFiles]);
-  if (!result.ok || !result.text) return fail(result.error ?? "Frank didn't answer", result.status || 502);
-  const direction = parseDesignDirection(result.text, slideCount, isVideo);
-  if (!direction) return fail("Frank's answer couldn't be read. Try again.", 502);
-
-  const refs = references.map((r, i) => ({
-    n: r.n,
-    url: r.url,
-    title: r.title,
-    image: previews[i]?.image ?? null,
-    read: !!(previews[i] || images[i]),
-  }));
-  const { data: saved, error } = await supabase
-    .from("design_directions")
-    .insert({ creative_id: creative.id, body: direction, refs, created_by: user.id })
-    .select("id")
-    .single();
-  if (error || !saved) return fail(`Frank answered, but the direction couldn't be kept: ${error?.message ?? "no row"}`, 500);
-
-  return NextResponse.json({ id: saved.id, skippedFiles: skipped });
+  // From here the answer streams back as Frank writes it (direct
+  // instruction), one JSON line per event: the references first, then the
+  // text as it comes, then the saved direction's id, or what went wrong.
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const send = (event: Record<string, unknown>) => controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
+      try {
+        send({ type: "refs", refs });
+        const result = await runAiTask(supabase, agencyId, user.id, prompt, [...referenceImages, ...knowledgeFiles], (text) =>
+          send({ type: "text", text }),
+        );
+        if (!result.ok || !result.text) {
+          send({ type: "error", error: result.error ?? "Frank didn't answer" });
+          return;
+        }
+        const direction = parseDesignDirection(result.text, slideCount, isVideo);
+        if (!direction) {
+          send({ type: "error", error: "Frank's answer couldn't be read. Try again." });
+          return;
+        }
+        const { data: saved, error } = await supabase
+          .from("design_directions")
+          .insert({ creative_id: creative.id, body: direction, refs, created_by: user.id })
+          .select("id")
+          .single();
+        if (error || !saved) {
+          send({ type: "error", error: `Frank answered, but the direction couldn't be kept: ${error?.message ?? "no row"}` });
+          return;
+        }
+        send({ type: "done", id: saved.id, skippedFiles: [...skippedRefs, ...skipped] });
+      } catch (e) {
+        send({ type: "error", error: e instanceof Error ? e.message : "Frank didn't answer" });
+      } finally {
+        controller.close();
+      }
+    },
+  });
+  return new Response(stream, { headers: { "content-type": "application/x-ndjson; charset=utf-8", "cache-control": "no-store" } });
 }

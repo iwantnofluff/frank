@@ -6,9 +6,11 @@ import type { DesignDirection as Body } from "@/lib/ai/design-direction";
 
 export interface DesignDirectionRef {
   n: number;
-  url: string;
+  // Null for a pasted image (phase111), which has its file's key instead.
+  url: string | null;
   title: string | null;
   image: string | null;
+  assetKey?: string;
   read: boolean;
 }
 
@@ -53,23 +55,54 @@ export function useDesignDirections(creativeId: string | null | undefined) {
   });
 }
 
-// A new direction from Frank, from the brief as it is in the window.
+// A new direction from Frank, from the brief as it is in the window,
+// streamed (direct instruction: shown as it's written): onProgress hears
+// the references Frank is reading, then all the text so far each time
+// more arrives.
 export function useRequestDesignDirection(creativeId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: {
+    mutationFn: async ({
+      onProgress,
+      ...input
+    }: {
       concept: string;
       referenceUrls: string[];
       slideCount: number | null;
+      onProgress?: (progress: { refs: DesignDirectionRef[]; text: string }) => void;
     }): Promise<{ id: string; skippedFiles: string[] }> => {
       const res = await fetch("/api/ai/design-direction", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ creativeId, ...input }),
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error ?? "Frank didn't answer");
-      return { id: data.id, skippedFiles: data.skippedFiles ?? [] };
+      if (!res.ok || !res.body) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "Frank didn't answer");
+      }
+      const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+      let buffer = "";
+      let refs: DesignDirectionRef[] = [];
+      let text = "";
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += value;
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        let changed = false;
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          const event = JSON.parse(line) as { type: string; refs?: DesignDirectionRef[]; text?: string; id?: string; skippedFiles?: string[]; error?: string };
+          if (event.type === "refs") refs = event.refs ?? [];
+          else if (event.type === "text") text += event.text ?? "";
+          else if (event.type === "error") throw new Error(event.error ?? "Frank didn't answer");
+          else if (event.type === "done") return { id: event.id!, skippedFiles: event.skippedFiles ?? [] };
+          changed = true;
+        }
+        if (changed) onProgress?.({ refs, text });
+      }
+      throw new Error("Frank stopped before finishing. Try again.");
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["design-directions", creativeId] });

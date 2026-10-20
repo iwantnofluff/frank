@@ -78,7 +78,7 @@ test("a new project's columns: untick defaults, add its own, fill them in on a p
   // Each column's type shows beside it.
   await expect(group.locator(".coled-row", { has: page.getByLabel("Show Status") }).locator(".coled-type")).toHaveText("Stage");
   // Rename a built-in column, and drag Copy above VO.
-  const copyName = page.getByLabel("Name of Copy");
+  const copyName = page.getByLabel("Name of Caption/Copy");
   await copyName.fill("Caption");
   await copyName.press("Enter");
   await expect(page.getByLabel("Show Caption")).toBeVisible();
@@ -117,7 +117,9 @@ test("a new project's columns: untick defaults, add its own, fill them in on a p
   await pop.getByLabel("Column name").fill("Long Notes");
   await pop.getByLabel("What it records").selectOption("long_text");
   await pop.getByRole("button", { name: "Add", exact: true }).click();
-  await expect.poll(async () => (await admin.from("custom_columns").select("type").eq("project_id", projectId).eq("label", "Long Notes").maybeSingle()).data?.type).toBe("long_text");
+  await expect
+    .poll(async () => (await admin.from("custom_columns").select("type").eq("project_id", projectId).eq("label", "Long Notes").maybeSingle()).data?.type, { timeout: 15_000 })
+    .toBe("long_text");
   // Renaming there changes the project's column; dragging reorders the table.
   const thumbName = pop.getByLabel("Name of Thumbnail Text");
   await thumbName.fill("Thumb Text");

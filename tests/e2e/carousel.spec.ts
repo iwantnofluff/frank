@@ -158,9 +158,13 @@ test("a multi-image post takes Notes for Designer for each image, on its Brief",
   // Saved with the brief.
   await page.getByRole("button", { name: "Update" }).click();
   await expect(page.getByText("Post updated.")).toBeVisible();
+  // The team's own (phase112), off the post a Client can read.
   await expect
-    .poll(async () => (await admin.from("creatives").select("slide_notes, slide_count").eq("id", frank.creativeId).single()).data)
-    .toEqual({ slide_notes: ["", "Brighter crop, badge top right"], slide_count: 4 });
+    .poll(async () => (await admin.from("designer_notes").select("slides").eq("creative_id", frank.creativeId).maybeSingle()).data)
+    .toEqual({ slides: ["", "Brighter crop, badge top right"] });
+  await expect
+    .poll(async () => (await admin.from("creatives").select("slide_count").eq("id", frank.creativeId).single()).data)
+    .toEqual({ slide_count: 4 });
   // Not on the Content tab any more.
   await page.getByRole("tab", { name: "Content" }).click();
   await expect(page.getByRole("button", { name: "Save Notes for Designer" })).toHaveCount(0);

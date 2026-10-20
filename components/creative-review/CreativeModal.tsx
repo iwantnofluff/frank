@@ -47,7 +47,7 @@ import {
   hasVideoFormat,
 } from "@/lib/formats";
 import { slideFields, tidySlideText } from "@/lib/slide-text";
-import { SlideNotesChangedError, useSaveSlideNotes } from "@/hooks/use-save-slide-notes";
+import { DesignerNotesChangedError, sameNotes, useDesignerNotes, useSaveDesignerNotes, type DesignerNotes } from "@/hooks/use-designer-notes";
 import { copyCaption } from "@/lib/copy-text";
 import { ListEditor } from "@/components/ui/ListEditor";
 import { linkHref, tidyReferences } from "@/lib/links";
@@ -66,7 +66,10 @@ import { modelById } from "@/lib/ai/models";
 import { errorMessage } from "@/lib/errors";
 import { VoicePost } from "@/components/creative-review/VoicePost";
 import { DesignDirection } from "@/components/creative-review/DesignDirection";
-import { directionAsNote, type DesignDirectionOption } from "@/lib/ai/design-direction";
+import { directionAsDesignNote, type DesignDirection as DesignDirectionBody, type DesignDirectionOption } from "@/lib/ai/design-direction";
+import { ReferenceImages, imageFiles } from "@/components/creative-review/ReferenceImages";
+import { uploadReferenceImages } from "@/hooks/use-reference-images";
+import { useDesignDirections } from "@/hooks/use-design-directions";
 import type { VoicePostFields } from "@/lib/ai/voice-post";
 
 const KNOWLEDGE_SECTION_LABELS: Record<string, string> = Object.fromEntries(
@@ -77,8 +80,29 @@ type Tab = "brief" | "upload" | "checks";
 
 // Where the cursor goes when the window opens from a table's Pending
 // cell (direct instruction): that field, on its tab, ready for input.
-export type FocusTarget = "name" | "team" | "concept" | "slides" | "voiceover" | "artwork" | "imageOnText" | "copy" | "alt";
-const FOCUS: Record<FocusTarget, { tab: Tab; selector: string }> = {
+// A table cell's Edit opens the window at its field (direct instruction:
+// no cell is edited in place): the fixed fields, Notes for Designer,
+// Principles, and each project field by its key ("cx:<key>").
+export type FocusTarget =
+  | "name"
+  | "team"
+  | "concept"
+  | "slides"
+  | "voiceover"
+  | "artwork"
+  | "imageOnText"
+  | "copy"
+  | "alt"
+  | "notes"
+  | "principles"
+  | `cx:${string}`;
+const focusOf = (t: FocusTarget): { tab: Tab; selector: string } =>
+  t.startsWith("cx:")
+    ? { tab: "brief", selector: `[data-cx="${t.slice(3)}"] textarea, [data-cx="${t.slice(3)}"] input, [data-cx="${t.slice(3)}"] select, [data-cx="${t.slice(3)}"] button` }
+    : FOCUS[t as keyof typeof FOCUS];
+const FOCUS: Record<Exclude<FocusTarget, `cx:${string}`>, { tab: Tab; selector: string }> = {
+  notes: { tab: "brief", selector: "#nbNotes" },
+  principles: { tab: "brief", selector: "#nbPrinciples" },
   name: { tab: "brief", selector: "#nbName" },
   team: { tab: "brief", selector: "#nbTeam" },
   concept: { tab: "brief", selector: "#nbConcept" },
@@ -92,6 +116,8 @@ const FOCUS: Record<FocusTarget, { tab: Tab; selector: string }> = {
 
 // Long-form fields get a textarea, short ones a single-line input — same
 // split the prototype's own capField rendering makes (frank-prototype.html).
+const EMPTY_NOTES: DesignerNotes = { overall: "", slides: [] };
+
 const LONG_COPY_FIELDS = new Set(["caption", "description", "body", "notes", "primary", "bullets"]);
 
 // Saving used to insert a new copy_versions row unconditionally, even when
@@ -533,11 +559,6 @@ export function CreativeModal(props: CreativeModalProps) {
   const initialSlideText = isCreate ? [] : (props.creative.slide_text ?? []);
   const [slideText, setSlideText] = useState<string[]>(initialSlideText);
   const [savedSlideText, setSavedSlideText] = useState<string[]>(tidySlideText(initialSlideText));
-  // Notes for Designer, one per image (phase108, direct instruction), on
-  // the post with their own Save, as Text on Image is.
-  const initialSlideNotes = isCreate ? [] : (props.creative.slide_notes ?? []);
-  const [slideNotes, setSlideNotes] = useState<string[]>(initialSlideNotes);
-  const [savedSlideNotes, setSavedSlideNotes] = useState<string[]>(tidySlideText(initialSlideNotes));
   // A video post's VO script (phase88): on the post, with its own Save,
   // as Text on Image is.
   const initialVoiceover = isCreate ? "" : (props.creative.voiceover ?? "");
@@ -550,13 +571,13 @@ export function CreativeModal(props: CreativeModalProps) {
   const initialCx: Record<string, CxValue> = isCreate ? {} : ((props.creative.cx as Record<string, CxValue> | null) ?? {});
   const [cx, setCx] = useState<Record<string, CxValue>>(initialCx);
   const [savedCx, setSavedCx] = useState<Record<string, CxValue>>(initialCx);
-  // Continuous projects' Notes for Designer (direct instruction: in the
-  // window as well as the table, optional), saved to the cx key the table
-  // writes. Funnel went (direct instruction).
+  // Principles on an Other Content post, here since no table cell is
+  // edited in place (direct instruction), saved to the cx key the table
+  // reads.
   const savedTableFields = {
-    designer_notes: isCreate ? "" : String(props.creative.cx?.designer_notes ?? ""),
+    principles: isCreate ? "" : String(props.creative.cx?.principles ?? ""),
   };
-  const [designerNotes, setDesignerNotes] = useState(savedTableFields.designer_notes);
+  const [principles, setPrinciples] = useState(savedTableFields.principles);
   const [savedFields, setSavedFields] = useState(savedTableFields);
 
   const [nameError, setNameError] = useState<string | null>(null);
@@ -629,13 +650,13 @@ export function CreativeModal(props: CreativeModalProps) {
 
   const initialFocus = isCreate ? undefined : props.initialFocus;
   const [activeTab, setActiveTab] = useState<Tab>(
-    isCreate ? "brief" : initialFocus ? FOCUS[initialFocus].tab : (props.initialTab ?? "upload"),
+    isCreate ? "brief" : initialFocus ? focusOf(initialFocus).tab : (props.initialTab ?? "upload"),
   );
   // Once, as it opens: the cursor in the field asked for, scrolled to.
   useEffect(() => {
     if (!initialFocus) return;
     const t = setTimeout(() => {
-      const el = document.querySelector<HTMLElement>(FOCUS[initialFocus].selector);
+      const el = document.querySelector<HTMLElement>(focusOf(initialFocus).selector);
       el?.scrollIntoView({ block: "center" });
       el?.focus();
     }, 50);
@@ -684,22 +705,31 @@ export function CreativeModal(props: CreativeModalProps) {
         concept,
         referenceUrls: tidyReferences(referenceUrls),
         slideCount,
-        cx:
-          delivery === "continuous"
-            ? {
-                ...cx,
-                ...(designerNotes.trim() ? { designer_notes: designerNotes.trim() } : {}),
-              }
-            : cx,
+        cx: {
+          ...cx,
+          ...(delivery === "continuous" && principles.trim() ? { principles: principles.trim() } : {}),
+        },
         scheduledAt,
         destination: delivery === "continuous" ? destination.trim() || null : null,
         dueOn: delivery === "continuous" ? dueOn || null : null,
-        slideNotes: slideCount ? draftSlideNotes : [],
       });
       setCreatedCreativeId(newId);
       setSavedBrief({ formats, slideCount });
-      setSavedFields({ designer_notes: designerNotes.trim() });
-      setSavedSlideNotes(slideCount ? draftSlideNotes : []);
+      // The new post's reference images and Design Direction (phase111).
+      try {
+        if (pendingRefImages.length && agencyId) {
+          await uploadReferenceImages(agencyId, newId, pendingRefImages);
+          setPendingRefImages([]);
+        }
+        // Notes for Designer, the team's own (phase112).
+        if (!sameNotes(draftNotes, EMPTY_NOTES)) {
+          await saveNotes.mutateAsync({ creativeId: newId, notes: draftNotes, known: EMPTY_NOTES });
+          setKnownNotes(draftNotes);
+        }
+      } catch (e) {
+        setRefSaveError(errorMessage(e, "The post was made, but its reference images or Notes for Designer couldn't be saved"));
+      }
+      setSavedFields({ principles: principles.trim() });
       props.onCreated?.(scheduledAt, delivery === "continuous" ? dueOn || null : null);
       // Straight on to the artwork and copy (direct instruction).
       setActiveTab("upload");
@@ -750,11 +780,11 @@ export function CreativeModal(props: CreativeModalProps) {
       return;
     }
     setBriefBase(savedAt);
-    // Notes for Designer by slide, from the Brief (phase108), when changed.
+    // Notes for Designer, overall and by slide (phase112), when changed.
     if (pendingNotesChange && creativeId) {
       try {
-        await saveSlideNotes.mutateAsync({ slideNotes: draftSlideNotes, known: savedSlideNotes });
-        setSavedSlideNotes(draftSlideNotes);
+        await saveNotes.mutateAsync({ creativeId, notes: draftNotes, known: knownNotesNow });
+        setKnownNotes(draftNotes);
       } catch {
         return; // Shown under the notes.
       }
@@ -774,9 +804,9 @@ export function CreativeModal(props: CreativeModalProps) {
     setSavedBrief({ formats, slideCount });
     // Notes for Designer, its own atomic write (as the table's), only when
     // changed.
-    if (delivery === "continuous" && creativeId) {
-      const next = { designer_notes: designerNotes.trim() };
-      for (const key of ["designer_notes"] as const) {
+    if (creativeId) {
+      const next = { principles: delivery === "continuous" ? principles.trim() : savedFields.principles };
+      for (const key of ["principles"] as const) {
         if (next[key] !== savedFields[key]) {
           await updateCx.mutateAsync({ creativeId, key, value: next[key] || null });
         }
@@ -908,6 +938,28 @@ export function CreativeModal(props: CreativeModalProps) {
   // a direction went in, so pressing Added puts it back.
   const [designOpen, setDesignOpen] = useState(false);
   const [notesBefore, setNotesBefore] = useState<{ overall: string; slides: string[] } | null>(null);
+  // Notes for Designer (phase112, direct instruction): the team's own,
+  // overall and one per image, from their own table. What's shown is the
+  // window's own text once changed, else what's saved; `known` is what
+  // the window first loaded (or last saved), to catch someone else's save.
+  const { data: savedNotes } = useDesignerNotes(creativeId);
+  const [overallDraft, setOverallDraft] = useState<string | null>(null);
+  const [slideNotesDraft, setSlideNotesDraft] = useState<string[] | null>(null);
+  const [knownNotes, setKnownNotes] = useState<DesignerNotes | null>(null);
+  useEffect(() => {
+    if (savedNotes && !knownNotes) setKnownNotes(savedNotes);
+  }, [savedNotes, knownNotes]);
+  const designerNotes = overallDraft ?? savedNotes?.overall ?? "";
+  const slideNotes = slideNotesDraft ?? savedNotes?.slides ?? [];
+  const setDesignerNotes = setOverallDraft;
+  const setSlideNotes = (next: string[]) => setSlideNotesDraft(next);
+  const saveNotes = useSaveDesignerNotes(projectId);
+  const { data: directionRuns } = useDesignDirections(creativeId);
+  // Reference images (phase111): a new post's wait here until it's made;
+  // what's pasted into a link box is handed to ReferenceImages.
+  const [pendingRefImages, setPendingRefImages] = useState<File[]>([]);
+  const [refSaveError, setRefSaveError] = useState<string | null>(null);
+  const [pastedRefImages, setPastedRefImages] = useState<{ files: File[]; at: number } | null>(null);
   // What each field held before a Draft with Frank suggestion went in, so
   // Added pressed again puts it back, even after the chat window was
   // closed and opened again.
@@ -948,7 +1000,6 @@ export function CreativeModal(props: CreativeModalProps) {
       // Shown via saveSlideText.error below.
     }
   }
-  const saveSlideNotes = useSaveSlideNotes(creativeId ?? "", projectId);
   const saveVoiceover = useSaveVoiceover(creativeId ?? "", projectId);
   const [voSaveNote, setVoSaveNote] = useState<string | null>(null);
   async function handleSaveVoiceover() {
@@ -1046,8 +1097,9 @@ export function CreativeModal(props: CreativeModalProps) {
   // Text on Image, saved on its own (not a version).
   const draftSlideText = tidySlideText(slideFields(slideText, slideCount));
   const pendingSlideChange = JSON.stringify(draftSlideText) !== JSON.stringify(savedSlideText);
-  const draftSlideNotes = tidySlideText(slideFields(slideNotes, slideCount));
-  const pendingNotesChange = !!slideCount && JSON.stringify(draftSlideNotes) !== JSON.stringify(savedSlideNotes);
+  const draftNotes: DesignerNotes = { overall: designerNotes, slides: slideCount ? tidySlideText(slideFields(slideNotes, slideCount)) : [] };
+  const knownNotesNow = knownNotes ?? savedNotes ?? EMPTY_NOTES;
+  const pendingNotesChange = !sameNotes(draftNotes, knownNotesNow);
   const isVideo = hasVideoFormat(formats);
   const pendingVoChange = isVideo && voiceover.trim() !== savedVoiceover;
   const pendingCreativeChange = carouselPending;
@@ -1225,6 +1277,42 @@ export function CreativeModal(props: CreativeModalProps) {
       footer={
         activeTab === "brief" ? (
           <>
+            {/* Design with Frank (phase110) in the Brief's footer, as Draft
+                with Frank is in Content's (direct instruction), with a
+                small two-line note beside it. */}
+            <button
+              type="button"
+              className="btn primary btn-frank"
+              disabled={!modelLabel || !creativeId}
+              title={creativeId ? undefined : "Save the brief first"}
+              onClick={() => setDesignOpen(true)}
+            >
+              <svg className="aicon" viewBox="0 0 24 24">
+                <path d="M12 3l1.8 6.2L20 11l-6.2 1.8L12 19l-1.8-6.2L4 11l6.2-1.8L12 3z" />
+              </svg>
+              Design with Frank
+            </button>
+            <span className="ddir-foot">
+              {!creativeId ? (
+                <>
+                  Once the brief is saved, Frank
+                  <br />
+                  can suggest how to design it.
+                </>
+              ) : directionRuns?.length ? (
+                <>
+                  {directionRuns.length === 1 ? "1 direction" : `${directionRuns.length} directions`} from Frank,
+                  <br />
+                  latest by {directionRuns[0].author ?? "someone"}, {new Date(directionRuns[0].created_at).toLocaleDateString(undefined, { day: "numeric", month: "short" })}
+                </>
+              ) : (
+                <>
+                  Frank reads the concept and references,
+                  <br />
+                  and suggests how to design this post.
+                </>
+              )}
+            </span>
             <div className="grow" />
             {showUpdatedNote && <span className="bsaved">Post updated.</span>}
             <button type="button" className="btn" onClick={requestClose}>
@@ -1458,7 +1546,17 @@ export function CreativeModal(props: CreativeModalProps) {
             />
           </div>
 
-          <div className="field">
+          {/* Links, and images pasted into any of it (phase111, direct
+              instruction). */}
+          <div
+            className="field"
+            onPaste={(e) => {
+              const files = imageFiles(e.clipboardData?.items);
+              if (!files.length) return;
+              e.preventDefault();
+              setPastedRefImages({ files, at: Date.now() });
+            }}
+          >
             <label htmlFor="nbRef">
               References <span className="bnote">optional</span>
             </label>
@@ -1497,49 +1595,47 @@ export function CreativeModal(props: CreativeModalProps) {
             <button type="button" className="badd" onClick={() => setReferenceUrls((prev) => [...prev, ""])}>
               + Add Reference
             </button>
-          </div>
-
-          {/* Design with Frank (phase110): a direction for the designer
-              from the concept and the references. */}
-          <div className="field">
-            <label>Design Direction</label>
-            <div className="ddir-ask">
-              <button
-                type="button"
-                className="btn primary btn-frank sm"
-                disabled={!modelLabel || !creativeId}
-                title={creativeId ? undefined : "Save the brief first"}
-                onClick={() => setDesignOpen(true)}
-              >
-                <svg className="aicon" viewBox="0 0 24 24">
-                  <path d="M12 3l1.8 6.2L20 11l-6.2 1.8L12 19l-1.8-6.2L4 11l6.2-1.8L12 3z" />
-                </svg>
-                Design with Frank
-              </button>
-              <span className="hint">
-                {creativeId
-                  ? "Frank reads the concept and references, and suggests how to design this post."
-                  : "Once the brief is saved, Frank can suggest how to design this post."}
-              </span>
-            </div>
+            <ReferenceImages
+              creativeId={creativeId}
+              agencyId={agencyId}
+              pending={pendingRefImages}
+              onPendingChange={setPendingRefImages}
+              incoming={pastedRefImages}
+            />
+            {refSaveError && <p className="autherr">{refSaveError}</p>}
           </div>
 
           {/* Notes for Designer on the Brief (direct instruction): the post's
-              overall note on an Other Content post, and one per slide or
-              story once there are several, opening as the count goes up,
-              saved with the brief (phase108). */}
-          {delivery === "continuous" && (
-            <div className="field">
+              overall note, on every post, and one per slide or story once
+              there are several, opening as the count goes up, saved with
+              the brief; the team's only (phase112). Design with Frank's Use
+              This fills them. */}
+          <div className="field">
               <label htmlFor="nbNotes">
                 Notes for Designer <span className="bnote">optional</span>
               </label>
               <textarea
                 id="nbNotes"
                 className="bin"
-                rows={3}
+                rows={designerNotes ? 6 : 3}
                 value={designerNotes}
                 onChange={(e) => setDesignerNotes(e.target.value)}
-                placeholder="What the designer should know: sizes, references, things to avoid."
+                placeholder="What the designer should know: the idea, layout, style, things to avoid. Use This in Design with Frank fills it."
+              />
+          </div>
+          {/* Other Content's Principles, here now no cell is edited in
+              place (direct instruction). */}
+          {delivery === "continuous" && (
+            <div className="field">
+              <label htmlFor="nbPrinciples">
+                Principles <span className="bnote">optional</span>
+              </label>
+              <input
+                id="nbPrinciples"
+                className="bin one"
+                value={principles}
+                onChange={(e) => setPrinciples(e.target.value)}
+                placeholder="The psychological angle"
               />
             </div>
           )}
@@ -1555,35 +1651,35 @@ export function CreativeModal(props: CreativeModalProps) {
                 fixed
                 bare
               />
-              {saveSlideNotes.error instanceof SlideNotesChangedError ? (
-                <p className="autherr">
-                  {saveSlideNotes.error.message}{" "}
-                  <button
-                    type="button"
-                    className="linkbtn"
-                    onClick={() => {
-                      const theirs = (saveSlideNotes.error as SlideNotesChangedError).theirs;
-                      setSlideNotes(theirs);
-                      setSavedSlideNotes(tidySlideText(theirs));
-                      saveSlideNotes.reset();
-                    }}
-                  >
-                    Show Theirs
-                  </button>
-                </p>
-              ) : (
-                saveSlideNotes.error && (
-                  <p className="autherr">{errorMessage(saveSlideNotes.error, "Couldn't save the Notes for Designer")}</p>
-                )
-              )}
             </div>
+          )}
+
+          {saveNotes.error instanceof DesignerNotesChangedError ? (
+            <p className="autherr">
+              {saveNotes.error.message}{" "}
+              <button
+                type="button"
+                className="linkbtn"
+                onClick={() => {
+                  const theirs = (saveNotes.error as DesignerNotesChangedError).theirs;
+                  setOverallDraft(theirs.overall);
+                  setSlideNotesDraft(theirs.slides);
+                  setKnownNotes(theirs);
+                  saveNotes.reset();
+                }}
+              >
+                Show Theirs
+              </button>
+            </p>
+          ) : (
+            saveNotes.error && <p className="autherr">{errorMessage(saveNotes.error, "Couldn't save the Notes for Designer")}</p>
           )}
 
           {customColumns && customColumns.length > 0 && (
             <div className="field">
               <label>Project Fields</label>
               {customColumns.map((col) => (
-                <div className="brow" key={col.id}>
+                <div className="brow" key={col.id} data-cx={col.key}>
                   <b>{col.label}</b>
                   <CxCell
                     column={col}
@@ -2053,36 +2149,26 @@ export function CreativeModal(props: CreativeModalProps) {
         frameNoun={frameNoun}
         isVideo={isVideo}
         notesHome={
-          delivery === "continuous" && slideCount
+          slideCount
             ? `Notes for Designer, overall and by ${frameNoun.toLowerCase()}, saved when you Update`
-            : delivery === "continuous"
-              ? "Notes for Designer, saved when you Update"
-              : slideCount
-                ? `Notes for Designer by ${frameNoun.toLowerCase()}, saved when you Update`
-                : null
+            : "Notes for Designer, saved when you Update"
         }
-        onUse={(d: DesignDirectionOption | null) => {
+        onUse={(d: DesignDirectionOption | null, guardrails?: DesignDirectionBody["guardrails"]) => {
           if (!d) {
             // Added pressed again: the notes go back to what they were.
             if (notesBefore) {
-              setDesignerNotes(notesBefore.overall);
-              setSlideNotes(notesBefore.slides);
+              setOverallDraft(notesBefore.overall);
+              setSlideNotesDraft(notesBefore.slides);
             }
             setNotesBefore(null);
             return;
           }
           if (!notesBefore) setNotesBefore({ overall: designerNotes, slides: slideNotes });
-          const note = directionAsNote(d);
-          if (delivery === "continuous") setDesignerNotes(note);
-          if (slideCount) {
-            setSlideNotes(
-              d.slides.length
-                ? slideFields(d.slides, slideCount)
-                : delivery === "continuous"
-                  ? slideNotes
-                  : slideFields([note], slideCount),
-            );
-          }
+          // Into Notes for Designer (direct instruction: one place, not a
+          // separate Design Direction box): the direction and its
+          // guardrails overall, each slide's line into its own.
+          setOverallDraft(directionAsDesignNote(d, guardrails ?? { format: [], client: [], avoid: [] }));
+          if (slideCount && d.slides.length) setSlideNotesDraft(slideFields(d.slides, slideCount));
         }}
         onClose={() => setDesignOpen(false)}
       />

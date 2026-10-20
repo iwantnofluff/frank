@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { buildDesignDirectionPrompt, directionAsNote, parseDesignDirection, type DesignContext } from "./design-direction.ts";
+import { buildDesignDirectionPrompt, directionAsDesignNote, directionAsNote, parseDesignDirection, parsePartialDesignDirection, type DesignContext } from "./design-direction.ts";
 
 const context: DesignContext = {
   postName: "Autumn Roast",
@@ -84,4 +84,24 @@ test("a direction as a note", () => {
     reel: { hook: "Pour", shots: ["Pour", "Sip"], end: "Logo" },
   });
   assert.equal(note, "Steam: Steam rising\nLayout: Cup centred\nPalette: Warm browns\nFirst three seconds: Pour\nShots: Pour / Sip\nEnd frame: Logo");
+});
+
+test("a direction as the Design Direction box, with its guardrails", () => {
+  const d = { title: "Steam", idea: "Steam rising", layout: "", style: "", palette: "", textOnImage: "", slides: ["a"], reel: null };
+  assert.equal(
+    directionAsDesignNote(d, { format: ["4:5"], client: [], avoid: ["Big logo"] }),
+    "Steam: Steam rising\n\nGuardrails:\n- 4:5\n- Big logo",
+  );
+  assert.equal(directionAsDesignNote(d, { format: [], client: [], avoid: [] }), "Steam: Steam rising");
+});
+
+test("a direction part-written reads as far as it goes", () => {
+  const d = parsePartialDesignDirection('```json\n{"summary":"Warm","references":[{"n":1,"lessons":["Big ty', 3, false);
+  assert.equal(d.summary, "Warm");
+  assert.deepEqual(d.references, [{ n: 1, lessons: ["Big ty"] }]);
+  assert.deepEqual(d.directions, []);
+  const later = parsePartialDesignDirection('{"summary":"Warm","directions":[{"title":"Steam","idea":"Ste', 3, false);
+  assert.equal(later.directions[0].title, "Steam");
+  assert.equal(later.directions[0].idea, "Ste");
+  assert.deepEqual(parsePartialDesignDirection("", null, false).directions, []);
 });

@@ -14,6 +14,10 @@ export async function generate(
   prompt: string | string[],
   model: string,
   attachments: Attachment[] = [],
+  // Each piece of the answer as Claude writes it (Design with Frank,
+  // direct instruction: shown as it's written). Streamed, and not retried
+  // on a refusal, since what was shown can't be taken back.
+  onText?: (text: string) => void,
 ): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -59,7 +63,12 @@ export async function generate(
   }
 
   let message: Anthropic.Messages.Message | undefined;
-  for (let attempt = 0; attempt <= REFUSAL_RETRIES; attempt++) {
+  if (onText) {
+    const stream = client.messages.stream({ model, max_tokens: 8192, messages: [{ role: "user", content }] });
+    stream.on("text", (text) => onText(text));
+    message = await stream.finalMessage();
+  }
+  for (let attempt = 0; !onText && attempt <= REFUSAL_RETRIES; attempt++) {
     message = await client.messages.create({
       model,
       // Room for a conversational reply with drafts that carry every

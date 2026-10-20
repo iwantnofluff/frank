@@ -15,7 +15,8 @@ import type { CreativeListRow } from "@/hooks/use-creatives";
 import type { CustomColumnRow } from "@/hooks/use-custom-columns";
 import { useArchiveCreatives } from "@/hooks/use-archive-creatives";
 import { useDeleteCreativesPermanently } from "@/hooks/use-delete-creatives-permanently";
-import { CxCell } from "@/components/project/CxCell";
+import { CxValueCell } from "@/components/project/CxValueCell";
+import { useProjectDesignerNotes } from "@/hooks/use-designer-notes";
 import { ReferenceLinks } from "@/components/project/ReferenceLinks";
 import { ClampText } from "@/components/project/ClampText";
 import { ProjectCalendarGrid } from "@/components/project/ProjectCalendarGrid";
@@ -51,7 +52,7 @@ import {
 } from "@/hooks/use-calendar-views";
 
 // What a Pending button says it adds (direct instruction): "Add Creative".
-const ADD_LABELS: Record<FocusTarget, string> = {
+const ADD_LABELS: Partial<Record<FocusTarget, string>> = {
   name: "Post Name",
   team: "Team",
   concept: "Concept",
@@ -61,6 +62,8 @@ const ADD_LABELS: Record<FocusTarget, string> = {
   imageOnText: "Text on Image",
   copy: "Caption",
   alt: "Alt Text",
+  notes: "Notes",
+  principles: "Principles",
 };
 
 const MONTH_NAMES = [
@@ -115,6 +118,9 @@ export const TOGGLABLE_COLUMNS = [
   // columns (CopyVersionHistoryPopover), per explicit direction.
   // A video post's VO script (phase88), before its Text on Image.
   { key: "voiceover", label: "VO", sub: "Voiceover script", width: 220 },
+  // Notes for Designer, as on Other Content's table, as wide as Caption
+  // (direct instruction).
+  { key: "notes", label: "Notes for Designer", sub: "Design feedback", width: 330 },
   // The latest creative version's file name, with its preview on hover
   // (direct instruction; the preview moved here off Post Name).
   { key: "artwork", label: "Creative", sub: "Latest post visual", width: 200 },
@@ -190,8 +196,6 @@ export function ProjectCalendarTable({
   defaultOrder = null,
   columnLabels = {},
   canAddColumns = false,
-  onCxSave,
-  cxReadOnly,
   isStaff,
   initialFocusDate,
   draftRow,
@@ -212,8 +216,6 @@ export function ProjectCalendarTable({
   columnLabels?: Record<string, string>;
   // Owners and Admins: + Add Column in the Columns picker (phase96).
   canAddColumns?: boolean;
-  onCxSave: (creativeId: string, key: string, value: string | number | boolean | null) => void;
-  cxReadOnly: boolean;
   isStaff: boolean;
   // The date to open on — defaults to today. The caller passes the
   // scheduled_at of a just-created brief (with a remount, via `key`) so a
@@ -525,6 +527,35 @@ export function ProjectCalendarTable({
     // What the button says it adds (direct instruction): "Add Creative".
     addLabel: ADD_LABELS[focus],
   });
+  // Notes for Designer (direct instruction: on both tables, and opened in
+  // the window, never edited in the cell): the overall note, then each
+  // image's own. The team's only (phase112), read for the posts in view.
+  const { data: designerNotes } = useProjectDesignerNotes(projectId, creativeIds, isStaff);
+  const notesCell = (c: CreativeListRow, key: string) => (
+    <td key={key} className="cellw">
+      <CxValueCell
+        column={{ label: "Notes for Designer", type: "long_text", options: null }}
+        value={designerNotes?.[c.id]?.overall ?? null}
+        expanded={expandedRow === c.id}
+        onToggle={() => toggleRow(c.id)}
+        onFill={fill(c, "notes").onFill}
+        addLabel="Notes"
+        after={
+          (designerNotes?.[c.id]?.slides ?? []).some((n) => n.trim()) ? (
+            <span className="slidenotes">
+              {(designerNotes?.[c.id]?.slides ?? []).map((n, i) =>
+                n.trim() ? (
+                  <span key={i}>
+                    <b>Slide {i + 1}:</b> {n}
+                  </span>
+                ) : null,
+              )}
+            </span>
+          ) : undefined
+        }
+      />
+    </td>
+  );
   const { data: latestFeedback } = useLatestFeedbackByCreative(creativeIds);
 
   // Second, independent hover pair for the copy-history popover — separate
@@ -610,7 +641,7 @@ export function ProjectCalendarTable({
 
   // VO is the team's (phase88, direct instruction: not shown to clients).
   // Renamed for the project (phase96), the rest as they come.
-  const shownColumns = TOGGLABLE_COLUMNS.filter((c) => isStaff || c.key !== "voiceover").map((c) => ({
+  const shownColumns = TOGGLABLE_COLUMNS.filter((c) => isStaff || (c.key !== "voiceover" && c.key !== "notes")).map((c) => ({
     ...c,
     label: columnLabels[c.key] ?? c.label,
   }));
@@ -1292,6 +1323,8 @@ export function ProjectCalendarTable({
                                   )}
                                 </td>
                               );
+                            case "notes":
+                              return notesCell(c, key);
                             case "voiceover": {
                               // A video post's VO script (phase88), on the post itself.
                               const vo = c.voiceover?.trim();
@@ -1440,12 +1473,13 @@ export function ProjectCalendarTable({
                               const customCol = customColumnByKey.get(key);
                               if (!customCol) return null;
                               return (
-                                <td key={key}>
-                                  <CxCell
+                                <td key={key} className="cellw">
+                                  <CxValueCell
                                     column={customCol}
                                     value={c.cx?.[customCol.key] ?? null}
-                                    onSave={(value) => onCxSave(c.id, customCol.key, value)}
-                                    readOnly={cxReadOnly}
+                                    expanded={expandedRow === c.id}
+                                    onToggle={() => toggleRow(c.id)}
+                                    onFill={fill(c, `cx:${customCol.key}`).onFill}
                                   />
                                 </td>
                               );

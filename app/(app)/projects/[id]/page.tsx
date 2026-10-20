@@ -8,7 +8,6 @@ import { useProjectPresence } from "@/hooks/use-project-presence";
 import { PresenceAvatars } from "@/components/app-shell/PresenceAvatars";
 import { useCreatives } from "@/hooks/use-creatives";
 import { useCustomColumns } from "@/hooks/use-custom-columns";
-import { useUpdateCreativeCx } from "@/hooks/use-update-creative-cx";
 import { useIsStaff } from "@/hooks/use-is-staff";
 import { useMyAgency } from "@/hooks/use-my-agency";
 import { useMyMembership } from "@/hooks/use-my-membership";
@@ -40,7 +39,6 @@ export default function ProjectPage({
   // stage, a date, a name.
   useLiveUpdates(`creatives:${id}`, [{ table: "creatives", filter: `project_id=eq.${id}` }], [["creatives", id]]);
   const { data: customColumns } = useCustomColumns(id);
-  const updateCx = useUpdateCreativeCx(id);
   const { isStaff, isPending: isStaffPending } = useIsStaff();
   // Owners and Admins add a project's columns (phase96).
   const { data: myAgency } = useMyAgency();
@@ -292,10 +290,6 @@ export default function ProjectPage({
           defaultOrder={project.default_column_order}
           columnLabels={project.column_labels ?? {}}
           canAddColumns={isAdmin}
-          onCxSave={(creativeId, key, value) =>
-            updateCx.mutate({ creativeId, key, value })
-          }
-          cxReadOnly={!confirmedStaff}
           isStaff={confirmedStaff}
           initialFocusDate={calendarFocusDate}
           draftRow={draftRow}
@@ -314,10 +308,6 @@ export default function ProjectPage({
           defaultOrder={project.default_column_order}
           columnLabels={project.column_labels ?? {}}
           canAddColumns={isAdmin}
-          onCxSave={(creativeId, key, value) =>
-            updateCx.mutate({ creativeId, key, value })
-          }
-          cxReadOnly={!confirmedStaff}
           isStaff={confirmedStaff}
           initialFocusDate={calendarFocusDate}
           draftRow={draftRow}

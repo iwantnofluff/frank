@@ -1,3 +1,5 @@
+import { parsePartialJson } from "./partial-json.ts";
+
 // Design with Frank (phase110): a design direction for one post. Pure and
 // unit-testable: the route gathers the brief, the references as read and
 // the client's context; this turns them into one prompt and reads the
@@ -5,7 +7,8 @@
 
 export interface DesignReference {
   n: number;
-  url: string;
+  // Null for an image the team pasted (phase111).
+  url: string | null;
   title: string | null;
   // The page's own description: for a public Instagram post, its likes,
   // comments, date and caption.
@@ -72,7 +75,7 @@ function referencesBlock(refs: DesignReference[]): string {
     "References the team gave for this post. Each one's preview image is attached as \"Reference n\" where it could be read. If an image is only the site's own logo or sharing card, not the post itself, say so in one lesson and take nothing from it. Where a description gives likes and comments, that is how the post performed: use it to say which did best, and never invent figures that aren't there.",
     ...refs.map((r) =>
       [
-        `Reference ${r.n}: ${r.url}`,
+        r.url ? `Reference ${r.n}: ${r.url}` : `Reference ${r.n}: an image the team pasted`,
         r.siteName ? `  Site: ${r.siteName}` : null,
         r.title ? `  Title: ${clip(r.title, 200)}` : null,
         r.description ? `  Description: ${clip(r.description, 400)}` : null,
@@ -156,6 +159,19 @@ export function parseDesignDirection(text: string, slideCount: number | null, is
     }
   }
   if (!raw || typeof raw !== "object") return null;
+  const direction = tidyDirection(raw, slideCount, isVideo, false);
+  return direction.directions.length ? direction : null;
+}
+
+// What there is of the direction so far, while Frank is still writing it
+// (direct instruction: shown as it's written). A direction shows from its
+// title on.
+export function parsePartialDesignDirection(text: string, slideCount: number | null, isVideo: boolean): DesignDirection {
+  const raw = parsePartialJson(text);
+  return tidyDirection(raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {}, slideCount, isVideo, true);
+}
+
+function tidyDirection(raw: Record<string, unknown>, slideCount: number | null, isVideo: boolean, partial: boolean): DesignDirection {
   const multi = slideCount && slideCount > 1 ? slideCount : 0;
 
   const directions = (Array.isArray(raw.directions) ? raw.directions : [])
@@ -175,10 +191,9 @@ export function parseDesignDirection(text: string, slideCount: number | null, is
             : null,
       };
     })
-    .filter((d) => d.idea || d.layout)
+    .filter((d) => d.idea || d.layout || (partial && d.title))
     .slice(0, 3)
     .map((d, i) => ({ ...d, title: d.title || `Direction ${i + 1}` }));
-  if (!directions.length) return null;
 
   const guard = (raw.guardrails ?? {}) as Record<string, unknown>;
   return {
@@ -207,4 +222,13 @@ export function directionAsNote(d: DesignDirectionOption): string {
   ]
     .filter(Boolean)
     .join("\n");
+}
+
+// A direction as the post's Design Direction box (phase111): the direction
+// and its guardrails, ready to edit.
+export function directionAsDesignNote(d: DesignDirectionOption, guardrails: DesignDirection["guardrails"]): string {
+  const rules = [...guardrails.format, ...guardrails.client, ...guardrails.avoid];
+  return [directionAsNote(d), rules.length ? `Guardrails:\n${rules.map((r) => `- ${r}`).join("\n")}` : null]
+    .filter(Boolean)
+    .join("\n\n");
 }

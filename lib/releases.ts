@@ -13,6 +13,18 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.42.0",
+    date: "2026-10-20",
+    title: "Notes for Designer, for the team",
+    changes: [
+      "Notes for Designer is now the team's only: clients no longer see it in the tables or on the post. It's on every post's Brief, Social too, and in the Social Media table after VO.",
+      "Design with Frank's Use This puts the direction and its guardrails into Notes for Designer, and a line into each slide's note. Its button is now in the Brief's footer, beside a note on when Frank last suggested a direction.",
+      "Frank's direction now appears as it's written, instead of all at once at the end.",
+      "References take images: click the box under the links and paste, drop one in, or choose a file. Each shows straight away while it's added, and Frank reads them too.",
+      "No table cell is edited in place any more: Notes for Designer, Principles and your own columns show an Edit or Add button that opens the post at that field, and a saved note shows in the table straight away.",
+    ],
+  },
+  {
     version: "1.41.0",
     date: "2026-10-20",
     title: "Design with Frank",

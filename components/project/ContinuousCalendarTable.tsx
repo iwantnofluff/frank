@@ -15,7 +15,8 @@ import type { CreativeListRow } from "@/hooks/use-creatives";
 import type { CustomColumnRow } from "@/hooks/use-custom-columns";
 import { useArchiveCreatives } from "@/hooks/use-archive-creatives";
 import { useDeleteCreativesPermanently } from "@/hooks/use-delete-creatives-permanently";
-import { CxCell } from "@/components/project/CxCell";
+import { CxValueCell } from "@/components/project/CxValueCell";
+import { useProjectDesignerNotes } from "@/hooks/use-designer-notes";
 import { ReferenceLinks } from "@/components/project/ReferenceLinks";
 import { ClampText } from "@/components/project/ClampText";
 import { ContinuousCalendarGrid } from "@/components/project/ContinuousCalendarGrid";
@@ -50,7 +51,7 @@ import {
 } from "@/hooks/use-calendar-views";
 
 // What a Pending button says it adds (direct instruction): "Add Creative".
-const ADD_LABELS: Record<FocusTarget, string> = {
+const ADD_LABELS: Partial<Record<FocusTarget, string>> = {
   name: "Post Name",
   team: "Team",
   concept: "Concept",
@@ -60,6 +61,8 @@ const ADD_LABELS: Record<FocusTarget, string> = {
   imageOnText: "Text on Image",
   copy: "Caption",
   alt: "Alt Text",
+  notes: "Notes",
+  principles: "Principles",
 };
 
 const MONTH_NAMES = [
@@ -117,7 +120,8 @@ export const TOGGLABLE_COLUMNS = [
   { key: "conceptRef", label: "Concept & Reference", sub: "Directions for creative and copy", width: 260 },
   // A video post's VO script (phase88), before its Text on Image.
   { key: "voiceover", label: "VO", sub: "Voiceover script", width: 220 },
-  { key: "notes", label: "Notes for Designer", sub: "Design feedback", width: 220 },
+  // As wide as Caption/Copy (direct instruction).
+  { key: "notes", label: "Notes for Designer", sub: "Design feedback", width: 330 },
   // The latest creative version's file name, with its preview on hover
   // (direct instruction; the preview moved here off Post Name).
   { key: "artwork", label: "Creative", sub: "Latest post visual", width: 200 },
@@ -134,13 +138,8 @@ export const TOGGLABLE_COLUMNS = [
 const CUSTOM_COLUMN_WIDTH = 140;
 const DEFAULT_COLUMN_ORDER = TOGGLABLE_COLUMNS.map((c) => c.key);
 
-// Fake CustomColumnRow-shaped objects, stable across renders — CxCell only
-// cares about the shape, not where it came from, so Notes for Designer and
-// Principles get its existing text editing for free, reading and writing
-// through the same creatives.cx blob and the same
-// onCxSave callback the page already wires up for real custom columns.
-// Several lines, wrapping (direct instruction: cell content always wraps).
-export const DESIGNER_NOTES_COLUMN: CustomColumnRow = { id: "designer_notes", key: "designer_notes", label: "Notes for Designer", type: "long_text", options: null, position: 0 };
+// Principles, shaped as a project field so it shows as one: read in the
+// cell, edited in the post's window (direct instruction).
 const PRINCIPLES_COLUMN: CustomColumnRow = { id: "principles", key: "principles", label: "Principles", type: "text", options: null, position: 0 };
 
 // A saved (or default) order can be missing a key that exists right now —
@@ -199,8 +198,6 @@ export function ContinuousCalendarTable({
   defaultOrder = null,
   columnLabels = {},
   canAddColumns = false,
-  onCxSave,
-  cxReadOnly,
   isStaff,
   initialFocusDate,
   draftRow,
@@ -221,8 +218,6 @@ export function ContinuousCalendarTable({
   columnLabels?: Record<string, string>;
   // Owners and Admins: + Add Column in the Columns picker (phase96).
   canAddColumns?: boolean;
-  onCxSave: (creativeId: string, key: string, value: string | number | boolean | null) => void;
-  cxReadOnly: boolean;
   isStaff: boolean;
   // The date to open on — defaults to today. The caller passes the due_on
   // of a just-created brief (with a remount, via `key`) so a post briefed
@@ -529,6 +524,35 @@ export function ContinuousCalendarTable({
     // What the button says it adds (direct instruction): "Add Creative".
     addLabel: ADD_LABELS[focus],
   });
+  // Notes for Designer (direct instruction: on both tables, and opened in
+  // the window, never edited in the cell): the overall note, then each
+  // image's own. The team's only (phase112), read for the posts in view.
+  const { data: designerNotes } = useProjectDesignerNotes(projectId, creativeIds, isStaff);
+  const notesCell = (c: CreativeListRow, key: string) => (
+    <td key={key} className="cellw">
+      <CxValueCell
+        column={{ label: "Notes for Designer", type: "long_text", options: null }}
+        value={designerNotes?.[c.id]?.overall ?? null}
+        expanded={expandedRow === c.id}
+        onToggle={() => toggleRow(c.id)}
+        onFill={fill(c, "notes").onFill}
+        addLabel="Notes"
+        after={
+          (designerNotes?.[c.id]?.slides ?? []).some((n) => n.trim()) ? (
+            <span className="slidenotes">
+              {(designerNotes?.[c.id]?.slides ?? []).map((n, i) =>
+                n.trim() ? (
+                  <span key={i}>
+                    <b>Slide {i + 1}:</b> {n}
+                  </span>
+                ) : null,
+              )}
+            </span>
+          ) : undefined
+        }
+      />
+    </td>
+  );
 
   const filtered = useMemo(() => {
     return creatives
@@ -573,7 +597,7 @@ export function ContinuousCalendarTable({
 
   // VO is the team's (phase88, direct instruction: not shown to clients).
   // Renamed for the project (phase96), the rest as they come.
-  const shownColumns = TOGGLABLE_COLUMNS.filter((c) => isStaff || c.key !== "voiceover").map((c) => ({
+  const shownColumns = TOGGLABLE_COLUMNS.filter((c) => isStaff || (c.key !== "voiceover" && c.key !== "notes")).map((c) => ({
     ...c,
     label: columnLabels[c.key] ?? c.label,
   }));
@@ -1309,28 +1333,7 @@ export function ContinuousCalendarTable({
                               );
                             }
                             case "notes":
-                              return (
-                                <td key={key} className="cellw">
-                                  <CxCell
-                                    column={DESIGNER_NOTES_COLUMN}
-                                    value={c.cx?.["designer_notes"] ?? null}
-                                    onSave={(value) => onCxSave(c.id, "designer_notes", value)}
-                                    readOnly={cxReadOnly}
-                                  />
-                                  {/* Each image's own note (phase108), under the overall one. */}
-                                  {(c.slide_notes ?? []).some((n) => n.trim()) && (
-                                    <span className="slidenotes">
-                                      {(c.slide_notes ?? []).map((n, i) =>
-                                        n.trim() ? (
-                                          <span key={i}>
-                                            <b>Slide {i + 1}:</b> {n}
-                                          </span>
-                                        ) : null,
-                                      )}
-                                    </span>
-                                  )}
-                                </td>
-                              );
+                              return notesCell(c, key);
                             case "approach":
                               return (
                                 <td key={key} className="cellw">
@@ -1356,12 +1359,13 @@ export function ContinuousCalendarTable({
                               );
                             case "principles":
                               return (
-                                <td key={key}>
-                                  <CxCell
+                                <td key={key} className="cellw">
+                                  <CxValueCell
                                     column={PRINCIPLES_COLUMN}
                                     value={c.cx?.["principles"] ?? null}
-                                    onSave={(value) => onCxSave(c.id, "principles", value)}
-                                    readOnly={cxReadOnly}
+                                    expanded={expandedRow === c.id}
+                                    onToggle={() => toggleRow(c.id)}
+                                    onFill={fill(c, "principles").onFill}
                                   />
                                 </td>
                               );
@@ -1369,12 +1373,13 @@ export function ContinuousCalendarTable({
                               const customCol = customColumnByKey.get(key);
                               if (!customCol) return null;
                               return (
-                                <td key={key}>
-                                  <CxCell
+                                <td key={key} className="cellw">
+                                  <CxValueCell
                                     column={customCol}
                                     value={c.cx?.[customCol.key] ?? null}
-                                    onSave={(value) => onCxSave(c.id, customCol.key, value)}
-                                    readOnly={cxReadOnly}
+                                    expanded={expandedRow === c.id}
+                                    onToggle={() => toggleRow(c.id)}
+                                    onFill={fill(c, `cx:${customCol.key}`).onFill}
                                   />
                                 </td>
                               );

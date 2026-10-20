@@ -32,6 +32,8 @@ export async function runAiTask(
   // across a conversation's messages, so a provider can keep it.
   prompt: string | string[],
   attachments: Attachment[] = [],
+  // The answer as it's written (Design with Frank), where the model can.
+  onText?: (text: string) => void,
 ): Promise<AiTaskResult> {
   const { data: agency, error: agencyError } = await supabase
     .from("agencies")
@@ -68,7 +70,7 @@ export async function runAiTask(
 
   let text: string;
   try {
-    text = await generateDraft(agency.ai_default_model, prompt, attachments);
+    text = await generateDraft(agency.ai_default_model, prompt, attachments, onText);
   } catch (err) {
     return {
       ok: false,

@@ -7,9 +7,11 @@ import {
   useChooseDesignDirection,
   useDesignDirections,
   useRequestDesignDirection,
+  type DesignDirectionRef,
   type DesignDirectionRow,
 } from "@/hooks/use-design-directions";
-import type { DesignDirectionOption } from "@/lib/ai/design-direction";
+import { parsePartialDesignDirection, type DesignDirection as Body, type DesignDirectionOption } from "@/lib/ai/design-direction";
+import { useReferenceImages } from "@/hooks/use-reference-images";
 import { errorMessage } from "@/lib/errors";
 import { useMyAgency } from "@/hooks/use-my-agency";
 import { useClientDetail } from "@/hooks/use-client";
@@ -43,8 +45,8 @@ function List({ items }: { items: string[] }) {
 // Design with Frank (phase110): Frank reads the post's concept and its
 // reference links, and writes the designer a direction: what the
 // references teach, two or three ways to design this post, and guardrails.
-// Use This puts a direction into Notes for Designer, and marks it as the
-// one chosen for the post page. Kept with the post, for the team.
+// Use This puts a direction into the post's Design Direction box (and each
+// slide's line into its Notes for Designer), and marks it as chosen. Kept with the post, for the team.
 // Portalled to the page: it opens over the post window.
 export function DesignDirection({
   creativeId,
@@ -68,11 +70,10 @@ export function DesignDirection({
   slideCount: number | null;
   frameNoun: string;
   isVideo: boolean;
-  // Where Use This puts a direction, in words, for the note under it;
-  // null when the post has no Notes for Designer to fill.
-  notesHome: string | null;
+  // Where Use This puts a direction, in words, for the note under it.
+  notesHome: string;
   // A direction into the notes, or null to put back what was there.
-  onUse: (direction: DesignDirectionOption | null) => void;
+  onUse: (direction: DesignDirectionOption | null, guardrails?: Body["guardrails"]) => void;
   onClose: () => void;
 }) {
   const { data: rows, isLoading } = useDesignDirections(creativeId);
@@ -85,11 +86,22 @@ export function DesignDirection({
   const [openId, setOpenId] = useState<string | null>(null);
   const [skipped, setSkipped] = useState<string[]>([]);
   const row: DesignDirectionRow | undefined = rows?.find((r) => r.id === openId) ?? rows?.[0];
-  const canAsk = !!concept.trim() || referenceUrls.length > 0;
+  const { data: pastedImages } = useReferenceImages(creativeId);
+  const pastedUrl = (key: string | undefined) => pastedImages?.find((p) => p.storageKey === key)?.url ?? null;
+  const canAsk = !!concept.trim() || referenceUrls.length > 0 || !!pastedImages?.length;
+  // While Frank writes (direct instruction: shown as it's written): the
+  // references it's reading, and what it has written so far.
+  const [progress, setProgress] = useState<{ refs: DesignDirectionRef[]; text: string }>({ refs: [], text: "" });
+  const shown: { body: Body; refs: DesignDirectionRef[]; chosen: number | null; live: boolean } | null = request.isPending
+    ? { body: parsePartialDesignDirection(progress.text, slideCount, isVideo), refs: progress.refs, chosen: null, live: true }
+    : row
+      ? { body: row.body, refs: row.refs, chosen: row.chosen, live: false }
+      : null;
 
   function ask() {
+    setProgress({ refs: [], text: "" });
     request.mutate(
-      { concept, referenceUrls, slideCount },
+      { concept, referenceUrls, slideCount, onProgress: setProgress },
       {
         onSuccess: (r) => {
           setOpenId(r.id);
@@ -103,7 +115,7 @@ export function DesignDirection({
     if (!row) return;
     const added = row.chosen === i;
     choose.mutate({ id: row.id, chosen: added ? null : i });
-    onUse(added ? null : row.body.directions[i]);
+    onUse(added ? null : row.body.directions[i], row.body.guardrails);
   }
 
   const body = (
@@ -144,8 +156,8 @@ export function DesignDirection({
             <ul className="cchat-reads">
               <li>This post&rsquo;s Concept, format, WIIFM and Text on Image, as they are in the window.</li>
               <li>
-                Each reference link&rsquo;s page and preview image, up to 8. A public Instagram post&rsquo;s likes and comments
-                show which did best.
+                Each reference link&rsquo;s page and preview image, up to 8, and the images pasted into References. A public
+                Instagram post&rsquo;s likes and comments show which did best.
               </li>
               <li>Each format&rsquo;s direction, and {theirs} strategy for the month.</li>
               <li>Your workspace&rsquo;s and {theirs} Knowledge: notes in full, and up to 10 PDFs or images.</li>
@@ -180,19 +192,7 @@ export function DesignDirection({
         </div>
 
         <div className="cchat-main ddir" aria-live="polite">
-          {request.isPending ? (
-            <div className="cchat-msg assistant pending" role="status">
-              <div className="cchat-who">Frank</div>
-              <div className="cchat-thinking">
-                Frank is reading the references
-                <span className="cchat-dots" aria-hidden="true">
-                  <i />
-                  <i />
-                  <i />
-                </span>
-              </div>
-            </div>
-          ) : !row ? (
+          {!shown ? (
             <div className="cchat-empty">
               {isLoading
                 ? "Loading…"
@@ -200,19 +200,23 @@ export function DesignDirection({
             </div>
           ) : (
             <>
-              {row.body.summary && <p className="ddir-summary">{row.body.summary}</p>}
+              {shown.body.summary && <p className="ddir-summary">{shown.body.summary}</p>}
 
-              {row.refs.length > 0 && (
+              {shown.refs.length > 0 && (
                 <section>
                   <div className="cchat-head">What the references teach</div>
                   <div className="ddir-refs">
-                    {row.refs.map((ref) => {
-                      const lessons = row.body.references.find((r) => r.n === ref.n)?.lessons ?? [];
+                    {shown.refs.map((ref) => {
+                      const lessons = shown.body.references.find((r) => r.n === ref.n)?.lessons ?? [];
                       return (
                         <div className="ddir-ref" key={ref.n}>
-                          <a href={ref.url} target="_blank" rel="noreferrer" aria-label={`Open reference ${ref.n}`}>
-                            <RefThumb src={ref.image} />
-                          </a>
+                          {ref.url ? (
+                            <a href={ref.url} target="_blank" rel="noreferrer" aria-label={`Open reference ${ref.n}`}>
+                              <RefThumb src={ref.image} />
+                            </a>
+                          ) : (
+                            <RefThumb src={pastedUrl(ref.assetKey)} />
+                          )}
                           <div className="ddir-ref-b">
                             <div className="ddir-ref-h">
                               <b>Reference {ref.n}</b>
@@ -222,7 +226,13 @@ export function DesignDirection({
                               <List items={lessons} />
                             ) : (
                               <p className="cchat-note">
-                                {ref.read ? "Nothing particular to take from this one." : "Couldn’t be read: the page needs a sign-in or refused."}
+                                {shown.live
+                                  ? "Reading\u2026"
+                                  : ref.read
+                                    ? "Nothing particular to take from this one."
+                                    : ref.url
+                                      ? "Couldn\u2019t be read: the page needs a sign-in or refused."
+                                      : "Too large to include this time."}
                               </p>
                             )}
                           </div>
@@ -233,23 +243,23 @@ export function DesignDirection({
                 </section>
               )}
 
-              {row.body.worked.length > 0 && (
+              {shown.body.worked.length > 0 && (
                 <section>
                   <div className="cchat-head">What has worked</div>
-                  <List items={row.body.worked} />
+                  <List items={shown.body.worked} />
                 </section>
               )}
 
               <section>
                 <div className="cchat-head">Directions</div>
-                {notesHome && <p className="cchat-note">Use This puts a direction into {notesHome}.</p>}
-                {row.body.directions.map((d, i) => {
-                  const added = row.chosen === i;
+                <p className="cchat-note">Use This puts a direction into {notesHome}.</p>
+                {shown.body.directions.map((d, i) => {
+                  const added = shown.chosen === i;
                   return (
                     <div className="cchat-draft ddir-dir" key={i}>
                       <div className="cchat-draft-h">
                         <b>{d.title}</b>
-                        <button
+                        {!shown.live && <button
                           type="button"
                           className={`btn sm${added ? " added" : ""}`}
                           aria-pressed={added}
@@ -258,7 +268,7 @@ export function DesignDirection({
                           onClick={() => use(i)}
                         >
                           {added ? "Added" : "Use This"}
-                        </button>
+                        </button>}
                       </div>
                       <dl className="ddir-fields">
                         {(
@@ -323,36 +333,52 @@ export function DesignDirection({
                 })}
               </section>
 
-              {(row.body.guardrails.format.length > 0 ||
-                row.body.guardrails.client.length > 0 ||
-                row.body.guardrails.avoid.length > 0) && (
+              {(shown.body.guardrails.format.length > 0 ||
+                shown.body.guardrails.client.length > 0 ||
+                shown.body.guardrails.avoid.length > 0) && (
                 <section>
                   <div className="cchat-head">Guardrails</div>
                   <div className="ddir-guard">
-                    {row.body.guardrails.format.length > 0 && (
+                    {shown.body.guardrails.format.length > 0 && (
                       <div>
                         <b>The format</b>
-                        <List items={row.body.guardrails.format} />
+                        <List items={shown.body.guardrails.format} />
                       </div>
                     )}
-                    {row.body.guardrails.client.length > 0 && (
+                    {shown.body.guardrails.client.length > 0 && (
                       <div>
                         <b>{client?.name ? `${client.name}’s brand` : "The brand"}</b>
-                        <List items={row.body.guardrails.client} />
+                        <List items={shown.body.guardrails.client} />
                       </div>
                     )}
-                    {row.body.guardrails.avoid.length > 0 && (
+                    {shown.body.guardrails.avoid.length > 0 && (
                       <div>
                         <b>Avoid</b>
-                        <List items={row.body.guardrails.avoid} />
+                        <List items={shown.body.guardrails.avoid} />
                       </div>
                     )}
                   </div>
                 </section>
               )}
-              <p className="cchat-note">
-                {row.author ?? "Someone"} asked Frank · {when(row.created_at)}
-              </p>
+              {shown.live ? (
+                <div className="cchat-msg assistant pending" role="status">
+                  <div className="cchat-who">Frank</div>
+                  <div className="cchat-thinking">
+                    {progress.text ? "Frank is writing" : "Frank is reading the references"}
+                    <span className="cchat-dots" aria-hidden="true">
+                      <i />
+                      <i />
+                      <i />
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                row && (
+                  <p className="cchat-note">
+                    {row.author ?? "Someone"} asked Frank · {when(row.created_at)}
+                  </p>
+                )
+              )}
             </>
           )}
           {request.error && <p className="autherr">{errorMessage(request.error, "Frank didn't answer")}</p>}

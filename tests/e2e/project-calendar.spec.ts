@@ -201,7 +201,7 @@ test("project calendar — Columns picker hides and reshows a column", async ({ 
   await page.waitForSelector(".colpop");
   await page.getByRole("checkbox", { name: /^Show Concept/ }).click();
   await expect(page.locator("th", { hasText: "Concept" })).toHaveCount(0);
-  await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 16/17");
+  await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 17/18");
 
   await page.click('button:has-text("Columns")');
   await page.getByRole("checkbox", { name: /^Show Concept/ }).click();
@@ -292,10 +292,10 @@ test("project calendar — matches the real content-planner template's default c
   await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
-  await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 17/17");
+  await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 18/18");
   for (const label of [
     "Week", "Publish Date", "Day", "Time", "Status", "Format", "Slides", "Team",
-    "Post Name", "Concept & Reference", "VO", "Creative", "Text on Image", "Caption/Copy", "Alt Text", "WIIFM Direction", "Client Feedback",
+    "Post Name", "Concept & Reference", "VO", "Notes for Designer", "Creative", "Text on Image", "Caption/Copy", "Alt Text", "WIIFM Direction", "Client Feedback",
   ]) {
     // Anchored at the start: a th's text is always {label}{sub} with no
     // separator, and hasText's substring match is case-insensitive, so an
@@ -446,6 +446,7 @@ test("project calendar — a post past its date is red, and Pending opens its Ed
   await expect(row.locator(".tpending-btn")).toHaveText([
     "Add Team",
     "Add Concept",
+    "Add Notes",
     "Add Creative",
     "Add Text on Image",
     "Add Caption",

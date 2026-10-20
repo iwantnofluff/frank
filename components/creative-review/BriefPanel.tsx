@@ -3,7 +3,7 @@
 import type { CreativeRow } from "@/hooks/use-creative";
 import { formatById, formatsLabel, postFormats } from "@/lib/formats";
 import { ReferenceLinks } from "@/components/project/ReferenceLinks";
-import { useDesignDirections } from "@/hooks/use-design-directions";
+import { useDesignerNotes } from "@/hooks/use-designer-notes";
 
 // Informational only, on this page — editing the brief now happens in
 // CreativeModal's Brief tab (the single entry point that replaced New
@@ -26,16 +26,11 @@ export function BriefPanel({
   // On the post itself (phase57), not a copy version.
   const slideText = creative.slide_text ?? [];
   // Notes for Designer (direct instruction): the post's overall note, and
-  // one per image on a multi-image post (phase108).
-  const overallNote = String(creative.cx?.designer_notes ?? "").trim();
-  const slideNotes = creative.slide_notes ?? [];
-  // The design direction the team chose from Design with Frank (phase110):
-  // the newest run with one chosen. The team only: a Client reads none.
-  const { data: directions } = useDesignDirections(creative.id);
-  const chosenRun = directions?.find((r) => r.chosen !== null && r.body.directions[r.chosen]);
-  const chosen = chosenRun ? chosenRun.body.directions[chosenRun.chosen!] : null;
-  const guard = chosenRun?.body.guardrails;
-  const guardrails = guard ? [...guard.format, ...guard.client, ...guard.avoid] : [];
+  // one per image on a multi-image post. The team's only (phase112): a
+  // Client reads none, and the section doesn't show.
+  const { data: notes } = useDesignerNotes(creative.id);
+  const overallNote = notes?.overall.trim() ?? "";
+  const slideNotes = notes?.slides ?? [];
 
   return (
     <div className="brief open reviewpanel">
@@ -116,7 +111,7 @@ export function BriefPanel({
       {(overallNote || slideNotes.some((n) => n.trim())) && (
         <div className="bsec">
           <div className="bl">Notes for Designer</div>
-          {overallNote && <p className="fd-d">{overallNote}</p>}
+          {overallNote && <p className="fd-d fd-pre">{overallNote}</p>}
           {slideNotes.map((note, i) =>
             note.trim() ? (
               <p className="fd-d" key={i}>
@@ -128,49 +123,6 @@ export function BriefPanel({
         </div>
       )}
 
-      {chosen && (
-        <div className="bsec">
-          <div className="bl">Design Direction</div>
-          <p className="fd-d">
-            <b>{chosen.title}: </b>
-            {chosen.idea}
-          </p>
-          {(
-            [
-              ["Layout", chosen.layout],
-              ["Style", chosen.style],
-              ["Palette", chosen.palette],
-              ["Text on Image", chosen.textOnImage],
-              ["First three seconds", chosen.reel?.hook],
-              ["Shots", chosen.reel?.shots.join(" / ")],
-              ["End frame", chosen.reel?.end],
-            ] as const
-          ).map(([label, text]) =>
-            text ? (
-              <p className="fd-d" key={label}>
-                <b>{label}: </b>
-                {text}
-              </p>
-            ) : null,
-          )}
-          {chosen.slides.map((line, i) => (
-            <p className="fd-d" key={i}>
-              <b>Slide {i + 1}: </b>
-              {line}
-            </p>
-          ))}
-          {guardrails.length > 0 && (
-            <div className="fd-d">
-              <b>Guardrails:</b>
-              <ul className="ddir-list">
-                {guardrails.map((g, i) => (
-                  <li key={i}>{g}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      )}
       </div>
     </div>
   );

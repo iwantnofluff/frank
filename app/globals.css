@@ -7914,16 +7914,99 @@ a.profproject:hover .pp-t b {
   font-size: 13.2px;
   margin-bottom: 4px;
 }
-/* On the Brief tab: the button, and a line on what it does. */
-.ddir-ask {
+/* Pasted reference images on the Brief (phase111): thumbnails with an x,
+   then the way to add more; outlined while files are dragged over. */
+.refimgs {
+  border-radius: var(--r);
+  margin-top: 2px;
+}
+.refimg-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+/* Going up: this computer's copy, faded, with the upload bar's pulse. */
+.refimg.adding img {
+  opacity: 0.55;
+}
+.refimg-bar {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--action);
+  animation: upbar-pulse 1.2s ease-in-out infinite;
+}
+.refimg {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--canvas);
+  overflow: hidden;
+}
+.refimg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.refimg .refx {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  background: var(--surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+.refimg-none {
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+  justify-content: center;
+  font-size: 11.7px;
+  color: var(--muted);
 }
-.ddir-ask .hint {
-  flex: 1;
-  min-width: 200px;
+.refimg-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 72px;
+  margin-top: 8px;
+  padding: 12px;
+  border: 1.5px dashed var(--line-2);
+  border-radius: var(--r);
+  background: var(--canvas);
+  text-align: center;
+  font-size: 13.2px;
+  color: var(--muted);
+  cursor: text;
+}
+.refimg-drop b {
+  color: var(--ink);
+  font-weight: 500;
+}
+.refimg-drop:focus,
+.refimgs.over .refimg-drop {
+  outline: none;
+  border-color: var(--action);
+  background: var(--action-soft);
+}
+/* Beside Design with Frank in the Brief's footer: what it does, or how
+   many directions Frank has written and when, small, on two lines. */
+.ddir-foot {
+  font-size: 11.7px;
+  line-height: 1.35;
+  color: var(--muted);
+  margin-left: 2px;
+}
+/* The post page's Design Direction keeps its lines and lists. */
+.fd-d.fd-pre {
+  white-space: pre-wrap;
 }
 /* The review page's copy, before there is any (direct instruction). */
 .ig-nocopy {

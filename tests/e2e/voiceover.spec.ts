@@ -55,7 +55,9 @@ test("a video post has a VO after its Creative, saved on the post and shown on t
   await expect(page.locator("th", { hasText: /^VO/ })).toHaveCount(1);
   const voCol = await page.locator("th").evaluateAll((ths) => ths.findIndex((th) => /^VO/.test(th.textContent ?? "")));
   expect(voCol).toBeGreaterThan(0);
-  await expect(row.locator("td").nth(voCol)).toHaveText("Nobody misses on purpose.");
+  // The script, then its Edit (direct instruction).
+  await expect(row.locator("td").nth(voCol).locator(".cc-t")).toHaveText("Nobody misses on purpose.");
+  await expect(row.locator("td").nth(voCol).locator(".tedit-btn")).toHaveText("Edit");
 });
 
 test("a post with no video format has no VO, and a client's table has no VO column", async ({ page, frank }) => {

@@ -22,6 +22,11 @@ function viewSaveSplit(page: import("@playwright/test").Page) {
 
 // A row's cell under the column headed `label`, wherever that column is.
 async function cellUnder(page: import("@playwright/test").Page, rowText: string, label: string) {
+  // Once the page knows who's looking: the team's own columns (the
+  // checkbox, VO, Notes for Designer) come in then, moving the rest along.
+  if (!(await page.locator("th", { hasText: /^Notes for Designer/ }).count())) {
+    await page.locator("tr[data-row] td input[type=checkbox]").first().waitFor({ timeout: 10_000 }).catch(() => {});
+  }
   const index = await page.locator("thead tr").first().evaluate((tr, l) => {
     const name = (th: Element) => {
       const copy = th.cloneNode(true) as HTMLElement;
@@ -71,16 +76,24 @@ test("continuous calendar — Notes for Designer persist", async ({ page, frank 
   await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
-  const saved = () => page.waitForResponse((r) => r.url().includes("update_creative_cx") && r.ok());
-  // Several lines, wrapping (direct instruction).
-  const notes = (await cellUnder(page, "Chip Test Creative", "Notes for Designer")).locator("textarea");
-  await notes.fill("Keep the logo top left");
-  await Promise.all([saved(), notes.blur()]);
+  // Never edited in the cell (direct instruction): its Add opens the
+  // post's window at the notes, and the table shows them once saved,
+  // without a reload.
+  const row = page.locator("tr[data-row]", { hasText: "Chip Test Creative" });
+  await expect(row.locator("textarea, input:not([type=checkbox]), select")).toHaveCount(0);
+  await row.getByRole("button", { name: "Add Notes" }).click();
+  await expect(page.locator("#nbNotes")).toBeFocused({ timeout: 15_000 });
+  await page.locator("#nbNotes").fill("Keep the logo top left");
+  await page.getByRole("button", { name: "Update" }).click();
+  await expect(page.getByText("Post updated.")).toBeVisible({ timeout: 15_000 });
+  await page.keyboard.press("Escape");
+  await expect(row).toContainText("Keep the logo top left", { timeout: 10_000 });
+  await expect(row.getByRole("button", { name: "Add Notes" })).toHaveCount(0);
   await page.reload();
   await page.waitForSelector(".tblwrap, .empty");
   await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
-  await expect((await cellUnder(page, "Chip Test Creative", "Notes for Designer")).locator("textarea")).toHaveValue("Keep the logo top left");
+  await expect(page.locator("tr[data-row]", { hasText: "Chip Test Creative" })).toContainText("Keep the logo top left");
 });
 
 test("continuous calendar — Format, Text on Image and Copy come from the post itself", async ({ page, frank }) => {
@@ -229,9 +242,12 @@ test("a real client-role session sees the continuous table read-only", async ({ 
 
   await expect(page.getByRole("button", { name: "New Post", exact: true })).toHaveCount(0);
   const row = page.locator("tr[data-row]", { hasText: "Client View Creative" });
-  // Notes for Designer (several lines) and Principles (one), locked.
-  await expect(row.locator("textarea.cxin").first()).toBeDisabled();
-  await expect(row.locator("input.cxin").first()).toBeDisabled();
+  // Nothing to edit and no Add or Edit buttons (Notes for Designer and
+  // Principles are the team's to fill, in the post's window).
+  await expect(row.locator("textarea, input:not([type=checkbox]), select")).toHaveCount(0);
+  await expect(row.locator(".tpending-btn, .tedit-btn")).toHaveCount(0);
+  // Notes for Designer is the team's (phase112): no column for a client.
+  await expect(page.locator("th", { hasText: /^Notes for Designer/ })).toHaveCount(0);
   // VO is the team's (phase88): no column for a client.
   await expect(page.locator("th", { hasText: /^VO/ })).toHaveCount(0);
 });
