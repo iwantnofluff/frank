@@ -18,10 +18,6 @@ const BUILT_IN_TYPES: Record<string, string> = {
   altText: "Copy",
   approach: "Copy",
   clientFeedback: "Comments",
-  placement: "Single Line Text",
-  funnel: "Dropdown",
-  tg: "Single Line Text",
-  finalCreative: "Artwork",
   notes: "Large Text",
   principles: "Single Line Text",
 };

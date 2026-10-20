@@ -104,7 +104,6 @@ export function MobileReview({
                   </span>
                   <span>
                     {formatsLabel(postFormats(active))}
-                    {active.destination && ` · ${active.destination}`}
                   </span>
                 </>
               ) : undefined

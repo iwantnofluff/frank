@@ -35,7 +35,8 @@ test("creates a continuous creative end to end", async ({ page, frank }) => {
 
   await page.getByRole("button", { name: "New Post", exact: true }).click();
   await page.fill("#nbName", "New Brief E2E — Continuous");
-  await page.fill("#nbDest", "https://example.com/listing");
+  // No Destination any more (direct instruction).
+  await expect(page.locator("#nbDest")).toHaveCount(0);
   // due_on is optional at the schema/form level, but ContinuousCalendarTable
   // (like ProjectCalendarTable's own scheduled_at) only shows a creative
   // that has one — fill it so this brief actually appears afterward.

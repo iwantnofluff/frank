@@ -334,7 +334,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     id: "other-content",
     title: "Track Other Content",
     category: "posts",
-    summary: "Deliverables with a live date and a destination.",
+    summary: "Deliverables with a live date.",
     blocks: [
       {
         kind: "p",
@@ -343,9 +343,9 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         kind: "list",
         items: [
-          "Each post has a Live Date and a Destination, such as a URL, an ASIN or a location.",
-          "Funnel and Notes for Designer can be set in the post window or in the table.",
-          "The table also shows TG, Final Creative and Principles, edited in place.",
+          "Each post has a Live Date; a post without one is an Idea.",
+          "Notes for Designer can be set in the post window or in the table, and a post with several images has one for each.",
+          "The table also shows Principles, edited in place.",
         ],
       },
     ],

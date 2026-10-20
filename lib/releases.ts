@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.40.0",
+    date: "2026-10-20",
+    title: "A simpler Other Content table",
+    changes: [
+      "Destination, Funnel, TG and Final Creative are gone from Other Content's table and from the post window; nothing asks for a destination any more.",
+      "The table's columns now follow the Social Media table's order, with Notes for Designer before Creative.",
+    ],
+  },
+  {
     version: "1.39.2",
     date: "2026-10-19",
     title: "0. Idea",

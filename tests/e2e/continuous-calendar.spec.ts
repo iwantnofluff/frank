@@ -14,12 +14,25 @@ function viewSaveSplit(page: import("@playwright/test").Page) {
 // ContinuousCalendarTable — a copy of ProjectCalendarTable/project-calendar
 // .spec.ts's own coverage, scoped to what's genuinely new or different here:
 // the content-planner template with the New Post window's own names, the
-// cx-jsonb-backed built-ins (Funnel/TG/Final Creative/Notes for Designer/
-// Principles), the real copy versions, due_on-driven grouping in place of
+// cx-jsonb-backed built-ins (Notes for Designer and Principles), the real copy versions, due_on-driven grouping in place of
 // scheduled_at, and calendar_views now being scoped per table_type. Drag-
 // resize/reorder/Columns-picker mechanics are verbatim-copied code already
 // covered by project-calendar.spec.ts, so get one combined check here
 // rather than the full matrix again.
+
+// A row's cell under the column headed `label`, wherever that column is.
+async function cellUnder(page: import("@playwright/test").Page, rowText: string, label: string) {
+  const index = await page.locator("thead tr").first().evaluate((tr, l) => {
+    const name = (th: Element) => {
+      const copy = th.cloneNode(true) as HTMLElement;
+      copy.querySelectorAll("small").forEach((x) => x.remove());
+      return (copy.textContent ?? "").trim();
+    };
+    return [...tr.querySelectorAll(":scope > th")].findIndex((th) => name(th) === l);
+  }, label);
+  expect(index, `a column headed ${label}`).toBeGreaterThan(-1);
+  return page.locator("tr[data-row]", { hasText: rowText }).locator("td").nth(index);
+}
 
 test("continuous calendar — the template's columns, named as in the New Post window", async ({ page, frank }) => {
   const projectId = await frank.createContinuousProject();
@@ -30,18 +43,26 @@ test("continuous calendar — the template's columns, named as in the New Post w
   await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
-  // 18 toggleable (VO, phase88; Alt Text; Creative) + the frozen Live Date column = 19.
-  await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 19/19");
-  for (const label of [
-    "Live Date", "Post Name", "Destination", "Funnel", "TG", "Format", "Slides", "Team", "Status",
-    "Concept & Reference", "Final Creative", "VO", "Creative", "Text on Image", "Caption/Copy", "Alt Text", "Notes for Designer", "WIIFM Direction",
-    "Principles",
-  ]) {
-    await expect(page.locator("th", { hasText: new RegExp(`^${label}`) })).toHaveCount(1);
-  }
+  // In the Social Media table's order, Notes for Designer before Creative
+  // (direct instruction); Destination, Funnel, TG and Final Creative gone.
+  await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 15/15");
+  // Each heading's name, without its <small> subtitle.
+  const headings = await page.locator("thead tr").first().locator("th").evaluateAll((ths) =>
+    ths
+      .map((th) => {
+        const copy = th.cloneNode(true) as HTMLElement;
+        copy.querySelectorAll("small").forEach((x) => x.remove());
+        return (copy.textContent ?? "").trim();
+      })
+      .filter(Boolean),
+  );
+  expect(headings).toEqual([
+    "Live Date", "Status", "Format", "Slides", "Team", "Post Name", "Concept & Reference", "VO", "Notes for Designer",
+    "Creative", "Text on Image", "Caption/Copy", "Alt Text", "WIIFM Direction", "Principles",
+  ]);
 });
 
-test("continuous calendar — Funnel and Notes for Designer persist", async ({ page, frank }) => {
+test("continuous calendar — Notes for Designer persist", async ({ page, frank }) => {
   const projectId = await frank.createContinuousProject();
   await frank.createContinuousCreative(projectId, { name: "Chip Test Creative", dueOn: "2027-03-15" });
   await frank.loginAsStaff(page);
@@ -50,26 +71,16 @@ test("continuous calendar — Funnel and Notes for Designer persist", async ({ p
   await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
-  // Default column order's td indices: 0 the staff-only select-row
-  // checkbox, 1 Live Date, 2 Post Name, 3 Destination, 4 Funnel, ...,
-  // 17 Notes for Designer (VO, phase88, is 12; Creative 13; Alt Text 16).
-  const row = page.locator("tr[data-row]", { hasText: "Chip Test Creative" });
-  const cells = row.locator("td");
-  // Each save lands before the reload (it used to race it).
   const saved = () => page.waitForResponse((r) => r.url().includes("update_creative_cx") && r.ok());
-  await Promise.all([saved(), cells.nth(4).locator("select").selectOption("tof")]);
   // Several lines, wrapping (direct instruction).
-  const notes = cells.nth(17).locator("textarea");
+  const notes = (await cellUnder(page, "Chip Test Creative", "Notes for Designer")).locator("textarea");
   await notes.fill("Keep the logo top left");
   await Promise.all([saved(), notes.blur()]);
   await page.reload();
   await page.waitForSelector(".tblwrap, .empty");
   await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
-  const reloadedCells = page.locator("tr[data-row]", { hasText: "Chip Test Creative" }).locator("td");
-  await expect(reloadedCells.nth(4).locator("select")).toHaveValue("tof");
-  await expect(reloadedCells.nth(4)).toContainText("TOF");
-  await expect(reloadedCells.nth(17).locator("textarea")).toHaveValue("Keep the logo top left");
+  await expect((await cellUnder(page, "Chip Test Creative", "Notes for Designer")).locator("textarea")).toHaveValue("Keep the logo top left");
 });
 
 test("continuous calendar — Format, Text on Image and Copy come from the post itself", async ({ page, frank }) => {
@@ -85,19 +96,21 @@ test("continuous calendar — Format, Text on Image and Copy come from the post 
   await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
-  const cells = page.locator("tr[data-row]", { hasText: "Copy Test Creative" }).locator("td");
-  // 6 Format, 14 Text on Image (no versions), 15 Copy: the latest
-  // version, older on hover.
-  await expect(cells.nth(6)).toHaveText("Instagram Post");
+  // Format, Text on Image (no versions), Copy: the latest version, older
+  // on hover.
+  const format = await cellUnder(page, "Copy Test Creative", "Format");
+  const textOnImage = await cellUnder(page, "Copy Test Creative", "Text on Image");
+  const copy = await cellUnder(page, "Copy Test Creative", "Caption/Copy");
+  await expect(format).toHaveText("Instagram Post");
   // The text, then its Edit (direct instruction).
-  await expect(cells.nth(14).locator(".cc-t")).toHaveText("On the artwork");
-  await expect(cells.nth(14).locator(".tedit-btn")).toHaveText("Edit");
-  await expect(cells.nth(15)).toContainText("Second caption");
-  await expect(cells.nth(15)).toContainText("+1 earlier");
-  await cells.nth(15).locator(".cc-n").hover();
+  await expect(textOnImage.locator(".cc-t")).toHaveText("On the artwork");
+  await expect(textOnImage.locator(".tedit-btn")).toHaveText("Edit");
+  await expect(copy).toContainText("Second caption");
+  await expect(copy).toContainText("+1 earlier");
+  await copy.locator(".cc-n").hover();
   await expect(page.locator(".copypop")).toContainText("First caption");
   // Nothing to type into: the copy is written in the post's own window.
-  await expect(cells.nth(15).locator("textarea")).toHaveCount(0);
+  await expect(copy.locator("textarea")).toHaveCount(0);
 });
 
 test("continuous calendar — status filter narrows the visible rows", async ({ page, frank }) => {
@@ -138,7 +151,6 @@ test("continuous calendar — jumps to the month of a newly created brief", asyn
 
   await page.getByRole("button", { name: "New Post", exact: true }).click();
   await page.fill("#nbName", "Continuous Calendar Jump E2E");
-  await page.fill("#nbDest", "https://example.com/listing");
   await page.fill("#nbDue", "2027-06-10");
   await chooseFormat(page, "A+ Content Module");
   await page.click('button:has-text("Create Post")');
@@ -217,8 +229,8 @@ test("a real client-role session sees the continuous table read-only", async ({ 
 
   await expect(page.getByRole("button", { name: "New Post", exact: true })).toHaveCount(0);
   const row = page.locator("tr[data-row]", { hasText: "Client View Creative" });
-  await expect(row.locator("select").first()).toBeDisabled();
-  // Notes for Designer, a text field.
+  // Notes for Designer (several lines) and Principles (one), locked.
+  await expect(row.locator("textarea.cxin").first()).toBeDisabled();
   await expect(row.locator("input.cxin").first()).toBeDisabled();
   // VO is the team's (phase88): no column for a client.
   await expect(page.locator("th", { hasText: /^VO/ })).toHaveCount(0);

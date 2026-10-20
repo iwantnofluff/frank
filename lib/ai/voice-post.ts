@@ -19,7 +19,6 @@ export interface VoicePostFields {
   date?: string; // YYYY-MM-DD, a scheduled post's Publish Date
   time?: string; // HH:MM
   dueOn?: string; // YYYY-MM-DD, a continuous post's Live Date
-  destination?: string;
   concept?: string;
   referenceUrls?: string[];
   teamUserIds?: string[];
@@ -38,7 +37,7 @@ export function buildVoicePostPrompt(input: VoicePostInput): string {
     '- "slideCount": how many slides or stories, a number, only for carousels and stories.',
     scheduled
       ? '- "date": the Publish Date, YYYY-MM-DD. "time": its time, 24-hour HH:MM.'
-      : '- "dueOn": the Live Date, YYYY-MM-DD. "destination": where it goes (an ASIN, URL or place).',
+      : '- "dueOn": the Live Date, YYYY-MM-DD.',
     '- "concept": what the post is and how it should look, in their words, tidied into a clear brief of one to four sentences. Don\'t invent details they didn\'t give.',
     '- "referenceUrls": any links they read out, as URLs.',
     '- "teamUserIds": ids from the team list below for the people they name, matching first names or nicknames.',
@@ -90,8 +89,6 @@ export function parseVoicePost(
   if (time && TIME.test(time)) out.time = time;
   const dueOn = str(raw.dueOn);
   if (dueOn && DATE.test(dueOn)) out.dueOn = dueOn;
-  const destination = str(raw.destination);
-  if (destination) out.destination = destination.slice(0, 300);
   const concept = str(raw.concept);
   if (concept) out.concept = concept.slice(0, 4000);
   if (Array.isArray(raw.referenceUrls)) {

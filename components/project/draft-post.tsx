@@ -21,7 +21,6 @@ export interface DraftPostValues {
   teamUserIds: string[];
   date: string; // scheduled: publish date; continuous: due date (optional)
   time: string;
-  destination: string; // continuous only
   concept: string;
 }
 
@@ -54,7 +53,6 @@ export function useDraftPost({
     // in its table, so one added by row would vanish on save.
     date: todayIso(),
     time: "09:00",
-    destination: "",
     concept: "",
   });
   const [problem, setProblem] = useState<string | null>(null);
@@ -67,7 +65,6 @@ export function useDraftPost({
   async function save() {
     // Same checks, in the same order, as the window's handleSaveBrief.
     if (!values.name.trim()) return setProblem("Give the post a name");
-    if (delivery === "continuous" && !values.destination.trim()) return setProblem("Say where this goes");
     const scheduledAt =
       delivery === "scheduled" && values.date ? new Date(`${values.date}T${values.time || "09:00"}:00`).toISOString() : null;
     try {
@@ -80,7 +77,8 @@ export function useDraftPost({
         slideCount: null,
         cx: {},
         scheduledAt,
-        destination: delivery === "continuous" ? values.destination.trim() : null,
+        // No longer asked for (direct instruction).
+        destination: null,
         dueOn: delivery === "continuous" ? values.date || null : null,
       });
       onCreated(scheduledAt ?? (values.date || null));
@@ -141,7 +139,7 @@ export function DraftField({
   field,
 }: {
   draft: Draft;
-  field: "name" | "format" | "lead" | "date" | "time" | "destination" | "concept";
+  field: "name" | "format" | "lead" | "date" | "time" | "concept";
 }) {
   const { values, set } = draft;
   switch (field) {
@@ -191,16 +189,6 @@ export function DraftField({
       return (
         // Frank's own dropdown, opened from anywhere in the box.
         <TimeField className="ecell one when" aria-label="Time" value={values.time} onChange={(v) => set("time", v)} />
-      );
-    case "destination":
-      return (
-        <input
-          className="ecell one"
-          aria-label="Destination"
-          placeholder="Where this goes"
-          value={values.destination}
-          onChange={(e) => set("destination", e.target.value)}
-        />
       );
     case "concept":
       return (

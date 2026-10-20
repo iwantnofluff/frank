@@ -62,10 +62,6 @@ export function BriefPanel({
       ) : (
         <>
           <div className="bsec">
-            <div className="bl">Destination</div>
-            <p className="fd-d">{creative.destination || "—"}</p>
-          </div>
-          <div className="bsec">
             <div className="bl">Needed By</div>
             <p className="fd-d">
               {creative.due_on ? new Date(creative.due_on).toLocaleDateString() : "—"}

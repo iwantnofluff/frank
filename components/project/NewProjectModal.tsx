@@ -237,8 +237,8 @@ export function NewProjectModal({
             <span className="kt">
               <b>Other Content</b>
               <span>
-                Approved then handed over. You get a list ordered by what is due, with a
-                destination instead of a date.
+                Approved then handed over. You get a list ordered by what is due, by
+                its Live Date.
               </span>
               <span className="keg">Amazon A+ · Website · Emailers · Print and Events</span>
             </span>

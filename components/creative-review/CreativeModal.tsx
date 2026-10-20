@@ -11,7 +11,6 @@ import { useCreateCreative } from "@/hooks/use-create-creative";
 import { SlideTextChangedError, useSaveSlideText } from "@/hooks/use-save-slide-text";
 import { VoiceoverChangedError, useSaveVoiceover } from "@/hooks/use-save-voiceover";
 import { useUpdateCreativeCx } from "@/hooks/use-update-creative-cx";
-import { FUNNEL_COLUMN } from "@/components/project/ContinuousCalendarTable";
 import { PostChangedError, useUpdateBrief, type BriefFields } from "@/hooks/use-update-brief";
 import { useTeamMembers } from "@/hooks/use-team-members";
 import { useProjectTeam } from "@/hooks/use-project-team";
@@ -515,6 +514,9 @@ export function CreativeModal(props: CreativeModalProps) {
   }
   const [date, setDate] = useState(isCreate ? "" : isoToDateInput(props.creative.scheduled_at));
   const [time, setTime] = useState(isCreate ? "09:00" : isoToTimeInput(props.creative.scheduled_at));
+  // Destination is no longer asked for (direct instruction); a post's own
+  // is carried through unchanged when it's saved (and taken from someone
+  // else's save with the rest of their brief).
   const [destination, setDestination] = useState(isCreate ? "" : (props.creative.destination ?? ""));
   const [dueOn, setDueOn] = useState(isCreate ? "" : (props.creative.due_on ?? ""));
   const [concept, setConcept] = useState(isCreate ? "" : (props.creative.concept ?? ""));
@@ -546,14 +548,12 @@ export function CreativeModal(props: CreativeModalProps) {
   const initialCx: Record<string, CxValue> = isCreate ? {} : ((props.creative.cx as Record<string, CxValue> | null) ?? {});
   const [cx, setCx] = useState<Record<string, CxValue>>(initialCx);
   const [savedCx, setSavedCx] = useState<Record<string, CxValue>>(initialCx);
-  // Continuous projects' Funnel and Notes for Designer (direct instruction:
-  // in the window as well as the table, both optional). Saved to the same
-  // cx keys the table writes.
+  // Continuous projects' Notes for Designer (direct instruction: in the
+  // window as well as the table, optional), saved to the cx key the table
+  // writes. Funnel went (direct instruction).
   const savedTableFields = {
-    funnel: isCreate ? "" : String(props.creative.cx?.funnel ?? ""),
     designer_notes: isCreate ? "" : String(props.creative.cx?.designer_notes ?? ""),
   };
-  const [funnel, setFunnel] = useState(savedTableFields.funnel);
   const [designerNotes, setDesignerNotes] = useState(savedTableFields.designer_notes);
   const [savedFields, setSavedFields] = useState(savedTableFields);
 
@@ -571,7 +571,6 @@ export function CreativeModal(props: CreativeModalProps) {
     if (f.date) setDate(f.date);
     if (f.time) setTime(f.time);
     if (f.dueOn) setDueOn(f.dueOn);
-    if (f.destination) setDestination(f.destination);
     if (f.concept) setConcept(f.concept);
     if (f.referenceUrls) setReferenceUrls(f.referenceUrls);
     if (f.teamUserIds) {
@@ -579,7 +578,6 @@ export function CreativeModal(props: CreativeModalProps) {
       setTeamUserIds(f.teamUserIds);
     }
   }
-  const [destinationError, setDestinationError] = useState<string | null>(null);
 
   // A brief flash beside Cancel after a successful "Update" (never shown
   // for the first "Create Post" save) — auto-hides rather than tracking
@@ -667,11 +665,6 @@ export function CreativeModal(props: CreativeModalProps) {
     setNameError(null);
     // No date is fine: the post is an Idea until it has one (direct
     // instruction).
-    if (delivery === "continuous" && !destination.trim()) {
-      setDestinationError("Say where this goes.");
-      return;
-    }
-    setDestinationError(null);
 
     const scheduledAt =
       delivery === "scheduled" && date ? new Date(`${date}T${time || "09:00"}:00`).toISOString() : null;
@@ -693,17 +686,16 @@ export function CreativeModal(props: CreativeModalProps) {
           delivery === "continuous"
             ? {
                 ...cx,
-                ...(funnel ? { funnel } : {}),
                 ...(designerNotes.trim() ? { designer_notes: designerNotes.trim() } : {}),
               }
             : cx,
         scheduledAt,
-        destination: delivery === "continuous" ? destination.trim() : null,
+        destination: delivery === "continuous" ? destination.trim() || null : null,
         dueOn: delivery === "continuous" ? dueOn || null : null,
       });
       setCreatedCreativeId(newId);
       setSavedBrief({ formats, slideCount });
-      setSavedFields({ funnel, designer_notes: designerNotes.trim() });
+      setSavedFields({ designer_notes: designerNotes.trim() });
       props.onCreated?.(scheduledAt, delivery === "continuous" ? dueOn || null : null);
       // Straight on to the artwork and copy (direct instruction).
       setActiveTab("upload");
@@ -736,7 +728,7 @@ export function CreativeModal(props: CreativeModalProps) {
         referenceUrls: tidyReferences(referenceUrls),
         slideCount,
         scheduledAt,
-        destination: delivery === "continuous" ? destination.trim() : null,
+        destination: delivery === "continuous" ? destination.trim() || null : null,
         dueOn: delivery === "continuous" ? dueOn || null : null,
         expectedUpdatedAt: overBase ?? briefBase,
       });
@@ -767,11 +759,11 @@ export function CreativeModal(props: CreativeModalProps) {
     });
     setConflict(null);
     setSavedBrief({ formats, slideCount });
-    // Funnel and Notes for Designer, each its own atomic write (as the
-    // table's), only when changed.
+    // Notes for Designer, its own atomic write (as the table's), only when
+    // changed.
     if (delivery === "continuous" && creativeId) {
-      const next = { funnel, designer_notes: designerNotes.trim() };
-      for (const key of ["funnel", "designer_notes"] as const) {
+      const next = { designer_notes: designerNotes.trim() };
+      for (const key of ["designer_notes"] as const) {
         if (next[key] !== savedFields[key]) {
           await updateCx.mutateAsync({ creativeId, key, value: next[key] || null });
         }
@@ -1419,20 +1411,6 @@ export function CreativeModal(props: CreativeModalProps) {
           ) : (
             <div className="frow">
               <div className="field">
-                <label htmlFor="nbDest">Destination</label>
-                <input
-                  id="nbDest"
-                  className="bin one"
-                  value={destination}
-                  onChange={(e) => {
-                    setDestination(e.target.value);
-                    if (destinationError) setDestinationError(null);
-                  }}
-                  placeholder="ASIN, URL or location"
-                />
-                {destinationError && <p className="autherr">{destinationError}</p>}
-              </div>
-              <div className="field">
                 <label htmlFor="nbDue">Live Date</label>
                 <DateField id="nbDue" className="bin one" value={dueOn} onChange={setDueOn} />
               </div>
@@ -1518,19 +1496,6 @@ export function CreativeModal(props: CreativeModalProps) {
 
           {delivery === "continuous" && (
             <>
-              <div className="field">
-                <label htmlFor="nbFunnel">
-                  Funnel <span className="bnote">optional</span>
-                </label>
-                <select id="nbFunnel" className="bin one" value={funnel} onChange={(e) => setFunnel(e.target.value)}>
-                  <option value="">Not set</option>
-                  {(FUNNEL_COLUMN.options ?? []).map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
               <div className="field">
                 <label htmlFor="nbNotes">
                   Notes for Designer <span className="bnote">optional</span>

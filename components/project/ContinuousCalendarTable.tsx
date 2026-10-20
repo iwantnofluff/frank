@@ -86,13 +86,13 @@ const CHECKBOX_COL_WIDTH = 36;
 // The 13-field content-planner template supplied directly, replacing the
 // generic Creative/Format/Destination/Added/Due/Stage columns the old flat
 // .ptable had. Real schema fields map onto real columns (creative/
-// placement/status/conceptRef/notes); the rest have no schema column of
+// status/conceptRef/notes); the rest have no schema column of
 // their own and read/write creatives.cx — the same jsonb blob genuine
 // per-project custom columns already use, just under fixed keys rather
 // than a real custom_columns row (see docs/parity-gaps.md).
 //
 // Names match the New Post window's own (direct instruction): Post Name,
-// Destination, Format, Slides, Lead, Concept and Reference, Text on Image,
+// Format, Slides, Lead, Concept and Reference, Text on Image,
 // Copy, WIIFM Direction. Format is the formats chosen in the window (the
 // old Static/Video "Type" choice is kept in cx.type, no longer shown).
 // Text on Image and Copy are the real copy versions, as on the scheduled
@@ -100,11 +100,12 @@ const CHECKBOX_COL_WIDTH = 36;
 // longer shown. Notes for Designer is its own text (cx.designer_notes),
 // also in the window; it used to show the WIIFM direction, which now has
 // its own column.
+// In the Social Media table's order (direct instruction), with Notes for
+// Designer before Creative and Principles after; Live Date stays first,
+// frozen. Destination, Funnel, TG and Final Creative went (direct
+// instruction); what they held stays on the posts, unshown.
 export const TOGGLABLE_COLUMNS = [
-  { key: "creative", label: "Post Name", sub: "Post identifier", width: 196 },
-  { key: "placement", label: "Destination", sub: "ASIN, URL or location", width: 140 },
-  { key: "funnel", label: "Funnel", sub: "Funnel stage", width: 150 },
-  { key: "tg", label: "TG", sub: "Target audience", width: 130 },
+  { key: "status", label: "Status", sub: "Workflow state", width: 132 },
   { key: "type", label: "Format", sub: "Platform and type", width: 141 },
   // Wide enough for its "Add Slides" button (direct instruction).
   { key: "slides", label: "Slides", sub: "#", width: 108 },
@@ -112,11 +113,11 @@ export const TOGGLABLE_COLUMNS = [
   // the name. Format, Slides and Status are as wide as their longest
   // words, as on the scheduled table.
   { key: "lead", label: "Team", sub: "Person and role", width: 154 },
-  { key: "status", label: "Status", sub: "Workflow state", width: 132 },
+  { key: "creative", label: "Post Name", sub: "Post identifier", width: 196 },
   { key: "conceptRef", label: "Concept & Reference", sub: "Directions for creative and copy", width: 260 },
-  { key: "finalCreative", label: "Final Creative", sub: "Approved asset", width: 200 },
   // A video post's VO script (phase88), before its Text on Image.
   { key: "voiceover", label: "VO", sub: "Voiceover script", width: 220 },
+  { key: "notes", label: "Notes for Designer", sub: "Design feedback", width: 220 },
   // The latest creative version's file name, with its preview on hover
   // (direct instruction; the preview moved here off Post Name).
   { key: "artwork", label: "Creative", sub: "Latest post visual", width: 200 },
@@ -125,7 +126,6 @@ export const TOGGLABLE_COLUMNS = [
   // The latest copy's Alt Text, its own column after Copy (direct
   // instruction).
   { key: "altText", label: "Alt Text", sub: "For screen readers", width: 220 },
-  { key: "notes", label: "Notes for Designer", sub: "Design feedback", width: 220 },
   // As wide as Copy (direct instruction), now that it's a few short points.
   { key: "approach", label: "WIIFM Direction", sub: "WIIFM of latest copy", width: 330 },
   { key: "principles", label: "Principles", sub: "Psychological angle", width: 180 },
@@ -134,25 +134,13 @@ export const TOGGLABLE_COLUMNS = [
 const CUSTOM_COLUMN_WIDTH = 140;
 const DEFAULT_COLUMN_ORDER = TOGGLABLE_COLUMNS.map((c) => c.key);
 
-// Same colour palette AddColumnForm.tsx already uses for a real "status"-
-// type custom column, reused here for consistency even though these two
-// aren't real custom_columns rows.
-const FUNNEL_OPTIONS = [
-  { value: "tof", label: "TOF (Top of Funnel)", colour: "#007BFF" },
-  { value: "mof", label: "MOF (Middle of Funnel)", colour: "#2BB65B" },
-  { value: "bof", label: "BOF (Bottom of Funnel)", colour: "#FF8A00" },
-];
-
 // Fake CustomColumnRow-shaped objects, stable across renders — CxCell only
-// cares about the shape, not where it came from, so Funnel/Type/TG/Final
-// Creative/Principles get its existing dropdown-chip/text editing for free,
-// reading and writing through the same creatives.cx blob and the same
+// cares about the shape, not where it came from, so Notes for Designer and
+// Principles get its existing text editing for free, reading and writing
+// through the same creatives.cx blob and the same
 // onCxSave callback the page already wires up for real custom columns.
-export const FUNNEL_COLUMN: CustomColumnRow = { id: "funnel", key: "funnel", label: "Funnel", type: "status", options: FUNNEL_OPTIONS, position: 0 };
 // Several lines, wrapping (direct instruction: cell content always wraps).
 export const DESIGNER_NOTES_COLUMN: CustomColumnRow = { id: "designer_notes", key: "designer_notes", label: "Notes for Designer", type: "long_text", options: null, position: 0 };
-const TG_COLUMN: CustomColumnRow = { id: "tg", key: "tg", label: "TG", type: "text", options: null, position: 0 };
-const FINAL_CREATIVE_COLUMN: CustomColumnRow = { id: "final_creative", key: "final_creative", label: "Final Creative", type: "text", options: null, position: 0 };
 const PRINCIPLES_COLUMN: CustomColumnRow = { id: "principles", key: "principles", label: "Principles", type: "text", options: null, position: 0 };
 
 // A saved (or default) order can be missing a key that exists right now —
@@ -926,11 +914,7 @@ export function ContinuousCalendarTable({
       {draftRow && (
         <DraftEditBar
           blocked={
-            !visibleOrderedKeys.includes("creative")
-              ? "Show the Creative Name column to name the post"
-              : !visibleOrderedKeys.includes("placement")
-                ? "Show the Placement column to say where it goes"
-                : null
+            !visibleOrderedKeys.includes("creative") ? "Show the Post Name column to name the post" : null
           }
           problem={draft.problem}
           saving={draft.saving}
@@ -1017,9 +1001,7 @@ export function ContinuousCalendarTable({
                     const field =
                       key === "creative"
                         ? "name"
-                        : key === "placement"
-                          ? "destination"
-                          : key === "type"
+                        : key === "type"
                             ? "format"
                             : key === "lead"
                               ? "lead"
@@ -1143,34 +1125,6 @@ export function ContinuousCalendarTable({
                                   )}
                                 </td>
                               );
-                            case "placement":
-                              return (
-                                <td key={key}>
-                                  {c.destination || <span className="tdim">—</span>}
-                                </td>
-                              );
-                            case "funnel":
-                              return (
-                                <td key={key}>
-                                  <CxCell
-                                    column={FUNNEL_COLUMN}
-                                    value={c.cx?.["funnel"] ?? null}
-                                    onSave={(value) => onCxSave(c.id, "funnel", value)}
-                                    readOnly={cxReadOnly}
-                                  />
-                                </td>
-                              );
-                            case "tg":
-                              return (
-                                <td key={key}>
-                                  <CxCell
-                                    column={TG_COLUMN}
-                                    value={c.cx?.["tg"] ?? null}
-                                    onSave={(value) => onCxSave(c.id, "tg", value)}
-                                    readOnly={cxReadOnly}
-                                  />
-                                </td>
-                              );
                             case "type":
                               return (
                                 <td key={key}>
@@ -1242,17 +1196,6 @@ export function ContinuousCalendarTable({
                                   ) : (
                                     <MissingContent expected={true} {...fill(c, "concept")} />
                                   )}
-                                </td>
-                              );
-                            case "finalCreative":
-                              return (
-                                <td key={key}>
-                                  <CxCell
-                                    column={FINAL_CREATIVE_COLUMN}
-                                    value={c.cx?.["final_creative"] ?? null}
-                                    onSave={(value) => onCxSave(c.id, "final_creative", value)}
-                                    readOnly={cxReadOnly}
-                                  />
                                 </td>
                               );
                             case "voiceover": {

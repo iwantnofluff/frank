@@ -76,9 +76,8 @@ test("an Other Content post can be added straight into an empty table", async ({
   const row = page.locator("tr.draft");
   const bar = page.getByRole("region", { name: "New post row" });
   await row.getByLabel("Post name").fill("Listing Refresh E2E");
-  await bar.getByRole("button", { name: "Save" }).click();
-  await expect(bar).toContainText("Say where this goes");
-  await row.getByLabel("Destination").fill("Amazon listing — hero image");
+  // No Destination any more (direct instruction): a name and date will do.
+  await expect(row.getByLabel("Destination")).toHaveCount(0);
   await row.getByLabel("Date").fill("2027-03-18");
   await bar.getByRole("button", { name: "Save" }).click();
   await expect(page.locator("tr.draft")).toHaveCount(0);
@@ -90,5 +89,5 @@ test("an Other Content post can be added straight into an empty table", async ({
     .eq("project_id", proj!.id)
     .eq("name", "Listing Refresh E2E")
     .single();
-  expect(c).toEqual({ destination: "Amazon listing — hero image", due_on: "2027-03-18" });
+  expect(c).toEqual({ destination: null, due_on: "2027-03-18" });
 });
