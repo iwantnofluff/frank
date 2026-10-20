@@ -7,7 +7,7 @@ import { clientContext, loadKnowledgeFiles } from "@/lib/ai/client-context";
 import { fetchImage, readPreview } from "@/lib/link-fetch";
 import { fetchableUrl } from "@/lib/link-preview";
 import { monthOf, strategyForPrompt, type StrategyFields } from "@/lib/monthly-strategy";
-import { formatsLabel, frameLimits, hasVideoFormat, postFormats } from "@/lib/formats";
+import { COPY_FIELD_LABELS, formatsLabel, frameLimits, hasVideoFormat, postFormats } from "@/lib/formats";
 
 const fail = (error: string, status: number) => NextResponse.json({ error }, { status });
 
@@ -44,6 +44,9 @@ export async function POST(request: Request) {
     // From the Concept, or a rework of the window's Notes for Designer.
     mode?: string;
     notes?: { overall?: unknown; slides?: unknown };
+    // The VO and copy as they are in the window (direct instruction).
+    voiceover?: unknown;
+    copy?: unknown;
     name?: string;
     formats?: unknown;
     images?: unknown;
@@ -66,6 +69,7 @@ export async function POST(request: Request) {
     formats: string[] | null;
     slideCount: number | null;
     slideText: string[];
+    voiceover: string;
     referenceUrls: string[];
     when: string | null;
   };
@@ -73,7 +77,7 @@ export async function POST(request: Request) {
     const { data: creative } = await supabase
       .from("creatives")
       .select(
-        "id, agency_id, name, concept, approach_notes, format, formats, slide_count, slide_text, reference_urls, scheduled_at, due_on, project:projects(client_id)",
+        "id, agency_id, name, concept, approach_notes, format, formats, slide_count, slide_text, voiceover, reference_urls, scheduled_at, due_on, project:projects(client_id)",
       )
       .eq("id", body.creativeId)
       .maybeSingle();
@@ -89,6 +93,7 @@ export async function POST(request: Request) {
       formats: (creative.formats as string[] | null) ?? null,
       slideCount: (creative.slide_count as number | null) ?? null,
       slideText: (creative.slide_text as string[] | null) ?? [],
+      voiceover: (creative.voiceover as string | null) ?? "",
       referenceUrls: (creative.reference_urls as string[] | null) ?? [],
       when: ((creative.scheduled_at as string | null) ?? (creative.due_on as string | null)) || null,
     };
@@ -108,6 +113,7 @@ export async function POST(request: Request) {
       formats,
       slideCount: null,
       slideText: [],
+      voiceover: "",
       referenceUrls: [],
       when: null,
     };
@@ -286,6 +292,25 @@ export async function POST(request: Request) {
       .filter((e) => e.kind === "text" && typeof e.body === "string" && (e.body as string).trim())
       .map((e) => ({ title: e.title as string, body: (e.body as string).trim() }));
 
+  // The copy as it is in the window, else the post's latest version.
+  async function copyFor(): Promise<{ label: string; text: string }[]> {
+    const sent = (Array.isArray(body.copy) ? body.copy : []).filter(
+      (c): c is { label: string; text: string } => !!c && typeof c.label === "string" && typeof c.text === "string" && !!c.text.trim(),
+    );
+    if (Array.isArray(body.copy)) return sent.slice(0, 8);
+    if (!post.id) return [];
+    const { data } = await supabase
+      .from("copy_versions")
+      .select("fields, created_at")
+      .eq("creative_id", post.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    return Object.entries((data?.fields as Record<string, unknown> | null) ?? {})
+      .filter((e): e is [string, string] => typeof e[1] === "string" && !!e[1].trim())
+      .map(([key, text]) => ({ label: COPY_FIELD_LABELS[key] ?? key, text }));
+  }
+
   const prompt = buildDesignDirectionPrompt({
     postName: post.name,
     formatLabel: formatsLabel(formats),
@@ -304,6 +329,8 @@ export async function POST(request: Request) {
     references,
     mode,
     notes,
+    voiceover: isVideo ? (typeof body.voiceover === "string" ? body.voiceover : post.voiceover) : null,
+    copy: await copyFor(),
   });
 
   // From here the answer streams back as Frank writes it (direct

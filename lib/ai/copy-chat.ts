@@ -22,6 +22,9 @@ export interface CopyChatContext {
   // The client's strategy for the month the post goes live (phase78),
   // ready to read; absent when nothing's been decided for it.
   strategy?: string | null;
+  // The post's Notes for Designer (direct instruction): the visual plan the
+  // copy has to fit, overall and by slide.
+  designerNotes?: { overall: string; slides: string[] } | null;
   // The client's other posts, for their voice (direct instruction): the
   // latest copy of up to 8, Approved first.
   otherPosts?: OtherPost[];
@@ -71,6 +74,19 @@ function feedbackBlock(feedback: ClientFeedback[] | undefined): string | null {
     "What the client has asked for in their comments, newest first. Treat it as standing direction for this post too. If any of it conflicts with the knowledge above, point the conflict out in your reply so your colleague can decide.",
     ...feedback.map((f) => `- On "${f.post}"${f.category ? ` (${f.category})` : ""}: ${clip(f.body, 300)}`),
   ].join("\n");
+}
+
+function designerNotesBlock(notes: CopyChatContext["designerNotes"]): string | null {
+  if (!notes) return null;
+  const slides = notes.slides.map((t, i) => (t.trim() ? `- Slide ${i + 1}: ${clip(t, 500)}` : null)).filter(Boolean);
+  if (!notes.overall.trim() && !slides.length) return null;
+  return [
+    "The Notes for Designer: the visual plan this copy goes with. Write copy that fits it: Text on Image short enough for the space it gives the words, and a caption that adds to the visual rather than describing it.",
+    notes.overall.trim() ? clip(notes.overall, 3000) : null,
+    slides.length ? `By slide:\n${slides.join("\n")}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 export interface CopyChatTurn {
@@ -174,6 +190,7 @@ export function buildCopyChatPromptParts(
       ? `What's already working in this post's copy (its WIIFM Direction: the psychology principles and biases it uses; build on them):\n${context.approachNotes.map((n) => `- ${n}`).join("\n")}`
       : null,
     context.formatDirection ? `Format direction (follow it):\n${context.formatDirection}` : null,
+    designerNotesBlock(context.designerNotes),
     context.strategy ?? null,
     notes("Workspace knowledge", context.agencyNotes),
     notes("Client knowledge", context.clientNotes),

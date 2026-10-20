@@ -58,7 +58,7 @@ test("a pasted reference image, and a direction into Notes for Designer, for the
   const designWithFrank = page.getByRole("button", { name: "Design with Frank" });
   await expect(designWithFrank).toBeDisabled();
   await page.locator("#nbConcept").fill("Warm and slow.");
-  await page.getByRole("button", { name: "Save Concept and Notes" }).click();
+  await page.getByRole("button", { name: "Save Concept, References and Notes" }).click();
   await expect(page.locator(".bsaved", { hasText: "Saved." })).toBeVisible({ timeout: 15_000 });
   await expect(designWithFrank).toBeEnabled();
   // Then, from the footer: the seeded direction's Use This fills Notes for
@@ -94,7 +94,7 @@ test("a pasted reference image, and a direction into Notes for Designer, for the
   expect((await client.from("design_directions").select("id")).data).toEqual([]);
 });
 
-test("Save Concept and Notes: on a new post it locks the Concept in for Design with Frank; on a saved one it saves the Concept and notes only", async ({ page, frank }) => {
+test("Save Concept, References and Notes: on a new post it locks the Concept in for Design with Frank; on a saved one it saves those three only", async ({ page, frank }) => {
   test.setTimeout(60_000);
   await frank.loginAsStaff(page);
 
@@ -105,12 +105,13 @@ test("Save Concept and Notes: on a new post it locks the Concept in for Design w
   await page.getByRole("tab", { name: "Brief" }).click();
   await page.locator("#nbConcept").fill("Saved on its own");
   await page.locator("#nbNotes").fill("Pumpkin top left");
+  await page.locator("#nbRef").fill("https://example.com/look");
   await page.locator("#nbName").fill("Renamed Later");
-  await page.getByRole("button", { name: "Save Concept and Notes" }).click();
+  await page.getByRole("button", { name: "Save Concept, References and Notes" }).click();
   await expect(page.locator(".bsaved", { hasText: "Saved." })).toBeVisible({ timeout: 15_000 });
   const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
-  const after = (await admin.from("creatives").select("name, concept").eq("id", frank.creativeId).single()).data;
-  expect(after).toEqual({ name: "E2E Test Creative", concept: "Saved on its own" });
+  const after = (await admin.from("creatives").select("name, concept, reference_urls").eq("id", frank.creativeId).single()).data;
+  expect(after).toEqual({ name: "E2E Test Creative", concept: "Saved on its own", reference_urls: ["https://example.com/look"] });
   expect((await admin.from("designer_notes").select("overall").eq("creative_id", frank.creativeId).maybeSingle()).data?.overall).toBe("Pumpkin top left");
   // With notes in the window, Rework My Notes is there to ask for.
   await page.getByRole("button", { name: "Design with Frank" }).click();
@@ -126,10 +127,10 @@ test("Save Concept and Notes: on a new post it locks the Concept in for Design w
   await page.goto(`/projects/${frank.projectId}`);
   await page.getByRole("button", { name: "New Post", exact: true }).click();
   const designWithFrank = page.getByRole("button", { name: "Design with Frank" });
-  await expect(page.getByRole("button", { name: "Save Concept and Notes" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Save Concept, References and Notes" })).toBeDisabled();
   await page.locator("#nbConcept").fill("A new idea");
   await expect(designWithFrank).toBeDisabled();
-  await page.getByRole("button", { name: "Save Concept and Notes" }).click();
+  await page.getByRole("button", { name: "Save Concept, References and Notes" }).click();
   await expect(page.getByText("Saved. Create Post adds them to the post.")).toBeVisible();
   await expect(designWithFrank).toBeEnabled();
   expect((await admin.from("creatives").select("id").eq("concept", "A new idea")).data).toEqual([]);

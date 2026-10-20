@@ -39,6 +39,7 @@ export async function POST(request: Request) {
     mode?: CopyChatMode;
     message?: string;
     currentFields?: Record<string, string>;
+    designerNotes?: { overall?: unknown; slides?: unknown };
   };
   try {
     body = await request.json();
@@ -149,6 +150,21 @@ export async function POST(request: Request) {
     ...((clientKnowledge.data ?? []) as Row[]),
   ]);
 
+  // Notes for Designer (direct instruction): as they are in the window,
+  // or as saved. The team's only (phase112), read through their session.
+  const sentNotes = body.designerNotes
+    ? {
+        overall: typeof body.designerNotes.overall === "string" ? body.designerNotes.overall : "",
+        slides: (Array.isArray(body.designerNotes.slides) ? body.designerNotes.slides : []).filter(
+          (t): t is string => typeof t === "string",
+        ),
+      }
+    : null;
+  const { data: savedNotes } = sentNotes
+    ? { data: null }
+    : await supabase.from("designer_notes").select("overall, slides").eq("creative_id", creative.id).maybeSingle();
+  const designerNotes = sentNotes ?? (savedNotes ? { overall: savedNotes.overall as string, slides: (savedNotes.slides as string[]) ?? [] } : null);
+
   // The brief, knowledge and instructions first, kept by Claude between
   // messages; then this message's part.
   const prompt = buildCopyChatPromptParts(
@@ -162,6 +178,7 @@ export async function POST(request: Request) {
       clientNotes: textNotes(clientKnowledge.data as Row[] | null),
       fileTitles: attachments.map((a) => a.title),
       strategy: strategyForPrompt(strategyMonth, strategy.data as Partial<StrategyFields> | null),
+      designerNotes,
       otherPosts,
       clientFeedback,
       fields: covered,

@@ -61,6 +61,8 @@ export function DesignDirection({
   frameNoun,
   isVideo,
   notes,
+  voiceover,
+  copy,
   notesHome,
   onUse,
   onClose,
@@ -83,6 +85,10 @@ export function DesignDirection({
   isVideo: boolean;
   // The window's Notes for Designer, for Rework My Notes.
   notes: { overall: string; slides: string[] };
+  // The VO and copy as they are in the window, for directions that fit
+  // them (direct instruction).
+  voiceover: string;
+  copy: { label: string; text: string }[];
   // Where Use This puts a direction, in words, for the note under it.
   notesHome: string;
   // A direction into the notes, or null to put back what was there.
@@ -125,7 +131,7 @@ export function DesignDirection({
   function ask(mode: "concept" | "rework") {
     setProgress({ refs: [], text: "" });
     request.mutate(
-      { concept, referenceUrls, slideCount, newPost: newPost ?? undefined, mode, notes, onProgress: setProgress },
+      { concept, referenceUrls, slideCount, newPost: newPost ?? undefined, mode, notes, voiceover, copy, onProgress: setProgress },
       {
         onSuccess: (r) => {
           setSkipped(r.skippedFiles);
@@ -205,7 +211,7 @@ export function DesignDirection({
           <div className="cchat-head">Frank reads</div>
           <div className="cchat-note">
             <ul className="cchat-reads">
-              <li>This post&rsquo;s Concept, format, WIIFM and Text on Image, as they are in the window.</li>
+              <li>This post&rsquo;s Concept, format and WIIFM, as they are in the window; and its Text on Image, copy and a video&rsquo;s VO where they&rsquo;re written, usually by a later rework.</li>
               <li>For a rework, your Notes for Designer as they are in the window: kept where they work, sharpened where they don&rsquo;t.</li>
               <li>
                 Each reference link&rsquo;s page and preview image, up to 8, and the images pasted into References. A public
@@ -330,7 +336,7 @@ export function DesignDirection({
                             ["Layout", d.layout],
                             ["Style", d.style],
                             ["Palette", d.palette],
-                            ["Text on Image", d.textOnImage],
+                            ["Type and placement", d.textOnImage],
                           ] as const
                         ).map(([label, text]) =>
                           text ? (

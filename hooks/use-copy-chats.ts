@@ -67,6 +67,8 @@ export function useSendCopyChat(creativeId: string) {
       mode?: CopyChatMode;
       message?: string;
       currentFields: Record<string, string>;
+      // The window's Notes for Designer, for the visual plan.
+      designerNotes?: { overall: string; slides: string[] };
     }): Promise<{ chatId: string; skippedFiles: string[] }> => {
       const res = await fetch("/api/ai/copy-chat", {
         method: "POST",

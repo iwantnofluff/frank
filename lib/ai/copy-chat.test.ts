@@ -135,3 +135,12 @@ test("chatFields: reviewing a draft covers only the fields written; drafting cov
   );
   assert.deepEqual(reply.drafts[0].fields, { caption: "Hi", slide_2: "Two" });
 });
+
+test("the Notes for Designer go in as the visual plan the copy fits, and only when there are some", () => {
+  const prompt = buildCopyChatPrompt({ ...context, designerNotes: { overall: "Big jar, pink ground", slides: ["", "Close-up"] } }, [], {});
+  assert.match(prompt, /The Notes for Designer: the visual plan this copy goes with/);
+  assert.match(prompt, /Big jar, pink ground/);
+  assert.match(prompt, /By slide:\n- Slide 2: Close-up/);
+  assert.doesNotMatch(buildCopyChatPrompt({ ...context, designerNotes: { overall: " ", slides: [""] } }, [], {}), /Notes for Designer/);
+  assert.doesNotMatch(buildCopyChatPrompt(context, [], {}), /Notes for Designer/);
+});

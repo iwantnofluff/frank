@@ -50,6 +50,7 @@ export function CopyChat({
   clientId,
   fields,
   currentFields,
+  designerNotes,
   onUse,
   before,
   onBeforeChange,
@@ -62,6 +63,9 @@ export function CopyChat({
   clientId: string | null;
   fields: CopyChatField[];
   currentFields: Record<string, string>;
+  // The post's Notes for Designer as they are in its window, for the
+  // visual plan the copy goes with (direct instruction).
+  designerNotes: { overall: string; slides: string[] };
   onUse: (fields: Record<string, string>) => void;
   // What the editor had in each field before Frank's went in, so Added
   // pressed again puts it back. Kept by the post's window, so it lasts
@@ -104,7 +108,7 @@ export function CopyChat({
 
   function start(mode: CopyChatMode) {
     send.mutate(
-      { mode, currentFields },
+      { mode, currentFields, designerNotes },
       {
         onSuccess: (r) => {
           setChatId(r.chatId);
@@ -121,7 +125,7 @@ export function CopyChat({
     // Frank doesn't answer.
     setDraft("");
     send.mutate(
-      { chatId, message, currentFields },
+      { chatId, message, currentFields, designerNotes },
       {
         onSuccess: (r) => setSkipped(r.skippedFiles),
         onError: () => setDraft(message),
@@ -192,6 +196,7 @@ export function CopyChat({
           <div className="cchat-note">
             <ul className="cchat-reads">
               <li>This post&rsquo;s brief: its name, format, Concept and WIIFM.</li>
+              <li>Its Notes for Designer, as they are in the window, so the copy fits the visual.</li>
               <li>Each format&rsquo;s direction, from Knowledge.</li>
               <li>{capital(theirs)} strategy for the month the post goes live.</li>
               <li>

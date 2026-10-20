@@ -114,3 +114,16 @@ test("a rework reads the team's notes and asks to keep what they decided", () =>
   assert.doesNotMatch(p, /Offer two or three directions/);
   assert.match(buildDesignDirectionPrompt(context), /Offer two or three directions/);
 });
+
+test("a direction's placement is named apart from the Content tab's Text on Image", () => {
+  const note = directionAsNote({ title: "T", idea: "I", layout: "", style: "", palette: "", textOnImage: "Bottom left, serif", slides: [], reel: null });
+  assert.match(note, /^Type and placement: Bottom left, serif$/m);
+  assert.doesNotMatch(note, /Text on Image/);
+});
+
+test("the copy and a video's VO go in, so the visual fits them", () => {
+  const p = buildDesignDirectionPrompt({ ...context, isVideo: true, slideCount: null, voiceover: "Nobody misses on purpose.", copy: [{ label: "Caption", text: "Slow mornings" }] });
+  assert.match(p, /The copy that goes with it[^\n]*\n- Caption: Slow mornings/);
+  assert.match(p, /The VO script[^\n]*\nNobody misses on purpose\./);
+  assert.doesNotMatch(buildDesignDirectionPrompt(context), /The VO script|The copy that goes with it/);
+});

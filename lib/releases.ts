@@ -13,6 +13,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.43.1",
+    date: "2026-10-20",
+    title: "A clearer Brief, and the two Franks in step",
+    changes: [
+      "The Brief is in clear sections: Details, Concept (with References), Design (Notes for Designer and its save) and Other Fields (Principles and your own columns).",
+      "Save Concept, References and Notes saves the reference links too.",
+      "Draft with Frank now reads Notes for Designer, so the copy, Text on Image and VO fit the visual plan. Design with Frank reads the copy and VO once they're written, for a rework.",
+      "In Design with Frank's directions, where the words sit is now called Type and placement, so it's not mistaken for the Text on Image itself.",
+    ],
+  },
+  {
     version: "1.43.0",
     date: "2026-10-20",
     title: "Design with Frank, two ways in",

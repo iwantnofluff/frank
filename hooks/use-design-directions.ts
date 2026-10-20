@@ -78,6 +78,9 @@ export function useRequestDesignDirection(creativeId: string | null) {
       // From the Concept, or a rework of these notes.
       mode: "concept" | "rework";
       notes: { overall: string; slides: string[] };
+      // The VO and copy as they are in the window.
+      voiceover: string;
+      copy: { label: string; text: string }[];
       onProgress?: (progress: { refs: DesignDirectionRef[]; text: string }) => void;
     }): Promise<{ id: string | null; direction?: Body; refs?: DesignDirectionRef[]; skippedFiles: string[] }> => {
       const { newPost, ...brief } = input;

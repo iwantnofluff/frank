@@ -40,6 +40,10 @@ export interface DesignContext {
   // Designer (direct instruction, as Draft with Frank drafts or reviews).
   mode?: DesignMode;
   notes?: { overall: string; slides: string[] };
+  // The copy that goes with it (direct instruction): a video's VO script,
+  // and the caption and other copy fields, labelled.
+  voiceover?: string | null;
+  copy?: { label: string; text: string }[];
 }
 
 export type DesignMode = "concept" | "rework";
@@ -114,7 +118,7 @@ export function buildDesignDirectionPrompt(context: DesignContext): string {
     '{"summary":"one or two sentences: the design problem this post solves"',
     '"references":[{"n":1,"lessons":["one short sentence on something this reference does that works: composition, colour, type and hierarchy, or the hook"]}]',
     '"worked":["what has worked across the references, grounded in what you can see and the figures given"]',
-    `"directions":[{"title":"a few words","idea":"the idea in one line","layout":"what goes where","style":"photo, illustration or type-led, and the look","palette":"the colours","textOnImage":"where the Text on Image sits and how it's set"${
+    `"directions":[{"title":"a few words","idea":"the idea in one line","layout":"what goes where","style":"photo, illustration or type-led, and the look","palette":"the colours","textOnImage":"type and placement: where the Text on Image sits and how it's set, never the words themselves"${
       multi
         ? `,"slides":["what the designer makes on each ${context.frameNoun.toLowerCase()}: the shot or illustration, its composition and where the text sits; exactly ${multi}, never the words themselves"]`
         : ""
@@ -134,6 +138,12 @@ export function buildDesignDirectionPrompt(context: DesignContext): string {
       ? `Text on Image already written:\n${context.textOnImage.map((t, i) => (t.trim() ? `- ${multi ? `${context.frameNoun} ${i + 1}: ` : ""}${clip(t, 300)}` : null)).filter(Boolean).join("\n")}`
       : null,
     context.formatDirection ? `Format direction (follow it):\n${context.formatDirection}` : null,
+    context.copy?.length
+      ? `The copy that goes with it (the visual should carry the same idea without repeating it):\n${context.copy.map((c) => `- ${c.label}: ${clip(c.text, 600)}`).join("\n")}`
+      : null,
+    context.voiceover?.trim()
+      ? `The VO script, spoken over the video: plan the shots to what's said, in time with it.\n${clip(context.voiceover, 1500)}`
+      : null,
     context.strategy ?? null,
     notes("Workspace knowledge", context.agencyNotes),
     notes("Client knowledge", context.clientNotes),
@@ -241,7 +251,9 @@ export function directionAsNote(d: DesignDirectionOption): string {
     d.layout && `Layout: ${d.layout}`,
     d.style && `Style: ${d.style}`,
     d.palette && `Palette: ${d.palette}`,
-    d.textOnImage && `Text on Image: ${d.textOnImage}`,
+    // Where the words sit and how they're set, named apart from the Content
+    // tab's Text on Image (the words themselves; direct instruction).
+    d.textOnImage && `Type and placement: ${d.textOnImage}`,
     d.reel?.hook && `First three seconds: ${d.reel.hook}`,
     d.reel?.shots.length && `Shots: ${d.reel.shots.join(" / ")}`,
     d.reel?.end && `End frame: ${d.reel.end}`,

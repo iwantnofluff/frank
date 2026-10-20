@@ -3,9 +3,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 
-// Save Concept on a saved post's Brief (direct instruction, as Save
-// Content is on the Content tab): just the Concept, and only if the post
-// is still as this window last knew it (phase82), else who changed it.
+// Save Concept, References and Notes on a saved post's Brief (direct
+// instruction, as Save Content is on the Content tab): the Concept and the
+// reference links here (the notes have their own save), and only if the
+// post is still as this window last knew it (phase82), else who changed it.
 // Returns the post's new last-changed time, for the window's next save.
 export class ConceptChangedError extends Error {
   constructor(public byName: string | null) {
@@ -16,10 +17,21 @@ export class ConceptChangedError extends Error {
 export function useSaveConcept(creativeId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ concept, expectedUpdatedAt }: { concept: string; expectedUpdatedAt: string | null }): Promise<string> => {
+    mutationFn: async ({
+      concept,
+      referenceUrls,
+      expectedUpdatedAt,
+    }: {
+      concept: string;
+      referenceUrls: string[];
+      expectedUpdatedAt: string | null;
+    }): Promise<string> => {
       const supabase = createClient();
       const save = (at: string | null) => {
-        let q = supabase.from("creatives").update({ concept: concept.trim() || null }).eq("id", creativeId);
+        let q = supabase
+          .from("creatives")
+          .update({ concept: concept.trim() || null, reference_urls: referenceUrls })
+          .eq("id", creativeId);
         if (at) q = q.eq("updated_at", at);
         return q.select("updated_at").maybeSingle();
       };

@@ -556,6 +556,9 @@ export function CreativeModal(props: CreativeModalProps) {
   const [savedConcept, setSavedConcept] = useState<string | null>(isCreate ? null : (props.creative.concept ?? "").trim());
   const [conceptNote, setConceptNote] = useState<string | null>(null);
   const conceptReady = !!concept.trim() && savedConcept !== null && concept.trim() === savedConcept;
+  // The references as last saved, for whether Save Concept, References and
+  // Notes has anything of theirs to save.
+  const [savedRefs, setSavedRefs] = useState<string[]>(isCreate ? [] : (props.creative.reference_urls ?? []));
   // Every reference link (phase58), at least one box to type into.
   const [referenceUrls, setReferenceUrls] = useState<string[]>(() => {
     const saved = isCreate ? [] : (props.creative.reference_urls ?? []);
@@ -724,6 +727,7 @@ export function CreativeModal(props: CreativeModalProps) {
       setCreatedCreativeId(newId);
       setSavedBrief({ formats, slideCount });
       setSavedConcept(concept.trim());
+      setSavedRefs(tidyReferences(referenceUrls));
       setConceptNote(null);
       // The new post's reference images, and any directions Design with
       // Frank wrote before it was made (phase111).
@@ -798,6 +802,7 @@ export function CreativeModal(props: CreativeModalProps) {
     }
     setBriefBase(savedAt);
     setSavedConcept(concept.trim());
+    setSavedRefs(tidyReferences(referenceUrls));
     setConceptNote(null);
     // Notes for Designer, overall and by slide (phase112), when changed.
     if (pendingNotesChange && creativeId) {
@@ -973,11 +978,13 @@ export function CreativeModal(props: CreativeModalProps) {
       return;
     }
     try {
-      if (text !== savedConcept) {
-        const at = await saveConcept.mutateAsync({ concept: text, expectedUpdatedAt: briefBase });
+      if (text !== savedConcept || pendingRefsChange) {
+        const refs = tidyReferences(referenceUrls);
+        const at = await saveConcept.mutateAsync({ concept: text, referenceUrls: refs, expectedUpdatedAt: briefBase });
         setBriefBase(at);
-        setOpened((o) => (o ? { ...o, concept: text } : o));
+        setOpened((o) => (o ? { ...o, concept: text, reference_urls: refs } : o));
         setSavedConcept(text);
+        setSavedRefs(refs);
       }
       if (pendingNotesChange) {
         await saveNotes.mutateAsync({ creativeId, notes: draftNotes, known: knownNotesNow });
@@ -1150,6 +1157,7 @@ export function CreativeModal(props: CreativeModalProps) {
   const draftNotes: DesignerNotes = { overall: designerNotes, slides: slideCount ? tidySlideText(slideFields(slideNotes, slideCount)) : [] };
   const knownNotesNow = knownNotes ?? savedNotes ?? EMPTY_NOTES;
   const pendingNotesChange = !sameNotes(draftNotes, knownNotesNow);
+  const pendingRefsChange = JSON.stringify(tidyReferences(referenceUrls)) !== JSON.stringify(savedRefs);
   const isVideo = hasVideoFormat(formats);
   const pendingVoChange = isVideo && voiceover.trim() !== savedVoiceover;
   const pendingCreativeChange = carouselPending;
@@ -1561,7 +1569,7 @@ export function CreativeModal(props: CreativeModalProps) {
           </div>
 
           <div className="msection-h">Concept</div>
-          <p className="msection-d">What is being made and why — the brief the Content tab drafts against.</p>
+          <p className="msection-d">What is being made and why, and what it&rsquo;s modelled on: the brief the Content tab drafts against.</p>
 
           <div className="field">
             <label htmlFor="nbConcept">Concept</label>
@@ -1634,6 +1642,11 @@ export function CreativeModal(props: CreativeModalProps) {
             {refSaveError && <p className="autherr">{refSaveError}</p>}
           </div>
 
+          {/* Design (direct instruction: its own section, not under Concept):
+              Notes for Designer, overall then by slide, and the save. */}
+          <div className="msection-h">Design</div>
+          <p className="msection-d">How it should look, for the designer. The team&rsquo;s only: clients don&rsquo;t see it.</p>
+
           {/* Notes for Designer on the Brief (direct instruction): the post's
               overall note, on every post, and one per slide or story once
               there are several, opening as the count goes up, saved with
@@ -1652,22 +1665,6 @@ export function CreativeModal(props: CreativeModalProps) {
                 placeholder="What the designer should know: the idea, layout, style, things to avoid."
               />
           </div>
-          {/* Other Content's Principles, here now no cell is edited in
-              place (direct instruction). */}
-          {delivery === "continuous" && (
-            <div className="field">
-              <label htmlFor="nbPrinciples">
-                Principles <span className="bnote">optional</span>
-              </label>
-              <input
-                id="nbPrinciples"
-                className="bin one"
-                value={principles}
-                onChange={(e) => setPrinciples(e.target.value)}
-                placeholder="The psychological angle"
-              />
-            </div>
-          )}
           {!!slideCount && (
             <div className="field" data-focus="slideNotes">
               <label>
@@ -1683,27 +1680,27 @@ export function CreativeModal(props: CreativeModalProps) {
             </div>
           )}
 
-          {/* Save Concept and Notes (direct instruction, as Save Content
-              is on the Content tab), under the notes: on a saved post, the
-              Concept and Notes for Designer; on a new one, the Concept
-              locked in for Design with Frank, both saved by Create Post. */}
+          {/* Save Concept, References and Notes (direct instruction, as Save
+              Content is on the Content tab), under the notes: on a saved
+              post, those three; on a new one, the Concept locked in for
+              Design with Frank, all saved by Create Post. */}
           <div className="field btnrow">
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <button
                 type="button"
                 className="btn sm primary"
-                disabled={!concept.trim() || (conceptReady && !(creativeId && pendingNotesChange)) || saveConcept.isPending || saveNotes.isPending}
+                disabled={!concept.trim() || (conceptReady && !(creativeId && (pendingNotesChange || pendingRefsChange))) || saveConcept.isPending || saveNotes.isPending}
                 onClick={handleSaveConcept}
               >
-                {saveConcept.isPending || saveNotes.isPending ? "Saving…" : "Save Concept and Notes"}
+                {saveConcept.isPending || saveNotes.isPending ? "Saving…" : "Save Concept, References and Notes"}
               </button>
-              {conceptNote && conceptReady && !(creativeId && pendingNotesChange) && <span className="bsaved">{conceptNote}</span>}
+              {conceptNote && conceptReady && !(creativeId && (pendingNotesChange || pendingRefsChange)) && <span className="bsaved">{conceptNote}</span>}
             </div>
             {saveConcept.error && (
               <p className="autherr">
                 {saveConcept.error instanceof ConceptChangedError
                   ? saveConcept.error.message
-                  : errorMessage(saveConcept.error, "Couldn't save the Concept")}
+                  : errorMessage(saveConcept.error, "Couldn't save the Concept and References")}
               </p>
             )}
           </div>
@@ -1728,6 +1725,31 @@ export function CreativeModal(props: CreativeModalProps) {
             saveNotes.error && <p className="autherr">{errorMessage(saveNotes.error, "Couldn't save the Notes for Designer")}</p>
           )}
 
+          {/* Everything else the brief records (direct instruction: not
+              under Concept or between the notes): Other Content's
+              Principles, and the project's own fields. */}
+          {(delivery === "continuous" || !!customColumns?.length) && (
+            <>
+              <div className="msection-h">Other Fields</div>
+              <p className="msection-d">Saved with Update.</p>
+            </>
+          )}
+          {/* Other Content's Principles, here now no cell is edited in
+              place (direct instruction). */}
+          {delivery === "continuous" && (
+            <div className="field">
+              <label htmlFor="nbPrinciples">
+                Principles <span className="bnote">optional</span>
+              </label>
+              <input
+                id="nbPrinciples"
+                className="bin one"
+                value={principles}
+                onChange={(e) => setPrinciples(e.target.value)}
+                placeholder="The psychological angle"
+              />
+            </div>
+          )}
           {customColumns && customColumns.length > 0 && (
             <div className="field">
               <label>Project Fields</label>
@@ -2205,6 +2227,8 @@ export function CreativeModal(props: CreativeModalProps) {
         frameNoun={frameNoun}
         isVideo={isVideo}
         notes={draftNotes}
+        voiceover={isVideo ? voiceover : ""}
+        copy={copyFieldSpecs.map((f) => ({ label: f.label, text: draftFields[f.key] ?? "" })).filter((c) => c.text.trim())}
         notesHome={
           slideCount
             ? `Notes for Designer, overall and by ${frameNoun.toLowerCase()}, saved when you Update`
@@ -2233,6 +2257,7 @@ export function CreativeModal(props: CreativeModalProps) {
     {chatOpen && creativeId && (
       <CopyChat
         creativeId={creativeId}
+        designerNotes={draftNotes}
         postName={name || (isCreate ? "New post" : props.creative.name)}
         clientId={clientId ?? null}
         fields={[...copyFieldSpecs, ...(isVideo ? [VO_FIELD] : []), ...slideTextFields(slideCount)]}
