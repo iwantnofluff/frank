@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.45.0",
+    date: "2026-10-21",
+    title: "Save copy changes without a new version",
+    changes: [
+      "Changing a post's copy now gives you the choice: Save to V2 corrects the current version, or Save as V3 keeps it and adds a new one.",
+      "Once a version has comments, changes always go in a new version, so every comment stays on the words it was about.",
+    ],
+  },
+  {
     version: "1.44.3",
     date: "2026-10-21",
     title: "Every sign-in screen in the new look",

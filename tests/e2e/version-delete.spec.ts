@@ -89,7 +89,7 @@ test("copy versions have tabs, and one without comments can be deleted", async (
 
   // Deleting the latest frees its number: the next save is V2 again.
   await caption(page).fill("Third caption");
-  await page.getByRole("button", { name: "Save Copy V2" }).click();
+  await page.getByRole("button", { name: "Save as V2" }).click();
   await expect(page.getByRole("tab", { name: /^V\d$/ })).toHaveText(["V1", "V2"]);
 });
 

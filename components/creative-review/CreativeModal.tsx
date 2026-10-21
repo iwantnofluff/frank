@@ -27,6 +27,7 @@ import {
 import { UploadProgressBar } from "./UploadProgressBar";
 import { CarouselSlots } from "./CarouselSlots";
 import { useSaveCopyFields } from "@/hooks/use-save-copy-fields";
+import { useUpdateCopyVersion } from "@/hooks/use-update-copy-version";
 import { useRefreshWiifmNote } from "@/hooks/use-refresh-wiifm-note";
 import { CopyChat } from "@/components/creative-review/CopyChat";
 import { useDeletePostVersion } from "@/hooks/use-delete-post-version";
@@ -926,6 +927,11 @@ export function CreativeModal(props: CreativeModalProps) {
   // Delete Version (phase30): only a version with no comments on it.
   const deleteVersion = useDeletePostVersion(creativeId ?? "");
   const { data: postComments } = useComments(creativeId ?? "");
+  // Comments on the latest copy version: with any, changes go in a new
+  // version (phase113).
+  const latestCopyCommentCount = latestCopyVersion
+    ? (postComments ?? []).filter((c) => c.copy_version_id === latestCopyVersion.id).length
+    : 0;
   const [deleteTarget, setDeleteTarget] = useState<{ kind: "creative" | "copy"; id: string; versionNo: number } | null>(
     null,
   );
@@ -1045,6 +1051,9 @@ export function CreativeModal(props: CreativeModalProps) {
     }
   }
   const saveCopy = useSaveCopyFields(creativeId ?? "");
+  // Saving into the current version instead (phase113, direct instruction):
+  // the latest one, while nobody has commented on it.
+  const updateCopy = useUpdateCopyVersion(creativeId ?? "");
   const saveSlideText = useSaveSlideText(creativeId ?? "", projectId);
   const [slideSaveNote, setSlideSaveNote] = useState<string | null>(null);
   async function handleSaveSlideText() {
@@ -1216,6 +1225,21 @@ export function CreativeModal(props: CreativeModalProps) {
     if (uploadCarousel.isPending) setCloseAsk("saving");
     else if (carouselPending) setCloseAsk("unsaved");
     else onClose();
+  }
+
+  // Save to V{n} (phase113): the changes into the latest version, offered
+  // while it has no comments; stays open, as Save as V{n+1} does.
+  async function handleUpdateCopyOnly() {
+    if (!latestCopyVersion || !pendingCopyChange) return;
+    setCopySaveNote(null);
+    try {
+      await updateCopy.mutateAsync({ fields: draftFields, latest: latestCopyVersion });
+      setCopySaveNote(`Saved to version ${latestCopyVersion.version_no}.`);
+      setViewingCopyVersionNo(latestCopyVersion.version_no);
+      if (agencyId && creativeId) refreshWiifmNote.mutate(agencyId);
+    } catch {
+      // Shown under the buttons.
+    }
   }
 
   // The inline "Save Version N" button under the copy fields — saves just
@@ -2003,19 +2027,45 @@ export function CreativeModal(props: CreativeModalProps) {
               <div className="field btnrow">
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   {/* Greyed while there's nothing new to save (direct
-                      instruction), as Save Text on Image and Save VO are. */}
+                      instruction), as Save Text on Image and Save VO are.
+                      With a version already saved and nobody's comments
+                      on it, the choice of saving into it or as a new one
+                      (phase113, direct instruction); with comments, only
+                      a new one, so a comment stays on the words it was
+                      about. */}
+                  {latestCopyVersion && latestCopyCommentCount === 0 && (
+                    <button
+                      type="button"
+                      className="btn sm primary"
+                      disabled={updateCopy.isPending || saveCopy.isPending || !pendingCopyChange}
+                      onClick={handleUpdateCopyOnly}
+                    >
+                      {updateCopy.isPending ? "Saving…" : `Save to V${latestCopyVersion.version_no}`}
+                    </button>
+                  )}
                   <button
                     type="button"
-                    className="btn sm primary"
-                    disabled={saveCopy.isPending || !pendingCopyChange}
+                    className={`btn sm${latestCopyVersion && latestCopyCommentCount === 0 ? "" : " primary"}`}
+                    disabled={saveCopy.isPending || updateCopy.isPending || !pendingCopyChange}
                     onClick={handleSaveCopyOnly}
                   >
-                    {saveCopy.isPending ? "Saving…" : `Save Copy V${nextCopyVersionNo}`}
+                    {saveCopy.isPending
+                      ? "Saving…"
+                      : latestCopyVersion
+                        ? `Save as V${nextCopyVersionNo}`
+                        : `Save Copy V${nextCopyVersionNo}`}
                   </button>
                   {copySaveNote && (
                     <span className={copySaveNote.startsWith("Saved") ? "bsaved" : "sub"}>{copySaveNote}</span>
                   )}
                 </div>
+                {latestCopyVersion && latestCopyCommentCount > 0 && pendingCopyChange && (
+                  <p className="hint">
+                    V{latestCopyVersion.version_no} has {latestCopyCommentCount === 1 ? "a comment" : `${latestCopyCommentCount} comments`}, so
+                    changes are saved as a new version.
+                  </p>
+                )}
+                {updateCopy.error && <p className="autherr">{errorMessage(updateCopy.error, "Couldn't save to this version")}</p>}
               </div>
             </>
           )}
