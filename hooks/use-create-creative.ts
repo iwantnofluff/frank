@@ -54,7 +54,8 @@ export function useCreateCreative(projectId: string) {
         .insert({
           project_id: projectId,
           name: input.name,
-          format: input.formats[0],
+          // An idea or concept can be made without one (phase114).
+          format: input.formats[0] ?? null,
           formats: input.formats,
           team_user_ids: input.teamUserIds,
           concept: input.concept.trim() || null,

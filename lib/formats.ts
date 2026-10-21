@@ -156,8 +156,10 @@ export function formatsByCategory(category: string): FormatDefinition[] {
 // is the main one — it sets the Feed Preview's shape and is what
 // creatives.format mirrors. An older row with no formats falls back to its
 // single format.
-export function postFormats(c: { format: string; formats?: string[] | null }): string[] {
-  return c.formats && c.formats.length ? c.formats : [c.format];
+// A post's formats, main first; none yet for an idea or concept made
+// without one (phase114).
+export function postFormats(c: { format: string | null; formats?: string[] | null }): string[] {
+  return c.formats && c.formats.length ? c.formats : c.format ? [c.format] : [];
 }
 
 export function formatsLabel(ids: string[]): string {
@@ -203,15 +205,16 @@ export function frameLimits(ids: string[]): { min: number; max: number; noun: "S
 }
 
 // A format's shape as a CSS aspect-ratio ("4:5" → "4 / 5"); square for
-// the formats with none ("—", "varies").
+// the formats with none ("—", "varies"), and for a post without a format
+// yet (phase114).
 // The same shape as a number, width over height.
-export function formatRatio(id: string): number {
+export function formatRatio(id: string | null | undefined): number {
   const [w, h] = aspectRatioCss(id).split(" / ").map(Number);
   return w / h;
 }
 
-export function aspectRatioCss(id: string): string {
-  const m = formatById(id)?.aspectRatio.match(/^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)$/);
+export function aspectRatioCss(id: string | null | undefined): string {
+  const m = (id ? formatById(id) : undefined)?.aspectRatio.match(/^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)$/);
   return m ? `${m[1]} / ${m[2]}` : "1 / 1";
 }
 

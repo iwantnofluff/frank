@@ -98,6 +98,7 @@ export type FocusTarget =
   | "alt"
   | "notes"
   | "principles"
+  | "format"
   | `cx:${string}`;
 const focusOf = (t: FocusTarget): { tab: Tab; selector: string } =>
   t.startsWith("cx:")
@@ -107,6 +108,7 @@ const FOCUS: Record<Exclude<FocusTarget, `cx:${string}`>, { tab: Tab; selector: 
   notes: { tab: "brief", selector: "#nbNotes" },
   principles: { tab: "brief", selector: "#nbPrinciples" },
   name: { tab: "brief", selector: "#nbName" },
+  format: { tab: "brief", selector: "#nbFmt" },
   team: { tab: "brief", selector: "#nbTeam" },
   concept: { tab: "brief", selector: "#nbConcept" },
   slides: { tab: "brief", selector: "#nbSlides" },
@@ -688,10 +690,8 @@ export function CreativeModal(props: CreativeModalProps) {
     artworkCleared = false,
     overBase,
   }: { artworkCleared?: boolean; overBase?: string } = {}) {
-    if (!formats.length) {
-      setFormatError("Choose at least one format.");
-      return;
-    }
+    // A format can wait (phase114, direct instruction): ideas and concepts
+    // are made without one, and the table offers Add Format.
     setFormatError(null);
     if (!name.trim()) {
       setNameError("Give the brief a name.");
@@ -1487,7 +1487,7 @@ export function CreativeModal(props: CreativeModalProps) {
 
           <div className="field">
             <label htmlFor="nbFmt">
-              Format <span className="hint">tick every format this goes out as</span>
+              Format <span className="hint">optional for now: tick every format this goes out as</span>
             </label>
             <FormatPicker
               id="nbFmt"
@@ -1794,7 +1794,30 @@ export function CreativeModal(props: CreativeModalProps) {
         </div>
       )}
 
-      {activeTab === "upload" && creativeId && (
+      {activeTab === "upload" && creativeId && !formats.length && (
+        <div className="mtabbody">
+          {/* A post can be made without a format (phase114); its copy
+              fields and artwork shape come from it, so first that. */}
+          <div className="msection-h">Choose a Format First</div>
+          <p className="msection-d">
+            This post&rsquo;s copy fields and artwork shape come from its format. Choose one on the Brief, then add the
+            creative and copy here.
+          </p>
+          <div className="field btnrow">
+            <button
+              type="button"
+              className="btn sm primary"
+              onClick={() => {
+                setActiveTab("brief");
+                setTimeout(() => document.querySelector<HTMLElement>("#nbFmt")?.click(), 50);
+              }}
+            >
+              Choose a Format
+            </button>
+          </div>
+        </div>
+      )}
+      {activeTab === "upload" && creativeId && !!formats.length && (
         <div className="mtabbody">
           <div className="msection-h">Creative</div>
           <p className="msection-d">The artwork or video for this post.</p>

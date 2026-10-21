@@ -11,7 +11,7 @@ export function NoArtwork({
   note,
   children,
 }: {
-  format: string;
+  format: string | null;
   // "Artwork removed", once it has gone after the post went live (phase60).
   title?: string;
   note?: string;

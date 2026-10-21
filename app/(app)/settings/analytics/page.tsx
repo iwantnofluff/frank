@@ -30,7 +30,7 @@ const fmtDays = (n: number | null) => (n === null ? "—" : `${n < 10 ? n.toFixe
 const fmtPct = (n: number | null) => (n === null ? "—" : `${Math.round(n * 100)}%`);
 const fmtNum = (n: number | null) => (n === null ? "—" : n.toFixed(1));
 const categoryLabel = (k: string) => ISSUE_CATEGORIES.find((c) => c.key === k)?.label ?? k;
-const formatLabel = (k: string) => formatById(k)?.label ?? k;
+const formatLabel = (k: string) => (k ? (formatById(k)?.label ?? k) : "No format yet");
 const weeks = (days: number) => `${days / 7} weeks`;
 const dayMonth = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 

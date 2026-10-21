@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { postFormats } from "@/lib/formats";
 
 export interface BriefFields {
   name: string;
@@ -60,7 +61,8 @@ export function useUpdateBrief(creativeId: string) {
           .from("creatives")
           .update({
           name: fields.name.trim(),
-          format: fields.formats[0],
+          // None yet is fine (phase114): said as null, so it clears.
+          format: fields.formats[0] ?? null,
           formats: fields.formats,
           team_user_ids: fields.teamUserIds,
           concept: fields.concept.trim() || null,
@@ -100,7 +102,7 @@ export function useUpdateBrief(creativeId: string) {
             : { data: null };
           throw new PostChangedError((who?.name as string | undefined) ?? null, now.updated_at as string, {
             name: now.name as string,
-            formats: ((now.formats as string[] | null)?.length ? now.formats : [now.format]) as string[],
+            formats: postFormats({ format: (now.format as string | null) ?? null, formats: now.formats as string[] | null }),
             teamUserIds: (now.team_user_ids as string[] | null) ?? [],
             concept: (now.concept as string | null) ?? "",
             referenceUrls: (now.reference_urls as string[] | null) ?? [],

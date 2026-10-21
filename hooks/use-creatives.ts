@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 export interface CreativeListRow {
   id: string;
   name: string;
-  format: string;
+  format: string | null;
   stage: number;
   exception: "changes_requested" | "rejected" | null;
   // The first of team_user_ids, kept by the database (phase87).

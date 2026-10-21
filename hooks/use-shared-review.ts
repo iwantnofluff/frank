@@ -6,7 +6,7 @@ import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-quer
 export interface SharedCreative {
   id: string;
   name: string;
-  format: string;
+  format: string | null;
   formats: string[]; // every format, main first
   // A carousel's slides, signed, in order — empty for a single image.
   slides: { position: number; signed_url: string | null; mime_type: string; filename: string }[];

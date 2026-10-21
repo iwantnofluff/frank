@@ -24,7 +24,8 @@ export interface DraftPostValues {
   concept: string;
 }
 
-const DEFAULT_FORMAT = formatsByCategory(FORMAT_CATEGORIES[0])[0]?.id ?? "";
+// None to start, as in the New Post window: a format can wait (phase114).
+const DEFAULT_FORMAT = "";
 
 function todayIso() {
   const d = new Date();
@@ -70,7 +71,7 @@ export function useDraftPost({
     try {
       await createCreative.mutateAsync({
         name: values.name.trim(),
-        formats: [values.format],
+        formats: values.format ? [values.format] : [],
         teamUserIds: values.teamUserIds,
         concept: values.concept,
         referenceUrls: [],
@@ -160,6 +161,7 @@ export function DraftField({
     case "format":
       return (
         <select className="ecell one" aria-label="Post type" value={values.format} onChange={(e) => set("format", e.target.value)}>
+          <option value="">No format yet</option>
           {FORMAT_CATEGORIES.map((cat) => (
             <optgroup key={cat} label={cat}>
               {formatsByCategory(cat).map((f) => (

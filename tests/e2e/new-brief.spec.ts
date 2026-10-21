@@ -57,12 +57,9 @@ test("a post saved with no publish date is made as an Idea", async ({ page, fran
 
   await page.getByRole("button", { name: "New Post", exact: true }).click();
   await page.fill("#nbName", "Pumpkin Bread Idea");
-  // No format yet (a new post starts with none): asked for one first.
+  // No format yet (a new post starts with none), and that's fine too
+  // (phase114, direct instruction): an idea needs neither.
   await expect(page.locator("#nbFmt")).toHaveText("Choose formats");
-  await page.click('button:has-text("Create Post")');
-  await expect(page.locator(".autherr", { hasText: "Choose at least one format." })).toBeVisible();
-  await chooseFormat(page);
-  await expect(page.locator(".autherr", { hasText: "Choose at least one format." })).toHaveCount(0);
   await page.click('button:has-text("Create Post")');
 
   // No Publish Date is fine: it's made as an Idea (direct instruction),
@@ -73,6 +70,24 @@ test("a post saved with no publish date is made as an Idea", async ({ page, fran
   const row = page.locator("tr[data-row]", { hasText: "Pumpkin Bread Idea" });
   await expect(row.locator(".stg.idea")).toHaveText(/^0\.\s*Idea$/);
   await expect(page.locator("tr.ideaband")).toContainText("1 Idea");
+
+  // Its Format cell offers Add Format, opening it at the picker; the
+  // Content tab, until then, says to choose one first.
+  await row.getByRole("button", { name: "Add Format" }).click();
+  await expect(page.getByRole("tab", { name: "Brief" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.locator("#nbFmt")).toBeFocused();
+  await page.getByRole("tab", { name: "Content" }).click();
+  await expect(page.getByText("Choose a Format First")).toBeVisible();
+  await page.getByRole("button", { name: "Choose a Format" }).click();
+  // It opens the Brief's picker.
+  const pop = page.getByRole("dialog", { name: "Formats" });
+  await pop.getByRole("checkbox", { name: "Instagram Post" }).click();
+  await pop.getByRole("button", { name: "Done" }).click();
+  await page.getByRole("button", { name: "Update" }).click();
+  await expect(page.getByText("Post updated.")).toBeVisible({ timeout: 15_000 });
+  await page.keyboard.press("Escape");
+  await expect(row.getByRole("button", { name: "Add Format" })).toHaveCount(0);
+  await expect(row).toContainText("Instagram");
 });
 
 test("a real client-role session has no New Brief entry point", async ({ page, frank }) => {

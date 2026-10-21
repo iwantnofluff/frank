@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.46.0",
+    date: "2026-10-21",
+    title: "Ideas and concepts without a format",
+    changes: [
+      "A post can be made without choosing a format, in the New Post window or straight in the table, so an idea or concept can be noted down first.",
+      "The table's Format column shows Add Format until one's chosen, opening the post at the format picker. The Content tab asks for a format first, as the copy fields and artwork shape come from it.",
+    ],
+  },
+  {
     version: "1.45.0",
     date: "2026-10-21",
     title: "Save copy changes without a new version",

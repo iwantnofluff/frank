@@ -9,7 +9,7 @@ export interface CreativeRow {
   agency_id: string;
   project_id: string;
   name: string;
-  format: string;
+  format: string | null;
   stage: number;
   exception: "changes_requested" | "rejected" | null;
   lead_user_id: string | null;

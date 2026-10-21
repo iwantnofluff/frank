@@ -57,7 +57,7 @@ export const NO_FILTER: PostFilter = { statuses: ALL_STATUSES, platform: "all" }
 // Whether a post shows: its status (Idea or stage), and any of its formats
 // on the platform.
 export function matchesFilter(
-  post: { stage: number; format: string; formats?: string[] | null; scheduled_at?: string | null; due_on?: string | null },
+  post: { stage: number; format: string | null; formats?: string[] | null; scheduled_at?: string | null; due_on?: string | null },
   filter: PostFilter,
 ): boolean {
   if (!filter.statuses.includes(statusKey(post))) return false;

@@ -62,6 +62,7 @@ const ADD_LABELS: Partial<Record<FocusTarget, string>> = {
   imageOnText: "Text on Image",
   copy: "Caption",
   alt: "Alt Text",
+  format: "Format",
   notes: "Notes",
   principles: "Principles",
 };
@@ -1227,7 +1228,13 @@ export function ProjectCalendarTable({
                             case "type":
                               return (
                                 <td key={key}>
-                                  <span className="tdim">{formatsLabel(postFormats(c))}</span>
+                                  {/* None yet (phase114): Add Format for the
+                                      team, opening the post at the picker. */}
+                                  {postFormats(c).length ? (
+                                    <span className="tdim">{formatsLabel(postFormats(c))}</span>
+                                  ) : (
+                                    <MissingContent expected {...fill(c, "format")} />
+                                  )}
                                 </td>
                               );
                             case "slides":

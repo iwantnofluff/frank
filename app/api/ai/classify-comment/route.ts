@@ -73,7 +73,8 @@ export async function POST(request: Request) {
   const prompt = buildClassifyCommentPrompt({
     body: comment.body,
     anchor: comment.anchor,
-    format: comment.creatives.format,
+    // A post can be without a format yet (phase114).
+    format: comment.creatives.format ?? "not chosen yet",
   });
 
   // Attributed to the creative's own creator — there's no real user behind
