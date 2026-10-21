@@ -105,7 +105,10 @@ export async function updateSession(request: NextRequest) {
     ) {
       return NextResponse.next();
     }
-    return NextResponse.rewrite(new URL("/welcome", request.url));
+    // With its query kept, so ?signin opens on Sign in.
+    const welcome = new URL("/welcome", request.url);
+    welcome.search = request.nextUrl.search;
+    return NextResponse.rewrite(welcome);
   }
   // admin.beingfrank.app is the platform admin area (phase37) and nothing
   // else: its sign-in, password reset, and /admin. Anywhere else goes to

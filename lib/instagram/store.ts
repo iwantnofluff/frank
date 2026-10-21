@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { tenantFromHost } from "@/lib/tenant";
+import { frontDoorFor, tenantFromHost } from "@/lib/tenant";
 import { decryptToken, encryptToken } from "./secrets";
 import { fetchChildren, fetchMedia, fetchProfile, isTokenGone, refreshToken, type InstagramMedia, type InstagramProfile } from "./api";
 
@@ -23,8 +23,10 @@ export function requestOrigin(request: Request): string {
 // the root's own, so each environment points at itself.
 export function callbackUrl(request: Request): string {
   const origin = new URL(requestOrigin(request));
-  const host =
-    tenantFromHost(origin.host).kind === "agency" ? origin.host.split(".").slice(1).join(".") : origin.host;
+  // Meta takes one fixed address per environment: the front door
+  // (app.beingfrank.app on live once it's set), whichever agency asked.
+  const kind = tenantFromHost(origin.host).kind;
+  const host = kind === "agency" || kind === "root" ? (frontDoorFor(origin.host) ?? origin.host) : origin.host;
   return `${origin.protocol}//${host}/api/connections/instagram/callback`;
 }
 

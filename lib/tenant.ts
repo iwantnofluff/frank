@@ -21,10 +21,37 @@ export const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "beingfrank.ap
 
 const ROOT_DOMAINS = [ROOT_DOMAIN, "frank.localhost"];
 
+// Frank's front door: where agencies sign up and find their address
+// (decided directly, 21 Oct 2026: the website takes the bare
+// beingfrank.app, and the front door moves to app.beingfrank.app). Set by
+// NEXT_PUBLIC_FRONT_DOOR_HOST on live; unset, it's the bare domain, as
+// before (staging, previews). app. (a reserved name, never an agency's)
+// is the front door too wherever Frank answers it, and the bare domain
+// keeps working until it's pointed at the website.
+export const FRONT_DOOR_HOST = process.env.NEXT_PUBLIC_FRONT_DOOR_HOST || ROOT_DOMAIN;
+
+// The root domain an address sits under, with its port: nofluff.beingfrank.app
+// or app.beingfrank.app → beingfrank.app; null for anything else.
+export function rootDomainOf(host: string): string | null {
+  const [hostname, port] = host.toLowerCase().split(":");
+  const root = ROOT_DOMAINS.find((r) => hostname === r || hostname.endsWith(`.${r}`));
+  return root ? `${root}${port ? `:${port}` : ""}` : null;
+}
+
+// The front door for an address under Frank's domain, with its port: the
+// configured one on live, the bare domain elsewhere (frank.localhost
+// locally).
+export function frontDoorFor(host: string): string | null {
+  const root = rootDomainOf(host);
+  if (!root) return null;
+  const [bare, port] = root.split(":");
+  return `${bare === ROOT_DOMAIN ? FRONT_DOOR_HOST : bare}${port ? `:${port}` : ""}`;
+}
+
 export function tenantFromHost(host: string | null | undefined): Tenant {
   const hostname = (host ?? "").split(":")[0].toLowerCase();
   for (const root of ROOT_DOMAINS) {
-    if (hostname === root || hostname === `www.${root}`) return { kind: "root" };
+    if (hostname === root || hostname === `www.${root}` || hostname === `app.${root}`) return { kind: "root" };
     if (hostname.endsWith(`.${root}`)) {
       const sub = hostname.slice(0, -(root.length + 1));
       // One level only (*.beingfrank.app); deeper names aren't agencies.

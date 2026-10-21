@@ -17,15 +17,17 @@ const slug = (s: string) =>
     .replace(/-+$/, "");
 const clean = (s: string) => s.toLowerCase().replace(/[^a-z0-9-]/g, "");
 
-// An agency's own address, from wherever this page is (beingfrank.app, or
-// frank.localhost:3000 locally).
+// An agency's own address, from wherever this page is (app.beingfrank.app,
+// beingfrank.app, or frank.localhost:3000 locally).
 function agencyUrl(subdomain: string, path: string) {
-  const host = window.location.host.replace(/^www\./, "");
+  const host = window.location.host.replace(/^(www|app)\./, "");
   return `${window.location.protocol}//${subdomain}.${host}${path}`;
 }
 
-export function Welcome() {
-  const [mode, setMode] = useState<"signup" | "signin" | "forgot">("signup");
+// Sign up to start; ?signin opens on Sign in (direct instruction: the
+// website's Log In button links here).
+export function Welcome({ startOnSignIn = false }: { startOnSignIn?: boolean }) {
+  const [mode, setMode] = useState<"signup" | "signin" | "forgot">(startOnSignIn ? "signin" : "signup");
   // Once signed up, there's only "check your email" left: no switching.
   const [signedUp, setSignedUp] = useState(false);
   return (

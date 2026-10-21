@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.44.1",
+    date: "2026-10-21",
+    title: "Getting ready for the website",
+    changes: [
+      "Frank's sign-up and sign-in page also answers at app.beingfrank.app, ready for the website to take beingfrank.app. Agencies' own addresses don't change.",
+      "A link ending ?signin opens that page on Sign in.",
+    ],
+  },
+  {
     version: "1.44.0",
     date: "2026-10-20",
     title: "Talk it through with Design with Frank",
