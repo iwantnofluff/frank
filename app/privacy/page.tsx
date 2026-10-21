@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AuthPanel } from "@/components/ui/AuthPanel";
 
 export const metadata: Metadata = {
   title: "Privacy policy · Frank",
@@ -10,13 +11,9 @@ export const metadata: Metadata = {
 // Every claim here matches what the code does; change both together.
 export default function PrivacyPage() {
   return (
-    <div className="authwrap scroll">
-      <article className="authcard legal">
-        <div className="mark authmark">F</div>
-        <div className="welcomehead">
-          <h1 className="h1">Privacy Policy</h1>
-          <p className="sub">Last updated 7 October 2026</p>
-        </div>
+    <div className="authwrap">
+      <AuthPanel title="Privacy Policy" sub="Last updated 7 October 2026" wide>
+      <article className="legal">
 
         <p>
           Frank is a content planning and approval tool for marketing agencies and their clients. It is run by No Fluff
@@ -169,6 +166,7 @@ export default function PrivacyPage() {
           Park Road, Bandra West, Mumbai 400050, Maharashtra, India.
         </p>
       </article>
+      </AuthPanel>
     </div>
   );
 }

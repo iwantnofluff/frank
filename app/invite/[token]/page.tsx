@@ -17,17 +17,15 @@ import { initials } from "@/lib/initials";
 import { MIN_PASSWORD_LENGTH } from "@/lib/invites/constants";
 import { ROLE_LABELS } from "@/lib/roles";
 import { uploadAvatar, validateAvatar } from "@/lib/upload-avatar";
+import { AuthPanel } from "@/components/ui/AuthPanel";
 
 function Notice({ title, body }: { title: string; body: string }) {
   return (
-    <div className="authcard">
-      <div className="mark authmark">F</div>
-      <h1 className="h1">{title}</h1>
-      <p className="sub">{body}</p>
-      <Link className="btn primary" href="/login" style={{ textAlign: "center" }}>
+    <AuthPanel title={title} sub={body}>
+      <Link className="btn primary" href="/login">
         Go to sign in
       </Link>
-    </div>
+    </AuthPanel>
   );
 }
 
@@ -114,13 +112,10 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
   let content: React.ReactNode = null;
   if (photoFailed) {
     content = (
-      <div className="authcard">
-        <div className="mark authmark">F</div>
-        <h1 className="h1">You&rsquo;re in</h1>
-        <p className="sub">
-          Your account is ready, but your photo didn&rsquo;t upload ({photoFailed}). You can add it
-          any time from Your Profile.
-        </p>
+      <AuthPanel
+        title="You\u2019re In"
+        sub={`Your account is ready, but your photo didn\u2019t upload (${photoFailed}). You can add it any time from Your Profile.`}
+      >
         <button
           type="button"
           className="btn primary"
@@ -131,7 +126,7 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
         >
           Continue
         </button>
-      </div>
+      </AuthPanel>
     );
   } else if (isError || invite?.status === "not_found") {
     content = (
@@ -151,17 +146,20 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
     content = <Notice title="You've already joined" body="This invite has been used. Sign in to continue." />;
   } else if (invite?.status === "ok") {
     content = (
-      <form className="authcard" onSubmit={handleSubmit}>
-        <div className="mark authmark">F</div>
-        <h1 className="h1">Join {invite.agencyName} on Frank</h1>
-        <p className="sub">
-          {invite.clientName
-            ? `You've been invited to review ${invite.clientName}'s work.`
-            : `You've been invited as ${ROLE_LABELS[invite.role]}.`}{" "}
-          {invite.needsPassword
-            ? "Tell your team who you are, then choose a password."
-            : `You already have a Frank account as ${invite.email} — accept, then sign in as usual.`}
-        </p>
+      <AuthPanel
+        title={`Join ${invite.agencyName} on Frank`}
+        sub={
+          <>
+            {invite.clientName
+              ? `You've been invited to review ${invite.clientName}'s work.`
+              : `You've been invited as ${ROLE_LABELS[invite.role]}.`}{" "}
+            {invite.needsPassword
+              ? "Tell your team who you are, then choose a password."
+              : `You already have a Frank account as ${invite.email} — accept, then sign in as usual.`}
+          </>
+        }
+      >
+      <form className="signform" onSubmit={handleSubmit}>
 
         {invite.needsPassword && (
           <>
@@ -199,6 +197,7 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
           {accept.isPending ? "Joining…" : invite.needsPassword ? "Create account" : "Accept invite"}
         </button>
       </form>
+      </AuthPanel>
     );
   }
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { AuthPanel } from "@/components/ui/AuthPanel";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -28,31 +29,26 @@ function ResetPassword() {
   if (state === "checking") return <p className="sub">Checking the link…</p>;
   if (state === "bad") {
     return (
-      <div className="authcard">
-        <div className="mark authmark">F</div>
-        <h1 className="h1">This link has expired</h1>
-        <p className="sub">Reset links work once, for an hour. Ask for a new one.</p>
-        <a className="btn primary" href="/forgot-password" style={{ textAlign: "center" }}>
+      <AuthPanel title="This Link Has Expired" sub="Reset links work once, for an hour. Ask for a new one.">
+        <a className="btn primary" href="/forgot-password">
           Send a new link
         </a>
-      </div>
+      </AuthPanel>
     );
   }
   if (state === "done") {
     return (
-      <div className="authcard">
-        <div className="mark authmark">F</div>
-        <h1 className="h1">Password changed</h1>
-        <p className="sub">You&rsquo;re signed in with your new password.</p>
-        <a className="btn primary" href="/dashboard" style={{ textAlign: "center" }}>
+      <AuthPanel title="Password Changed" sub="You\u2019re signed in with your new password.">
+        <a className="btn primary" href="/dashboard">
           Continue
         </a>
-      </div>
+      </AuthPanel>
     );
   }
   return (
+    <AuthPanel title="Choose a New Password">
     <form
-      className="authcard"
+      className="signform"
       onSubmit={async (e) => {
         e.preventDefault();
         if (password.length < MIN_PASSWORD_LENGTH) {
@@ -66,8 +62,6 @@ function ResetPassword() {
         else setState("done");
       }}
     >
-      <div className="mark authmark">F</div>
-      <h1 className="h1">Choose a New Password</h1>
       <label className="authfield">
         <span>New password</span>
         <input type="password" required autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
@@ -77,6 +71,7 @@ function ResetPassword() {
         {busy ? "Saving…" : "Save password"}
       </button>
     </form>
+    </AuthPanel>
   );
 }
 

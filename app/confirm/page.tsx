@@ -1,5 +1,6 @@
 "use client";
 
+import { AuthPanel } from "@/components/ui/AuthPanel";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -30,16 +31,11 @@ function Confirm() {
 
   if (!bad) return <p className="sub">Opening your workspace…</p>;
   return (
-    <div className="authcard">
-      <div className="mark authmark">F</div>
-      <h1 className="h1">This link has expired</h1>
-      <p className="sub">
-        Confirmation links work once. If you&rsquo;ve already confirmed your email, sign in; if not, sign up again.
-      </p>
-      <a className="btn primary" href="/login" style={{ textAlign: "center" }}>
+    <AuthPanel title={<>This link has expired</>} sub={<>Confirmation links work once. If you&rsquo;ve already confirmed your email, sign in; if not, sign up again.</>}>
+      <a className="btn primary" href="/login">
         Sign in
       </a>
-    </div>
+    </AuthPanel>
   );
 }
 

@@ -1,3 +1,5 @@
+import { AuthPanel } from "@/components/ui/AuthPanel";
+
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
@@ -17,12 +19,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!isAdmin) {
     return (
       <div className="authwrap">
-        <div className="authcard">
-          <div className="mark authmark">F</div>
-          <h1 className="h1">Not a platform admin</h1>
-          <p className="sub">{user?.email ?? "This account"} can&rsquo;t use Frank Admin.</p>
+        <AuthPanel title={<>Not a platform admin</>} sub={<>{user?.email ?? "This account"} can&rsquo;t use Frank Admin.</>}>
           <SignOutButton />
-        </div>
+        </AuthPanel>
       </div>
     );
   }

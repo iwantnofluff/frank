@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AuthPanel } from "@/components/ui/AuthPanel";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -10,8 +11,16 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="authwrap">
+      <AuthPanel
+        title="Reset Your Password"
+        sub={
+          sent
+            ? `If ${email} has a Frank account, a link to set a new password is on its way. It works for an hour.`
+            : "Enter your email and we\u2019ll send you a link to set a new password."
+        }
+      >
       <form
-        className="authcard"
+        className="signform"
         onSubmit={async (e) => {
           e.preventDefault();
           setBusy(true);
@@ -26,15 +35,8 @@ export default function ForgotPasswordPage() {
           else setError((await res.json().catch(() => ({}))).error ?? "Couldn't send the email");
         }}
       >
-        <div className="mark authmark">F</div>
-        <h1 className="h1">Reset Your Password</h1>
-        {sent ? (
-          <p className="sub">
-            If {email} has a Frank account, a link to set a new password is on its way. It works for an hour.
-          </p>
-        ) : (
+        {!sent && (
           <>
-            <p className="sub">Enter your email and we&rsquo;ll send you a link to set a new password.</p>
             <label className="authfield">
               <span>Email</span>
               <input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -49,6 +51,7 @@ export default function ForgotPasswordPage() {
           Back to sign in
         </a>
       </form>
+      </AuthPanel>
     </div>
   );
 }

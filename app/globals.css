@@ -1283,6 +1283,32 @@ body.lightrail .search input::placeholder {
   font-size: 14.7px;
   line-height: 1.6;
 }
+/* The privacy policy inside the sign-in screens' layout (AuthPanel). */
+.fd-card .legal {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.fd-card .legal h2 {
+  margin: 14px 0 0;
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--fd-ink);
+}
+.fd-card .legal p,
+.fd-card .legal ul {
+  margin: 0;
+  color: var(--fd-muted);
+}
+.fd-card .legal ul {
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.fd-card .legal a {
+  color: var(--fd-ink);
+}
 .authcard.legal h2 {
   margin: 14px 0 0;
   font-size: 16px;
@@ -11647,8 +11673,18 @@ button.sortbtn:hover {
   white-space: nowrap;
   cursor: pointer;
 }
+/* Inside a sign-in screen's own wrapper (AuthPanel): the page is the
+   panel's, edge to edge. */
+.authwrap:has(> .fdoor) {
+  display: block;
+  padding: 0;
+  background: #fbfaf6;
+}
+.authwrap > .fdoor {
+  width: 100%;
+}
 .fd-main {
-  max-width: 480px;
+  max-width: 640px;
   margin: 0 auto;
   padding: 64px 16px 48px;
   display: flex;
@@ -11664,6 +11700,11 @@ button.sortbtn:hover {
   letter-spacing: -0.01em;
   text-align: center;
 }
+/* A heading long enough to wrap (an expired link, a missing workspace)
+   steps down, so it stays a line or two. */
+.fd-title.long {
+  font-size: 42px;
+}
 .fd-sub {
   margin: 12px 0 34px;
   color: var(--fd-muted);
@@ -11671,6 +11712,7 @@ button.sortbtn:hover {
 }
 .fd-card {
   width: 100%;
+  max-width: 480px;
   padding: 32px;
   background: var(--fd-card);
   border-radius: 6px;
@@ -11709,7 +11751,10 @@ button.sortbtn:hover {
 .fdoor .btn.primary {
   height: 48px;
   margin-top: 4px;
+  display: flex;
+  align-items: center;
   justify-content: center;
+  text-decoration: none;
   border: 0;
   border-radius: 8px;
   background: var(--fd-ink);
@@ -11729,6 +11774,20 @@ button.sortbtn:hover {
 .fdoor .authlink {
   color: var(--fd-muted);
   font-size: 14px;
+}
+.fd-main.wide {
+  max-width: 820px;
+}
+.fd-main.wide .fd-card {
+  max-width: 760px;
+  line-height: 1.6;
+}
+.fd-card .authlink {
+  align-self: center;
+  text-align: center;
+}
+.fd-card .btn {
+  justify-content: center;
 }
 .fd-switch {
   align-self: center;

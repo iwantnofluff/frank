@@ -115,7 +115,7 @@ test("an admin creates an agency, and its Primary Owner is invited to its own ad
 
     // Its address exists.
     await page.goto(`http://${sub}.frank.localhost:3000/login`);
-    await expect(page.getByRole("heading", { name: "Hey, sign in to E2E Created Agency" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Sign in to E2E Created Agency" })).toBeVisible();
   } finally {
     const { data: agency } = await admin.from("agencies").select("id").eq("subdomain", sub).maybeSingle();
     if (agency) {

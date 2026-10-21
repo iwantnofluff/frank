@@ -1,5 +1,6 @@
 "use client";
 
+import { AuthPanel } from "@/components/ui/AuthPanel";
 import { Suspense, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -15,17 +16,11 @@ function AccessRemoved() {
   }, []);
 
   return (
-    <div className="authcard">
-      <div className="mark authmark">F</div>
-      <h1 className="h1">Access removed</h1>
-      <p className="sub">
-        {agency ? `Your access to ${agency} on Frank` : "Your access to Frank"} has been turned off.
-        Contact an Owner of your workspace if you think this is a mistake.
-      </p>
-      <Link className="btn primary" href="/login" style={{ textAlign: "center" }}>
+    <AuthPanel title={<>Access removed</>} sub={<>{agency ? `Your access to ${agency} on Frank` : "Your access to Frank"} has been turned off. Contact an Owner of your workspace if you think this is a mistake.</>}>
+      <Link className="btn primary" href="/login">
         Back to sign in
       </Link>
-    </div>
+    </AuthPanel>
   );
 }
 

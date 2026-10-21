@@ -1,5 +1,6 @@
 "use client";
 
+import { AuthPanel } from "@/components/ui/AuthPanel";
 import { use } from "react";
 import { useConnectLink } from "@/hooks/use-instagram";
 
@@ -52,20 +53,16 @@ export default function ConnectInstagramPage({
   return (
     <div className="authwrap">
       {isLoading ? null : (
-        <div className="authcard">
-          <div className="mark authmark">F</div>
-          <h1 className="h1">{title}</h1>
-          <p className="sub">{body}</p>
+        <AuthPanel title={<>{title}</>} sub={<>{body}</>}>
           {canConnect && (
             <a
               className="btn primary"
-              style={{ textAlign: "center" }}
               href={`/api/connections/instagram/start?link=${encodeURIComponent(token)}`}
             >
               Connect with Instagram
             </a>
           )}
-        </div>
+        </AuthPanel>
       )}
     </div>
   );

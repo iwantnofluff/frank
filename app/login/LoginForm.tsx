@@ -3,6 +3,7 @@
 import { useState, type SubmitEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { AuthPanel } from "@/components/ui/AuthPanel";
 
 // On an agency's own address the page names it (workspaceName); elsewhere
 // it's plain Frank.
@@ -48,18 +49,17 @@ export function LoginForm({
   }
 
   return (
-    <form className="authcard" onSubmit={handleSubmit}>
-      <div className="mark authmark">F</div>
-      <h1 className="h1">
-        {adminArea ? "Frank Admin" : workspaceName ? `Hey, sign in to ${workspaceName}` : "Hey, sign in to Frank"}
-      </h1>
-      <p className="sub">
-        {adminArea
+    <AuthPanel
+      title={adminArea ? "Frank Admin" : workspaceName ? `Sign in to ${workspaceName}` : "Sign In"}
+      sub={
+        adminArea
           ? "For Frank's platform admins only."
           : workspaceName
             ? `${workspaceName}'s Frank workspace.`
-            : "Use the account you signed up or were invited with."}
-      </p>
+            : "Use the account you signed up or were invited with."
+      }
+    >
+    <form className="signform" onSubmit={handleSubmit}>
 
       <label className="authfield">
         <span>Email</span>
@@ -94,5 +94,6 @@ export function LoginForm({
         Forgot password?
       </a>
     </form>
+    </AuthPanel>
   );
 }

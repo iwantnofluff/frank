@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.44.3",
+    date: "2026-10-21",
+    title: "Every sign-in screen in the new look",
+    changes: [
+      "Signing in to your workspace, resetting a password, accepting an invite and the other sign-in screens now share the new look, with Frank's logo at the top.",
+      "The sign-in heading now reads \"Sign in to\" your workspace.",
+    ],
+  },
+  {
     version: "1.44.2",
     date: "2026-10-21",
     title: "A new look for sign-up and sign-in",

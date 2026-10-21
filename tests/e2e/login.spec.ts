@@ -5,6 +5,6 @@ import { test, expect } from "@playwright/test";
 
 test("login page", async ({ page }) => {
   await page.goto("/login");
-  await page.waitForSelector(".authcard");
+  await page.waitForSelector(".fd-card");
   await expect(page).toHaveScreenshot("login.png");
 });

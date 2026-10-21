@@ -1,5 +1,6 @@
 "use client";
 
+import { AuthPanel } from "@/components/ui/AuthPanel";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { forgetSignedUrls } from "@/hooks/use-avatar-urls";
@@ -17,13 +18,7 @@ export default function NotAMemberPage() {
 
   return (
     <div className="authwrap">
-      <div className="authcard">
-        <div className="mark authmark">F</div>
-        <h1 className="h1">Not part of this workspace</h1>
-        <p className="sub">
-          {email ? `${email} isn't` : "This account isn't"} a member of the workspace at this address. Sign in with the
-          account they invited, or ask them to invite you.
-        </p>
+      <AuthPanel title={<>Not part of this workspace</>} sub={<>{email ? `${email} isn't` : "This account isn't"} a member of the workspace at this address. Sign in with the account they invited, or ask them to invite you.</>}>
         <button
           type="button"
           className="btn primary"
@@ -35,7 +30,7 @@ export default function NotAMemberPage() {
         >
           Sign in with another account
         </button>
-      </div>
+      </AuthPanel>
     </div>
   );
 }

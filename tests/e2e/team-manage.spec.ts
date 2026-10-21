@@ -97,7 +97,7 @@ test("deactivating blocks sign-in with a clear message, and reactivating restore
   const blocked = await signInAs(browser, member.email);
   await blocked.page.waitForURL(/\/access-removed/, { timeout: 15000 });
   await expect(blocked.page.getByRole("heading", { name: "Access removed" })).toBeVisible();
-  await expect(blocked.page.locator(".sub")).toContainText("Your access to E2E Test Agency on Frank");
+  await expect(blocked.page.locator(".fd-sub")).toContainText("Your access to E2E Test Agency on Frank");
   // Signed out, not just shown a page: the app itself sends them back to sign in.
   await blocked.page.goto(`${APP_URL}/dashboard`);
   await blocked.page.waitForURL(/\/login/, { timeout: 15000 });
