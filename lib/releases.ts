@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.44.2",
+    date: "2026-10-21",
+    title: "A new look for sign-up and sign-in",
+    changes: [
+      "Frank's sign-up and sign-in page now matches the website: its header, and a simpler card with clear headings. What it asks for, and how it works, are the same.",
+    ],
+  },
+  {
     version: "1.44.1",
     date: "2026-10-21",
     title: "Getting ready for the website",

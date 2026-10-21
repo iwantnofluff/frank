@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useAddressAvailable, useEmailMyAddresses, useFindWorkspace, useSignUp } from "@/hooks/use-signup";
 import { MIN_PASSWORD_LENGTH } from "@/lib/invites/constants";
 import { errorMessage } from "@/lib/errors";
+import { BRAND } from "@/lib/brand";
 
 const ROOT = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "beingfrank.app";
 
@@ -24,37 +25,115 @@ function agencyUrl(subdomain: string, path: string) {
   return `${window.location.protocol}//${subdomain}.${host}${path}`;
 }
 
-// Sign up to start; ?signin opens on Sign in (direct instruction: the
-// website's Log In button links here).
-export function Welcome({ startOnSignIn = false }: { startOnSignIn?: boolean }) {
-  const [mode, setMode] = useState<"signup" | "signin" | "forgot">(startOnSignIn ? "signin" : "signup");
-  // Once signed up, there's only "check your email" left: no switching.
-  const [signedUp, setSignedUp] = useState(false);
+// The website (direct instruction: the front door wears its header), at the
+// bare domain once the DNS sends it there.
+const WEBSITE = `https://${ROOT}`;
+const COMPANY = [
+  { label: "About", href: "/company/about" },
+  { label: "Blog", href: "/company/blog" },
+  { label: "Careers", href: "/company/careers" },
+  { label: "Updates", href: "/company/updates" },
+];
+const NAV = [
+  { label: "Integrations", href: "/integrations" },
+  { label: "Customers", href: "/customers" },
+  { label: "Pricing", href: "/pricing" },
+];
+
+type Mode = "signup" | "signin" | "forgot";
+
+// The website's header, as its Framer design has it: the logo home, the
+// site's sections, and Sign In and Try Frank Free, which switch this page.
+function Header({ onMode }: { onMode: (m: Mode) => void }) {
+  const [companyOpen, setCompanyOpen] = useState(false);
   return (
-    <div className="authcard">
-      <div className="mark authmark">F</div>
-      <div className="welcomehead">
-        <h1 className="h1">Frank</h1>
-        <p className="sub">Content review and approval for agencies: briefs, artwork and copy, approved by your clients in one place.</p>
-      </div>
-      {!signedUp && (
-        <div className="filters signtabs" role="group" aria-label="Sign up or sign in">
-          <button type="button" className="chip" aria-pressed={mode === "signup"} onClick={() => setMode("signup")}>
-            Sign Up
-          </button>
-          <button type="button" className="chip" aria-pressed={mode !== "signup"} onClick={() => setMode("signin")}>
+    <header className="fd-head">
+      <div className="fd-headin">
+        <a className="fd-logo" href={WEBSITE} aria-label="Frank home">
+          {/* eslint-disable-next-line @next/next/no-img-element -- the brand's own SVG */}
+          <img src={BRAND.headerStrapline} alt="Frank, faster approvals" />
+        </a>
+        <nav className="fd-nav" aria-label="Website">
+          <div className="fd-drop" onMouseLeave={() => setCompanyOpen(false)}>
+            <button type="button" className="fd-link" aria-expanded={companyOpen} onClick={() => setCompanyOpen((o) => !o)}>
+              Company
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
+            {companyOpen && (
+              <div className="fd-menu">
+                {COMPANY.map((c) => (
+                  <a key={c.href} href={`${WEBSITE}${c.href}`}>
+                    {c.label}
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+          {NAV.map((n) => (
+            <a key={n.href} className="fd-link" href={`${WEBSITE}${n.href}`}>
+              {n.label}
+            </a>
+          ))}
+        </nav>
+        <div className="fd-actions">
+          <button type="button" className="fd-link" onClick={() => onMode("signin")}>
             Sign In
           </button>
+          <button type="button" className="fd-cta" onClick={() => onMode("signup")}>
+            Try Frank Free
+          </button>
         </div>
-      )}
-      {mode === "signup" ? (
-        <SignUp onDone={() => setSignedUp(true)} />
-      ) : mode === "signin" ? (
-        <SignIn onForgot={() => setMode("forgot")} />
-      ) : (
-        <Forgot />
-      )}
-    </div>
+      </div>
+    </header>
+  );
+}
+
+const TITLES: Record<Mode, { title: string; sub: string }> = {
+  signup: { title: "Sign Up", sub: "Start your 30-day free trial. No card needed." },
+  signin: { title: "Sign In", sub: "Enter your workspace address to sign in." },
+  forgot: { title: "Find Your Workspace", sub: "We\u2019ll email you the address of every workspace you belong to." },
+};
+
+// Sign up to start; ?signin opens on Sign in (direct instruction: the
+// website's Log In button links here). In the website's Sign Up design:
+// a light serif heading, a line under it, and a soft grey card with a dark
+// full-width button and a switch to the other.
+export function Welcome({ startOnSignIn = false }: { startOnSignIn?: boolean }) {
+  const [mode, setMode] = useState<Mode>(startOnSignIn ? "signin" : "signup");
+  // Once signed up, there's only "check your email" left: no switching.
+  const [signedUp, setSignedUp] = useState(false);
+  const { title, sub } = signedUp ? { title: "Check Your Email", sub: "One last step to your workspace." } : TITLES[mode];
+  return (
+    <>
+      <Header onMode={(m) => !signedUp && setMode(m)} />
+      <main className="fd-main">
+        <h1 className="fd-title">{title}</h1>
+        <p className="fd-sub">{sub}</p>
+        <div className="fd-card">
+          {mode === "signup" ? (
+            <SignUp onDone={() => setSignedUp(true)} />
+          ) : mode === "signin" ? (
+            <SignIn onForgot={() => setMode("forgot")} />
+          ) : (
+            <Forgot />
+          )}
+          {!signedUp && (
+            <button
+              type="button"
+              className="fd-switch"
+              onClick={() => setMode(mode === "signup" ? "signin" : mode === "signin" ? "signup" : "signin")}
+            >
+              {mode === "signup" ? "Already have an account?" : mode === "signin" ? "New to Frank? Try it free" : "Back to Sign In"}
+            </button>
+          )}
+        </div>
+        <p className="fd-foot">
+          <a href="/privacy">Privacy policy</a>
+        </p>
+      </main>
+    </>
   );
 }
 
@@ -81,7 +160,6 @@ function SignUp({ onDone }: { onDone: () => void }) {
   if (signUp.data) {
     return (
       <div className="signdone">
-        <b>Check your email</b>
         <p className="sub">
           We sent a link to {email}. Open it to confirm your email and go to your workspace at{" "}
           <b>{signUp.data.address}</b>.
