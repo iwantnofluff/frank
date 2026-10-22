@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useSyncExternalStore } from "react";
-import type { VoicePostFields } from "@/lib/ai/voice-post";
+import type { VoicePostCurrent, VoicePostFields } from "@/lib/ai/voice-post";
 
 // The browser's own speech-to-text (Chrome and Safari; not Firefox), not in
 // TypeScript's own types.
@@ -24,19 +24,23 @@ function recognitionCtor(): RecognitionCtor | null {
 
 type Phase = "idle" | "listening" | "thinking" | "done";
 
-// Make a post by speaking (direct instruction): tap, say it, and Frank
-// fills in the New Post window's fields from what was said, with one AI
+// Make or change a post by speaking (direct instruction): tap, say it, and
+// Frank fills in the post window's fields from what was said, with one AI
 // request (app/api/ai/voice-post), for checking before Create Post.
 export function VoicePost({
   agencyId,
   projectId,
   delivery,
+  current,
   onFill,
 }: {
   agencyId: string;
   // For its team: only the project's can be put on the post.
   projectId: string;
   delivery: "scheduled" | "continuous";
+  // A post already made: its brief as the window has it, so only what's
+  // said changes.
+  current?: VoicePostCurrent;
   onFill: (fields: VoicePostFields) => void;
 }) {
   const supported = useSyncExternalStore(
@@ -139,6 +143,7 @@ export function VoicePost({
           delivery,
           today: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`,
           weekday: now.toLocaleDateString("en-GB", { weekday: "long" }),
+          current,
         }),
       });
       const data = (await res.json()) as { fields?: VoicePostFields; error?: string };
@@ -183,7 +188,9 @@ export function VoicePost({
               </>
             ) : (
               <span className="voicepost-i">
-                Say what it is, its format, when it goes out and who&rsquo;s on it.
+                {current
+                  ? "Say what to change: its date, its format, who\u2019s on it, or what to add to the concept."
+                  : "Say what it is, its format, when it goes out and who\u2019s on it."}
               </span>
             )}
           </p>
@@ -198,8 +205,10 @@ export function VoicePost({
             {phase === "thinking"
               ? `“${heard}”`
               : phase === "done"
-                ? "Filled in from what you said. Check each field, then Create Post."
-                : "Make this post by speaking: one of your monthly AI requests."}
+                ? `Filled in from what you said. Check each field, then ${current ? "Update" : "Create Post"}.`
+                : current
+                  ? "Change this post by speaking: one of your monthly AI requests."
+                  : "Make this post by speaking: one of your monthly AI requests."}
           </span>
         </div>
       )}

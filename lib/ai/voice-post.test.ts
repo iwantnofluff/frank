@@ -25,6 +25,35 @@ test("buildVoicePostPrompt: today, the formats and team by id, and what was said
   assert.doesNotMatch(c, /"date": the Publish Date/);
 });
 
+test("buildVoicePostPrompt: an existing post changes only what's said, keeping its name and concept", () => {
+  const p = buildVoicePostPrompt({
+    transcript: "Move it to Friday and add Hannah",
+    today: "2026-10-17",
+    weekday: "Saturday",
+    delivery: "scheduled",
+    formats: [{ id: "ig_feed", label: "Instagram Post" }],
+    team: [{ id: "u1", name: "Hannah Cardozo" }, { id: "u2", name: "Aditya Agrawal" }],
+    current: {
+      name: "Testing AI",
+      formats: ["ig_feed"],
+      slideCount: null,
+      date: "",
+      time: "09:00",
+      dueOn: "",
+      concept: "A mental movie of a brand owner hitting sales targets.",
+      referenceUrls: [],
+      teamUserIds: ["u2"],
+    },
+  });
+  assert.match(p, /This post already exists\. Change only what they talk about/);
+  assert.match(p, /name: Testing AI/);
+  assert.match(p, /concept: A mental movie of a brand owner hitting sales targets\./);
+  assert.match(p, /teamUserIds: u2/);
+  assert.match(p, /"name": only if they rename it/);
+  assert.doesNotMatch(p, /make one from what it/);
+  assert.match(p, /keeping what's there and working in what they said/);
+});
+
 test("parseVoicePost: keeps real formats, team, dates and times; drops the rest", () => {
   const f = parseVoicePost(
     'Here you go: {"name":"Night Feed Dad","formats":["ig_carousel","tiktok","ig_carousel"],"slideCount":5,' +

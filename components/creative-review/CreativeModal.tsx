@@ -597,7 +597,7 @@ export function CreativeModal(props: CreativeModalProps) {
   const [nameError, setNameError] = useState<string | null>(null);
   const [formatError, setFormatError] = useState<string | null>(null);
   // What was said (VoicePost), into the fields it covers; the rest stay as
-  // they were, and nothing is saved until Create Post.
+  // they were, and nothing is saved until Create Post or Update.
   function applyVoice(f: VoicePostFields) {
     if (f.name) setName(f.name);
     if (f.formats) {
@@ -1463,9 +1463,20 @@ export function CreativeModal(props: CreativeModalProps) {
 
       {activeTab === "brief" && (
         <div className="mtabbody">
-          {/* Made by speaking (direct instruction): a new post only. */}
-          {isCreate && !creativeId && agencyId && (
-            <VoicePost agencyId={agencyId} projectId={projectId} delivery={delivery} onFill={applyVoice} />
+          {/* Made or changed by speaking (direct instruction); a post
+              already made passes its brief, so only what's said changes. */}
+          {agencyId && (
+            <VoicePost
+              agencyId={agencyId}
+              projectId={projectId}
+              delivery={delivery}
+              current={
+                creativeId
+                  ? { name, formats, slideCount: slideCountChoice, date, time, dueOn, concept, referenceUrls, teamUserIds }
+                  : undefined
+              }
+              onFill={applyVoice}
+            />
           )}
           <div className="msection-h">Details</div>
           <p className="msection-d">The basics — what this is, its format, when it&rsquo;s due, and who&rsquo;s on it.</p>

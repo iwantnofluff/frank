@@ -1,6 +1,6 @@
-// A post made by speaking (direct instruction): what was said, turned into
-// the New Post window's fields by one AI request, for the person to check
-// before Create Post. Nothing here saves anything.
+// A post made or changed by speaking (direct instruction): what was said,
+// turned into the post window's fields by one AI request, for the person
+// to check before Create Post or Update. Nothing here saves anything.
 
 export interface VoicePostInput {
   transcript: string;
@@ -10,6 +10,22 @@ export interface VoicePostInput {
   delivery: "scheduled" | "continuous";
   formats: { id: string; label: string }[];
   team: { id: string; name: string }[];
+  // An existing post's brief as the window has it (direct instruction:
+  // speaking works on a post already made, too), so only what's said
+  // changes.
+  current?: VoicePostCurrent;
+}
+
+export interface VoicePostCurrent {
+  name: string;
+  formats: string[];
+  slideCount: number | null;
+  date: string; // YYYY-MM-DD or ""
+  time: string; // HH:MM or ""
+  dueOn: string; // YYYY-MM-DD or ""
+  concept: string;
+  referenceUrls: string[];
+  teamUserIds: string[];
 }
 
 export interface VoicePostFields {
@@ -26,22 +42,42 @@ export interface VoicePostFields {
 
 export function buildVoicePostPrompt(input: VoicePostInput): string {
   const scheduled = input.delivery === "scheduled";
+  const cur = input.current;
   return [
     "You turn what someone said aloud about a social media post into the fields of a form. Reply with one JSON object and nothing else.",
     "",
     `Today is ${input.weekday} ${input.today}. Dates they say are on or after today unless they clearly mean otherwise.`,
     "",
     "Fields (leave any out that they didn't say or clearly imply):",
-    '- "name": a short post name, 2 to 6 words. If they didn\'t name it, make one from what it\'s about.',
+    cur
+      ? '- "name": only if they rename it, 2 to 6 words.'
+      : '- "name": a short post name, 2 to 6 words. If they didn\'t name it, make one from what it\'s about.',
     '- "formats": format ids from the list below, the main one first. "Instagram post" means ig_feed, "reel" ig_reel, "carousel" ig_carousel, "story" ig_story, unless they name another platform.',
     '- "slideCount": how many slides or stories, a number, only for carousels and stories.',
     scheduled
       ? '- "date": the Publish Date, YYYY-MM-DD. "time": its time, 24-hour HH:MM.'
       : '- "dueOn": the Live Date, YYYY-MM-DD.',
-    '- "concept": what the post is and how it should look, in their words, tidied into a clear brief of one to four sentences. Don\'t invent details they didn\'t give.',
+    cur
+      ? '- "concept": only if they talk about what the post is or how it should look: the whole updated concept, keeping what\'s there and working in what they said (replace it only if they say to), tidied into one to four sentences. Don\'t invent details they didn\'t give.'
+      : '- "concept": what the post is and how it should look, in their words, tidied into a clear brief of one to four sentences. Don\'t invent details they didn\'t give.',
     '- "referenceUrls": any links they read out, as URLs.',
     '- "teamUserIds": ids from the team list below for the people they name, matching first names or nicknames.',
     "",
+    ...(cur
+      ? [
+          "This post already exists. Change only what they talk about and leave every other field out. For formats, references and team, give the whole list after their change (\"add Hannah\" keeps who's there).",
+          "",
+          "The post now:",
+          `name: ${cur.name || "(none)"}`,
+          `formats: ${cur.formats.join(", ") || "(none)"}`,
+          ...(cur.slideCount ? [`slideCount: ${cur.slideCount}`] : []),
+          scheduled ? `date: ${cur.date || "(none)"}, time: ${cur.time || "(none)"}` : `dueOn: ${cur.dueOn || "(none)"}`,
+          `concept: ${cur.concept.trim() || "(none)"}`,
+          `referenceUrls: ${cur.referenceUrls.join(" ") || "(none)"}`,
+          `teamUserIds: ${cur.teamUserIds.join(", ") || "(none)"}`,
+          "",
+        ]
+      : []),
     "Formats:",
     ...input.formats.map((f) => `${f.id}: ${f.label}`),
     "",

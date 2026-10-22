@@ -2,14 +2,14 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { runAiTask } from "@/lib/ai/run-ai-task";
 import { FORMATS } from "@/lib/formats";
-import { buildVoicePostPrompt, parseVoicePost } from "@/lib/ai/voice-post";
+import { buildVoicePostPrompt, parseVoicePost, type VoicePostCurrent } from "@/lib/ai/voice-post";
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-// A post made by speaking (direct instruction): what the browser heard,
-// turned into the New Post window's fields by one request against the
+// A post made or changed by speaking (direct instruction): what the browser
+// heard, turned into the post window's fields by one request against the
 // agency's monthly cap (runAiTask). The team only. Nothing is saved: the
-// fields go back to the window, to be checked before Create Post. The team
+// fields go back to the window, to be checked before Create Post or Update. The team
 // and formats are read here, not taken from the request, so the reply can
 // only name real ones.
 export async function POST(request: Request) {
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
 
-  let body: { agencyId?: string; projectId?: string; transcript?: string; delivery?: string; today?: string; weekday?: string };
+  let body: { agencyId?: string; projectId?: string; transcript?: string; delivery?: string; today?: string; weekday?: string; current?: Partial<VoicePostCurrent> };
   try {
     body = await request.json();
   } catch {
@@ -63,6 +63,25 @@ export async function POST(request: Request) {
   });
   const formats = FORMATS.map((f) => ({ id: f.id, label: f.label }));
 
+  // An existing post's brief, from the window (direct instruction): only
+  // plain values are passed on, as the prompt's starting point.
+  const c = body.current;
+  const text = (v: unknown, max: number) => (typeof v === "string" ? v.slice(0, max) : "");
+  const list = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string").slice(0, 30).map((x) => x.slice(0, 500)) : []);
+  const current: VoicePostCurrent | undefined = c
+    ? {
+        name: text(c.name, 120),
+        formats: list(c.formats),
+        slideCount: typeof c.slideCount === "number" ? c.slideCount : null,
+        date: text(c.date, 10),
+        time: text(c.time, 5),
+        dueOn: text(c.dueOn, 10),
+        concept: text(c.concept, 4000),
+        referenceUrls: list(c.referenceUrls),
+        teamUserIds: list(c.teamUserIds),
+      }
+    : undefined;
+
   const prompt = buildVoicePostPrompt({
     transcript,
     today,
@@ -70,6 +89,7 @@ export async function POST(request: Request) {
     delivery: delivery === "continuous" ? "continuous" : "scheduled",
     formats,
     team,
+    current,
   });
   const result = await runAiTask(supabase, agencyId, user.id, prompt);
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });

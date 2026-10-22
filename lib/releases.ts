@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.48.0",
+    date: "2026-10-22",
+    title: "Speak It on a post already made",
+    changes: [
+      "Speak It is now on every post's Brief, not just a new one. Say what to change, its date, format, who's on it or what to add to the concept, and Frank fills in just those fields for you to check before Update.",
+      "The post keeps its name unless you rename it, and what you say about the concept is worked into what's already there.",
+    ],
+  },
+  {
     version: "1.47.1",
     date: "2026-10-22",
     title: "Client Feedback is the client's",
