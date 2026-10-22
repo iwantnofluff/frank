@@ -42,7 +42,24 @@ import { useArtworkByCreative } from "@/hooks/use-artwork-by-creative";
 import { useCopyVersionsByCreative, type CopyVersionSummary } from "@/hooks/use-copy-versions-by-creative";
 import { useLatestFeedbackByCreative } from "@/hooks/use-latest-feedback-by-creative";
 import { useMyAgency } from "@/hooks/use-my-agency";
-import { DraftEditBar, DraftField, useDraftPost } from "@/components/project/draft-post";
+import { DraftEditBar, DraftField, useDraftPost, type DraftFieldKey } from "@/components/project/draft-post";
+
+// A new row's cells, by column (the Social Media table's keys).
+const DRAFT_FIELDS: Record<string, DraftFieldKey> = {
+  time: "time",
+  type: "format",
+  lead: "lead",
+  creative: "name",
+  concept: "concept",
+  status: "status",
+  slides: "slides",
+  voiceover: "voiceover",
+  imageOnText: "imageOnText",
+  postCopy: "caption",
+  altText: "alt",
+  notes: "notes",
+};
+const WIDE_DRAFT = new Set<DraftFieldKey>(["concept", "voiceover", "imageOnText", "caption", "alt", "notes"]);
 import {
   useCalendarViews,
   useCreateCalendarView,
@@ -1075,25 +1092,13 @@ export function ProjectCalendarTable({
                     <span className="tdim">—</span>
                   </td>
                   {visibleOrderedKeys.map((key) => {
-                    const field =
-                      key === "time"
-                        ? "time"
-                        : key === "type"
-                          ? "format"
-                          : key === "lead"
-                            ? "lead"
-                            : key === "creative"
-                              ? "name"
-                              : key === "concept"
-                                ? "concept"
-                                : null;
+                    // Every column the window's Brief and Content can fill
+                    // (direct instruction: Slides, VO, Text on Image,
+                    // Caption/Copy and Alt Text too), and the pill it'll get.
+                    const field = DRAFT_FIELDS[key] ?? null;
                     return (
-                      <td key={key} className={key === "concept" ? "cellw" : undefined}>
-                        {field ? (
-                          <DraftField draft={draft} field={field} />
-                        ) : key === "status" ? (
-                          <span className="tdim">1. Concept</span>
-                        ) : null}
+                      <td key={key} className={field && WIDE_DRAFT.has(field) ? "cellw" : undefined}>
+                        {field ? <DraftField draft={draft} field={field} /> : null}
                       </td>
                     );
                   })}

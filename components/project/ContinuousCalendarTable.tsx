@@ -41,7 +41,24 @@ import type { FocusTarget } from "@/components/creative-review/CreativeModal";
 
 import { CopySummaryText } from "@/components/project/CopySummaryText";
 import { CopyCaptionChip } from "@/components/project/CopyCaptionChip";
-import { DraftEditBar, DraftField, useDraftPost } from "@/components/project/draft-post";
+import { DraftEditBar, DraftField, useDraftPost, type DraftFieldKey } from "@/components/project/draft-post";
+
+// A new row's cells, by column (Other Content's keys).
+const DRAFT_FIELDS: Record<string, DraftFieldKey> = {
+  creative: "name",
+  type: "format",
+  lead: "lead",
+  conceptRef: "concept",
+  status: "status",
+  slides: "slides",
+  voiceover: "voiceover",
+  imageOnText: "imageOnText",
+  copy: "caption",
+  altText: "alt",
+  notes: "notes",
+  principles: "principles",
+};
+const WIDE_DRAFT = new Set<DraftFieldKey>(["concept", "voiceover", "imageOnText", "caption", "alt", "notes"]);
 import {
   useCalendarViews,
   useCreateCalendarView,
@@ -1023,23 +1040,13 @@ export function ContinuousCalendarTable({
                     <DraftField draft={draft} field="date" />
                   </td>
                   {visibleOrderedKeys.map((key) => {
-                    const field =
-                      key === "creative"
-                        ? "name"
-                        : key === "type"
-                            ? "format"
-                            : key === "lead"
-                              ? "lead"
-                              : key === "conceptRef"
-                                ? "concept"
-                                : null;
+                    // Every column the window's Brief and Content can fill
+                    // (direct instruction: Slides, VO, Text on Image,
+                    // Caption/Copy and Alt Text too), and the pill it'll get.
+                    const field = DRAFT_FIELDS[key] ?? null;
                     return (
-                      <td key={key} className={key === "conceptRef" ? "cellw" : undefined}>
-                        {field ? (
-                          <DraftField draft={draft} field={field} />
-                        ) : key === "status" ? (
-                          <span className="tdim">1. {stageLabel(1, "continuous")}</span>
-                        ) : null}
+                      <td key={key} className={field && WIDE_DRAFT.has(field) ? "cellw" : undefined}>
+                        {field ? <DraftField draft={draft} field={field} /> : null}
                       </td>
                     );
                   })}

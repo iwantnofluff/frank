@@ -37,8 +37,21 @@ test("a Content Planner post can be added straight into the table", async ({ pag
   await row.getByLabel("Post name").fill("Quick Row E2E");
   await row.getByLabel("Date").fill("2027-03-20");
   await row.getByLabel("Time").fill("14:30");
+  // The status shows as the pill it'll get (direct instruction).
+  await expect(row.locator(".stg")).toHaveText(/^1\.\s*Concept$/);
   await row.getByLabel("Post type").selectOption({ label: "Instagram Carousel" });
   await row.getByLabel("Concept").fill("Five slides on the new menu.");
+  await expect(row.locator(".stg")).toHaveText(/^2\.\s*In Production$/);
+  // Every column the window can fill is open here too (direct
+  // instruction): Slides, Caption, Alt Text, Notes for Designer; Text on
+  // Image stays in the post for several slides.
+  await row.getByLabel("Slides").selectOption("5");
+  await expect(row).toContainText("In the post, by slide");
+  await row.getByLabel("Caption").fill("The autumn menu is here.");
+  // Copy moves it on to Internal Review, as saving copy does.
+  await expect(row.locator(".stg")).toHaveText(/^3\.\s*Internal Review$/);
+  await row.getByLabel("Alt Text").fill("Five drinks on a table.");
+  await row.getByLabel("Notes for Designer").fill("Warm, one hero per slide.");
   await bar.getByRole("button", { name: "Save" }).click();
   await expect(page.locator("tr.draft")).toHaveCount(0);
 
@@ -47,14 +60,20 @@ test("a Content Planner post can be added straight into the table", async ({ pag
   await expect(page.locator(".pname", { hasText: "Quick Row E2E" })).toBeVisible();
   const { data: c } = await admin
     .from("creatives")
-    .select("format, concept, scheduled_at, stage")
+    .select("id, format, concept, scheduled_at, stage, slide_count")
     .eq("project_id", frank.projectId)
     .eq("name", "Quick Row E2E")
     .single();
   expect(c!.format).toBe("ig_carousel");
   expect(c!.concept).toBe("Five slides on the new menu.");
-  // Its Concept is written, so it's In Production already (phase102).
-  expect(c!.stage).toBe(2);
+  expect(c!.slide_count).toBe(5);
+  const { data: copy } = await admin.from("copy_versions").select("version_no, fields").eq("creative_id", c!.id);
+  expect(copy).toEqual([{ version_no: 1, fields: { caption: "The autumn menu is here.", alt: "Five drinks on a table." } }]);
+  const { data: notes } = await admin.from("designer_notes").select("overall").eq("creative_id", c!.id).single();
+  expect(notes!.overall).toBe("Warm, one hero per slide.");
+  // Its copy is written, so it's in Internal Review already, as the row's
+  // pill said.
+  expect(c!.stage).toBe(3);
   const when = new Date(c!.scheduled_at);
   expect([when.getFullYear(), when.getMonth(), when.getDate(), when.getHours(), when.getMinutes()]).toEqual([
     2027, 2, 20, 14, 30,

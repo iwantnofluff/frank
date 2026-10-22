@@ -8,7 +8,8 @@ import { useProjectTeam } from "@/hooks/use-project-team";
 import { TeamPicker } from "@/components/ui/TeamPicker";
 import { DateField, TimeField } from "@/components/ui/DateField";
 import { errorMessage } from "@/lib/errors";
-import { FORMAT_CATEGORIES, formatsByCategory } from "@/lib/formats";
+import { COPY_FIELD_LABELS, FORMAT_CATEGORIES, copyFieldsFor, formatsByCategory, frameLimits, hasVideoFormat } from "@/lib/formats";
+import { IDEA, stageColor, stageLabel } from "@/lib/stage-labels";
 
 // The prototype's "Row" way of adding a brief (#briefMore → startDraft()):
 // a draft row at the top of the table, saved from the floating .editbar.
@@ -22,6 +23,22 @@ export interface DraftPostValues {
   date: string; // scheduled: publish date; continuous: due date (optional)
   time: string;
   concept: string;
+  // Typed straight into the row too (direct instruction): its slides, a
+  // video's VO, Text on Image (one slide only), and its main copy field
+  // and Alt Text.
+  slideCount: number | null;
+  voiceover: string;
+  textOnImage: string;
+  caption: string;
+  alt: string;
+  designerNotes: string;
+  principles: string;
+}
+
+// The copy field the row's Caption box fills: the format's main one (a
+// caption, an ad's primary text…), or a caption with no format yet.
+export function mainCopyField(format: string): string {
+  return copyFieldsFor(format ? [format] : []).find((k) => k !== "alt") ?? "caption";
 }
 
 // None to start, as in the New Post window: a format can wait (phase114).
@@ -55,6 +72,13 @@ export function useDraftPost({
     date: todayIso(),
     time: "09:00",
     concept: "",
+    slideCount: null,
+    voiceover: "",
+    textOnImage: "",
+    caption: "",
+    alt: "",
+    designerNotes: "",
+    principles: "",
   });
   const [problem, setProblem] = useState<string | null>(null);
 
@@ -68,15 +92,24 @@ export function useDraftPost({
     if (!values.name.trim()) return setProblem("Give the post a name");
     const scheduledAt =
       delivery === "scheduled" && values.date ? new Date(`${values.date}T${values.time || "09:00"}:00`).toISOString() : null;
+    const formats = values.format ? [values.format] : [];
+    const frames = frameLimits(formats);
+    const slideCount = frames ? Math.min(Math.max(values.slideCount ?? frames.min, frames.min), frames.max) : null;
+    const takesAlt = !values.format || copyFieldsFor(formats).includes("alt");
     try {
       await createCreative.mutateAsync({
         name: values.name.trim(),
-        formats: values.format ? [values.format] : [],
+        formats,
         teamUserIds: values.teamUserIds,
         concept: values.concept,
         referenceUrls: [],
-        slideCount: null,
-        cx: {},
+        slideCount,
+        cx: delivery === "continuous" && values.principles.trim() ? { principles: values.principles.trim() } : {},
+        designerNotes: values.designerNotes,
+        voiceover: hasVideoFormat(formats) ? values.voiceover : "",
+        // One slide's words; a post of several adds them in its window.
+        slideText: (slideCount ?? 1) > 1 ? [] : [values.textOnImage],
+        copyFields: { [mainCopyField(values.format)]: values.caption, ...(takesAlt ? { alt: values.alt } : {}) },
         scheduledAt,
         // No longer asked for (direct instruction).
         destination: null,
@@ -94,6 +127,7 @@ export function useDraftPost({
     save,
     saving: createCreative.isPending,
     problem,
+    delivery,
     team: (team ?? []).filter((m) => m.accepted_at && !m.removed_at && !!projectTeam?.includes(m.user_id)),
   };
 }
@@ -132,6 +166,7 @@ export function DraftEditBar({
 }
 
 type Draft = ReturnType<typeof useDraftPost>;
+export type DraftFieldKey = "name" | "format" | "lead" | "date" | "time" | "concept" | "status" | "slides" | "voiceover" | "imageOnText" | "caption" | "alt" | "notes" | "principles";
 
 // One editable cell of the draft row, by what it holds. Each table maps its
 // own column keys onto these.
@@ -140,10 +175,93 @@ export function DraftField({
   field,
 }: {
   draft: Draft;
-  field: "name" | "format" | "lead" | "date" | "time" | "concept";
+  field: DraftFieldKey;
 }) {
   const { values, set } = draft;
+  const formats = values.format ? [values.format] : [];
+  const frames = frameLimits(formats);
+  const slides = frames ? Math.min(Math.max(values.slideCount ?? frames.min, frames.min), frames.max) : null;
   switch (field) {
+    case "status": {
+      // The pill it'll get (direct instruction): an Idea with no date;
+      // else, as the database will place it, Internal Review with copy
+      // (a copy version moves it there), In Production with a Concept or
+      // other words, else Concept.
+      if (!values.date) {
+        return (
+          <span className="stg idea">
+            <span className="no">0.</span>
+            {IDEA.label}
+          </span>
+        );
+      }
+      const hasCopy = [values.caption, values.alt].some((t) => t.trim());
+      const written = [values.concept, values.textOnImage, values.voiceover].some((t) => t.trim());
+      const stage = hasCopy ? 3 : written ? 2 : 1;
+      return (
+        <span className="stg" style={{ background: stageColor(stage, null) }}>
+          <span className="no">{stage}.</span>
+          {stageLabel(stage, draft.delivery)}
+        </span>
+      );
+    }
+    case "slides":
+      return frames ? (
+        <select
+          className="ecell one"
+          aria-label={frames.noun === "Story" ? "Stories" : "Slides"}
+          value={slides ?? frames.min}
+          onChange={(e) => set("slideCount", Number(e.target.value))}
+        >
+          {Array.from({ length: frames.max - frames.min + 1 }, (_, i) => frames.min + i).map((n) => (
+            <option key={n} value={n}>
+              {n}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <span className="tdim">—</span>
+      );
+    case "voiceover":
+      return hasVideoFormat(formats) ? (
+        <textarea className="ecell" aria-label="VO" rows={3} placeholder="The voiceover" value={values.voiceover} onChange={(e) => set("voiceover", e.target.value)} />
+      ) : (
+        <span className="tdim">—</span>
+      );
+    case "imageOnText":
+      // Several slides each have their own, added in the post's window.
+      return (slides ?? 1) > 1 ? (
+        <span className="tdim">In the post, by {frames?.noun.toLowerCase() ?? "slide"}</span>
+      ) : (
+        <textarea className="ecell" aria-label="Text on Image" rows={3} placeholder="The words on the artwork" value={values.textOnImage} onChange={(e) => set("textOnImage", e.target.value)} />
+      );
+    case "caption": {
+      const label = COPY_FIELD_LABELS[mainCopyField(values.format)] ?? "Caption";
+      return (
+        <textarea className="ecell" aria-label={label} rows={3} placeholder={label} value={values.caption} onChange={(e) => set("caption", e.target.value)} />
+      );
+    }
+    case "notes":
+      return (
+        <textarea
+          className="ecell"
+          aria-label="Notes for Designer"
+          rows={3}
+          placeholder="What the designer should know"
+          value={values.designerNotes}
+          onChange={(e) => set("designerNotes", e.target.value)}
+        />
+      );
+    case "principles":
+      return (
+        <input className="ecell one" aria-label="Principles" placeholder="The psychological angle" value={values.principles} onChange={(e) => set("principles", e.target.value)} />
+      );
+    case "alt":
+      return !values.format || copyFieldsFor(formats).includes("alt") ? (
+        <textarea className="ecell" aria-label="Alt Text" rows={3} placeholder="For screen readers" value={values.alt} onChange={(e) => set("alt", e.target.value)} />
+      ) : (
+        <span className="tdim">—</span>
+      );
     case "name":
       return (
         <input

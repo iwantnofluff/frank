@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.46.1",
+    date: "2026-10-22",
+    title: "More to fill in when adding a post by row",
+    changes: [
+      "Adding a post as a row in the table now takes Slides, VO, Text on Image, Caption, Alt Text and Notes for Designer too (and Principles on Other Content), as the post window does.",
+      "Its Status shows the pill the post will get, from 0. Idea to Internal Review, as you type.",
+    ],
+  },
+  {
     version: "1.46.0",
     date: "2026-10-21",
     title: "Ideas and concepts without a format",
