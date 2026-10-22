@@ -4279,3 +4279,9 @@ The card (TipCard) uses the Help panel's motion: 24px from the right and a fade,
 Test users start with tips off, so no card covers what a test clicks; tips.spec turns them on. The fixture's users insert now fails loudly, and passes defaultToNull: false (two rows with different fields otherwise send the missing one as null, not its default).
 
 **Verified**: phase116 rehearsed on staging as a real user in a rolled-back transaction: defaults 24, empty, null; their own update lands; 5 hours is refused; another's row isn't touched (0 rows). Applied to staging (with an API schema reload, now in the file). tips.spec (4): a tip shows when due, is saved as seen, Read More opens its article, a reload brings none; See it in Action lights Design with Frank in a new post; Off saves from My Profile; a client gets neither card nor setting. By hand, every one of the eight tips' See it in Action landed and lit its place. The motion measured with real timing: in from a 24px offset to rest, out at about 13px and half opacity mid-way, then gone. Card and spotlight screenshotted.
+
+## My Profile in Settings' layout (2026-10-22)
+
+Direct instruction: the profile page should look like Settings. My Profile now uses the same left menu and page frame as Workspace and Client Settings (SettingsNav, SettingsMain, SettingsHead, .pad.narrow), one section, My Profile, with Profile (/profile) and Notifications (/profile/notifications, the tips setting as a panel row like Preferences'). Notifications is listed for the team only; a client sent there lands on Profile. The bell's cog goes to the Notifications page, and the header reads My Profile.
+
+**Verified**: screenshotted Profile and Notifications beside Settings → Preferences: the same menu, heading, panel and row. profile.spec and tips.spec (6) pass, the tips spec now on /profile/notifications and checking a client is taken to Profile with no Notifications in the menu.

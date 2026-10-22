@@ -18,11 +18,9 @@ import {
   type ProfileValues,
 } from "@/components/profile/ProfileFields";
 import { errorMessage } from "@/lib/errors";
+import { SettingsHead } from "@/components/settings/SettingsHead";
 import { initials } from "@/lib/initials";
 import { validateAvatar } from "@/lib/upload-avatar";
-import { useIsStaff } from "@/hooks/use-is-staff";
-import { useMyTips, useSetTipsEvery } from "@/hooks/use-tips";
-import { TIP_EVERY_OPTIONS } from "@/lib/tips";
 
 function toValues(p: MyProfile): ProfileValues {
   return {
@@ -37,9 +35,8 @@ export default function ProfilePage() {
   const { data: profile, isLoading, isError } = useMyProfile();
 
   return (
-    <div className="pad" style={{ maxWidth: 560 }}>
-      <h1 className="h1">Your Profile</h1>
-      <p className="sub">How you appear to your team and on your comments.</p>
+    <div className="pad narrow">
+      <SettingsHead title="Profile" description="How you appear to your team and on your comments." />
 
       {isError && (
         <div className="empty">
@@ -48,7 +45,6 @@ export default function ProfilePage() {
       )}
 
       {!isLoading && profile && <ProfileForm profile={profile} />}
-      <NotificationSettings />
     </div>
   );
 }
@@ -82,7 +78,7 @@ function ProfileForm({ profile }: { profile: MyProfile }) {
   const photoUrl = profile.avatar_asset_id ? (photos?.[profile.avatar_asset_id] ?? null) : null;
 
   return (
-    <div className="panel" style={{ padding: 20, marginTop: 16 }}>
+    <div className="panel" style={{ padding: 20 }}>
       <PhotoPicker
         initials={initials(profile.name, profile.email)}
         photoUrl={photoUrl}
@@ -135,42 +131,3 @@ function ProfileForm({ profile }: { profile: MyProfile }) {
   );
 }
 
-// Your own Notifications settings (direct instruction): how often a tip
-// shows (phase116), once a day by default. The team only, as tips are.
-function NotificationSettings() {
-  const { isStaff, isPending } = useIsStaff();
-  const enabled = isStaff && !isPending;
-  const { data: tips, error } = useMyTips(enabled);
-  const setEvery = useSetTipsEvery();
-  if (!enabled) return null;
-  return (
-    <section className="panel" id="notifications" style={{ marginTop: 16 }}>
-      <div className="panel-h">
-        <b>Notifications</b>
-        {setEvery.isSuccess && !setEvery.isPending && <span className="sync">Saved</span>}
-      </div>
-      {error && <p className="autherr">{errorMessage(error, "Couldn't load your notification settings")}</p>}
-      {tips && (
-        <div className="srow">
-          <span className="sl">
-            <b>Show tips</b>
-            <span>A tip about something in Frank, top right for 5 seconds. Once a day is the first time you open Frank that day.</span>
-          </span>
-          <select
-            aria-label="Show tips"
-            value={tips.everyHours}
-            disabled={setEvery.isPending}
-            onChange={(e) => setEvery.mutate(Number(e.target.value))}
-          >
-            {TIP_EVERY_OPTIONS.map((o) => (
-              <option key={o.hours} value={o.hours}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-      {setEvery.error && <p className="autherr">{errorMessage(setEvery.error, "Couldn't save that change")}</p>}
-    </section>
-  );
-}

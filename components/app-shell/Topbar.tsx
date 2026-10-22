@@ -24,6 +24,7 @@ const STATIC_CRUMBS: Record<string, string> = {
   "/analytics": "Analytics",
   "/visibility": "Client visibility",
   "/settings": "Workspace Settings",
+  "/profile": "My Profile",
 };
 
 function AllClientsCrumbLink() {
@@ -259,7 +260,7 @@ export function Topbar({
           team
             ? () => {
                 setNotifOpen(false);
-                router.push("/profile#notifications");
+                router.push("/profile/notifications");
               }
             : undefined
         }

@@ -47,7 +47,7 @@ test("off in My Profile: no tip, and the setting saves", async ({ page, frank })
   const id = await staffId(frank.staffEmail);
   await admin.from("users").update({ tips_every_hours: 24, tips_seen: ["design-with-frank"], tips_last_at: new Date().toISOString() }).eq("id", id);
   await frank.loginAsStaff(page);
-  await page.goto("/profile");
+  await page.goto("/profile/notifications");
   const pick = page.getByLabel("Show tips");
   await expect(pick).toHaveValue("24", { timeout: 15_000 });
   await pick.selectOption("0");
@@ -58,8 +58,8 @@ test("off in My Profile: no tip, and the setting saves", async ({ page, frank })
 test("a client gets no tips and no tips setting", async ({ page, frank }) => {
   test.setTimeout(90_000);
   await frank.loginAsClient(page);
-  await page.goto("/profile");
-  await page.waitForTimeout(2500);
+  await page.goto("/profile/notifications");
+  await expect(page).toHaveURL(/\/profile$/, { timeout: 15_000 });
+  await expect(page.getByRole("link", { name: "Notifications" })).toHaveCount(0);
   await expect(page.locator(".tipcard")).toHaveCount(0);
-  await expect(page.getByLabel("Show tips")).toHaveCount(0);
 });

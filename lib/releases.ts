@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.49.1",
+    date: "2026-10-22",
+    title: "My Profile, laid out like Settings",
+    changes: [
+      "My Profile now has Settings' menu on the left, with Profile and, for your team, Notifications on pages of their own. The cog in the bell opens Notifications.",
+    ],
+  },
+  {
     version: "1.49.0",
     date: "2026-10-22",
     title: "Tips",
