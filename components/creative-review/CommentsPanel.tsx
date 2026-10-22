@@ -1,5 +1,7 @@
 "use client";
 
+import { canApproveConcept, useApproveConcept } from "@/hooks/use-approve-concept";
+import { errorMessage } from "@/lib/errors";
 import { CommentWhen } from "./CommentWhen";
 import { CommentBody, EditCommentButton } from "./CommentBody";
 import { useEffect, useMemo, useState } from "react";
@@ -113,7 +115,10 @@ function Composer({
   autoFocus,
   submitLabel = "Post",
   moment = null,
+  beside,
 }: {
+  // Another action beside Post (Approve Concept, phase115).
+  beside?: React.ReactNode;
   // A video paused at this moment: the comment is attached to it unless
   // the chip is turned off. Receives the moment it was posted at, or null.
   moment?: number | null;
@@ -197,6 +202,7 @@ function Composer({
           <span className="intog">Private (replying to a private comment)</span>
         ) : null}
         <div className="grow" />
+        {beside}
         <button
           type="button"
           className="btn primary sm"
@@ -471,6 +477,7 @@ export function CommentsPanel({
 }) {
   const { data: creative } = useCreative(creativeId);
   const { data: agency } = useMyAgency();
+  const approve = useApproveConcept();
   const clientName = creative?.projects?.clients?.name ?? null;
   const fromName = (c: CommentRow) => (c.from === "agency" ? (agency?.name ?? null) : clientName);
   const { data: currentUser } = useCurrentUser();
@@ -628,10 +635,25 @@ export function CommentsPanel({
         </button>
       </div>
 
+      {approve.error && <p className="autherr">{errorMessage(approve.error, "Couldn't approve the concept")}</p>}
       <Composer
         placeholder="Add a comment…"
         showInternalToggle={isStaff}
         moment={videoMoment}
+        beside={
+          // Approve Concept (phase115, direct instruction): while the post
+          // is in Concept with one written, for the client or the team.
+          creative && canApproveConcept(creative) ? (
+            <button
+              type="button"
+              className="btn sm approve-concept"
+              disabled={approve.isPending}
+              onClick={() => approve.mutate(creativeId)}
+            >
+              {approve.isPending ? "Approving…" : "Approve Concept"}
+            </button>
+          ) : null
+        }
         onSubmit={(body, visibility, at) =>
           createComment.mutateAsync({
             body,

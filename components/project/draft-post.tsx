@@ -184,9 +184,9 @@ export function DraftField({
   switch (field) {
     case "status": {
       // The pill it'll get (direct instruction): an Idea with no date;
-      // else, as the database will place it, Internal Review with copy
-      // (a copy version moves it there), In Production with a Concept or
-      // other words, else Concept.
+      // else, as the database will place it, Internal Review with copy (a
+      // copy version moves it there), else Concept, until its concept is
+      // approved (phase115).
       if (!values.date) {
         return (
           <span className="stg idea">
@@ -196,8 +196,7 @@ export function DraftField({
         );
       }
       const hasCopy = [values.caption, values.alt].some((t) => t.trim());
-      const written = [values.concept, values.textOnImage, values.voiceover].some((t) => t.trim());
-      const stage = hasCopy ? 3 : written ? 2 : 1;
+      const stage = hasCopy ? 3 : 1;
       return (
         <span className="stg" style={{ background: stageColor(stage, null) }}>
           <span className="no">{stage}.</span>

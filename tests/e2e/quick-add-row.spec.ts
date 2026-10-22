@@ -41,7 +41,8 @@ test("a Content Planner post can be added straight into the table", async ({ pag
   await expect(row.locator(".stg")).toHaveText(/^1\.\s*Concept$/);
   await row.getByLabel("Post type").selectOption({ label: "Instagram Carousel" });
   await row.getByLabel("Concept").fill("Five slides on the new menu.");
-  await expect(row.locator(".stg")).toHaveText(/^2\.\s*In Production$/);
+  // A written Concept waits to be approved (phase115): still Concept.
+  await expect(row.locator(".stg")).toHaveText(/^1\.\s*Concept$/);
   // Every column the window can fill is open here too (direct
   // instruction): Slides, Caption, Alt Text, Notes for Designer; Text on
   // Image stays in the post for several slides.

@@ -13,6 +13,18 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.47.0",
+    date: "2026-10-22",
+    title: "Concept approval",
+    changes: [
+      "A post now stays in Concept until its concept is approved. Writing the concept no longer moves it to In Production by itself.",
+      "Approve Concept sits beside Post in the post's comments, and as a small green button in the table's Concept & Reference column. Anyone working on the post can press it, the client included.",
+      "Approving moves the post to In Production and records a comment in the approver's name, \"Approved Concept\" from the team or \"Client Approved Concept\" from the client, which the Client Feedback column shows.",
+      "A client can now see and add comments on a post in Concept, as well as in Client Review.",
+      "A post in Concept with no artwork or copy yet opens on its Brief.",
+    ],
+  },
+  {
     version: "1.46.1",
     date: "2026-10-22",
     title: "More to fill in when adding a post by row",

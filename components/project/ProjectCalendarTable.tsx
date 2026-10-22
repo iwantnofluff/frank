@@ -16,6 +16,8 @@ import type { CustomColumnRow } from "@/hooks/use-custom-columns";
 import { useArchiveCreatives } from "@/hooks/use-archive-creatives";
 import { useDeleteCreativesPermanently } from "@/hooks/use-delete-creatives-permanently";
 import { CxValueCell } from "@/components/project/CxValueCell";
+import { ApproveConceptButton } from "@/components/project/ApproveConceptButton";
+import { canApproveConcept } from "@/hooks/use-approve-concept";
 import { useProjectDesignerNotes } from "@/hooks/use-designer-notes";
 import { ReferenceLinks } from "@/components/project/ReferenceLinks";
 import { ClampText } from "@/components/project/ClampText";
@@ -1301,9 +1303,12 @@ export function ProjectCalendarTable({
                                       <ReferenceLinks urls={c.reference_urls ?? []} preview />
                                       {/* After the references, so a long concept's
                                           Read more stays with it. */}
-                                      {isStaff && (
+                                      {(isStaff || canApproveConcept(c)) && (
                                         <span className="cc-after">
-                                          <EditContent onFill={fill(c, "concept").onFill} label="Concept" />
+                                          {isStaff && <EditContent onFill={fill(c, "concept").onFill} label="Concept" />}
+                                          {/* Approve Concept (phase115): anyone, the
+                                              client too, while it's in Concept. */}
+                                          {canApproveConcept(c) && <ApproveConceptButton creativeId={c.id} />}
                                         </span>
                                       )}
                                     </span>

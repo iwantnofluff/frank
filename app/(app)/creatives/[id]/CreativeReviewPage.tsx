@@ -109,7 +109,13 @@ export function CreativeReviewPage({ id }: { id: string }) {
   // Which of Brief/Content/Checks/Feed Preview the canvas shows — replaced
   // the three independent accordions (Brief/Content/Checks could each be
   // open at once) with a single selection, per direct instruction.
-  const [activeSection, setActiveSection] = useState<ReviewSection>("content");
+  // A post still in Concept with no artwork or copy opens on its Brief
+  // (direct instruction: the concept is what's there to approve); else
+  // Content. Once someone picks a section, theirs.
+  const [pickedSection, setActiveSection] = useState<ReviewSection | null>(null);
+  const bareConcept =
+    creative?.stage === STAGE.concept && creativeVersions?.length === 0 && copyVersions?.length === 0;
+  const activeSection: ReviewSection = pickedSection ?? (bareConcept ? "brief" : "content");
   // Feed Preview → Content linking: the same creative just switches section
   // (no navigation needed), a different one is a real route change — this
   // page is scoped to one creative's id, so there's no other way to show it.
@@ -129,10 +135,14 @@ export function CreativeReviewPage({ id }: { id: string }) {
   // the same "which thread is highlighted" state.
   const queryClient = useQueryClient();
   const { data: fetchedComments } = useComments(id);
-  // A client sees the comments only while the post is in Client Review
-  // (direct instruction): no panel, pins or timeline marks before or after.
-  // Hidden until we know who's looking, so a client never glimpses them.
-  const showComments = !!membership && (membership.client_id === null || creative?.stage === STAGE.review);
+  // A client sees the comments only while the post is in Concept (to
+  // comment on and approve it, phase115, direct instruction) or Client
+  // Review (direct instruction): no panel, pins or timeline marks between
+  // or after. Hidden until we know who's looking, so a client never
+  // glimpses them.
+  const showComments =
+    !!membership &&
+    (membership.client_id === null || creative?.stage === STAGE.review || creative?.stage === STAGE.concept);
   const allComments = showComments ? fetchedComments : [];
   const clientLogoUrl = useClientLogoUrl(creative?.projects?.client_id);
   // A comment made anywhere, on any device, shows here at once (direct
