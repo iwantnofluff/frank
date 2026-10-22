@@ -138,12 +138,16 @@ export const test = base.extend<{ frank: Frank }>({
       .single();
     if (agencyError) throw agencyError;
 
-    await admin.from("users").insert([
+    const { error: usersError } = await admin.from("users").insert([
       // Today's update already seen, so the bell's count (and screenshots)
-      // don't hang on when that check loads; updates.spec clears it.
-      { id: staffAuth.user.id, email: staffEmail, name: "E2E Staff", releases_seen: CURRENT_RELEASE.version },
+      // don't hang on when that check loads; updates.spec clears it. Tips
+      // off (phase116), so none slides over what a test clicks; tips.spec
+      // turns them on.
+      { id: staffAuth.user.id, email: staffEmail, name: "E2E Staff", releases_seen: CURRENT_RELEASE.version, tips_every_hours: 0 },
       { id: clientAuth.user.id, email: clientEmail, name: "E2E Client User" },
-    ]);
+      // A field one row leaves out takes its default, not null.
+    ], { defaultToNull: false });
+    if (usersError) throw usersError;
 
     const { data: client, error: clientError } = await admin
       .from("clients")

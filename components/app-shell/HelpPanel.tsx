@@ -141,9 +141,31 @@ function ArticleRow({ a, onOpen }: { a: HelpArticle; onOpen: () => void }) {
 // need, and the categories at its foot; a category lists its articles, an
 // article reads like Slack's, with Back to where you came from. It slides
 // in and out with the menus' motion (hooks/use-presence.ts).
-export function HelpPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
+// Opens Help at one article from anywhere (a tip's Read More): the header
+// listens for it.
+export const HELP_OPEN_EVENT = "frank:open-help";
+export function openHelpArticle(id: string) {
+  window.dispatchEvent(new CustomEvent(HELP_OPEN_EVENT, { detail: { id } }));
+}
+
+export function HelpPanel({
+  open,
+  onClose,
+  startAt,
+}: {
+  open: boolean;
+  onClose: () => void;
+  // An article to open at, asked for from elsewhere; `at` makes asking for
+  // the same one again count.
+  startAt?: { id: string; at: number } | null;
+}) {
   const pop = usePresence(open);
   const [history, setHistory] = useState<View[]>([{ kind: "home" }]);
+  const [startedAt, setStartedAt] = useState<number | null>(null);
+  if (startAt && startAt.at !== startedAt && helpArticle(startAt.id)) {
+    setStartedAt(startAt.at);
+    setHistory([{ kind: "home" }, { kind: "article", id: startAt.id }]);
+  }
   const [query, setQuery] = useState("");
   const body = useRef<HTMLDivElement>(null);
   const view = history[history.length - 1];

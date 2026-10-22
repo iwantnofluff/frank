@@ -1270,6 +1270,7 @@ export function CreativeModal(props: CreativeModalProps) {
     <button
       type="button"
       className="btn primary btn-frank"
+      data-tip="draft-with-frank"
       disabled={!modelLabel || !creativeId}
       title={creativeId ? undefined : "Save the brief first"}
       onClick={() => setChatOpen(true)}
@@ -1365,6 +1366,7 @@ export function CreativeModal(props: CreativeModalProps) {
             <button
               type="button"
               className="btn primary btn-frank"
+              data-tip="design-with-frank"
               disabled={!modelLabel || !conceptReady}
               title={conceptReady ? undefined : "Save the Concept first"}
               onClick={() => setDesignOpen(true)}

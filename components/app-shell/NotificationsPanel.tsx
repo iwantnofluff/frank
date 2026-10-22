@@ -49,6 +49,7 @@ export function NotificationsPanel({
   releases = [],
   onOpenRelease,
   onReadReleases,
+  onOpenSettings,
 }: {
   open: boolean;
   items: NotificationRow[];
@@ -59,6 +60,8 @@ export function NotificationsPanel({
   releases?: Release[];
   onOpenRelease?: (r: Release) => void;
   onReadReleases?: () => void;
+  // Your own Notifications settings (tips, phase116); the team only.
+  onOpenSettings?: () => void;
 }) {
   const pop = usePresence(open);
   const panel = useRef<HTMLDivElement>(null);
@@ -186,6 +189,20 @@ export function NotificationsPanel({
       <div className="notif-h">
         <b>Notifications</b>
         <div className="grow" />
+        {onOpenSettings && (
+          <button
+            type="button"
+            className="notif-filter"
+            aria-label="Notification settings"
+            title="Notification settings"
+            onClick={onOpenSettings}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-3-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H2.5a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.2-3l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V2.5a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 3 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1h.2a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
+            </svg>
+          </button>
+        )}
         <button
           type="button"
           className={`notif-filter${filtering ? " on" : ""}`}

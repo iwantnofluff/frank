@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCreative } from "@/hooks/use-creative";
 import { useAdvanceCreativeStage } from "@/hooks/use-advance-creative-stage";
 import { useCreativeVersions, versionSlides } from "@/hooks/use-creative-versions";
@@ -95,6 +95,21 @@ export function CreativeReviewPage({ id }: { id: string }) {
   // Draft from Brief entry points with one window — this just remembers
   // which tab it should open on for whichever button was clicked.
   const [creativeModalTab, setCreativeModalTab] = useState<"brief" | "upload" | null>(null);
+  // A tip's See it in Action (lib/tips.ts): ?edit=upload opens the Edit
+  // window at Content, for the team, once.
+  const askedEdit = useSearchParams().get("edit");
+  const [editAsked, setEditAsked] = useState(false);
+  if (!editAsked && isStaff && creative && (askedEdit === "upload" || askedEdit === "brief")) {
+    setEditAsked(true);
+    setCreativeModalTab(askedEdit);
+  }
+  useEffect(() => {
+    if (!editAsked) return;
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has("edit")) return;
+    url.searchParams.delete("edit");
+    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+  }, [editAsked]);
   // Who else on the team is on this post, and editing it (phase82, direct
   // instruction): the project's room, saying I'm here and whether my Edit
   // window is open.

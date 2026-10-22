@@ -81,6 +81,24 @@ export const HELP_ARTICLES: HelpArticle[] = [
     ],
   },
   {
+    id: "sign-in",
+    title: "Sign In and Sign Up",
+    category: "start",
+    summary: "Your workspace has its own address; sign in there.",
+    blocks: [
+      { kind: "p", text: "Every workspace has its own address, such as yourstudio.beingfrank.app. Sign in there with the account you signed up or were invited with: the page says Sign in to, and your workspace's name." },
+      {
+        kind: "list",
+        items: [
+          "At app.beingfrank.app, Sign In asks for your workspace address and takes you to it.",
+          "Forgot your address? emails you the address of every workspace you belong to.",
+          "Forgot password? sends a link to set a new one.",
+          "To start a new workspace, sign up at app.beingfrank.app: a workspace name, its address and your details. It's free for 30 days, no card needed.",
+        ],
+      },
+    ],
+  },
+  {
     id: "how-frank-works",
     title: "How Frank Works",
     category: "start",
@@ -103,8 +121,8 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         kind: "steps",
         items: [
-          "Concept: the post is planned, its brief still to be written.",
-          "In Production: the brief is written and your team is making the artwork and copy.",
+          "Concept: the post is planned and its Concept written, waiting for the client or your team to approve it.",
+          "In Production: the Concept is approved and your team is making the artwork and copy.",
           "Internal Review: your team checks the artwork and copy.",
           "Client Review: the client sees it, through Frank or a review link, and comments.",
           "Approved: the client has signed it off.",
@@ -112,7 +130,9 @@ export const HELP_ARTICLES: HelpArticle[] = [
         ],
       },
       { kind: "p", text: "On a post, the stage switch shows all six as numbered pills, the post's own stage in its colour: Concept and In Production red, Internal Review and Client Review orange, Approved and Live green." },
-      { kind: "p", text: "A post moves on by itself at first: from Concept to In Production once its Concept is written, and to Internal Review when its first artwork or copy is saved. Pick Internal Review, Client Review, Approved or Live to move it on from there." },
+      { kind: "p", text: "A post moves to In Production when someone approves its Concept: Approve Concept, beside Post in its comments, or the green Approve Concept button in the table's Concept & Reference column. The client can approve it too. It moves to Internal Review by itself when its first artwork or copy is saved, approved or not. Pick Internal Review, Client Review, Approved or Live to move it on from there." },
+      { kind: "p", text: "A post with no date yet is an Idea (0. Idea), listed under No Scheduled Date at the foot of the table, where Add Date gives it one. Ideas are your team's only: clients don't see them." },
+      { kind: "p", text: "A post in Concept with no artwork or copy yet opens on its Brief." },
       { kind: "p", text: "Once a post is Live, the date it really went live shows in brackets after its planned date, above the phone: green if it went live that day or earlier, red if later. Posts planned before 14 Oct 2026 count as live on their planned day." },
       { kind: "h", text: "Getting around" },
       { kind: "p", text: "The left rail follows where you are, and names the client: anywhere inside a client you'll see Clients, the client's projects (Casa Carigar Projects, with a buildings icon, opening its page), and the client's Settings (Casa Carigar Settings); in a project and on its posts, the client's planner (Casa Carigar Planner) or Other Content as well." },
@@ -279,15 +299,20 @@ export const HELP_ARTICLES: HelpArticle[] = [
     category: "posts",
     summary: "Brief a post, then add its artwork, Text on Image and copy.",
     blocks: [
-      { kind: "p", text: "In a Content Planner project, choose New Post. Use Window for the full form, or Row to type a quick post straight into the table." },
-      { kind: "p", text: "On a post's own page, New Post beside Edit opens the window for another post in the same project." },
+      { kind: "p", text: "In a Content Planner project, choose + New. Use Window for the full form, or Row to add a post straight into the table: its Slides, VO, Text on Image, Caption, Alt Text and Notes for Designer can all be typed in the row, and its Status shows the pill it will get as you type." },
+      { kind: "p", text: "On a post's own page, + New beside Edit takes you to its project's table with the window open for another post." },
+      { kind: "p", text: "Speak It, at the top of the Brief, fills the window in from what you say: what the post is, its format, when it goes out and who's on it. On a post that's already made, say what to change; it keeps the post's name unless you rename it and adds to the Concept rather than replacing it. Check each field, then Create Post or Update. Each use is one of your monthly AI requests." },
       { kind: "h", text: "The brief" },
+      { kind: "p", text: "The Brief has four parts: Details, Concept, Design and Other Fields." },
       {
         kind: "list",
         items: [
-          "Post Name, and every Format it goes out as. A carousel asks how many slides it has.",
+          "Details: Post Name, and every Format it goes out as. A format is optional at first, so an idea or concept can be noted down before it's decided; the table shows Add Format until one's chosen, and the Content tab asks for one first. A carousel asks how many slides it has.",
           "Publish Date and Time, and its Team: as many people from your team as are working on it, picked one at a time with + Add someone and taken off with the × on their name.\n\nThe table lists them all in its Team column, one a line, each with their role on the project in brackets if one's set in the project's Settings (Lead, Content, Designer…).\n\nIf the client has chosen that the post's Team hears about their comments and approvals, everyone on it does.",
-          "The Concept, and any References, each of which opens when clicked in the table.",
+          "Concept: what's being made and why, and any References, each of which opens when clicked in the table. Paste an image into the box under References (click it, then ⌘V or Ctrl+V), or drop one in, for up to 8 reference images; only your team sees them.",
+          "Design: Notes for Designer, for your team only: one overall note, and one for each slide on a carousel. Design with Frank, at the foot of the window, can write them with you.",
+          "Save Concept, References and Notes saves those three without the rest of the window. On a new post it holds them until Create Post.",
+          "Other Fields: any columns the project adds of its own, saved with Update.",
         ],
       },
       { kind: "h", text: "The content" },
@@ -297,7 +322,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "Creative: one slot per slide, or one for a single image or video, up to 300MB a file. A file dropped in isn't added until you press Save Creative V1 (then V2 and so on); closing first asks if you're sure.",
           "VO, for a video post (a Reel, Story, YouTube or other video format): the voiceover script, after the artwork, saved with Save VO. Like Text on Image, it stays with the post rather than becoming a version, and only your team sees it.",
           "Text on Image: the words on each slide, saved with Save Text on Image. It stays with the post rather than becoming a version.",
-          "Copy: the caption and anything else the formats need. Save Copy V1, then V2 and so on; it's greyed until there's a change to save.\n\nCopy Caption, under the caption, copies it with its line breaks and paragraphs, ready to paste into Instagram or another platform.",
+          "Copy: the caption and anything else the formats need. Save Copy V1 for the first version. After that, Save to the current version (Save to V1, say) puts your changes into it, offered only while nobody has commented on it, and Save as the next (Save as V2) makes a new one. Each is greyed until there's a change to save.\n\nCopy Caption, under the caption, copies it with its line breaks and paragraphs, ready to paste into Instagram or another platform.",
           "WIIFM Direction: each time copy is saved, Frank lists what's working in it, in 3 to 5 short points, each naming the psychology principle or bias the copy uses (curiosity gap, loss aversion and so on) and the words that use it. It never lists what isn't working.\n\nOn the table, Copy Caption and Copy WIIFM copy either one, ready to paste.",
         ],
       },
@@ -306,6 +331,15 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         kind: "note",
         text: "Earlier versions stay in each section's tabs, read only, and can be deleted if nobody has commented on them.",
+      },
+      { kind: "h", text: "The table" },
+      {
+        kind: "list",
+        items: [
+          "Nothing is typed straight into a cell. Each cell has its own Edit button, or Add when it's empty (Add Date, Add Team, Add Notes…), with an arrow, which opens the post's window at that field.",
+          "Hover a Creative to see it larger.",
+          "Client Feedback shows the latest open comment from the client, with their name above it. Your team's own comments stay on the post's page.",
+        ],
       },
     ],
   },
@@ -344,8 +378,8 @@ export const HELP_ARTICLES: HelpArticle[] = [
         kind: "list",
         items: [
           "Each post has a Live Date; a post without one is an Idea.",
-          "Notes for Designer can be set in the post window or in the table, and a post with several images has one for each.",
-          "The table also shows Principles, edited in place.",
+          "Notes for Designer are set in the post window, and a post with several images has one for each. They're your team's only.",
+          "The table also shows Principles. As in every table, each cell's Edit or Add button opens the post at that field.",
         ],
       },
     ],
@@ -387,7 +421,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     id: "comments",
     title: "Comment, Pin and Resolve",
     category: "reviews",
-    summary: "Talk about a post right where the point is.",
+    summary: "Talk about a post right where the point is, and approve its Concept.",
     blocks: [
       {
         kind: "list",
@@ -397,8 +431,13 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "Drop a pin or mark an area on the artwork. On a video, a comment remembers the moment it was made.",
           "Select words in the caption to comment on just those.",
           "Resolve a comment once it's dealt with. Filter by All, Unresolved, Resolved, Mine or Private.",
+          "The Primary Owner and Owners can delete any comment; deleting one takes its replies with it.",
         ],
       },
+      { kind: "h", text: "Approve the Concept" },
+      { kind: "p", text: "While a post is in Concept with its Concept written, Approve Concept sits beside Post. Anyone on the post can press it, the client included, or use the green Approve Concept button in the table's Concept & Reference column." },
+      { kind: "p", text: "Approving moves the post to In Production and adds a comment in the approver's name: Approved Concept from your team, Client Approved Concept from the client. The client's shows in the table's Client Feedback column." },
+      { kind: "note", text: "Clients see and add comments while a post is in Concept or Client Review, and never see private ones." },
     ],
   },
   {
@@ -407,15 +446,15 @@ export const HELP_ARTICLES: HelpArticle[] = [
     category: "claude",
     summary: "Draft from the concept, or have your own draft reviewed.",
     blocks: [
-      { kind: "p", text: "In a post's Content tab, choose Draft with Frank at the foot of the window." },
-      { kind: "p", text: "Frank reads the brief, the WIIFM, each format's direction, and your workspace's and the client's Knowledge, files included." },
+      { kind: "p", text: "In a post's Content tab, choose Draft with Frank at the foot of the window. The post needs a format first, as its copy fields come from it." },
+      { kind: "p", text: "Frank reads the brief, the Notes for Designer (so the copy fits the visual), the WIIFM, each format's direction, and your workspace's and the client's Knowledge, files included." },
       { kind: "p", text: "It also reads up to 8 of the client's Approved posts, to keep to their voice without repeating them, and up to 20 of the client's own comments, which it follows (not praise or approvals); if those clash with the Knowledge, Frank says so." },
       { kind: "p", text: "How far back each reaches, or whether Frank reads it at all, is set in the client's Preferences (by default, Approved posts from the last 12 months and comments from the last 90 days). The window lists what Frank reads for that client." },
       {
         kind: "list",
         items: [
           "Draft from the Concept: Frank offers a few drafts of the caption, the other copy fields, the VO for a video post, and the Text on Image.",
-          "Review My Draft: Frank says what works in what you've written and how to improve it.",
+          "Review My Draft: Frank says what works in what you've written and how to improve it, looking only at the fields you've filled in.",
           "Ask for changes in your own words: shorter, warmer, a different hook.",
           "Each part of a draft has its own Use This: the Caption, the Alt Text and the Text on Image each go into the editor on their own, and the button says Added.\n\nPress Added again to take it back out (the editor goes back to what it had), or Use This on another draft's to swap it in.\n\nOpen Draft with Frank again later and what you used still says Added; change any of it in the editor and it doesn't. Nothing is saved until you save it.",
         ],
@@ -423,6 +462,30 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         kind: "note",
         text: "Each message uses one of your workspace's monthly AI requests. Conversations stay with the post for your team.",
+      },
+    ],
+  },
+  {
+    id: "design-with-frank",
+    title: "Design with Frank",
+    category: "claude",
+    summary: "A design direction for the post, written with you into its Notes for Designer.",
+    blocks: [
+      { kind: "p", text: "On a post's Brief, choose Design with Frank at the foot of the window. It's for your team only." },
+      {
+        kind: "list",
+        items: [
+          "Direction from the Concept: Frank offers a few broad directions, each with its idea, layout and style, leaving room for the designer. It needs a Concept or a reference first.",
+          "Rework My Notes: Frank keeps what works in your Notes for Designer and sharpens what doesn't. It needs some notes first.",
+          "Ask for changes in your own words: bolder, fewer props, another palette, or ask why.",
+          "Use This puts a direction into the Notes for Designer, and the button says Added. Nothing is saved until you save the post.",
+        ],
+      },
+      { kind: "p", text: "Frank reads the post's Concept, format and WIIFM; its Text on Image, copy and VO where they're written; up to 8 reference links' pages and preview images, and the images pasted into References; each format's direction and the client's strategy for the month; and your workspace's and the client's Knowledge." },
+      { kind: "p", text: "A public Instagram reference's likes and comments show which did best." },
+      {
+        kind: "note",
+        text: "Each direction, and each message after it, uses one of your workspace's monthly AI requests. Conversations stay with the post for your team.",
       },
     ],
   },
@@ -518,8 +581,9 @@ export const HELP_ARTICLES: HelpArticle[] = [
         kind: "list",
         items: [
           "Someone at one of your clients, signed in to Frank. Can be at more than one of your clients.",
-          "Sees that client's projects (or the ones they're on), the posts and public comments, and the client's Knowledge.",
-          "Comments, and approves on review links unless the client's Preferences say the agency approves.",
+          "Sees that client's projects (or the ones they're on), the posts (not Ideas) and the client's Knowledge.",
+          "Sees and adds public comments while a post is in Concept or Client Review, and approves a post's Concept.",
+          "Approves on review links unless the client's Preferences say the agency approves.",
           "Never sees private comments, other clients, or your settings.",
         ],
       },
@@ -597,7 +661,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         items: [
           "General: your Workspace Name and Workspace URL, Preferences (how long the bell keeps a notification once it's been read: 30, 60 or 90 days, unread ones always staying; and how far back a review link lists Approved posts: 7, 14, 21 or 28 days, or Always, 14 by default), anything Frank's support has done in your account, and Updates: every version of Frank and what changed.\n\nA new version also shows in the bell, and an open tab offers to reload when one goes live.\n\nThe bell shows All, Unread and Read with how many of each; the funnel icon narrows it to certain people or clients; on the Read tab, read ones can be ticked, or all ticked at once with All, and deleted.",
           "Customisation: your logo and brand colours, on plans that include branding. Your logo shows in the header, after Frank's; until there is one, Owners and Admins can choose Add Logo there.",
-          "Team: your Users and Clients, and inviting people.",
+          "Users: everyone in the workspace in one list, your team and each client's people, with when each was added, sorted by name or date; and inviting people.",
           "AI Governance: the AI model Draft with Frank uses.",
           "Connections: every client's Instagram in one list.",
           "Your Plan and Billing: your plan, payment methods and invoices.",

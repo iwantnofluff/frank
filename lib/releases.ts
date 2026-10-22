@@ -13,6 +13,26 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.49.0",
+    date: "2026-10-22",
+    title: "Tips",
+    changes: [
+      "A tip now slides in at the top right for 5 seconds, about something in Frank worth knowing. It waits while your pointer is on it.",
+      "See it in Action takes you to it and lights it up: Design with Frank in a new post, say. Read More opens its Help article.",
+      "Choose how often in My Profile, under Notifications (or the cog in the bell): once a day, the first time you open Frank, by default; every 1, 2, 3 or 4 hours; or off. Tips are for your team only.",
+      "Help can now open straight at an article.",
+    ],
+  },
+  {
+    version: "1.48.1",
+    date: "2026-10-22",
+    title: "Help, brought up to date",
+    changes: [
+      "New Help articles: Design with Frank, and Sign In and Sign Up.",
+      "How Frank Works, Plan Posts, Comments, Draft with Frank, Other Content, Roles and Workspace Settings now cover concept approval, Ideas, Notes for Designer, pasted reference images, the Brief's sections, Speak It, saving copy into the current version, adding a post by row, and the table's Edit and Add buttons.",
+    ],
+  },
+  {
     version: "1.48.0",
     date: "2026-10-22",
     title: "Speak It on a post already made",

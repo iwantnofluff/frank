@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { NavRail } from "./NavRail";
 import { Topbar } from "./Topbar";
@@ -5,6 +6,8 @@ import { AgencyTheme } from "./AgencyTheme";
 import { ReadOnlyBanner } from "./ReadOnlyBanner";
 import { ViewTransition } from "./ViewTransition";
 import { UpdateReady } from "./UpdateReady";
+import { TipCard } from "./TipCard";
+import { TipSpotlight } from "./TipSpotlight";
 import { BRAND } from "@/lib/brand";
 import type { RailSeed } from "@/lib/rail-seed";
 
@@ -41,6 +44,10 @@ export function AppShell({
         <ReadOnlyBanner />
         <ViewTransition>{children}</ViewTransition>
         <UpdateReady />
+        <TipCard />
+        <Suspense fallback={null}>
+          <TipSpotlight />
+        </Suspense>
       </div>
     </div>
   );

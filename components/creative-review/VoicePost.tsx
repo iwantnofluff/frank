@@ -166,7 +166,7 @@ export function VoicePost({
   );
 
   return (
-    <div className="voicepost">
+    <div className="voicepost" data-tip="speak-it">
       {phase === "listening" ? (
         <div className="voicepost-live" role="status" aria-live="polite">
           <div className="voicepost-h">

@@ -78,15 +78,22 @@ export default function ProjectPage({
   // From a post's page, "+ New" comes here with the New Post window open
   // (direct instruction: ?new=1), taken off the address so a reload
   // doesn't open it again.
-  const askedNew = useSearchParams().get("new") === "1";
+  const query = useSearchParams();
+  const askedNew = query.get("new") === "1";
+  // A tip's See it in Action (lib/tips.ts): ?row=1 opens a quick-add row.
+  const askedRow = query.get("row") === "1";
   const [newHandled, setNewHandled] = useState(false);
-  if (askedNew && !newHandled) {
+  if ((askedNew || askedRow) && !newHandled) {
     setNewHandled(true);
-    setNewBriefOpen(true);
+    if (askedNew) setNewBriefOpen(true);
+    else {
+      setArchiveFilter("active");
+      setDraftRowOpen(true);
+    }
   }
   useEffect(() => {
-    if (askedNew) router.replace(`/projects/${id}`, { scroll: false });
-  }, [askedNew, id, router]);
+    if (askedNew || askedRow) router.replace(`/projects/${id}`, { scroll: false });
+  }, [askedNew, askedRow, id, router]);
 
   const isLoading = projectLoading || creativesLoading;
   const columns = customColumns ?? [];

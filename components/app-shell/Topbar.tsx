@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useClientDetail } from "@/hooks/use-client";
 import { useProject } from "@/hooks/use-project";
@@ -8,7 +8,7 @@ import { useCreative } from "@/hooks/use-creative";
 import { useNotifications, type NotificationRow } from "@/hooks/use-notifications";
 import { BellIcon, HelpIcon } from "./icons";
 import { GlobalSearch } from "./GlobalSearch";
-import { HelpPanel } from "./HelpPanel";
+import { HELP_OPEN_EVENT, HelpPanel } from "./HelpPanel";
 import { NotificationsPanel } from "./NotificationsPanel";
 import { useMarkReleasesSeen, useReleasesSeen } from "@/hooks/use-releases-seen";
 import { CURRENT_RELEASE, RELEASES } from "@/lib/releases";
@@ -196,6 +196,19 @@ export function Topbar({
   const { isStaff, isPending: staffPending } = useIsStaff();
   const [helpOpen, setHelpOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  // Help asked for at one article from elsewhere (openHelpArticle).
+  const [helpStartAt, setHelpStartAt] = useState<{ id: string; at: number } | null>(null);
+  useEffect(() => {
+    function onOpenHelp(e: Event) {
+      const id = (e as CustomEvent<{ id: string }>).detail?.id;
+      if (!id) return;
+      setHelpStartAt({ id, at: Date.now() });
+      setHelpOpen(true);
+      setNotifOpen(false);
+    }
+    window.addEventListener(HELP_OPEN_EVENT, onOpenHelp);
+    return () => window.removeEventListener(HELP_OPEN_EVENT, onOpenHelp);
+  }, []);
   const [deciding, setDeciding] = useState<NonNullable<NotificationRow["creative"]> | null>(null);
   const router = useRouter();
   const bell = useRef<HTMLButtonElement>(null);
@@ -242,6 +255,14 @@ export function Topbar({
         onClose={() => setNotifOpen(false)}
         releases={newReleases}
         onReadReleases={() => markReleasesSeen.mutate(CURRENT_RELEASE.version)}
+        onOpenSettings={
+          team
+            ? () => {
+                setNotifOpen(false);
+                router.push("/profile#notifications");
+              }
+            : undefined
+        }
         onOpenRelease={(r) => {
           setNotifOpen(false);
           markReleasesSeen.mutate(CURRENT_RELEASE.version);
@@ -274,7 +295,7 @@ export function Topbar({
       >
         <HelpIcon />
       </button>
-      <HelpPanel open={helpOpen} onClose={() => setHelpOpen(false)} />
+      <HelpPanel open={helpOpen} onClose={() => setHelpOpen(false)} startAt={helpStartAt} />
       <span className="tsep" aria-hidden="true" />
       <AccountMenu initials={userInitials} name={userName} email={userEmail} showSettings={isStaff && !staffPending} />
     </header>

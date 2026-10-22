@@ -11875,3 +11875,120 @@ button.sortbtn:hover {
     padding: 22px 18px;
   }
 }
+
+/* A tip (direct instruction): top right under the header for 5 seconds,
+   sliding in and out as the Help panel does (24px from the right, opening
+   with --dur-open, closing faster). The team only (components/app-shell/
+   TipCard.tsx). */
+.tipcard {
+  position: fixed;
+  top: 76px;
+  right: 16px;
+  z-index: 60;
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  padding: 12px 14px 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 14px 44px rgba(20, 22, 26, 0.2);
+  opacity: 0;
+  transform: translateX(24px);
+  pointer-events: none;
+  transition:
+    opacity var(--dur-close) var(--ease-close),
+    transform var(--dur-close) var(--ease-close);
+}
+.tipcard.is-open {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+  transition-duration: var(--dur-open);
+  transition-timing-function: var(--ease-open);
+}
+.tipcard-h {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.tipcard-h .aicon {
+  width: 14px;
+  height: 14px;
+  fill: var(--amber);
+}
+.tipcard-k {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.tipcard-x {
+  margin-left: auto;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  color: var(--muted);
+  transition: background-color var(--dur-fast) var(--ease-std);
+}
+.tipcard-x:hover {
+  background: var(--canvas);
+}
+.tipcard-x svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.tipcard-t {
+  display: block;
+  font-size: 14.5px;
+}
+.tipcard-p {
+  margin: 4px 0 12px;
+  font-size: 13.2px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.tipcard-a {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tipcard,
+  .tipcard.is-open {
+    transition: none;
+  }
+}
+
+/* Where a tip's See it in Action lands: a soft ring that fades (TipSpotlight). */
+.tip-spot {
+  border-radius: 8px;
+  animation: tip-spot 2.6s var(--ease-std);
+}
+@keyframes tip-spot {
+  0%,
+  70% {
+    box-shadow:
+      0 0 0 3px var(--surface),
+      0 0 0 6px var(--action);
+  }
+  100% {
+    box-shadow:
+      0 0 0 3px transparent,
+      0 0 0 6px transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tip-spot {
+    animation: none;
+    outline: 3px solid var(--action);
+    outline-offset: 3px;
+  }
+}
