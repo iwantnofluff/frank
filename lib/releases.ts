@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.47.1",
+    date: "2026-10-22",
+    title: "Client Feedback is the client's",
+    changes: [
+      "The table's Client Feedback column now shows only what the client has said. The team's comments, their Approved Concept included, stay on the post's page.",
+      "Each piece of feedback has the client's name above it in small text, so a client's approval reads as just Approved Concept there.",
+    ],
+  },
+  {
     version: "1.47.0",
     date: "2026-10-22",
     title: "Concept approval",

@@ -1476,6 +1476,7 @@ export function ProjectCalendarTable({
                                 <td key={key} className="cellw">
                                   {feedback ? (
                                     <span className="copyc feedback-note">
+                                      {feedback.name && <span className="cc-v">{feedback.name}</span>}
                                       <ClampText expanded={expandedRow === c.id} onToggle={() => toggleRow(c.id)}>
                                         {feedback.body}
                                       </ClampText>
