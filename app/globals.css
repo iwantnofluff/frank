@@ -12059,3 +12059,8 @@ button.sortbtn:hover {
   display: block;
   margin-top: 8px;
 }
+/* Each image's own note after the overall one, in the same clamp. */
+.ntext + .nt-slides,
+.nt-slides .nt-p + .nt-p {
+  margin-top: 6px;
+}

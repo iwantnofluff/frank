@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.50.1",
+    date: "2026-10-23",
+    title: "Read more on every Notes for Designer",
+    changes: ["In the table, a post's Notes for Designer show two lines with Read more, each slide's note included, rather than every slide's note in full."],
+  },
+  {
     version: "1.50.0",
     date: "2026-10-23",
     title: "Notes for Designer, neater and in versions",

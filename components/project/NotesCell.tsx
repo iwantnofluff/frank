@@ -9,7 +9,8 @@ import { NotesText } from "@/components/creative-review/NotesText";
 
 // A post's Notes for Designer in the table (both tables, direct
 // instruction): its latest version with its V label, the headings neatened
-// (NotesText), each image's own after it, and earlier versions on hover of
+// (NotesText), each image's own after it, all under one Read more, and
+// earlier versions on hover of
 // "+N earlier", as the Caption column shows its copy (phase117).
 export function NotesCell({
   notes,
@@ -42,23 +43,22 @@ export function NotesCell({
   return (
     <span className="copyc">
       <span className="cc-v">V{notes.versionNo}</span>
-      {overall && (
-        <ClampText expanded={expanded} onToggle={onToggle} after={hasSlides ? undefined : <EditContent onFill={onFill} label="Notes for Designer" />}>
-          <NotesText text={overall} />
-        </ClampText>
-      )}
-      {hasSlides && (
-        <span className="slidenotes">
-          {slides.map((n, i) =>
-            n.trim() ? (
-              <span key={i}>
-                <b>Slide {i + 1}:</b> {n}
-              </span>
-            ) : null,
-          )}
-        </span>
-      )}
-      {(hasSlides || !overall) && <EditContent onFill={onFill} label="Notes for Designer" />}
+      {/* The overall note and each image's own in one clamp, so Read
+          more opens them all (direct instruction). */}
+      <ClampText expanded={expanded} onToggle={onToggle} after={<EditContent onFill={onFill} label="Notes for Designer" />}>
+        {overall && <NotesText text={overall} />}
+        {hasSlides && (
+          <span className="ntext nt-slides">
+            {slides.map((n, i) =>
+              n.trim() ? (
+                <span key={i} className="nt-p">
+                  <b>Slide {i + 1}:</b> {n}
+                </span>
+              ) : null,
+            )}
+          </span>
+        )}
+      </ClampText>
       {notes.earlier.length > 0 && (
         <span
           className="cc-n"
