@@ -19,6 +19,7 @@ import { CxValueCell } from "@/components/project/CxValueCell";
 import { ApproveConceptButton } from "@/components/project/ApproveConceptButton";
 import { canApproveConcept } from "@/hooks/use-approve-concept";
 import { useProjectDesignerNotes } from "@/hooks/use-designer-notes";
+import { NotesCell } from "@/components/project/NotesCell";
 import { ReferenceLinks } from "@/components/project/ReferenceLinks";
 import { ClampText } from "@/components/project/ClampText";
 import { ProjectCalendarGrid } from "@/components/project/ProjectCalendarGrid";
@@ -553,26 +554,11 @@ export function ProjectCalendarTable({
   const { data: designerNotes } = useProjectDesignerNotes(projectId, creativeIds, isStaff);
   const notesCell = (c: CreativeListRow, key: string) => (
     <td key={key} className="cellw">
-      <CxValueCell
-        column={{ label: "Notes for Designer", type: "long_text", options: null }}
-        value={designerNotes?.[c.id]?.overall ?? null}
+      <NotesCell
+        notes={designerNotes?.[c.id]}
         expanded={expandedRow === c.id}
         onToggle={() => toggleRow(c.id)}
         onFill={fill(c, "notes").onFill}
-        addLabel="Notes"
-        after={
-          (designerNotes?.[c.id]?.slides ?? []).some((n) => n.trim()) ? (
-            <span className="slidenotes">
-              {(designerNotes?.[c.id]?.slides ?? []).map((n, i) =>
-                n.trim() ? (
-                  <span key={i}>
-                    <b>Slide {i + 1}:</b> {n}
-                  </span>
-                ) : null,
-              )}
-            </span>
-          ) : undefined
-        }
       />
     </td>
   );

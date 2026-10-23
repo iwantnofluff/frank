@@ -85,11 +85,11 @@ export function useCreateCreative(projectId: string) {
         .single();
       if (creativeError) throw creativeError;
 
-      // The row's Notes for Designer, when typed.
+      // The row's Notes for Designer, when typed, as V1 (phase117).
       if (input.designerNotes?.trim()) {
         const { error: notesError } = await supabase
-          .from("designer_notes")
-          .insert({ creative_id: creative.id, overall: input.designerNotes.trim(), slides: [], updated_by: user.id });
+          .from("designer_note_versions")
+          .insert({ creative_id: creative.id, version_no: 1, overall: input.designerNotes.trim(), slides: [], created_by: user.id });
         if (notesError) throw new Error(`The post was added, but its Notes for Designer couldn't be saved: ${notesError.message}`);
       }
       // The row's copy, as version 1, when any was typed.

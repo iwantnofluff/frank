@@ -155,13 +155,17 @@ test("a multi-image post takes Notes for Designer for each image, on its Brief",
   await page.selectOption("#nbSlides", "4");
   await expect(notes).toHaveCount(4);
   await notes.nth(1).fill("Brighter crop, badge top right");
-  // Saved with the brief.
+  // Update asks for the notes to be saved first, as a version (phase117).
+  await page.getByRole("button", { name: "Update" }).click();
+  await expect(page.getByText("Save the Notes for Designer first")).toBeVisible();
+  await page.getByRole("button", { name: "Save Notes V1" }).click();
+  await expect(page.getByText("Saved as V1.")).toBeVisible({ timeout: 15_000 });
   await page.getByRole("button", { name: "Update" }).click();
   await expect(page.getByText("Post updated.")).toBeVisible();
   // The team's own (phase112), off the post a Client can read.
   await expect
-    .poll(async () => (await admin.from("designer_notes").select("slides").eq("creative_id", frank.creativeId).maybeSingle()).data)
-    .toEqual({ slides: ["", "Brighter crop, badge top right"] });
+    .poll(async () => (await admin.from("designer_note_versions").select("version_no, slides").eq("creative_id", frank.creativeId).maybeSingle()).data)
+    .toEqual({ version_no: 1, slides: ["", "Brighter crop, badge top right"] });
   await expect
     .poll(async () => (await admin.from("creatives").select("slide_count").eq("id", frank.creativeId).single()).data)
     .toEqual({ slide_count: 4 });

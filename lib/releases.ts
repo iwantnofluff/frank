@@ -13,6 +13,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.50.0",
+    date: "2026-10-23",
+    title: "Notes for Designer, neater and in versions",
+    changes: [
+      "Notes for Designer show their headings: a line starting with a label and a colon (Layout:, Style:, Guardrails:) shows the label as a small heading, and lines starting with - as a list, in the post window, on the post's Brief and in the table. Click them in the window to type.",
+      "They're now kept as versions, like the copy: Save to V1 to change the current version, or Save as V2 to start a new one. Earlier versions stay in their tabs, read only, and the table shows the latest with its V and the earlier ones on hover.",
+      "Notes save on their own, under the notes. Save Concept and References saves those two, and Update asks for any unsaved notes to be saved first.",
+      "Each post's notes as they were are its V1.",
+    ],
+  },
+  {
     version: "1.49.1",
     date: "2026-10-22",
     title: "My Profile, laid out like Settings",

@@ -48,7 +48,17 @@ import {
   hasVideoFormat,
 } from "@/lib/formats";
 import { slideFields, tidySlideText } from "@/lib/slide-text";
-import { DesignerNotesChangedError, sameNotes, useDesignerNotes, useSaveDesignerNotes, type DesignerNotes } from "@/hooks/use-designer-notes";
+import {
+  DesignerNotesChangedError,
+  NO_NOTES,
+  knownFrom,
+  sameNotes,
+  useDesignerNoteVersions,
+  useSaveDesignerNotes,
+  type DesignerNotes,
+  type KnownNotes,
+} from "@/hooks/use-designer-notes";
+import { NotesText } from "@/components/creative-review/NotesText";
 import { copyCaption } from "@/lib/copy-text";
 import { ListEditor } from "@/components/ui/ListEditor";
 import { linkHref, tidyReferences } from "@/lib/links";
@@ -697,6 +707,13 @@ export function CreativeModal(props: CreativeModalProps) {
       setNameError("Give the brief a name.");
       return;
     }
+    // Notes for Designer save on their own, as versions (phase117, decided
+    // directly): Update asks for them to be saved first.
+    if (creativeId && pendingNotesChange) {
+      setNotesAsk(true);
+      document.querySelector("#nbNotes")?.scrollIntoView({ block: "center", behavior: "smooth" });
+      return;
+    }
     setNameError(null);
     // No date is fine: the post is an Idea until it has one (direct
     // instruction).
@@ -745,8 +762,7 @@ export function CreativeModal(props: CreativeModalProps) {
         }
         // Notes for Designer, the team's own (phase112).
         if (!sameNotes(draftNotes, EMPTY_NOTES)) {
-          await saveNotes.mutateAsync({ creativeId: newId, notes: draftNotes, known: EMPTY_NOTES });
-          setKnownNotes(draftNotes);
+          setKnownNotes(await saveNotes.mutateAsync({ creativeId: newId, notes: draftNotes, known: NO_NOTES, mode: "new" }));
         }
       } catch (e) {
         setRefSaveError(errorMessage(e, "The post was made, but its reference images, Notes for Designer or directions couldn't be saved"));
@@ -805,15 +821,6 @@ export function CreativeModal(props: CreativeModalProps) {
     setSavedConcept(concept.trim());
     setSavedRefs(tidyReferences(referenceUrls));
     setConceptNote(null);
-    // Notes for Designer, overall and by slide (phase112), when changed.
-    if (pendingNotesChange && creativeId) {
-      try {
-        await saveNotes.mutateAsync({ creativeId, notes: draftNotes, known: knownNotesNow });
-        setKnownNotes(draftNotes);
-      } catch {
-        return; // Shown under the notes.
-      }
-    }
     knowBrief({
       name: name.trim(),
       formats,
@@ -992,10 +999,6 @@ export function CreativeModal(props: CreativeModalProps) {
         setSavedConcept(text);
         setSavedRefs(refs);
       }
-      if (pendingNotesChange) {
-        await saveNotes.mutateAsync({ creativeId, notes: draftNotes, known: knownNotesNow });
-        setKnownNotes(draftNotes);
-      }
       setConceptNote("Saved.");
     } catch {
       // Shown under the button, or under the notes.
@@ -1006,13 +1009,27 @@ export function CreativeModal(props: CreativeModalProps) {
   // overall and one per image, from their own table. What's shown is the
   // window's own text once changed, else what's saved; `known` is what
   // the window first loaded (or last saved), to catch someone else's save.
-  const { data: savedNotes } = useDesignerNotes(creativeId);
+  // Kept as versions (phase117): the latest is edited, earlier ones read.
+  const { data: noteVersions } = useDesignerNoteVersions(creativeId);
+  const latestNotes = noteVersions?.length ? noteVersions[noteVersions.length - 1] : null;
+  const savedNotes: DesignerNotes | undefined = noteVersions
+    ? latestNotes
+      ? { overall: latestNotes.overall, slides: latestNotes.slides }
+      : EMPTY_NOTES
+    : undefined;
   const [overallDraft, setOverallDraft] = useState<string | null>(null);
   const [slideNotesDraft, setSlideNotesDraft] = useState<string[] | null>(null);
-  const [knownNotes, setKnownNotes] = useState<DesignerNotes | null>(null);
+  const [knownNotes, setKnownNotes] = useState<KnownNotes | null>(null);
   useEffect(() => {
-    if (savedNotes && !knownNotes) setKnownNotes(savedNotes);
-  }, [savedNotes, knownNotes]);
+    if (noteVersions && !knownNotes) setKnownNotes(knownFrom(latestNotes));
+  }, [noteVersions, latestNotes, knownNotes]);
+  // Which version is in view (null: the latest), whether the notes are
+  // being typed in (else shown with their headings, NotesText), and Update
+  // asking for them to be saved first.
+  const [viewingNotesNo, setViewingNotesNo] = useState<number | null>(null);
+  const [notesEditing, setNotesEditing] = useState(false);
+  const [notesAsk, setNotesAsk] = useState(false);
+  const [notesSaveNote, setNotesSaveNote] = useState<string | null>(null);
   const designerNotes = overallDraft ?? savedNotes?.overall ?? "";
   const slideNotes = slideNotesDraft ?? savedNotes?.slides ?? [];
   const setDesignerNotes = setOverallDraft;
@@ -1164,7 +1181,28 @@ export function CreativeModal(props: CreativeModalProps) {
   const draftSlideText = tidySlideText(slideFields(slideText, slideCount));
   const pendingSlideChange = JSON.stringify(draftSlideText) !== JSON.stringify(savedSlideText);
   const draftNotes: DesignerNotes = { overall: designerNotes, slides: slideCount ? tidySlideText(slideFields(slideNotes, slideCount)) : [] };
-  const knownNotesNow = knownNotes ?? savedNotes ?? EMPTY_NOTES;
+  const knownNotesNow: KnownNotes = knownNotes ?? knownFrom(latestNotes);
+  const viewedOldNotes =
+    viewingNotesNo !== null && viewingNotesNo !== latestNotes?.versionNo
+      ? (noteVersions?.find((v) => v.versionNo === viewingNotesNo) ?? null)
+      : null;
+  // Notes for Designer on their own (phase117): into the latest version, or
+  // as the next.
+  async function handleSaveNotes(mode: "new" | "current") {
+    if (!creativeId) return;
+    const no = mode === "new" ? (latestNotes?.versionNo ?? 0) + 1 : (latestNotes?.versionNo ?? 1);
+    setNotesSaveNote(null);
+    try {
+      setKnownNotes(await saveNotes.mutateAsync({ creativeId, notes: draftNotes, known: knownNotesNow, mode }));
+      setNotesAsk(false);
+      setViewingNotesNo(null);
+      // Saved: shown with its headings again.
+      setNotesEditing(false);
+      setNotesSaveNote(mode === "new" ? `Saved as V${no}.` : `Saved to V${no}.`);
+    } catch {
+      // Shown under the notes.
+    }
+  }
   const pendingNotesChange = !sameNotes(draftNotes, knownNotesNow);
   const pendingRefsChange = JSON.stringify(tidyReferences(referenceUrls)) !== JSON.stringify(savedRefs);
   const isVideo = hasVideoFormat(formats);
@@ -1679,59 +1717,22 @@ export function CreativeModal(props: CreativeModalProps) {
             {refSaveError && <p className="autherr">{refSaveError}</p>}
           </div>
 
-          {/* Design (direct instruction: its own section, not under Concept):
-              Notes for Designer, overall then by slide, and the save. */}
-          <div className="msection-h">Design</div>
-          <p className="msection-d">How it should look, for the designer. The team&rsquo;s only: clients don&rsquo;t see it.</p>
-
-          {/* Notes for Designer on the Brief (direct instruction): the post's
-              overall note, on every post, and one per slide or story once
-              there are several, opening as the count goes up, saved with
-              the brief; the team's only (phase112). Design with Frank's Use
-              This fills them. */}
-          <div className="field">
-              <label htmlFor="nbNotes">
-                Notes for Designer <span className="bnote">optional</span>
-              </label>
-              <textarea
-                id="nbNotes"
-                className="bin"
-                rows={designerNotes ? 6 : 3}
-                value={designerNotes}
-                onChange={(e) => setDesignerNotes(e.target.value)}
-                placeholder="What the designer should know: the idea, layout, style, things to avoid."
-              />
-          </div>
-          {!!slideCount && (
-            <div className="field" data-focus="slideNotes">
-              <label>
-                Notes for Designer, by {frameNoun.toLowerCase()} <span className="bnote">optional</span>
-              </label>
-              <ListEditor
-                itemLabel={(i) => `${frameNoun} ${i + 1}`}
-                values={slideFields(slideNotes, slideCount)}
-                onChange={setSlideNotes}
-                fixed
-                bare
-              />
-            </div>
-          )}
-
-          {/* Save Concept, References and Notes (direct instruction, as Save
-              Content is on the Content tab), under the notes: on a saved
-              post, those three; on a new one, the Concept locked in for
-              Design with Frank, all saved by Create Post. */}
+          {/* Save Concept and References (direct instruction, as Save
+              Content is on the Content tab): on a saved post, those two; on
+              a new one, the Concept locked in for Design with Frank, saved
+              by Create Post. Notes for Designer save on their own, as
+              versions (phase117). */}
           <div className="field btnrow">
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <button
                 type="button"
                 className="btn sm primary"
-                disabled={!concept.trim() || (conceptReady && !(creativeId && (pendingNotesChange || pendingRefsChange))) || saveConcept.isPending || saveNotes.isPending}
+                disabled={!concept.trim() || (conceptReady && !(creativeId && pendingRefsChange)) || saveConcept.isPending}
                 onClick={handleSaveConcept}
               >
-                {saveConcept.isPending || saveNotes.isPending ? "Saving…" : "Save Concept, References and Notes"}
+                {saveConcept.isPending ? "Saving…" : "Save Concept and References"}
               </button>
-              {conceptNote && conceptReady && !(creativeId && (pendingNotesChange || pendingRefsChange)) && <span className="bsaved">{conceptNote}</span>}
+              {conceptNote && conceptReady && !(creativeId && pendingRefsChange) && <span className="bsaved">{conceptNote}</span>}
             </div>
             {saveConcept.error && (
               <p className="autherr">
@@ -1741,6 +1742,133 @@ export function CreativeModal(props: CreativeModalProps) {
               </p>
             )}
           </div>
+          {/* Design (direct instruction: its own section, not under Concept):
+              Notes for Designer, overall then by slide, in versions as the
+              Content tab's copy is (phase117), saved on their own. */}
+          <div className="msection-h">Design</div>
+          <p className="msection-d">How it should look, for the designer. The team&rsquo;s only: clients don&rsquo;t see it.</p>
+
+          {/* Notes for Designer on the Brief (direct instruction): the post's
+              overall note, on every post, and one per slide or story once
+              there are several; the team's only (phase112). Shown with
+              their headings (NotesText) until clicked to type in (decided
+              directly). Design with Frank's Use This fills them. */}
+          <div className="field">
+            <label htmlFor="nbNotes">
+              Notes for Designer <span className="bnote">optional</span>
+            </label>
+            {noteVersions && noteVersions.length > 1 && (
+              <div className="viewbar" style={{ marginBottom: 10 }}>
+                {[...noteVersions].reverse().map((v) => (
+                  <VersionTab
+                    key={v.versionNo}
+                    versionNo={v.versionNo}
+                    selected={(viewingNotesNo ?? latestNotes?.versionNo) === v.versionNo}
+                    onSelect={() => setViewingNotesNo(v.versionNo === latestNotes?.versionNo ? null : v.versionNo)}
+                  />
+                ))}
+              </div>
+            )}
+            {viewedOldNotes ? (
+              <>
+                <p className="sub" style={{ marginBottom: 10 }}>
+                  An earlier version, read only. Changes build on the latest, V{latestNotes?.versionNo}.
+                </p>
+                <div className="notesview ro">
+                  {viewedOldNotes.overall.trim() ? <NotesText text={viewedOldNotes.overall} /> : <span className="tdim">—</span>}
+                  {viewedOldNotes.slides.map((n, i) =>
+                    n.trim() ? (
+                      <span className="nt-slide" key={i}>
+                        <b>{frameNoun} {i + 1}:</b> {n}
+                      </span>
+                    ) : null,
+                  )}
+                </div>
+              </>
+            ) : notesEditing || !designerNotes.trim() ? (
+              <textarea
+                id="nbNotes"
+                className="bin"
+                rows={designerNotes ? 10 : 3}
+                value={designerNotes}
+                autoFocus={notesEditing}
+                onFocus={() => setNotesEditing(true)}
+                onBlur={() => setNotesEditing(false)}
+                onChange={(e) => {
+                  setDesignerNotes(e.target.value);
+                  setNotesSaveNote(null);
+                }}
+                placeholder="What the designer should know: the idea, layout, style, things to avoid."
+              />
+            ) : (
+              <div
+                id="nbNotes"
+                className="notesview"
+                role="button"
+                tabIndex={0}
+                aria-label="Edit the Notes for Designer"
+                onClick={() => setNotesEditing(true)}
+                onFocus={() => setNotesEditing(true)}
+              >
+                <NotesText text={designerNotes} />
+              </div>
+            )}
+          </div>
+          {!!slideCount && !viewedOldNotes && (
+            <div className="field" data-focus="slideNotes">
+              <label>
+                Notes for Designer, by {frameNoun.toLowerCase()} <span className="bnote">optional</span>
+              </label>
+              <ListEditor
+                itemLabel={(i) => `${frameNoun} ${i + 1}`}
+                values={slideFields(slideNotes, slideCount)}
+                onChange={(next) => {
+                  setSlideNotes(next);
+                  setNotesSaveNote(null);
+                }}
+                fixed
+                bare
+              />
+            </div>
+          )}
+          {creativeId && !viewedOldNotes && (
+            <div className="field btnrow">
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {/* Greyed until there's a change, as Copy's are. Notes have
+                    no comments, so saving into the latest is always offered. */}
+                {latestNotes && (
+                  <button
+                    type="button"
+                    className="btn sm primary"
+                    disabled={saveNotes.isPending || !pendingNotesChange}
+                    // Keeps the text box from closing (and the button
+                    // moving) before the click lands.
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => handleSaveNotes("current")}
+                  >
+                    {saveNotes.isPending ? "Saving…" : `Save to V${latestNotes.versionNo}`}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className={`btn sm${latestNotes ? "" : " primary"}`}
+                  disabled={saveNotes.isPending || !pendingNotesChange}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleSaveNotes("new")}
+                >
+                  {saveNotes.isPending
+                    ? "Saving…"
+                    : latestNotes
+                      ? `Save as V${latestNotes.versionNo + 1}`
+                      : "Save Notes V1"}
+                </button>
+                {notesSaveNote && !pendingNotesChange && <span className="bsaved">{notesSaveNote}</span>}
+              </div>
+              {notesAsk && pendingNotesChange && (
+                <p className="hint">Save the Notes for Designer first, as a version, then Update.</p>
+              )}
+            </div>
+          )}
           {saveNotes.error instanceof DesignerNotesChangedError ? (
             <p className="autherr">
               {saveNotes.error.message}{" "}
@@ -2386,13 +2514,15 @@ function VersionTab({
   versionNo: number;
   selected: boolean;
   onSelect: () => void;
-  onDelete: () => void;
+  // No delete for versions that can't be (Notes for Designer's).
+  onDelete?: () => void;
 }) {
   return (
     <span className="vtabwrap">
       <button type="button" role="tab" className="vtab" aria-selected={selected} onClick={onSelect}>
         V{versionNo}
       </button>
+      {onDelete && (
       <button
         type="button"
         className="vtab-x"
@@ -2404,6 +2534,7 @@ function VersionTab({
           <path d="M18 6L6 18M6 6l12 12" />
         </svg>
       </button>
+      )}
     </span>
   );
 }

@@ -11992,3 +11992,70 @@ button.sortbtn:hover {
     outline-offset: 3px;
   }
 }
+
+/* Notes for Designer with headings (direct instruction; NotesText): a
+   label's heading in small capitals, its text under it, "-" lines as a
+   list. Blocks, so a table cell still clamps to its lines. */
+.ntext,
+.ntext .nt-h,
+.ntext .nt-p,
+.ntext .nt-l,
+.ntext .nt-li {
+  display: block;
+}
+.ntext .nt-h {
+  margin-top: 8px;
+  font-size: 10.7px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.ntext .nt-h:first-child {
+  margin-top: 0;
+}
+.ntext .nt-li {
+  position: relative;
+  padding-left: 12px;
+}
+.ntext .nt-li::before {
+  content: "•";
+  position: absolute;
+  left: 2px;
+}
+.cc-t.open .ntext {
+  white-space: normal;
+}
+
+/* The window's Notes for Designer while not being typed in (decided
+   directly): with their headings, in the text box's frame; a click (or
+   focus) turns it into the text box. An earlier version reads the same,
+   without the click. */
+.notesview {
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  padding: 10px 12px;
+  background: var(--surface);
+  font-size: 13.7px;
+  line-height: 1.45;
+  cursor: text;
+  transition: border-color var(--dur-fast) var(--ease-std);
+}
+.notesview:hover {
+  border-color: var(--muted);
+}
+.notesview:focus-visible {
+  outline: 2px solid var(--action);
+  outline-offset: 1px;
+}
+.notesview.ro {
+  cursor: default;
+  background: var(--canvas);
+}
+.notesview.ro:hover {
+  border-color: var(--line-2);
+}
+.notesview .nt-slide {
+  display: block;
+  margin-top: 8px;
+}

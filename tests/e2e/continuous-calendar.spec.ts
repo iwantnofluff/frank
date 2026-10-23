@@ -84,10 +84,12 @@ test("continuous calendar — Notes for Designer persist", async ({ page, frank 
   await row.getByRole("button", { name: "Add Notes" }).click();
   await expect(page.locator("#nbNotes")).toBeFocused({ timeout: 15_000 });
   await page.locator("#nbNotes").fill("Keep the logo top left");
-  await page.getByRole("button", { name: "Update" }).click();
-  await expect(page.getByText("Post updated.")).toBeVisible({ timeout: 15_000 });
+  // Saved on their own, as a version (phase117).
+  await page.getByRole("button", { name: "Save Notes V1" }).click();
+  await expect(page.getByText("Saved as V1.")).toBeVisible({ timeout: 15_000 });
   await page.keyboard.press("Escape");
   await expect(row).toContainText("Keep the logo top left", { timeout: 10_000 });
+  await expect(row.locator(".cc-v", { hasText: "V1" })).toBeVisible();
   await expect(row.getByRole("button", { name: "Add Notes" })).toHaveCount(0);
   await page.reload();
   await page.waitForSelector(".tblwrap, .empty");

@@ -4,6 +4,7 @@ import type { CreativeRow } from "@/hooks/use-creative";
 import { formatById, formatsLabel, postFormats } from "@/lib/formats";
 import { ReferenceLinks } from "@/components/project/ReferenceLinks";
 import { useDesignerNotes } from "@/hooks/use-designer-notes";
+import { NotesText } from "@/components/creative-review/NotesText";
 
 // Informational only, on this page — editing the brief now happens in
 // CreativeModal's Brief tab (the single entry point that replaced New
@@ -111,7 +112,11 @@ export function BriefPanel({
       {(overallNote || slideNotes.some((n) => n.trim())) && (
         <div className="bsec">
           <div className="bl">Notes for Designer</div>
-          {overallNote && <p className="fd-d fd-pre">{overallNote}</p>}
+          {overallNote && (
+            <p className="fd-d">
+              <NotesText text={overallNote} />
+            </p>
+          )}
           {slideNotes.map((note, i) =>
             note.trim() ? (
               <p className="fd-d" key={i}>

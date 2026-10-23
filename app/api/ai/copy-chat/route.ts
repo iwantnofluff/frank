@@ -162,7 +162,13 @@ export async function POST(request: Request) {
     : null;
   const { data: savedNotes } = sentNotes
     ? { data: null }
-    : await supabase.from("designer_notes").select("overall, slides").eq("creative_id", creative.id).maybeSingle();
+    : await supabase
+        .from("designer_note_versions")
+        .select("overall, slides")
+        .eq("creative_id", creative.id)
+        .order("version_no", { ascending: false })
+        .limit(1)
+        .maybeSingle();
   const designerNotes = sentNotes ?? (savedNotes ? { overall: savedNotes.overall as string, slides: (savedNotes.slides as string[]) ?? [] } : null);
 
   // The brief, knowledge and instructions first, kept by Claude between

@@ -70,7 +70,7 @@ test("a Content Planner post can be added straight into the table", async ({ pag
   expect(c!.slide_count).toBe(5);
   const { data: copy } = await admin.from("copy_versions").select("version_no, fields").eq("creative_id", c!.id);
   expect(copy).toEqual([{ version_no: 1, fields: { caption: "The autumn menu is here.", alt: "Five drinks on a table." } }]);
-  const { data: notes } = await admin.from("designer_notes").select("overall").eq("creative_id", c!.id).single();
+  const { data: notes } = await admin.from("designer_note_versions").select("overall").eq("creative_id", c!.id).eq("version_no", 1).single();
   expect(notes!.overall).toBe("Warm, one hero per slide.");
   // Its copy is written, so it's in Internal Review already, as the row's
   // pill said.
