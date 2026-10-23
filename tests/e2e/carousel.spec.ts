@@ -100,8 +100,8 @@ test("a carousel gets a slide count, and Text on Image one field per slide", asy
   // No copy written yet, so no copy version (direct instruction).
   expect((await admin.from("copy_versions").select("id").eq("creative_id", c!.id)).data).toEqual([]);
 
-  // Text on Image is its own section after the artwork on Content.
-  await page.getByRole("tab", { name: "Content" }).click();
+  // Text on Image is on Production (direct instruction).
+  await page.getByRole("tab", { name: "Production" }).click();
   await expect(page.locator('[data-focus="imageOnText"] .brow textarea')).toHaveCount(3);
   // Slide 2 written, slide 1 left blank: positions are kept.
   await page.locator('[data-focus="imageOnText"] .brow textarea').nth(1).fill("Second slide words");
@@ -131,8 +131,9 @@ test("a Listing Image Set takes up to 9 images, Text on Image for each, and the 
   await expect(page.locator("#nbSlides option")).toHaveCount(8);
   await page.selectOption("#nbSlides", "3");
   await page.click('button:has-text("Create Post")');
-  await page.getByRole("tab", { name: "Content" }).click();
+  await page.getByRole("tab", { name: "Production" }).click();
   await expect(page.locator('[data-focus="imageOnText"] .brow textarea')).toHaveCount(3);
+  await page.getByRole("tab", { name: "Content" }).click();
   // The listing's own text, to review with its images.
   const labels = page.locator(".mtabbody .field > label");
   for (const l of ["Title", "Bullet Points", "Description"]) {

@@ -316,14 +316,24 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "Other Fields: any columns the project adds of its own, saved with Update.",
         ],
       },
+      { kind: "h", text: "Production" },
+      { kind: "p", text: "The Production tab, between the Brief and the Content, holds the words that go into making the creative." },
+      {
+        kind: "list",
+        items: [
+          "Thumbnail Text on Image, for a video post: the words on its cover, saved on the post.",
+          "VO, for a video post (a Reel, Story, YouTube or other video format): the voiceover script, saved with Save VO. It stays with the post rather than becoming a version, and only your team sees it.",
+          "Text on Image: the words on each slide, saved with Save Text on Image. It stays with the post rather than becoming a version. In the table, a carousel's shows each slide's words under its own Slide heading.",
+          "Notes for Designer, as last saved on the Brief, read only: they're written and changed on the Brief.",
+          "Draft with Frank, at the foot of the tab, drafts the VO, Text on Image and a video's Thumbnail Text on Image, with conversations of their own.",
+        ],
+      },
       { kind: "h", text: "The content" },
       {
         kind: "list",
         items: [
           "Creative: one slot per slide, or one for a single image or video, up to 300MB a file. A file dropped in isn't added until you press Save Creative V1 (then V2 and so on); closing first asks if you're sure.",
-          "Thumbnail, for a video post: the cover the platform shows before the video plays, straight after the Creative. Drop or choose a JPG, PNG or WebP and press Save Thumbnail V1, then V2 and so on; earlier ones stay in their tabs. Saving one doesn't move the post's stage. Under it, Thumbnail Text on Image: the words on the cover, saved on the post. Your client sees the thumbnail beside the video, on the post and on review links.",
-          "VO, for a video post (a Reel, Story, YouTube or other video format): the voiceover script, after the artwork, saved with Save VO. Like Text on Image, it stays with the post rather than becoming a version, and only your team sees it.",
-          "Text on Image: the words on each slide, saved with Save Text on Image. It stays with the post rather than becoming a version.",
+          "Thumbnail, for a video post: the cover the platform shows before the video plays, straight after the Creative. Drop or choose a JPG, PNG or WebP and press Save Thumbnail V1, then V2 and so on; earlier ones stay in their tabs. Saving one doesn't move the post's stage. Its words are on the Production tab. Your client sees the thumbnail beside the video, on the post and on review links.",
           "Copy: the caption and anything else the formats need. Save Copy V1 for the first version. After that, Save to the current version (Save to V1, say) puts your changes into it, offered only while nobody has commented on it, and Save as the next (Save as V2) makes a new one. Each is greyed until there's a change to save.\n\nCopy Caption, under the caption, copies it with its line breaks and paragraphs, ready to paste into Instagram or another platform.",
           "WIIFM Direction: each time copy is saved, Frank lists what's working in it, in 3 to 5 short points, each naming the psychology principle or bias the copy uses (curiosity gap, loss aversion and so on) and the words that use it. It never lists what isn't working.\n\nOn the table, Copy Caption and Copy WIIFM copy either one, ready to paste.",
         ],
@@ -448,14 +458,14 @@ export const HELP_ARTICLES: HelpArticle[] = [
     category: "claude",
     summary: "Draft from the concept, or have your own draft reviewed.",
     blocks: [
-      { kind: "p", text: "In a post's Content tab, choose Draft with Frank at the foot of the window. The post needs a format first, as its copy fields come from it." },
+      { kind: "p", text: "There's a Draft with Frank at the foot of two tabs, each with its own conversations. On Content it drafts the copy: the caption and the other copy fields, so the post needs a format first. On Production it drafts the words for making the creative: the Text on Image, and a video's VO and Thumbnail Text on Image." },
       { kind: "p", text: "Frank reads the brief, the Notes for Designer (so the copy fits the visual), the WIIFM, each format's direction, and your workspace's and the client's Knowledge, files included." },
       { kind: "p", text: "It also reads up to 8 of the client's Approved posts, to keep to their voice without repeating them, and up to 20 of the client's own comments, which it follows (not praise or approvals); if those clash with the Knowledge, Frank says so." },
       { kind: "p", text: "How far back each reaches, or whether Frank reads it at all, is set in the client's Preferences (by default, Approved posts from the last 12 months and comments from the last 90 days). The window lists what Frank reads for that client." },
       {
         kind: "list",
         items: [
-          "Draft from the Concept: Frank offers a few drafts of the caption, the other copy fields, the VO for a video post, and the Text on Image.",
+          "Draft from the Concept: Frank offers a few drafts of that tab's fields.",
           "Review My Draft: Frank says what works in what you've written and how to improve it, looking only at the fields you've filled in.",
           "Ask for changes in your own words: shorter, warmer, a different hook.",
           "Each part of a draft has its own Use This: the Caption, the Alt Text and the Text on Image each go into the editor on their own, and the button says Added.\n\nPress Added again to take it back out (the editor goes back to what it had), or Use This on another draft's to swap it in.\n\nOpen Draft with Frank again later and what you used still says Added; change any of it in the editor and it doesn't. Nothing is saved until you save it.",

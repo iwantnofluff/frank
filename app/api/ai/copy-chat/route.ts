@@ -8,7 +8,9 @@ import {
   parseCopyChatReply,
   slideTextFields,
   VO_FIELD,
+  THUMB_TEXT_FIELD,
   type CopyChatMode,
+  type CopyChatScope,
   type CopyChatTurn,
 } from "@/lib/ai/copy-chat";
 import { monthOf, strategyForPrompt, type StrategyFields } from "@/lib/monthly-strategy";
@@ -37,6 +39,7 @@ export async function POST(request: Request) {
     creativeId?: string;
     chatId?: string;
     mode?: CopyChatMode;
+    scope?: CopyChatScope;
     message?: string;
     currentFields?: Record<string, string>;
     designerNotes?: { overall?: unknown; slides?: unknown };
@@ -69,22 +72,30 @@ export async function POST(request: Request) {
   if (!membership || membership.client_id !== null) return fail("Staff access required", 403);
 
   const formats = postFormats(creative as { format: string; formats: string[] | null });
-  // The formats' copy fields, a video's VO, then the Text on Image (one
-  // per slide).
-  const fields = [
-    ...copyFieldsFor(formats).map((key) => ({ key, label: COPY_FIELD_LABELS[key] ?? key })),
-    // A video post's VO (phase88).
-    ...(hasVideoFormat(formats) ? [VO_FIELD] : []),
-    ...slideTextFields((creative.slide_count as number | null) ?? null),
-  ];
-
-  // The conversation: an existing one, or a new one's opening.
+  // The conversation: an existing one, or a new one's opening; and which
+  // tab's it is (phase119).
   let chatId = body.chatId ?? null;
   let history: CopyChatTurn[] = [];
   let message: string;
   let mode: CopyChatMode;
+  let scope: CopyChatScope = body.scope === "production" ? "production" : "copy";
+  let existing: { id: string; creative_id: string; mode: string; scope: string } | null = null;
   if (chatId) {
-    const { data: chat } = await supabase.from("copy_chats").select("id, creative_id, mode").eq("id", chatId).maybeSingle();
+    const { data: chat } = await supabase.from("copy_chats").select("id, creative_id, mode, scope").eq("id", chatId).maybeSingle();
+    existing = chat;
+    if (chat?.scope === "production") scope = "production";
+    else if (chat) scope = "copy";
+  }
+  // Content's: the formats' copy fields. Production's: a video's Thumbnail
+  // Text on Image and VO (phase88), then the Text on Image, one per slide.
+  const video = hasVideoFormat(formats);
+  const fields =
+    scope === "production"
+      ? [...(video ? [THUMB_TEXT_FIELD, VO_FIELD] : []), ...slideTextFields((creative.slide_count as number | null) ?? null)]
+      : copyFieldsFor(formats).map((key) => ({ key, label: COPY_FIELD_LABELS[key] ?? key }));
+
+  if (chatId) {
+    const chat = existing;
     if (!chat || chat.creative_id !== creative.id) return fail("Conversation not found", 404);
     mode = chat.mode as CopyChatMode;
     const { data: past } = await supabase
@@ -99,7 +110,7 @@ export async function POST(request: Request) {
   } else {
     if (body.mode !== "draft" && body.mode !== "review") return fail("Choose to draft or review", 400);
     mode = body.mode;
-    message = openingMessage(body.mode, currentFields, fields);
+    message = openingMessage(body.mode, currentFields, fields, scope);
   }
   // Reviewing a draft covers only what's been written (direct
   // instruction): Frank reads, reviews and suggests the filled fields, not
@@ -188,6 +199,7 @@ export async function POST(request: Request) {
       otherPosts,
       clientFeedback,
       fields: covered,
+      scope,
     },
     [...history, { role: "user", body: message }],
     currentFields,
@@ -201,7 +213,7 @@ export async function POST(request: Request) {
   if (!chatId) {
     const { data: chat, error } = await supabase
       .from("copy_chats")
-      .insert({ creative_id: creative.id, mode: body.mode, created_by: user.id })
+      .insert({ creative_id: creative.id, mode: body.mode, scope, created_by: user.id })
       .select("id")
       .single();
     if (error || !chat) return fail(error?.message ?? "Couldn't keep the conversation", 500);

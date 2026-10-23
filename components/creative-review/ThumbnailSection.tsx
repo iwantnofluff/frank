@@ -2,32 +2,22 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useArtworkUrl } from "@/hooks/use-asset-signed-url";
-import {
-  THUMBNAIL_TYPES,
-  useSaveThumbnail,
-  useSaveThumbnailText,
-  useThumbnailVersions,
-  type ThumbnailVersion,
-} from "@/hooks/use-thumbnails";
+import { THUMBNAIL_TYPES, useSaveThumbnail, useThumbnailVersions, type ThumbnailVersion } from "@/hooks/use-thumbnails";
 import { errorMessage } from "@/lib/errors";
 
 // A video post's Thumbnail on the Content tab, after Creative (phase118,
 // direct instruction): one image in Creative's slot, saved as V1, V2 and so
-// on with earlier versions in tabs, read only; then Thumbnail Text on
-// Image, saved on the post as Text on Image is. Saving neither moves the
-// post's stage.
+// on with earlier versions in tabs, read only. Its words, Thumbnail Text on
+// Image, are on the Production tab. Saving one doesn't move the post's
+// stage.
 export function ThumbnailSection({
   creativeId,
   agencyId,
-  projectId,
   aspectRatio,
-  savedText,
 }: {
   creativeId: string;
   agencyId: string;
-  projectId: string;
   aspectRatio: string;
-  savedText: string;
 }) {
   const { data: versions } = useThumbnailVersions(creativeId);
   const latest = versions?.[0] ?? null;
@@ -66,12 +56,6 @@ export function ThumbnailSection({
       // Shown below.
     }
   }
-
-  const [text, setText] = useState(savedText);
-  const [knownText, setKnownText] = useState(savedText);
-  const [textNote, setTextNote] = useState<string | null>(null);
-  const saveText = useSaveThumbnailText(creativeId, projectId);
-  const pendingText = text.trim() !== knownText.trim();
 
   return (
     <>
@@ -180,43 +164,6 @@ export function ThumbnailSection({
         </>
       )}
 
-      <div className="msection-h">Thumbnail Text on Image</div>
-      <p className="msection-d">The words on the thumbnail itself.</p>
-      <div className="field">
-        <textarea
-          className="bin"
-          rows={2}
-          aria-label="Thumbnail Text on Image"
-          maxLength={2000}
-          value={text}
-          onChange={(e) => {
-            setText(e.target.value);
-            setTextNote(null);
-          }}
-        />
-      </div>
-      <div className="field btnrow">
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button
-            type="button"
-            className="btn sm primary"
-            disabled={!pendingText || saveText.isPending}
-            onClick={async () => {
-              try {
-                await saveText.mutateAsync(text);
-                setKnownText(text);
-                setTextNote("Saved.");
-              } catch {
-                // Shown below.
-              }
-            }}
-          >
-            {saveText.isPending ? "Saving…" : "Save Thumbnail Text on Image"}
-          </button>
-          {textNote && !pendingText && <span className="bsaved">{textNote}</span>}
-        </div>
-        {saveText.error && <p className="autherr">{errorMessage(saveText.error, "Couldn't save the Thumbnail Text on Image")}</p>}
-      </div>
     </>
   );
 }

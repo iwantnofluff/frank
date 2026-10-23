@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Modal } from "@/components/ui/Modal";
 import { useCopyChats, useSendCopyChat, type CopyChat as Chat } from "@/hooks/use-copy-chats";
-import { cleanReplyBody, isSlideField, type CopyChatField, type CopyChatMode } from "@/lib/ai/copy-chat";
+import { cleanReplyBody, isSlideField, type CopyChatField, type CopyChatMode, type CopyChatScope } from "@/lib/ai/copy-chat";
 import { errorMessage } from "@/lib/errors";
 import { useLiveUpdates } from "@/hooks/use-live-updates";
 import { useClientPreferences } from "@/hooks/use-client-preferences";
@@ -55,6 +55,7 @@ export function CopyChat({
   before,
   onBeforeChange,
   onClose,
+  scope = "copy",
 }: {
   creativeId: string;
   // In the header, under "Draft with Frank" (direct instruction).
@@ -73,8 +74,12 @@ export function CopyChat({
   before: Record<string, Record<string, string>>;
   onBeforeChange: (next: Record<string, Record<string, string>>) => void;
   onClose: () => void;
+  // Which tab it's opened from (phase119): Content's drafts the copy,
+  // Production's the VO and the words on the artwork, each with its own
+  // conversations.
+  scope?: CopyChatScope;
 }) {
-  const { data: chats, isLoading } = useCopyChats(creativeId);
+  const { data: chats, isLoading } = useCopyChats(creativeId, scope);
   // A conversation going on in another window or device updates here too
   // (direct instruction): a new conversation for this post, or a new
   // message in one of its conversations.
@@ -108,7 +113,7 @@ export function CopyChat({
 
   function start(mode: CopyChatMode) {
     send.mutate(
-      { mode, currentFields, designerNotes },
+      { mode, scope, currentFields, designerNotes },
       {
         onSuccess: (r) => {
           setChatId(r.chatId);
@@ -125,7 +130,7 @@ export function CopyChat({
     // Frank doesn't answer.
     setDraft("");
     send.mutate(
-      { chatId, message, currentFields, designerNotes },
+      { chatId, scope, message, currentFields, designerNotes },
       {
         onSuccess: (r) => setSkipped(r.skippedFiles),
         onError: () => setDraft(message),
@@ -184,7 +189,7 @@ export function CopyChat({
             type="button"
             className="btn sm"
             disabled={send.isPending || !hasCopy}
-            title={hasCopy ? undefined : "Write some copy first"}
+            title={hasCopy ? undefined : scope === "production" ? "Write some first" : "Write some copy first"}
             onClick={() => start("review")}
           >
             Review My Draft

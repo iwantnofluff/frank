@@ -17,7 +17,7 @@ async function makeVideo(frank: Frank) {
   if (error) throw new Error(error.message);
 }
 
-test("a video post has a VO after its Creative, saved on the post and shown on the table", async ({ page, frank }) => {
+test("a video post has a VO on Production, saved on the post and shown on the table", async ({ page, frank }) => {
   test.setTimeout(90_000);
   await makeVideo(frank);
   await frank.loginAsStaff(page);
@@ -25,9 +25,11 @@ test("a video post has a VO after its Creative, saved on the post and shown on t
   await page.getByRole("button", { name: "Upload Artwork" }).click();
   const modal = page.locator(".scrim .modal").first();
 
-  // Creative, then VO, then Text on Image.
+  // On Production (direct instruction): Thumbnail Text on Image, then VO,
+  // then Text on Image.
+  await modal.getByRole("tab", { name: "Production" }).click();
   const heads = await modal.locator(".msection-h").allTextContents();
-  expect(heads.indexOf("VO")).toBe(heads.indexOf("Creative") + 1);
+  expect(heads.indexOf("VO")).toBe(heads.indexOf("Thumbnail Text on Image") + 1);
   expect(heads.indexOf("Text on Image")).toBe(heads.indexOf("VO") + 1);
 
   const vo = modal.getByLabel("VO", { exact: true });
@@ -66,7 +68,8 @@ test("a post with no video format has no VO, and a client's table has no VO colu
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
   await page.getByRole("button", { name: "Upload Artwork" }).click();
   const modal = page.locator(".scrim .modal").first();
-  await expect(modal.locator(".msection-h", { hasText: "Text on Image" })).toBeVisible();
+  await modal.getByRole("tab", { name: "Production" }).click();
+  await expect(modal.locator(".msection-h", { hasText: /^Text on Image$/ })).toBeVisible();
   await expect(modal.locator(".msection-h", { hasText: /^VO$/ })).toHaveCount(0);
 
   const client = await page.context().browser()!.newContext();
@@ -79,13 +82,13 @@ test("a post with no video format has no VO, and a client's table has no VO colu
   await client.close();
 });
 
-test("Draft with Frank offers a VO with its own Use This", async ({ page, frank }) => {
+test("Production's Draft with Frank offers a VO with its own Use This", async ({ page, frank }) => {
   test.setTimeout(90_000);
   await makeVideo(frank);
   const staffId = (await admin.from("users").select("id").eq("email", frank.staffEmail).single()).data!.id;
   const { data: chat } = await admin
     .from("copy_chats")
-    .insert({ creative_id: frank.creativeId, mode: "draft", created_by: staffId })
+    .insert({ creative_id: frank.creativeId, mode: "draft", scope: "production", created_by: staffId })
     .select("id")
     .single();
   await admin.from("copy_chat_messages").insert([
@@ -95,13 +98,15 @@ test("Draft with Frank offers a VO with its own Use This", async ({ page, frank 
       role: "assistant",
       body: "One angle.",
       created_by: null,
-      drafts: [{ label: "Calm", fields: { caption: "Daily dessert.", voiceover: "Something sweet, every day." } }],
+      drafts: [{ label: "Calm", fields: { voiceover: "Something sweet, every day." } }],
     },
   ]);
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
   await page.getByRole("button", { name: "Upload Artwork" }).click();
   const modal = page.locator(".scrim .modal").first();
+  // The VO is on Production, with its own Draft with Frank (phase119).
+  await modal.getByRole("tab", { name: "Production" }).click();
   await modal.getByRole("button", { name: "Draft with Frank" }).click();
   const dialog = page.getByRole("dialog", { name: "Draft with Frank" });
   await dialog.getByRole("button", { name: /Drafted from the concept/ }).click();

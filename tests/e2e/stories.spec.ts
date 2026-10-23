@@ -42,11 +42,16 @@ test("a story post takes a number of stories, an upload and Text on Image for ea
 
   // Content: three upload slots, a Text on Image box per story, no Copy.
   await page.getByRole("tab", { name: "Content" }).click();
-  await expect(page.locator(".cslot")).toHaveCount(3);
+  // The artwork's slots (a Story is a video post, so a Thumbnail's slot is
+  // there too, phase118).
+  await expect(page.locator('.cslots[aria-label="Slides"] .cslot')).toHaveCount(3);
   await expect(page.getByRole("button", { name: "Add story 2" })).toBeVisible();
   await expect(page.locator(".msection-h", { hasText: /^Copy$/ })).toHaveCount(0);
+  // Text on Image, a box per story, on Production (direct instruction).
+  await page.getByRole("tab", { name: "Production" }).click();
   await expect(page.locator(".msection-h", { hasText: /^Text on Image$/ })).toBeVisible();
   for (const n of [1, 2, 3]) await expect(page.getByText(`Story ${n}`, { exact: true })).toBeVisible();
+  await page.getByRole("tab", { name: "Content" }).click();
 
   await page
     .locator('input[aria-label="Slide files"]')

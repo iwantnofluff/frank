@@ -19,6 +19,9 @@ export interface CopyChatContext {
   // Knowledge files sent alongside (PDFs, images), by title.
   fileTitles: string[];
   fields: CopyChatField[];
+  // Which tab's Draft with Frank (phase119): Content's drafts the copy,
+  // Production's the words for making the creative. Copy when not given.
+  scope?: CopyChatScope;
   // The client's strategy for the month the post goes live (phase78),
   // ready to read; absent when nothing's been decided for it.
   strategy?: string | null;
@@ -100,6 +103,11 @@ export interface CopyDraft {
 }
 
 export type CopyChatMode = "draft" | "review";
+export type CopyChatScope = "copy" | "production";
+
+// A video's Thumbnail Text on Image (phase118), on Production's Draft with
+// Frank.
+export const THUMB_TEXT_FIELD: CopyChatField = { key: "thumbnail_text", label: "Thumbnail Text on Image" };
 
 // A video post's VO script (phase88) as a chat field, after the copy.
 export const VO_FIELD: CopyChatField = { key: "voiceover", label: "VO" };
@@ -145,8 +153,20 @@ export function chatFields(mode: CopyChatMode, fields: CopyChatField[], currentF
   return mode === "review" ? fields.filter((f) => currentFields[f.key]?.trim()) : fields;
 }
 
-export function openingMessage(mode: CopyChatMode, currentFields: Record<string, string>, fields: CopyChatField[]): string {
-  if (mode === "draft") return "Draft some copy for this post from the concept.";
+export function openingMessage(
+  mode: CopyChatMode,
+  currentFields: Record<string, string>,
+  fields: CopyChatField[],
+  scope: CopyChatScope = "copy",
+): string {
+  if (mode === "draft") {
+    if (scope === "production") {
+      const parts = fields.map((f) => (isSlideField(f.key) ? "Text on Image" : f.label)).filter((l, i, all) => all.indexOf(l) === i);
+      const list = parts.length > 1 ? `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}` : (parts[0] ?? "Text on Image");
+      return `Draft the ${list} for this post from the concept.`;
+    }
+    return "Draft some copy for this post from the concept.";
+  }
   const draft = fields
     .filter((f) => currentFields[f.key]?.trim())
     .map((f) => `${f.label}:\n${currentFields[f.key].trim()}`)
@@ -182,7 +202,9 @@ export function buildCopyChatPromptParts(
     .join("\n");
 
   const stable = [
-    "You are a senior copywriter at a content agency, working with a colleague on the copy for one post. Be specific, warm and brief. Ground everything in the brief and the knowledge below; don't invent facts about the client.",
+    context.scope === "production"
+      ? "You are a senior copywriter at a content agency, working with a colleague on the words that go into making one post's creative: what's spoken over it and set on it. The caption is written separately. Be specific, warm and brief. Ground everything in the brief and the knowledge below; don't invent facts about the client."
+      : "You are a senior copywriter at a content agency, working with a colleague on the copy for one post. Be specific, warm and brief. Ground everything in the brief and the knowledge below; don't invent facts about the client.",
     `Post: ${context.postName}`,
     `Format: ${context.formatLabel}`,
     context.concept ? `Concept:\n${context.concept}` : "Concept: none written yet.",
@@ -202,6 +224,9 @@ export function buildCopyChatPromptParts(
       : null,
     context.fields.some((f) => f.key === VO_FIELD.key)
       ? "VO is the voiceover script, spoken over the video: written to be heard, in short natural sentences, paced to the video's length, and never a repeat of the caption or the Text on Image. Include it in every draft."
+      : null,
+    context.fields.some((f) => f.key === THUMB_TEXT_FIELD.key)
+      ? "Thumbnail Text on Image is the few words on the video's cover: a hook that reads at thumbnail size, a handful of words, never a repeat of the first slide or line. Include it in every draft."
       : null,
     context.formatLabel.includes(" + ")
       ? `This post goes out as ${context.formatLabel}, and they share one set of fields: write one version of each field that works for all of them. Never split a field by platform ("IG: … LinkedIn: …").`

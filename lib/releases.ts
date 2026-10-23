@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.52.0",
+    date: "2026-10-23",
+    title: "A Production tab",
+    changes: [
+      "The post window has a Production tab between Brief and Content, for the words that go into making the creative: a video's Thumbnail Text on Image and VO, then the Text on Image. Content keeps the files and the copy.",
+      "Production shows the Notes for Designer as last saved on the Brief, read only, with Edit on the Brief.",
+      "Each of the two tabs has its own Draft with Frank: Content's drafts the copy, Production's the VO, Text on Image and Thumbnail Text on Image, each with its own conversations. Earlier conversations are Content's.",
+    ],
+  },
+  {
     version: "1.51.1",
     date: "2026-10-23",
     title: "A clearer Creative column and Text on Image",

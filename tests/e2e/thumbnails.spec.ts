@@ -34,6 +34,8 @@ test("a Reel's thumbnail saves as versions with its words, shows in the table an
   await expect(page.getByText("Saved as version 2.")).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole("tab", { name: "Thumbnail V1" })).toBeVisible();
 
+  // Its words are on Production (direct instruction).
+  await page.getByRole("tab", { name: "Production" }).click();
   await page.getByLabel("Thumbnail Text on Image").fill("WATCH TILL THE END");
   await page.getByRole("button", { name: "Save Thumbnail Text on Image" }).click();
   await expect(page.locator(".bsaved", { hasText: "Saved." }).last()).toBeVisible({ timeout: 15_000 });

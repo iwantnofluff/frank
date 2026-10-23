@@ -49,11 +49,12 @@ test("Draft with Frank reopens a conversation, and each field's Use This adds, r
   await expect(chat.locator(".cchat-msg.user")).toContainText("Draft some copy for this post from the concept.");
   await expect(chat.locator(".cchat-draft").first()).toContainText("Dessert, but make it daily.");
   await page.screenshot({ path: `${process.env.SHOT_DIR ?? "test-results"}/copy-chat.png`, animations: "disabled" });
-  // Each field has its own button: Caption, Alt Text and Text on Image.
+  // Each copy field has its own button: Caption and Alt Text. Text on
+  // Image is Production's Draft with Frank's now (phase119), so not here.
   const playful = chat.locator(".cchat-draft").nth(0);
   const warm = chat.locator(".cchat-draft").nth(1);
-  await expect(playful.locator(".cchat-group .btn")).toHaveText(["Use This", "Use This", "Use This"]);
-  await expect(playful.getByRole("button", { name: "Use This for Text on Image" })).toBeVisible();
+  await expect(playful.locator(".cchat-group .btn")).toHaveText(["Use This", "Use This"]);
+  await expect(playful.getByRole("button", { name: "Use This for Text on Image" })).toHaveCount(0);
   // Added; another suggestion's Caption replaces it; pressing Added again removes it.
   await playful.getByRole("button", { name: "Use This for Caption" }).click();
   await expect(playful.getByRole("button", { name: "Added: Caption" })).toHaveAttribute("aria-pressed", "true");
@@ -83,7 +84,6 @@ test("Draft with Frank reopens a conversation, and each field's Use This adds, r
   await chat.getByRole("button", { name: /Drafted from the concept/ }).click();
   await expect(playful.getByRole("button", { name: "Added: Caption" })).toBeVisible();
   await expect(playful.getByRole("button", { name: "Added: Alt Text" })).toBeVisible();
-  await expect(playful.getByRole("button", { name: "Use This for Text on Image" })).toBeVisible();
   // Changed by hand, it isn't any more; Added still takes Frank's back out.
   await page.keyboard.press("Escape");
   await caption.fill("Dessert, but make it daily. Every day.");
@@ -127,4 +127,44 @@ test("the route refuses a review with no draft and anyone but staff; Clients can
   await c.auth.signInWithPassword({ email: frank.clientEmail, password: frank.clientPassword });
   expect((await c.from("copy_chats").select("id")).data ?? []).toHaveLength(0);
   expect((await c.from("copy_chat_messages").select("id")).data ?? []).toHaveLength(0);
+});
+
+test("Production has its own Draft with Frank: its own conversations, drafting the VO and Text on Image", async ({ page, frank }) => {
+  test.setTimeout(90_000);
+  await seedChat(frank);
+  await admin.from("creatives").update({ format: "ig_reel", formats: ["ig_reel"] }).eq("id", frank.creativeId);
+  const staffId = (await admin.from("users").select("id").eq("email", frank.staffEmail).single()).data!.id;
+  const { data: prod } = await admin
+    .from("copy_chats")
+    .insert({ creative_id: frank.creativeId, mode: "draft", scope: "production", created_by: staffId })
+    .select("id")
+    .single();
+  await admin.from("copy_chat_messages").insert([
+    { chat_id: prod!.id, role: "user", body: "Draft the Thumbnail Text on Image, VO and Text on Image for this post from the concept.", drafts: [], created_by: staffId },
+    {
+      chat_id: prod!.id,
+      role: "assistant",
+      body: "One way in.",
+      created_by: null,
+      drafts: [{ label: "Slow", fields: { thumbnail_text: "No rushing this", voiceover: "Pour it slow.", slide_1: "SLOW IS THE METHOD" } }],
+    },
+  ]);
+  await frank.loginAsStaff(page);
+  await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
+  await page.getByRole("button", { name: "Edit", exact: true }).click();
+  const post = page.locator(".scrim .modal").first();
+  await post.getByRole("tab", { name: "Production" }).click();
+  await post.getByRole("button", { name: "Draft with Frank" }).click();
+  const chat = page.getByRole("dialog", { name: "Draft with Frank" });
+  // Only Production's conversation is listed.
+  await expect(chat.getByRole("button", { name: /Drafted from the concept/ })).toHaveCount(1);
+  await chat.getByRole("button", { name: /Drafted from the concept/ }).click();
+  const slow = chat.locator(".cchat-draft").first();
+  await slow.getByRole("button", { name: "Use This for Thumbnail Text on Image" }).click();
+  await slow.getByRole("button", { name: "Use This for VO" }).click();
+  await slow.getByRole("button", { name: "Use This for Text on Image" }).click();
+  await page.keyboard.press("Escape");
+  await expect(post.locator("#nbThumbText")).toHaveValue("No rushing this");
+  await expect(post.locator("#nbVo")).toHaveValue("Pour it slow.");
+  await expect(post.locator('[data-focus="imageOnText"] textarea').first()).toHaveValue("SLOW IS THE METHOD");
 });

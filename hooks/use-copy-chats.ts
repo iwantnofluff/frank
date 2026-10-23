@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
-import type { CopyChatMode, CopyDraft } from "@/lib/ai/copy-chat";
+import type { CopyChatMode, CopyChatScope, CopyDraft } from "@/lib/ai/copy-chat";
 
 export interface CopyChatMessage {
   id: string;
@@ -22,16 +22,17 @@ export interface CopyChat {
 }
 
 // A post's conversations with Claude about its copy (phase52), newest
-// first. Staff only (RLS).
-export function useCopyChats(creativeId: string) {
+// first, for one tab's Draft with Frank (phase119). Staff only (RLS).
+export function useCopyChats(creativeId: string, scope: CopyChatScope = "copy") {
   return useQuery({
-    queryKey: ["copy-chats", creativeId],
+    queryKey: ["copy-chats", creativeId, scope],
     queryFn: async (): Promise<CopyChat[]> => {
       const supabase = createClient();
       const { data: chats, error } = await supabase
         .from("copy_chats")
         .select("id, mode, created_at, updated_at, created_by")
         .eq("creative_id", creativeId)
+        .eq("scope", scope)
         .order("updated_at", { ascending: false });
       if (error) throw error;
       if (!chats.length) return [];
@@ -65,6 +66,7 @@ export function useSendCopyChat(creativeId: string) {
     mutationFn: async (input: {
       chatId?: string;
       mode?: CopyChatMode;
+      scope?: CopyChatScope;
       message?: string;
       currentFields: Record<string, string>;
       // The window's Notes for Designer, for the visual plan.

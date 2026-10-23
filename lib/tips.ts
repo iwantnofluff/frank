@@ -47,7 +47,7 @@ export const TIPS: Tip[] = [
   {
     id: "draft-with-frank",
     title: "Draft with Frank",
-    text: "Drafts of the caption, Text on Image and VO from the brief, in the client's voice.",
+    text: "Drafts of the caption from the brief, in the client's voice. Production has its own, for the VO and Text on Image.",
     articleId: "write-with-claude",
     place: "post-content",
     spot: ['[data-tip="draft-with-frank"]'],

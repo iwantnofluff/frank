@@ -61,15 +61,15 @@ test("two people saving one post: the second is asked, and nothing is lost", asy
     const openContent = async (p: Page) => {
       await p.goto(APP_URL + "/creatives/" + frank.creativeId);
       await p.getByRole("button", { name: "Edit", exact: true }).click();
-      await p.getByRole("tab", { name: "Content" }).click();
-      await expect(p.locator(".msection-h", { hasText: "Text on Image" }).locator("xpath=following::*[self::textarea or self::input][1]")).toBeVisible({ timeout: 15_000 });
+      await p.getByRole("tab", { name: "Production" }).click();
+      await expect(p.locator(".msection-h", { hasText: /^Text on Image$/ }).locator("xpath=following::*[self::textarea or self::input][1]")).toBeVisible({ timeout: 15_000 });
     };
     await openContent(page);
     await openContent(b);
-    await b.locator(".msection-h", { hasText: "Text on Image" }).locator("xpath=following::*[self::textarea or self::input][1]").fill("Raj's words");
+    await b.locator(".msection-h", { hasText: /^Text on Image$/ }).locator("xpath=following::*[self::textarea or self::input][1]").fill("Raj's words");
     await b.getByRole("button", { name: "Save Text on Image" }).click();
     await b.waitForTimeout(2000);
-    await page.locator(".msection-h", { hasText: "Text on Image" }).locator("xpath=following::*[self::textarea or self::input][1]").fill("Staff words");
+    await page.locator(".msection-h", { hasText: /^Text on Image$/ }).locator("xpath=following::*[self::textarea or self::input][1]").fill("Staff words");
     await page.getByRole("button", { name: "Save Text on Image" }).click();
     await expect(page.getByText("changed the Text on Image while you had it open")).toBeVisible({ timeout: 15_000 });
     expect((await admin.from("creatives").select("slide_text").eq("id", frank.creativeId).single()).data).toEqual({ slide_text: ["Raj's words"] });

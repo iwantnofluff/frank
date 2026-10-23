@@ -2,18 +2,7 @@
 // (or `npm run test:unit`).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import {
-  applySlideDraft,
-  buildCopyChatPrompt,
-  chatFields,
-  cleanReplyBody,
-  openingMessage,
-  parseCopyChatReply,
-  slideTextAsFields,
-  slideTextFields,
-  VO_FIELD,
-  type CopyChatContext,
-} from "./copy-chat.ts";
+import { applySlideDraft, buildCopyChatPrompt, chatFields, cleanReplyBody, openingMessage, parseCopyChatReply, slideTextAsFields, slideTextFields, VO_FIELD, type CopyChatContext, THUMB_TEXT_FIELD, buildCopyChatPromptParts } from "./copy-chat.ts";
 
 const fields = [
   { key: "caption", label: "Caption" },
@@ -143,4 +132,19 @@ test("the Notes for Designer go in as the visual plan the copy fits, and only wh
   assert.match(prompt, /By slide:\n- Slide 2: Close-up/);
   assert.doesNotMatch(buildCopyChatPrompt({ ...context, designerNotes: { overall: " ", slides: [""] } }, [], {}), /Notes for Designer/);
   assert.doesNotMatch(buildCopyChatPrompt(context, [], {}), /Notes for Designer/);
+});
+
+test("Production's Draft with Frank writes the words for making the creative, not the caption", () => {
+  const fields = [THUMB_TEXT_FIELD, VO_FIELD, ...slideTextFields(2)];
+  const [stable] = buildCopyChatPromptParts({ ...context, fields, scope: "production" }, [], {});
+  assert.match(stable, /words that go into making one post's creative/);
+  assert.match(stable, /The caption is written separately/);
+  assert.match(stable, /Thumbnail Text on Image is the few words on the video's cover/);
+  assert.match(stable, /VO is the voiceover script/);
+  assert.equal(
+    openingMessage("draft", {}, fields, "production"),
+    "Draft the Thumbnail Text on Image, VO and Text on Image for this post from the concept.",
+  );
+  // Content's stays as it was.
+  assert.match(buildCopyChatPromptParts(context, [], {})[0], /working with a colleague on the copy for one post/);
 });

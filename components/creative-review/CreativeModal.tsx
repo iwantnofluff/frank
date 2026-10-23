@@ -60,16 +60,18 @@ import {
 } from "@/hooks/use-designer-notes";
 import { NotesText } from "@/components/creative-review/NotesText";
 import { ThumbnailSection } from "@/components/creative-review/ThumbnailSection";
+import { useSaveThumbnailText } from "@/hooks/use-thumbnails";
 import { copyCaption } from "@/lib/copy-text";
 import { ListEditor } from "@/components/ui/ListEditor";
 import { linkHref, tidyReferences } from "@/lib/links";
 import { FormatPicker } from "./FormatPicker";
 import {
   applySlideDraft,
-  isSlideField,
   slideTextAsFields,
   slideTextFields,
   VO_FIELD,
+  THUMB_TEXT_FIELD,
+  type CopyChatScope,
   type CopyChatField as CopyFieldSpec,
 } from "@/lib/ai/copy-chat";
 import { buildCheckPrompt, parseCheckFindings, type CheckFinding } from "@/lib/ai/build-check-prompt";
@@ -90,7 +92,9 @@ const KNOWLEDGE_SECTION_LABELS: Record<string, string> = Object.fromEntries(
   KNOWLEDGE_SECTIONS.map((s) => [s.key, s.label]),
 );
 
-type Tab = "brief" | "upload" | "checks";
+// Production (direct instruction): the words for making the creative,
+// between the Brief and the Content.
+type Tab = "brief" | "production" | "upload" | "checks";
 
 // Where the cursor goes when the window opens from a table's Pending
 // cell (direct instruction): that field, on its tab, ready for input.
@@ -123,9 +127,9 @@ const FOCUS: Record<Exclude<FocusTarget, `cx:${string}`>, { tab: Tab; selector: 
   team: { tab: "brief", selector: "#nbTeam" },
   concept: { tab: "brief", selector: "#nbConcept" },
   slides: { tab: "brief", selector: "#nbSlides" },
-  voiceover: { tab: "upload", selector: "#nbVo" },
+  voiceover: { tab: "production", selector: "#nbVo" },
   artwork: { tab: "upload", selector: ".mtabbody .cslot-add" },
-  imageOnText: { tab: "upload", selector: '[data-focus="imageOnText"] textarea' },
+  imageOnText: { tab: "production", selector: '[data-focus="imageOnText"] textarea' },
   copy: { tab: "upload", selector: '[data-focus="copy"] textarea, [data-focus="copy"] input' },
   alt: { tab: "upload", selector: '[data-focus="alt"] textarea, [data-focus="alt"] input' },
 };
@@ -912,6 +916,10 @@ export function CreativeModal(props: CreativeModalProps) {
   // blank); Content counts once either side of it has real content.
   const briefPopulated = !!creativeId;
   const uploadPopulated = latestCreativeVersionNo > 0 || !!latestCopyVersion;
+  const productionPopulated =
+    !!(isCreate ? null : props.creative.slide_text)?.some((t) => t.trim()) ||
+    !!(isCreate ? null : props.creative.voiceover)?.trim() ||
+    !!(isCreate ? null : props.creative.thumbnail_text)?.trim();
 
   const [fileError, setFileError] = useState<string | null>(null);
   const [copySaveNote, setCopySaveNote] = useState<string | null>(null);
@@ -971,7 +979,7 @@ export function CreativeModal(props: CreativeModalProps) {
   }
 
   // "Write with Claude" (phase52), over this window.
-  const [chatOpen, setChatOpen] = useState(false);
+  const [chatScope, setChatScope] = useState<CopyChatScope | null>(null);
   // Design with Frank (phase110), and what Notes for Designer held before
   // a direction went in, so pressing Added puts it back.
   const [designOpen, setDesignOpen] = useState(false);
@@ -1082,6 +1090,22 @@ export function CreativeModal(props: CreativeModalProps) {
       setSlideSaveNote("Saved.");
     } catch {
       // Shown via saveSlideText.error below.
+    }
+  }
+  // Thumbnail Text on Image (phase118), on Production with the VO.
+  const savedThumbText = isCreate ? "" : (props.creative.thumbnail_text ?? "");
+  const [thumbText, setThumbText] = useState(savedThumbText);
+  const [knownThumbText, setKnownThumbText] = useState(savedThumbText);
+  const [thumbTextNote, setThumbTextNote] = useState<string | null>(null);
+  const saveThumbText = useSaveThumbnailText(creativeId ?? "", projectId);
+  const pendingThumbText = thumbText.trim() !== knownThumbText.trim();
+  async function handleSaveThumbText() {
+    try {
+      await saveThumbText.mutateAsync(thumbText);
+      setKnownThumbText(thumbText);
+      setThumbTextNote("Saved.");
+    } catch {
+      // Shown under the button.
     }
   }
   const saveVoiceover = useSaveVoiceover(creativeId ?? "", projectId);
@@ -1305,14 +1329,16 @@ export function CreativeModal(props: CreativeModalProps) {
   // "Write with Claude" (phase52): under the caption field.
   // In the Content tab's footer, so it's in reach however far down the
   // window is scrolled (direct instruction).
-  const writeWithClaude = (
+  // One on each tab (decided directly, phase119): Content's drafts the
+  // copy, Production's the words for making the creative.
+  const writeWithClaude = (scope: CopyChatScope) => (
     <button
       type="button"
       className="btn primary btn-frank"
-      data-tip="draft-with-frank"
+      data-tip={scope === "copy" ? "draft-with-frank" : undefined}
       disabled={!modelLabel || !creativeId}
       title={creativeId ? undefined : "Save the brief first"}
-      onClick={() => setChatOpen(true)}
+      onClick={() => setChatScope(scope)}
     >
       <svg className="aicon" viewBox="0 0 24 24">
         <path d="M12 3l1.8 6.2L20 11l-6.2 1.8L12 19l-1.8-6.2L4 11l6.2-1.8L12 3z" />
@@ -1431,7 +1457,8 @@ export function CreativeModal(props: CreativeModalProps) {
           </>
         ) : (
           <>
-            {activeTab === "upload" && creativeId && writeWithClaude}
+            {activeTab === "upload" && creativeId && writeWithClaude("copy")}
+            {activeTab === "production" && creativeId && writeWithClaude("production")}
             <div className="grow" />
             <button type="button" className="btn" onClick={requestClose}>
               Cancel
@@ -1445,11 +1472,12 @@ export function CreativeModal(props: CreativeModalProps) {
                 pendingCopyChange ||
                 pendingCreativeChange ||
                 pendingSlideChange ||
-                pendingVoChange
+                pendingVoChange ||
+                pendingThumbText
               }
               title={
-                pendingCopyChange || pendingCreativeChange || pendingSlideChange || pendingVoChange
-                  ? "Save the copy, VO, Text on Image or creative changes above first"
+                pendingCopyChange || pendingCreativeChange || pendingSlideChange || pendingVoChange || pendingThumbText
+                  ? "Save the copy, VO, Text on Image or creative changes first"
                   : undefined
               }
               onClick={handleSaveUpload}
@@ -1477,6 +1505,17 @@ export function CreativeModal(props: CreativeModalProps) {
           onClick={() => setActiveTab("brief")}
         >
           Brief
+        </button>
+        <button
+          type="button"
+          className={`mtab${productionPopulated ? " populated" : ""}`}
+          role="tab"
+          aria-selected={activeTab === "production"}
+          disabled={!creativeId}
+          title={!creativeId ? "Save the brief first" : undefined}
+          onClick={() => creativeId && setActiveTab("production")}
+        >
+          Production
         </button>
         <button
           type="button"
@@ -1936,6 +1975,193 @@ export function CreativeModal(props: CreativeModalProps) {
         </div>
       )}
 
+      {activeTab === "production" && creativeId && (
+        <div className="mtabbody">
+          {/* Production (direct instruction): what goes into making the
+              creative, in the order it's made. A video's Thumbnail Text on
+              Image (phase118) and VO, then the Text on Image, then the
+              Notes for Designer as last saved on the Brief, read only. */}
+          {isVideo && (
+            <>
+              <div className="msection-h">Thumbnail Text on Image</div>
+              <p className="msection-d">The words on the video&rsquo;s thumbnail. The thumbnail itself is on the Content tab.</p>
+              <div className="field">
+                <textarea
+                  id="nbThumbText"
+                  className="bin"
+                  rows={2}
+                  aria-label="Thumbnail Text on Image"
+                  maxLength={2000}
+                  value={thumbText}
+                  onChange={(e) => {
+                    setThumbText(e.target.value);
+                    setThumbTextNote(null);
+                  }}
+                />
+              </div>
+              <div className="field btnrow">
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <button
+                    type="button"
+                    className="btn sm primary"
+                    disabled={!pendingThumbText || saveThumbText.isPending}
+                    onClick={handleSaveThumbText}
+                  >
+                    {saveThumbText.isPending ? "Saving…" : "Save Thumbnail Text on Image"}
+                  </button>
+                  {thumbTextNote && !pendingThumbText && <span className="bsaved">{thumbTextNote}</span>}
+                </div>
+                {saveThumbText.error && (
+                  <p className="autherr">{errorMessage(saveThumbText.error, "Couldn't save the Thumbnail Text on Image")}</p>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* A video's VO script (phase88, direct instruction): its own
+              section after the Creative, laid out as Text on Image below
+              it, saved on the post with its own Save. */}
+          {isVideo && (
+            <>
+              <div className="msection-h">VO</div>
+              <p className="msection-d">The voiceover script, the words spoken over the video.</p>
+              <div className="field">
+                <label htmlFor="nbVo">Script</label>
+                <textarea
+                  id="nbVo"
+                  className="bin"
+                  rows={5}
+                  aria-label="VO"
+                  maxLength={5000}
+                  placeholder="Write the voiceover script…"
+                  value={voiceover}
+                  onChange={(e) => {
+                    setVoiceover(e.target.value);
+                    setVoSaveNote(null);
+                  }}
+                />
+              </div>
+              <div className="field btnrow">
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <button
+                    type="button"
+                    className="btn sm primary"
+                    disabled={!creativeId || !pendingVoChange || saveVoiceover.isPending}
+                    onClick={handleSaveVoiceover}
+                  >
+                    {saveVoiceover.isPending ? "Saving…" : "Save VO"}
+                  </button>
+                  {voSaveNote && !pendingVoChange && <span className="bsaved">{voSaveNote}</span>}
+                </div>
+                {saveVoiceover.error instanceof VoiceoverChangedError ? (
+                  // Someone else's VO arrived meanwhile.
+                  <p className="autherr">
+                    {saveVoiceover.error.message}{" "}
+                    <button
+                      type="button"
+                      className="linkbtn"
+                      onClick={() => {
+                        const theirs = (saveVoiceover.error as VoiceoverChangedError).theirs;
+                        setVoiceover(theirs);
+                        setSavedVoiceover(theirs);
+                        saveVoiceover.reset();
+                      }}
+                    >
+                      Show Theirs
+                    </button>
+                  </p>
+                ) : (
+                  saveVoiceover.error && (
+                    <p className="autherr">{errorMessage(saveVoiceover.error, "Couldn't save the VO")}</p>
+                  )
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Text on Image (phase57): saved on the post, not as a version. */}
+          <div className="msection-h">Text on Image</div>
+          <p className="msection-d">
+            {slideCount
+              ? `The words on each ${frameNoun.toLowerCase()}'s artwork, one entry per ${frameNoun.toLowerCase()}.`
+              : "The words on the artwork itself."}
+          </p>
+          <div data-focus="imageOnText">
+          <ListEditor
+            itemLabel={(i) => (slideCount ? `${frameNoun} ${i + 1}` : "Text on Image")}
+            values={slideFields(slideText, slideCount ?? 1)}
+            onChange={(next) => {
+              setSlideText(next);
+              setSlideSaveNote(null);
+            }}
+            fixed
+            bare
+          />
+          </div>
+          <div className="field btnrow">
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <button
+                type="button"
+                className="btn sm primary"
+                disabled={!creativeId || !pendingSlideChange || saveSlideText.isPending}
+                onClick={handleSaveSlideText}
+              >
+                {saveSlideText.isPending ? "Saving…" : "Save Text on Image"}
+              </button>
+              {slideSaveNote && !pendingSlideChange && <span className="bsaved">{slideSaveNote}</span>}
+            </div>
+            {saveSlideText.error instanceof SlideTextChangedError ? (
+              // Someone else's Text on Image arrived meanwhile (phase82).
+              <p className="autherr">
+                {saveSlideText.error.message}{" "}
+                <button
+                  type="button"
+                  className="linkbtn"
+                  onClick={() => {
+                    const theirs = (saveSlideText.error as SlideTextChangedError).theirs;
+                    setSlideText(theirs);
+                    setSavedSlideText(tidySlideText(theirs));
+                    saveSlideText.reset();
+                  }}
+                >
+                  Show Theirs
+                </button>
+              </p>
+            ) : (
+              saveSlideText.error && (
+                <p className="autherr">{errorMessage(saveSlideText.error, "Couldn't save the Text on Image")}</p>
+              )
+            )}
+          </div>
+
+
+          {/* The Notes for Designer as saved on the Brief, where they're
+              made (decided directly), read only here. */}
+          <div className="msection-h">Notes for Designer</div>
+          <p className="msection-d">
+            {latestNotes ? `V${latestNotes.versionNo}, as saved on the Brief, where they\u2019re changed.` : "Written on the Brief."}
+          </p>
+          {latestNotes && (latestNotes.overall.trim() || latestNotes.slides.some((n) => n.trim())) ? (
+            <div className="notesview ro">
+              {latestNotes.overall.trim() && <NotesText text={latestNotes.overall} />}
+              {latestNotes.slides.map((n, i) =>
+                n.trim() ? (
+                  <span className="nt-slide" key={i}>
+                    <b>{frameNoun} {i + 1}:</b> {n}
+                  </span>
+                ) : null,
+              )}
+            </div>
+          ) : (
+            <p className="sub">None saved yet.</p>
+          )}
+          <div className="field btnrow">
+            <button type="button" className="btn sm" onClick={() => setActiveTab("brief")}>
+              Edit on the Brief
+            </button>
+          </div>
+        </div>
+      )}
       {activeTab === "upload" && creativeId && !formats.length && (
         <div className="mtabbody">
           {/* A post can be made without a format (phase114); its copy
@@ -2007,128 +2233,9 @@ export function CreativeModal(props: CreativeModalProps) {
             <ThumbnailSection
               creativeId={creativeId}
               agencyId={agencyId}
-              projectId={projectId}
               aspectRatio={aspectRatioCss(format)}
-              savedText={isCreate ? "" : (props.creative.thumbnail_text ?? "")}
             />
           )}
-
-          {/* A video's VO script (phase88, direct instruction): its own
-              section after the Creative, laid out as Text on Image below
-              it, saved on the post with its own Save. */}
-          {isVideo && (
-            <>
-              <div className="msection-h">VO</div>
-              <p className="msection-d">The voiceover script, the words spoken over the video.</p>
-              <div className="field">
-                <label htmlFor="nbVo">Script</label>
-                <textarea
-                  id="nbVo"
-                  className="bin"
-                  rows={5}
-                  aria-label="VO"
-                  maxLength={5000}
-                  placeholder="Write the voiceover script…"
-                  value={voiceover}
-                  onChange={(e) => {
-                    setVoiceover(e.target.value);
-                    setVoSaveNote(null);
-                  }}
-                />
-              </div>
-              <div className="field btnrow">
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <button
-                    type="button"
-                    className="btn sm primary"
-                    disabled={!creativeId || !pendingVoChange || saveVoiceover.isPending}
-                    onClick={handleSaveVoiceover}
-                  >
-                    {saveVoiceover.isPending ? "Saving…" : "Save VO"}
-                  </button>
-                  {voSaveNote && !pendingVoChange && <span className="bsaved">{voSaveNote}</span>}
-                </div>
-                {saveVoiceover.error instanceof VoiceoverChangedError ? (
-                  // Someone else's VO arrived meanwhile.
-                  <p className="autherr">
-                    {saveVoiceover.error.message}{" "}
-                    <button
-                      type="button"
-                      className="linkbtn"
-                      onClick={() => {
-                        const theirs = (saveVoiceover.error as VoiceoverChangedError).theirs;
-                        setVoiceover(theirs);
-                        setSavedVoiceover(theirs);
-                        saveVoiceover.reset();
-                      }}
-                    >
-                      Show Theirs
-                    </button>
-                  </p>
-                ) : (
-                  saveVoiceover.error && (
-                    <p className="autherr">{errorMessage(saveVoiceover.error, "Couldn't save the VO")}</p>
-                  )
-                )}
-              </div>
-            </>
-          )}
-
-          {/* Its own section after the artwork (direct instruction), saved
-              on the post, not as a version (phase57). */}
-          <div className="msection-h">Text on Image</div>
-          <p className="msection-d">
-            {slideCount
-              ? `The words on each ${frameNoun.toLowerCase()}'s artwork, one entry per ${frameNoun.toLowerCase()}.`
-              : "The words on the artwork itself."}
-          </p>
-          <div data-focus="imageOnText">
-          <ListEditor
-            itemLabel={(i) => (slideCount ? `${frameNoun} ${i + 1}` : "Text on Image")}
-            values={slideFields(slideText, slideCount ?? 1)}
-            onChange={(next) => {
-              setSlideText(next);
-              setSlideSaveNote(null);
-            }}
-            fixed
-            bare
-          />
-          </div>
-          <div className="field btnrow">
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <button
-                type="button"
-                className="btn sm primary"
-                disabled={!creativeId || !pendingSlideChange || saveSlideText.isPending}
-                onClick={handleSaveSlideText}
-              >
-                {saveSlideText.isPending ? "Saving…" : "Save Text on Image"}
-              </button>
-              {slideSaveNote && !pendingSlideChange && <span className="bsaved">{slideSaveNote}</span>}
-            </div>
-            {saveSlideText.error instanceof SlideTextChangedError ? (
-              // Someone else's Text on Image arrived meanwhile (phase82).
-              <p className="autherr">
-                {saveSlideText.error.message}{" "}
-                <button
-                  type="button"
-                  className="linkbtn"
-                  onClick={() => {
-                    const theirs = (saveSlideText.error as SlideTextChangedError).theirs;
-                    setSlideText(theirs);
-                    setSavedSlideText(tidySlideText(theirs));
-                    saveSlideText.reset();
-                  }}
-                >
-                  Show Theirs
-                </button>
-              </p>
-            ) : (
-              saveSlideText.error && (
-                <p className="autherr">{errorMessage(saveSlideText.error, "Couldn't save the Text on Image")}</p>
-              )
-            )}
-          </div>
 
           {/* Hidden when the formats have no copy, a story's (direct
               instruction): their words are the Text on Image above. */}
@@ -2481,35 +2588,49 @@ export function CreativeModal(props: CreativeModalProps) {
         onClose={() => setDesignOpen(false)}
       />
     )}
-    {chatOpen && creativeId && (
+    {chatScope && creativeId && (
       <CopyChat
+        scope={chatScope}
         creativeId={creativeId}
         designerNotes={draftNotes}
         postName={name || (isCreate ? "New post" : props.creative.name)}
         clientId={clientId ?? null}
-        fields={[...copyFieldSpecs, ...(isVideo ? [VO_FIELD] : []), ...slideTextFields(slideCount)]}
-        currentFields={{
-          ...draftFields,
-          ...(isVideo ? { [VO_FIELD.key]: voiceover } : {}),
-          ...slideTextAsFields(slideFields(slideText, slideCount)),
-        }}
+        fields={
+          chatScope === "production"
+            ? [...(isVideo ? [THUMB_TEXT_FIELD, VO_FIELD] : []), ...slideTextFields(slideCount)]
+            : copyFieldSpecs
+        }
+        currentFields={
+          chatScope === "production"
+            ? {
+                ...(isVideo ? { [THUMB_TEXT_FIELD.key]: thumbText, [VO_FIELD.key]: voiceover } : {}),
+                ...slideTextAsFields(slideFields(slideText, slideCount)),
+              }
+            : draftFields
+        }
         onUse={(fields) => {
-          // The caption fields into the copy, the VO into the VO, the
-          // slides into Text on Image.
-          const copy = Object.fromEntries(
-            Object.entries(fields).filter(([key]) => !isSlideField(key) && key !== VO_FIELD.key),
-          );
-          setDraftFields((prev) => ({ ...prev, ...copy }));
-          if (VO_FIELD.key in fields) {
-            setVoiceover(fields[VO_FIELD.key]);
-            setVoSaveNote(null);
+          if (chatScope === "production") {
+            // Into the Thumbnail Text on Image, the VO and each slide's
+            // Text on Image.
+            if (THUMB_TEXT_FIELD.key in fields) {
+              setThumbText(fields[THUMB_TEXT_FIELD.key]);
+              setThumbTextNote(null);
+            }
+            if (VO_FIELD.key in fields) {
+              setVoiceover(fields[VO_FIELD.key]);
+              setVoSaveNote(null);
+            }
+            setSlideText((prev) => applySlideDraft(slideFields(prev, slideCount), fields));
+            setSlideSaveNote(null);
+            return;
           }
-          setSlideText((prev) => applySlideDraft(slideFields(prev, slideCount), fields));
+          // Content's: the copy fields.
+          setDraftFields((prev) => ({ ...prev, ...fields }));
           setCopySaveNote(null);
         }}
         before={chatBefore}
         onBeforeChange={setChatBefore}
-        onClose={() => setChatOpen(false)}
+        onClose={() => setChatScope(null)}
       />
     )}
     </>
