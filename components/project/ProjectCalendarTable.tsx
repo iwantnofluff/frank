@@ -44,6 +44,7 @@ import { getMonthWeeks, getWeekDays, isoWeekNumber, dateKey } from "@/lib/calend
 import { useArtworkByCreative } from "@/hooks/use-artwork-by-creative";
 import { useThumbnailsByCreative } from "@/hooks/use-thumbnails";
 import { ArtworkCell } from "@/components/project/ArtworkCell";
+import { SlideTextCell } from "@/components/project/SlideTextCell";
 import { useCopyVersionsByCreative, type CopyVersionSummary } from "@/hooks/use-copy-versions-by-creative";
 import { useLatestFeedbackByCreative } from "@/hooks/use-latest-feedback-by-creative";
 import { useMyAgency } from "@/hooks/use-my-agency";
@@ -1359,6 +1360,7 @@ export function ProjectCalendarTable({
                               return (
                                 <td
                                   key={key}
+                                  className={art ? "artcell-td" : undefined}
                                   onMouseEnter={art ? (e) => handleEnter(c, e.currentTarget) : undefined}
                                   onMouseLeave={art ? scheduleHide : undefined}
                                 >
@@ -1382,7 +1384,7 @@ export function ProjectCalendarTable({
                                         onToggle={() => toggleRow(c.id)}
                                         after={<EditContent onFill={fill(c, "imageOnText").onFill} label="Text on Image" />}
                                       >
-                                        {lines.join(" · ")}
+                                        <SlideTextCell texts={c.slide_text ?? []} multi={(c.slide_count ?? 0) > 1 || (c.slide_text ?? []).filter((t) => t.trim()).length > 1} />
                                       </ClampText>
                                     </span>
                                   ) : (

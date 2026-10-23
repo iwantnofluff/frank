@@ -5,24 +5,23 @@ import type { ThumbnailAsset } from "@/hooks/use-thumbnails";
 import { useArtworkUrl } from "@/hooks/use-asset-signed-url";
 
 // The table's Creative cell (direct instruction): a small phone with the
-// post's thumbnail (phase118) or its first image, the file name under it,
-// no taller than the row already is; hovering opens the larger preview.
-// A video without a thumbnail shows a play mark rather than loading the
-// video for every row.
+// post's thumbnail (phase118) or its artwork, a video's first frame, at
+// half the row's height and laid over the cell so the row is never taller
+// for it; the file name under it; hovering opens the larger preview.
 export function ArtworkCell({ artwork, thumbnail }: { artwork: PostArtwork; thumbnail?: ThumbnailAsset }) {
-  const image = thumbnail ?? (artwork.first.mime_type.startsWith("image/") ? artwork.first : null);
-  const { data: url } = useArtworkUrl(image?.storage_key);
+  const shown = thumbnail ?? artwork.first;
+  const video = !thumbnail && artwork.first.mime_type.startsWith("video/");
+  const { data: url } = useArtworkUrl(shown.storage_key);
   return (
     <span className="artcell">
       <span className="artmini" aria-hidden="true">
-        {image && url ? (
-          // eslint-disable-next-line @next/next/no-img-element -- a short-lived signed URL
-          <img src={url} alt="" />
-        ) : !image ? (
-          <svg viewBox="0 0 24 24">
-            <path d="M8 5v14l11-7z" />
-          </svg>
-        ) : null}
+        {url &&
+          (video ? (
+            <video src={`${url}#t=0.1`} muted playsInline preload="metadata" />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element -- a short-lived signed URL
+            <img src={url} alt="" />
+          ))}
       </span>
       <span className="artname">
         <span className="artname-f">{artwork.names[0]}</span>

@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.51.1",
+    date: "2026-10-23",
+    title: "A clearer Creative column and Text on Image",
+    changes: [
+      "The table's Creative column shows the artwork itself in its small phone, a video's first frame included, at half the row's height, still without making any row taller.",
+      "On a post with several slides, the table's Text on Image puts each slide's words under its own heading: Slide 1, Slide 2 and so on.",
+    ],
+  },
+  {
     version: "1.51.0",
     date: "2026-10-23",
     title: "Thumbnails for video posts",

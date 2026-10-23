@@ -12066,38 +12066,44 @@ button.sortbtn:hover {
 }
 
 /* The table's Creative cell (direct instruction): a small phone with the
-   thumbnail or first image, the file name under it. Kept short (32px) so
-   the row is no taller than its other cells make it. */
-.artcell {
+   thumbnail or the artwork at half the row's height, the file name under
+   it. Laid over the cell, so whatever the row's other cells make its
+   height, this never adds to it. */
+.tbl td.artcell-td {
+  position: relative;
+  min-width: 120px;
+}
+.artcell-td .artcell {
+  position: absolute;
+  inset: var(--d-cell-y) var(--d-cell-x);
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
+  align-items: flex-start;
   min-width: 0;
 }
 .artmini {
-  width: 18px;
-  height: 32px;
+  height: 50%;
+  min-height: 26px;
+  aspect-ratio: 9 / 16;
   border: 1.5px solid var(--ink);
   border-radius: 4px;
   overflow: hidden;
   background: var(--canvas);
-  display: grid;
-  place-items: center;
   flex-shrink: 0;
 }
-.artmini img {
+.artmini img,
+.artmini video {
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-.artmini svg {
-  width: 12px;
-  height: 12px;
-  fill: var(--muted);
+  display: block;
 }
 .artcell .artname {
   font-size: 12.2px;
-  line-height: 1.2;
+  line-height: 1.25;
+  white-space: normal;
+  overflow: hidden;
 }
 
 /* A video's thumbnail beside the phone on its page (phase118): a small
@@ -12158,4 +12164,12 @@ button.sortbtn:hover {
 }
 .rthumb-t {
   color: var(--muted);
+}
+/* Text on Image's slides (SlideTextCell): each slide a block, its heading
+   a little apart from the slide before. */
+.ntext > span {
+  display: block;
+}
+.ntext > span + span .nt-h {
+  margin-top: 8px;
 }

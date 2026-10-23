@@ -34,6 +34,7 @@ import { useMyAgency } from "@/hooks/use-my-agency";
 import { useArtworkByCreative } from "@/hooks/use-artwork-by-creative";
 import { useThumbnailsByCreative } from "@/hooks/use-thumbnails";
 import { ArtworkCell } from "@/components/project/ArtworkCell";
+import { SlideTextCell } from "@/components/project/SlideTextCell";
 import { useCopyVersionsByCreative } from "@/hooks/use-copy-versions-by-creative";
 import { VersionedTextCell } from "@/components/project/VersionedTextCell";
 import { copySummary, expectedContent, formatsLabel, postFormats } from "@/lib/formats";
@@ -1258,6 +1259,7 @@ export function ContinuousCalendarTable({
                               return (
                                 <td
                                   key={key}
+                                  className={art ? "artcell-td" : undefined}
                                   onMouseEnter={art ? (e) => handleEnter(c, e.currentTarget) : undefined}
                                   onMouseLeave={art ? scheduleHide : undefined}
                                 >
@@ -1281,7 +1283,7 @@ export function ContinuousCalendarTable({
                                         onToggle={() => toggleRow(c.id)}
                                         after={<EditContent onFill={fill(c, "imageOnText").onFill} label="Text on Image" />}
                                       >
-                                        {lines.join("\n")}
+                                        <SlideTextCell texts={c.slide_text ?? []} multi={(c.slide_count ?? 0) > 1 || (c.slide_text ?? []).filter((t) => t.trim()).length > 1} />
                                       </ClampText>
                                     </span>
                                   ) : (
