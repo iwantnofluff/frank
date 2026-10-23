@@ -12064,3 +12064,98 @@ button.sortbtn:hover {
 .nt-slides .nt-p + .nt-p {
   margin-top: 6px;
 }
+
+/* The table's Creative cell (direct instruction): a small phone with the
+   thumbnail or first image, the file name under it. Kept short (32px) so
+   the row is no taller than its other cells make it. */
+.artcell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.artmini {
+  width: 18px;
+  height: 32px;
+  border: 1.5px solid var(--ink);
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--canvas);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.artmini img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.artmini svg {
+  width: 12px;
+  height: 12px;
+  fill: var(--muted);
+}
+.artcell .artname {
+  font-size: 12.2px;
+  line-height: 1.2;
+}
+
+/* A video's thumbnail beside the phone on its page (phase118): a small
+   card off the phone's lower right, out of the column's flow so the phone
+   keeps its size. */
+.pnav-mid {
+  position: relative;
+}
+.pthumb {
+  position: absolute;
+  left: calc(100% + 18px);
+  bottom: 0;
+  width: 104px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12.2px;
+}
+.pthumb figcaption {
+  font-weight: 600;
+}
+.pthumb-img {
+  display: block;
+  width: 100%;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--canvas);
+}
+.pthumb-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.pthumb-t {
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+/* A video's thumbnail on a review link (phase118), after the caption. */
+.rthumb {
+  margin: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12.2px;
+}
+.rthumb figcaption {
+  font-weight: 600;
+}
+.rthumb img {
+  width: 120px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  display: block;
+}
+.rthumb-t {
+  color: var(--muted);
+}

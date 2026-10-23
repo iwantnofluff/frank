@@ -10,6 +10,7 @@ import { CommentWhen } from "@/components/creative-review/CommentWhen";
 import { CommentJump, useSwipe } from "./mobile-gestures";
 import { copySummaryParts, formatsLabel, postFormats } from "@/lib/formats";
 import { ReviewMedia } from "./ReviewMedia";
+import { ReviewThumbnail } from "./ReviewThumbnail";
 import { MomentBadge } from "./MomentBadge";
 import { SharedCommentText } from "./SharedCommentText";
 import { GuestComposer } from "./GuestComposer";
@@ -213,6 +214,7 @@ export function MobileReview({
                     <CopyFieldsPreview fields={active.copy.fields} formatIds={postFormats(active)} />
                   </div>
                 ) : null}
+                <ReviewThumbnail creative={active} />
               </div>
               </>
             )}

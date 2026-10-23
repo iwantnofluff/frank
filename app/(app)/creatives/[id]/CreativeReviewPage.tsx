@@ -9,7 +9,7 @@ import { dayMonth, ARTWORK_KEEP_DAYS } from "@/lib/artwork-removal";
 import { useClientPreferences } from "@/hooks/use-client-preferences";
 import { useLiveUpdates } from "@/hooks/use-live-updates";
 import { useClientLogoUrl } from "@/hooks/use-client-logo-url";
-import { aspectRatioCss, copySummaryParts, formatRatio, isReelFormat, isStoryFormat, postFormats } from "@/lib/formats";
+import { aspectRatioCss, copySummaryParts, formatRatio, hasVideoFormat, isReelFormat, isStoryFormat, postFormats } from "@/lib/formats";
 import { CopyFieldsPreview } from "@/components/creative-review/CopyFieldsPreview";
 import { useCopyVersions } from "@/hooks/use-copy-versions";
 import { useArtworkUrl, usePreloadAssets } from "@/hooks/use-asset-signed-url";
@@ -35,6 +35,7 @@ import { type ReviewSection } from "@/components/creative-review/ReviewNav";
 import { SectionRail } from "@/components/creative-review/SectionRail";
 import { FeedPreviewGrid } from "@/components/creative-review/FeedPreviewGrid";
 import { PhoneFrame } from "@/components/creative-review/PhoneFrame";
+import { PostThumbnail } from "@/components/creative-review/PostThumbnail";
 import { PNAV_CURRENT_H, PostNeighbours } from "@/components/creative-review/PostNeighbours";
 import { StoryReplyBar } from "@/components/creative-review/StoryReplyBar";
 import { useClientInstagramFeed } from "@/hooks/use-instagram";
@@ -774,6 +775,10 @@ export function CreativeReviewPage({ id }: { id: string }) {
               </div>
               </div>
               </PhoneFrame>
+              {/* A video's thumbnail beside the phone (phase118). */}
+              {hasVideoFormat(postFormats(creative)) && (
+                <PostThumbnail creativeId={creative.id} aspectRatio={aspectRatioCss(creative.format)} text={creative.thumbnail_text} />
+              )}
               </PostNeighbours>
             )}
             {activeSection === "checks" && (

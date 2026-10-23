@@ -12,6 +12,7 @@ import { reviewGroup } from "./review-group";
 import { ReviewNav, type ReviewSection } from "@/components/creative-review/ReviewNav";
 import { copySummaryParts, formatsLabel, postFormats, isStoryFormat } from "@/lib/formats";
 import { ReviewMedia } from "./ReviewMedia";
+import { ReviewThumbnail } from "./ReviewThumbnail";
 import { MomentBadge } from "./MomentBadge";
 import { SharedCommentText } from "./SharedCommentText";
 import { GuestComposer } from "./GuestComposer";
@@ -212,6 +213,7 @@ export function DesktopReview({
                         <CopyFieldsPreview fields={active.copy.fields} formatIds={postFormats(active)} />
                       </div>
                     ) : null}
+                    <ReviewThumbnail creative={active} />
                   </div>
                 </div>
               </PhoneFrame>

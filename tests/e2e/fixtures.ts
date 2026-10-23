@@ -417,6 +417,8 @@ export const test = base.extend<{ frank: Frank }>({
       ["copy_versions", () => admin.from("copy_versions").delete().eq("agency_id", agency.id)],
       ["creative_version_slides", () => admin.from("creative_version_slides").delete().eq("agency_id", agency.id)],
       ["creative_versions", () => admin.from("creative_versions").delete().eq("agency_id", agency.id)],
+      // phase118: a video's thumbnails (before assets).
+      ["thumbnail_versions", () => admin.from("thumbnail_versions").delete().eq("agency_id", agency.id)],
       // phase52: Claude conversations about a post's copy (cascade with it,
       // swept by name so a failure says so).
       ["designer_notes", () => admin.from("designer_notes").delete().eq("agency_id", agency.id)],

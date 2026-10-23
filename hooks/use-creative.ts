@@ -26,6 +26,8 @@ export interface CreativeRow {
   slide_count: number | null; // carousels only (phase31)
   // Text on Image, one entry per slide (phase57: on the post, not versions).
   slide_text: string[];
+  // The words on a video's thumbnail (phase118).
+  thumbnail_text?: string | null;
   // A video post's VO script (phase88).
   voiceover: string | null;
   approach_notes: string[] | null;

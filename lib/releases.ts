@@ -13,6 +13,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.51.0",
+    date: "2026-10-23",
+    title: "Thumbnails for video posts",
+    changes: [
+      "A video post's Content tab has a Thumbnail section after Creative: drop in the cover image and save it as V1, V2 and so on, with Thumbnail Text on Image under it for the words on it. Saving a thumbnail doesn't move the post's stage.",
+      "The table's Creative column shows the artwork in a small phone with the file name under it, a video's thumbnail when it has one, without making the row any taller. Hovering shows it larger, the thumbnail in place of the video.",
+      "Your client sees a video's thumbnail and its words beside the phone on the post, and after the caption on review links.",
+      "Thumbnails are removed with the artwork after a post goes live, as each client is set.",
+    ],
+  },
+  {
     version: "1.50.1",
     date: "2026-10-23",
     title: "Read more on every Notes for Designer",

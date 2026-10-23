@@ -1,5 +1,6 @@
 "use client";
 
+import { useThumbnailVersions } from "@/hooks/use-thumbnails";
 import { useRef } from "react";
 import { useCopyVersions } from "@/hooks/use-copy-versions";
 import { useViewportFit } from "@/hooks/use-viewport-fit";
@@ -53,7 +54,11 @@ export function CreativePreviewPopover({
   const { data: project } = useProject(projectId);
   const clientLogoUrl = useClientLogoUrl(project?.client_id);
   const { data: versions, isPending: versionsPending } = useCreativeVersions(creative.id);
-  const art = versionSlides(versions?.[0])[0]?.asset ?? null;
+  // A video's thumbnail shows instead of the video, when it has one
+  // (phase118, decided directly).
+  const { data: thumbnails } = useThumbnailVersions(creative.id);
+  const thumb = thumbnails?.find((t) => t.asset)?.asset ?? null;
+  const art = thumb ?? versionSlides(versions?.[0])[0]?.asset ?? null;
   const { data: artUrl } = useArtworkUrl(art?.storage_key);
   const { data: comments } = useComments(creative.id);
 
@@ -141,7 +146,12 @@ export function CreativePreviewPopover({
           />
         ) : art && artUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
-          <img src={artUrl} alt={creative.name} />
+          <img
+            src={artUrl}
+            alt={creative.name}
+            // A thumbnail in the video's shape.
+            style={thumb ? { aspectRatio: aspectRatioCss(creative.format), objectFit: "cover" } : undefined}
+          />
         ) : art || versionsPending ? (
           <div className="pp-loading" style={{ aspectRatio: aspectRatioCss(creative.format) }} />
         ) : (

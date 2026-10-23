@@ -26,6 +26,9 @@ export interface SharedCreative {
   approved_at: string | null;
   // A continuous project's Live Date (the list's date after the name).
   due_on?: string | null;
+  // A video's latest thumbnail, and the words on it (phase118).
+  thumbnail?: { version_no: number; filename: string; signed_url: string | null } | null;
+  thumbnail_text?: string | null;
   asset: {
     version_no: number;
     mime_type: string;
@@ -166,6 +169,10 @@ function keepSignedUrls(prev: SharedReviewResult | undefined, next: SharedReview
           const old = was.slides.find((o) => o.position === s.position && o.filename === s.filename);
           return old ? { ...s, signed_url: reuse(old.signed_url, s.signed_url) } : s;
         }),
+        thumbnail:
+          c.thumbnail && was.thumbnail && was.thumbnail.version_no === c.thumbnail.version_no
+            ? { ...c.thumbnail, signed_url: reuse(was.thumbnail.signed_url, c.thumbnail.signed_url) }
+            : c.thumbnail,
       };
     }),
   };

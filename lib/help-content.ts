@@ -321,6 +321,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         kind: "list",
         items: [
           "Creative: one slot per slide, or one for a single image or video, up to 300MB a file. A file dropped in isn't added until you press Save Creative V1 (then V2 and so on); closing first asks if you're sure.",
+          "Thumbnail, for a video post: the cover the platform shows before the video plays, straight after the Creative. Drop or choose a JPG, PNG or WebP and press Save Thumbnail V1, then V2 and so on; earlier ones stay in their tabs. Saving one doesn't move the post's stage. Under it, Thumbnail Text on Image: the words on the cover, saved on the post. Your client sees the thumbnail beside the video, on the post and on review links.",
           "VO, for a video post (a Reel, Story, YouTube or other video format): the voiceover script, after the artwork, saved with Save VO. Like Text on Image, it stays with the post rather than becoming a version, and only your team sees it.",
           "Text on Image: the words on each slide, saved with Save Text on Image. It stays with the post rather than becoming a version.",
           "Copy: the caption and anything else the formats need. Save Copy V1 for the first version. After that, Save to the current version (Save to V1, say) puts your changes into it, offered only while nobody has commented on it, and Save as the next (Save as V2) makes a new one. Each is greyed until there's a change to save.\n\nCopy Caption, under the caption, copies it with its line breaks and paragraphs, ready to paste into Instagram or another platform.",
@@ -338,7 +339,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         kind: "list",
         items: [
           "Nothing is typed straight into a cell. Each cell has its own Edit button, or Add when it's empty (Add Date, Add Team, Add Notes…), with an arrow, which opens the post's window at that field.",
-          "Hover a Creative to see it larger.",
+          "The Creative column shows the latest artwork in a small phone with its file name under it (a video's thumbnail if it has one); hover it to see it larger, a video's thumbnail in place of the video.",
           "Client Feedback shows the latest open comment from the client, with their name above it. Your team's own comments stay on the post's page.",
         ],
       },

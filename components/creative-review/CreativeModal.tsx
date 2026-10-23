@@ -59,6 +59,7 @@ import {
   type KnownNotes,
 } from "@/hooks/use-designer-notes";
 import { NotesText } from "@/components/creative-review/NotesText";
+import { ThumbnailSection } from "@/components/creative-review/ThumbnailSection";
 import { copyCaption } from "@/lib/copy-text";
 import { ListEditor } from "@/components/ui/ListEditor";
 import { linkHref, tidyReferences } from "@/lib/links";
@@ -1999,6 +2000,18 @@ export function CreativeModal(props: CreativeModalProps) {
             <UploadProgressBar progress={uploadProgress} versionNo={nextCreativeVersionNo} />
           )}
           {artworkError && !uploadCarousel.isPending && <p className="autherr">{artworkError}</p>}
+
+          {/* A video's Thumbnail and its words (phase118, direct
+              instruction), after the Creative. */}
+          {isVideo && creativeId && agencyId && (
+            <ThumbnailSection
+              creativeId={creativeId}
+              agencyId={agencyId}
+              projectId={projectId}
+              aspectRatio={aspectRatioCss(format)}
+              savedText={isCreate ? "" : (props.creative.thumbnail_text ?? "")}
+            />
+          )}
 
           {/* A video's VO script (phase88, direct instruction): its own
               section after the Creative, laid out as Text on Image below

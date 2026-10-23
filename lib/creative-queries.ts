@@ -4,7 +4,7 @@
 // can call it.
 
 export const CREATIVE_SELECT =
-  "id, agency_id, project_id, name, format, stage, exception, lead_user_id, team_user_ids, scheduled_at, formats, destination, due_on, concept, reference_url, reference_urls, slide_count, slide_text, voiceover, approach_notes, artwork_removed_at, cx, updated_at, updated_by, projects(id, name, delivery, client_id, clients(name))";
+  "id, agency_id, project_id, name, format, stage, exception, lead_user_id, team_user_ids, scheduled_at, formats, destination, due_on, concept, reference_url, reference_urls, slide_count, slide_text, thumbnail_text, voiceover, approach_notes, artwork_removed_at, cx, updated_at, updated_by, projects(id, name, delivery, client_id, clients(name))";
 
 export const CREATIVE_VERSIONS_SELECT =
   "id, version_no, note, created_at, asset:assets(id, storage_key, filename, mime_type), slides:creative_version_slides(position, asset:assets(id, storage_key, filename, mime_type))";

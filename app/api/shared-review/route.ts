@@ -128,7 +128,7 @@ export async function POST(request: Request) {
         // Looked up for exactly the creatives that function just returned
         // for this validated token, nothing wider.
         ids.length
-          ? serviceRole.from("creatives").select("id, formats, slide_count, artwork_removed_at, due_on").in("id", ids).then((r) => r.data ?? [])
+          ? serviceRole.from("creatives").select("id, formats, slide_count, artwork_removed_at, due_on, thumbnail_text").in("id", ids).then((r) => r.data ?? [])
           : [],
         // Each comment's anchor — get_shared_review returns only the text —
         // so a comment made at a moment in a video can show, and jump to,
@@ -188,8 +188,10 @@ export async function POST(request: Request) {
   const slideCountById = new Map<string, number | null>();
   const removedById = new Map<string, string | null>();
   const dueOnById = new Map<string, string | null>();
+  const thumbTextById = new Map<string, string | null>();
   for (const r of creativeRows) {
     dueOnById.set(r.id, r.due_on);
+    thumbTextById.set(r.id, (r as { thumbnail_text?: string | null }).thumbnail_text ?? null);
     formatsById.set(r.id, r.formats);
     slideCountById.set(r.id, r.slide_count);
     removedById.set(r.id, r.artwork_removed_at);
@@ -240,6 +242,24 @@ export async function POST(request: Request) {
         }[])
       : [];
 
+  // A video's latest thumbnail with a file (phase118): the client sees it
+  // beside the video.
+  const thumbRows =
+    serviceRole && creatives.length
+      ? (((
+          await serviceRole
+            .from("thumbnail_versions")
+            .select("creative_id, version_no, asset:assets(storage_key, filename)")
+            .in("creative_id", creatives.map((c) => c.id))
+            .not("asset_id", "is", null)
+            .order("version_no", { ascending: false })
+        ).data ?? []) as unknown as { creative_id: string; version_no: number; asset: { storage_key: string; filename: string } | null }[])
+      : [];
+  const thumbById = new Map<string, { version_no: number; storage_key: string; filename: string }>();
+  for (const t of thumbRows) {
+    if (t.asset && !thumbById.has(t.creative_id)) thumbById.set(t.creative_id, { version_no: t.version_no, ...t.asset });
+  }
+
   // Every file the page shows — each post's artwork, each slide, and the two
   // logos — signed in one request rather than one at a time. Signed here
   // because a visitor has no session to read storage with.
@@ -249,6 +269,7 @@ export async function POST(request: Request) {
   for (const c of creatives)
     if (c.asset?.storage_key && !emptied.has(c.id)) keys.add(c.asset.storage_key).add(previewKey(c.asset.storage_key));
   for (const r of slideRows) if (r.asset) keys.add(r.asset.storage_key).add(previewKey(r.asset.storage_key));
+  for (const t of thumbById.values()) keys.add(t.storage_key).add(previewKey(t.storage_key));
   if (settings?.logo_asset) keys.add(settings.logo_asset.storage_key);
   if (clientLogo) keys.add(clientLogo.storage_key);
   const signedByKey = new Map<string, string>();
@@ -282,6 +303,12 @@ export async function POST(request: Request) {
       // A continuous project's Live Date, for the date after the post's
       // name in the list (scheduled_at comes from get_shared_review).
       due_on: dueOnById.get(raw.id) ?? null,
+      // A video's thumbnail and its words (phase118); no storage key leaves.
+      thumbnail: (() => {
+        const t = thumbById.get(raw.id);
+        return t ? { version_no: t.version_no, filename: t.filename, signed_url: artworkUrl(t.storage_key) } : null;
+      })(),
+      thumbnail_text: thumbTextById.get(raw.id) ?? null,
       comments: raw.comments.map((m) => ({
         ...m,
         anchor: anchorById.get(m.id) ?? null,

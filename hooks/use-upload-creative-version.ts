@@ -78,7 +78,7 @@ function probeImageDimensions(file: File): Promise<{ width: number; height: numb
 type Supabase = ReturnType<typeof createClient>;
 
 // Puts one file in storage and records it as an asset; returns the asset id.
-async function uploadAsset(
+export async function uploadAsset(
   supabase: Supabase,
   agencyId: string,
   creativeId: string,

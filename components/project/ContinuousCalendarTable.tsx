@@ -32,6 +32,8 @@ import { errorMessage } from "@/lib/errors";
 import { getMonthWeeks, getWeekDays, isoWeekNumber, dateKey } from "@/lib/calendar-weeks";
 import { useMyAgency } from "@/hooks/use-my-agency";
 import { useArtworkByCreative } from "@/hooks/use-artwork-by-creative";
+import { useThumbnailsByCreative } from "@/hooks/use-thumbnails";
+import { ArtworkCell } from "@/components/project/ArtworkCell";
 import { useCopyVersionsByCreative } from "@/hooks/use-copy-versions-by-creative";
 import { VersionedTextCell } from "@/components/project/VersionedTextCell";
 import { copySummary, expectedContent, formatsLabel, postFormats } from "@/lib/formats";
@@ -526,6 +528,7 @@ export function ContinuousCalendarTable({
   const toggleRow = (id: string) => setExpandedRow((r) => (r === id ? null : id));
   const { data: copyVersionsByCreative } = useCopyVersionsByCreative(creativeIds);
   const { data: artworkByCreative } = useArtworkByCreative(creativeIds);
+  const { data: thumbnailsByCreative } = useThumbnailsByCreative(creativeIds);
   // A post's date changed from the table (direct instruction): its date
   // or time a button for the team, opening the pickers right there.
   const [datePick, setDatePick] = useState<{ c: CreativeListRow; rect: DOMRect; focus: "date" | "time" } | null>(null);
@@ -1249,19 +1252,17 @@ export function ContinuousCalendarTable({
                               );
                             }
                             case "artwork": {
-                              // The latest version's file names; a carousel's first, then a count.
-                              const names = artworkByCreative?.[c.id] ?? [];
+                              // The latest version in a small phone, the thumbnail
+                              // first (phase118), its file name under it.
+                              const art = artworkByCreative?.[c.id];
                               return (
                                 <td
                                   key={key}
-                                  onMouseEnter={names.length ? (e) => handleEnter(c, e.currentTarget) : undefined}
-                                  onMouseLeave={names.length ? scheduleHide : undefined}
+                                  onMouseEnter={art ? (e) => handleEnter(c, e.currentTarget) : undefined}
+                                  onMouseLeave={art ? scheduleHide : undefined}
                                 >
-                                  {names.length ? (
-                                    <span className="artname">
-                                      <span className="artname-f">{names[0]}</span>
-                                      {names.length > 1 && <span className="tdim">+{names.length - 1}</span>}
-                                    </span>
+                                  {art ? (
+                                    <ArtworkCell artwork={art} thumbnail={thumbnailsByCreative?.[c.id]} />
                                   ) : (
                                     <MissingContent expected={!c.artwork_removed_at} {...fill(c, "artwork")} />
                                   )}
