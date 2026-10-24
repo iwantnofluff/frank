@@ -63,15 +63,15 @@ test("a Reel's thumbnail saves as versions with its words, shows in the table an
   await expect(page.locator(".phonepop .pp-media img")).toBeVisible({ timeout: 15_000 });
   await expect(page.locator(".phonepop .pp-media video")).toHaveCount(0);
 
-  // The client, on the post's page, sees it with its words.
+  // The client, on the post's page, sees it.
   const ctx = await browser.newContext();
   const clientPage = await ctx.newPage();
   await admin.from("creatives").update({ stage: 4 }).eq("id", frank.creativeId);
   await frank.loginAsClient(clientPage);
   await clientPage.goto(`/creatives/${frank.creativeId}`);
-  await expect(clientPage.locator(".pthumb")).toContainText("Thumbnail", { timeout: 15_000 });
-  await expect(clientPage.locator(".pthumb")).toContainText("WATCH TILL THE END");
-  await expect(clientPage.locator(".pthumb img")).toBeVisible();
+  // As the video's cover in the phone, and its version beside Creative's.
+  await expect(clientPage.getByLabel("Thumbnail")).toHaveValue(/.+/, { timeout: 15_000 });
+  await expect(clientPage.locator("#vThumb option")).toHaveText(["V2", "V1"]);
   await ctx.close();
 });
 

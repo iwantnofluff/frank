@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.52.3",
+    date: "2026-10-24",
+    title: "The thumbnail on the phone",
+    changes: [
+      "On a video post's page, the thumbnail is the video's cover in the phone until it plays, as the platform shows it, rather than a small card beside the phone.",
+      "Its versions are picked on the right, between Creative and Copy: Creative, Thumbnail, Copy.",
+    ],
+  },
+  {
     version: "1.52.2",
     date: "2026-10-24",
     title: "Add Thumbnail where the other buttons are, and deleted feedback gone",

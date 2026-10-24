@@ -31,6 +31,7 @@ export function VideoPlayer({
   overlay,
   ratio,
   expandable = false,
+  cover,
 }: {
   // Not yet known while the file's address is fetched: the player is
   // drawn at its size anyway, so nothing moves when the video arrives.
@@ -50,6 +51,9 @@ export function VideoPlayer({
   // (direct instruction: no jump to the real height). The video's own
   // takes over once known, if different.
   ratio: number;
+  // A video's thumbnail (phase118, direct instruction): shown over the
+  // frame, as the platform shows a cover, until it's first played.
+  cover?: string | null;
   // A Reel's (direct instruction): a button over the frame's top right
   // that fills the phone's screen with it, as the app does — the phone's,
   // not the computer's (direct instruction).
@@ -62,6 +66,14 @@ export function VideoPlayer({
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [paused, setPaused] = useState(true);
+  // Once played, or taken to a comment's moment, the video itself, not the
+  // cover. (Not on its time: the first frame is drawn at 0.001s.)
+  const [started, setStarted] = useState(false);
+  const [seekSeen, setSeekSeen] = useState(seek?.nonce ?? null);
+  if (seek && seek.nonce !== seekSeen) {
+    setSeekSeen(seek.nonce);
+    setStarted(true);
+  }
   // The marker whose card is showing (hovered or focused).
   const [peek, setPeek] = useState<string | null>(null);
 
@@ -160,10 +172,17 @@ export function VideoPlayer({
           }}
           onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
           onSeeked={(e) => setTime(e.currentTarget.currentTime)}
-          onPlay={() => setPaused(false)}
+          onPlay={() => {
+            setPaused(false);
+            setStarted(true);
+          }}
           onPause={() => setPaused(true)}
           onEnded={() => setPaused(true)}
         />
+        {cover && !started && (
+          // eslint-disable-next-line @next/next/no-img-element -- a short-lived signed URL
+          <img className="vcover" src={cover} alt="" aria-hidden="true" />
+        )}
         {overlay?.(time, paused)}
       </div>
       <div className="vbar">

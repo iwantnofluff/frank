@@ -35,7 +35,7 @@ import { type ReviewSection } from "@/components/creative-review/ReviewNav";
 import { SectionRail } from "@/components/creative-review/SectionRail";
 import { FeedPreviewGrid } from "@/components/creative-review/FeedPreviewGrid";
 import { PhoneFrame } from "@/components/creative-review/PhoneFrame";
-import { PostThumbnail } from "@/components/creative-review/PostThumbnail";
+import { useThumbnailVersions } from "@/hooks/use-thumbnails";
 import { PNAV_CURRENT_H, PostNeighbours } from "@/components/creative-review/PostNeighbours";
 import { StoryReplyBar } from "@/components/creative-review/StoryReplyBar";
 import { useClientInstagramFeed } from "@/hooks/use-instagram";
@@ -96,6 +96,13 @@ export function CreativeReviewPage({ id }: { id: string }) {
   // Draft from Brief entry points with one window — this just remembers
   // which tab it should open on for whichever button was clicked.
   const [creativeModalTab, setCreativeModalTab] = useState<"brief" | "upload" | null>(null);
+  // A video's thumbnail (phase118): the version picked, else the latest
+  // with a file, shown as the video's cover.
+  const { data: thumbnailVersions } = useThumbnailVersions(id);
+  const [thumbnailId, setThumbnailId] = useState<string | null>(null);
+  const activeThumbnail =
+    thumbnailVersions?.find((v) => v.id === thumbnailId) ?? thumbnailVersions?.find((v) => v.asset) ?? null;
+  const { data: thumbnailUrl } = useArtworkUrl(activeThumbnail?.asset?.storage_key);
   // A tip's See it in Action (lib/tips.ts): ?edit=upload opens the Edit
   // window at Content, for the team, once.
   const askedEdit = useSearchParams().get("edit");
@@ -290,6 +297,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
   }
 
   const clientName = creative.projects?.clients?.name ?? "This client";
+  const isVideoPost = hasVideoFormat(postFormats(creative));
   const accountName = igProfile?.username ?? clientName;
   const caption = activeCopyVersion?.fields?.caption;
   const isVideo = currentSlide?.asset.mime_type.startsWith("video/");
@@ -499,6 +507,21 @@ export function CreativeReviewPage({ id }: { id: string }) {
                   )}
                 </select>
               </div>
+              {/* A video's thumbnail versions (phase118, direct instruction),
+                  between Creative and Copy; the chosen one is the video's
+                  cover in the phone. */}
+              {isVideoPost && !!thumbnailVersions?.length && (
+                <div className="vsel">
+                  <label htmlFor="vThumb">Thumbnail</label>
+                  <select id="vThumb" value={activeThumbnail?.id ?? ""} onChange={(e) => setThumbnailId(e.target.value)}>
+                    {thumbnailVersions.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        V{v.versionNo}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="vsel">
                 <label htmlFor="vCopy">Copy</label>
                 <select
@@ -633,6 +656,8 @@ export function CreativeReviewPage({ id }: { id: string }) {
                       // Each video slide is its own player, from 0:00.
                       key={slidePosition}
                       src={signedUrl ?? undefined}
+                      // The post's thumbnail as its cover, on its first frame.
+                      cover={slidePosition === 1 ? (thumbnailUrl ?? null) : null}
                       ratio={formatRatio(creative.format)}
                       expandable={isReelFormat(creative.format)}
                       markers={videoMarkers}
@@ -775,10 +800,6 @@ export function CreativeReviewPage({ id }: { id: string }) {
               </div>
               </div>
               </PhoneFrame>
-              {/* A video's thumbnail beside the phone (phase118). */}
-              {hasVideoFormat(postFormats(creative)) && (
-                <PostThumbnail creativeId={creative.id} aspectRatio={aspectRatioCss(creative.format)} text={creative.thumbnail_text} />
-              )}
               </PostNeighbours>
             )}
             {activeSection === "checks" && (
