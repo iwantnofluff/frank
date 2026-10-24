@@ -64,6 +64,8 @@ export function useToggleCommentResolved(creativeId: string) {
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ["comments", creativeId] });
+      // Client Feedback shows only what's still open.
+      void queryClient.invalidateQueries({ queryKey: ["latest-feedback-by-creative"] });
     },
   });
 }

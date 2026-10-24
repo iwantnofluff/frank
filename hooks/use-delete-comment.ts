@@ -24,6 +24,11 @@ export function useDeleteComment(creativeId: string) {
       if (error) throw error;
       if (!data?.some((row) => row.id === commentId)) throw new Error("Only Owners can delete a comment.");
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["comments", creativeId] }),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["comments", creativeId] }),
+        // The table's Client Feedback column, which showed it.
+        queryClient.invalidateQueries({ queryKey: ["latest-feedback-by-creative"] }),
+      ]),
   });
 }

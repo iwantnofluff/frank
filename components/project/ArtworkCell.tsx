@@ -15,7 +15,7 @@ export function ArtworkCell({
 }: {
   artwork: PostArtwork;
   thumbnail?: ThumbnailAsset;
-  // Beside the phone: a video's Add Thumbnail, while it has none.
+  // At the bottom left: a video's Add Thumbnail, while it has none.
   after?: React.ReactNode;
 }) {
   const shown = thumbnail ?? artwork.first;
@@ -23,22 +23,21 @@ export function ArtworkCell({
   const { data: url } = useArtworkUrl(shown.storage_key);
   return (
     <span className="artcell">
-      <span className="artcell-top">
-        <span className="artmini" aria-hidden="true">
-          {url &&
-            (video ? (
-              <video src={`${url}#t=0.1`} muted playsInline preload="metadata" />
-            ) : (
-              // eslint-disable-next-line @next/next/no-img-element -- a short-lived signed URL
-              <img src={url} alt="" />
-            ))}
-        </span>
-        {after}
+      <span className="artmini" aria-hidden="true">
+        {url &&
+          (video ? (
+            <video src={`${url}#t=0.1`} muted playsInline preload="metadata" />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element -- a short-lived signed URL
+            <img src={url} alt="" />
+          ))}
       </span>
       <span className="artname">
         <span className="artname-f">{artwork.names[0]}</span>
         {artwork.names.length > 1 && <span className="tdim">+{artwork.names.length - 1}</span>}
       </span>
+      {/* At the cell's bottom left, as the other columns' buttons are. */}
+      {after && <span className="artcell-after">{after}</span>}
     </span>
   );
 }

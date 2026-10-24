@@ -58,6 +58,8 @@ export function useRepeatIssueCount(
         .select("issue_category")
         .in("creative_id", creativeIds)
         .neq("issue_category", "no_issue")
+        // Deleted ones (phase97) don't count.
+        .is("deleted_at", null)
         .gte("created_at", since);
       if (commentsError) throw commentsError;
 

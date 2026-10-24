@@ -37,6 +37,8 @@ export function useToggleCommentVisibility(creativeId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["comments", creativeId] });
+      // Client Feedback shows only public comments.
+      queryClient.invalidateQueries({ queryKey: ["latest-feedback-by-creative"] });
     },
   });
 }

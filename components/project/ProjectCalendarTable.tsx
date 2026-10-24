@@ -1367,7 +1367,7 @@ export function ProjectCalendarTable({
                               return (
                                 <td
                                   key={key}
-                                  className={art ? "artcell-td" : undefined}
+                                  className={art ? `artcell-td${addThumb ? " has-after" : ""}` : undefined}
                                   onMouseEnter={art ? (e) => handleEnter(c, e.currentTarget) : undefined}
                                   onMouseLeave={art ? scheduleHide : undefined}
                                 >

@@ -23,6 +23,11 @@ export function useEditComment(creativeId: string) {
       if (error) throw error;
       if (!data) throw new Error("You can only edit your own comments.");
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["comments", creativeId] }),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["comments", creativeId] }),
+        // The table's Client Feedback column shows its words.
+        queryClient.invalidateQueries({ queryKey: ["latest-feedback-by-creative"] }),
+      ]),
   });
 }

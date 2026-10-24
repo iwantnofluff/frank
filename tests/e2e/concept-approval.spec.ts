@@ -69,3 +69,41 @@ test("a client approves a concept from the table, and it shows as their feedback
   const { data: cm } = await admin.from("comments").select("body, author_id").eq("creative_id", id);
   expect(cm).toEqual([{ body: "Client Approved Concept", author_id: client!.id }]);
 });
+
+test("a deleted client comment leaves the table's Client Feedback, without a reload", async ({ page, frank }) => {
+  test.setTimeout(120_000);
+  const id = await conceptPost(frank, "Feedback Then Deleted");
+  // The client's comment, from their own session (its author depends on who's calling).
+  const client = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { auth: { persistSession: false } });
+  await client.auth.signInWithPassword({ email: frank.clientEmail, password: frank.clientPassword });
+  const { data: me } = await client.auth.getUser();
+  const { data: cm, error } = await client
+    .from("comments")
+    .insert({ agency_id: frank.agencyId, creative_id: id, author_id: me.user!.id, body: "This is not good", visibility: "public" })
+    .select("id")
+    .single();
+  expect(error).toBeNull();
+  // Owners delete comments (phase97).
+  const { data: staff } = await admin.from("users").select("id").eq("email", frank.staffEmail).single();
+  await admin.from("memberships").update({ role: "owner" }).eq("user_id", staff!.id).eq("agency_id", frank.agencyId);
+
+  await frank.loginAsStaff(page);
+  await page.goto(`/projects/${frank.projectId}`);
+  await page.waitForSelector(".tblwrap, .empty", { timeout: 60_000 });
+  await goToMonth(page, "March 2027");
+  const row = page.locator("tr[data-row]", { hasText: "Feedback Then Deleted" });
+  await expect(row.locator(".feedback-note")).toContainText("This is not good", { timeout: 15_000 });
+
+  // Deleted on the post's page, then back to the table in the same visit.
+  await row.locator(".pname").first().click();
+  await page.waitForURL(/\/creatives\//, { timeout: 15_000 });
+  const card = page.locator(`#cmt-${cm!.id}`);
+  await card.getByRole("button", { name: "Delete comment" }).click({ timeout: 15_000 });
+  await page.getByRole("dialog").getByRole("button", { name: "Delete", exact: true }).click();
+  await expect(card).toHaveCount(0, { timeout: 15_000 });
+  await page.goBack();
+  await page.waitForSelector(".tblwrap, .empty", { timeout: 60_000 });
+  await goToMonth(page, "March 2027");
+  await expect(page.locator("tr[data-row]", { hasText: "Feedback Then Deleted" })).toBeVisible();
+  await expect(page.locator("tr[data-row]", { hasText: "Feedback Then Deleted" }).locator(".feedback-note")).toHaveCount(0, { timeout: 15_000 });
+});

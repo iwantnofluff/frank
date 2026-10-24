@@ -31,6 +31,8 @@ export function useLatestFeedbackByCreative(creativeIds: string[]) {
         .in("creative_id", creativeIds)
         .eq("visibility", "public")
         .is("resolved_at", null)
+        // Deleted ones (phase97) are marked, not removed: never feedback.
+        .is("deleted_at", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
 

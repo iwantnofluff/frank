@@ -124,6 +124,8 @@ export function useCreateComment(creativeId: string) {
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ["comments", creativeId] });
+      // The table's Client Feedback column, when it's the client's.
+      void queryClient.invalidateQueries({ queryKey: ["latest-feedback-by-creative"] });
     },
   });
 }

@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.52.2",
+    date: "2026-10-24",
+    title: "Add Thumbnail where the other buttons are, and deleted feedback gone",
+    changes: [
+      "In the table's Creative column, Add Thumbnail now sits at the bottom left of the cell, under the artwork and its name, as the other columns' buttons do.",
+      "A deleted comment no longer shows in the table's Client Feedback, and adding, editing, resolving or deleting a comment updates the column straight away.",
+      "Analytics' repeat issues no longer count deleted comments.",
+    ],
+  },
+  {
     version: "1.52.1",
     date: "2026-10-24",
     title: "Add Thumbnail in the table",

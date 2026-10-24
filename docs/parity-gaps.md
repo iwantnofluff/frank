@@ -4335,3 +4335,15 @@ Gap, deliberate for now: neither Draft with Frank reads the other tab's words. C
 Direct instruction: a Reel without a thumbnail gets the small blue Add Thumbnail (with arrow) in the table's Creative column, opening the post at the thumbnail. Shown for any video post (hasVideoFormat, as the Thumbnail section is) with no thumbnail and its artwork not removed, for the team only (a client sees neither it nor a Pending): beside the small phone when there's artwork, under Add Creative when there isn't. It opens the Edit window on Content, focused on the Thumbnail's add slot (a new "thumbnail" focus target), and goes once one is saved.
 
 **Verified**: screenshotted a Reel with a video and no thumbnail (the phone, Add Thumbnail beside it, the name under) and a Reel with nothing (Add Creative, Add Thumbnail under it); clicking it opened the window on Content with the Thumbnail's slot focused. New thumbnails.spec case: Add Thumbnail opens the slot; saved, it's gone; a client's table has no Add Thumbnail or Pending.
+
+## Add Thumbnail at the cell's bottom left (2026-10-24)
+
+Direct instruction: Add Thumbnail beside the phone wasn't placed as the other columns' buttons are (bottom left of the cell). It now comes after the phone and the file name, pushed to the cell's bottom (margin-top: auto in the laid-over cell); the phone gives up height first. A row with nothing else to make it tall gets 112px for that cell while Add Thumbnail shows (a cell's height is its least), so the button and a readable phone fit; taller rows are unchanged.
+
+**Verified**: screenshotted a tall row (148px: the phone, the name, Add Thumbnail at the bottom left, beside the other columns' buttons) and a short one (112px with the button, the phone still readable); row heights measured the same with and without the cell's contents.
+
+## Deleted comments out of Client Feedback (2026-10-24)
+
+Reported directly: a client's comment deleted on the post's page still showed in the table's Client Feedback. Deleted comments are marked (deleted_at, phase97), not removed, and the column's query didn't leave them out; nor did deleting, editing, resolving, adding a comment or changing its visibility refresh the column (only Approve Concept did). Now the query skips deleted comments and each of those refreshes it. Found while checking the other readers: Analytics' repeat issues counted deleted comments too, now not. The review link and the comments panel already left them out. A bell notification about a comment that was later deleted still shows; it records what happened, and was left as is.
+
+**Verified**: new concept-approval.spec case: a client's comment (from their own session) shows in the row's Client Feedback; an Owner deletes it on the post's page; back on the table in the same visit, the row has no feedback. The spec's other two cases pass.
