@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.52.1",
+    date: "2026-10-24",
+    title: "Add Thumbnail in the table",
+    changes: ["A video post with no thumbnail shows a small Add Thumbnail button in the table's Creative column, beside its artwork or under Add Creative, opening the post at the Thumbnail slot. For your team only."],
+  },
+  {
     version: "1.52.0",
     date: "2026-10-23",
     title: "A Production tab",

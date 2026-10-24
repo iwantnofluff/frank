@@ -30,7 +30,7 @@ import { SaveViewModal } from "@/components/project/SaveViewModal";
 import { PermanentDeleteConfirm } from "@/components/project/PermanentDeleteConfirm";
 import { bandOf, stageLabel, stageColor, exceptionLabel, STAGE_COUNT, IDEA, isIdea } from "@/lib/stage-labels";
 import { errorMessage } from "@/lib/errors";
-import { copySummary, expectedContent, formatsLabel, postFormats } from "@/lib/formats";
+import { copySummary, expectedContent, formatsLabel, postFormats, hasVideoFormat } from "@/lib/formats";
 import { EditContent, MissingContent } from "@/components/project/MissingContent";
 import { isOverdue } from "@/lib/post-live";
 import { EditPostWindow } from "@/components/project/EditPostWindow";
@@ -82,6 +82,7 @@ const ADD_LABELS: Partial<Record<FocusTarget, string>> = {
   slides: "Slides",
   voiceover: "VO",
   artwork: "Creative",
+  thumbnail: "Thumbnail",
   imageOnText: "Text on Image",
   copy: "Caption",
   alt: "Alt Text",
@@ -1355,8 +1356,14 @@ export function ProjectCalendarTable({
                             }
                             case "artwork": {
                               // The latest version in a small phone, the thumbnail
-                              // first (phase118), its file name under it.
+                              // first (phase118), its file name under it. A video
+                              // with no thumbnail yet: Add Thumbnail, for the team
+                              // (direct instruction).
                               const art = artworkByCreative?.[c.id];
+                              const addThumb =
+                                isStaff && hasVideoFormat(postFormats(c)) && !thumbnailsByCreative?.[c.id] && !c.artwork_removed_at ? (
+                                  <MissingContent expected {...fill(c, "thumbnail")} />
+                                ) : null;
                               return (
                                 <td
                                   key={key}
@@ -1365,9 +1372,12 @@ export function ProjectCalendarTable({
                                   onMouseLeave={art ? scheduleHide : undefined}
                                 >
                                   {art ? (
-                                    <ArtworkCell artwork={art} thumbnail={thumbnailsByCreative?.[c.id]} />
+                                    <ArtworkCell artwork={art} thumbnail={thumbnailsByCreative?.[c.id]} after={addThumb} />
                                   ) : (
-                                    <MissingContent expected={!c.artwork_removed_at} {...fill(c, "artwork")} />
+                                    <span className="artadds">
+                                      <MissingContent expected={!c.artwork_removed_at} {...fill(c, "artwork")} />
+                                      {addThumb}
+                                    </span>
                                   )}
                                 </td>
                               );

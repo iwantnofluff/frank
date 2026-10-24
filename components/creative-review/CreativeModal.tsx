@@ -108,6 +108,8 @@ export type FocusTarget =
   | "slides"
   | "voiceover"
   | "artwork"
+  // A video's Thumbnail slot (phase118), from the table's Add Thumbnail.
+  | "thumbnail"
   | "imageOnText"
   | "copy"
   | "alt"
@@ -129,6 +131,7 @@ const FOCUS: Record<Exclude<FocusTarget, `cx:${string}`>, { tab: Tab; selector: 
   slides: { tab: "brief", selector: "#nbSlides" },
   voiceover: { tab: "production", selector: "#nbVo" },
   artwork: { tab: "upload", selector: ".mtabbody .cslot-add" },
+  thumbnail: { tab: "upload", selector: '[aria-label="Add the thumbnail"], [aria-label="Replace the thumbnail"]' },
   imageOnText: { tab: "production", selector: '[data-focus="imageOnText"] textarea' },
   copy: { tab: "upload", selector: '[data-focus="copy"] textarea, [data-focus="copy"] input' },
   alt: { tab: "upload", selector: '[data-focus="alt"] textarea, [data-focus="alt"] input' },

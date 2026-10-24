@@ -74,3 +74,37 @@ test("a Reel's thumbnail saves as versions with its words, shows in the table an
   await expect(clientPage.locator(".pthumb img")).toBeVisible();
   await ctx.close();
 });
+
+test("a Reel with no thumbnail has Add Thumbnail in the table, for the team, opening the Thumbnail slot", async ({ page, browser, frank }) => {
+  test.setTimeout(120_000);
+  await admin.from("creatives").update({ format: "ig_reel", formats: ["ig_reel"], stage: 4 }).eq("id", frank.creativeId);
+  await frank.createArtworkVersion(frank.creativeId, 1, "reel-cut.png");
+  await frank.loginAsStaff(page);
+  await page.goto(`/projects/${frank.projectId}`);
+  await page.waitForSelector(".tblwrap, .empty", { timeout: 60_000 });
+  await goToMonth(page, "March 2027");
+  const row = page.locator("tr[data-row]", { hasText: "E2E Test Creative" });
+  await row.getByRole("button", { name: "Add Thumbnail" }).click();
+  await expect(page.getByRole("button", { name: "Add the thumbnail" })).toBeFocused({ timeout: 15_000 });
+
+  // Saved, the button goes.
+  await page.getByLabel("Thumbnail file").setInputFiles({ name: "cover.png", mimeType: "image/png", buffer: PNG });
+  await page.getByRole("button", { name: "Save Thumbnail V1" }).click();
+  await expect(page.getByText("Saved as version 1.")).toBeVisible({ timeout: 30_000 });
+  await page.keyboard.press("Escape");
+  await expect(row.getByRole("button", { name: "Add Thumbnail" })).toHaveCount(0, { timeout: 15_000 });
+
+  // A client never sees it.
+  await admin.from("thumbnail_versions").delete().eq("creative_id", frank.creativeId);
+  const ctx = await browser.newContext();
+  const cp = await ctx.newPage();
+  await frank.loginAsClient(cp);
+  await cp.goto(`/projects/${frank.projectId}`);
+  await cp.waitForSelector(".tblwrap, .empty", { timeout: 60_000 });
+  await goToMonth(cp, "March 2027");
+  const clientRow = cp.locator("tr[data-row]", { hasText: "E2E Test Creative" });
+  await expect(clientRow.locator("td.artcell-td")).toBeVisible();
+  await expect(cp.getByText("Add Thumbnail")).toHaveCount(0);
+  await expect(clientRow.locator("td.artcell-td")).not.toContainText("Pending");
+  await ctx.close();
+});

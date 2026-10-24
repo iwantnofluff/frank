@@ -37,7 +37,7 @@ import { ArtworkCell } from "@/components/project/ArtworkCell";
 import { SlideTextCell } from "@/components/project/SlideTextCell";
 import { useCopyVersionsByCreative } from "@/hooks/use-copy-versions-by-creative";
 import { VersionedTextCell } from "@/components/project/VersionedTextCell";
-import { copySummary, expectedContent, formatsLabel, postFormats } from "@/lib/formats";
+import { copySummary, expectedContent, formatsLabel, postFormats, hasVideoFormat } from "@/lib/formats";
 import { EditContent, MissingContent } from "@/components/project/MissingContent";
 import { isOverdue } from "@/lib/post-live";
 import { EditPostWindow } from "@/components/project/EditPostWindow";
@@ -81,6 +81,7 @@ const ADD_LABELS: Partial<Record<FocusTarget, string>> = {
   slides: "Slides",
   voiceover: "VO",
   artwork: "Creative",
+  thumbnail: "Thumbnail",
   imageOnText: "Text on Image",
   copy: "Caption",
   alt: "Alt Text",
@@ -1254,8 +1255,14 @@ export function ContinuousCalendarTable({
                             }
                             case "artwork": {
                               // The latest version in a small phone, the thumbnail
-                              // first (phase118), its file name under it.
+                              // first (phase118), its file name under it. A video
+                              // with no thumbnail yet: Add Thumbnail, for the team
+                              // (direct instruction).
                               const art = artworkByCreative?.[c.id];
+                              const addThumb =
+                                isStaff && hasVideoFormat(postFormats(c)) && !thumbnailsByCreative?.[c.id] && !c.artwork_removed_at ? (
+                                  <MissingContent expected {...fill(c, "thumbnail")} />
+                                ) : null;
                               return (
                                 <td
                                   key={key}
@@ -1264,9 +1271,12 @@ export function ContinuousCalendarTable({
                                   onMouseLeave={art ? scheduleHide : undefined}
                                 >
                                   {art ? (
-                                    <ArtworkCell artwork={art} thumbnail={thumbnailsByCreative?.[c.id]} />
+                                    <ArtworkCell artwork={art} thumbnail={thumbnailsByCreative?.[c.id]} after={addThumb} />
                                   ) : (
-                                    <MissingContent expected={!c.artwork_removed_at} {...fill(c, "artwork")} />
+                                    <span className="artadds">
+                                      <MissingContent expected={!c.artwork_removed_at} {...fill(c, "artwork")} />
+                                      {addThumb}
+                                    </span>
                                   )}
                                 </td>
                               );
