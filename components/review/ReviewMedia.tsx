@@ -91,6 +91,10 @@ export function ReviewMedia({
           src={stableSrc!}
           ratio={formatRatio(active.format)}
           expandable={isReelFormat(active.format)}
+          // A video's thumbnail as its cover until it plays, as the
+          // platform shows it (phase118, direct instruction): the first
+          // slide only.
+          cover={slide.position === 1 ? (active.thumbnail?.signed_url ?? null) : null}
           // Only this slide's comments, when it's one video of several.
           markers={active.comments.flatMap((c) => {
             const t = commentTime(c.anchor);

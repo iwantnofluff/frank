@@ -12106,26 +12106,6 @@ button.sortbtn:hover {
   overflow: hidden;
 }
 
-/* A video's thumbnail on a review link (phase118), after the caption. */
-.rthumb {
-  margin: 10px 12px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 12.2px;
-}
-.rthumb figcaption {
-  font-weight: 600;
-}
-.rthumb img {
-  width: 120px;
-  border-radius: 8px;
-  border: 1px solid var(--line);
-  display: block;
-}
-.rthumb-t {
-  color: var(--muted);
-}
 /* Text on Image's slides (SlideTextCell): each slide a block, its heading
    a little apart from the slide before. */
 .ntext > span {
