@@ -339,6 +339,8 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "WIIFM Direction: each time copy is saved, Frank lists what's working in it, in 3 to 5 short points, each naming the psychology principle or bias the copy uses (curiosity gap, loss aversion and so on) and the words that use it. It never lists what isn't working.\n\nOn the table, Copy Caption and Copy WIIFM copy either one, ready to paste.",
         ],
       },
+      { kind: "h", text: "Proofreading" },
+      { kind: "p", text: "Each time copy, a VO, Text on Image or Thumbnail Text on Image is saved, Frank proofreads what was saved: spelling, punctuation and grammar, following the client's Tone of Voice, and paragraphs that start on the very next line instead of after a blank one. Its suggestions are listed under the field, each with Fix, which puts it into the editor for you to save, and Ignore, which hides it for good on that version; Fix All does them all. Nothing changes until you choose, as some things are meant to be the way they are. Each proofread is one of your workspace's monthly AI requests." },
       { kind: "p", text: "Saving shows each step: compressing a video, uploading, then saving the version. Keep the window open until it says the version is saved." },
       { kind: "p", text: "A file goes up in pieces, so if the connection drops, Frank carries on from where it was once it's back; if it still can't, the reason shows under Save." },
       {

@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.54.0",
+    date: "2026-10-24",
+    title: "Proofreading after every save",
+    changes: [
+      "Straight after copy, a VO, Text on Image or Thumbnail Text on Image is saved, Frank proofreads it: spelling, punctuation and grammar, following the client's Tone of Voice, and paragraphs that start on the next line rather than after a blank one.",
+      "Suggestions are listed under the field, each with Fix and Ignore, and Fix All. Nothing changes until you choose; a Fix goes into the editor, to save as usual, and an Ignore stays ignored on that version.",
+    ],
+  },
+  {
     version: "1.53.1",
     date: "2026-10-24",
     title: "An Internal Feedback column",

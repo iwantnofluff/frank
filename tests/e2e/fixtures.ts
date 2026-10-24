@@ -422,6 +422,8 @@ export const test = base.extend<{ frank: Frank }>({
       // phase52: Claude conversations about a post's copy (cascade with it,
       // swept by name so a failure says so).
       ["designer_notes", () => admin.from("designer_notes").delete().eq("agency_id", agency.id)],
+      // phase121: proofreads of saved versions.
+      ["proofreads", () => admin.from("proofreads").delete().eq("agency_id", agency.id)],
       // phase120: the Production tab's versions.
       ["production_versions", () => admin.from("production_versions").delete().eq("agency_id", agency.id)],
       // phase117: the notes' versions.

@@ -57,6 +57,8 @@ import {
   type KnownNotes,
 } from "@/hooks/use-designer-notes";
 import { NotesText } from "@/components/creative-review/NotesText";
+import { ProofreadList } from "@/components/creative-review/ProofreadList";
+import { useRunProofread } from "@/hooks/use-proofread";
 import { ThumbnailSection } from "@/components/creative-review/ThumbnailSection";
 import { ProductionChangedError, useProductionVersions, useSaveProduction, type ProductionField } from "@/hooks/use-production-versions";
 import { copyCaption } from "@/lib/copy-text";
@@ -1128,6 +1130,7 @@ export function CreativeModal(props: CreativeModalProps) {
       else setSavedSlideText(draftSlideText);
       setViewProd((v) => ({ ...v, [field]: undefined }));
       setProdNote((n) => ({ ...n, [field]: mode === "new" ? `Saved as V${saved.versionNo}.` : `Saved to V${saved.versionNo}.` }));
+      runProofread.mutate({ kind: "production", versionId: saved.id });
     } catch (e) {
       setProdError((x) => ({ ...x, [field]: e }));
       if (e instanceof ProductionChangedError) void refetchProd();
@@ -1210,6 +1213,46 @@ export function CreativeModal(props: CreativeModalProps) {
       An earlier version, read only. Changes build on the latest, V{latestProd(field)?.versionNo}.
     </p>
   );
+  // Proofreading what's saved (phase121): which version is being read now.
+  const runProofread = useRunProofread();
+  const proofreading = (versionId: string | null | undefined) =>
+    !!versionId && runProofread.isPending && runProofread.variables?.versionId === versionId;
+  const proofError = (versionId: string | null | undefined) =>
+    versionId && runProofread.variables?.versionId === versionId ? runProofread.error : null;
+  const prodProof = (field: ProductionField) => {
+    const id = latestProd(field)?.id;
+    const current: Record<string, string> =
+      field === "voiceover"
+        ? { voiceover }
+        : field === "thumbnail_text"
+          ? { thumbnail_text: thumbText }
+          : Object.fromEntries(slideFields(slideText, slideCount ?? 1).map((t, i) => [`slide_${i + 1}`, t]));
+    const labels: Record<string, string> =
+      field === "slide_text"
+        ? Object.fromEntries(slideFields(slideText, slideCount ?? 1).map((_, i) => [`slide_${i + 1}`, slideCount ? `${frameNoun} ${i + 1}` : "Text on Image"]))
+        : { [field]: field === "voiceover" ? "VO" : "Thumbnail Text on Image" };
+    return (
+      <ProofreadList
+        versionId={id}
+        current={current}
+        labels={labels}
+        running={proofreading(id)}
+        error={proofError(id)}
+        onFix={(key, text) => {
+          if (key === "voiceover") setVoiceover(text);
+          else if (key === "thumbnail_text") setThumbText(text);
+          else {
+            const i = Number(key.slice("slide_".length)) - 1;
+            setSlideText((prev) => {
+              const next = slideFields(prev, slideCount ?? 1);
+              next[i] = text;
+              return next;
+            });
+          }
+        }}
+      />
+    );
+  };
   const refreshWiifmNote = useRefreshWiifmNote(creativeId ?? "");
 
   // Same "not available in create mode" shape as copyVersions/creativeVersions
@@ -1345,6 +1388,8 @@ export function CreativeModal(props: CreativeModalProps) {
       latest: latestCopyVersion,
     });
     if (!isCreate) props.onCopyVersionCreated(versionId);
+    // Proofread what was just saved (phase121), not awaited.
+    runProofread.mutate({ kind: "copy", versionId });
 
     // "As and when copy versions get done, the system gives the WIIFM
     // Approach Note" — not awaited (Save Copy's own "Saved" confirmation
@@ -1388,6 +1433,7 @@ export function CreativeModal(props: CreativeModalProps) {
     try {
       await updateCopy.mutateAsync({ fields: draftFields, latest: latestCopyVersion });
       setCopySaveNote(`Saved to version ${latestCopyVersion.version_no}.`);
+      runProofread.mutate({ kind: "copy", versionId: latestCopyVersion.id });
       setViewingCopyVersionNo(latestCopyVersion.version_no);
       if (agencyId && creativeId) refreshWiifmNote.mutate(agencyId);
     } catch {
@@ -2097,6 +2143,7 @@ export function CreativeModal(props: CreativeModalProps) {
                 />
               </div>
               {prodSaveRow("thumbnail_text", "Thumbnail Text on Image", pendingThumbText)}
+              {prodProof("thumbnail_text")}
               </>
               )}
             </>
@@ -2133,6 +2180,7 @@ export function CreativeModal(props: CreativeModalProps) {
                 />
               </div>
               {prodSaveRow("voiceover", "VO", pendingVoChange)}
+              {prodProof("voiceover")}
               </>
               )}
             </>
@@ -2176,6 +2224,7 @@ export function CreativeModal(props: CreativeModalProps) {
           />
           </div>
           {prodSaveRow("slide_text", "Text on Image", pendingSlideChange)}
+          {prodProof("slide_text")}
           </>
           )}
 
@@ -2396,6 +2445,18 @@ export function CreativeModal(props: CreativeModalProps) {
                 )}
                 {updateCopy.error && <p className="autherr">{errorMessage(updateCopy.error, "Couldn't save to this version")}</p>}
               </div>
+              {/* What was saved, proofread (phase121). */}
+              <ProofreadList
+                versionId={latestCopyVersion?.id}
+                current={draftFields}
+                labels={Object.fromEntries(copyFieldSpecs.map((f) => [f.key, f.label]))}
+                running={proofreading(latestCopyVersion?.id)}
+                error={proofError(latestCopyVersion?.id)}
+                onFix={(key, text) => {
+                  setDraftFields((prev) => ({ ...prev, [key]: text }));
+                  setCopySaveNote(null);
+                }}
+              />
             </>
           )}
           </>
