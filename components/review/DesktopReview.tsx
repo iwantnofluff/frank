@@ -1,7 +1,7 @@
 "use client";
 
 import { CopyFieldsPreview } from "@/components/creative-review/CopyFieldsPreview";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReviewController } from "@/hooks/use-review-controller";
 import { SharedFeedGrid } from "./SharedFeedGrid";
 import { CommentCount } from "./CommentCount";
@@ -16,6 +16,7 @@ import { MomentBadge } from "./MomentBadge";
 import { SharedCommentText } from "./SharedCommentText";
 import { GuestComposer } from "./GuestComposer";
 import { PhoneFrame } from "@/components/creative-review/PhoneFrame";
+import { ScrollHint } from "@/components/creative-review/ScrollHint";
 import { StoryReplyBar } from "@/components/creative-review/StoryReplyBar";
 import { publishDate } from "@/lib/publish-date";
 
@@ -51,23 +52,11 @@ export function DesktopReview({
   // instruction); Content is the post, Feed the grid.
   const [navCollapsed, setNavCollapsed] = useState(false);
   const clientLogoUrl = controller.data?.status === "ok" ? controller.data.client_logo_url : null;
-  // Whether the post goes on below the phone's screen, for the note under it.
+  // Each post starts at the top of the phone's screen.
   const scroller = useRef<HTMLDivElement>(null);
-  const [more, setMore] = useState(false);
-  const measure = useCallback(() => {
-    const el = scroller.current;
-    setMore(!!el && el.scrollHeight - el.scrollTop - el.clientHeight > 8);
-  }, []);
   useEffect(() => {
-    const el = scroller.current;
-    if (!el) return;
-    el.scrollTop = 0;
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(el);
-    if (el.firstElementChild) observer.observe(el.firstElementChild);
-    return () => observer.disconnect();
-  }, [active?.id, controller.view, measure]);
+    if (scroller.current) scroller.current.scrollTop = 0;
+  }, [active?.id, controller.view]);
 
   return (
     <div className="browser">
@@ -165,7 +154,7 @@ export function DesktopReview({
                 <div className="lpv-bar">
                   <b>Posts</b>
                 </div>
-                <div className="pf-scroll" ref={scroller} onScroll={measure}>
+                <div className="pf-scroll" ref={scroller}>
                   {/* A Story as Instagram shows one (direct instruction). */}
                   <div className={`ig${isStoryFormat(active.format) ? " story" : ""}`}>
                     <div className="ig-h">
@@ -215,14 +204,7 @@ export function DesktopReview({
                   </div>
                 </div>
               </PhoneFrame>
-              {more && (
-                <p className="dk-scrollhint">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 5v14M6 13l6 6 6-6" />
-                  </svg>
-                  Scroll inside the phone to read the caption
-                </p>
-              )}
+              {active && <ScrollHint formats={postFormats(active)} />}
             </div>
           )}
         </div>

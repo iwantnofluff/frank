@@ -2,6 +2,7 @@
 
 import { useCreativeVersions } from "@/hooks/use-creative-versions";
 import { useArtworkUrl } from "@/hooks/use-asset-signed-url";
+import { useThumbnailVersions } from "@/hooks/use-thumbnails";
 import type { CreativeListRow } from "@/hooks/use-creatives";
 
 // Real artwork when a creative has one, a plain "No Creative" tile when it
@@ -31,8 +32,13 @@ export function FeedTileArt({
 }) {
   const { data: versions } = useCreativeVersions(creative.id);
   const latest = versions?.[0] ?? null;
-  const { data: signedUrl } = useArtworkUrl(latest?.asset?.storage_key);
-  const isVideo = latest?.asset?.mime_type?.startsWith("video/") ?? false;
+  // A video's thumbnail when it has one (phase118, direct instruction), as
+  // the feed shows it; else the artwork.
+  const { data: thumbnails } = useThumbnailVersions(creative.id);
+  const thumb = thumbnails?.find((t) => t.asset)?.asset ?? null;
+  const shown = thumb ?? latest?.asset ?? null;
+  const { data: signedUrl } = useArtworkUrl(shown?.storage_key);
+  const isVideo = !thumb && (latest?.asset?.mime_type?.startsWith("video/") ?? false);
 
   if (!signedUrl) {
     return (

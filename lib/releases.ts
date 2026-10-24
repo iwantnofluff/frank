@@ -13,6 +13,20 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.54.4",
+    date: "2026-10-24",
+    title: "The scroll note on every review",
+    changes: [
+      "Under the phone, on the post's page and on review links, a post whose format takes a caption always says to scroll inside the phone to read it, written yet or not. A video post's says to read the caption or play the video.",
+    ],
+  },
+  {
+    version: "1.54.3",
+    date: "2026-10-24",
+    title: "The thumbnail in the feeds",
+    changes: ["A video post's tile in the Feed, on the post's page, on review links and in the Share window, shows its thumbnail when it has one, as the platform's grid does."],
+  },
+  {
     version: "1.54.2",
     date: "2026-10-24",
     title: "Feedback headers in Frank's orange",

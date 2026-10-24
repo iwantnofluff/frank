@@ -70,8 +70,11 @@ export function SharedFeedGrid({ controller, brandName }: { controller: ReviewCo
               </div>
             );
           }
-          const url = c.asset?.signed_url ?? null;
-          const video = !!c.asset?.mime_type.startsWith("video/");
+          // A video's thumbnail when it has one (phase118, direct
+          // instruction), as the feed shows it; else the artwork.
+          const thumb = c.thumbnail?.signed_url ?? null;
+          const url = thumb ?? c.asset?.signed_url ?? null;
+          const video = !thumb && !!c.asset?.mime_type.startsWith("video/");
           return (
             <button
               key={c.id}

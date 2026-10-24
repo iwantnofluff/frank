@@ -36,6 +36,7 @@ import { SectionRail } from "@/components/creative-review/SectionRail";
 import { FeedPreviewGrid } from "@/components/creative-review/FeedPreviewGrid";
 import { PhoneFrame } from "@/components/creative-review/PhoneFrame";
 import { useThumbnailVersions } from "@/hooks/use-thumbnails";
+import { ScrollHint, hasScrollHint } from "@/components/creative-review/ScrollHint";
 import { PNAV_CURRENT_H, PostNeighbours } from "@/components/creative-review/PostNeighbours";
 import { StoryReplyBar } from "@/components/creative-review/StoryReplyBar";
 import { useClientInstagramFeed } from "@/hooks/use-instagram";
@@ -568,7 +569,8 @@ export function CreativeReviewPage({ id }: { id: string }) {
               >
               {/* 15% smaller, with the post's date and title above it
                   (direct instruction), to make room beside it. */}
-              <PhoneFrame scale={0.85} reserve={PNAV_CURRENT_H}>
+              {/* Room under it for the scroll note (direct instruction). */}
+              <PhoneFrame scale={0.85} reserve={PNAV_CURRENT_H + (hasScrollHint(postFormats(creative)) ? 46 : 0)}>
               <div className="lpv-bar">
                 <button
                   type="button"
@@ -800,6 +802,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
               </div>
               </div>
               </PhoneFrame>
+              <ScrollHint formats={postFormats(creative)} />
               </PostNeighbours>
             )}
             {activeSection === "checks" && (

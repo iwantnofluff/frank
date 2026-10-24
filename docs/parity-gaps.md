@@ -4393,3 +4393,15 @@ Direct instruction: Internal and Client Feedback should show the date and time a
 Direct instruction: the Internal Feedback and Client Feedback headers in Frank's orange. Both take the logo's orange line, #F4A460 (Client Feedback's was red), with white header text and a white line between the two (decided directly). The client's comments in the cells stay red.
 
 **Verified**: screenshotted the two headers side by side, orange with white text and the white line between them, after WIIFM Direction's dark one.
+
+## The thumbnail in the feeds (2026-10-24)
+
+Direct instruction: the feed on share links and the review page should show the thumbnail. A video post's feed tile now shows its latest thumbnail with a file, else the artwork as before (a video's first frame): FeedTileArt, which is the post page's Feed Preview and the Share window's picker, and SharedFeedGrid, the review link's Feed, from the thumbnail the route already signs.
+
+**Verified**: a Reel with a video and a thumbnail: the post page's Feed and the review link's Feed both showed the thumbnail as its tile, no video; screenshotted both.
+
+## The scroll note on every review (2026-10-24)
+
+Direct instruction: "Scroll inside the phone to read the caption" under the phone on all review pages for any format with a caption, even when the caption is pending; on a video post, "Scroll inside the phone to read the caption or play the video". ScrollHint shows it whenever the post's formats take a caption (copyFieldsFor includes caption), rather than only when the caption ran past the screen, on the review link (desktop) and now the post's own page, which keeps 46px under the phone for it so the phone still fits without the page scrolling. A Story (no caption) has none. A phone's review link has no phone frame, so no note.
+
+**Verified**: a Reel with no caption on the post's page showed the video wording, the page not scrolling; an Instagram post on a review link the caption wording; a Story none.
