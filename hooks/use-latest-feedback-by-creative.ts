@@ -8,10 +8,19 @@ export interface LatestFeedback {
   createdAt: string;
   // Who said it: the client's person, or a review link's guest.
   name: string;
+  resolved: boolean;
+}
+
+// A post's feedback from one side: the latest still open, shown in the
+// cell, and every comment from that side, newest first, for Show All
+// (direct instruction), the resolved ones too.
+export interface PostFeedback {
+  latest: LatestFeedback | null;
+  all: LatestFeedback[];
 }
 
 // The calendar table's "Client Feedback" column (docs/parity-gaps.md) —
-// the most recent unresolved *public* comment per creative, batched for
+// the most recent unresolved *public* comment per creative, and the rest, batched for
 // the whole project in one query rather than per row. Public only: an
 // internal-only comment isn't "client feedback" by definition, and
 // comments_select's own RLS already keeps a client-role caller from
@@ -26,16 +35,15 @@ export function useLatestFeedbackByCreative(creativeIds: string[], from: "client
   const key = [...creativeIds].sort().join(",");
   return useQuery({
     queryKey: ["latest-feedback-by-creative", key, from],
-    queryFn: async (): Promise<Record<string, LatestFeedback>> => {
+    queryFn: async (): Promise<Record<string, PostFeedback>> => {
       if (creativeIds.length === 0) return {};
       const supabase = createClient();
       let q = supabase
         .from("comments")
-        .select("creative_id, agency_id, author_id, guest_name, body, created_at")
+        .select("creative_id, agency_id, author_id, guest_name, body, created_at, resolved_at")
         .in("creative_id", creativeIds);
       if (from === "client") q = q.eq("visibility", "public");
       const { data, error } = await q
-        .is("resolved_at", null)
         // Deleted ones (phase97) are marked, not removed: never feedback.
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
@@ -63,19 +71,22 @@ export function useLatestFeedbackByCreative(creativeIds: string[], from: "client
         for (const m of members) team.add(m.user_id as string);
       }
 
-      const result: Record<string, LatestFeedback> = {};
+      const result: Record<string, PostFeedback> = {};
       for (const row of data) {
-        if (result[row.creative_id]) continue;
         const isTeam = !!row.author_id && team.has(row.author_id);
         if (from === "client" ? isTeam : !isTeam) continue;
-        result[row.creative_id] = {
+        const one: LatestFeedback = {
           // The client's name is over it, so a client's approval reads as
           // just "Approved Concept" here (direct instruction); the post's
           // page keeps the comment's own words.
           body: row.body === "Client Approved Concept" ? "Approved Concept" : row.body,
           createdAt: row.created_at,
           name: (row.author_id ? names.get(row.author_id) : row.guest_name) ?? "",
+          resolved: !!row.resolved_at,
         };
+        const post = (result[row.creative_id] ??= { latest: null, all: [] });
+        post.all.push(one);
+        if (!post.latest && !one.resolved) post.latest = one;
       }
       return result;
     },

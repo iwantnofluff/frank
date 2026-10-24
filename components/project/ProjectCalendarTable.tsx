@@ -46,6 +46,7 @@ import { useThumbnailsByCreative } from "@/hooks/use-thumbnails";
 import { ArtworkCell } from "@/components/project/ArtworkCell";
 import { SlideTextCell } from "@/components/project/SlideTextCell";
 import { EarlierVersions } from "@/components/project/EarlierVersions";
+import { FeedbackCell } from "@/components/project/FeedbackCell";
 import { useProjectProductionVersions } from "@/hooks/use-production-versions";
 import { useCopyVersionsByCreative, type CopyVersionSummary } from "@/hooks/use-copy-versions-by-creative";
 import { useLatestFeedbackByCreative } from "@/hooks/use-latest-feedback-by-creative";
@@ -1500,40 +1501,20 @@ export function ProjectCalendarTable({
                                 </td>
                               );
                             }
-                            case "internalFeedback": {
-                              const fb = internalFeedback?.[c.id];
+                            case "internalFeedback":
+                            case "clientFeedback":
+                              // Each with who and when, Read more, and Show All
+                              // (direct instruction).
                               return (
                                 <td key={key} className="cellw">
-                                  {fb ? (
-                                    <span className="copyc">
-                                      {fb.name && <span className="cc-v">{fb.name}</span>}
-                                      <ClampText expanded={expandedRow === c.id} onToggle={() => toggleRow(c.id)}>
-                                        {fb.body}
-                                      </ClampText>
-                                    </span>
-                                  ) : (
-                                    <span className="tdim">—</span>
-                                  )}
+                                  <FeedbackCell
+                                    feedback={(key === "internalFeedback" ? internalFeedback : latestFeedback)?.[c.id]}
+                                    expanded={expandedRow === c.id}
+                                    onToggle={() => toggleRow(c.id)}
+                                    tone={key === "clientFeedback" ? "client" : undefined}
+                                  />
                                 </td>
                               );
-                            }
-                            case "clientFeedback": {
-                              const feedback = latestFeedback?.[c.id];
-                              return (
-                                <td key={key} className="cellw">
-                                  {feedback ? (
-                                    <span className="copyc feedback-note">
-                                      {feedback.name && <span className="cc-v">{feedback.name}</span>}
-                                      <ClampText expanded={expandedRow === c.id} onToggle={() => toggleRow(c.id)}>
-                                        {feedback.body}
-                                      </ClampText>
-                                    </span>
-                                  ) : (
-                                    <span className="tdim">—</span>
-                                  )}
-                                </td>
-                              );
-                            }
                             default: {
                               const customCol = customColumnByKey.get(key);
                               if (!customCol) return null;

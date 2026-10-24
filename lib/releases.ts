@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.54.1",
+    date: "2026-10-24",
+    title: "Feedback with dates, Show All, and slides spaced out",
+    changes: [
+      "Internal Feedback and Client Feedback show when each comment was made, after the name.",
+      "Show All, under each, lists every comment from that side on hover, newest first, with who and when, the resolved ones marked; a long one scrolls. The latest keeps its Read more.",
+      "A carousel's Text on Image in the table has a clear gap before each slide.",
+    ],
+  },
+  {
     version: "1.54.0",
     date: "2026-10-24",
     title: "Proofreading after every save",

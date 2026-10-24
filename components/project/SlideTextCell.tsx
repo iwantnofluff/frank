@@ -8,7 +8,7 @@ export function SlideTextCell({ texts, multi }: { texts: string[]; multi: boolea
     <span className="ntext">
       {texts.map((t, i) =>
         t.trim() ? (
-          <span key={i}>
+          <span key={i} className="nt-sb">
             <span className="nt-h">Slide {i + 1}</span>
             <span className="nt-p">{t}</span>
           </span>

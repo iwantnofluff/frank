@@ -353,7 +353,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         items: [
           "Nothing is typed straight into a cell. Each cell has its own Edit button, or Add when it's empty (Add Date, Add Team, Add Notes…), with an arrow, which opens the post's window at that field.",
           "The Creative column shows the latest artwork in a small phone with its file name under it (a video's thumbnail if it has one); hover it to see it larger, a video's thumbnail in place of the video.",
-          "Internal Feedback shows your team's latest open comment, private or public, with who said it above; only your team sees the column. Client Feedback, after it, shows the latest open comment from the client, with their name above it.",
+          "Internal Feedback shows your team's latest open comment, private or public, with who said it and when above it; only your team sees the column. Client Feedback, after it, shows the client's latest open comment the same way. Show All under either lists every comment from that side, newest first, on hover.",
         ],
       },
     ],

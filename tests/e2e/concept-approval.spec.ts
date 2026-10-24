@@ -63,7 +63,9 @@ test("a client approves a concept from the table, and it shows as their feedback
   const note = row.locator(".feedback-note");
   await expect(note).toContainText("Approved Concept");
   await expect(note).not.toContainText("Client Approved Concept");
-  await expect(note.locator(".cc-v")).toHaveText(client!.name);
+  // Their name, then when (direct instruction).
+  await expect(note.locator(".cc-v")).toContainText(client!.name);
+  await expect(note.locator(".cc-v")).toHaveText(new RegExp(`^${client!.name} · \\d{1,2} \\w{3}, \\d{2}:\\d{2}$`));
   await expect(row.locator(".stg")).toContainText("In Production");
 
   const { data: cm } = await admin.from("comments").select("body, author_id").eq("creative_id", id);
@@ -121,6 +123,7 @@ test("Internal Feedback shows the team's latest open comment, private ones inclu
   const client = await signIn(frank.clientEmail, frank.clientPassword);
   const me = (await staff.auth.getUser()).data.user!.id;
   const them = (await client.auth.getUser()).data.user!.id;
+  expect((await staff.from("comments").insert({ agency_id: frank.agencyId, creative_id: id, author_id: me, body: "An earlier note", visibility: "private" })).error).toBeNull();
   expect((await staff.from("comments").insert({ agency_id: frank.agencyId, creative_id: id, author_id: me, body: "Tighten the hook", visibility: "private" })).error).toBeNull();
   expect((await client.from("comments").insert({ agency_id: frank.agencyId, creative_id: id, author_id: them, body: "Love the colours", visibility: "public" })).error).toBeNull();
   const staffName = (await admin.from("users").select("name").eq("id", me).single()).data!.name;
@@ -133,8 +136,15 @@ test("Internal Feedback shows the team's latest open comment, private ones inclu
   const row = page.locator("tr[data-row]", { hasText: "Two Kinds Of Feedback" });
   const internal = row.locator("td").filter({ hasText: "Tighten the hook" });
   await expect(internal).toHaveCount(1, { timeout: 15_000 });
-  await expect(internal.locator(".cc-v")).toHaveText(staffName);
+  await expect(internal.locator(".cc-v")).toContainText(staffName);
   await expect(internal).not.toContainText("Love the colours");
+  // Show All: every team comment, newest first, with who and when.
+  await internal.getByText("Show All (2)").hover();
+  const pop = page.locator(".copypop");
+  await expect(pop.locator(".cp-row")).toHaveCount(2, { timeout: 5_000 });
+  await expect(pop.locator(".cp-row").first()).toContainText("Tighten the hook");
+  await expect(pop.locator(".cp-row").nth(1)).toContainText("An earlier note");
+  await expect(pop.locator(".cp-row").first().locator("b")).toContainText(staffName);
   await expect(row.locator(".feedback-note")).toContainText("Love the colours");
 
   // A client has no Internal Feedback column.

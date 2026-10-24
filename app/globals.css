@@ -12111,8 +12111,11 @@ button.sortbtn:hover {
 .ntext > span {
   display: block;
 }
-.ntext > span + span .nt-h {
-  margin-top: 8px;
+/* A clear gap before each slide after the first (direct instruction: they
+   ran together, the heading's own gap being cancelled as each is the
+   first in its block). */
+.ntext .nt-sb + .nt-sb {
+  margin-top: 10px;
 }
 /* A video's Add Thumbnail at the cell's bottom left, as the other columns'
    buttons are (direct instruction); the phone gives up height before the
@@ -12242,4 +12245,14 @@ button.sortbtn:hover {
   margin: 0 0 18px;
   font-size: 12.2px;
   color: var(--muted);
+}
+/* Feedback's Show All (FeedbackCell): each comment's words in full, in ink
+   even in the client's red cell. */
+.cp-body {
+  display: block;
+  white-space: pre-line;
+  line-height: 1.45;
+}
+.feedback-note .copypop {
+  color: var(--ink);
 }
