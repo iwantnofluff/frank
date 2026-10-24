@@ -321,9 +321,10 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         kind: "list",
         items: [
-          "Thumbnail Text on Image, for a video post: the words on its cover, saved on the post.",
-          "VO, for a video post (a Reel, Story, YouTube or other video format): the voiceover script, saved with Save VO. It stays with the post rather than becoming a version, and only your team sees it.",
-          "Text on Image: the words on each slide, saved with Save Text on Image. It stays with the post rather than becoming a version. In the table, a carousel's shows each slide's words under its own Slide heading.",
+          "Thumbnail Text on Image, for a video post: the words on its cover.",
+          "VO, for a video post (a Reel, Story, YouTube or other video format): the voiceover script. Only your team sees it.",
+          "Text on Image: the words on each slide. In the table, a carousel's shows each slide's words under its own Slide heading.",
+          "Each is saved as versions of its own, like the copy: Save VO V1 (or Save Text on Image V1) the first time, then Save to V1 to change it or Save as V2 to start a new one. Earlier versions stay in their tabs, read only, and the table shows the latest VO and Text on Image with their V and the earlier ones on hover.",
           "Notes for Designer, as last saved on the Brief, read only: they're written and changed on the Brief.",
           "Draft with Frank, at the foot of the tab, drafts the VO, Text on Image and a video's Thumbnail Text on Image, with conversations of their own.",
         ],
@@ -350,7 +351,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         items: [
           "Nothing is typed straight into a cell. Each cell has its own Edit button, or Add when it's empty (Add Date, Add Team, Add Notes…), with an arrow, which opens the post's window at that field.",
           "The Creative column shows the latest artwork in a small phone with its file name under it (a video's thumbnail if it has one); hover it to see it larger, a video's thumbnail in place of the video.",
-          "Client Feedback shows the latest open comment from the client, with their name above it. Your team's own comments stay on the post's page.",
+          "Internal Feedback shows your team's latest open comment, private or public, with who said it above; only your team sees the column. Client Feedback, after it, shows the latest open comment from the client, with their name above it.",
         ],
       },
     ],

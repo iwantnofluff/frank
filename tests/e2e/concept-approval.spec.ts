@@ -107,3 +107,45 @@ test("a deleted client comment leaves the table's Client Feedback, without a rel
   await expect(page.locator("tr[data-row]", { hasText: "Feedback Then Deleted" })).toBeVisible();
   await expect(page.locator("tr[data-row]", { hasText: "Feedback Then Deleted" }).locator(".feedback-note")).toHaveCount(0, { timeout: 15_000 });
 });
+
+test("Internal Feedback shows the team's latest open comment, private ones included, for the team only", async ({ page, browser, frank }) => {
+  test.setTimeout(120_000);
+  const id = await conceptPost(frank, "Two Kinds Of Feedback");
+  const signIn = async (email: string, password: string) => {
+    const c = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { auth: { persistSession: false } });
+    await c.auth.signInWithPassword({ email, password });
+    return c;
+  };
+  // Each from their own session (visibility and author depend on who's calling).
+  const staff = await signIn(frank.staffEmail, frank.staffPassword);
+  const client = await signIn(frank.clientEmail, frank.clientPassword);
+  const me = (await staff.auth.getUser()).data.user!.id;
+  const them = (await client.auth.getUser()).data.user!.id;
+  expect((await staff.from("comments").insert({ agency_id: frank.agencyId, creative_id: id, author_id: me, body: "Tighten the hook", visibility: "private" })).error).toBeNull();
+  expect((await client.from("comments").insert({ agency_id: frank.agencyId, creative_id: id, author_id: them, body: "Love the colours", visibility: "public" })).error).toBeNull();
+  const staffName = (await admin.from("users").select("name").eq("id", me).single()).data!.name;
+
+  await frank.loginAsStaff(page);
+  await page.goto(`/projects/${frank.projectId}`);
+  await page.waitForSelector(".tblwrap, .empty", { timeout: 60_000 });
+  await goToMonth(page, "March 2027");
+  await expect(page.locator("th", { hasText: /^Internal Feedback/ })).toHaveCount(1);
+  const row = page.locator("tr[data-row]", { hasText: "Two Kinds Of Feedback" });
+  const internal = row.locator("td").filter({ hasText: "Tighten the hook" });
+  await expect(internal).toHaveCount(1, { timeout: 15_000 });
+  await expect(internal.locator(".cc-v")).toHaveText(staffName);
+  await expect(internal).not.toContainText("Love the colours");
+  await expect(row.locator(".feedback-note")).toContainText("Love the colours");
+
+  // A client has no Internal Feedback column.
+  const ctx = await browser.newContext();
+  const cp = await ctx.newPage();
+  await frank.loginAsClient(cp);
+  await cp.goto(`/projects/${frank.projectId}`);
+  await cp.waitForSelector(".tblwrap, .empty", { timeout: 60_000 });
+  await goToMonth(cp, "March 2027");
+  await cp.waitForSelector(".tbl th", { timeout: 30_000 });
+  await expect(cp.locator("th", { hasText: /^Client Feedback/ })).toHaveCount(1);
+  await expect(cp.locator("th", { hasText: /^Internal Feedback/ })).toHaveCount(0);
+  await ctx.close();
+});

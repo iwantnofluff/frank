@@ -17,6 +17,7 @@ const BUILT_IN_TYPES: Record<string, string> = {
   copy: "Copy",
   altText: "Copy",
   approach: "Copy",
+  internalFeedback: "Comments",
   clientFeedback: "Comments",
   notes: "Large Text",
   principles: "Single Line Text",

@@ -18,18 +18,23 @@ export interface LatestFeedback {
 // seeing private ones regardless. The client's only (direct instruction):
 // the team's own comments, their Approved Concept included, stay on the
 // post's page.
-export function useLatestFeedbackByCreative(creativeIds: string[]) {
+//
+// From the team instead (direct instruction: the Internal Feedback column):
+// the latest open comment by someone on the team, private or public. The
+// team only, so a client's session never asks.
+export function useLatestFeedbackByCreative(creativeIds: string[], from: "client" | "team" = "client", enabled = true) {
   const key = [...creativeIds].sort().join(",");
   return useQuery({
-    queryKey: ["latest-feedback-by-creative", key],
+    queryKey: ["latest-feedback-by-creative", key, from],
     queryFn: async (): Promise<Record<string, LatestFeedback>> => {
       if (creativeIds.length === 0) return {};
       const supabase = createClient();
-      const { data, error } = await supabase
+      let q = supabase
         .from("comments")
         .select("creative_id, agency_id, author_id, guest_name, body, created_at")
-        .in("creative_id", creativeIds)
-        .eq("visibility", "public")
+        .in("creative_id", creativeIds);
+      if (from === "client") q = q.eq("visibility", "public");
+      const { data, error } = await q
         .is("resolved_at", null)
         // Deleted ones (phase97) are marked, not removed: never feedback.
         .is("deleted_at", null)
@@ -61,7 +66,8 @@ export function useLatestFeedbackByCreative(creativeIds: string[]) {
       const result: Record<string, LatestFeedback> = {};
       for (const row of data) {
         if (result[row.creative_id]) continue;
-        if (row.author_id && team.has(row.author_id)) continue;
+        const isTeam = !!row.author_id && team.has(row.author_id);
+        if (from === "client" ? isTeam : !isTeam) continue;
         result[row.creative_id] = {
           // The client's name is over it, so a client's approval reads as
           // just "Approved Concept" here (direct instruction); the post's
@@ -73,6 +79,6 @@ export function useLatestFeedbackByCreative(creativeIds: string[]) {
       }
       return result;
     },
-    enabled: creativeIds.length > 0,
+    enabled: enabled && creativeIds.length > 0,
   });
 }

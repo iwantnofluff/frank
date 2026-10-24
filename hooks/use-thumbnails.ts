@@ -103,27 +103,3 @@ export function useSaveThumbnail(creativeId: string, agencyId: string) {
     },
   });
 }
-
-// Thumbnail Text on Image, on the post itself as Text on Image is.
-export function useSaveThumbnailText(creativeId: string, projectId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (text: string) => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from("creatives")
-        .update({ thumbnail_text: text.trim() || null })
-        .eq("id", creativeId)
-        .select("id")
-        .maybeSingle();
-      if (error) throw error;
-      if (!data) throw new Error("You don't have permission to edit this post.");
-    },
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["creative", creativeId] }),
-        queryClient.invalidateQueries({ queryKey: ["creatives", projectId] }),
-      ]);
-    },
-  });
-}

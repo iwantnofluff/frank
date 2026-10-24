@@ -67,11 +67,12 @@ test("two people saving one post: the second is asked, and nothing is lost", asy
     await openContent(page);
     await openContent(b);
     await b.locator(".msection-h", { hasText: /^Text on Image$/ }).locator("xpath=following::*[self::textarea or self::input][1]").fill("Raj's words");
-    await b.getByRole("button", { name: "Save Text on Image" }).click();
+    // In versions now (phase120): the first save makes V1.
+    await b.getByRole("button", { name: "Save Text on Image V1" }).click();
     await b.waitForTimeout(2000);
     await page.locator(".msection-h", { hasText: /^Text on Image$/ }).locator("xpath=following::*[self::textarea or self::input][1]").fill("Staff words");
-    await page.getByRole("button", { name: "Save Text on Image" }).click();
-    await expect(page.getByText("changed the Text on Image while you had it open")).toBeVisible({ timeout: 15_000 });
+    await page.getByRole("button", { name: "Save Text on Image V1" }).click();
+    await expect(page.getByText("changed this while you had it open")).toBeVisible({ timeout: 15_000 });
     expect((await admin.from("creatives").select("slide_text").eq("id", frank.creativeId).single()).data).toEqual({ slide_text: ["Raj's words"] });
     await page.getByRole("button", { name: "Show Theirs" }).click();
     await expect(page.locator(".msection-h", { hasText: "Text on Image" }).locator("xpath=following::*[self::textarea or self::input][1]")).toHaveValue("Raj's words");

@@ -45,6 +45,8 @@ import { useArtworkByCreative } from "@/hooks/use-artwork-by-creative";
 import { useThumbnailsByCreative } from "@/hooks/use-thumbnails";
 import { ArtworkCell } from "@/components/project/ArtworkCell";
 import { SlideTextCell } from "@/components/project/SlideTextCell";
+import { EarlierVersions } from "@/components/project/EarlierVersions";
+import { useProjectProductionVersions } from "@/hooks/use-production-versions";
 import { useCopyVersionsByCreative, type CopyVersionSummary } from "@/hooks/use-copy-versions-by-creative";
 import { useLatestFeedbackByCreative } from "@/hooks/use-latest-feedback-by-creative";
 import { useMyAgency } from "@/hooks/use-my-agency";
@@ -156,6 +158,9 @@ export const TOGGLABLE_COLUMNS = [
   { key: "altText", label: "Alt Text", sub: "For screen readers", width: 220 },
   // As wide as Copy (direct instruction), now that it's a few short points.
   { key: "approach", label: "WIIFM Direction", sub: "WIIFM of latest copy", width: 330 },
+  // The team's own latest open comment, before the client's (direct
+  // instruction); the team only.
+  { key: "internalFeedback", label: "Internal Feedback", sub: "", width: 220 },
   { key: "clientFeedback", label: "Client Feedback", sub: "", width: 220 },
 ] as const;
 
@@ -534,6 +539,8 @@ export function ProjectCalendarTable({
   const { data: copyVersionsByCreative } = useCopyVersionsByCreative(creativeIds);
   const { data: artworkByCreative } = useArtworkByCreative(creativeIds);
   const { data: thumbnailsByCreative } = useThumbnailsByCreative(creativeIds);
+  // The VO's and Text on Image's versions (phase120), the team's.
+  const { data: productionVersions } = useProjectProductionVersions(projectId, creativeIds, isStaff);
   // A post's date changed from the table (direct instruction): its date
   // or time a button for the team, opening the pickers right there.
   const [datePick, setDatePick] = useState<{ c: CreativeListRow; rect: DOMRect; focus: "date" | "time" } | null>(null);
@@ -568,6 +575,7 @@ export function ProjectCalendarTable({
     </td>
   );
   const { data: latestFeedback } = useLatestFeedbackByCreative(creativeIds);
+  const { data: internalFeedback } = useLatestFeedbackByCreative(creativeIds, "team", isStaff);
 
   // Second, independent hover pair for the copy-history popover — separate
   // from the creative-preview hover above since they show unrelated
@@ -652,7 +660,9 @@ export function ProjectCalendarTable({
 
   // VO is the team's (phase88, direct instruction: not shown to clients).
   // Renamed for the project (phase96), the rest as they come.
-  const shownColumns = TOGGLABLE_COLUMNS.filter((c) => isStaff || (c.key !== "voiceover" && c.key !== "notes")).map((c) => ({
+  const shownColumns = TOGGLABLE_COLUMNS.filter(
+    (c) => isStaff || (c.key !== "voiceover" && c.key !== "notes" && c.key !== "internalFeedback"),
+  ).map((c) => ({
     ...c,
     label: columnLabels[c.key] ?? c.label,
   }));
@@ -1336,10 +1346,13 @@ export function ProjectCalendarTable({
                             case "voiceover": {
                               // A video post's VO script (phase88), on the post itself.
                               const vo = c.voiceover?.trim();
+                              const voVersions = productionVersions?.[c.id]?.voiceover ?? [];
                               return (
                                 <td key={key} className="cellw">
                                   {vo ? (
                                     <span className="copyc">
+                                      {/* Its version (phase120), as the Caption's. */}
+                                      {voVersions[0] && <span className="cc-v">V{voVersions[0].versionNo}</span>}
                                       <ClampText
                                         expanded={expandedRow === c.id}
                                         onToggle={() => toggleRow(c.id)}
@@ -1347,6 +1360,7 @@ export function ProjectCalendarTable({
                                       >
                                         {vo}
                                       </ClampText>
+                                      <EarlierVersions label="VO" rows={voVersions.map((v) => ({ versionNo: v.versionNo, text: v.body }))} />
                                     </span>
                                   ) : (
                                     <MissingContent expected={exp.voiceover} {...fill(c, "voiceover")} />
@@ -1385,10 +1399,12 @@ export function ProjectCalendarTable({
                             case "imageOnText": {
                               // On the post itself (phase57), not versioned.
                               const lines = (c.slide_text ?? []).filter((t) => t.trim());
+                              const slideVersions = productionVersions?.[c.id]?.slide_text ?? [];
                               return (
                                 <td key={key} className="cellw">
                                   {lines.length ? (
                                     <span className="copyc">
+                                      {slideVersions[0] && <span className="cc-v">V{slideVersions[0].versionNo}</span>}
                                       <ClampText
                                         expanded={expandedRow === c.id}
                                         onToggle={() => toggleRow(c.id)}
@@ -1396,6 +1412,21 @@ export function ProjectCalendarTable({
                                       >
                                         <SlideTextCell texts={c.slide_text ?? []} multi={(c.slide_count ?? 0) > 1 || (c.slide_text ?? []).filter((t) => t.trim()).length > 1} />
                                       </ClampText>
+                                      <EarlierVersions
+
+                                        label="Text on Image"
+
+                                        rows={slideVersions.map((v) => ({
+
+                                          versionNo: v.versionNo,
+
+                                          text: v.slides.filter((t) => t.trim()).join(" · "),
+
+                                          node: <SlideTextCell texts={v.slides} multi={v.slides.filter((t) => t.trim()).length > 1} />,
+
+                                        }))}
+
+                                      />
                                     </span>
                                   ) : (
                                     <MissingContent expected={true} {...fill(c, "imageOnText")} />
@@ -1465,6 +1496,23 @@ export function ProjectCalendarTable({
                                     </span>
                                   ) : (
                                     <MissingContent expected={exp.copy} {...fill(c, "copy")} />
+                                  )}
+                                </td>
+                              );
+                            }
+                            case "internalFeedback": {
+                              const fb = internalFeedback?.[c.id];
+                              return (
+                                <td key={key} className="cellw">
+                                  {fb ? (
+                                    <span className="copyc">
+                                      {fb.name && <span className="cc-v">{fb.name}</span>}
+                                      <ClampText expanded={expandedRow === c.id} onToggle={() => toggleRow(c.id)}>
+                                        {fb.body}
+                                      </ClampText>
+                                    </span>
+                                  ) : (
+                                    <span className="tdim">—</span>
                                   )}
                                 </td>
                               );

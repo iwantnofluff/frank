@@ -35,6 +35,8 @@ import { useArtworkByCreative } from "@/hooks/use-artwork-by-creative";
 import { useThumbnailsByCreative } from "@/hooks/use-thumbnails";
 import { ArtworkCell } from "@/components/project/ArtworkCell";
 import { SlideTextCell } from "@/components/project/SlideTextCell";
+import { EarlierVersions } from "@/components/project/EarlierVersions";
+import { useProjectProductionVersions } from "@/hooks/use-production-versions";
 import { useCopyVersionsByCreative } from "@/hooks/use-copy-versions-by-creative";
 import { VersionedTextCell } from "@/components/project/VersionedTextCell";
 import { copySummary, expectedContent, formatsLabel, postFormats, hasVideoFormat } from "@/lib/formats";
@@ -531,6 +533,8 @@ export function ContinuousCalendarTable({
   const { data: copyVersionsByCreative } = useCopyVersionsByCreative(creativeIds);
   const { data: artworkByCreative } = useArtworkByCreative(creativeIds);
   const { data: thumbnailsByCreative } = useThumbnailsByCreative(creativeIds);
+  // The VO's and Text on Image's versions (phase120), the team's.
+  const { data: productionVersions } = useProjectProductionVersions(projectId, creativeIds, isStaff);
   // A post's date changed from the table (direct instruction): its date
   // or time a button for the team, opening the pickers right there.
   const [datePick, setDatePick] = useState<{ c: CreativeListRow; rect: DOMRect; focus: "date" | "time" } | null>(null);
@@ -1235,10 +1239,13 @@ export function ContinuousCalendarTable({
                             case "voiceover": {
                               // A video post's VO script (phase88), on the post itself.
                               const vo = c.voiceover?.trim();
+                              const voVersions = productionVersions?.[c.id]?.voiceover ?? [];
                               return (
                                 <td key={key} className="cellw">
                                   {vo ? (
                                     <span className="copyc">
+                                      {/* Its version (phase120), as the Caption's. */}
+                                      {voVersions[0] && <span className="cc-v">V{voVersions[0].versionNo}</span>}
                                       <ClampText
                                         expanded={expandedRow === c.id}
                                         onToggle={() => toggleRow(c.id)}
@@ -1246,6 +1253,7 @@ export function ContinuousCalendarTable({
                                       >
                                         {vo}
                                       </ClampText>
+                                      <EarlierVersions label="VO" rows={voVersions.map((v) => ({ versionNo: v.versionNo, text: v.body }))} />
                                     </span>
                                   ) : (
                                     <MissingContent expected={exp.voiceover} {...fill(c, "voiceover")} />
@@ -1284,10 +1292,12 @@ export function ContinuousCalendarTable({
                             case "imageOnText": {
                               // On the post itself (phase57), not versioned.
                               const lines = (c.slide_text ?? []).filter((t) => t.trim());
+                              const slideVersions = productionVersions?.[c.id]?.slide_text ?? [];
                               return (
                                 <td key={key} className="cellw">
                                   {lines.length ? (
                                     <span className="copyc">
+                                      {slideVersions[0] && <span className="cc-v">V{slideVersions[0].versionNo}</span>}
                                       <ClampText
                                         expanded={expandedRow === c.id}
                                         onToggle={() => toggleRow(c.id)}
@@ -1295,6 +1305,21 @@ export function ContinuousCalendarTable({
                                       >
                                         <SlideTextCell texts={c.slide_text ?? []} multi={(c.slide_count ?? 0) > 1 || (c.slide_text ?? []).filter((t) => t.trim()).length > 1} />
                                       </ClampText>
+                                      <EarlierVersions
+
+                                        label="Text on Image"
+
+                                        rows={slideVersions.map((v) => ({
+
+                                          versionNo: v.versionNo,
+
+                                          text: v.slides.filter((t) => t.trim()).join(" · "),
+
+                                          node: <SlideTextCell texts={v.slides} multi={v.slides.filter((t) => t.trim()).length > 1} />,
+
+                                        }))}
+
+                                      />
                                     </span>
                                   ) : (
                                     <MissingContent expected={true} {...fill(c, "imageOnText")} />

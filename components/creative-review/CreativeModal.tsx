@@ -8,8 +8,6 @@ import type { CreativeRow } from "@/hooks/use-creative";
 import { useCopyVersions, type CopyVersionRow } from "@/hooks/use-copy-versions";
 import { useCreativeVersions, versionSlides, type CreativeVersionRow } from "@/hooks/use-creative-versions";
 import { useCreateCreative } from "@/hooks/use-create-creative";
-import { SlideTextChangedError, useSaveSlideText } from "@/hooks/use-save-slide-text";
-import { VoiceoverChangedError, useSaveVoiceover } from "@/hooks/use-save-voiceover";
 import { useUpdateCreativeCx } from "@/hooks/use-update-creative-cx";
 import { PostChangedError, useUpdateBrief, type BriefFields } from "@/hooks/use-update-brief";
 import { useTeamMembers } from "@/hooks/use-team-members";
@@ -60,7 +58,7 @@ import {
 } from "@/hooks/use-designer-notes";
 import { NotesText } from "@/components/creative-review/NotesText";
 import { ThumbnailSection } from "@/components/creative-review/ThumbnailSection";
-import { useSaveThumbnailText } from "@/hooks/use-thumbnails";
+import { ProductionChangedError, useProductionVersions, useSaveProduction, type ProductionField } from "@/hooks/use-production-versions";
 import { copyCaption } from "@/lib/copy-text";
 import { ListEditor } from "@/components/ui/ListEditor";
 import { linkHref, tidyReferences } from "@/lib/links";
@@ -1083,46 +1081,135 @@ export function CreativeModal(props: CreativeModalProps) {
   // Saving into the current version instead (phase113, direct instruction):
   // the latest one, while nobody has commented on it.
   const updateCopy = useUpdateCopyVersion(creativeId ?? "");
-  const saveSlideText = useSaveSlideText(creativeId ?? "", projectId);
-  const [slideSaveNote, setSlideSaveNote] = useState<string | null>(null);
-  async function handleSaveSlideText() {
-    setSlideSaveNote(null);
-    try {
-      await saveSlideText.mutateAsync({ slideText: draftSlideText, known: savedSlideText });
-      setSavedSlideText(draftSlideText);
-      setSlideSaveNote("Saved.");
-    } catch {
-      // Shown via saveSlideText.error below.
-    }
-  }
   // Thumbnail Text on Image (phase118), on Production with the VO.
   const savedThumbText = isCreate ? "" : (props.creative.thumbnail_text ?? "");
   const [thumbText, setThumbText] = useState(savedThumbText);
   const [knownThumbText, setKnownThumbText] = useState(savedThumbText);
-  const [thumbTextNote, setThumbTextNote] = useState<string | null>(null);
-  const saveThumbText = useSaveThumbnailText(creativeId ?? "", projectId);
   const pendingThumbText = thumbText.trim() !== knownThumbText.trim();
-  async function handleSaveThumbText() {
+  // The Production tab's words in versions (phase120): each field its own,
+  // Save to V{n} or Save as V{n+1}; the window knows which version it
+  // started from, to catch someone else's save.
+  const { data: prodVersions, refetch: refetchProd } = useProductionVersions(creativeId);
+  const saveProduction = useSaveProduction(creativeId ?? "", projectId);
+  const [knownProd, setKnownProd] = useState<Record<ProductionField, string | null> | null>(null);
+  useEffect(() => {
+    if (prodVersions && !knownProd)
+      setKnownProd({
+        voiceover: prodVersions.voiceover[0]?.id ?? null,
+        slide_text: prodVersions.slide_text[0]?.id ?? null,
+        thumbnail_text: prodVersions.thumbnail_text[0]?.id ?? null,
+      });
+  }, [prodVersions, knownProd]);
+  const [viewProd, setViewProd] = useState<Partial<Record<ProductionField, number>>>({});
+  const [prodNote, setProdNote] = useState<Partial<Record<ProductionField, string>>>({});
+  const [prodError, setProdError] = useState<Partial<Record<ProductionField, unknown>>>({});
+  const [prodSaving, setProdSaving] = useState<ProductionField | null>(null);
+  const latestProd = (f: ProductionField) => prodVersions?.[f][0] ?? null;
+  const viewedProd = (f: ProductionField) => {
+    const no = viewProd[f];
+    return no !== undefined && no !== latestProd(f)?.versionNo ? (prodVersions?.[f].find((v) => v.versionNo === no) ?? null) : null;
+  };
+  async function handleSaveProduction(field: ProductionField, mode: "current" | "new") {
+    if (!creativeId) return;
+    setProdNote((n) => ({ ...n, [field]: undefined }));
+    setProdError((e) => ({ ...e, [field]: undefined }));
+    setProdSaving(field);
     try {
-      await saveThumbText.mutateAsync(thumbText);
-      setKnownThumbText(thumbText);
-      setThumbTextNote("Saved.");
-    } catch {
-      // Shown under the button.
+      const saved = await saveProduction.mutateAsync({
+        field,
+        mode,
+        body: field === "voiceover" ? voiceover : field === "thumbnail_text" ? thumbText : undefined,
+        slides: field === "slide_text" ? draftSlideText : undefined,
+        knownVersionId: knownProd?.[field] ?? latestProd(field)?.id ?? null,
+      });
+      setKnownProd((k) => ({ ...(k ?? { voiceover: null, slide_text: null, thumbnail_text: null }), [field]: saved.id }));
+      if (field === "voiceover") setSavedVoiceover(voiceover.trim());
+      else if (field === "thumbnail_text") setKnownThumbText(thumbText);
+      else setSavedSlideText(draftSlideText);
+      setViewProd((v) => ({ ...v, [field]: undefined }));
+      setProdNote((n) => ({ ...n, [field]: mode === "new" ? `Saved as V${saved.versionNo}.` : `Saved to V${saved.versionNo}.` }));
+    } catch (e) {
+      setProdError((x) => ({ ...x, [field]: e }));
+      if (e instanceof ProductionChangedError) void refetchProd();
+    } finally {
+      setProdSaving(null);
     }
   }
-  const saveVoiceover = useSaveVoiceover(creativeId ?? "", projectId);
-  const [voSaveNote, setVoSaveNote] = useState<string | null>(null);
-  async function handleSaveVoiceover() {
-    setVoSaveNote(null);
-    try {
-      await saveVoiceover.mutateAsync({ voiceover, known: savedVoiceover });
-      setSavedVoiceover(voiceover.trim());
-      setVoSaveNote("Saved.");
-    } catch {
-      // Shown via saveVoiceover.error below.
+  // Someone else's newer version, into the editor.
+  function showTheirs(field: ProductionField) {
+    const v = latestProd(field);
+    if (field === "voiceover") {
+      setVoiceover(v?.body ?? "");
+      setSavedVoiceover((v?.body ?? "").trim());
+    } else if (field === "thumbnail_text") {
+      setThumbText(v?.body ?? "");
+      setKnownThumbText(v?.body ?? "");
+    } else {
+      setSlideText(v?.slides ?? []);
+      setSavedSlideText(tidySlideText(v?.slides ?? []));
     }
+    setKnownProd((k) => ({ ...(k ?? { voiceover: null, slide_text: null, thumbnail_text: null }), [field]: v?.id ?? null }));
+    setProdError((x) => ({ ...x, [field]: undefined }));
   }
+  const prodSaveRow = (field: ProductionField, label: string, pending: boolean) => {
+    const latest = latestProd(field);
+    const err = prodError[field];
+    return (
+      <div className="field btnrow">
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {latest && (
+            <button
+              type="button"
+              className="btn sm primary"
+              disabled={!creativeId || !pending || prodSaving !== null}
+              onClick={() => handleSaveProduction(field, "current")}
+            >
+              {prodSaving === field ? "Saving…" : `Save to V${latest.versionNo}`}
+            </button>
+          )}
+          <button
+            type="button"
+            className={`btn sm${latest ? "" : " primary"}`}
+            disabled={!creativeId || !pending || prodSaving !== null}
+            onClick={() => handleSaveProduction(field, "new")}
+          >
+            {prodSaving === field ? "Saving…" : latest ? `Save as V${latest.versionNo + 1}` : `Save ${label} V1`}
+          </button>
+          {prodNote[field] && !pending && <span className="bsaved">{prodNote[field]}</span>}
+        </div>
+        {err instanceof ProductionChangedError ? (
+          <p className="autherr">
+            {err.message}.{" "}
+            <button type="button" className="linkbtn" onClick={() => showTheirs(field)}>
+              Show Theirs
+            </button>
+          </p>
+        ) : err ? (
+          <p className="autherr">{errorMessage(err, `Couldn't save the ${label}`)}</p>
+        ) : null}
+      </div>
+    );
+  };
+  const prodTabs = (field: ProductionField) =>
+    (prodVersions?.[field].length ?? 0) > 1 ? (
+      <div className="viewbar" style={{ marginBottom: 10 }}>
+        {prodVersions![field].map((v) => (
+          <VersionTab
+            key={v.versionNo}
+            versionNo={v.versionNo}
+            selected={(viewProd[field] ?? latestProd(field)?.versionNo) === v.versionNo}
+            onSelect={() =>
+              setViewProd((x) => ({ ...x, [field]: v.versionNo === latestProd(field)?.versionNo ? undefined : v.versionNo }))
+            }
+          />
+        ))}
+      </div>
+    ) : null;
+  const oldNote = (field: ProductionField) => (
+    <p className="sub" style={{ marginBottom: 10 }}>
+      An earlier version, read only. Changes build on the latest, V{latestProd(field)?.versionNo}.
+    </p>
+  );
   const refreshWiifmNote = useRefreshWiifmNote(creativeId ?? "");
 
   // Same "not available in create mode" shape as copyVersions/creativeVersions
@@ -1987,7 +2074,15 @@ export function CreativeModal(props: CreativeModalProps) {
           {isVideo && (
             <>
               <div className="msection-h">Thumbnail Text on Image</div>
-              <p className="msection-d">The words on the video&rsquo;s thumbnail. The thumbnail itself is on the Content tab.</p>
+              <p className="msection-d">The words on the video&rsquo;s thumbnail, saved as versions. The thumbnail itself is on the Content tab.</p>
+              {prodTabs("thumbnail_text")}
+              {viewedProd("thumbnail_text") ? (
+                <>
+                  {oldNote("thumbnail_text")}
+                  <p className="fd-d fd-pre">{viewedProd("thumbnail_text")!.body || "—"}</p>
+                </>
+              ) : (
+              <>
               <div className="field">
                 <textarea
                   id="nbThumbText"
@@ -1998,26 +2093,12 @@ export function CreativeModal(props: CreativeModalProps) {
                   value={thumbText}
                   onChange={(e) => {
                     setThumbText(e.target.value);
-                    setThumbTextNote(null);
                   }}
                 />
               </div>
-              <div className="field btnrow">
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <button
-                    type="button"
-                    className="btn sm primary"
-                    disabled={!pendingThumbText || saveThumbText.isPending}
-                    onClick={handleSaveThumbText}
-                  >
-                    {saveThumbText.isPending ? "Saving…" : "Save Thumbnail Text on Image"}
-                  </button>
-                  {thumbTextNote && !pendingThumbText && <span className="bsaved">{thumbTextNote}</span>}
-                </div>
-                {saveThumbText.error && (
-                  <p className="autherr">{errorMessage(saveThumbText.error, "Couldn't save the Thumbnail Text on Image")}</p>
-                )}
-              </div>
+              {prodSaveRow("thumbnail_text", "Thumbnail Text on Image", pendingThumbText)}
+              </>
+              )}
             </>
           )}
 
@@ -2027,7 +2108,15 @@ export function CreativeModal(props: CreativeModalProps) {
           {isVideo && (
             <>
               <div className="msection-h">VO</div>
-              <p className="msection-d">The voiceover script, the words spoken over the video.</p>
+              <p className="msection-d">The voiceover script, the words spoken over the video, saved as versions.</p>
+              {prodTabs("voiceover")}
+              {viewedProd("voiceover") ? (
+                <>
+                  {oldNote("voiceover")}
+                  <p className="fd-d fd-pre">{viewedProd("voiceover")!.body || "—"}</p>
+                </>
+              ) : (
+              <>
               <div className="field">
                 <label htmlFor="nbVo">Script</label>
                 <textarea
@@ -2040,102 +2129,55 @@ export function CreativeModal(props: CreativeModalProps) {
                   value={voiceover}
                   onChange={(e) => {
                     setVoiceover(e.target.value);
-                    setVoSaveNote(null);
                   }}
                 />
               </div>
-              <div className="field btnrow">
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <button
-                    type="button"
-                    className="btn sm primary"
-                    disabled={!creativeId || !pendingVoChange || saveVoiceover.isPending}
-                    onClick={handleSaveVoiceover}
-                  >
-                    {saveVoiceover.isPending ? "Saving…" : "Save VO"}
-                  </button>
-                  {voSaveNote && !pendingVoChange && <span className="bsaved">{voSaveNote}</span>}
-                </div>
-                {saveVoiceover.error instanceof VoiceoverChangedError ? (
-                  // Someone else's VO arrived meanwhile.
-                  <p className="autherr">
-                    {saveVoiceover.error.message}{" "}
-                    <button
-                      type="button"
-                      className="linkbtn"
-                      onClick={() => {
-                        const theirs = (saveVoiceover.error as VoiceoverChangedError).theirs;
-                        setVoiceover(theirs);
-                        setSavedVoiceover(theirs);
-                        saveVoiceover.reset();
-                      }}
-                    >
-                      Show Theirs
-                    </button>
-                  </p>
-                ) : (
-                  saveVoiceover.error && (
-                    <p className="autherr">{errorMessage(saveVoiceover.error, "Couldn't save the VO")}</p>
-                  )
-                )}
-              </div>
+              {prodSaveRow("voiceover", "VO", pendingVoChange)}
+              </>
+              )}
             </>
           )}
 
-          {/* Text on Image (phase57): saved on the post, not as a version. */}
+          {/* Text on Image (phase57), in versions (phase120). */}
           <div className="msection-h">Text on Image</div>
           <p className="msection-d">
             {slideCount
-              ? `The words on each ${frameNoun.toLowerCase()}'s artwork, one entry per ${frameNoun.toLowerCase()}.`
-              : "The words on the artwork itself."}
+              ? `The words on each ${frameNoun.toLowerCase()}'s artwork, one entry per ${frameNoun.toLowerCase()}, saved as versions.`
+              : "The words on the artwork itself, saved as versions."}
           </p>
+          {prodTabs("slide_text")}
+          {viewedProd("slide_text") ? (
+            <>
+              {oldNote("slide_text")}
+              {viewedProd("slide_text")!.slides.some((t) => t.trim()) ? (
+                viewedProd("slide_text")!.slides.map((t, i) =>
+                  t.trim() ? (
+                    <p className="fd-d" key={i}>
+                      {slideCount ? <b>{frameNoun} {i + 1}: </b> : null}
+                      {t}
+                    </p>
+                  ) : null,
+                )
+              ) : (
+                <p className="fd-d">—</p>
+              )}
+            </>
+          ) : (
+          <>
           <div data-focus="imageOnText">
           <ListEditor
             itemLabel={(i) => (slideCount ? `${frameNoun} ${i + 1}` : "Text on Image")}
             values={slideFields(slideText, slideCount ?? 1)}
             onChange={(next) => {
               setSlideText(next);
-              setSlideSaveNote(null);
             }}
             fixed
             bare
           />
           </div>
-          <div className="field btnrow">
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <button
-                type="button"
-                className="btn sm primary"
-                disabled={!creativeId || !pendingSlideChange || saveSlideText.isPending}
-                onClick={handleSaveSlideText}
-              >
-                {saveSlideText.isPending ? "Saving…" : "Save Text on Image"}
-              </button>
-              {slideSaveNote && !pendingSlideChange && <span className="bsaved">{slideSaveNote}</span>}
-            </div>
-            {saveSlideText.error instanceof SlideTextChangedError ? (
-              // Someone else's Text on Image arrived meanwhile (phase82).
-              <p className="autherr">
-                {saveSlideText.error.message}{" "}
-                <button
-                  type="button"
-                  className="linkbtn"
-                  onClick={() => {
-                    const theirs = (saveSlideText.error as SlideTextChangedError).theirs;
-                    setSlideText(theirs);
-                    setSavedSlideText(tidySlideText(theirs));
-                    saveSlideText.reset();
-                  }}
-                >
-                  Show Theirs
-                </button>
-              </p>
-            ) : (
-              saveSlideText.error && (
-                <p className="autherr">{errorMessage(saveSlideText.error, "Couldn't save the Text on Image")}</p>
-              )
-            )}
-          </div>
+          {prodSaveRow("slide_text", "Text on Image", pendingSlideChange)}
+          </>
+          )}
 
 
           {/* The Notes for Designer as saved on the Brief, where they're
@@ -2617,14 +2659,11 @@ export function CreativeModal(props: CreativeModalProps) {
             // Text on Image.
             if (THUMB_TEXT_FIELD.key in fields) {
               setThumbText(fields[THUMB_TEXT_FIELD.key]);
-              setThumbTextNote(null);
             }
             if (VO_FIELD.key in fields) {
               setVoiceover(fields[VO_FIELD.key]);
-              setVoSaveNote(null);
             }
             setSlideText((prev) => applySlideDraft(slideFields(prev, slideCount), fields));
-            setSlideSaveNote(null);
             return;
           }
           // Content's: the copy fields.

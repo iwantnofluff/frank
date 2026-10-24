@@ -13,6 +13,22 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.53.1",
+    date: "2026-10-24",
+    title: "An Internal Feedback column",
+    changes: ["The planner table has an Internal Feedback column before Client Feedback: your team's latest open comment on each post, private or public, with who said it above, two lines with Read more. For your team only."],
+  },
+  {
+    version: "1.53.0",
+    date: "2026-10-24",
+    title: "Versions for the Production tab",
+    changes: [
+      "The VO, Text on Image and Thumbnail Text on Image each have their own versions, like the copy: Save to V1 to change the current one, or Save as V2 to start a new one. Earlier versions stay in their tabs, read only.",
+      "The table's VO and Text on Image show the latest with its V, and the earlier ones on hover of +N earlier, as the Caption does.",
+      "Each post's words as they were are its V1.",
+    ],
+  },
+  {
     version: "1.52.4",
     date: "2026-10-24",
     title: "The thumbnail on review links, as the cover",

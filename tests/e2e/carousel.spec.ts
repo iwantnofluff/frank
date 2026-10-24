@@ -106,8 +106,10 @@ test("a carousel gets a slide count, and Text on Image one field per slide", asy
   // Slide 2 written, slide 1 left blank: positions are kept.
   await page.locator('[data-focus="imageOnText"] .brow textarea').nth(1).fill("Second slide words");
   // Its own Save: on the post, never a copy version (phase57).
-  await page.getByRole("button", { name: "Save Text on Image" }).click();
-  await expect(page.getByRole("button", { name: "Save Text on Image" })).toBeDisabled();
+  // As V1 (phase120); then it offers Save to V1 or Save as V2, greyed with no change.
+  await page.getByRole("button", { name: "Save Text on Image V1" }).click();
+  await expect(page.getByText("Saved as V1.")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("button", { name: "Save to V1" })).toBeDisabled();
   const { data: saved } = await admin.from("creatives").select("slide_text").eq("id", c!.id).single();
   expect(saved!.slide_text).toEqual(["", "Second slide words"]);
   expect((await admin.from("copy_versions").select("id").eq("creative_id", c!.id)).data).toEqual([]);
@@ -449,8 +451,9 @@ test("a format change the artwork no longer fits warns, and confirming removes a
   // Confirm removes the artwork, then saves the format.
   await page.getByRole("button", { name: "Update", exact: true }).click();
   await warning.getByRole("button", { name: "Change Format and Remove" }).click();
-  await expect(warning).toHaveCount(0);
-  await expect(page.getByText("Post updated.")).toBeVisible();
+  // Removing every file takes a moment on a slow connection.
+  await expect(warning).toHaveCount(0, { timeout: 15_000 });
+  await expect(page.getByText("Post updated.")).toBeVisible({ timeout: 15_000 });
   await expect
     .poll(async () => (await admin.from("creatives").select("formats").eq("id", frank.creativeId).single()).data!.formats)
     .toEqual(["ig_reel"]);

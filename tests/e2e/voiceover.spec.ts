@@ -36,9 +36,10 @@ test("a video post has a VO on Production, saved on the post and shown on the ta
   await vo.fill("Nobody misses on purpose.");
   // Unsaved, the window won't close on it.
   await expect(modal.getByRole("button", { name: "Save and Close" })).toBeDisabled();
-  await modal.getByRole("button", { name: "Save VO" }).click();
-  await expect(modal.getByRole("button", { name: "Save VO" })).toBeDisabled();
-  await expect(modal.getByText("Saved.")).toBeVisible();
+  // As V1 (phase120); then Save to V1 or Save as V2, greyed with no change.
+  await modal.getByRole("button", { name: "Save VO V1" }).click();
+  await expect(modal.getByText("Saved as V1.")).toBeVisible({ timeout: 15_000 });
+  await expect(modal.getByRole("button", { name: "Save to V1" })).toBeDisabled();
   await expect(modal.getByRole("button", { name: "Save and Close" })).toBeEnabled();
 
   // On the post itself, not a copy version; the log names it.
