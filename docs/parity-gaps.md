@@ -4405,3 +4405,17 @@ Direct instruction: the feed on share links and the review page should show the 
 Direct instruction: "Scroll inside the phone to read the caption" under the phone on all review pages for any format with a caption, even when the caption is pending; on a video post, "Scroll inside the phone to read the caption or play the video". ScrollHint shows it whenever the post's formats take a caption (copyFieldsFor includes caption), rather than only when the caption ran past the screen, on the review link (desktop) and now the post's own page, which keeps 46px under the phone for it so the phone still fits without the page scrolling. A Story (no caption) has none. A phone's review link has no phone frame, so no note.
 
 **Verified**: a Reel with no caption on the post's page showed the video wording, the page not scrolling; an Instagram post on a review link the caption wording; a Story none.
+
+## Feedback headers, named (2026-10-24)
+
+Direct instruction: keep the two feedback headers on the same dark background, the text orange; under Internal Feedback in small text "<name>'s team feedback", under Client Feedback "<client>'s feedback". The headers now have the other headers' dark background, in white (decided directly: the orange didn't look right); the sub-lines are the workspace's name ("No Fluff's team feedback", as the example) and the project's client's ("Casa Carigar's feedback"). Read the example as the workspace for Internal Feedback, since it's the team's; for a client that is also the workspace (No Fluff's own planner) both read No Fluff.
+
+**Verified**: screenshotted the headers: dark, orange names, "E2E Test Agency's team feedback" and "E2E Test Client's feedback" under them.
+
+Also, directly: every header's sub-line is white, at regular weight (it was faded to 60%, hard to read); and the hover preview's open-comment count, which had no styles of its own so its icon and number stacked on two lines, sits on one line at the strip's right.
+
+**Verified**: screenshotted the headers' left and right ends (white sub-lines) and the hover preview's strip (Client Review, then the comment icon and 2 on one line).
+
+Also, directly: the Copy section's line is shorter ("The caption and on-post text, saved as versions.") and a brief red note under the copy's save buttons (decided directly: there, not in the line), "Once saved, give Frank a moment to proofread it."; and the copy's proofread sits straight under the caption field (above Copy Caption), not under the save buttons. The Production fields' stay under each field's save.
+
+**Verified**: screenshotted the Copy section (the red note), and a seeded suggestion straight under the caption; proofread.spec passes.

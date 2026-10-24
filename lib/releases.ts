@@ -13,6 +13,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.54.5",
+    date: "2026-10-24",
+    title: "Feedback headers, named",
+    changes: [
+      "The Internal Feedback and Client Feedback headers are back on the table's dark background, in white, with whose under each: your workspace's team feedback, and the client's feedback.",
+      "Every column header's small line underneath is now white and easier to read.",
+      "In the Creative column's hover preview, the open comments' icon and count sit on one line.",
+      "Under the copy's save buttons, a red note says Frank proofreads what you save, and its suggestions now sit straight under the caption.",
+    ],
+  },
+  {
     version: "1.54.4",
     date: "2026-10-24",
     title: "The scroll note on every review",

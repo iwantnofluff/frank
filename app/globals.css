@@ -1521,26 +1521,22 @@ body.lightrail .search input::placeholder {
   white-space: nowrap;
   text-align: left;
 }
+/* White and regular (direct instruction: the faded grey was hard to read). */
 .tbl th small {
   display: block;
   font-size: 10.7px;
   font-weight: 400;
-  opacity: 0.6;
+  color: #fff;
   letter-spacing: 0.4px;
   margin-top: 1px;
 }
 .tbl th.k {
   background: #007bff;
 }
-/* Internal and Client Feedback's headers in Frank's orange (direct
-   instruction: the logo's review line, #F4A460), with white text and a
-   white line between them. */
+/* Internal and Client Feedback's headers: the other headers' dark and
+   white (direct instruction), whose under each. */
 .tbl th.feedback {
-  background: #f4a460;
   color: #fff;
-}
-.tbl th.feedback {
-  border-right-color: #fff;
 }
 .feedback-note {
   color: var(--rose);
@@ -12262,4 +12258,32 @@ button.sortbtn:hover {
 }
 .feedback-note .copypop {
   color: var(--ink);
+}
+
+/* The hover preview's open-comment count (direct instruction: its icon and
+   number on one line). */
+.evpop .rv .cchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  font-size: 12.2px;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--ink);
+}
+.evpop .rv .cchip svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+}
+/* The Copy section's note that Frank proofreads what's saved (direct
+   instruction: in red, brief). */
+.proof-wait {
+  margin: 6px 0 0;
+  font-size: 12.2px;
+  color: var(--rose);
 }

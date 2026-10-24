@@ -2337,7 +2337,7 @@ export function CreativeModal(props: CreativeModalProps) {
           <>
           <div className="msection-h">Copy</div>
           <p className="msection-d">
-            The caption and on-post text the chosen formats need, saved as versions.
+            The caption and on-post text, saved as versions.
           </p>
 
           {copyVersions.length > 0 && (
@@ -2397,6 +2397,21 @@ export function CreativeModal(props: CreativeModalProps) {
                     />
                   )}
                 </div>
+                {/* What was saved, proofread (phase121), straight under the
+                    first field, the caption (direct instruction). */}
+                {i === 0 && (
+                <ProofreadList
+                  versionId={latestCopyVersion?.id}
+                  current={draftFields}
+                  labels={Object.fromEntries(copyFieldSpecs.map((f) => [f.key, f.label]))}
+                  running={proofreading(latestCopyVersion?.id)}
+                  error={proofError(latestCopyVersion?.id)}
+                  onFix={(key, text) => {
+                    setDraftFields((prev) => ({ ...prev, [key]: text }));
+                    setCopySaveNote(null);
+                  }}
+                />
+                )}
                 {spec.key === "caption" && copyFieldButton("caption", "Caption")}
                 {spec.key === "alt" && copyFieldButton("alt", "Alt Text")}
                 </Fragment>
@@ -2437,6 +2452,9 @@ export function CreativeModal(props: CreativeModalProps) {
                     <span className={copySaveNote.startsWith("Saved") ? "bsaved" : "sub"}>{copySaveNote}</span>
                   )}
                 </div>
+                {/* Under the saves (direct instruction), so nobody closes
+                    before the proofread is back. */}
+                <p className="proof-wait">Once saved, give Frank a moment to proofread it.</p>
                 {latestCopyVersion && latestCopyCommentCount > 0 && pendingCopyChange && (
                   <p className="hint">
                     V{latestCopyVersion.version_no} has {latestCopyCommentCount === 1 ? "a comment" : `${latestCopyCommentCount} comments`}, so
@@ -2445,18 +2463,7 @@ export function CreativeModal(props: CreativeModalProps) {
                 )}
                 {updateCopy.error && <p className="autherr">{errorMessage(updateCopy.error, "Couldn't save to this version")}</p>}
               </div>
-              {/* What was saved, proofread (phase121). */}
-              <ProofreadList
-                versionId={latestCopyVersion?.id}
-                current={draftFields}
-                labels={Object.fromEntries(copyFieldSpecs.map((f) => [f.key, f.label]))}
-                running={proofreading(latestCopyVersion?.id)}
-                error={proofError(latestCopyVersion?.id)}
-                onFix={(key, text) => {
-                  setDraftFields((prev) => ({ ...prev, [key]: text }));
-                  setCopySaveNote(null);
-                }}
-              />
+
             </>
           )}
           </>

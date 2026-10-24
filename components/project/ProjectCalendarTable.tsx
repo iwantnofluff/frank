@@ -51,6 +51,7 @@ import { useProjectProductionVersions } from "@/hooks/use-production-versions";
 import { useCopyVersionsByCreative, type CopyVersionSummary } from "@/hooks/use-copy-versions-by-creative";
 import { useLatestFeedbackByCreative } from "@/hooks/use-latest-feedback-by-creative";
 import { useMyAgency } from "@/hooks/use-my-agency";
+import { useProject } from "@/hooks/use-project";
 import { DraftEditBar, DraftField, useDraftPost, type DraftFieldKey } from "@/components/project/draft-post";
 
 // A new row's cells, by column (the Social Media table's keys).
@@ -331,6 +332,16 @@ export function ProjectCalendarTable({
   // per-project. null activeViewId means "Main Table", the built-in
   // default that can be dirtied but never itself saved over.
   const { data: agency } = useMyAgency();
+  // The feedback columns' headers say whose (direct instruction): the
+  // workspace's team, and the client.
+  const { data: thisProject } = useProject(projectId);
+  const possessive = (n: string | null | undefined) => (n ? `${n}\u2019s` : null);
+  const feedbackSub = (key: string) =>
+    key === "internalFeedback"
+      ? possessive(agency?.name) && `${possessive(agency?.name)} team feedback`
+      : key === "clientFeedback"
+        ? possessive(thisProject?.clients?.name) && `${possessive(thisProject?.clients?.name)} feedback`
+        : null;
   const { data: savedViews } = useCalendarViews("scheduled", projectId);
   const createView = useCreateCalendarView();
   const updateView = useUpdateCalendarView();
@@ -1070,7 +1081,7 @@ export function ProjectCalendarTable({
                       onMouseDown={c.draggable ? (e) => startColumnDrag(c.key, e) : undefined}
                     >
                       {c.label}
-                      {c.sub && <small>{c.sub}</small>}
+                      {(feedbackSub(c.key) ?? c.sub) && <small>{feedbackSub(c.key) ?? c.sub}</small>}
                       {c.draggable && (
                         <span
                           className="grip"
