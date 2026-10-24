@@ -1532,8 +1532,15 @@ body.lightrail .search input::placeholder {
 .tbl th.k {
   background: #007bff;
 }
+/* Internal and Client Feedback's headers in Frank's orange (direct
+   instruction: the logo's review line, #F4A460), with white text and a
+   white line between them. */
 .tbl th.feedback {
-  background: var(--rose);
+  background: #f4a460;
+  color: #fff;
+}
+.tbl th.feedback {
+  border-right-color: #fff;
 }
 .feedback-note {
   color: var(--rose);

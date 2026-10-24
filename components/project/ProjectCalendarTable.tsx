@@ -1054,7 +1054,7 @@ export function ProjectCalendarTable({
                 )}
                 {columns.map((c) => {
                   const classes = [
-                    c.key === "clientFeedback" ? "feedback" : c.stickyClass,
+                    c.key === "clientFeedback" || c.key === "internalFeedback" ? "feedback" : c.stickyClass,
                     c.draggable ? "dragcol" : "",
                     dragVisual.drag === c.key ? "dragging" : "",
                     c.draggable && dragVisual.drop === c.key && dragVisual.drag !== c.key ? "drop-target" : "",

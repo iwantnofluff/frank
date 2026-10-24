@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.54.2",
+    date: "2026-10-24",
+    title: "Feedback headers in Frank's orange",
+    changes: ["The table's Internal Feedback and Client Feedback headers are in Frank's orange, so the two feedback columns stand together."],
+  },
+  {
     version: "1.54.1",
     date: "2026-10-24",
     title: "Feedback with dates, Show All, and slides spaced out",

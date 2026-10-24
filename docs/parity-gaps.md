@@ -4387,3 +4387,9 @@ Not done, for later if wanted: a marker in the table for copy with suggestions s
 Direct instruction: Internal and Client Feedback should show the date and time after the name, have a Show All hover link (as Caption's "+N earlier") listing every earlier comment with name and date and time, scrolling, and Read more on a long latest one; and a carousel's Text on Image slides were run together. FeedbackCell (both feedback columns): "NAME · 24 Oct, 12:36" over the latest open comment, clamped with Read more; Show All (N), on hover, every comment from that side, newest first, with who and when and "Resolved" on resolved ones, in the copy history's scrolling popover (in ink inside the client's red cell). The hook now returns each side's comments as well as the latest open one (resolved ones listed, deleted ones never). With every comment resolved, the cell says All resolved, with Show All. The slides: the heading's own top gap was cancelled because each is the first in its block; each slide now has a 10px gap before it.
 
 **Verified**: screenshotted a post with two team and three client comments (latest of each with name and time, Read more and Read less, Show All (2) and (3)), the Show All popover (newest first, names and times), and the carousel's Text on Image (Slide 1 to 3 spaced). concept-approval.spec updated: the client's label reads name · date, time; Show All lists both team comments newest first with the name.
+
+## Feedback headers in Frank's orange (2026-10-24)
+
+Direct instruction: the Internal Feedback and Client Feedback headers in Frank's orange. Both take the logo's orange line, #F4A460 (Client Feedback's was red), with white header text and a white line between the two (decided directly). The client's comments in the cells stay red.
+
+**Verified**: screenshotted the two headers side by side, orange with white text and the white line between them, after WIIFM Direction's dark one.
