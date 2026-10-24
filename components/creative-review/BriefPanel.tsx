@@ -5,6 +5,7 @@ import { formatById, formatsLabel, postFormats } from "@/lib/formats";
 import { ReferenceLinks } from "@/components/project/ReferenceLinks";
 import { useDesignerNotes } from "@/hooks/use-designer-notes";
 import { NotesText } from "@/components/creative-review/NotesText";
+import { ConceptText } from "@/components/creative-review/ConceptText";
 
 // Informational only, on this page — editing the brief now happens in
 // CreativeModal's Brief tab (the single entry point that replaced New
@@ -81,7 +82,7 @@ export function BriefPanel({
 
       <div className="bsec">
         <div className="bl">Concept</div>
-        <p className="fd-d">{creative.concept || "—"}</p>
+        <p className="fd-d">{creative.concept ? <ConceptText text={creative.concept} /> : "—"}</p>
       </div>
 
       <div className="bsec">

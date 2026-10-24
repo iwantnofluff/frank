@@ -35,6 +35,7 @@ import { useArtworkByCreative } from "@/hooks/use-artwork-by-creative";
 import { useThumbnailsByCreative } from "@/hooks/use-thumbnails";
 import { ArtworkCell } from "@/components/project/ArtworkCell";
 import { SlideTextCell } from "@/components/project/SlideTextCell";
+import { ConceptText } from "@/components/creative-review/ConceptText";
 import { EarlierVersions } from "@/components/project/EarlierVersions";
 import { useProjectProductionVersions } from "@/hooks/use-production-versions";
 import { useCopyVersionsByCreative } from "@/hooks/use-copy-versions-by-creative";
@@ -1218,7 +1219,12 @@ export function ContinuousCalendarTable({
                                 <td key={key} className="cellw">
                                   {c.concept || c.reference_urls?.length ? (
                                     <span className="copyc">
-                                      {c.concept && <ClampText expanded={expandedRow === c.id} onToggle={() => toggleRow(c.id)}>{c.concept}</ClampText>}
+                                      {c.concept && (
+                                        <ClampText expanded={expandedRow === c.id} onToggle={() => toggleRow(c.id)}>
+                                          {/* Laid out for reading when opened (direct instruction). */}
+                                          {expandedRow === c.id ? <ConceptText text={c.concept} /> : c.concept}
+                                        </ClampText>
+                                      )}
                                       <ReferenceLinks urls={c.reference_urls ?? []} preview />
                                       {/* After the references, so a long concept's
                                           Read more stays with it. */}

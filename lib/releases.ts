@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.54.6",
+    date: "2026-10-24",
+    title: "Concepts laid out for reading",
+    changes: ["A post's Concept on its Brief, and in the table once opened with Read more, is laid out for reading rather than one block: your own line breaks kept, each Slide 1:, Slide 2: on its own line with its label in bold, and a long run of sentences split into short paragraphs. What's saved doesn't change."],
+  },
+  {
     version: "1.54.5",
     date: "2026-10-24",
     title: "Feedback headers, named",

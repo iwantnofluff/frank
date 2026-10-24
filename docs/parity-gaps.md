@@ -4419,3 +4419,9 @@ Also, directly: every header's sub-line is white, at regular weight (it was fade
 Also, directly: the Copy section's line is shorter ("The caption and on-post text, saved as versions.") and a brief red note under the copy's save buttons (decided directly: there, not in the line), "Once saved, give Frank a moment to proofread it."; and the copy's proofread sits straight under the caption field (above Copy Caption), not under the save buttons. The Production fields' stay under each field's save.
 
 **Verified**: screenshotted the Copy section (the red note), and a seeded suggestion straight under the caption; proofread.spec passes.
+
+## Concepts laid out for reading (2026-10-24)
+
+Direct instruction: the Concept shouldn't read as one big block; paragraphs where needed. lib/concept-format.ts decides the breaks without changing what's saved: the writer's own line breaks kept; each "Slide N:" (and Story, Frame, Scene) on its own line, its label in bold and a wrapping bracket dropped ("Slide 1: the bird in the frame"); prose over 320 characters split at sentence ends into paragraphs of about 230. Used on the post's Brief (ConceptText) and in both tables' Concept cell once opened with Read more (the clamped two lines are unchanged). The Brief window's own text box is as typed.
+
+**Verified**: unit tests for slides, kept breaks and long prose. The Fear Factor concept on a post's Brief: its opening paragraph, then Slide 1 to 5 each on a line with the label in bold; screenshotted.

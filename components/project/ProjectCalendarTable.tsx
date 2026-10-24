@@ -45,6 +45,7 @@ import { useArtworkByCreative } from "@/hooks/use-artwork-by-creative";
 import { useThumbnailsByCreative } from "@/hooks/use-thumbnails";
 import { ArtworkCell } from "@/components/project/ArtworkCell";
 import { SlideTextCell } from "@/components/project/SlideTextCell";
+import { ConceptText } from "@/components/creative-review/ConceptText";
 import { EarlierVersions } from "@/components/project/EarlierVersions";
 import { FeedbackCell } from "@/components/project/FeedbackCell";
 import { useProjectProductionVersions } from "@/hooks/use-production-versions";
@@ -1310,7 +1311,8 @@ export function ProjectCalendarTable({
                                     <span className="copyc">
                                       {c.concept && (
                                         <ClampText expanded={expandedRow === c.id} onToggle={() => toggleRow(c.id)}>
-                                          {c.concept}
+                                          {/* Laid out for reading when opened (direct instruction). */}
+                                          {expandedRow === c.id ? <ConceptText text={c.concept} /> : c.concept}
                                         </ClampText>
                                       )}
                                       <ReferenceLinks urls={c.reference_urls ?? []} preview />

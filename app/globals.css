@@ -12287,3 +12287,19 @@ button.sortbtn:hover {
   font-size: 12.2px;
   color: var(--rose);
 }
+
+/* A Concept laid out for reading (ConceptText): paragraphs with a gap,
+   each slide on its own line. */
+.ctext,
+.ctext-p,
+.ctext-s {
+  display: block;
+}
+.ctext-p + .ctext-p,
+.ctext-p + .ctext-s,
+.ctext-s + .ctext-p {
+  margin-top: 8px;
+}
+.ctext-s + .ctext-s {
+  margin-top: 3px;
+}
