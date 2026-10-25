@@ -22,6 +22,7 @@ export function ConfirmDialog({
   onConfirm,
   onClose,
   tone = "danger",
+  children,
 }: {
   title: string;
   message: string;
@@ -36,6 +37,8 @@ export function ConfirmDialog({
   onClose: () => void;
   // "primary" for a confirmation that isn't destructive (choosing a plan).
   tone?: "danger" | "primary";
+  // Anything else to offer before deciding (a Copy button, say).
+  children?: React.ReactNode;
 }) {
   const firstName = useMyFirstName();
   return (
@@ -48,6 +51,7 @@ export function ConfirmDialog({
           ))}
         </ul>
       )}
+      {children}
       {!!error && <p className="autherr">{errorMessage(error, errorFallback)}</p>}
       <div className="confirm-acts">
         <button type="button" className="btn" onClick={onClose}>

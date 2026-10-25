@@ -1,9 +1,22 @@
 // Proofreading what's saved (phase121, direct instruction): suggestions,
-// never changes, each with Fix and Ignore. Spelling, punctuation and
-// grammar come from one AI request; paragraphs that run on with a single
-// line break are found here, without AI.
+// never changes, each with Fix and Ignore. The workspace's rules
+// (phase122, lib/proofread-rules.ts) say what's checked: those for the AI
+// go in one request; paragraphs that run on with a single line break are
+// found here, without AI, as are the rest (lib/proofread-rules.ts).
 
-export type ProofreadKind = "spelling" | "grammar" | "punctuation" | "paragraph";
+import type { AiRule } from "@/lib/proofread-rules";
+
+export type ProofreadKind =
+  | "spelling"
+  | "grammar"
+  | "punctuation"
+  | "paragraph"
+  | "spacing"
+  | "repeat"
+  | "hashtag"
+  | "style"
+  | "word"
+  | "custom";
 
 export interface ProofreadSuggestion {
   id: string;
@@ -62,13 +75,19 @@ export function buildProofreadPrompt(input: {
   fields: { key: string; label: string; text: string }[];
   clientName: string | null;
   toneOfVoice: string[];
+  rules: AiRule[];
+  // What's checked without AI, to leave out.
+  apart?: string[];
 }): string {
   return [
-    "You proofread social media copy for a brand before it goes out. Find only clear mistakes: spelling and typos, grammar, and wrong or missing punctuation. Reply with one JSON object and nothing else.",
-    "Respect deliberate style: a casual tone, sentence fragments, lowercase styling, slang, emojis, hashtags, @handles, brand and product names, line breaks and the spelling convention (British or American) the copy already uses. If you're not sure it's a mistake, leave it out.",
+    "You proofread social media copy for a brand before it goes out. Check it against the rules below, and nothing else. Reply with one JSON object and nothing else.",
+    "The rules, each with its id in brackets:",
+    input.rules.map((r) => `[${r.id}] ${r.text}`).join("\n"),
+    input.apart?.length ? `These are checked separately, so leave them out: ${input.apart.join("; ")}.` : null,
+    "Otherwise respect deliberate style: a casual tone, sentence fragments, lowercase styling, slang, emojis, hashtags, @handles, brand and product names, and line breaks. If you're not sure a rule applies, leave it out.",
     input.clientName ? `The brand: ${input.clientName}.` : null,
     input.toneOfVoice.length ? `Its tone of voice (follow it; don't flag what it asks for):\n${input.toneOfVoice.map((t) => `- ${t}`).join("\n")}` : null,
-    'Shape: {"suggestions":[{"field":"<key>","from":"<exact words from that field>","to":"<corrected words>","reason":"<a few words>","kind":"spelling|grammar|punctuation"}]}. "from" must appear in the field exactly as written, as short as it can be while appearing only once. Each suggestion one change. No suggestions: {"suggestions":[]}.',
+    'Shape: {"suggestions":[{"field":"<key>","from":"<exact words from that field>","to":"<corrected words>","reason":"<a few words>","rule":"<the rule\'s id>"}]}. "from" must appear in the field exactly as written, as short as it can be while appearing only once. Each suggestion one change. No suggestions: {"suggestions":[]}.',
     "The fields:",
     ...input.fields.map((f) => `<${f.key}> (${f.label})\n${f.text}\n</${f.key}>`),
   ]
@@ -76,11 +95,10 @@ export function buildProofreadPrompt(input: {
     .join("\n\n");
 }
 
-const KINDS = new Set(["spelling", "grammar", "punctuation"]);
-
 // The reply's suggestions, kept only where they're real: a known field,
-// words that are in it, and an actual change.
-export function parseProofread(reply: string, fields: Record<string, string>): ProofreadSuggestion[] {
+// words that are in it, and an actual change. Each takes its kind from the
+// rule it names, and the rule's name when it gives no reason.
+export function parseProofread(reply: string, fields: Record<string, string>, rules: AiRule[]): ProofreadSuggestion[] {
   const start = reply.indexOf("{");
   const end = reply.lastIndexOf("}");
   if (start < 0 || end <= start) return [];
@@ -92,19 +110,23 @@ export function parseProofread(reply: string, fields: Record<string, string>): P
   }
   const list = (raw as { suggestions?: unknown }).suggestions;
   if (!Array.isArray(list)) return [];
+  const byId = new Map(rules.map((r) => [r.id, r]));
   const out: ProofreadSuggestion[] = [];
   const seen = new Set<string>();
   for (const s of list as Record<string, unknown>[]) {
     const field = typeof s.field === "string" ? s.field : "";
     const from = typeof s.from === "string" ? s.from : "";
     const to = typeof s.to === "string" ? s.to : "";
-    const kind = typeof s.kind === "string" && KINDS.has(s.kind) ? (s.kind as ProofreadKind) : "spelling";
+    const rule = typeof s.rule === "string" ? byId.get(s.rule) : undefined;
     const text = fields[field];
     if (!text || !from || from === to || !text.includes(from)) continue;
     const id = idOf(field, from, to);
     if (seen.has(id)) continue;
     seen.add(id);
-    out.push({ id, field, from, to, reason: typeof s.reason === "string" ? s.reason.slice(0, 120) : "", kind });
+    const given = typeof s.reason === "string" ? s.reason.slice(0, 120) : "";
+    // A workspace's own rule is named, so it's clear where it came from.
+    const reason = rule?.kind === "custom" ? `Your rule: ${rule.label}` : given || rule?.label || "";
+    out.push({ id, field, from, to, reason, kind: rule?.kind ?? "spelling" });
   }
   return out;
 }

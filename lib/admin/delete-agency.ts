@@ -26,6 +26,7 @@ const TABLES = [
   "custom_columns",
   "projects",
   "format_directions",
+  "proofread_rules",
   "agency_knowledge_entries",
   "knowledge_entries",
   "invites",

@@ -19,22 +19,42 @@ test("parseProofread keeps only real changes to words that are in the field", ()
       '{"field":"alt","from":"Thsi","to":"This","kind":"spelling"},' +
       '{"field":"caption","from":"test","to":"test","kind":"spelling"}]}',
     fields,
+    [],
   );
   assert.equal(s.length, 1);
   assert.deepEqual({ from: s[0].from, to: s[0].to, kind: s[0].kind }, { from: "Thsi", to: "This", kind: "spelling" });
-  assert.deepEqual(parseProofread("no json", fields), []);
+  assert.deepEqual(parseProofread("no json", fields, []), []);
 });
 
 test("openSuggestions drops ignored ones and those already fixed", () => {
-  const [a] = parseProofread('{"suggestions":[{"field":"caption","from":"Thsi","to":"This","kind":"spelling"}]}', { caption: "Thsi is it" });
+  const [a] = parseProofread('{"suggestions":[{"field":"caption","from":"Thsi","to":"This","kind":"spelling"}]}', { caption: "Thsi is it" }, []);
   assert.equal(openSuggestions([a], [], { caption: "Thsi is it" }).length, 1);
   assert.equal(openSuggestions([a], [a.id], { caption: "Thsi is it" }).length, 0);
   assert.equal(openSuggestions([a], [], { caption: "This is it" }).length, 0);
 });
 
-test("the prompt respects style and carries the tone of voice and fields", () => {
-  const p = buildProofreadPrompt({ fields: [{ key: "caption", label: "Caption", text: "hello" }], clientName: "Casa", toneOfVoice: ["Warm, lowercase"] });
-  assert.match(p, /Respect deliberate style/);
+test("parseProofread takes the kind from the rule, and names a workspace's own", () => {
+  const rules = [
+    { id: "grammar", text: "Grammar.", kind: "grammar" as const, label: "Grammar" },
+    { id: "own_1", text: "Never use & in a sentence.", kind: "custom" as const, label: "Never use & in a sentence." },
+  ];
+  const s = parseProofread(
+    '{"suggestions":[{"field":"caption","from":"we was","to":"we were","rule":"grammar"},{"field":"caption","from":"tea & cake","to":"tea and cake","reason":"x","rule":"own_1"}]}',
+    { caption: "we was having tea & cake" },
+    rules,
+  );
+  assert.deepEqual(s.map((x) => [x.kind, x.reason]), [["grammar", "Grammar"], ["custom", "Your rule: Never use & in a sentence."]]);
+});
+
+test("the prompt respects style and carries the rules, tone of voice and fields", () => {
+  const p = buildProofreadPrompt({
+    fields: [{ key: "caption", label: "Caption", text: "hello" }],
+    clientName: "Casa",
+    toneOfVoice: ["Warm, lowercase"],
+    rules: [{ id: "spelling", text: "Spelling and typos.", kind: "spelling", label: "Spelling" }],
+  });
+  assert.match(p, /\[spelling\] Spelling and typos\./);
+  assert.match(p, /respect deliberate style/);
   assert.match(p, /Warm, lowercase/);
   assert.match(p, /<caption> \(Caption\)\nhello\n<\/caption>/);
 });

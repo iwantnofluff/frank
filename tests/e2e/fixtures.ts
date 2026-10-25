@@ -447,6 +447,9 @@ export const test = base.extend<{ frank: Frank }>({
       // clean it up, or agencies' delete below fails on the FK and leaves
       // this whole fixture orphaned.
       ["format_directions", () => admin.from("format_directions").delete().eq("agency_id", agency.id)],
+      // phase122: the workspace's proofreading rules. References agencies
+      // and users, so before both.
+      ["proofread_rules", () => admin.from("proofread_rules").delete().eq("agency_id", agency.id)],
       // Before phase11_agency_knowledge.sql is applied, this errors
       // (best-effort/logged, not thrown — same as every step here) rather
       // than blocking the rest of cleanup.

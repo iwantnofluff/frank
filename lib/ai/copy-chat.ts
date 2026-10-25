@@ -34,6 +34,9 @@ export interface CopyChatContext {
   // What the client has asked for on their posts lately (direct
   // instruction): real corrections from the last 90 days, newest first.
   clientFeedback?: ClientFeedback[];
+  // The workspace's proofreading rules, as rules to write by (phase122,
+  // lib/proofread-rules.ts writingRules).
+  writingRules?: string[];
 }
 
 export interface OtherPost {
@@ -212,6 +215,9 @@ export function buildCopyChatPromptParts(
       ? `What's already working in this post's copy (its WIIFM Direction: the psychology principles and biases it uses; build on them):\n${context.approachNotes.map((n) => `- ${n}`).join("\n")}`
       : null,
     context.formatDirection ? `Format direction (follow it):\n${context.formatDirection}` : null,
+    context.writingRules?.length
+      ? `The workspace's house rules. Every draft follows them; when reviewing, point out where the copy breaks one:\n${context.writingRules.map((r) => `- ${r}`).join("\n")}`
+      : null,
     designerNotesBlock(context.designerNotes),
     context.strategy ?? null,
     notes("Workspace knowledge", context.agencyNotes),

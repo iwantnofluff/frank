@@ -340,7 +340,9 @@ export const HELP_ARTICLES: HelpArticle[] = [
         ],
       },
       { kind: "h", text: "Proofreading" },
-      { kind: "p", text: "Each time copy, a VO, Text on Image or Thumbnail Text on Image is saved, Frank proofreads what was saved: spelling, punctuation and grammar, following the client's Tone of Voice, and paragraphs that start on the very next line instead of after a blank one. Its suggestions are listed under the field, each with Fix, which puts it into the editor for you to save, and Ignore, which hides it for good on that version; Fix All does them all. Nothing changes until you choose, as some things are meant to be the way they are. Each proofread is one of your workspace's monthly AI requests." },
+      { kind: "p", text: "Each time copy, a VO, Text on Image or Thumbnail Text on Image is saved, Frank proofreads what was saved, by your workspace's proofreading rules and following the client's Tone of Voice. Its suggestions are listed under the field, each with Fix, which puts it into the editor for you to save, and Ignore, which hides it for good on that version; Fix All does them all. Nothing changes until you choose, as some things are meant to be the way they are." },
+      { kind: "p", text: "The rules are in Workspace Settings → Knowledge → Proofreading, each with a switch: spelling, grammar, punctuation, British or American spelling, names as the brand writes them, paragraph spacing, spaces, repeated words, hashtags, no em dashes, no colons and no AI-sounding phrases. Owners and Admins can add rules in their own words, and Preferred Words that are always written one way." },
+      { kind: "p", text: "Each proofread is one of your workspace's monthly AI requests, your own rules included. Spaces, repeated words, repeated hashtags, paragraph spacing and Preferred Words are checked without AI, so with every AI rule off a save uses none." },
       { kind: "p", text: "Saving shows each step: compressing a video, uploading, then saving the version. Keep the window open until it says the version is saved." },
       { kind: "p", text: "A file goes up in pieces, so if the connection drops, Frank carries on from where it was once it's back; if it still can't, the reason shows under Save." },
       {
@@ -463,6 +465,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     blocks: [
       { kind: "p", text: "There's a Draft with Frank at the foot of two tabs, each with its own conversations. On Content it drafts the copy: the caption and the other copy fields, so the post needs a format first. On Production it drafts the words for making the creative: the Text on Image, and a video's VO and Thumbnail Text on Image." },
       { kind: "p", text: "Frank reads the brief, the Notes for Designer (so the copy fits the visual), the WIIFM, each format's direction, and your workspace's and the client's Knowledge, files included." },
+      { kind: "p", text: "Its drafts follow your workspace's proofreading rules (Workspace Settings → Knowledge → Proofreading): British or American spelling, no em dashes or colons, no AI-sounding phrases, your own rules and Preferred Words, whichever are switched on. Reviewing your draft, it points out where the copy breaks one." },
       { kind: "p", text: "It also reads up to 8 of the client's Approved posts, to keep to their voice without repeating them, and up to 20 of the client's own comments, which it follows (not praise or approvals); if those clash with the Knowledge, Frank says so." },
       { kind: "p", text: "How far back each reaches, or whether Frank reads it at all, is set in the client's Preferences (by default, Approved posts from the last 12 months and comments from the last 90 days). The window lists what Frank reads for that client." },
       {
@@ -680,7 +683,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "AI Governance: the AI model Draft with Frank uses.",
           "Connections: every client's Instagram in one list.",
           "Your Plan and Billing: your plan, payment methods and invoices.",
-          "Knowledge: Format Directions for each format, and Reference Material shared across every client.",
+          "Knowledge: the Proofreading rules Frank checks saved copy by, Format Directions for each format, and Reference Material shared across every client.",
         ],
       },
     ],

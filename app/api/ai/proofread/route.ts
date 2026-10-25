@@ -3,14 +3,17 @@ import { createClient } from "@/lib/supabase/server";
 import { runAiTask } from "@/lib/ai/run-ai-task";
 import { COPY_FIELD_LABELS } from "@/lib/formats";
 import { buildProofreadPrompt, paragraphSuggestions, parseProofread, type ProofreadSuggestion } from "@/lib/proofread";
+import { aiRules, checkedApart, codeSuggestions, resolveRules, type ProofreadRuleRow } from "@/lib/proofread-rules";
 
 // Proofreads a version just saved (phase121, direct instruction): a copy
 // version, or one Production field's version. The words are read here, from
 // what was saved, never taken from the request. Paragraphs that run on are
 // found without AI; spelling, punctuation and grammar are one request
 // against the agency's monthly cap (runAiTask), told to respect the
-// client's tone. The result replaces the version's proofread, so an
-// earlier Ignore goes with the words it was about. The team only.
+// client's tone. The workspace's rules (phase122) say which checks run:
+// with every AI rule off, no request is made. The result replaces the
+// version's proofread, so an earlier Ignore goes with the words it was
+// about. The team only.
 export async function POST(request: Request) {
   const supabase = await createClient();
   const {
@@ -77,22 +80,44 @@ export async function POST(request: Request) {
   if (!membership || membership.client_id !== null) return NextResponse.json({ error: "Staff access required" }, { status: 403 });
 
   const byKey = Object.fromEntries(fields.map((f) => [f.key, f.text]));
-  let suggestions: ProofreadSuggestion[] = fields.filter((f) => prose.has(f.key)).flatMap((f) => paragraphSuggestions(f.key, f.text));
+  const project = creative.project as unknown as { client_id: string; clients: { name: string } | null } | null;
+  const [{ data: ruleRows }, { data: knowledge }] = await Promise.all([
+    supabase
+      .from("proofread_rules")
+      .select("id, kind, rule_key, body, from_word, to_word, enabled, options, created_at")
+      .eq("agency_id", agencyId),
+    project?.client_id
+      ? supabase
+          .from("knowledge_entries")
+          .select("section, title, body")
+          .eq("client_id", project.client_id)
+          .in("section", ["tone", "about", "products", "protected_terms"])
+          .limit(60)
+      : Promise.resolve({ data: [] as { section: string; title: string | null; body: string | null }[] }),
+  ]);
+  const rules = resolveRules((ruleRows ?? []) as ProofreadRuleRow[]);
+  const entries = knowledge ?? [];
+  const line = (t: { title: string | null; body: string | null }, max: number) => [t.title, t.body].filter(Boolean).join(": ").slice(0, max);
+  const tone = entries.filter((e) => e.section === "tone").slice(0, 10).map((t) => line(t, 600)).filter(Boolean);
+  // How the brand writes its names: Protected Terms first, then its
+  // products and About, kept short.
+  const names = [project?.clients?.name ?? null, ...["protected_terms", "products", "about"].flatMap((sec) => entries.filter((e) => e.section === sec).map((e) => line(e, 300)))]
+    .filter((n): n is string => !!n)
+    .slice(0, 20);
+  const forAi = aiRules(rules, names);
 
-  if (fields.length) {
-    const project = creative.project as unknown as { client_id: string; clients: { name: string } | null } | null;
-    const { data: tone } = project?.client_id
-      ? await supabase.from("knowledge_entries").select("title, body").eq("client_id", project.client_id).eq("section", "tone").limit(10)
-      : { data: [] };
-    const prompt = buildProofreadPrompt({
-      fields,
-      clientName: project?.clients?.name ?? null,
-      toneOfVoice: (tone ?? []).map((t) => [t.title, t.body].filter(Boolean).join(": ").slice(0, 600)).filter(Boolean),
-    });
+  let found: ProofreadSuggestion[] = [];
+  if (fields.length && forAi.length) {
+    const prompt = buildProofreadPrompt({ fields, clientName: project?.clients?.name ?? null, toneOfVoice: tone, rules: forAi, apart: checkedApart(rules) });
     const result = await runAiTask(supabase, agencyId, user.id, prompt);
     if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
-    suggestions = [...parseProofread(result.text ?? "", byKey), ...suggestions];
+    found = parseProofread(result.text ?? "", byKey, forAi);
   }
+  // The same change found twice (by the AI and a preferred word) shows once.
+  const suggestions: ProofreadSuggestion[] = [
+    ...found,
+    ...fields.flatMap((f) => codeSuggestions(f.key, f.text, rules, prose.has(f.key), found, paragraphSuggestions)),
+  ].filter((s, i, all) => all.findIndex((x) => x.id === s.id) === i);
 
   const { error } = await supabase
     .from("proofreads")

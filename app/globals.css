@@ -4462,6 +4462,192 @@ textarea.cxin {
   padding: 2px 0;
 }
 
+/* Settings → Knowledge → Proofreading (phase122): rules in groups, each
+   with a switch at the right; the workspace's own rules and preferred
+   words below, in the same rows. */
+.pr-group {
+  padding: 8px 15px;
+  background: var(--canvas);
+  border-bottom: 1px solid var(--line);
+  font-size: 11.7px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.pr-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 11px 15px;
+  border-bottom: 1px solid var(--line);
+}
+.pr-row:last-child,
+.pr-row:has(+ .kb-foot) {
+  border-bottom: none;
+}
+.pr-b {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.pr-b b {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13.7px;
+  font-weight: 600;
+}
+.pr-row.off .pr-b b,
+.pr-row.off .pr-own {
+  color: var(--muted);
+}
+.pr-ai {
+  font-size: 10.2px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  padding: 1px 6px;
+  border-radius: 99px;
+  color: var(--action);
+  background: var(--action-soft);
+}
+.pr-d,
+.pr-hint {
+  font-size: 12.7px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.pr-own {
+  font-size: 13.7px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.pr-own del {
+  color: var(--rose);
+}
+.pr-own ins {
+  text-decoration: none;
+  color: var(--green);
+  font-weight: 600;
+}
+.pr-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 5px;
+  font-size: 12.7px;
+  color: var(--muted);
+}
+.pr-phrases {
+  font-size: 12.2px;
+  line-height: 1.55;
+  color: var(--ink);
+  margin-top: 3px;
+}
+.pr-acts {
+  display: flex;
+  gap: 12px;
+  margin-top: 2px;
+}
+.pr-link {
+  border: none;
+  background: none;
+  padding: 0;
+  margin-left: 8px;
+  font: inherit;
+  font-size: 12.2px;
+  font-weight: 600;
+  color: var(--action);
+  cursor: pointer;
+}
+.pr-acts .pr-link {
+  margin-left: 0;
+}
+.pr-link:hover {
+  text-decoration: underline;
+}
+.pr-edit {
+  gap: 7px;
+  margin-top: 4px;
+}
+.pr-words {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pr-err {
+  margin: 0;
+  padding: 9px 15px 0;
+}
+/* Reset to Frank's List's warning: the list as it is, to copy first. */
+.pr-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 14px;
+}
+.pr-copy pre {
+  align-self: stretch;
+  margin: 0;
+  max-height: 180px;
+  overflow: auto;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--canvas);
+  font: inherit;
+  font-size: 12.7px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.pr-switch {
+  flex-shrink: 0;
+  position: relative;
+  width: 34px;
+  height: 20px;
+  margin-top: 1px;
+  padding: 0;
+  border: none;
+  border-radius: 99px;
+  background: var(--line-2);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.pr-switch span {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease;
+}
+.pr-switch[aria-checked="true"] {
+  background: var(--action);
+}
+.pr-switch[aria-checked="true"] span {
+  transform: translateX(14px);
+}
+.pr-switch:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.pr-switch:focus-visible {
+  outline: 2px solid var(--action);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pr-switch,
+  .pr-switch span {
+    transition: none;
+  }
+}
+
 /* Format Directions — the full 41-format catalog grouped into collapsible
    categories (frank-prototype.html, renderMethod()), ported verbatim. */
 .fd-note {

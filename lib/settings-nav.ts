@@ -82,6 +82,8 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     key: "knowledge",
     label: "Knowledge",
     pages: [
+      // The rules Frank proofreads by (phase122), above the formats.
+      { href: "/settings/knowledge/proofreading", label: "Proofreading" },
       { href: "/settings/knowledge/format-directions", label: "Format Directions" },
       { href: "/settings/knowledge/reference-material", label: "Reference Material" },
     ],

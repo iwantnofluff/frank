@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { resolveRules, writingRules, type ProofreadRuleRow } from "@/lib/proofread-rules";
 import { runAiTask } from "@/lib/ai/run-ai-task";
 import {
   chatFields,
@@ -122,7 +123,7 @@ export async function POST(request: Request) {
   // The context. The client's strategy is the month the post goes live in,
   // or this month without a live date (decided directly, phase78).
   const strategyMonth = monthOf((creative.scheduled_at as string | null) ?? (creative.due_on as string | null) ?? new Date());
-  const [directions, agencyKnowledge, clientKnowledge, strategy] = await Promise.all([
+  const [directions, agencyKnowledge, clientKnowledge, strategy, ruleRows] = await Promise.all([
     supabase.from("format_directions").select("format_id, direction_text").eq("agency_id", agencyId),
     supabase.from("agency_knowledge_entries").select("kind, title, body, asset_id").eq("agency_id", agencyId).order("created_at"),
     clientId
@@ -136,6 +137,11 @@ export async function POST(request: Request) {
           .eq("month", strategyMonth)
           .maybeSingle()
       : Promise.resolve({ data: null }),
+    // The workspace's proofreading rules, for the drafts to follow.
+    supabase
+      .from("proofread_rules")
+      .select("id, kind, rule_key, body, from_word, to_word, enabled, options, created_at")
+      .eq("agency_id", agencyId),
   ]);
   // The client's other posts, for their voice, and what the client has
   // asked for in the last 90 days (direct instruction).
@@ -198,6 +204,7 @@ export async function POST(request: Request) {
       designerNotes,
       otherPosts,
       clientFeedback,
+      writingRules: writingRules(resolveRules((ruleRows.data ?? []) as ProofreadRuleRow[])),
       fields: covered,
       scope,
     },

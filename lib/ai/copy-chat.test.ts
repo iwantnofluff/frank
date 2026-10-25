@@ -148,3 +148,9 @@ test("Production's Draft with Frank writes the words for making the creative, no
   // Content's stays as it was.
   assert.match(buildCopyChatPromptParts(context, [], {})[0], /working with a colleague on the copy for one post/);
 });
+
+test("the workspace's proofreading rules go in as house rules, in the part kept between messages", () => {
+  const [stable] = buildCopyChatPromptParts({ ...context, writingRules: ["No colons, except in times (10:30), ratios and links."] }, [], {});
+  assert.match(stable, /house rules[^\n]*\n- No colons/);
+  assert.doesNotMatch(buildCopyChatPrompt(context, [], {}), /house rules/);
+});

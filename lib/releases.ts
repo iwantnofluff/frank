@@ -13,6 +13,18 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.55.0",
+    date: "2026-10-25",
+    title: "Your own proofreading rules",
+    changes: [
+      "Settings → Knowledge → Proofreading lists the rules Frank proofreads by, each with a switch: spelling, grammar and punctuation, British or American spelling, names as the brand writes them, paragraph spacing, spaces, repeated words, hashtags, no em dashes, no colons, and no AI-sounding phrases, with a list of phrases you can edit. They all start on. Owners and Admins change them.",
+      "Add rules in your own words for Frank to follow, such as Never use & in a sentence, and Preferred Words that are always written one way, such as ecommerce rather than e-commerce. Your rules go in the same AI request, so they don't use any more.",
+      "Spaces, repeated words, repeated hashtags, paragraph spacing and preferred words are checked exactly, without AI. With every AI rule off, a save uses no AI request at all.",
+      "Draft with Frank now writes by the same rules, on the Content and Production tabs, so its drafts start clean. Reviewing your draft, it points out where the copy breaks one.",
+      "Reset to Frank's List puts the original AI-sounding phrases back, after a warning that shows your list with Copy List, so you can keep it first.",
+    ],
+  },
+  {
     version: "1.54.6",
     date: "2026-10-24",
     title: "Concepts laid out for reading",
