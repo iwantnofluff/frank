@@ -1,22 +1,76 @@
 import { test as base, expect, type Page } from "@playwright/test";
 import { CURRENT_RELEASE } from "../../lib/releases";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import path from "path";
+import { admin, ANON_KEY, SUPABASE_URL, sweepAgency, TEST_AGENCY_NAME } from "./sweep";
 
-// Playwright's runner doesn't load .env.local the way `next dev` does.
-process.loadEnvFile(path.resolve(__dirname, "../../.env.local"));
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 export const APP_URL = "http://localhost:3000";
 // A phone's screen: a review link opened at this size gets the phone
 // layout, as on a real phone (anything 900px or wider gets the desktop one).
 export const PHONE_VIEWPORT = { width: 390, height: 844 };
 
-const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
-  auth: { persistSession: false, autoRefreshToken: false },
-});
+// The fixture's two sign-in accounts are reused, not made per test
+// (decided directly, 25 Oct 2026): making and deleting two accounts for
+// each of ~290 tests overwhelmed staging's sign-in service. Each parallel
+// slot (workers in playwright.config.ts) has its own pair, made once;
+// every test still gets a new workspace and fresh rows in users, so only
+// the sign-in account itself carries over. A run's slots are named by
+// E2E_POOL ("suite" by default), so a second run at the same time (a
+// throwaway spec while the suite runs) sets its own and doesn't share.
+const POOL = process.env.E2E_POOL ?? "suite";
+const STAFF_PASSWORD = "E2e-Staff-Test-1234!";
+const CLIENT_PASSWORD = "E2e-Client-Test-1234!";
+const poolEmail = (slot: number, who: "staff" | "client") => `e2e-pool-${POOL}-${slot}-${who}@example.invalid`;
+const isPoolEmail = (email: string) => email.startsWith("e2e-pool-");
+
+// The slot's accounts' ids, once found, for the rest of this worker.
+const known = new Map<string, string>();
+
+// The account's id: signing in finds it; failing that, it's made, or if
+// it's there with another password (a spec changed it), put right.
+async function poolAccount(email: string, password: string): Promise<string> {
+  const cached = known.get(email);
+  if (cached) return cached;
+  const probe = createClient(SUPABASE_URL, ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
+  const signedIn = await probe.auth.signInWithPassword({ email, password });
+  let id = signedIn.data.user?.id;
+  if (!id) {
+    const made = await admin.auth.admin.createUser({ email, password, email_confirm: true });
+    id = made.data.user?.id;
+    if (!id) {
+      // Already there: find it and reset its password.
+      for (let page = 1; !id && page <= 20; page++) {
+        const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
+        if (error) throw error;
+        id = data.users.find((u) => u.email === email)?.id;
+        if (data.users.length < 1000) break;
+      }
+      if (!id) throw made.error ?? new Error(`Couldn't make or find ${email}`);
+      const { error } = await admin.auth.admin.updateUserById(id, { password, ban_duration: "none" });
+      if (error) throw error;
+    }
+  } else {
+    await probe.auth.signOut();
+  }
+  known.set(email, id);
+  return id;
+}
+
+// Anything a stopped run left on this slot's accounts: their test
+// workspaces (swept whole) and their rows in users, so the test starts
+// from nothing.
+async function clearSlot(ids: string[]) {
+  const { data: rows } = await admin
+    .from("memberships")
+    .select("agency_id, agency:agencies(name)")
+    .in("user_id", ids);
+  const left = new Set(
+    (rows ?? [])
+      .filter((r) => (r.agency as unknown as { name: string } | null)?.name === TEST_AGENCY_NAME)
+      .map((r) => r.agency_id as string),
+  );
+  for (const agencyId of left) await sweepAgency(agencyId);
+  await admin.from("users").delete().in("id", ids);
+}
 
 export interface Frank {
   agencyId: string;
@@ -95,6 +149,10 @@ export interface Frank {
    * only, no file in storage (the table's Creative column shows the name;
    * the preview just has nothing to draw). Same agency_id-wide teardown. */
   createArtworkVersion(creativeId: string, versionNo: number, filename: string): Promise<void>;
+  /** Says this spec changed a fixture account's password (or anything
+   * else on the sign-in account), so the teardown puts it back for the
+   * next test on this slot's reused accounts. */
+  accountsChanged(): void;
 }
 
 async function signIn(email: string, password: string): Promise<SupabaseClient> {
@@ -105,26 +163,19 @@ async function signIn(email: string, password: string): Promise<SupabaseClient> 
 }
 
 export const test = base.extend<{ frank: Frank }>({
-  frank: async ({}, provideFixture) => {
+  frank: async ({}, provideFixture, testInfo) => {
     const stamp = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const staffEmail = `e2e-staff-${stamp}@example.invalid`;
-    const staffPassword = "E2e-Staff-Test-1234!";
-    const clientEmail = `e2e-client-${stamp}@example.invalid`;
-    const clientPassword = "E2e-Client-Test-1234!";
+    const slot = testInfo.parallelIndex;
+    const staffEmail = poolEmail(slot, "staff");
+    const staffPassword = STAFF_PASSWORD;
+    const clientEmail = poolEmail(slot, "client");
+    const clientPassword = CLIENT_PASSWORD;
 
-    const { data: staffAuth, error: staffAuthError } = await admin.auth.admin.createUser({
-      email: staffEmail,
-      password: staffPassword,
-      email_confirm: true,
-    });
-    if (staffAuthError || !staffAuth.user) throw staffAuthError ?? new Error("No staff user");
-
-    const { data: clientAuth, error: clientAuthError } = await admin.auth.admin.createUser({
-      email: clientEmail,
-      password: clientPassword,
-      email_confirm: true,
-    });
-    if (clientAuthError || !clientAuth.user) throw clientAuthError ?? new Error("No client user");
+    const staffAuth = { user: { id: await poolAccount(staffEmail, staffPassword) } };
+    const clientAuth = { user: { id: await poolAccount(clientEmail, clientPassword) } };
+    await clearSlot([staffAuth.user.id, clientAuth.user.id]);
+    // Set when a spec changes an account's password, so it's put back.
+    let accountsChanged = false;
 
     const { data: agency, error: agencyError } = await admin
       .from("agencies")
@@ -133,20 +184,29 @@ export const test = base.extend<{ frank: Frank }>({
       // them), so specs that add members or clients don't trip over the
       // plan's: Starter's 3 clients and 5 members, plus an admin override
       // (phase42) taking both to 50.
-      .insert({ name: "E2E Test Agency", plan: "starter", extra_clients: 47, extra_seats: 45 })
+      .insert({ name: TEST_AGENCY_NAME, plan: "starter", extra_clients: 47, extra_seats: 45 })
       .select("id")
       .single();
     if (agencyError) throw agencyError;
 
-    const { error: usersError } = await admin.from("users").insert([
+    const usersRows = [
       // Today's update already seen, so the bell's count (and screenshots)
       // don't hang on when that check loads; updates.spec clears it. Tips
       // off (phase116), so none slides over what a test clicks; tips.spec
       // turns them on.
       { id: staffAuth.user.id, email: staffEmail, name: "E2E Staff", releases_seen: CURRENT_RELEASE.version, tips_every_hours: 0 },
       { id: clientAuth.user.id, email: clientEmail, name: "E2E Client User" },
-      // A field one row leaves out takes its default, not null.
-    ], { defaultToNull: false });
+    ];
+    // A field one row leaves out takes its default, not null.
+    let { error: usersError } = await admin.from("users").insert(usersRows, { defaultToNull: false });
+    if (usersError?.code === "23503") {
+      // An account a spec deleted through the app: made again.
+      known.delete(staffEmail);
+      known.delete(clientEmail);
+      usersRows[0].id = staffAuth.user.id = await poolAccount(staffEmail, staffPassword);
+      usersRows[1].id = clientAuth.user.id = await poolAccount(clientEmail, clientPassword);
+      ({ error: usersError } = await admin.from("users").insert(usersRows, { defaultToNull: false }));
+    }
     if (usersError) throw usersError;
 
     const { data: client, error: clientError } = await admin
@@ -349,6 +409,8 @@ export const test = base.extend<{ frank: Frank }>({
         if (error) throw error;
       },
 
+      accountsChanged() {},
+
       async createArtworkVersion(creativeId, versionNo, filename) {
         const { data: asset, error: assetError } = await admin
           .from("assets")
@@ -370,20 +432,16 @@ export const test = base.extend<{ frank: Frank }>({
       },
     };
 
+    frank.accountsChanged = () => {
+      accountsChanged = true;
+    };
+
     await provideFixture(frank);
 
-    // Teardown, reverse dependency order. Best-effort — logged, not thrown,
-    // so one failure doesn't stop the rest of cleanup from running.
-    //
-    // By agency_id throughout, not by the specific ids created above —
-    // every agency-scoped table has that column (denormalised for RLS),
-    // and specs are free to create their own extra creatives/copy versions
-    // against either project (New Brief's spec cases do exactly that).
-    // Tracking each such row individually here would be one more thing to
-    // remember per spec; agency_id sweeps all of it regardless of what a
-    // test added.
-    // Accounts a spec invited into this agency (team-invite.spec.ts) — never
-    // the fixture's own two. Restricted to the reserved .invalid domain so a
+    // Teardown: the workspace and everything in it (sweep.ts), then the
+    // people's rows. Accounts a spec invited into this agency
+    // (team-invite.spec.ts) go too, never the slot's own two, which stay
+    // for the next test. Restricted to the reserved .invalid domain so a
     // real account can never be swept, whatever a spec did.
     const { data: invitedRows } = await admin
       .from("memberships")
@@ -395,186 +453,22 @@ export const test = base.extend<{ frank: Frank }>({
         return (
           r.user_id !== staffAuth.user.id &&
           r.user_id !== clientAuth.user.id &&
-          !!u?.email.endsWith("@example.invalid")
+          !!u?.email.endsWith("@example.invalid") &&
+          !isPoolEmail(u.email)
         );
       })
       .map((r) => r.user_id as string);
 
-    const steps: [string, () => PromiseLike<{ error: unknown }>][] = [
-      // By agency_id, not by the tokens tracked in sharedLinkTokens — that
-      // array only sees links made via frank.createSharedLink(); one made
-      // through the real ShareModal UI (share-eligibility.spec.ts) goes
-      // through create_shared_link() instead and was never tracked,
-      // which is exactly the gap that orphaned an agency here once already.
-      ["shared_links", () => admin.from("shared_links").delete().eq("agency_id", agency.id)],
-      // phase60: notifications about its posts (cascade with them anyway).
-      ["notifications", () => admin.from("notifications").delete().eq("agency_id", agency.id)],
-      // phase84: a project's Discussion (before users: its author has no
-      // cascade) and its log.
-      ["project_discussion", () => admin.from("project_discussion").delete().eq("agency_id", agency.id)],
-      ["project_activity", () => admin.from("project_activity").delete().eq("agency_id", agency.id)],
-      ["comments", () => admin.from("comments").delete().eq("agency_id", agency.id)],
-      ["copy_versions", () => admin.from("copy_versions").delete().eq("agency_id", agency.id)],
-      ["creative_version_slides", () => admin.from("creative_version_slides").delete().eq("agency_id", agency.id)],
-      ["creative_versions", () => admin.from("creative_versions").delete().eq("agency_id", agency.id)],
-      // phase118: a video's thumbnails (before assets).
-      ["thumbnail_versions", () => admin.from("thumbnail_versions").delete().eq("agency_id", agency.id)],
-      // phase52: Claude conversations about a post's copy (cascade with it,
-      // swept by name so a failure says so).
-      ["designer_notes", () => admin.from("designer_notes").delete().eq("agency_id", agency.id)],
-      // phase121: proofreads of saved versions.
-      ["proofreads", () => admin.from("proofreads").delete().eq("agency_id", agency.id)],
-      // phase120: the Production tab's versions.
-      ["production_versions", () => admin.from("production_versions").delete().eq("agency_id", agency.id)],
-      // phase117: the notes' versions.
-      ["designer_note_versions", () => admin.from("designer_note_versions").delete().eq("agency_id", agency.id)],
-      ["reference_images", () => admin.from("reference_images").delete().eq("agency_id", agency.id)],
-      ["design_directions", () => admin.from("design_directions").delete().eq("agency_id", agency.id)],
-      ["copy_chat_messages", () => admin.from("copy_chat_messages").delete().eq("agency_id", agency.id)],
-      ["copy_chats", () => admin.from("copy_chats").delete().eq("agency_id", agency.id)],
-      // The stage log (phase71) goes with its posts; said here before them.
-      ["creative_stage_events", () => admin.from("creative_stage_events").delete().eq("agency_id", agency.id)],
-      ["post_live_dates", () => admin.from("post_live_dates").delete().eq("agency_id", agency.id)],
-      ["creatives", () => admin.from("creatives").delete().eq("agency_id", agency.id)],
-      ["custom_columns", () => admin.from("custom_columns").delete().eq("agency_id", agency.id)],
-      // References projects and memberships (phase46). Both cascade to it,
-      // but swept by name so a failure here says so.
-      ["project_access", () => admin.from("project_access").delete().eq("agency_id", agency.id)],
-      ["projects", () => admin.from("projects").delete().eq("agency_id", agency.id)],
-      // No RLS delete policy exists for format_directions at all — even
-      // staff can't remove one through the app — so a spec that adds one
-      // (settings.spec.ts's catalog test) needs the service-role client to
-      // clean it up, or agencies' delete below fails on the FK and leaves
-      // this whole fixture orphaned.
-      ["format_directions", () => admin.from("format_directions").delete().eq("agency_id", agency.id)],
-      // phase122: the workspace's proofreading rules. References agencies
-      // and users, so before both.
-      ["proofread_rules", () => admin.from("proofread_rules").delete().eq("agency_id", agency.id)],
-      // Before phase11_agency_knowledge.sql is applied, this errors
-      // (best-effort/logged, not thrown — same as every step here) rather
-      // than blocking the rest of cleanup.
-      ["agency_knowledge_entries", () => admin.from("agency_knowledge_entries").delete().eq("agency_id", agency.id)],
-      // References clients — must run before the clients delete below, the
-      // same reason format_directions/custom_columns run before agencies.
-      ["knowledge_entries", () => admin.from("knowledge_entries").delete().eq("agency_id", agency.id)],
-      ["client_monthly_strategies", () => admin.from("client_monthly_strategies").delete().eq("agency_id", agency.id)],
-      ["client_strategy_overviews", () => admin.from("client_strategy_overviews").delete().eq("agency_id", agency.id)],
-      // Both cascade from memberships anyway; swept explicitly so a failure
-      // names the table instead of surfacing as a memberships FK error.
-      ["invites", () => admin.from("invites").delete().eq("agency_id", agency.id)],
-      ["staff_client_access", () => admin.from("staff_client_access").delete().eq("agency_id", agency.id)],
-      // Points at users (requested_by); also goes with its agency (cascade).
-      ["plan_requests", () => admin.from("plan_requests").delete().eq("agency_id", agency.id)],
-      // Paddle's side of a plan (phase39); also goes with its agency (cascade).
-      ["agency_billing", () => admin.from("agency_billing").delete().eq("agency_id", agency.id)],
-      ["memberships", () => admin.from("memberships").delete().eq("agency_id", agency.id)],
-      // References both agencies and users (created_by) — must run before
-      // both deletes below, the same reason format_directions/
-      // custom_columns run before clients/agencies. Never surfaced before
-      // continuous-calendar.spec.ts: no earlier spec ever completed a real
-      // "Save as New View" flow, only asserted the Save button's presence.
-      ["calendar_views", () => admin.from("calendar_views").delete().eq("agency_id", agency.id)],
-      // References clients — must run before the clients delete below, same
-      // reason format_directions/custom_columns do.
-      ["client_contacts", () => admin.from("client_contacts").delete().eq("agency_id", agency.id)],
-      // References both clients (client_id) and users (created_by) — must
-      // run before both deletes below, same reason format_directions/
-      // custom_columns run before clients/agencies. projects.folder_id
-      // itself needs no ordering against this (on delete set null).
-      ["project_folders", () => admin.from("project_folders").delete().eq("agency_id", agency.id)],
-      // By agency_id, not just the fixture's own client.id — new-client.spec.ts
-      // creates extra clients through the real New Client modal, same reasoning
-      // as shared_links above.
-      // phase54: a client's Instagram connection and connect links (the
-      // token row cascades with its connection).
-      ["instagram_connect_links", () => admin.from("instagram_connect_links").delete().eq("agency_id", agency.id)],
-      ["instagram_connections", () => admin.from("instagram_connections").delete().eq("agency_id", agency.id)],
-      // Before clients (phase70; it would also go with them, but said here).
-      ["client_preferences", () => admin.from("client_preferences").delete().eq("agency_id", agency.id)],
-      ["clients", () => admin.from("clients").delete().eq("agency_id", agency.id)],
-      // After clients (clients.logo_asset_id references assets) and after
-      // every other table above that references assets (creative_versions,
-      // knowledge_entries) — an asset row with anything still pointing at
-      // it fails the same way an unswept child row anywhere else here does.
-      // References agencies, and (logo_asset_id) assets — so before both.
-      // Only exists once a spec saves branding (branding.spec.ts).
-      ["agency_settings", () => admin.from("agency_settings").delete().eq("agency_id", agency.id)],
-      // users.avatar_asset_id points at assets, so a profile photo set in a
-      // spec has to be unlinked before the sweep below can delete it.
-      [
-        "users.avatar_asset_id",
-        async () => {
-          const { data: owned } = await admin.from("assets").select("id").eq("agency_id", agency.id);
-          const ids = (owned ?? []).map((a) => a.id as string);
-          if (ids.length === 0) return { error: null };
-          return admin.from("users").update({ avatar_asset_id: null }).in("avatar_asset_id", ids);
-        },
-      ],
-      ["assets", () => admin.from("assets").delete().eq("agency_id", agency.id)],
-      // The files themselves (direct instruction: no test uploads left
-      // behind in storage). Everything under the agency's folder, any depth.
-      [
-        "storage files",
-        async () => {
-          const files: string[] = [];
-          const walk = async (prefix: string) => {
-            const { data, error } = await admin.storage.from("assets").list(prefix, { limit: 1000 });
-            if (error) throw error;
-            for (const f of data ?? []) {
-              if (f.id === null) await walk(`${prefix}/${f.name}`);
-              else files.push(`${prefix}/${f.name}`);
-            }
-          };
-          await walk(agency.id);
-          for (let i = 0; i < files.length; i += 100) {
-            const { error } = await admin.storage.from("assets").remove(files.slice(i, i + 100));
-            if (error) return { error };
-          }
-          return { error: null };
-        },
-      ],
-      // References both agencies and users — must run before both deletes
-      // below, same reason format_directions/custom_columns do. Never
-      // surfaced before real classify-comment-triggered AI calls existed:
-      // no earlier spec logged a row here.
-      ["ai_usage_events", () => admin.from("ai_usage_events").delete().eq("agency_id", agency.id)],
-      // phase50: written by a trigger whenever a spec changes the plan.
-      // Cascades with the agency, but swept by name so a failure says so.
-      ["plan_changes", () => admin.from("plan_changes").delete().eq("agency_id", agency.id)],
-      // phase51: the admin area's actions on this agency.
-      ["admin_actions", () => admin.from("admin_actions").delete().eq("agency_id", agency.id)],
-      // Retried, not a single attempt: a comment posted near the end of a
-      // test fires a background classify-comment call, and if the AI reply
-      // lands mid-teardown, its ai_usage_events row appears *after* the
-      // sweep above and blocks this delete on the FK. Re-sweep and retry
-      // until the agency is gone — once it is, any later usage insert just
-      // fails its own FK harmlessly instead of orphaning anything.
-      [
-        "agencies",
-        async () => {
-          let result = await admin.from("agencies").delete().eq("id", agency.id);
-          for (let attempt = 0; result.error && attempt < 10; attempt++) {
-            await new Promise((r) => setTimeout(r, 1000));
-            await admin.from("ai_usage_events").delete().eq("agency_id", agency.id);
-            result = await admin.from("agencies").delete().eq("id", agency.id);
-          }
-          return result;
-        },
-      ],
-      [
-        "users",
-        () => admin
-            .from("users")
-            .delete()
-            .in("id", [staffAuth.user.id, clientAuth.user.id, ...invitedUserIds]),
-      ],
-    ];
-    for (const [label, run] of steps) {
-      const { error } = await run();
-      if (error) console.error(`Cleanup failed at ${label}:`, error);
+    await sweepAgency(agency.id);
+    const { error: usersDeleteError } = await admin
+      .from("users")
+      .delete()
+      .in("id", [staffAuth.user.id, clientAuth.user.id, ...invitedUserIds]);
+    if (usersDeleteError) console.error("Cleanup failed at users:", usersDeleteError);
+    if (accountsChanged) {
+      await admin.auth.admin.updateUserById(staffAuth.user.id, { password: staffPassword, ban_duration: "none" });
+      await admin.auth.admin.updateUserById(clientAuth.user.id, { password: clientPassword, ban_duration: "none" });
     }
-    await admin.auth.admin.deleteUser(staffAuth.user.id);
-    await admin.auth.admin.deleteUser(clientAuth.user.id);
     for (const id of invitedUserIds) await admin.auth.admin.deleteUser(id);
   },
 });

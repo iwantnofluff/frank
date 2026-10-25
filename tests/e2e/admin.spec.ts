@@ -220,6 +220,8 @@ test("limits come from the plan plus the admin override, are enforced, and pausi
 
 test("forgot password sends a link that sets a new password", async ({ page, frank }) => {
   test.setTimeout(60_000);
+  // The staff account's password changes; put back after, for the next test.
+  frank.accountsChanged();
   await page.goto(`${APP_URL}/login`);
   await page.getByRole("link", { name: "Forgot password?" }).click();
   await page.fill('input[type="email"]', frank.staffEmail);

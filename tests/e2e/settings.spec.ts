@@ -22,15 +22,16 @@ test("settings — team roster", async ({ page, frank }) => {
   const row = page.locator(".crow:not(.head)").first();
   await expect(row).toContainText("E2E Staff");
   await expect(row).toContainText(frank.staffEmail);
-  // The fixture's email is stamp-generated (frank.staffEmail embeds
-  // Date.now() + a random suffix) — its rendered width varies run to run,
+  // The fixture's email differs by slot and run name (frank.staffEmail
+  // is its slot's reused account) — its rendered width varies run to run,
   // which would make a plain screenshot flaky on nothing but string
   // length. Mask that column; the content assertions above already cover
   // it precisely.
   await expect(page).toHaveScreenshot("settings-team.png", {
-    // The email cell is the row's second column; matched as a direct
+    // The email cell is each row's second column; matched as a direct
     // child, since the name cell now has its own nested divs (photo, name).
-    mask: [row.locator(":scope > div").nth(1)],
+    // Every row's: the client's reused account is named by its slot too.
+    mask: [page.locator(".crow:not(.head) > div:nth-child(2)")],
   });
 });
 
