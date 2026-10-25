@@ -1,4 +1,4 @@
-import { test as base, expect, type Page } from "@playwright/test";
+import { test as base, expect, type Cookie, type Page } from "@playwright/test";
 import { CURRENT_RELEASE } from "../../lib/releases";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { admin, ANON_KEY, SUPABASE_URL, sweepAgency, TEST_AGENCY_NAME } from "./sweep";
@@ -49,7 +49,7 @@ async function poolAccount(email: string, password: string): Promise<string> {
       if (error) throw error;
     }
   } else {
-    await probe.auth.signOut();
+    await probe.auth.signOut({ scope: "local" });
   }
   known.set(email, id);
   return id;
@@ -155,11 +155,44 @@ export interface Frank {
   accountsChanged(): void;
 }
 
+// Signed in once per account, not per test (decided directly, 25 Oct
+// 2026): staging's sign-in rate limit counts every sign-in from this
+// machine, and a faster suite reached it. The page's session cookies and a
+// signed-in client are kept for the rest of the worker; a saved session
+// that no longer works (expired, or its account was put right) is
+// dropped and the account signs in again.
+const pageSessions = new Map<string, Cookie[]>();
+const clientSessions = new Map<string, SupabaseClient>();
+
 async function signIn(email: string, password: string): Promise<SupabaseClient> {
-  const client = createClient(SUPABASE_URL, ANON_KEY);
+  const kept = clientSessions.get(email);
+  // Asked of the server, not the kept copy: another test signing this
+  // account out ends every session it has.
+  if (kept && (await kept.auth.getUser()).data.user) return kept;
+  const client = createClient(SUPABASE_URL, ANON_KEY, { auth: { persistSession: false } });
   const { error } = await client.auth.signInWithPassword({ email, password });
   if (error) throw error;
+  clientSessions.set(email, client);
   return client;
+}
+
+// To the dashboard signed in: on the kept session if it still works,
+// otherwise through the sign-in page, as before, keeping that session.
+async function signInPage(page: Page, email: string, password: string) {
+  const kept = pageSessions.get(email);
+  if (kept) {
+    await page.context().addCookies(kept);
+    await page.goto(`${APP_URL}/dashboard`);
+    if (new URL(page.url()).pathname === "/dashboard") return;
+    pageSessions.delete(email);
+    await page.context().clearCookies();
+  }
+  await page.goto(`${APP_URL}/login`);
+  await page.fill('input[type="email"]', email);
+  await page.fill('input[type="password"]', password);
+  await page.click('button[type="submit"]');
+  await page.waitForURL(`${APP_URL}/dashboard`, { timeout: 15000 });
+  pageSessions.set(email, (await page.context().cookies()).filter((c) => c.name.startsWith("sb-")));
 }
 
 export const test = base.extend<{ frank: Frank }>({
@@ -267,19 +300,11 @@ export const test = base.extend<{ frank: Frank }>({
       clientPassword,
 
       async loginAsStaff(page: Page) {
-        await page.goto(`${APP_URL}/login`);
-        await page.fill('input[type="email"]', staffEmail);
-        await page.fill('input[type="password"]', staffPassword);
-        await page.click('button[type="submit"]');
-        await page.waitForURL(`${APP_URL}/dashboard`, { timeout: 15000 });
+        await signInPage(page, staffEmail, staffPassword);
       },
 
       async loginAsClient(page: Page) {
-        await page.goto(`${APP_URL}/login`);
-        await page.fill('input[type="email"]', clientEmail);
-        await page.fill('input[type="password"]', clientPassword);
-        await page.click('button[type="submit"]');
-        await page.waitForURL(`${APP_URL}/dashboard`, { timeout: 15000 });
+        await signInPage(page, clientEmail, clientPassword);
       },
 
       async insertCommentAsStaff(body, visibility) {
@@ -292,7 +317,6 @@ export const test = base.extend<{ frank: Frank }>({
           .insert({ creative_id: creative.id, author_id: user!.id, body, visibility })
           .select("id, visibility")
           .single();
-        await staffClient.auth.signOut();
         if (error) throw error;
         if (data.visibility !== visibility) {
           throw new Error(
@@ -466,6 +490,10 @@ export const test = base.extend<{ frank: Frank }>({
       .in("id", [staffAuth.user.id, clientAuth.user.id, ...invitedUserIds]);
     if (usersDeleteError) console.error("Cleanup failed at users:", usersDeleteError);
     if (accountsChanged) {
+      for (const email of [staffEmail, clientEmail]) {
+        pageSessions.delete(email);
+        clientSessions.delete(email);
+      }
       await admin.auth.admin.updateUserById(staffAuth.user.id, { password: staffPassword, ban_duration: "none" });
       await admin.auth.admin.updateUserById(clientAuth.user.id, { password: clientPassword, ban_duration: "none" });
     }

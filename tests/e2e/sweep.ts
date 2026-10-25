@@ -20,13 +20,60 @@ export const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
 // Every test workspace has this name, so a sweep can never reach a real one.
 export const TEST_AGENCY_NAME = "E2E Test Agency";
 
-// Removes a test workspace and everything in it, reverse dependency order.
+// Removes a test workspace and everything in it: one call to
+// e2e_sweep_agency (supabase/test-support/, staging only), which does
+// every delete below in a single round trip, then the workspace's files.
+// Where that function isn't there, step by step as before. People's rows
+// and accounts are the caller's to remove.
+export async function sweepAgency(agencyId: string): Promise<void> {
+  // Retried: a comment posted near a test's end fires a background
+  // classify-comment call, and its ai_usage_events row can land after the
+  // deletes and block the workspace's own on the foreign key.
+  let result = await admin.rpc("e2e_sweep_agency", { p_agency_id: agencyId });
+  for (let attempt = 0; result.error?.code === "23503" && attempt < 10; attempt++) {
+    await new Promise((r) => setTimeout(r, 1000));
+    result = await admin.rpc("e2e_sweep_agency", { p_agency_id: agencyId });
+  }
+  if (result.error?.code === "PGRST202") return sweepStepByStep(agencyId);
+  if (result.error) {
+    console.error("Cleanup failed at e2e_sweep_agency:", result.error);
+    return sweepStepByStep(agencyId);
+  }
+  const { error } = await removeFiles(agencyId);
+  if (error) console.error("Cleanup failed at storage files:", error);
+}
+
+// The files themselves (direct instruction: no test uploads left behind in
+// storage). Everything under the agency's folder, any depth.
+async function removeFiles(agencyId: string): Promise<{ error: unknown }> {
+  const files: string[] = [];
+  const walk = async (prefix: string) => {
+    const { data, error } = await admin.storage.from("assets").list(prefix, { limit: 1000 });
+    if (error) throw error;
+    for (const f of data ?? []) {
+      if (f.id === null) await walk(`${prefix}/${f.name}`);
+      else files.push(`${prefix}/${f.name}`);
+    }
+  };
+  try {
+    await walk(agencyId);
+  } catch (error) {
+    return { error };
+  }
+  for (let i = 0; i < files.length; i += 100) {
+    const { error } = await admin.storage.from("assets").remove(files.slice(i, i + 100));
+    if (error) return { error };
+  }
+  return { error: null };
+}
+
+// The same, a delete at a time, reverse dependency order.
 // Best-effort: each failure is logged, not thrown, so one doesn't stop the
 // rest. By agency_id throughout, not by the ids a test created: every
 // agency-scoped table has that column (denormalised for RLS), and specs
 // are free to create their own extra rows; agency_id sweeps all of it.
 // People's rows and accounts are the caller's to remove.
-export async function sweepAgency(agencyId: string): Promise<void> {
+async function sweepStepByStep(agencyId: string): Promise<void> {
   const steps: [string, () => PromiseLike<{ error: unknown }>][] = [
     // By agency_id, not by the tokens tracked in sharedLinkTokens — that
     // array only sees links made via frank.createSharedLink(); one made
@@ -140,26 +187,7 @@ export async function sweepAgency(agencyId: string): Promise<void> {
     ["assets", () => admin.from("assets").delete().eq("agency_id", agencyId)],
     // The files themselves (direct instruction: no test uploads left
     // behind in storage). Everything under the agency's folder, any depth.
-    [
-      "storage files",
-      async () => {
-        const files: string[] = [];
-        const walk = async (prefix: string) => {
-          const { data, error } = await admin.storage.from("assets").list(prefix, { limit: 1000 });
-          if (error) throw error;
-          for (const f of data ?? []) {
-            if (f.id === null) await walk(`${prefix}/${f.name}`);
-            else files.push(`${prefix}/${f.name}`);
-          }
-        };
-        await walk(agencyId);
-        for (let i = 0; i < files.length; i += 100) {
-          const { error } = await admin.storage.from("assets").remove(files.slice(i, i + 100));
-          if (error) return { error };
-        }
-        return { error: null };
-      },
-    ],
+    ["storage files", () => removeFiles(agencyId)],
     // References both agencies and users — must run before both deletes
     // below, same reason format_directions/custom_columns do. Never
     // surfaced before real classify-comment-triggered AI calls existed:
