@@ -61,7 +61,7 @@ test("an Owner invites a User with access to one client, and re-sending replaces
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/settings/team`);
 
-  const email = `e2e-invitee-${Date.now()}@example.invalid`;
+  const email = `e2e-invitee-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
   await page.getByRole("button", { name: "Invite Member" }).click();
   const modal = page.getByRole("dialog", { name: "Invite Team Member" });
   // Names are asked now (phase44), and start the invitee's form.
@@ -137,7 +137,7 @@ test("an Admin can't invite unless an Owner lets them — no button, and the rou
   const res = await page.request.post(`${APP_URL}/api/team/invite`, {
     data: {
       agencyId: frank.agencyId,
-      email: `e2e-invitee-${Date.now()}@example.invalid`,
+      email: `e2e-invitee-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`,
       role: "user",
       clientIds: [],
     },

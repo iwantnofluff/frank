@@ -36,7 +36,7 @@ test("inviting a User from Team puts them on just the projects chosen", async ({
   const modal = page.getByRole("dialog", { name: "Invite Team Member" });
   await modal.getByRole("checkbox", { name: "E2E Test Client" }).click();
 
-  const email = `e2e-proj-user-${Date.now()}@example.invalid`;
+  const email = `e2e-proj-user-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
   await modal.getByLabel("First Name").fill("Pia");
   await modal.getByLabel("Last Name").fill("Project");
   await modal.getByLabel("Email Address").fill(email);
@@ -62,7 +62,7 @@ test("inviting a Client from Team puts them on the projects chosen", async ({ pa
   await page.goto(`${APP_URL}/settings/team`);
   await page.getByRole("button", { name: "Invite Member" }).click();
   const modal = page.getByRole("dialog", { name: "Invite Team Member" });
-  const email = `e2e-proj-client-${Date.now()}@example.invalid`;
+  const email = `e2e-proj-client-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
   await modal.getByLabel("First Name").fill("Cal");
   await modal.getByLabel("Last Name").fill("Client");
   await modal.getByLabel("Email Address").fill(email);
@@ -81,7 +81,7 @@ test("inviting a Client from Team puts them on the projects chosen", async ({ pa
 
 // An accepted User given the fixture client, with a password to sign in as.
 async function seedUser(frank: Frank) {
-  const email = `e2e-onproj-${Date.now()}@example.invalid`;
+  const email = `e2e-onproj-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
   const password = "E2e-OnProj-1234!";
   const { data } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
   await admin.from("users").insert({ id: data.user!.id, email, name: "Proj User" });

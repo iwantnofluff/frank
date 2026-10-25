@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { test, expect, APP_URL, type Frank } from "./fixtures";
+import { test, expect, APP_URL, type Frank, APP_PORT } from "./fixtures";
 
 // What a plan allows, enforced (phase41): new agencies on Free with a
 // 30-day trial, read-only after it, storage by plan, branding from Growth,
@@ -26,13 +26,20 @@ async function setRole(frank: Frank, role: string) {
 
 test("an agency signs itself up at beingfrank.app, confirms, works through its trial, goes read-only, and upgrading opens it again", async ({
   browser,
+  frank,
 }) => {
   test.setTimeout(180_000);
-  const ROOT = "http://frank.localhost:3000";
+  // An address already in use, made here so the test needs no real
+  // workspace (the local test database has none): the fixture's, swept
+  // with it.
+  const taken = `e2et${Date.now().toString(36)}`;
+  const { error: takenError } = await admin.from("agencies").update({ subdomain: taken }).eq("id", frank.agencyId).select("id").single();
+  if (takenError) throw takenError;
+  const ROOT = `http://frank.localhost:${APP_PORT}`;
   const sub = `e2es${Date.now().toString(36)}`;
-  const email = `e2e-signup-${Date.now()}@example.invalid`;
+  const email = `e2e-signup-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
   const password = "E2e-Signup-1234!";
-  const home = `http://${sub}.frank.localhost:3000`;
+  const home = `http://${sub}.frank.localhost:${APP_PORT}`;
   const ctx = await browser.newContext();
   try {
     const page = await ctx.newPage();
@@ -42,7 +49,7 @@ test("an agency signs itself up at beingfrank.app, confirms, works through its t
     await page.getByLabel("Workspace name").fill("E2E Signup Agency");
     // The address follows the name until it's typed over, and says if it's free.
     await expect(page.getByLabel("Your address")).toHaveValue("e2e-signup-agency");
-    await page.getByLabel("Your address").fill("nofluff");
+    await page.getByLabel("Your address").fill(taken);
     await expect(page.locator(".addr-bad")).toContainText("taken");
     await page.getByLabel("Your address").fill(sub);
     await expect(page.locator(".addr-ok")).toHaveText("Available");
@@ -54,7 +61,7 @@ test("an agency signs itself up at beingfrank.app, confirms, works through its t
     await expect(page.getByText("Check your email")).toBeVisible({ timeout: 20_000 });
     // Nothing to switch to once signed up.
     await expect(page.locator(".fd-switch")).toHaveCount(0);
-    await expect(page.locator(".signdone")).toContainText(`${sub}.frank.localhost:3000`);
+    await expect(page.locator(".signdone")).toContainText(`${sub}.frank.localhost:${APP_PORT}`);
 
     const { data: agency } = await admin
       .from("agencies")
@@ -154,7 +161,7 @@ test("read-only also stops invites and uploads, with the reason", async ({ page,
   await setRole(frank, "owner");
   await frank.loginAsStaff(page);
   const invite = await page.request.post(`${APP_URL}/api/team/invite`, {
-    data: { agencyId: frank.agencyId, email: `e2e-ro-${Date.now()}@example.invalid`, role: "admin" },
+    data: { agencyId: frank.agencyId, email: `e2e-ro-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`, role: "admin" },
   });
   expect(invite.status()).toBe(403);
   expect((await invite.json()).error).toContain("free trial has ended");
@@ -250,9 +257,9 @@ test("Account URL: an Owner on Agency changes it, the old address redirects, and
   expect((await admin.from("agencies").select("subdomain").eq("id", frank.agencyId).single()).data!.subdomain).toBe(next);
 
   // The old address leads to the new one, path and all.
-  const r = await page.request.get(`http://${old}.frank.localhost:3000/review/abc`, { maxRedirects: 0 });
+  const r = await page.request.get(`http://${old}.frank.localhost:${APP_PORT}/review/abc`, { maxRedirects: 0 });
   expect(r.status()).toBe(308);
-  expect(r.headers().location).toBe(`http://${next}.frank.localhost:3000/review/abc`);
+  expect(r.headers().location).toBe(`http://${next}.frank.localhost:${APP_PORT}/review/abc`);
   // And it stays this agency's.
   const squat = await admin.from("agencies").insert({ name: "E2E Squatter", subdomain: old }).select("id");
   expect(squat.error?.message).toContain("previously used by another agency");

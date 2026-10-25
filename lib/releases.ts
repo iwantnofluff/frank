@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.55.1",
+    date: "2026-10-25",
+    title: "Escape cancels a column's new name",
+    changes: [
+      "In a project's Columns picker, pressing Escape while renaming a column now puts its name back and keeps it. Before, the name you were discarding was saved anyway.",
+    ],
+  },
+  {
     version: "1.55.0",
     date: "2026-10-25",
     title: "Your own proofreading rules",

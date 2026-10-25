@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Page } from "@playwright/test";
-import { test, expect } from "./fixtures";
+import { test, expect, APP_PORT } from "./fixtures";
 
 // The admin area's Overview (decided directly, 4 Oct 2026): revenue, this
 // month's plan changes, and the agencies that need a look. The fixture
@@ -9,12 +9,12 @@ import { test, expect } from "./fixtures";
 const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
-const ADMIN = "http://admin.frank.localhost:3000";
+const ADMIN = `http://admin.frank.localhost:${APP_PORT}`;
 const PASSWORD = "E2e-Admin-Test-1234!";
 const DAY = 24 * 3600_000;
 
 async function makePlatformAdmin() {
-  const email = `e2e-platform-admin-${Date.now()}@example.invalid`;
+  const email = `e2e-platform-admin-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
   const { data } = await admin.auth.admin.createUser({ email, password: PASSWORD, email_confirm: true });
   const id = data.user!.id;
   await admin.from("users").insert({ id, email, name: "E2E Platform Admin" });

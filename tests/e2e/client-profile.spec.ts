@@ -93,7 +93,16 @@ test("a client gets a square profile image and a description", async ({ page, fr
 
     const listLogo = page.locator(".crow", { hasText: "E2E Test Client" }).locator(".logo img");
     await expect(listLogo).toBeVisible();
-    await expect.poll(() => listLogo.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(512);
+    // What's stored is the cropped 512px square: its PNG header says so.
+    const { data: file } = await admin.storage.from("assets").download(storageKey!);
+    const header = new DataView(await file!.arrayBuffer());
+    expect([header.getUint32(16), header.getUint32(20)]).toEqual([512, 512]);
+    // What's shown is square: the original, or the small copy the browser
+    // keeps of a picture once shown (hooks/use-avatar-urls.ts, 320px),
+    // whichever is there by the time it's looked at.
+    await expect
+      .poll(() => listLogo.evaluate((img: HTMLImageElement) => [img.naturalWidth, img.naturalHeight].join("x")))
+      .toMatch(/^(512x512|320x320)$/);
 
     await page.goto(`${APP_URL}/clients/${frank.clientId}`);
     await expect(page.locator(".pad > .sub").first()).toHaveText(

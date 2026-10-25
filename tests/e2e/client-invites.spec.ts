@@ -17,7 +17,7 @@ async function setStaffRole(frank: Frank, role: string) {
 
 // An accepted Admin with a password, to sign in as.
 async function seedAdmin(frank: Frank) {
-  const email = `e2e-admin2-${Date.now()}@example.invalid`;
+  const email = `e2e-admin2-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
   const password = "E2e-Admin2-1234!";
   const { data } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
   await admin.from("users").insert({ id: data.user!.id, email, name: "Second Admin" });
@@ -42,8 +42,8 @@ test("an Owner invites a User and a Client from Team, and the Client joins throu
   // New Client window only picks Users already on the team.
   await page.goto(`${APP_URL}/settings/team`);
 
-  const userEmail = `e2e-inv-user-${Date.now()}@example.invalid`;
-  const clientEmail = `e2e-inv-client-${Date.now()}@example.invalid`;
+  const userEmail = `e2e-inv-user-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
+  const clientEmail = `e2e-inv-client-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
   let clientLink = "";
   for (const [first, last, email, role] of [
     ["una", "user", userEmail, "user"],
@@ -139,7 +139,7 @@ test("an Owner lets an Admin invite: Admins, Users and Clients, never an Owner â
     await ap.getByRole("button", { name: "Invite Member" }).click();
     const modal = ap.getByRole("dialog", { name: "Invite Team Member" });
     await expect(modal.getByLabel("Role").locator("option")).toHaveText(["Admin", "User", "Client"]);
-    const invitee = `e2e-by-admin-${Date.now()}@example.invalid`;
+    const invitee = `e2e-by-admin-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
     await modal.getByLabel("First Name").fill("By");
     await modal.getByLabel("Last Name").fill("Admin");
     await modal.getByLabel("Email Address").fill(invitee);
@@ -150,7 +150,7 @@ test("an Owner lets an Admin invite: Admins, Users and Clients, never an Owner â
 
     // Not an Owner, through the routeâ€¦
     const owner = await ap.request.post(`${APP_URL}/api/team/invite`, {
-      data: { agencyId: frank.agencyId, email: `e2e-no-${Date.now()}@example.invalid`, firstName: "N", lastName: "O", role: "owner" },
+      data: { agencyId: frank.agencyId, email: `e2e-no-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`, firstName: "N", lastName: "O", role: "owner" },
     });
     expect(owner.status()).toBe(403);
   } finally {
@@ -164,7 +164,7 @@ test("an Owner lets an Admin invite: Admins, Users and Clients, never an Owner â
   await c.auth.signInWithPassword({ email: second.email, password: second.password });
   // Someone with no other membership here, so it's the Owner rule that
   // refuses it (phase63's team-or-client rule would refuse a Client first).
-  const outsiderEmail = `e2e-outsider-${Date.now()}@example.invalid`;
+  const outsiderEmail = `e2e-outsider-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
   const { data: outsider } = await admin.auth.admin.createUser({ email: outsiderEmail, email_confirm: true });
   await admin.from("users").insert({ id: outsider.user!.id, email: outsiderEmail, name: "Outsider" });
   const direct = await c
@@ -192,7 +192,7 @@ test("people invited as Client are who a review link offers, and drop off when r
   await frank.createClientContact("Already Listed", "listed@example.com");
   await setStaffRole(frank, "owner");
   await frank.loginAsStaff(page);
-  const email = `e2e-reviewer-${Date.now()}@example.invalid`;
+  const email = `e2e-reviewer-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
   const res = await page.request.post(`${APP_URL}/api/team/invite`, {
     data: { agencyId: frank.agencyId, email, firstName: "rita", lastName: "reviewer", role: "client", clientIds: [frank.clientId] },
   });

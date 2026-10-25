@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Page } from "@playwright/test";
-import { test, expect, APP_URL, type Frank } from "./fixtures";
+import { test, expect, APP_URL, type Frank, APP_PORT } from "./fixtures";
 
 // The platform admin area (phase37) at admin.frank.localhost:3000 — the
 // local shape of admin.beingfrank.app (lib/tenant.ts).
@@ -8,12 +8,12 @@ import { test, expect, APP_URL, type Frank } from "./fixtures";
 const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
-const ADMIN = "http://admin.frank.localhost:3000";
+const ADMIN = `http://admin.frank.localhost:${APP_PORT}`;
 const PASSWORD = "E2e-Admin-Test-1234!";
 
 // An admin-only account: on platform_admins, in no agency.
 async function makePlatformAdmin() {
-  const email = `e2e-platform-admin-${Date.now()}@example.invalid`;
+  const email = `e2e-platform-admin-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
   const { data } = await admin.auth.admin.createUser({ email, password: PASSWORD, email_confirm: true });
   const id = data.user!.id;
   await admin.from("users").insert({ id, email, name: "E2E Platform Admin" });
@@ -80,7 +80,7 @@ test("an admin creates an agency, and its Primary Owner is invited to its own ad
   test.setTimeout(90_000);
   const pa = await makePlatformAdmin();
   const sub = `e2ec${Date.now().toString(36)}`;
-  const ownerEmail = `e2e-owner-${Date.now()}@example.invalid`;
+  const ownerEmail = `e2e-owner-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
   try {
     await signInAt(page, ADMIN, pa.email, PASSWORD);
     await page.waitForURL(`${ADMIN}/admin`, { timeout: 20_000 });
@@ -114,7 +114,7 @@ test("an admin creates an agency, and its Primary Owner is invited to its own ad
     await expect(page.locator(".admintbl tr", { hasText: "E2E Created Agency" })).toContainText(ownerEmail);
 
     // Its address exists.
-    await page.goto(`http://${sub}.frank.localhost:3000/login`);
+    await page.goto(`http://${sub}.frank.localhost:${APP_PORT}/login`);
     await expect(page.getByRole("heading", { name: "Sign in to E2E Created Agency" })).toBeVisible();
   } finally {
     const { data: agency } = await admin.from("agencies").select("id").eq("subdomain", sub).maybeSingle();
@@ -200,7 +200,7 @@ test("limits come from the plan plus the admin override, are enforced, and pausi
     expect(review.status).toBe("not_found");
     await admin.from("agencies").update({ subdomain: `e2ep${Date.now().toString(36)}` }).eq("id", frank.agencyId);
     const { data: ag } = await admin.from("agencies").select("subdomain").eq("id", frank.agencyId).single();
-    await page.goto(`http://${ag!.subdomain}.frank.localhost:3000/login`);
+    await page.goto(`http://${ag!.subdomain}.frank.localhost:${APP_PORT}/login`);
     await expect(page.getByRole("heading", { name: "This workspace is paused" })).toBeVisible();
 
     // Reactivate: everything is back.
@@ -224,6 +224,10 @@ test("forgot password sends a link that sets a new password", async ({ page, fra
   frank.accountsChanged();
   await page.goto(`${APP_URL}/login`);
   await page.getByRole("link", { name: "Forgot password?" }).click();
+  // Its form works once the page has loaded; a click before that sends a
+  // plain form submission instead.
+  await page.waitForURL(`${APP_URL}/forgot-password`);
+  await page.waitForLoadState("networkidle");
   await page.fill('input[type="email"]', frank.staffEmail);
   await page.getByRole("button", { name: "Send the link" }).click();
   await expect(page.getByText("a link to set a new password is on its way")).toBeVisible();

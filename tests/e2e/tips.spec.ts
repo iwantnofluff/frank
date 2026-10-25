@@ -35,8 +35,10 @@ test("a tip shows once due, is recorded as seen, and Read More opens its article
 test("See it in Action opens a new post and lights up Design with Frank", async ({ page, frank }) => {
   test.setTimeout(90_000);
   const id = await staffId(frank.staffEmail);
-  await admin.from("users").update({ tips_every_hours: 24, tips_seen: [], tips_last_at: null }).eq("id", id);
   await frank.loginAsStaff(page);
+  // Due once signed in, so it's on the project's page, not used up on the
+  // dashboard that signing in lands on.
+  await admin.from("users").update({ tips_every_hours: 24, tips_seen: [], tips_last_at: null }).eq("id", id);
   await page.goto(`/projects/${frank.projectId}`);
   await page.locator(".tipcard.is-open").getByRole("button", { name: "See it in Action" }).click({ timeout: 15_000 });
   await expect(page.locator('[data-tip="design-with-frank"].tip-spot')).toBeVisible({ timeout: 15_000 });

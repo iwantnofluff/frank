@@ -8,6 +8,9 @@ const nextConfig: NextConfig = {
   // Local agency addresses (nofluff.frank.localhost:3000 — lib/tenant.ts)
   // talking to the dev server.
   allowedDevOrigins: ["frank.localhost", "*.frank.localhost"],
+  // The test app (npm run test:local) builds into its own folder, so it
+  // runs beside the dev server without either touching the other's files.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
 };
 
 export default nextConfig;

@@ -84,7 +84,7 @@ test("who hears follows the client's choice", async ({ frank }) => {
 
 // A User on the team, on the fixture's project only.
 async function teamUser(frank: Frank) {
-  const email = `e2e-member-${Date.now()}@example.invalid`;
+  const email = `e2e-member-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
   const { data, error } = await admin.auth.admin.createUser({ email, email_confirm: true });
   if (error) throw error;
   const userId = data.user.id;

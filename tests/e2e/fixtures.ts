@@ -3,7 +3,10 @@ import { CURRENT_RELEASE } from "../../lib/releases";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { admin, ANON_KEY, SUPABASE_URL, sweepAgency, TEST_AGENCY_NAME } from "./sweep";
 
-export const APP_URL = "http://localhost:3000";
+// The app under test: the dev server on 3000, or the test app on another
+// port pointed at the local test database (npm run test:local, E2E_PORT).
+export const APP_PORT = process.env.E2E_PORT ?? "3000";
+export const APP_URL = `http://localhost:${APP_PORT}`;
 // A phone's screen: a review link opened at this size gets the phone
 // layout, as on a real phone (anything 900px or wider gets the desktop one).
 export const PHONE_VIEWPORT = { width: 390, height: 844 };
@@ -179,6 +182,10 @@ async function signIn(email: string, password: string): Promise<SupabaseClient> 
 // To the dashboard signed in: on the kept session if it still works,
 // otherwise through the sign-in page, as before, keeping that session.
 async function signInPage(page: Page, email: string, password: string) {
+  // Only this account's session in the browser: the session is split over
+  // several cookies, so one laid over another account's would leave that
+  // account's pieces behind (a "client" still signed in as staff).
+  await page.context().clearCookies();
   const kept = pageSessions.get(email);
   if (kept) {
     await page.context().addCookies(kept);

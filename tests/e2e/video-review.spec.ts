@@ -316,6 +316,13 @@ test("a video is compressed to a 720p review copy before it's uploaded", async (
   await page.getByRole("button", { name: "Upload Artwork" }).click();
   await page.locator('.mtabbody input[type="file"]').first().setInputFiles({ name: "phone-export.mp4", mimeType: "video/mp4", buffer: heavy });
   const save = page.getByRole("button", { name: "Save Creative V1" });
+  // Each piece of the upload held a moment, so the Uploading step stays on
+  // screen long enough to see: against a local database it's otherwise over
+  // at once.
+  await page.route("**/storage/v1/**", async (route) => {
+    if (route.request().method() !== "GET") await new Promise((r) => setTimeout(r, 700));
+    await route.continue();
+  });
   await save.click();
   // The uploader shows each stage: compressing, then uploading with its size.
   // This recording reports itself read before the encoder is done, so the

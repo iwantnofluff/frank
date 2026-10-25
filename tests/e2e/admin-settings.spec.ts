@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Page } from "@playwright/test";
-import { test, expect } from "./fixtures";
+import { test, expect, APP_PORT } from "./fixtures";
 import { makeEmailChangeToken } from "../../lib/admin/email-change-token";
 
 // The admin area's menu and its own Settings: notifications, password,
@@ -9,11 +9,11 @@ import { makeEmailChangeToken } from "../../lib/admin/email-change-token";
 const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
-const ADMIN = "http://admin.frank.localhost:3000";
+const ADMIN = `http://admin.frank.localhost:${APP_PORT}`;
 const PASSWORD = "E2e-Admin-Test-1234!";
 
 async function makePlatformAdmin() {
-  const email = `e2e-platform-admin-${Date.now()}@example.invalid`;
+  const email = `e2e-platform-admin-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
   const { data } = await admin.auth.admin.createUser({ email, password: PASSWORD, email_confirm: true });
   const id = data.user!.id;
   await admin.from("users").insert({ id, email, name: "E2E Platform Admin" });
@@ -113,7 +113,7 @@ test("password: the current one is checked, then the new one signs in", async ({
 test("sign-in email: changes only through the link sent to the new address", async ({ page }) => {
   test.setTimeout(90_000);
   const pa = await makePlatformAdmin();
-  const next = `e2e-admin-new-${Date.now()}@example.invalid`;
+  const next = `e2e-admin-new-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
   try {
     await signIn(page, pa.email, PASSWORD);
     await page.goto(`${ADMIN}/admin/settings/security`);

@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Page } from "@playwright/test";
-import { test, expect, APP_URL, type Frank } from "./fixtures";
+import { test, expect, APP_URL, type Frank, APP_PORT } from "./fixtures";
 
 // The admin area acting inside an agency (phase51): each action asks for a
 // reason, is logged, and the agency's Owners can read the log.
@@ -8,12 +8,12 @@ import { test, expect, APP_URL, type Frank } from "./fixtures";
 const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
-const ADMIN = "http://admin.frank.localhost:3000";
+const ADMIN = `http://admin.frank.localhost:${APP_PORT}`;
 const PASSWORD = "E2e-Admin-Test-1234!";
 const DAY = 24 * 3600_000;
 
 async function makePlatformAdmin() {
-  const email = `e2e-platform-admin-${Date.now()}@example.invalid`;
+  const email = `e2e-platform-admin-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
   const { data } = await admin.auth.admin.createUser({ email, password: PASSWORD, email_confirm: true });
   const id = data.user!.id;
   await admin.from("users").insert({ id, email, name: "Support Sam" });
@@ -50,7 +50,7 @@ const userIdOf = async (email: string) => (await admin.from("users").select("id"
 test("the admin resends an invite and changes a role, each with a reason that's logged", async ({ page, frank }) => {
   test.setTimeout(120_000);
   // An invited User, the way the app leaves one.
-  const email = `e2e-support-${Date.now()}@example.invalid`;
+  const email = `e2e-support-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
   const { data: u } = await admin.auth.admin.createUser({ email, email_confirm: true });
   await admin.from("users").insert({ id: u.user!.id, email, name: "Ivy Invited" });
   const staffId = await userIdOf(frank.staffEmail);

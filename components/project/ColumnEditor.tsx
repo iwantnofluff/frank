@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 export interface EditorColumn {
   key: string;
@@ -109,6 +109,9 @@ export function ColumnEditor({
 function NameField({ label, onRename }: { label: string; onRename: (label: string) => void }) {
   const [draft, setDraft] = useState(label);
   const [was, setWas] = useState(label);
+  // Set by Escape, so the blur straight after doesn't save: it would still
+  // see the typed name, the put-back one not drawn yet.
+  const cancelled = useRef(false);
   if (label !== was) {
     setWas(label);
     setDraft(label);
@@ -121,6 +124,10 @@ function NameField({ label, onRename }: { label: string; onRename: (label: strin
       maxLength={40}
       onChange={(e) => setDraft(e.target.value)}
       onBlur={() => {
+        if (cancelled.current) {
+          cancelled.current = false;
+          return;
+        }
         const next = draft.trim();
         if (!next) setDraft(label);
         else if (next !== label) onRename(next);
@@ -130,6 +137,7 @@ function NameField({ label, onRename }: { label: string; onRename: (label: strin
         if (e.key === "Escape") {
           // Puts the name back without closing the Columns picker too.
           e.stopPropagation();
+          cancelled.current = true;
           setDraft(label);
           e.currentTarget.blur();
         }

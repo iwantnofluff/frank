@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Page } from "@playwright/test";
-import { test, expect, type Frank } from "./fixtures";
+import { test, expect, type Frank, APP_PORT } from "./fixtures";
 
 // Each agency at its own address (phase36), tried on the local shapes from
 // lib/tenant.ts: frank.localhost:3000 is beingfrank.app, and
@@ -11,7 +11,7 @@ const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SU
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
-const at = (sub: string | null, path = "/") => `http://${sub ? `${sub}.` : ""}frank.localhost:3000${path}`;
+const at = (sub: string | null, path = "/") => `http://${sub ? `${sub}.` : ""}frank.localhost:${APP_PORT}${path}`;
 
 async function signIn(page: Page, sub: string, email: string, password: string) {
   await page.goto(at(sub, "/login"));
@@ -141,7 +141,7 @@ test("an agency's sign-in page names the agency", async ({ page, frank }) => {
     await page.goto(at(agencies.mine, "/login"));
     await expect(page.getByRole("heading", { name: "Sign in to E2E Test Agency" })).toBeVisible();
     await expect(page.getByText("E2E Test Agency's Frank workspace.")).toBeVisible();
-    await page.goto("http://localhost:3000/login");
+    await page.goto(`http://localhost:${APP_PORT}/login`);
     await expect(page.getByRole("heading", { name: "Sign In", exact: true })).toBeVisible();
   } finally {
     await agencies.cleanup();

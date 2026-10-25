@@ -17,7 +17,9 @@ Everything in `AGENTS.md` applies. These are the Claude-specific ways of working
 
 ## Tests
 
-- Run the full Playwright suite in the background (it takes 3–4 minutes) and wait for it to finish rather than polling.
+- Run the full Playwright suite in the background and wait for it to finish rather than polling. Prefer `npm run test:local` (about 5 minutes): it runs against a local copy of the database in Docker and a test copy of the app on port 3100, leaving staging alone. `npx playwright test` runs against staging (about 12 minutes). Docker Desktop must be open for the local run.
+- After a migration is applied to staging, rebuild the local test database with `node scripts/e2e-db.mjs` (it copies staging's structure, never its data). `npm run test:local -- --stop` stops the test app.
+- A throwaway spec run beside the suite sets `E2E_POOL` to its own name, so it doesn't share the suite's reused test accounts.
 - A new table that tests can write to must be added to the teardown sweep in `tests/e2e/fixtures.ts`, in foreign-key order. After a failed teardown, check for and remove orphaned `E2E Test Agency` rows.
 - Before regenerating any screenshot baseline, open its diff and confirm the change is intended. `dashboard.png` changes whenever the date rolls over (Last Activity column) — that is expected, not a regression.
 - Never assert on a live AI response in a permanent test. Seed the result directly, and check real AI output by hand in a throwaway spec.

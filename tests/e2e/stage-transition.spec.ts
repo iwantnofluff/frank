@@ -45,7 +45,14 @@ test("a real client-role session has no entry point and cannot advance a creativ
   await frank.loginAsClient(page);
   await page.goto(`/creatives/${creativeId}`);
   await page.waitForSelector(".stage-h");
-  await expect(page.locator(".stagesw")).toHaveCount(0);
+  // A client sees the stage, read only (1.30.1): the pills are there, every
+  // one disabled, and never the team's switch. (Checking for no switch at
+  // all passed only by looking before the page had drawn it.)
+  await expect(page.locator(".stagesw.ro")).toBeVisible();
+  await expect(page.locator(".stagesw:not(.ro)")).toHaveCount(0);
+  const pills = page.locator(".stagesw.ro button");
+  await expect(pills).toHaveCount(6);
+  for (const pill of await pills.all()) await expect(pill).toBeDisabled();
 
   // Not just UI absence — the RPC itself rejects a non-staff caller,
   // bypassing the page entirely.

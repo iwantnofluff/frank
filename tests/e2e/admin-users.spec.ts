@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Page } from "@playwright/test";
-import { test, expect, APP_URL } from "./fixtures";
+import { test, expect, APP_URL, APP_PORT } from "./fixtures";
 
 // The admin area's Users (decided directly, 4 Oct 2026): everyone on Frank,
 // a person's page, and each agency's People. View-only.
@@ -8,11 +8,11 @@ import { test, expect, APP_URL } from "./fixtures";
 const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
-const ADMIN = "http://admin.frank.localhost:3000";
+const ADMIN = `http://admin.frank.localhost:${APP_PORT}`;
 const PASSWORD = "E2e-Admin-Test-1234!";
 
 async function makePlatformAdmin() {
-  const email = `e2e-platform-admin-${Date.now()}@example.invalid`;
+  const email = `e2e-platform-admin-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
   const { data } = await admin.auth.admin.createUser({ email, password: PASSWORD, email_confirm: true });
   const id = data.user!.id;
   await admin.from("users").insert({ id, email, name: "E2E Platform Admin" });
@@ -42,7 +42,7 @@ test("the admin finds a person, sees their role, clients, projects and pending i
   test.setTimeout(90_000);
   // An invited User on the fixture client, on one of its two projects.
   const second = await frank.createContinuousProject();
-  const email = `e2e-admin-view-${Date.now()}@example.invalid`;
+  const email = `e2e-admin-view-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
   const { data: created } = await admin.auth.admin.createUser({ email, email_confirm: true });
   await admin.from("users").insert({ id: created.user!.id, email, name: "Vera Viewed", designation: "Copywriter" });
   const staffId = (await admin.from("users").select("id").eq("email", frank.staffEmail).single()).data!.id;

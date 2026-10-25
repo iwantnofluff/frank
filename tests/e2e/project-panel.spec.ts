@@ -214,6 +214,9 @@ test("a role set in Project Settings shows after the name in the Team column", a
   await role.press("Enter");
   await expect(page.getByRole("status").filter({ hasText: "Saved." })).toBeVisible();
   await page.keyboard.press("Escape");
+  // Closed before it's opened again: it slides out, and a second opened
+  // meanwhile would sit beside it.
+  await expect(page.getByLabel("E2E Staff's project role")).toHaveCount(0);
   await expect(cell.locator(".lead-role")).toHaveText("(Designer)");
   expect((await admin.from("project_roles").select("role").eq("project_id", frank.projectId)).data).toEqual([{ role: "Designer" }]);
 

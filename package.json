@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test:unit": "node --experimental-strip-types --test",
     "test:e2e": "playwright test",
+    "test:local": "node scripts/e2e-local.mjs",
     "postinstall": "node scripts/copy-mediapipe-wasm.mjs"
   },
   "dependencies": {

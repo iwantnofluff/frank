@@ -24,14 +24,14 @@ test("an invite can't make someone both a team member and a Client", async ({ pa
     });
 
   // A User first, then the same email as a Client of the same client.
-  const user = `e2e-both-u-${Date.now()}@example.invalid`;
+  const user = `e2e-both-u-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
   expect((await invite(user, "user")).status()).toBe(201);
   const asClient = await invite(user, "client");
   expect(asClient.status()).toBe(409);
   expect((await asClient.json()).error).toBe(`${user} is on your team. Give them this client from its People instead.`);
 
   // A Client first, then the same email on the team.
-  const client = `e2e-both-c-${Date.now()}@example.invalid`;
+  const client = `e2e-both-c-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
   expect((await invite(client, "client")).status()).toBe(201);
   const asUser = await invite(client, "user");
   expect(asUser.status()).toBe(409);

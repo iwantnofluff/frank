@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { test, expect, APP_URL, type Frank, PHONE_VIEWPORT } from "./fixtures";
+import { test, expect, APP_URL, type Frank, PHONE_VIEWPORT, APP_PORT } from "./fixtures";
 
 // A client's Instagram, for the live feed (phase54). Instagram itself can't
 // be reached from a test, and Frank's Meta app isn't set up locally, so
@@ -134,7 +134,7 @@ test("the sign-in refuses a forged return, and nobody but the server reads a tok
   await seedConnection(frank);
   // Instagram coming back, at the root address, with a state Frank didn't
   // sign.
-  const forged = await page.request.get(`http://frank.localhost:3000/api/connections/instagram/callback?code=x&state=bm90.c2lnbmVk`, {
+  const forged = await page.request.get(`http://frank.localhost:${APP_PORT}/api/connections/instagram/callback?code=x&state=bm90.c2lnbmVk`, {
     maxRedirects: 0,
   });
   expect(forged.status()).toBe(400);
@@ -197,7 +197,7 @@ function signedRequest(userId: string, secret = process.env.INSTAGRAM_APP_SECRET
 
 test("Meta's deauthorize and data deletion callbacks remove the account, and need Meta's signature", async ({ page, frank }) => {
   test.skip(!process.env.INSTAGRAM_APP_SECRET, "needs Frank's Meta app secret");
-  const ROOT = "http://frank.localhost:3000";
+  const ROOT = `http://frank.localhost:${APP_PORT}`;
   await seedConnection(frank);
   // Unsigned (or signed with anything else): refused, nothing removed.
   const forged = await page.request.post(`${ROOT}/api/connections/instagram/deauthorize`, {

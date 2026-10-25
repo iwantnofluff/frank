@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { test, expect, APP_URL, type Frank } from "./fixtures";
+import { test, expect, APP_URL, type Frank, APP_PORT } from "./fixtures";
 
 // An Approved post's artwork goes 7 days after its live date; undated ones
 // wait on an Owner's or Admin's decision from the bell (phase60/61). The
@@ -200,7 +200,7 @@ test("only Owners and Admins decide, notifications are each person's own, and th
   expect((await page.request.get(`${APP_URL}/api/cron/artwork`, { headers: { authorization: "Bearer wrong" } })).status()).toBe(401);
   // Vercel's cron calls the main address, which shows the welcome page for
   // almost every path: the run's own must reach the route.
-  const atMain = await page.request.get(`${APP_URL}/api/cron/artwork`, { headers: { host: "frank.localhost:3000" } });
+  const atMain = await page.request.get(`${APP_URL}/api/cron/artwork`, { headers: { host: `frank.localhost:${APP_PORT}` } });
   expect(atMain.status()).toBe(401);
   expect(await atMain.json()).toEqual({ error: "Not allowed" });
 });

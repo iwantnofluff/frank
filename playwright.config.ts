@@ -22,7 +22,7 @@ export default defineConfig({
   workers: 4,
   reporter: "list",
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL: `http://localhost:${process.env.E2E_PORT ?? "3000"}`,
     viewport: { width: 1280, height: 900 },
   },
   expect: {

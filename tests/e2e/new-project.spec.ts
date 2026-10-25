@@ -132,9 +132,11 @@ test("a new project's columns: untick defaults, add its own, fill them in on a p
   await expect(renamed).toHaveValue("Thumb Text");
   const popRows = pop.locator(".coled-row");
   const names = async () => (await popRows.locator(".coled-name").evaluateAll((els) => els.map((e) => (e as HTMLInputElement).value || e.textContent)));
-  expect((await names()).slice(-3)).toEqual(["Thumb Text", "Shoot Date", "Long Notes"]);
+  await expect.poll(async () => (await names()).slice(-3)).toEqual(["Thumb Text", "Shoot Date", "Long Notes"]);
   await popRows.filter({ has: page.getByLabel("Show Shoot Date") }).locator(".coled-grip").dragTo(popRows.filter({ has: page.getByLabel("Show Thumb Text") }));
   await expect.poll(async () => (await names()).slice(-3)).toEqual(["Shoot Date", "Thumb Text", "Long Notes"]);
+  // Escape didn't save the discarded name, even once the field lost focus.
+  expect((await admin.from("custom_columns").select("label").eq("id", cols![0].id).single()).data?.label).toBe("Thumb Text");
 
   // A User can't add one (the database refuses).
   await admin.from("memberships").update({ role: "user" }).eq("user_id", staffId).eq("agency_id", frank.agencyId);

@@ -408,7 +408,7 @@ test("a pending invite says until when its link works, or that it's expired", as
 // and Revoke in its dropdown.
 test("Users lists each client's people, invited ones with Resend and Revoke", async ({ page, frank }) => {
   test.setTimeout(90_000);
-  const email = `e2e-cm-${Date.now()}@example.invalid`;
+  const email = `e2e-cm-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
   const { data: u } = await admin.auth.admin.createUser({ email, email_confirm: true });
   try {
     await admin.from("users").insert({ id: u.user!.id, email, name: "Ivy Invitee" });

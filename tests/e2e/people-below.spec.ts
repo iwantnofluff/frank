@@ -48,7 +48,7 @@ test("an Admin switches an invited User to Client and back, then resends and rem
   // Invited the way the app does, by an Owner.
   await setStaffRole(frank, "owner");
   await frank.loginAsStaff(page);
-  const email = `e2e-switch-${Date.now()}@example.invalid`;
+  const email = `e2e-switch-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
   const res = await page.request.post(`${APP_URL}/api/team/invite`, {
     data: {
       agencyId: frank.agencyId,
