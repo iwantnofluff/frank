@@ -1,8 +1,24 @@
 "use client";
 
+import { useMemo } from "react";
 import { useIgnoreSuggestion, useProofread } from "@/hooks/use-proofread";
-import { applySuggestion, openSuggestions, type ProofreadSuggestion } from "@/lib/proofread";
+import { useMyAgency } from "@/hooks/use-my-agency";
+import { useProofreadRules } from "@/hooks/use-proofread-rules";
+import { applySuggestion, isProse, openSuggestions, paragraphSuggestions, type ProofreadSuggestion } from "@/lib/proofread";
+import { proofreadField, resolveRules, type ResolvedRules } from "@/lib/proofread-rules";
 import { errorMessage } from "@/lib/errors";
+
+// Before exact suggestions were marked, these kinds were only ever exact.
+const EXACT_KINDS = new Set(["paragraph", "spacing", "repeat", "word", "capital"]);
+const isExact = (s: ProofreadSuggestion) => !!s.exact || EXACT_KINDS.has(s.kind);
+
+// A field's open suggestions: the AI's still there and not ignored, and the
+// exact checks worked out from the words as they are now (so fixing one
+// thing never leaves another behind), less any ignored.
+function openFor(field: string, text: string, ai: ProofreadSuggestion[], rules: ResolvedRules | null, ignored: Set<string>) {
+  if (!rules) return ai.filter((s) => s.field === field && text.includes(s.from) && !ignored.has(s.id));
+  return proofreadField(field, text, rules, ai, paragraphSuggestions, isProse).filter((s) => !ignored.has(s.id));
+}
 
 // A saved version's proofread under its field (phase121, direct
 // instruction): each suggestion with Fix, which puts it into the editor
@@ -28,17 +44,44 @@ export function ProofreadList({
 }) {
   const { data } = useProofread(versionId);
   const ignore = useIgnoreSuggestion(versionId);
-  if (running) return <p className="proof-note">Frank is proofreading what you saved…</p>;
+  const { data: agency } = useMyAgency();
+  const { data: ruleRows } = useProofreadRules(agency?.agencyId);
+  const rules = useMemo(() => (ruleRows ? resolveRules(ruleRows) : null), [ruleRows]);
+  if (running)
+    return (
+      <p className="proof-note" role="status">
+        Frank is proofreading what you saved
+        {/* Draft with Frank's dots (direct instruction). */}
+        <span className="cchat-dots" aria-hidden="true">
+          <i />
+          <i />
+          <i />
+        </span>
+      </p>
+    );
   if (error) return <p className="autherr">{errorMessage(error, "Frank couldn't proofread it")}</p>;
   if (!data) return null;
-  const open = openSuggestions(data.suggestions, data.ignored, current);
+  const ignored = new Set(data.ignored);
+  const ai = openSuggestions(data.suggestions.filter((s) => !isExact(s)), data.ignored, current);
+  const open = Object.entries(current).flatMap(([field, text]) => openFor(field, text ?? "", ai, rules, ignored));
   if (!open.length) return data.suggestions.length || data.ignored.length ? null : <p className="proof-note">Proofread: nothing to fix.</p>;
 
   const fix = (s: ProofreadSuggestion) => onFix(s.field, applySuggestion(current[s.field] ?? "", s));
+  // The AI's fixes first, then the exact checks again on the words they
+  // leave, one at a time, until there's nothing left to fix.
   const fixAll = () => {
-    const next = { ...current };
-    for (const s of open) next[s.field] = applySuggestion(next[s.field] ?? "", s);
-    for (const [field, text] of Object.entries(next)) if (text !== current[field]) onFix(field, text);
+    for (const [field, start] of Object.entries(current)) {
+      let text = start ?? "";
+      for (const s of open.filter((x) => x.field === field && !x.exact)) text = applySuggestion(text, s);
+      for (let i = 0; i < 50; i++) {
+        const next = openFor(field, text, [], rules, ignored)[0];
+        if (!next) break;
+        const after = applySuggestion(text, next);
+        if (after === text) break;
+        text = after;
+      }
+      if (text !== start) onFix(field, text);
+    }
   };
   const shown = (t: string) => t.replace(/\n/g, " ⏎ ");
   // The field named only when the suggestions are about more than one.

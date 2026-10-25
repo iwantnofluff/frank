@@ -1,7 +1,7 @@
 // Run with: node --experimental-strip-types --test lib/proofread-rules.test.ts
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { applySuggestion, paragraphSuggestions, type ProofreadSuggestion } from "./proofread.ts";
+import { applySuggestion, isProse, paragraphSuggestions, type ProofreadSuggestion } from "./proofread.ts";
 import {
   DEFAULT_AI_PHRASES,
   aiRules,
@@ -14,6 +14,8 @@ import {
   spacingSuggestions,
   wordSuggestions,
   writingRules,
+  capitalSuggestions,
+  proofreadField,
   type ProofreadRuleRow,
 } from "./proofread-rules.ts";
 
@@ -147,4 +149,51 @@ test("writingRules: what changes how copy is written, by the switches, with the 
   assert.ok(some.includes("British spelling throughout (colour, organise, centre, travelled)."));
   assert.ok(some.includes("Never use & in a sentence."));
   assert.ok(some.includes('Write "e-commerce" as "ecommerce".'));
+});
+
+test("capitals: a sentence's and a line's first letter, not after e.g. or ..., nor iPhone", () => {
+  const text = "fresh oats. baked daily! e.g. honey\nnew line here... and on\n- a list\niPhone time";
+  assert.equal(fixAll(text, capitalSuggestions("caption", text)), "Fresh oats. Baked daily! E.g. honey\nNew line here... and on\n- a list\niPhone time");
+});
+
+test("the reported caption: every fault listed, the capital on the AI's own fix, and Fix All leaves it right", () => {
+  const text = "tsis is aeasome .\ncna we doo more";
+  const ai: ProofreadSuggestion[] = [["tsis", "this"], ["aeasome", "awesome"], ["cna", "can"], ["doo", "do"]].map(([from, to], i) => ({
+    id: `a${i}`,
+    field: "caption",
+    from,
+    to,
+    reason: "typo",
+    kind: "spelling",
+  }));
+  const rules = resolveRules([]);
+  const listed = proofreadField("caption", text, rules, ai, paragraphSuggestions, isProse);
+  // The space beside "aeasome" isn't hidden by the AI fixing that word.
+  assert.ok(listed.some((s) => s.kind === "spacing" && s.from === "e ."));
+  assert.ok(listed.some((s) => s.kind === "paragraph"));
+  // One suggestion for "tsis", capitalised, not two.
+  assert.deepEqual(listed.filter((s) => s.from === "tsis").map((s) => s.to), ["This"]);
+  // Fix All as the editor does it: the AI's, then the exact ones again.
+  let t = text;
+  for (const s of listed.filter((x) => !x.exact)) t = applySuggestion(t, s);
+  for (let i = 0; i < 50; i++) {
+    const next = proofreadField("caption", t, rules, [], paragraphSuggestions, isProse)[0];
+    if (!next) break;
+    t = applySuggestion(t, next);
+  }
+  assert.equal(t, "This is awesome.\n\nCan we do more");
+  // Fixing the word beside the break first doesn't lose the break.
+  const afterOne = applySuggestion(text, ai[2]);
+  assert.ok(proofreadField("caption", afterOne, rules, ai, paragraphSuggestions, isProse).some((s) => s.kind === "paragraph"));
+});
+
+test("capitals off: a lowercase brand's copy is left alone", () => {
+  const rules = resolveRules([row({ rule_key: "capitals", enabled: false })]);
+  assert.deepEqual(proofreadField("caption", "all lowercase. on purpose", rules, [], paragraphSuggestions, isProse), []);
+});
+
+test("the editor's second look: a capital the AI's fix already has isn't listed again", () => {
+  const ai: ProofreadSuggestion[] = [{ id: "a", field: "caption", from: "tsis", to: "This", reason: "typo", kind: "spelling" }];
+  const listed = proofreadField("caption", "tsis is it", resolveRules([]), ai, paragraphSuggestions, isProse);
+  assert.deepEqual(listed.filter((s) => s.from === "tsis").map((s) => s.to), ["This"]);
 });

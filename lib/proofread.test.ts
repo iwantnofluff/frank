@@ -58,3 +58,9 @@ test("the prompt respects style and carries the rules, tone of voice and fields"
   assert.match(p, /Warm, lowercase/);
   assert.match(p, /<caption> \(Caption\)\nhello\n<\/caption>/);
 });
+
+test("openSuggestions: a fix that only adds to the words is done once they're in", () => {
+  const s = { id: "q", field: "caption", from: "more", to: "more?", reason: "", kind: "punctuation" as const };
+  assert.equal(openSuggestions([s], [], { caption: "can we do more" }).length, 1);
+  assert.equal(openSuggestions([s], [], { caption: "can we do more?" }).length, 0);
+});

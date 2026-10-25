@@ -16,6 +16,7 @@ export type ProofreadKind =
   | "hashtag"
   | "style"
   | "word"
+  | "capital"
   | "custom";
 
 export interface ProofreadSuggestion {
@@ -28,6 +29,15 @@ export interface ProofreadSuggestion {
   to: string;
   reason: string;
   kind: ProofreadKind;
+  // Found by an exact check, not the AI: worked out again from the words
+  // in the editor as they change, so a nearby fix never leaves it behind.
+  exact?: boolean;
+}
+
+// The long fields, where a paragraph can run on: copy but the alt text,
+// and the VO.
+export function isProse(field: string): boolean {
+  return field !== "alt" && field !== "thumbnail_text" && !field.startsWith("slide_");
 }
 
 // A short, stable id, so an Ignore sticks to the same suggestion.
@@ -66,6 +76,7 @@ export function paragraphSuggestions(field: string, text: string): ProofreadSugg
       to,
       reason: `A new paragraph ("${starts}…") on the next line: add a blank line before it`,
       kind: "paragraph",
+      exact: true,
     });
   }
   return out;
@@ -145,5 +156,11 @@ export function openSuggestions(
   current: Record<string, string>,
 ): ProofreadSuggestion[] {
   const skip = new Set(ignored);
-  return all.filter((s) => !skip.has(s.id) && (current[s.field] ?? "").includes(s.from));
+  return all.filter((s) => {
+    const text = current[s.field] ?? "";
+    if (skip.has(s.id) || !text.includes(s.from)) return false;
+    // A fix that only adds to the words (more → more?) leaves them there:
+    // done once its new words are in.
+    return !(s.to.includes(s.from) && text.includes(s.to));
+  });
 }

@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { runAiTask } from "@/lib/ai/run-ai-task";
 import { COPY_FIELD_LABELS } from "@/lib/formats";
 import { buildProofreadPrompt, paragraphSuggestions, parseProofread, type ProofreadSuggestion } from "@/lib/proofread";
-import { aiRules, checkedApart, codeSuggestions, resolveRules, type ProofreadRuleRow } from "@/lib/proofread-rules";
+import { aiRules, checkedApart, proofreadField, resolveRules, type ProofreadRuleRow } from "@/lib/proofread-rules";
 
 // Proofreads a version just saved (phase121, direct instruction): a copy
 // version, or one Production field's version. The words are read here, from
@@ -114,10 +114,9 @@ export async function POST(request: Request) {
     found = parseProofread(result.text ?? "", byKey, forAi);
   }
   // The same change found twice (by the AI and a preferred word) shows once.
-  const suggestions: ProofreadSuggestion[] = [
-    ...found,
-    ...fields.flatMap((f) => codeSuggestions(f.key, f.text, rules, prose.has(f.key), found, paragraphSuggestions)),
-  ].filter((s, i, all) => all.findIndex((x) => x.id === s.id) === i);
+  const suggestions: ProofreadSuggestion[] = fields
+    .flatMap((f) => proofreadField(f.key, f.text, rules, found, paragraphSuggestions, (key) => prose.has(key)))
+    .filter((s, i, all) => all.findIndex((x) => x.id === s.id) === i);
 
   const { error } = await supabase
     .from("proofreads")

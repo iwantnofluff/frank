@@ -35,6 +35,13 @@ export const BUILTIN_RULES: BuiltinRule[] = [
     group: "Language",
     ai: true,
   },
+  {
+    key: "capitals",
+    title: "Capital letters",
+    description: "A capital at the start of each sentence and line. Switch off for a brand that writes in lowercase.",
+    group: "Language",
+    ai: false,
+  },
   { key: "paragraphs", title: "Paragraph spacing", description: "A blank line between paragraphs, in captions and VOs.", group: "Layout", ai: false },
   {
     key: "spacing",
@@ -254,7 +261,7 @@ function make(
   // The widened words keep what was added before the change.
   const to = text.slice(p.at, start) + replacement;
   if (p.from === to) return null;
-  return { id: idOf(field, p.from, to), field, from: p.from, to, reason, kind };
+  return { id: idOf(field, p.from, to), field, from: p.from, to, reason, kind, exact: true };
 }
 
 export function spacingSuggestions(field: string, text: string): ProofreadSuggestion[] {
@@ -311,6 +318,39 @@ export function hashtagSuggestions(field: string, text: string): ProofreadSugges
     out.push(make(field, text, start, m.index! + m[0].length, "", `${m[0]} is already in it`, "hashtag"));
   }
   return out.filter((s): s is ProofreadSuggestion => !!s);
+}
+
+// Short words a full stop doesn't end a sentence after.
+const ABBREVIATION = /(?:^|[\s(])(?:e\.g|i\.e|etc|vs|approx|incl|no|mr|mrs|ms|dr|st|vol|fig)\.$/i;
+
+// A sentence's first letter in capitals: at the field's start, a line's
+// start, and after a full stop, ? or ! and a space. Not after an
+// abbreviation or a trailing-off "...", and never a word with capitals of
+// its own (iPhone, eBay).
+export function capitalSuggestions(field: string, text: string): ProofreadSuggestion[] {
+  const out: (ProofreadSuggestion | null)[] = [];
+  for (const m of text.matchAll(/(^|[.!?]["'’)\]]?[ \t]+|\n[ \t]*)(\p{Ll}[\p{L}\p{N}'’-]*)/gu)) {
+    const start = m.index! + m[1].length;
+    const word = m[2];
+    if (/\p{Lu}/u.test(word)) continue;
+    const before = text.slice(0, m.index! + 1);
+    if (m[1].startsWith(".") && (ABBREVIATION.test(before) || /(\.\.|…)$/.test(before))) continue;
+    out.push(make(field, text, start, start + word.length, capital(word), "A capital to start the sentence", "capital"));
+  }
+  return out.filter((s): s is ProofreadSuggestion => !!s);
+}
+
+// Where a suggestion changes the words: from its first difference to its
+// last, as places in the text (empty for an insertion). Null if its words
+// aren't there.
+function changedSpan(text: string, s: ProofreadSuggestion): [number, number] | null {
+  const at = text.indexOf(s.from);
+  if (at < 0) return null;
+  let head = 0;
+  while (head < s.from.length && head < s.to.length && s.from[head] === s.to[head]) head++;
+  let tail = 0;
+  while (tail < s.from.length - head && tail < s.to.length - head && s.from[s.from.length - 1 - tail] === s.to[s.to.length - 1 - tail]) tail++;
+  return [at + head, at + s.from.length - tail];
 }
 
 // Whether the AI's suggestions already cover the character at `at`.
@@ -382,15 +422,20 @@ export function codeSuggestions(
   paragraphs: (field: string, text: string) => ProofreadSuggestion[],
 ): ProofreadSuggestion[] {
   const mine = ai.filter((s) => s.field === field);
-  // Spaces and repeats the AI already fixed in its own words show once.
+  // Spaces and repeats the AI already fixed in its own words show once:
+  // only where the AI's words take in the very thing this changes, never
+  // just because it's fixing the word beside it.
   const overlaps = (s: ProofreadSuggestion) => {
-    const at = text.indexOf(s.from);
+    const span = changedSpan(text, s);
+    if (!span) return false;
+    const [from, to] = [span[0], Math.max(span[1], span[0] + 1)];
     return mine.some((a) => {
       const i = text.indexOf(a.from);
-      return i >= 0 && at >= 0 && i < at + s.from.length && at < i + a.from.length;
+      return i >= 0 && i < to && from < i + a.from.length;
     });
   };
   const exact = [
+    ...(rules.on("capitals") ? capitalSuggestions(field, text) : []),
     ...(prose && rules.on("paragraphs") ? paragraphs(field, text) : []),
     ...(rules.on("spacing") ? spacingSuggestions(field, text) : []),
     ...(rules.on("repeats") ? repeatSuggestions(field, text) : []),
@@ -402,9 +447,37 @@ export function codeSuggestions(
   return exact.filter((s) => !((s.kind === "spacing" || s.kind === "repeat") && overlaps(s)));
 }
 
+// A field's suggestions: the AI's that still apply, and the exact checks
+// worked out from its words as they are now. Where the AI is fixing a
+// sentence's first word, its fix takes the capital (tsis → This), not a
+// second suggestion for the same word. The server keeps these with the
+// version; the editor works the exact ones out again as the words change.
+export function proofreadField(
+  field: string,
+  text: string,
+  rules: ResolvedRules,
+  ai: ProofreadSuggestion[],
+  paragraphs: (field: string, text: string) => ProofreadSuggestion[],
+  prose: (field: string) => boolean,
+): ProofreadSuggestion[] {
+  const mine = ai.filter((s) => s.field === field && text.includes(s.from));
+  const exact = codeSuggestions(field, text, rules, prose(field), mine, paragraphs);
+  const merged = new Set<string>();
+  const fixed = mine.map((a) => {
+    const at = text.indexOf(a.from);
+    const cap = exact.find((c) => c.kind === "capital" && changedSpan(text, c)?.[0] === at);
+    if (!cap) return a;
+    // Whether or not its fix already has the capital (the server's does).
+    merged.add(cap.id);
+    return /^\p{Ll}/u.test(a.to) ? { ...a, to: capital(a.to) } : a;
+  });
+  return [...fixed, ...exact.filter((c) => !merged.has(c.id))];
+}
+
 // What the exact checks cover, so the AI leaves it out.
 export function checkedApart(rules: ResolvedRules): string[] {
   return [
+    rules.on("capitals") ? "a capital letter to start a sentence or a line" : null,
     rules.on("spacing") ? "double spaces and spaces around punctuation" : null,
     rules.on("repeats") ? "a word repeated" : null,
     rules.on("hashtags") ? "a hashtag repeated, or cut short by a hyphen" : null,

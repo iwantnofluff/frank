@@ -23,7 +23,7 @@ test("an Admin switches rules and adds their own; a User only reads them", async
   // In the menu, above Format Directions.
   const menu = page.locator("a", { hasText: /^(Proofreading|Format Directions)$/ });
   await expect(menu).toHaveText(["Proofreading", "Format Directions"]);
-  await expect(page.locator(".panel-h .sync").first()).toHaveText("12 of 12 on");
+  await expect(page.locator(".panel-h .sync").first()).toHaveText("13 of 13 on");
 
   // A built-in, off and saved.
   const colons = page.getByRole("switch", { name: "No colons" });
@@ -40,7 +40,7 @@ test("an Admin switches rules and adds their own; a User only reads them", async
   await page.reload();
   await expect(page.getByRole("switch", { name: "No colons" })).toHaveAttribute("aria-checked", "false");
   await expect(page.getByLabel("Spelling convention")).toHaveValue("british");
-  await expect(page.locator(".panel-h .sync").first()).toHaveText("11 of 12 on");
+  await expect(page.locator(".panel-h .sync").first()).toHaveText("12 of 13 on");
 
   // The workspace's own rule, and a preferred word.
   await page.getByRole("button", { name: "Add Rule" }).click();

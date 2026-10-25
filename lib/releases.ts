@@ -13,6 +13,18 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.55.2",
+    date: "2026-10-25",
+    title: "Proofreading that catches more",
+    changes: [
+      "A new Capital letters rule: a capital to start each sentence and line. It's on to begin with, and can be switched off for a brand that writes in lowercase.",
+      "A space before a full stop is now listed even when the word beside it has a typo too.",
+      "Spacing, paragraphs, capitals and Preferred Words are checked again as you fix things, so fixing one word never loses the paragraph break beside it, and Fix All leaves the copy right.",
+      "A fix that only adds to a word, like a question mark, now goes from the list once it's made.",
+      "While Frank proofreads, its note has Draft with Frank's moving dots and sits closer under the field.",
+    ],
+  },
+  {
     version: "1.55.1",
     date: "2026-10-25",
     title: "Escape cancels a column's new name",
