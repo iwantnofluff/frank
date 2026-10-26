@@ -115,16 +115,17 @@ export function useStatusPostCount(statusId: string | null) {
   });
 }
 
-// A post's status, picked by the team.
-export function useSetCreativeStatus(creativeId: string) {
+// A post's status, picked by the team: on the post, or from the table.
+export function useSetCreativeStatus() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (statusId: string) => {
-      const { data, error } = await createClient().from("creatives").update({ status_id: statusId }).eq("id", creativeId).select("status_id").maybeSingle();
+    // null: the stage alone (phase124).
+    mutationFn: async ({ creativeId, statusId }: { creativeId: string; statusId: string | null }) => {
+      const { data, error } = await createClient().from("creatives").update({ status_id: statusId }).eq("id", creativeId).select("id").maybeSingle();
       if (error) throw error;
       if (!data) throw new Error("You can't change this post's status.");
     },
-    onSuccess: async () => {
+    onSuccess: async (_d, { creativeId }) => {
       await queryClient.invalidateQueries({ queryKey: ["creative", creativeId], refetchType: "all" });
       await queryClient.invalidateQueries({ queryKey: ["creatives"], refetchType: "all" });
     },

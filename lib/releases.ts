@@ -13,6 +13,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.56.1",
+    date: "2026-10-26",
+    title: "The status in the stage pill",
+    changes: [
+      "A post's status is now its stage pill, lettered within the stage: 2a. In Progress (Content), 3b. Internal QC (Creative) and so on. For your team, the pill is the dropdown, on the post and in the table, offering that stage's statuses.",
+      "The dropdown starts with the stage itself, 2. Production or 3. Internal, for a post that's in the stage with no status in particular.",
+      "The table's Status column is a little wider, so the status reads in full.",
+      "Opening a post's Edit window before its copy had loaded left the caption empty. It now fills in when the copy arrives, unless you've started typing.",
+    ],
+  },
+  {
     version: "1.56.0",
     date: "2026-10-26",
     title: "Statuses within Production and Internal",

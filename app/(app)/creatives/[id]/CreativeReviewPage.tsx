@@ -53,6 +53,8 @@ import { PresenceAvatars } from "@/components/app-shell/PresenceAvatars";
 import { STAGE } from "@/lib/stage-labels";
 import { errorMessage } from "@/lib/errors";
 import { useProjectStatuses, useSetCreativeStatus } from "@/hooks/use-project-statuses";
+import { statusOptions } from "@/lib/project-statuses";
+import { StatusPill } from "@/components/project/StatusPill";
 
 // How close, in seconds, the paused moment has to be to a pin's for it to
 // show on the frame — about a frame or two either side.
@@ -84,7 +86,20 @@ export function CreativeReviewPage({ id }: { id: string }) {
   // Its status within In Production or Internal Review (phase123), the
   // team's only.
   const { data: projectStatuses } = useProjectStatuses(creative?.project_id, isStaff);
-  const setStatus = useSetCreativeStatus(id);
+  const setStatus = useSetCreativeStatus();
+  // The active Production or Internal pill is its status's dropdown (3a,
+  // 3b…), for the team.
+  const pillOptions = isStaff && creative && !creative.exception ? statusOptions(projectStatuses, creative.stage) : [];
+  const statusPill = (pillClass: string, stageText: string) => (
+    <StatusPill
+      stageText={stageText}
+      className={`sw-pick ${pillClass}`}
+      options={pillOptions}
+      value={creative?.status_id ?? null}
+      disabled={setStatus.isPending}
+      onPick={(statusId) => setStatus.mutate({ creativeId: id, statusId })}
+    />
+  );
   // Everyone on the post (phase87), in the order picked.
   const teamNames = (creative?.team_user_ids ?? []).map(
     (uid) => teamMembers?.find((m) => m.user_id === uid)?.user?.name ?? "Someone",
@@ -362,6 +377,9 @@ export function CreativeReviewPage({ id }: { id: string }) {
                     <span className="no">1.</span>
                     Concept
                   </button>
+                  {creative.stage === STAGE.production && pillOptions.length ? (
+                    statusPill("sw-production", "2. Production")
+                  ) : (
                   <button
                     data-label="In Production"
                     aria-label="In Production"
@@ -374,6 +392,10 @@ export function CreativeReviewPage({ id }: { id: string }) {
                     <span className="no">2.</span>
                     Production
                   </button>
+                  )}
+                  {creative.stage === STAGE.internal && pillOptions.length ? (
+                    statusPill("sw-internal", "3. Internal")
+                  ) : (
                   <button
                     data-label="Internal Review"
                     aria-label="Internal Review"
@@ -388,6 +410,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
                     <span className="no">3.</span>
                     Internal
                   </button>
+                  )}
                   <button
                     data-label="Client Review"
                     aria-label="Client Review"
@@ -436,34 +459,9 @@ export function CreativeReviewPage({ id }: { id: string }) {
                     Live
                   </button>
                 </div>
-                {/* Where it is within In Production or Internal Review
-                    (phase123): picked here, the team's only. */}
-                {isStaff &&
-                  (creative.stage === STAGE.production || creative.stage === STAGE.internal) &&
-                  (() => {
-                    const options = (projectStatuses ?? []).filter((s) => s.stage === creative.stage);
-                    if (!options.length) return null;
-                    return (
-                      <>
-                      <select
-                        className="sort stage-status"
-                        aria-label="Status within the stage"
-                        value={creative.status_id ?? options[0].id}
-                        disabled={setStatus.isPending}
-                        onChange={(e) => setStatus.mutate(e.target.value)}
-                      >
-                        {options.map((s) => (
-                          <option key={s.id} value={s.id}>
-                            {s.label}
-                          </option>
-                        ))}
-                      </select>
-                      {setStatus.error && (
-                        <span className="autherr stage-status-err">{errorMessage(setStatus.error, "Couldn't change the status")}</span>
-                      )}
-                      </>
-                    );
-                  })()}
+                {setStatus.error && (
+                  <span className="autherr stage-status-err">{errorMessage(setStatus.error, "Couldn't change the status")}</span>
+                )}
               </>
             )}
           <div className="tools">

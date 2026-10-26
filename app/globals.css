@@ -4517,17 +4517,63 @@ textarea.cxin {
 .ps-add {
   margin-top: 6px;
 }
-/* Under a Status pill in the table: the post's status within its stage. */
-.stg-status {
-  display: block;
-  margin-top: 4px;
-  font-size: 11.7px;
-  color: var(--muted);
+/* A stage pill that is its status's dropdown (phase123): the pill's own
+   look, a small white arrow after its words. Table (.stg-pick) and post
+   (.sw-pick). */
+.stg-pick,
+.sw-pick {
+  /* As wide as the status picked, not the longest in the list. */
+  field-sizing: content;
+  appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
 }
-/* The post's status within its stage, beside the stage pills. */
-.stage-status {
+.stg-pick {
+  padding-right: 18px;
+  background-position: right 5px center;
+  background-size: 9px;
+  max-width: 100%;
+  text-overflow: ellipsis;
+}
+.sw-pick {
+  padding: 2.7px 24px 2.7px 8px;
+  border-radius: 4.6px;
+  font-size: 13.9px;
+  font-weight: 600;
+  background-position: right 7px center;
+  background-size: 11px;
+  max-width: 260px;
+  text-overflow: ellipsis;
+}
+.sw-pick.sw-production {
+  background-color: var(--stage-concept);
+}
+.sw-pick.sw-internal {
+  background-color: var(--stage-review);
+}
+.stg-pick:focus-visible,
+.sw-pick:focus-visible {
+  outline: 2px solid var(--action);
+  outline-offset: 2px;
+}
+.stg-pick:disabled,
+.sw-pick:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+/* The options list draws in the system's own colours, not the pill's. */
+.stg-pick option,
+.sw-pick option {
+  color: var(--ink);
+  background: var(--surface);
+}
+.stage-status-err {
   margin-left: 8px;
-  max-width: 200px;
 }
 
 /* Settings → Knowledge → Proofreading (phase122): rules in groups, each

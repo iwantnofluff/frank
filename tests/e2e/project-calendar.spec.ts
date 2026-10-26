@@ -365,6 +365,9 @@ test("project calendar — resizing a column shows the Save button, Discard Chan
 });
 
 test("project calendar — dragging a column header reorders the table", async ({ page, frank }) => {
+  // Wide enough that Concept's header is on screen to drag (the Status
+  // column is wider since 1.56.1).
+  await page.setViewportSize({ width: 1600, height: 900 });
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${frank.projectId}`);
   await page.waitForSelector(".tblwrap, .empty");

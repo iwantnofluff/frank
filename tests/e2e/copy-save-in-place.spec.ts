@@ -50,3 +50,24 @@ test("copy saves into the current version until it has a comment, then as a new 
     [2, "Shorter words"],
   ]);
 });
+
+// Opened before the post's copy has loaded (a quick click, a slow
+// connection): the caption fills in when it arrives, rather than staying
+// empty for a save to empty it.
+test("the Edit window opened before the copy has loaded fills in when it arrives", async ({ page, frank }) => {
+  test.setTimeout(60_000);
+  await frank.createCopyVersion(frank.creativeId, 1, { caption: "Loaded late" });
+  await frank.loginAsStaff(page);
+  // The copy held back three seconds.
+  await page.route("**/rest/v1/copy_versions*", async (route) => {
+    await new Promise((r) => setTimeout(r, 3_000));
+    await route.continue();
+  });
+  await page.goto(`/creatives/${frank.creativeId}`);
+  await expect(async () => {
+    await page.getByRole("button", { name: "Edit", exact: true }).click();
+    await page.getByRole("tab", { name: "Content" }).click({ timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
+  const caption = page.locator('[data-focus="copy"] textarea').first();
+  await expect(caption).toHaveValue("Loaded late", { timeout: 15_000 });
+});

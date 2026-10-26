@@ -930,6 +930,14 @@ export function CreativeModal(props: CreativeModalProps) {
 
   // The editable draft always builds on the latest copy version.
   const [draftFields, setDraftFields] = useState<Record<string, string>>(latestCopyVersion?.fields ?? {});
+  // Opened before the post's copy had loaded (a quick click, a slow
+  // connection): it fills in once it arrives, as long as nothing's been
+  // typed, rather than staying empty for a save to empty it.
+  const [draftFrom, setDraftFrom] = useState<string | null>(latestCopyVersion?.id ?? null);
+  if (!draftFrom && latestCopyVersion && Object.values(draftFields).every((v) => !v?.trim())) {
+    setDraftFrom(latestCopyVersion.id);
+    setDraftFields(latestCopyVersion.fields ?? {});
+  }
 
   // Version tabs, for the artwork and (by direct instruction, the same way)
   // the copy: older versions open read only; the latest is where new work
