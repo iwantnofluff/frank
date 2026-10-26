@@ -539,7 +539,7 @@ export async function chooseFormat(page: import("@playwright/test").Page, label 
 // The tables' status filter (multi-choice, direct instruction): shows only
 // the statuses named, by their labels ("0. Idea", "4. Client Review").
 export async function showStatuses(page: import("@playwright/test").Page, labels: string[]) {
-  await page.getByRole("button", { name: "Status" }).click();
+  await page.getByRole("button", { name: "Status", exact: true }).click();
   const pop = page.getByRole("dialog", { name: "Statuses" });
   const all = pop.getByRole("checkbox", { name: "All Statuses" });
   // From none: tick All (if it isn't already) and untick it again.

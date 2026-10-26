@@ -80,56 +80,84 @@ test("a project starts with the statuses; an Admin adds, renames, moves and remo
   expect((await u.from("project_statuses").update({ label: "By a User" }).eq("id", first.id).select("id")).data ?? []).toHaveLength(0);
 });
 
-test("a post takes its stage's first status, the team picks another on the post, the table shows it, and a client sees none", async ({ page, browser, frank }) => {
+test("a post takes its stage's first status, the team picks another from its pill, the table's pill moves it anywhere, and a client sees none", async ({ page, browser, frank }) => {
   test.setTimeout(120_000);
   const list = await statuses(frank.projectId);
-  const qcCopy = list.find((s) => s.label === "Internal QC (Copy)")!;
+  const id = (label: string) => list.find((s) => s.label === label)!.id;
+  const now = async () => (await admin.from("creatives").select("stage, status_id").eq("id", frank.creativeId).single()).data!;
   // Into Internal Review: the first status, set by the database.
   await admin.from("creatives").update({ stage: 3, scheduled_at: new Date().toISOString() }).eq("id", frank.creativeId);
-  expect((await admin.from("creatives").select("status_id").eq("id", frank.creativeId).single()).data!.status_id).toBe(qcCopy.id);
+  expect((await now()).status_id).toBe(id("Internal QC (Copy)"));
 
+  // On the post: the active pill opens below it, the stage first, then its statuses only.
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
-  // The active Internal pill is the dropdown, lettered within its stage.
-  const pick = page.locator(".stagesw").getByLabel("Status within the stage");
-  await expect(pick).toHaveValue(qcCopy.id);
-  // Only Internal Review's statuses are offered.
-  // The stage alone first (phase124), then Internal Review's statuses only.
-  await expect(pick.locator("option")).toHaveText(["3. Internal", "3a. Internal QC (Copy)", "3b. Internal QC (Creative)", "3c. Hold", "3d. Cancel"]);
-  await pick.selectOption({ label: "3c. Hold" });
-  const statusNow = async () => (await admin.from("creatives").select("status_id").eq("id", frank.creativeId).single()).data!.status_id;
-  await expect.poll(statusNow).toBe(list.find((s) => s.label === "Hold")!.id);
+  const postPill = page.locator(".stagesw").getByRole("button", { name: "Status within the stage" });
+  await expect(postPill).toHaveText("3a. Internal QC (Copy)");
+  await postPill.click();
+  const menu = page.getByRole("listbox", { name: "Status within the stage" });
+  await expect(menu.getByRole("option")).toHaveText(["3. Internal", "3a. Internal QC (Copy)", "3b. Internal QC (Creative)", "3c. Hold", "3d. Cancel"]);
+  const pill = (await postPill.boundingBox())!;
+  expect((await menu.boundingBox())!.y).toBeGreaterThanOrEqual(pill.y + pill.height);
+  await menu.getByRole("option", { name: "3c. Hold" }).click();
+  await expect.poll(async () => (await now()).status_id).toBe(id("Hold"));
 
-  // The table's Status pill is the same dropdown, showing it, and picks too.
+  // In the table: every stage and status, and a post moves to any.
   await page.goto(`${APP_URL}/projects/${frank.projectId}`);
-  const tablePick = page.locator("tr[data-row] select.stg-pick").first();
-  await expect(tablePick).toHaveValue(list.find((s) => s.label === "Hold")!.id, { timeout: 20_000 });
-  await tablePick.selectOption({ label: "3b. Internal QC (Creative)" });
-  await expect.poll(statusNow).toBe(list.find((s) => s.label === "Internal QC (Creative)")!.id);
-  // The stage alone: no status, and it stays that way.
-  await tablePick.selectOption({ label: "3. Internal Review" });
-  await expect.poll(statusNow).toBeNull();
+  const tablePill = page.getByRole("button", { name: "Status of E2E Test Creative" });
+  await expect(tablePill).toHaveText("3c. Hold", { timeout: 20_000 });
+  const pick = async (text: string) => {
+    await tablePill.click();
+    await page.getByRole("listbox", { name: "Status of E2E Test Creative" }).getByRole("option", { name: text, exact: true }).click();
+  };
+  await tablePill.click();
+  await expect(page.getByRole("listbox").getByRole("option")).toHaveText([
+    "1. Concept",
+    "2. In Production",
+    "2a. In Progress (Content)",
+    "2b. In Progress (Creative)",
+    "3. Internal Review",
+    "3a. Internal QC (Copy)",
+    "3b. Internal QC (Creative)",
+    "3c. Hold",
+    "3d. Cancel",
+    "4. Client Review",
+    "5. Approved",
+    "6. Live",
+  ]);
+  await page.keyboard.press("Escape");
+  await pick("2b. In Progress (Creative)");
+  await expect.poll(now).toEqual({ stage: 2, status_id: id("In Progress (Creative)") });
+  await pick("3. Internal Review");
+  await expect.poll(now).toEqual({ stage: 3, status_id: null });
+  await pick("4. Client Review");
+  await expect.poll(now).toEqual({ stage: 4, status_id: null });
+  await expect(tablePill).toHaveText("4. Client Review");
+
+  // Still in Concept: the Concept is approved first, then it moves.
+  await pick("1. Concept");
+  await expect.poll(async () => (await now()).stage).toBe(1);
+  await admin.from("creatives").update({ concept: "Autumn oats, slow mornings" }).eq("id", frank.creativeId);
   await page.reload();
-  await expect(page.locator("tr[data-row] select.stg-pick").first()).toHaveValue("", { timeout: 20_000 });
+  await pick("2a. In Progress (Content)");
+  const ask = page.getByRole("dialog", { name: "Approve the Concept first?" });
+  await expect(ask).toContainText("then moves it to 2a. In Progress (Content).");
+  await ask.getByRole("button", { name: "Approve Concept" }).click();
+  await expect(ask).toHaveCount(0);
+  await expect.poll(now).toEqual({ stage: 2, status_id: id("In Progress (Content)") });
+  expect((await admin.from("comments").select("body").eq("creative_id", frank.creativeId)).data!.map((c) => c.body)).toContain("Approved Concept");
 
-  // Leaving the stage clears it; no picker in Client Review.
-  await admin.from("creatives").update({ stage: 4 }).eq("id", frank.creativeId);
-  expect((await admin.from("creatives").select("status_id").eq("id", frank.creativeId).single()).data!.status_id).toBeNull();
-  await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
-  await expect(page.locator(".stage-h")).toBeVisible();
-  await expect(page.getByLabel("Status within the stage")).toHaveCount(0);
-
-  // A client: no picker, no status in the table, and none to read.
+  // A client: plain pills, no menu, and no statuses to read.
   await admin.from("creatives").update({ stage: 3 }).eq("id", frank.creativeId);
   const clientPage = await (await browser.newContext()).newPage();
   await frank.loginAsClient(clientPage);
   await clientPage.goto(`${APP_URL}/creatives/${frank.creativeId}`);
   await expect(clientPage.locator(".stagesw.ro")).toBeVisible();
-  await expect(clientPage.getByLabel("Status within the stage")).toHaveCount(0);
+  await expect(clientPage.getByRole("button", { name: "Status within the stage" })).toHaveCount(0);
   await clientPage.goto(`${APP_URL}/projects/${frank.projectId}`);
   await expect(clientPage.locator("tr[data-row]").first()).toBeVisible({ timeout: 20_000 });
   await expect(clientPage.locator(".stg-pick")).toHaveCount(0);
-  await expect(clientPage.locator("tr[data-row] .stg").first()).toContainText("3.Internal Review");
+  await expect(clientPage.locator("tr[data-row] .stg").first()).toContainText("Internal Review");
   const c = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { auth: { persistSession: false } });
   await c.auth.signInWithPassword({ email: frank.clientEmail, password: frank.clientPassword });
   expect((await c.from("project_statuses").select("id").eq("project_id", frank.projectId)).data).toEqual([]);

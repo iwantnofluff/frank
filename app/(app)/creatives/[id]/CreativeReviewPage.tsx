@@ -54,7 +54,7 @@ import { STAGE } from "@/lib/stage-labels";
 import { errorMessage } from "@/lib/errors";
 import { useProjectStatuses, useSetCreativeStatus } from "@/hooks/use-project-statuses";
 import { statusOptions } from "@/lib/project-statuses";
-import { StatusPill } from "@/components/project/StatusPill";
+import { PillMenu } from "@/components/project/PillMenu";
 
 // How close, in seconds, the paused moment has to be to a pin's for it to
 // show on the frame — about a frame or two either side.
@@ -90,16 +90,22 @@ export function CreativeReviewPage({ id }: { id: string }) {
   // The active Production or Internal pill is its status's dropdown (3a,
   // 3b…), for the team.
   const pillOptions = isStaff && creative && !creative.exception ? statusOptions(projectStatuses, creative.stage) : [];
-  const statusPill = (pillClass: string, stageText: string) => (
-    <StatusPill
-      stageText={stageText}
-      className={`sw-pick ${pillClass}`}
-      options={pillOptions}
-      value={creative?.status_id ?? null}
-      disabled={setStatus.isPending}
-      onPick={(statusId) => setStatus.mutate({ creativeId: id, statusId })}
-    />
-  );
+  const statusPill = (pillClass: string, stageText: string) => {
+    const items = [{ key: "", text: stageText }, ...pillOptions.map((o) => ({ key: o.id, text: o.text, indent: true }))];
+    const value = creative?.status_id ?? "";
+    return (
+      <PillMenu
+        label="Status within the stage"
+        className={`sw-pick ${pillClass}`}
+        items={items}
+        value={value}
+        disabled={setStatus.isPending}
+        onPick={(key) => setStatus.mutate({ creativeId: id, statusId: key || null })}
+      >
+        {items.find((it) => it.key === value)?.text ?? stageText}
+      </PillMenu>
+    );
+  };
   // Everyone on the post (phase87), in the order picked.
   const teamNames = (creative?.team_user_ids ?? []).map(
     (uid) => teamMembers?.find((m) => m.user_id === uid)?.user?.name ?? "Someone",

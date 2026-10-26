@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.57.0",
+    date: "2026-10-26",
+    title: "Move a post to any stage from the table",
+    changes: [
+      "For your team, a post's Status pill in the table now lists every stage, each followed by its statuses (3. Internal Review, 3a. Internal QC (Copy)…), and moves the post to whichever you pick, back to Concept or Production included.",
+      "A post still in Concept is moved on once its Concept is approved: a window says so, with Approve Concept, which records it in your name and then moves it.",
+      "The list opens below the pill, on the post and in the table, and the table's pill is the same height as the others.",
+    ],
+  },
+  {
     version: "1.56.1",
     date: "2026-10-26",
     title: "The status in the stage pill",

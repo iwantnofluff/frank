@@ -57,17 +57,17 @@ test("project calendar — status filter narrows the visible rows", async ({ pag
   await expect(page.locator(".pname", { hasText: "Concept-Stage E2E" })).toBeVisible();
 
   // Idea, then the six stages (In Production, phase102), any combination.
-  await page.getByRole("button", { name: "Status" }).click();
+  await page.getByRole("button", { name: "Status", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "Statuses" }).getByRole("checkbox")).toHaveText([
     "All Statuses", "0. Idea", "1. Concept", "2. In Production", "3. Internal Review", "4. Client Review", "5. Approved", "6. Live",
   ]);
   await page.keyboard.press("Escape");
   await showStatuses(page, ["4. Client Review"]);
-  await expect(page.getByRole("button", { name: "Status" })).toHaveText("4. Client Review");
+  await expect(page.getByRole("button", { name: "Status", exact: true })).toHaveText("4. Client Review");
   await expect(page.locator(".pname", { hasText: "Concept-Stage E2E" })).toHaveCount(0);
   await expect(page.locator(".pname", { hasText: "E2E Test Creative" })).toBeVisible();
   await showStatuses(page, ["1. Concept", "4. Client Review"]);
-  await expect(page.getByRole("button", { name: "Status" })).toHaveText("2 Statuses");
+  await expect(page.getByRole("button", { name: "Status", exact: true })).toHaveText("2 Statuses");
   await expect(page.locator(".pname", { hasText: "Concept-Stage E2E" })).toBeVisible();
 });
 

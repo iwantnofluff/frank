@@ -131,3 +131,21 @@ export function useSetCreativeStatus() {
     },
   });
 }
+
+// A post to any stage, and status, from the table (phase125): null for
+// the stage alone. The database applies the stage's rules (approval,
+// live date) and refuses a post still in Concept until it's approved.
+export function useSetCreativeStage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ creativeId, stage, statusId }: { creativeId: string; stage: number; statusId: string | null }) => {
+      const { error } = await createClient().rpc("set_creative_stage", { p_creative_id: creativeId, p_stage: stage, p_status_id: statusId });
+      if (error) throw error;
+    },
+    onSuccess: async (_d, { creativeId }) => {
+      await queryClient.invalidateQueries({ queryKey: ["creative", creativeId], refetchType: "all" });
+      await queryClient.invalidateQueries({ queryKey: ["creatives"], refetchType: "all" });
+      await queryClient.invalidateQueries({ queryKey: ["post-live-date", creativeId] });
+    },
+  });
+}

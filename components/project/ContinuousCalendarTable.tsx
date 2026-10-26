@@ -38,9 +38,8 @@ import { SlideTextCell } from "@/components/project/SlideTextCell";
 import { ConceptText } from "@/components/creative-review/ConceptText";
 import { EarlierVersions } from "@/components/project/EarlierVersions";
 import { useProjectProductionVersions } from "@/hooks/use-production-versions";
-import { useProjectStatuses, useSetCreativeStatus } from "@/hooks/use-project-statuses";
-import { statusOptions } from "@/lib/project-statuses";
-import { StatusPill } from "@/components/project/StatusPill";
+import { useProjectStatuses } from "@/hooks/use-project-statuses";
+import { StagePillMenu } from "@/components/project/StagePillMenu";
 import { useCopyVersionsByCreative } from "@/hooks/use-copy-versions-by-creative";
 import { VersionedTextCell } from "@/components/project/VersionedTextCell";
 import { copySummary, expectedContent, formatsLabel, postFormats, hasVideoFormat } from "@/lib/formats";
@@ -540,9 +539,8 @@ export function ContinuousCalendarTable({
   // The VO's and Text on Image's versions (phase120), the team's.
   const { data: productionVersions } = useProjectProductionVersions(projectId, creativeIds, isStaff);
   // Each post's status within In Production or Internal Review (phase123):
-  // for the team, its Status pill is the dropdown (3a, 3b…).
+  // for the team, its Status pill opens every stage and status (phase125).
   const { data: projectStatuses } = useProjectStatuses(projectId, isStaff);
-  const setStatus = useSetCreativeStatus();
   // A post's date changed from the table (direct instruction): its date
   // or time a button for the team, opening the pickers right there.
   const [datePick, setDatePick] = useState<{ c: CreativeListRow; rect: DOMRect; focus: "date" | "time" } | null>(null);
@@ -1208,32 +1206,20 @@ export function ContinuousCalendarTable({
                                       {IDEA.label}
                                     </span>
                                   ) : (
-                                    (() => {
-                                      const options = isStaff && !c.exception ? statusOptions(projectStatuses, c.stage) : [];
-                                      return options.length ? (
-                                        <StatusPill
-                                          stageText={`${c.stage}. ${stageLabel(c.stage, "continuous")}`}
-                                          className="stg stg-pick"
-                                          // The colour alone: the shorthand would drop the arrow.
-                                          style={{ backgroundColor: color }}
-                                          options={options}
-                                          value={c.status_id}
-                                          disabled={setStatus.isPending && setStatus.variables?.creativeId === c.id}
-                                          onPick={(statusId) => setStatus.mutate({ creativeId: c.id, statusId })}
-                                        />
-                                      ) : (
-                                        <span className="stg" style={{ background: color }}>
-                                          {c.exception ? (
-                                            exceptionLabel(c.exception)
-                                          ) : (
-                                            <>
-                                              <span className="no">{c.stage}.</span>
-                                              {stageLabel(c.stage, "continuous")}
-                                            </>
-                                          )}
-                                        </span>
-                                      );
-                                    })()
+                                    isStaff ? (
+                                      <StagePillMenu post={c} statuses={projectStatuses} delivery="continuous" color={color} />
+                                    ) : (
+                                      <span className="stg" style={{ background: color }}>
+                                        {c.exception ? (
+                                          exceptionLabel(c.exception)
+                                        ) : (
+                                          <>
+                                            <span className="no">{c.stage}.</span>
+                                            {stageLabel(c.stage, "continuous")}
+                                          </>
+                                        )}
+                                      </span>
+                                    )
                                   )}
                                 </td>
                               );
