@@ -51,6 +51,8 @@ import { CreativeModal } from "@/components/creative-review/CreativeModal";
 import { useProjectPresence } from "@/hooks/use-project-presence";
 import { PresenceAvatars } from "@/components/app-shell/PresenceAvatars";
 import { STAGE } from "@/lib/stage-labels";
+import { errorMessage } from "@/lib/errors";
+import { useProjectStatuses, useSetCreativeStatus } from "@/hooks/use-project-statuses";
 
 // How close, in seconds, the paused moment has to be to a pin's for it to
 // show on the frame — about a frame or two either side.
@@ -79,6 +81,10 @@ export function CreativeReviewPage({ id }: { id: string }) {
   const { data: teamMembers } = useTeamMembers(creative?.agency_id);
   const isStaff = membership ? membership.client_id === null : false;
   const advanceStage = useAdvanceCreativeStage(id);
+  // Its status within In Production or Internal Review (phase123), the
+  // team's only.
+  const { data: projectStatuses } = useProjectStatuses(creative?.project_id, isStaff);
+  const setStatus = useSetCreativeStatus(id);
   // Everyone on the post (phase87), in the order picked.
   const teamNames = (creative?.team_user_ids ?? []).map(
     (uid) => teamMembers?.find((m) => m.user_id === uid)?.user?.name ?? "Someone",
@@ -430,6 +436,34 @@ export function CreativeReviewPage({ id }: { id: string }) {
                     Live
                   </button>
                 </div>
+                {/* Where it is within In Production or Internal Review
+                    (phase123): picked here, the team's only. */}
+                {isStaff &&
+                  (creative.stage === STAGE.production || creative.stage === STAGE.internal) &&
+                  (() => {
+                    const options = (projectStatuses ?? []).filter((s) => s.stage === creative.stage);
+                    if (!options.length) return null;
+                    return (
+                      <>
+                      <select
+                        className="sort stage-status"
+                        aria-label="Status within the stage"
+                        value={creative.status_id ?? options[0].id}
+                        disabled={setStatus.isPending}
+                        onChange={(e) => setStatus.mutate(e.target.value)}
+                      >
+                        {options.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.label}
+                          </option>
+                        ))}
+                      </select>
+                      {setStatus.error && (
+                        <span className="autherr stage-status-err">{errorMessage(setStatus.error, "Couldn't change the status")}</span>
+                      )}
+                      </>
+                    );
+                  })()}
               </>
             )}
           <div className="tools">

@@ -31,7 +31,8 @@ test("settings — team roster", async ({ page, frank }) => {
     // The email cell is each row's second column; matched as a direct
     // child, since the name cell now has its own nested divs (photo, name).
     // Every row's: the client's reused account is named by its slot too.
-    mask: [page.locator(".crow:not(.head) > div:nth-child(2)")],
+    // Date Added (the fourth) too: it's today, so it changes every day.
+    mask: [page.locator(".crow:not(.head) > div:nth-child(2)"), page.locator(".crow:not(.head) > div:nth-child(4)")],
   });
 });
 

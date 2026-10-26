@@ -4462,6 +4462,74 @@ textarea.cxin {
   padding: 2px 0;
 }
 
+/* Project Settings → Statuses (phase123): each stage's steps, one a row,
+   renamed in place, moved up or down, removed. */
+.ps-stage {
+  margin-bottom: 14px;
+}
+.ps-stage-h {
+  font-size: 11.7px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.ps-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+}
+.ps-name {
+  flex: 1;
+  min-width: 0;
+  max-width: 320px;
+}
+.ps-label {
+  font-size: 13.7px;
+}
+.ps-acts {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ps-btn {
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--line-2);
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+.ps-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.ps-none {
+  margin: 2px 0 6px;
+  font-size: 12.2px;
+  color: var(--muted);
+}
+.ps-add {
+  margin-top: 6px;
+}
+/* Under a Status pill in the table: the post's status within its stage. */
+.stg-status {
+  display: block;
+  margin-top: 4px;
+  font-size: 11.7px;
+  color: var(--muted);
+}
+/* The post's status within its stage, beside the stage pills. */
+.stage-status {
+  margin-left: 8px;
+  max-width: 200px;
+}
+
 /* Settings → Knowledge → Proofreading (phase122): rules in groups, each
    with a switch at the right; the workspace's own rules and preferred
    words below, in the same rows. */

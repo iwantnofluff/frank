@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.56.0",
+    date: "2026-10-26",
+    title: "Statuses within Production and Internal",
+    changes: [
+      "In Production and Internal Review now have statuses of their own, for your team: In Progress (Content) and In Progress (Creative); Internal QC (Copy), Internal QC (Creative), Hold and Cancel. Every project starts with these.",
+      "A post takes its stage's first status when it gets there. Pick another from the dropdown beside the stage pills on the post; the table shows it under the Status pill.",
+      "Owners and Admins add, rename, reorder and remove a project's statuses in its Settings, under Statuses. Removing one moves its posts to the first left in that stage. Clients never see them.",
+    ],
+  },
+  {
     version: "1.55.2",
     date: "2026-10-25",
     title: "Proofreading that catches more",

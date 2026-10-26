@@ -9,6 +9,8 @@ export interface CreativeListRow {
   format: string | null;
   stage: number;
   exception: "changes_requested" | "rejected" | null;
+  // Its status within In Production or Internal Review (phase123).
+  status_id: string | null;
   // The first of team_user_ids, kept by the database (phase87).
   lead_user_id: string | null;
   // Everyone on the post, in the order picked (phase87).
@@ -55,7 +57,7 @@ export function useCreatives(projectId: string) {
       const { data: rows, error } = await supabase
         .from("creatives")
         .select(
-          "id, name, format, stage, exception, lead_user_id, team_user_ids, concept, reference_url, reference_urls, slide_count, slide_text, voiceover, approach_notes, scheduled_at, formats, destination, added_on, due_on, published_at, artwork_removed_at, cx, archived_at",
+          "id, name, format, stage, exception, status_id, lead_user_id, team_user_ids, concept, reference_url, reference_urls, slide_count, slide_text, voiceover, approach_notes, scheduled_at, formats, destination, added_on, due_on, published_at, artwork_removed_at, cx, archived_at",
         )
         .eq("project_id", projectId)
         .order("position");

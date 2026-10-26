@@ -18,6 +18,7 @@ import { errorMessage } from "@/lib/errors";
 import { DeletePermanentlyDialog } from "@/components/ui/DeletePermanentlyDialog";
 import { useMyMembership } from "@/hooks/use-my-membership";
 import { useProjectRoles, useSetProjectRole } from "@/hooks/use-project-roles";
+import { ProjectStatuses } from "@/components/project/ProjectStatuses";
 import { useTeamMembers } from "@/hooks/use-team-members";
 import { ROLE_LABELS, seesAllClients } from "@/lib/roles";
 
@@ -216,6 +217,11 @@ export function ProjectProfileModal({
           <p className="profline">
             Latest approval: <b>{formatDay(stats?.latestApprovedAt ?? null)}</b>
           </p>
+        </div>
+
+        {/* The steps within In Production and Internal Review (phase123). */}
+        <div>
+          <ProjectStatuses projectId={project.id} canManage={isAdmin} />
         </div>
 
         {/* Its own part, so its line above is spaced as Progress's is

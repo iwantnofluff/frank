@@ -12,6 +12,8 @@ export interface CreativeRow {
   format: string | null;
   stage: number;
   exception: "changes_requested" | "rejected" | null;
+  // Its status within In Production or Internal Review (phase123).
+  status_id: string | null;
   lead_user_id: string | null;
   // Everyone on the post, in the order picked (phase87).
   team_user_ids: string[];

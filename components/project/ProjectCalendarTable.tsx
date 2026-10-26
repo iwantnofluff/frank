@@ -49,6 +49,7 @@ import { ConceptText } from "@/components/creative-review/ConceptText";
 import { EarlierVersions } from "@/components/project/EarlierVersions";
 import { FeedbackCell } from "@/components/project/FeedbackCell";
 import { useProjectProductionVersions } from "@/hooks/use-production-versions";
+import { useProjectStatuses } from "@/hooks/use-project-statuses";
 import { useCopyVersionsByCreative, type CopyVersionSummary } from "@/hooks/use-copy-versions-by-creative";
 import { useLatestFeedbackByCreative } from "@/hooks/use-latest-feedback-by-creative";
 import { useMyAgency } from "@/hooks/use-my-agency";
@@ -554,6 +555,10 @@ export function ProjectCalendarTable({
   const { data: thumbnailsByCreative } = useThumbnailsByCreative(creativeIds);
   // The VO's and Text on Image's versions (phase120), the team's.
   const { data: productionVersions } = useProjectProductionVersions(projectId, creativeIds, isStaff);
+  // Each post's status within In Production or Internal Review (phase123),
+  // under its Status pill, for the team.
+  const { data: projectStatuses } = useProjectStatuses(projectId, isStaff);
+  const statusLabel = (id: string | null) => (id ? projectStatuses?.find((s) => s.id === id)?.label : undefined);
   // A post's date changed from the table (direct instruction): its date
   // or time a button for the team, opening the pickers right there.
   const [datePick, setDatePick] = useState<{ c: CreativeListRow; rect: DOMRect; focus: "date" | "time" } | null>(null);
@@ -1233,16 +1238,21 @@ export function ProjectCalendarTable({
                                       {IDEA.label}
                                     </span>
                                   ) : (
-                                    <span className="stg" style={{ background: color }}>
-                                      {c.exception ? (
-                                        exceptionLabel(c.exception)
-                                      ) : (
-                                        <>
-                                          <span className="no">{c.stage}.</span>
-                                          {stageLabel(c.stage, "scheduled")}
-                                        </>
+                                    <>
+                                      <span className="stg" style={{ background: color }}>
+                                        {c.exception ? (
+                                          exceptionLabel(c.exception)
+                                        ) : (
+                                          <>
+                                            <span className="no">{c.stage}.</span>
+                                            {stageLabel(c.stage, "scheduled")}
+                                          </>
+                                        )}
+                                      </span>
+                                      {isStaff && !c.exception && statusLabel(c.status_id) && (
+                                        <span className="stg-status">{statusLabel(c.status_id)}</span>
                                       )}
-                                    </span>
+                                    </>
                                   )}
                                 </td>
                               );
