@@ -22,7 +22,9 @@ test("a copy-only post shows as a post for staff, clients and a review link", as
   await expect(page.locator(".ig-time")).toContainText("Copy saved");
   await page.getByPlaceholder("Add a comment…").fill("Staff note on a copy-only post");
   await page.getByRole("button", { name: "Post", exact: true }).click();
-  await expect(page.getByText("Staff note on a copy-only post")).toBeVisible();
+  // The posted comment, not the box it was typed in (it can still hold the
+  // words as the comment appears).
+  await expect(page.locator(".cmt p", { hasText: "Staff note on a copy-only post" })).toBeVisible();
 
   const clientContext = await browser.newContext();
   const client = await clientContext.newPage();
