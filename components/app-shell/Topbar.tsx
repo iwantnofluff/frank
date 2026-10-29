@@ -6,7 +6,7 @@ import { useClientDetail } from "@/hooks/use-client";
 import { useProject } from "@/hooks/use-project";
 import { useCreative } from "@/hooks/use-creative";
 import { useNotifications, type NotificationRow } from "@/hooks/use-notifications";
-import { BellIcon, HelpIcon } from "./icons";
+import { BellIcon, HelpIcon, MenuIcon } from "./icons";
 import { GlobalSearch } from "./GlobalSearch";
 import { HELP_OPEN_EVENT, HelpPanel } from "./HelpPanel";
 import { NotificationsPanel } from "./NotificationsPanel";
@@ -195,6 +195,28 @@ export function Topbar({
 }) {
   const pathname = usePathname();
   const { isStaff, isPending: staffPending } = useIsStaff();
+  // On a phone the rail's links open from the menu button, under the header
+  // (body.railopen), and close on the next page or a tap elsewhere.
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuPath, setMenuPath] = useState(pathname);
+  if (pathname !== menuPath) {
+    setMenuPath(pathname);
+    setMenuOpen(false);
+  }
+  const menuBtn = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    document.body.classList.toggle("railopen", menuOpen);
+    if (!menuOpen) return;
+    const away = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (!menuBtn.current?.contains(t) && !document.querySelector(".rail")?.contains(t)) setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", away);
+    return () => {
+      document.removeEventListener("mousedown", away);
+      document.body.classList.remove("railopen");
+    };
+  }, [menuOpen]);
   const [helpOpen, setHelpOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   // Help asked for at one article from elsewhere (openHelpArticle).
@@ -228,6 +250,18 @@ export function Topbar({
 
   return (
     <header className="topbar">
+      {/* A phone's only (CSS): the rail's links. */}
+      <button
+        ref={menuBtn}
+        className="bell menubtn"
+        type="button"
+        title="Menu"
+        aria-label="Menu"
+        aria-expanded={menuOpen}
+        onClick={() => setMenuOpen((o) => !o)}
+      >
+        <MenuIcon />
+      </button>
       <HeaderBrand />
       <div className="crumb">
         <Crumb pathname={pathname} />

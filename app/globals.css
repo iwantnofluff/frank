@@ -12669,3 +12669,314 @@ a.asset-saved {
 .ctext-s + .ctext-s {
   margin-top: 3px;
 }
+
+/* A post's page on a phone (MobilePost, direct instruction): one column
+   that scrolls as a whole, the review link's card in the middle. Big
+   enough to tap: Copy Caption and Final Asset a button's height. */
+.mpost {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: var(--canvas);
+  padding: 12px 16px calc(16px + env(safe-area-inset-bottom));
+}
+.mpost-h {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.mpost-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13.2px;
+  color: var(--action);
+  text-decoration: none;
+  margin-bottom: 6px;
+}
+.mpost-back svg {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.2;
+}
+.mpost-stage {
+  font-size: 12.2px;
+  padding: 3px 8px;
+  margin-bottom: 2px;
+}
+.mpost-t {
+  font-size: 17.2px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.3;
+}
+.mpost-d {
+  font-size: 13.2px;
+  color: var(--muted);
+}
+.mpost-acts {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.mpost-acts .mpost-copy,
+.mpost-acts .mpost-asset {
+  flex: 1;
+  justify-content: center;
+  min-height: 42px;
+  font-size: 14.2px;
+  border-radius: 8px;
+}
+.mpost-asset svg {
+  width: 15px;
+  height: 15px;
+}
+/* The comments under the post, the page scrolling them; no pins or boxes
+   to draw on a phone. */
+.mpost .cmts {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.mpost .cmts-b {
+  overflow: visible;
+}
+.mpost .cmt-tools {
+  display: none;
+}
+.mpost .composer {
+  border-top: 1px solid var(--line);
+}
+
+/* A project on a phone (MobileProject, direct instruction): the posts as
+   cards, a month at a time, the page scrolling them. */
+.mprojpage {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 16px calc(20px + env(safe-area-inset-bottom));
+}
+.mprojpage .h1 {
+  font-size: 21.2px;
+  line-height: 1.25;
+}
+.mproj-client {
+  font-size: 13.2px;
+  color: var(--muted);
+  margin: 0 0 2px;
+}
+.mproj-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 14px 0 12px;
+}
+.mproj-month {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.mproj-month b {
+  font-size: 15.2px;
+  font-weight: 600;
+  min-width: 118px;
+  text-align: center;
+}
+.mproj-platform {
+  font: inherit;
+  font-size: 13.2px;
+  padding: 6px 8px;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.mproj-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.mproj-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.mproj-date {
+  font-size: 12.7px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.mproj-top .stg {
+  font-size: 11.7px;
+  padding: 3px 7px;
+  white-space: normal;
+  text-align: right;
+}
+.mproj-name {
+  font-size: 15.7px;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: none;
+  line-height: 1.3;
+}
+.mproj-fmt {
+  font-size: 12.7px;
+  color: var(--muted);
+}
+/* The caption as written, at most four lines: Copy Caption copies all of
+   it, and the post shows the rest. */
+.mproj-cap {
+  font-size: 13.7px;
+  line-height: 1.42;
+  white-space: pre-wrap;
+  margin: 6px 0 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.mproj-fb {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13.2px;
+  margin-top: 6px;
+}
+.mproj-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.mproj-acts .mpost-copy,
+.mproj-acts .mpost-asset,
+.mproj-acts .tpending-btn.approve {
+  flex: 1;
+  justify-content: center;
+  min-height: 40px;
+  font-size: 14.2px;
+  border-radius: 8px;
+}
+
+/* Frank on a phone (direct instruction; the review link's width, below
+   900px): no rail, its links under the menu button instead; a shorter
+   header with Frank's logo, the bell, Help and your picture (no search,
+   breadcrumb or agency logo, the page names itself); and the clients and
+   a client's projects as one column. Not in the prototype, which has no
+   phone layout. */
+.menubtn {
+  display: none;
+}
+@media (max-width: 899px) {
+  .app {
+    grid-template-columns: minmax(0, 1fr);
+    height: 100dvh;
+  }
+  .menubtn {
+    display: grid;
+    flex-shrink: 0;
+  }
+  .menubtn svg {
+    width: 20px;
+    height: 20px;
+  }
+  .topbar {
+    height: 56px;
+    gap: 6px;
+    padding: 0 8px;
+  }
+  .corner-logo {
+    top: 14px;
+    left: 48px;
+  }
+  .corner-logo img {
+    height: 27px;
+  }
+  .hbrand,
+  .topbar .crumb,
+  .topbar .gsearch {
+    display: none;
+  }
+  .view {
+    border-radius: 0;
+  }
+  /* The rail's links, under the header, while the menu is open. */
+  .rail {
+    display: none;
+  }
+  body.railopen .rail {
+    display: flex;
+    position: fixed;
+    top: 56px;
+    left: 0;
+    right: 0;
+    z-index: 40;
+    padding: 6px 10px 12px;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25);
+  }
+  body.railopen .rail .rail-top,
+  body.railopen .rail .spacer {
+    display: none;
+  }
+  .rail .rbtn {
+    grid-template-columns: 36px minmax(0, 1fr);
+    justify-items: start;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 6px;
+  }
+  .rail .rbtn .rlab {
+    font-size: 14.2px;
+    text-align: left;
+    letter-spacing: 0;
+  }
+  /* The clients and a client's projects: two numbers a row, and each list
+     row its name alone (its counts and dates are the computer's). Adding a
+     client, project or folder is too. */
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .secthead {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+  .secthead .filters > .btn,
+  .secthead .filters > .toolsep {
+    display: none;
+  }
+  .clients .crow:not(.folder-band) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .clients .crow.head,
+  .clients .crow > .ago {
+    display: none;
+  }
+  /* A client's page goes straight to its projects: the brand overview is
+     the computer's. */
+  .brandrem {
+    display: none;
+  }
+  .brandrem + .secthead {
+    margin-top: 22px;
+  }
+}
+/* The note on a page made for a computer, its button under the words. */
+.computer-only {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}

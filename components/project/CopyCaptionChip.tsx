@@ -11,16 +11,19 @@ export function CopyCaptionChip({
   caption,
   label = "Copy",
   title = "Copy the caption, paragraphs and all",
+  className = "copychip",
 }: {
   caption: string;
   label?: string;
   title?: string;
+  // A bigger button where it stands on its own (a post on a phone).
+  className?: string;
 }) {
   const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   return (
     <button
       type="button"
-      className="copychip"
+      className={className}
       title={title}
       onClick={async (e) => {
         e.stopPropagation();

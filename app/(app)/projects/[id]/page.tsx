@@ -19,6 +19,8 @@ import { ProjectCalendarTable } from "@/components/project/ProjectCalendarTable"
 import { ContinuousCalendarTable } from "@/components/project/ContinuousCalendarTable";
 import { ProjectSettings } from "@/components/project/ProjectSettings";
 import { ProjectPanel, type ProjectPanelView } from "@/components/project/ProjectPanel";
+import { MobileProject } from "@/components/project/MobileProject";
+import { usePhoneScreen } from "@/hooks/use-phone-screen";
 
 type ArchiveFilter = "active" | "archived";
 
@@ -75,6 +77,7 @@ export default function ProjectPage({
   }
   const [movedNotice, setMovedNotice] = useState<string | null>(null);
   const router = useRouter();
+  const phone = usePhoneScreen();
   // From a post's page, "+ New" comes here with the New Post window open
   // (direct instruction: ?new=1), taken off the address so a reload
   // doesn't open it again.
@@ -122,6 +125,32 @@ export default function ProjectPage({
       ),
     [creatives, archiveFilter],
   );
+
+  // On a phone, the posts as cards (direct instruction): the client and
+  // project, then MobileProject. Adding, the project's panels and settings,
+  // and Archived stay on a computer.
+  if (phone) {
+    return (
+      <div className="pad mprojpage">
+        <p className="mproj-client">{project?.clients?.name ?? ""}</p>
+        <h1 className="h1">{project?.name ?? "Project"}</h1>
+        {isError && (
+          <div className="empty">
+            <b>Couldn&rsquo;t load this project</b>
+            <span>{errorMessage(error, "Unknown error")}</span>
+          </div>
+        )}
+        {!isError && creatives && project && (
+          <MobileProject
+            creatives={activeCreatives}
+            delivery={project.delivery}
+            isStaff={confirmedStaff}
+            projectId={id}
+          />
+        )}
+      </div>
+    );
+  }
 
   return (
     // projpage: the table scrolls in place under its own sticky headers,

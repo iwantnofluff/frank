@@ -9,7 +9,7 @@ import { dayMonth, ARTWORK_KEEP_DAYS } from "@/lib/artwork-removal";
 import { useClientPreferences } from "@/hooks/use-client-preferences";
 import { useLiveUpdates } from "@/hooks/use-live-updates";
 import { useClientLogoUrl } from "@/hooks/use-client-logo-url";
-import { aspectRatioCss, copySummaryParts, formatRatio, hasVideoFormat, isReelFormat, isStoryFormat, postFormats } from "@/lib/formats";
+import { aspectRatioCss, copySummaryParts, formatRatio, formatsLabel, hasVideoFormat, isReelFormat, isStoryFormat, postFormats } from "@/lib/formats";
 import { CopyFieldsPreview } from "@/components/creative-review/CopyFieldsPreview";
 import { useCopyVersions } from "@/hooks/use-copy-versions";
 import { useArtworkUrl, usePreloadAssets } from "@/hooks/use-asset-signed-url";
@@ -50,12 +50,15 @@ import { CaptionHighlighter } from "@/components/creative-review/CaptionHighligh
 import { CreativeModal } from "@/components/creative-review/CreativeModal";
 import { useProjectPresence } from "@/hooks/use-project-presence";
 import { PresenceAvatars } from "@/components/app-shell/PresenceAvatars";
-import { STAGE } from "@/lib/stage-labels";
+import { STAGE, exceptionLabel, stageColor, stageLabel } from "@/lib/stage-labels";
 import { errorMessage } from "@/lib/errors";
 import { useProjectStatuses, useSetCreativeStatus } from "@/hooks/use-project-statuses";
 import { statusOptions } from "@/lib/project-statuses";
 import { PillMenu } from "@/components/project/PillMenu";
 import { useAssetLink } from "@/hooks/use-asset-links";
+import { usePhoneScreen } from "@/hooks/use-phone-screen";
+import { MobilePost } from "@/components/creative-review/MobilePost";
+import { publishDate } from "@/lib/publish-date";
 import { OpenAsset } from "@/components/project/OpenAsset";
 
 // How close, in seconds, the paused moment has to be to a pin's for it to
@@ -90,6 +93,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
   const { data: projectStatuses } = useProjectStatuses(creative?.project_id, isStaff);
   const setStatus = useSetCreativeStatus();
   const { data: assetLink } = useAssetLink(id, isStaff);
+  const phone = usePhoneScreen();
   // The active Production or Internal pill is its status's dropdown (3a,
   // 3b…), for the team.
   const pillOptions = isStaff && creative && !creative.exception ? statusOptions(projectStatuses, creative.stage) : [];
@@ -348,6 +352,198 @@ export function CreativeReviewPage({ id }: { id: string }) {
       const kind = isPinAnchor(c.anchor) ? "pin" : isRegionAnchor(c.anchor) ? "region" : "time";
       return [{ commentId: c.id, t, kind, author: c.author?.name || c.guest_name || "Someone", body: c.body } as TimelineMarker];
     });
+
+  // The artwork, its slides or its video: the same on a computer and on a
+  // phone.
+  const media = (
+    <>
+      {/* Until the versions are known, the post's own shape holds
+          the space (direct instruction: no jumping height). */}
+      {creativeVersions === undefined ? (
+        // A tall format (a Reel, a Story) is nearly always a
+        // video: held as an empty player, timeline and all.
+        formatRatio(creative.format) < 0.8 ? (
+          <VideoPlayer src={undefined} ratio={formatRatio(creative.format)} markers={[]} highlightedCommentId={null} onMarker={() => {}} seek={null} />
+        ) : (
+          <div className="ig-hold" style={{ aspectRatio: aspectRatioCss(creative.format) }} />
+        )
+      ) : /* No version yet, one saved with every slide removed, or a
+          carousel slide with nothing on it yet. */
+      !currentSlide ? (
+        <NoArtwork
+          format={creative.format}
+          title={creative.artwork_removed_at ? "Artwork removed" : undefined}
+          note={
+            membershipLoading
+              ? undefined
+              : creative.artwork_removed_at
+                ? creative.scheduled_at
+                  ? `Removed on ${dayMonth(creative.artwork_removed_at)}, ${keepDays} days after the post went live. Its copy and comments are kept.`
+                  : `Removed on ${dayMonth(creative.artwork_removed_at)}. Its copy and comments are kept.`
+                : frames.length > 1
+                ? `Slide ${slidePosition} has no artwork yet.`
+                : isStaff
+                  ? activeCopyVersion
+                    ? "The copy is in. Add the artwork once it has been made."
+                    : "Add the artwork once it has been made."
+                  : "The agency hasn't uploaded the artwork for this post yet."
+          }
+        >
+          {isStaff && !phone && !creative.artwork_removed_at && (
+            <button
+              type="button"
+              className="btn primary sm"
+              style={{ marginTop: 10 }}
+              onClick={() => setCreativeModalTab("upload")}
+            >
+              Upload Artwork
+            </button>
+          )}
+        </NoArtwork>
+      ) : !signedUrl && signing && !isVideo ? (
+        <div className="ig-hold" style={{ aspectRatio: aspectRatioCss(creative.format) }} />
+      ) : !signedUrl && !isVideo ? (
+        <div className="ig-noasset">
+          {currentSlide?.asset.filename ?? "No preview available"}
+        </div>
+      ) : isVideo ? (
+        <VideoPlayer
+          // Each video slide is its own player, from 0:00.
+          key={slidePosition}
+          src={signedUrl ?? undefined}
+          // The post's thumbnail as its cover, on its first frame.
+          cover={slidePosition === 1 ? (thumbnailUrl ?? null) : null}
+          ratio={formatRatio(creative.format)}
+          expandable={isReelFormat(creative.format)}
+          markers={videoMarkers}
+          highlightedCommentId={highlightedCommentId}
+          onMarker={setHighlightedCommentId}
+          seek={videoSeek}
+          pauseNow={toolMode !== null}
+          onMoment={setVideoMoment}
+          // Paused, a comment's pin or box shows on the frame it
+          // was made on; while playing, none do.
+          overlay={(t, paused) => (
+            <AnnotationLayer
+              mode={paused ? toolMode : null}
+              pins={paused ? pins.filter((p) => Math.abs((p.t ?? 0) - t) < VIDEO_FRAME_TOLERANCE) : []}
+              regions={paused ? regions.filter((r) => Math.abs((r.t ?? 0) - t) < VIDEO_FRAME_TOLERANCE) : []}
+              nextNumber={nextAnnotationNumber}
+              highlightedCommentId={highlightedCommentId}
+              showVisibilityToggle={isStaff}
+              onSelect={setHighlightedCommentId}
+              onCreate={(anchor, body, visibility) => {
+                createComment.mutate({
+                  body,
+                  parentId: null,
+                  visibility,
+                  creativeVersionId: activeCreativeVersion!.id,
+                  anchor: {
+                    ...anchor,
+                    t: Math.round(t * 100) / 100,
+                    ...(frames.length > 1 ? { slide: slidePosition } : {}),
+                  },
+                });
+                setToolMode(null);
+              }}
+            />
+          )}
+        />
+      ) : (
+        // The image and its pins share one box the image's own
+        // size, so a pin stays put when the image is centred
+        // (a Story, on black).
+        <div className="ig-frame">
+          {/* Signed URLs are short-lived and per-request — not a
+              fit for next/image's static optimisation. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            key={slidePosition}
+            className={slideDir ? `car-in-${slideDir}` : undefined}
+            src={signedUrl ?? undefined}
+            alt={creative.name}
+            // The format's shape until the image's own is known.
+            style={{ aspectRatio: `auto ${aspectRatioCss(creative.format)}` }}
+          />
+          <AnnotationLayer
+            mode={toolMode}
+            pins={pins}
+            regions={regions}
+            nextNumber={nextAnnotationNumber}
+            highlightedCommentId={highlightedCommentId}
+            showVisibilityToggle={isStaff}
+            onSelect={setHighlightedCommentId}
+            onCreate={(anchor, body, visibility) => {
+              createComment.mutate({
+                body,
+                parentId: null,
+                visibility,
+                // A slide is showing, so its version exists.
+                creativeVersionId: activeCreativeVersion!.id,
+                anchor: frames.length > 1 ? { ...anchor, slide: slidePosition } : anchor,
+              });
+              setToolMode(null);
+            }}
+          />
+        </div>
+      )}
+      <CarouselNav
+        index={frameIndex}
+        count={frames.length}
+        onChange={goToSlide}
+        overVideo={!!isVideo}
+        story={isStoryFormat(creative.format)}
+      />
+    </>
+  );
+
+  // The comments, on a computer beside the post and on a phone under it.
+  const comments = showComments ? (
+    <CommentsPanel
+      creativeId={id}
+      highlightedCommentId={highlightedCommentId}
+      onHighlight={highlightComment}
+      toolMode={toolMode}
+      onToolModeChange={setToolMode}
+      canAnnotate={!!currentSlide && !phone}
+      videoMoment={isVideo ? videoMoment : null}
+      videoSlide={isVideo && frames.length > 1 ? slidePosition : null}
+      creativeVersionId={activeCreativeVersion?.id ?? null}
+    />
+  ) : null;
+
+  // On a phone, the post in one column (direct instruction): for copying
+  // and opening its Final Asset, and its comments. The team's status within
+  // the stage shows as the pill does here (3b. Internal QC).
+  if (phone) {
+    const status = pillOptions.find((o) => o.id === creative.status_id);
+    return (
+      <MobilePost
+        projectId={creative.project_id}
+        projectName={creative.projects?.name ?? "Project"}
+        stageText={creative.exception ? exceptionLabel(creative.exception) : (status?.text ?? `${creative.stage}. ${stageLabel(creative.stage, "scheduled")}`)}
+        stageColor={stageColor(creative.stage, creative.exception ?? null)}
+        date={publishDate(creative.projects?.delivery, creative.scheduled_at, creative.due_on)}
+        name={creative.name}
+        format={formatsLabel(postFormats(creative))}
+        accountName={accountName}
+        avatarUrl={igProfile?.pictureUrl ?? clientLogoUrl ?? null}
+        media={media}
+        caption={caption || null}
+        copy={
+          copySummaryParts(activeCopyVersion?.fields ?? {}, postFormats(creative)).others.length ? (
+            <CopyFieldsPreview fields={activeCopyVersion?.fields} formatIds={postFormats(creative)} />
+          ) : (
+            <span className="ig-nocopy">
+              {isStaff ? "No copy yet." : "The agency hasn't written the copy for this post yet."}
+            </span>
+          )
+        }
+        assetLink={isStaff ? (assetLink ?? null) : null}
+        comments={comments}
+      />
+    );
+  }
 
   return (
     <div className={`review${showComments ? "" : " nocomments"}`}>
@@ -652,145 +848,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
                   </div>
                   <div className="dots">•••</div>
                 </div>
-                <div className="ig-media">
-                  {/* Until the versions are known, the post's own shape holds
-                      the space (direct instruction: no jumping height). */}
-                  {creativeVersions === undefined ? (
-                    // A tall format (a Reel, a Story) is nearly always a
-                    // video: held as an empty player, timeline and all.
-                    formatRatio(creative.format) < 0.8 ? (
-                      <VideoPlayer src={undefined} ratio={formatRatio(creative.format)} markers={[]} highlightedCommentId={null} onMarker={() => {}} seek={null} />
-                    ) : (
-                      <div className="ig-hold" style={{ aspectRatio: aspectRatioCss(creative.format) }} />
-                    )
-                  ) : /* No version yet, one saved with every slide removed, or a
-                      carousel slide with nothing on it yet. */
-                  !currentSlide ? (
-                    <NoArtwork
-                      format={creative.format}
-                      title={creative.artwork_removed_at ? "Artwork removed" : undefined}
-                      note={
-                        membershipLoading
-                          ? undefined
-                          : creative.artwork_removed_at
-                            ? creative.scheduled_at
-                              ? `Removed on ${dayMonth(creative.artwork_removed_at)}, ${keepDays} days after the post went live. Its copy and comments are kept.`
-                              : `Removed on ${dayMonth(creative.artwork_removed_at)}. Its copy and comments are kept.`
-                            : frames.length > 1
-                            ? `Slide ${slidePosition} has no artwork yet.`
-                            : isStaff
-                              ? activeCopyVersion
-                                ? "The copy is in. Add the artwork once it has been made."
-                                : "Add the artwork once it has been made."
-                              : "The agency hasn't uploaded the artwork for this post yet."
-                      }
-                    >
-                      {isStaff && !creative.artwork_removed_at && (
-                        <button
-                          type="button"
-                          className="btn primary sm"
-                          style={{ marginTop: 10 }}
-                          onClick={() => setCreativeModalTab("upload")}
-                        >
-                          Upload Artwork
-                        </button>
-                      )}
-                    </NoArtwork>
-                  ) : !signedUrl && signing && !isVideo ? (
-                    <div className="ig-hold" style={{ aspectRatio: aspectRatioCss(creative.format) }} />
-                  ) : !signedUrl && !isVideo ? (
-                    <div className="ig-noasset">
-                      {currentSlide?.asset.filename ?? "No preview available"}
-                    </div>
-                  ) : isVideo ? (
-                    <VideoPlayer
-                      // Each video slide is its own player, from 0:00.
-                      key={slidePosition}
-                      src={signedUrl ?? undefined}
-                      // The post's thumbnail as its cover, on its first frame.
-                      cover={slidePosition === 1 ? (thumbnailUrl ?? null) : null}
-                      ratio={formatRatio(creative.format)}
-                      expandable={isReelFormat(creative.format)}
-                      markers={videoMarkers}
-                      highlightedCommentId={highlightedCommentId}
-                      onMarker={setHighlightedCommentId}
-                      seek={videoSeek}
-                      pauseNow={toolMode !== null}
-                      onMoment={setVideoMoment}
-                      // Paused, a comment's pin or box shows on the frame it
-                      // was made on; while playing, none do.
-                      overlay={(t, paused) => (
-                        <AnnotationLayer
-                          mode={paused ? toolMode : null}
-                          pins={paused ? pins.filter((p) => Math.abs((p.t ?? 0) - t) < VIDEO_FRAME_TOLERANCE) : []}
-                          regions={paused ? regions.filter((r) => Math.abs((r.t ?? 0) - t) < VIDEO_FRAME_TOLERANCE) : []}
-                          nextNumber={nextAnnotationNumber}
-                          highlightedCommentId={highlightedCommentId}
-                          showVisibilityToggle={isStaff}
-                          onSelect={setHighlightedCommentId}
-                          onCreate={(anchor, body, visibility) => {
-                            createComment.mutate({
-                              body,
-                              parentId: null,
-                              visibility,
-                              creativeVersionId: activeCreativeVersion!.id,
-                              anchor: {
-                                ...anchor,
-                                t: Math.round(t * 100) / 100,
-                                ...(frames.length > 1 ? { slide: slidePosition } : {}),
-                              },
-                            });
-                            setToolMode(null);
-                          }}
-                        />
-                      )}
-                    />
-                  ) : (
-                    // The image and its pins share one box the image's own
-                    // size, so a pin stays put when the image is centred
-                    // (a Story, on black).
-                    <div className="ig-frame">
-                      {/* Signed URLs are short-lived and per-request — not a
-                          fit for next/image's static optimisation. */}
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        key={slidePosition}
-                        className={slideDir ? `car-in-${slideDir}` : undefined}
-                        src={signedUrl ?? undefined}
-                        alt={creative.name}
-                        // The format's shape until the image's own is known.
-                        style={{ aspectRatio: `auto ${aspectRatioCss(creative.format)}` }}
-                      />
-                      <AnnotationLayer
-                        mode={toolMode}
-                        pins={pins}
-                        regions={regions}
-                        nextNumber={nextAnnotationNumber}
-                        highlightedCommentId={highlightedCommentId}
-                        showVisibilityToggle={isStaff}
-                        onSelect={setHighlightedCommentId}
-                        onCreate={(anchor, body, visibility) => {
-                          createComment.mutate({
-                            body,
-                            parentId: null,
-                            visibility,
-                            // A slide is showing, so its version exists.
-                            creativeVersionId: activeCreativeVersion!.id,
-                            anchor: frames.length > 1 ? { ...anchor, slide: slidePosition } : anchor,
-                          });
-                          setToolMode(null);
-                        }}
-                      />
-                    </div>
-                  )}
-                  <CarouselNav
-                    index={frameIndex}
-                    count={frames.length}
-                    onChange={goToSlide}
-                    overVideo={!!isVideo}
-                    story={isStoryFormat(creative.format)}
-                  />
-                </div>
+                <div className="ig-media">{media}</div>
                 <div className="ig-acts">
                   <svg viewBox="0 0 24 24">
                     <path d="M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 1 0-7.1 7.1L12 21.5l8.8-8.8a5 5 0 0 0 0-7.1z" />
@@ -876,19 +934,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
       </div>
       {showComments && <div className="review-sep" aria-hidden="true" />}
 
-      {showComments && (
-      <CommentsPanel
-        creativeId={id}
-        highlightedCommentId={highlightedCommentId}
-        onHighlight={highlightComment}
-        toolMode={toolMode}
-        onToolModeChange={setToolMode}
-        canAnnotate={!!currentSlide}
-        videoMoment={isVideo ? videoMoment : null}
-        videoSlide={isVideo && frames.length > 1 ? slidePosition : null}
-        creativeVersionId={activeCreativeVersion?.id ?? null}
-      />
-      )}
+      {comments}
 
       {shareOpen && (
         <ShareModal

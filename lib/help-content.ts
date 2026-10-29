@@ -164,6 +164,37 @@ export const HELP_ARTICLES: HelpArticle[] = [
     ],
   },
   {
+    id: "phone",
+    title: "Frank on Your Phone",
+    category: "start",
+    summary: "Projects and posts fit your phone, for copying captions and opening Final Assets.",
+    blocks: [
+      {
+        kind: "p",
+        text: "On a phone, the menu button at the top left opens the links that sit down the left on a computer: Clients, and the client and project you're in. Your clients and a client's projects show as simple lists.",
+      },
+      {
+        kind: "p",
+        text: "Open a project on your phone and its posts show as cards, a month at a time, in date order. Each card has its date and stage, its caption with Copy Caption, Final Asset for your team, and Approve Concept while a concept is waiting. The arrows change the month and the menu beside them picks a platform. Tap a post's name to open it.",
+      },
+      {
+        kind: "p",
+        text: "Open a post on your phone and it shows in one column, as on Instagram: where it sits and its stage, the post itself, then its buttons and comments.",
+      },
+      {
+        kind: "list",
+        items: [
+          "Copy Caption copies the caption with its line breaks and paragraphs, ready to paste.",
+          "Final Asset opens the link to the finished creative, for your team only.",
+          "Comments are under the post: read them, reply, and add your own. Approve Concept is there while a concept is waiting.",
+          "The project's name at the top takes you back to it.",
+          "Adding clients, projects and posts, the table's columns and views, Ideas, changing stages, editing, sharing, choosing versions and pinning comments on the artwork stay on a computer.",
+          "Settings, a client's Settings and Knowledge, Analytics, Calendar and My Profile are made for a computer: on a phone they say so, with a way back to your clients.",
+        ],
+      },
+    ],
+  },
+  {
     id: "create-client",
     title: "Create a Client and Its First Project",
     category: "clients",

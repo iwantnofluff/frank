@@ -13,6 +13,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.59.0",
+    date: "2026-10-29",
+    title: "Frank on your phone",
+    changes: [
+      "A project on a phone shows its posts as cards, a month at a time: each with its caption and Copy Caption, Final Asset for your team, and Approve Concept while a concept waits.",
+      "A post's page now fits a phone: the post in one column, as on Instagram, with Copy Caption and, for your team, Final Asset under it.",
+      "Its comments are underneath, to read, reply to and add to. Editing and sharing stay on a computer.",
+      "On a phone the left-hand links open from a menu button at the top, and your clients and a client's projects are simple lists. Settings, Analytics and the other pages made for a computer say so.",
+    ],
+  },
+  {
     version: "1.58.1",
     date: "2026-10-29",
     title: "Final Asset, tidied",

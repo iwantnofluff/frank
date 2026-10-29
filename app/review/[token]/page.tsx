@@ -1,10 +1,11 @@
 "use client";
 
-import { use, useEffect, useState, useSyncExternalStore } from "react";
+import { use, useEffect, useState } from "react";
 import { applyTheme, normaliseTheme } from "@/lib/theme";
 import { useReviewController } from "@/hooks/use-review-controller";
 import { MobileReview } from "@/components/review/MobileReview";
 import { DesktopReview } from "@/components/review/DesktopReview";
+import { usePhoneScreen } from "@/hooks/use-phone-screen";
 
 function PasscodeGate({
   onSubmit,
@@ -55,23 +56,6 @@ function UnavailableNotice() {
         </p>
       </div>
     </div>
-  );
-}
-
-// The visitor's own screen picks the layout (direct instruction): a phone's
-// browser gets the phone layout, filling it; anything wider, the desktop one,
-// filling the window. No frame, no preview switch.
-const PHONE_QUERY = "(max-width: 899px)";
-function subscribe(onChange: () => void) {
-  const mq = window.matchMedia(PHONE_QUERY);
-  mq.addEventListener("change", onChange);
-  return () => mq.removeEventListener("change", onChange);
-}
-function usePhoneScreen() {
-  return useSyncExternalStore(
-    subscribe,
-    () => window.matchMedia(PHONE_QUERY).matches,
-    () => false,
   );
 }
 

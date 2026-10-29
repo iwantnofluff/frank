@@ -53,6 +53,16 @@ export function SearchIcon() {
   );
 }
 
+// Not in the prototype, which has no phone layout: the phone's menu, three
+// lines on the bell's 24px grid.
+export function MenuIcon() {
+  return (
+    <svg viewBox="0 0 24 24">
+      <path d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+  );
+}
+
 export function BellIcon() {
   return (
     <svg viewBox="0 0 24 24">
