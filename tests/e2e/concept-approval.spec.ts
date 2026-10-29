@@ -39,7 +39,8 @@ test("the team approves a concept from the post's comments", async ({ page, fran
   await page.waitForSelector(".tblwrap, .empty");
   await goToMonth(page, "March 2027");
   const row = page.locator("tr[data-row]", { hasText: "Team Approves Concept" });
-  await expect(row.locator(".stg")).toContainText("In Production", { timeout: 15_000 });
+  // The team's pill shows its status within the stage (phase123): the first.
+  await expect(row.locator(".stg")).toContainText("2a. In Progress (Content)", { timeout: 15_000 });
   await expect(row.locator(".feedback-note")).toHaveCount(0);
 });
 

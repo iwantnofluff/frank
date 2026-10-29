@@ -7,7 +7,7 @@ import { useProject } from "@/hooks/use-project";
 import { useCreative } from "@/hooks/use-creative";
 import { useClientDetail } from "@/hooks/use-client";
 import { usePresence } from "@/hooks/use-presence";
-import { CalendarIcon, ClientIcon, ClientsIcon, SettingsIcon } from "./icons";
+import { CalendarIcon, ClientIcon, ClientsIcon } from "./icons";
 import type { RailSeed } from "@/lib/rail-seed";
 
 function RailLink({
@@ -134,21 +134,8 @@ export function NavRail({ seed }: { seed: RailSeed | null }) {
           current={pathname === `/projects/${projectId}`}
         />
       </RailSlot>
-      <RailSlot show={insideClient && !!clientId} swapKey={clientId}>
-        <RailLink
-          href={`/clients/${clientId}/settings`}
-          label={client?.name ? `${client.name} Settings` : "Client Settings"}
-          labelNode={
-            <>
-              {/* A long name stops at two lines; Settings always shows. */}
-              <span className="rlab-name">{client?.name ?? "\u00a0"}</span> Settings
-            </>
-          }
-          icon={SettingsIcon}
-          current={pathname.startsWith(`/clients/${clientId}/settings`)}
-          id="navClientSet"
-        />
-      </RailSlot>
+      {/* A client's Settings are on its page, top right, as a project's
+          are (direct instruction), not here. */}
       <div className="spacer" />
     </nav>
   );

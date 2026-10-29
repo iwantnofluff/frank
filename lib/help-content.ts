@@ -136,7 +136,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       { kind: "p", text: "A post in Concept with no artwork or copy yet opens on its Brief." },
       { kind: "p", text: "Once a post is Live, the date it really went live shows in brackets after its planned date, above the phone: green if it went live that day or earlier, red if later. Posts planned before 14 Oct 2026 count as live on their planned day." },
       { kind: "h", text: "Getting around" },
-      { kind: "p", text: "The left rail follows where you are, and names the client: anywhere inside a client you'll see Clients, the client's projects (Casa Carigar Projects, with a buildings icon, opening its page), and the client's Settings (Casa Carigar Settings); in a project and on its posts, the client's planner (Casa Carigar Planner) or Other Content as well." },
+      { kind: "p", text: "The left rail follows where you are, and names the client: anywhere inside a client you'll see Clients and the client's projects (Casa Carigar Projects, with a buildings icon, opening its page); in a project and on its posts, the client's planner (Casa Carigar Planner) or Other Content as well. The client's Settings are on its page, the settings icon (the cog) at the top right." },
       { kind: "p", text: "Frank's logo in the top left corner takes you back to Clients. Your picture at the top right holds My Profile, Settings for your whole workspace, and Sign out." },
       { kind: "p", text: "If you belong to more than one workspace, it lists them too: pick one to switch, still signed in." },
     ],
@@ -202,7 +202,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     blocks: [
       {
         kind: "p",
-        text: "Open a client's Settings from the left rail while you're in a client: it carries the client's name, Casa Carigar Settings, say. A project's own settings (its name, details, people, folder, archiving) open from the settings icon (the cog) at the top of the project's page.",
+        text: "Open a client's Settings from the settings icon (the cog) at the top right of the client's page, as a project's are. A project's own settings (its name, details, people, folder, archiving) open from the settings icon (the cog) at the top of the project's page.",
       },
       {
         kind: "list",

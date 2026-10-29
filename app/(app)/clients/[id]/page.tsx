@@ -182,14 +182,36 @@ export default function ClientWorkspacePage({
 
   return (
     <div className="pad">
-      <h1 className="h1">{client?.name ?? "Client"}</h1>
-      <p className="sub">
-        {client?.description
-          ? client.description
-          : asClient
-            ? "Pick a project to see what is scheduled."
-            : "Pick a project to open its calendar."}
-      </p>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+        <div>
+          <h1 className="h1">{client?.name ?? "Client"}</h1>
+          <p className="sub">
+            {client?.description
+              ? client.description
+              : asClient
+                ? "Pick a project to see what is scheduled."
+                : "Pick a project to open its calendar."}
+          </p>
+        </div>
+        {/* The client's Settings, top right as a project's are (direct
+            instruction), no longer on the rail. A client's own people get
+            theirs too: their Knowledge. */}
+        {!isStaffPending && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Link
+              href={`/clients/${id}/settings`}
+              className="pjlink line"
+              aria-label={client?.name ? `${client.name} Settings` : "Client Settings"}
+              title="Settings"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-3-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H2.5a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.2-3l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V2.5a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 3 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1h.2a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
+              </svg>
+            </Link>
+          </div>
+        )}
+      </div>
 
       {/* The brand at a glance, before the work (direct instruction); the
           stage counts that sat above it went for it (direct instruction),

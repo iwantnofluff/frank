@@ -105,7 +105,7 @@ test("a client gets a square profile image and a description", async ({ page, fr
       .toMatch(/^(512x512|320x320)$/);
 
     await page.goto(`${APP_URL}/clients/${frank.clientId}`);
-    await expect(page.locator(".pad > .sub").first()).toHaveText(
+    await expect(page.locator(".pad .sub").first()).toHaveText(
       "Organic skincare brand we've run social for since 2024.",
     );
 

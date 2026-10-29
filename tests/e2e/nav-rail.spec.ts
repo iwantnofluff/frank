@@ -15,13 +15,12 @@ test("the rail follows where you are inside a client", async ({ page, frank }) =
   await frank.loginAsStaff(page);
 
   await page.goto(`${APP_URL}/clients/${frank.clientId}`);
-  await expect(page.locator("#navClientSet")).toBeVisible();
+  await expect(page.locator("#navClient")).toBeVisible();
   // The client by name, with the buildings icon, on every page inside it
   // (direct instruction), as "<client> Projects" again.
   await expect.poll(() => railLinks(page)).toEqual([
     "Clients -> /dashboard",
     `E2E Test Client Projects -> /clients/${frank.clientId}`,
-    `E2E Test Client Settings -> /clients/${frank.clientId}/settings`,
   ]);
 
   // On a project's table, its planner too, named for the client ("E2E Test Client
@@ -32,7 +31,6 @@ test("the rail follows where you are inside a client", async ({ page, frank }) =
     "Clients -> /dashboard",
     `E2E Test Client Projects -> /clients/${frank.clientId}`,
     `E2E Test Client Planner -> /projects/${frank.projectId}`,
-    `E2E Test Client Settings -> /clients/${frank.clientId}/settings`,
   ]);
   await expect(page.getByRole("link", { name: "E2E Test Client Planner" })).toHaveAttribute("aria-current", "true");
 
@@ -43,14 +41,15 @@ test("the rail follows where you are inside a client", async ({ page, frank }) =
     "Clients -> /dashboard",
     `E2E Test Client Projects -> /clients/${frank.clientId}`,
     `E2E Test Client Planner -> /projects/${frank.projectId}`,
-    `E2E Test Client Settings -> /clients/${frank.clientId}/settings`,
   ]);
 
   await page.getByRole("link", { name: "E2E Test Client Planner" }).click();
   await page.waitForURL(`${APP_URL}/projects/${frank.projectId}`);
   await page.locator("#navClient").click();
   await page.waitForURL(`${APP_URL}/clients/${frank.clientId}`);
-  // The client's Settings, named for it, opens on Client Details for staff.
+  // The client's Settings, named for it, top right on its page (not the
+  // rail), opens on Client Details for staff.
+  await expect(page.locator(".rail").getByRole("link", { name: "E2E Test Client Settings" })).toHaveCount(0);
   await page.getByRole("link", { name: "E2E Test Client Settings" }).click();
   await page.waitForURL(`${APP_URL}/clients/${frank.clientId}/settings/details`);
   await expect(page.getByRole("navigation", { name: "Client Settings sections" })).toContainText("People");
@@ -64,7 +63,6 @@ test("a client-side member gets the same rail, opening their Knowledge", async (
     "Clients -> /dashboard",
     `E2E Test Client Projects -> /clients/${frank.clientId}`,
     `E2E Test Client Planner -> /projects/${frank.projectId}`,
-    `E2E Test Client Settings -> /clients/${frank.clientId}/settings`,
   ]);
   // Their Client Settings is Knowledge only; other pages send them there.
   await page.goto(`${APP_URL}/clients/${frank.clientId}/settings/details`);
@@ -93,7 +91,7 @@ test("outside a client the rail is just Clients, and Settings opens from your pi
   await page.waitForURL(`${APP_URL}/dashboard`);
 });
 
-test("a client-side member on their projects list gets Client Settings but no Settings", async ({ page, frank }) => {
+test("a client-side member on their projects list gets Client Settings, top right, but no Settings", async ({ page, frank }) => {
   await frank.loginAsClient(page);
   await page.goto(`${APP_URL}/clients/${frank.clientId}`);
   await page.waitForSelector(".clients, .empty");
@@ -102,6 +100,8 @@ test("a client-side member on their projects list gets Client Settings but no Se
   await expect.poll(() => railLinks(page)).toEqual([
     "Clients -> /dashboard",
     `E2E Test Client Projects -> /clients/${frank.clientId}`,
-    `E2E Test Client Settings -> /clients/${frank.clientId}/settings`,
   ]);
+  // Their client's Settings from its page: their Knowledge.
+  await page.getByRole("link", { name: "E2E Test Client Settings" }).click();
+  await page.waitForURL(`${APP_URL}/clients/${frank.clientId}/settings/knowledge`);
 });

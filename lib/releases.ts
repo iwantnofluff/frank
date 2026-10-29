@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.57.1",
+    date: "2026-10-29",
+    title: "A client's Settings on its page",
+    changes: [
+      "A client's Settings now open from the settings icon at the top right of the client's page, as a project's do, and no longer from the left rail.",
+    ],
+  },
+  {
     version: "1.57.0",
     date: "2026-10-26",
     title: "Move a post to any stage from the table",
