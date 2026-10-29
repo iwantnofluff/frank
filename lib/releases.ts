@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.60.0",
+    date: "2026-10-29",
+    title: "Check Creative reads the artwork",
+    changes: [
+      "Check Creative, on a post's Checks tab, now reads each slide of the latest artwork and compares it with that slide's Text on Image: it says slide by slide whether the words match, or what's missing, changed or misspelt.",
+      "It uses one AI request from your monthly allowance and needs a Claude model, chosen in Settings → AI Governance → Drafting Model.",
+    ],
+  },
+  {
     version: "1.59.0",
     date: "2026-10-29",
     title: "Frank on your phone",

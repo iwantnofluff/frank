@@ -206,27 +206,7 @@ const CHECK_SECTION_DESCRIPTIONS: Record<CheckKind, string> = {
   wiifm:
     "Whether this copy leads with a real reader benefit, and draws on the workspace's own reference material.",
   brand: "Whether this copy fits this client's brand knowledge — tone, protected terms, and anything else documented for them.",
-  creative: "Protected terms, line lengths and the format spec, checked against the artwork itself.",
-};
-
-// "Check Creative" isn't part of this pass — it'd check the artwork itself
-// (protected terms in on-image text, line lengths, the format spec), which
-// needs OCR/vision on the actual asset, not just a text prompt. Left as
-// the same placeholder it always was.
-const MOCK_CREATIVE_CHECK = {
-  against: "protected terms, line lengths and the format spec — not the image itself",
-  findings: [
-    {
-      tone: "ok" as const,
-      title: "Mock finding — protected terms",
-      body: "No protected term collisions found in the on-artwork text.",
-    },
-    {
-      tone: "warn" as const,
-      title: "Mock finding — line length",
-      body: "Line 2 runs to nine words; the format spec asks for six or fewer.",
-    },
-  ],
+  creative: "Whether each slide of the latest artwork says what its Text on Image says: missing or changed words, misspellings, wrong numbers.",
 };
 
 function FindingsList({ findings }: { findings: { tone: "ok" | "warn"; title: string; body: string }[] }) {
@@ -245,39 +225,62 @@ function FindingsList({ findings }: { findings: { tone: "ok" | "warn"; title: st
   );
 }
 
-function MockCreativeCheck() {
+// "Check Creative" (direct instruction): the latest uploaded artwork, slide
+// by slide, against its saved Text on Image, read by the AI
+// (app/api/ai/check-creative). Button-run, as the other checks are.
+function CreativeCheck({
+  creativeId,
+  hasArtwork,
+  hasText,
+}: {
+  creativeId: string;
+  hasArtwork: boolean;
+  hasText: boolean;
+}) {
+  const [findings, setFindings] = useState<CheckFinding[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
-  const [done, setDone] = useState(false);
+  const canRun = hasArtwork && hasText;
 
-  useEffect(() => {
-    if (!running) return;
-    const t = setTimeout(() => {
+  async function run() {
+    if (!canRun || running) return;
+    setRunning(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/ai/check-creative", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ creativeId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Couldn't run this check");
+      setFindings(data.findings);
+    } catch (err) {
+      setError(errorMessage(err, "Couldn't run this check"));
+    } finally {
       setRunning(false);
-      setDone(true);
-    }, 700);
-    return () => clearTimeout(t);
-  }, [running]);
+    }
+  }
+
+  const disabledReason = !hasArtwork
+    ? "Upload the artwork first, then check it against its Text on Image."
+    : !hasText
+      ? "Write the Text on Image on the Production tab first, then check the artwork against it."
+      : null;
 
   return (
     <div className="field">
-      <button
-        type="button"
-        className="btn sm primary"
-        disabled={running}
-        onClick={() => {
-          setDone(false);
-          setRunning(true);
-        }}
-      >
-        {running ? "Checking…" : CHECK_LABELS.creative}
-      </button>
-      {done && (
-        <div style={{ marginTop: 10 }}>
-          <FindingsList findings={MOCK_CREATIVE_CHECK.findings} />
-          <p className="checksource">
-            Checked against {MOCK_CREATIVE_CHECK.against}. This is placeholder output — the real check isn&rsquo;t
-            connected yet.
-          </p>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+        <button type="button" className="btn sm primary" disabled={running || !canRun} onClick={run}>
+          {running ? "Checking…" : CHECK_LABELS.creative}
+        </button>
+        {error && <span className="berr">{error}</span>}
+      </div>
+      {!running && disabledReason && <p className="msection-empty" style={{ marginBottom: 6 }}>{disabledReason}</p>}
+      {findings && findings.length > 0 && (
+        <div>
+          <FindingsList findings={findings} />
+          <p className="checksource">Checked the latest artwork against its saved Text on Image.</p>
         </div>
       )}
     </div>
@@ -416,6 +419,9 @@ function LiveCheck({
 
 function CheckSection({
   kind,
+  creativeId,
+  hasArtwork,
+  hasText,
   agencyId,
   concept,
   copyText,
@@ -424,6 +430,9 @@ function CheckSection({
   knowledgeLoading,
 }: {
   kind: CheckKind;
+  creativeId: string;
+  hasArtwork: boolean;
+  hasText: boolean;
   agencyId: string | undefined;
   concept: string | null;
   copyText: string;
@@ -431,7 +440,7 @@ function CheckSection({
   attachments: CheckAttachmentRef[];
   knowledgeLoading: boolean;
 }) {
-  if (kind === "creative") return <MockCreativeCheck />;
+  if (kind === "creative") return <CreativeCheck creativeId={creativeId} hasArtwork={hasArtwork} hasText={hasText} />;
   return (
     <LiveCheck
       kind={kind}
@@ -2612,6 +2621,9 @@ export function CreativeModal(props: CreativeModalProps) {
               <p className="msection-d">{CHECK_SECTION_DESCRIPTIONS[kind]}</p>
               <CheckSection
                 kind={kind}
+                creativeId={creativeId}
+                hasArtwork={creativeVersions.length > 0}
+                hasText={!isCreate && !!props.creative.slide_text?.some((t) => t.trim())}
                 agencyId={agencyId}
                 concept={concept}
                 copyText={copyTextForCheck}
