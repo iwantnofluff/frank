@@ -87,6 +87,8 @@ import { ConceptChangedError, useSaveConcept } from "@/hooks/use-save-concept";
 import { saveDirectionsForNewPost, type DesignDirectionRow } from "@/hooks/use-design-directions";
 import { useQueryClient } from "@tanstack/react-query";
 import type { VoicePostFields } from "@/lib/ai/voice-post";
+import { useAssetLink, useSaveAssetLink } from "@/hooks/use-asset-links";
+import { OpenAsset } from "@/components/project/OpenAsset";
 
 const KNOWLEDGE_SECTION_LABELS: Record<string, string> = Object.fromEntries(
   KNOWLEDGE_SECTIONS.map((s) => [s.key, s.label]),
@@ -1088,6 +1090,21 @@ export function CreativeModal(props: CreativeModalProps) {
     }
   }
   const saveCopy = useSaveCopyFields(creativeId ?? "");
+  // The final asset's link (phase126): the team's only, one a post. The
+  // draft is null until typed in, the saved link showing till then.
+  const { data: assetLink } = useAssetLink(creativeId ?? undefined, !!creativeId);
+  const saveAsset = useSaveAssetLink(creativeId ?? "");
+  const [assetDraft, setAssetDraft] = useState<string | null>(null);
+  const [assetNote, setAssetNote] = useState<string | null>(null);
+  const assetValue = assetDraft ?? assetLink ?? "";
+  const assetValid = !assetValue.trim() || /^https?:\/\//i.test(assetValue.trim());
+  const pendingAsset = assetDraft !== null && assetDraft.trim() !== (assetLink ?? "");
+  async function saveAssetIfChanged() {
+    if (!pendingAsset || !assetValid) return;
+    await saveAsset.mutateAsync(assetValue);
+    setAssetDraft(null);
+    setAssetNote(assetValue.trim() ? "Link saved." : "Link removed.");
+  }
   // Saving into the current version instead (phase113, direct instruction):
   // the latest one, while nobody has commented on it.
   const updateCopy = useUpdateCopyVersion(creativeId ?? "");
@@ -1420,6 +1437,7 @@ export function CreativeModal(props: CreativeModalProps) {
   // copy only, creative only, or both.
   async function handleSaveUpload() {
     await saveCopyIfChanged();
+    await saveAssetIfChanged();
     onClose();
   }
 
@@ -1617,7 +1635,8 @@ export function CreativeModal(props: CreativeModalProps) {
                 pendingCreativeChange ||
                 pendingSlideChange ||
                 pendingVoChange ||
-                pendingThumbText
+                pendingThumbText ||
+                (pendingAsset && !assetValid)
               }
               title={
                 pendingCopyChange || pendingCreativeChange || pendingSlideChange || pendingVoChange || pendingThumbText
@@ -2476,6 +2495,42 @@ export function CreativeModal(props: CreativeModalProps) {
           )}
           </>
           )}
+
+          {/* Where the finished creative is (phase126, direct
+              instruction), last in the tab. The team's only. */}
+          <div className="msection-h">Final Asset</div>
+          <p className="msection-d">
+            A link to the finished creative, such as its Google Drive folder. It shows as Open Asset in the table and on the post, for
+            your team only.
+          </p>
+          <div className="field" data-focus="asset">
+            <label htmlFor="assetLink">Link</label>
+            <input
+              id="assetLink"
+              type="url"
+              inputMode="url"
+              placeholder="https://drive.google.com/…"
+              value={assetValue}
+              onChange={(e) => {
+                setAssetDraft(e.target.value);
+                setAssetNote(null);
+              }}
+            />
+            {!assetValid && <p className="autherr">Paste the whole link, starting with https://</p>}
+          </div>
+          <div className="field btnrow">
+            <button
+              type="button"
+              className="btn sm primary"
+              disabled={!pendingAsset || !assetValid || saveAsset.isPending}
+              onClick={() => saveAssetIfChanged().catch(() => {})}
+            >
+              {saveAsset.isPending ? "Saving…" : assetLink && !assetValue.trim() ? "Remove Link" : "Save Link"}
+            </button>
+            {assetLink && !pendingAsset && <OpenAsset url={assetLink} />}
+            {assetNote && <span className="bsaved">{assetNote}</span>}
+          </div>
+          {saveAsset.error && <p className="autherr">{errorMessage(saveAsset.error, "Couldn't save the link")}</p>}
 
           {uploadError && <p className="autherr">{uploadError}</p>}
         </div>

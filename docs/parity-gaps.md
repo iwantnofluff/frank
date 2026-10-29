@@ -4515,3 +4515,11 @@ Direct instruction: move the client's Settings (No Fluff Settings) to the right 
 
 **Verified**: nav-rail.spec now expects no Settings on the rail, opens Client Details from the cog for the team and Knowledge for a client; the specs that open a client's Settings by its name (manage-clients-projects, client-profile) pass through the cog; client-workspace.png updated after looking at its diff (the rail's Settings gone, the cog top right). Help's two mentions of the rail's Settings rewritten.
 
+## A link to the final asset (phase126, 1.58.0, 2026-10-29)
+
+Direct instruction: a field in the Content tab for a link to the final creative; once added, the table's Creative column shows a green Open Asset pill with its arrow, opening the Google Drive folder; and somewhere on the post's page too. Decided directly: under the version pickers, the team's only, one link a post.
+
+phase126 adds creative_asset_links (one a post, its URL starting http(s), the team's only by can_see_creative_as_staff), apart from creatives so that no client can read it there; a change or removal goes into the project's Activity Log as an edit of "Final Asset". The Content tab's last section, Final Asset: the link, Save Link (Remove Link with it emptied), and Open Asset once saved; Save and Close saves a changed link too, and waits while one isn't a link. OpenAsset (components/project/OpenAsset.tsx) is the Add buttons' pill in Frank's green, opening in a new tab: in both tables' Creative cell, under Add Thumbnail when there's one; on the post, "Final Asset" under Creative, Thumbnail and Copy. Any link is taken, not only Google Drive.
+
+**Verified**: phase126 rehearsed on staging (rolled back): the team adds, changes, reads and removes it; not a link refused; a client reads none, changes nothing and can't add one; each change in the Activity Log. Applied to staging; local test database rebuilt. New final-asset.spec: not a link said and not saved; saved, then Open Asset on the post and in the table (new tab), in the Activity Log; emptied and removed; a client with no Open Asset anywhere and none to read. Screenshotted the Content tab, the table's cell (under Add Thumbnail) and the post.
+

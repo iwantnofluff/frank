@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.58.0",
+    date: "2026-10-29",
+    title: "A link to the final asset",
+    changes: [
+      "A post's Content tab has a Final Asset link at the end, for where the finished creative is, such as its Google Drive folder.",
+      "Once it's in, the table's Creative column shows a green Open Asset, and so does the post, under its Creative and Copy versions. Each opens the link in a new tab.",
+      "For your team only: clients never see the link. Changing or removing it is in the project's Activity Log.",
+    ],
+  },
+  {
     version: "1.57.1",
     date: "2026-10-29",
     title: "A client's Settings on its page",

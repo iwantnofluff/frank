@@ -12477,6 +12477,17 @@ button.sortbtn:hover {
   margin-top: auto;
   padding-top: 4px;
 }
+/* Add Thumbnail and Open Asset (phase126) in the Creative cell's foot, one
+   under the other. */
+.artcell-afters {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.asset-open {
+  text-decoration: none;
+}
 /* Room for the phone, the name and the button in a row that's otherwise
    short; a cell's height is only its least. */
 .tbl td.artcell-td.has-after {

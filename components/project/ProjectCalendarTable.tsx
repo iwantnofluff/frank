@@ -50,6 +50,8 @@ import { EarlierVersions } from "@/components/project/EarlierVersions";
 import { FeedbackCell } from "@/components/project/FeedbackCell";
 import { useProjectProductionVersions } from "@/hooks/use-production-versions";
 import { useProjectStatuses } from "@/hooks/use-project-statuses";
+import { useAssetLinksByCreative } from "@/hooks/use-asset-links";
+import { OpenAsset } from "@/components/project/OpenAsset";
 import { StagePillMenu } from "@/components/project/StagePillMenu";
 import { useCopyVersionsByCreative, type CopyVersionSummary } from "@/hooks/use-copy-versions-by-creative";
 import { useLatestFeedbackByCreative } from "@/hooks/use-latest-feedback-by-creative";
@@ -559,6 +561,7 @@ export function ProjectCalendarTable({
   // Each post's status within In Production or Internal Review (phase123):
   // for the team, its Status pill opens every stage and status (phase125).
   const { data: projectStatuses } = useProjectStatuses(projectId, isStaff);
+  const { data: assetLinks } = useAssetLinksByCreative(creativeIds, isStaff);
   // A post's date changed from the table (direct instruction): its date
   // or time a button for the team, opening the pickers right there.
   const [datePick, setDatePick] = useState<{ c: CreativeListRow; rect: DOMRect; focus: "date" | "time" } | null>(null);
@@ -1401,19 +1404,30 @@ export function ProjectCalendarTable({
                                 isStaff && hasVideoFormat(postFormats(c)) && !thumbnailsByCreative?.[c.id] && !c.artwork_removed_at ? (
                                   <MissingContent expected {...fill(c, "thumbnail")} />
                                 ) : null;
+                              // Its final asset's link, once added (phase126): Open
+                              // Asset, for the team.
+                              const asset = isStaff && assetLinks?.[c.id] ? <OpenAsset url={assetLinks[c.id]} /> : null;
+                              const after =
+                                addThumb || asset ? (
+                                  <span className="artcell-afters">
+                                    {addThumb}
+                                    {asset}
+                                  </span>
+                                ) : null;
                               return (
                                 <td
                                   key={key}
-                                  className={art ? `artcell-td${addThumb ? " has-after" : ""}` : undefined}
+                                  className={art ? `artcell-td${after ? " has-after" : ""}` : undefined}
                                   onMouseEnter={art ? (e) => handleEnter(c, e.currentTarget) : undefined}
                                   onMouseLeave={art ? scheduleHide : undefined}
                                 >
                                   {art ? (
-                                    <ArtworkCell artwork={art} thumbnail={thumbnailsByCreative?.[c.id]} after={addThumb} />
+                                    <ArtworkCell artwork={art} thumbnail={thumbnailsByCreative?.[c.id]} after={after} />
                                   ) : (
                                     <span className="artadds">
                                       <MissingContent expected={!c.artwork_removed_at} {...fill(c, "artwork")} />
                                       {addThumb}
+                                      {asset}
                                     </span>
                                   )}
                                 </td>

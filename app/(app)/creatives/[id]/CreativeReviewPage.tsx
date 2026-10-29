@@ -55,6 +55,8 @@ import { errorMessage } from "@/lib/errors";
 import { useProjectStatuses, useSetCreativeStatus } from "@/hooks/use-project-statuses";
 import { statusOptions } from "@/lib/project-statuses";
 import { PillMenu } from "@/components/project/PillMenu";
+import { useAssetLink } from "@/hooks/use-asset-links";
+import { OpenAsset } from "@/components/project/OpenAsset";
 
 // How close, in seconds, the paused moment has to be to a pin's for it to
 // show on the frame — about a frame or two either side.
@@ -87,6 +89,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
   // team's only.
   const { data: projectStatuses } = useProjectStatuses(creative?.project_id, isStaff);
   const setStatus = useSetCreativeStatus();
+  const { data: assetLink } = useAssetLink(id, isStaff);
   // The active Production or Internal pill is its status's dropdown (3a,
   // 3b…), for the team.
   const pillOptions = isStaff && creative && !creative.exception ? statusOptions(projectStatuses, creative.stage) : [];
@@ -580,6 +583,14 @@ export function CreativeReviewPage({ id }: { id: string }) {
                   )}
                 </select>
               </div>
+              {/* The final asset's link, once added (phase126, direct
+                  instruction): under the pickers, the team's only. */}
+              {isStaff && assetLink && (
+                <div className="vsel">
+                  <span className="vsel-l">Final Asset</span>
+                  <OpenAsset url={assetLink} />
+                </div>
+              )}
         </div>
         <div className="canvas">
           <div>

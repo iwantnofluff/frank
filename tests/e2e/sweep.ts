@@ -109,6 +109,8 @@ async function sweepStepByStep(agencyId: string): Promise<void> {
     // The stage log (phase71) goes with its posts; said here before them.
     ["creative_stage_events", () => admin.from("creative_stage_events").delete().eq("agency_id", agencyId)],
     ["post_live_dates", () => admin.from("post_live_dates").delete().eq("agency_id", agencyId)],
+    // phase126: a post's final asset link (goes with it anyway).
+    ["creative_asset_links", () => admin.from("creative_asset_links").delete().eq("agency_id", agencyId)],
     ["creatives", () => admin.from("creatives").delete().eq("agency_id", agencyId)],
     ["custom_columns", () => admin.from("custom_columns").delete().eq("agency_id", agencyId)],
     // References projects and memberships (phase46). Both cascade to it,
