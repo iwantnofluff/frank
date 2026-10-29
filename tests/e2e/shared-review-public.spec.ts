@@ -352,7 +352,11 @@ test("shared review — names link into Frank: sign in first, and the post for t
   // they're signed in (it looks up their membership). (The post's own name
   // above the phone, which opened its page, went with the title.)
   await frank.loginAsStaff(page);
-  const known = page.waitForResponse((r) => r.url().includes("/rest/v1/memberships"));
+  // The review page's own look-up (useReviewViewer), not the Clients page's
+  // that signing in lands on, which can still be answering.
+  const known = page.waitForResponse(
+    (r) => r.url().includes("/rest/v1/memberships?select=id&") && r.url().includes("client_id=is.null"),
+  );
   await page.goto(`/review/${token}`);
   await known;
   await page.locator(".dk-list .rv-client").getByRole("link", { name: "E2E Test Client" }).click();
