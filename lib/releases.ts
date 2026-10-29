@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.58.1",
+    date: "2026-10-29",
+    title: "Final Asset, tidied",
+    changes: [
+      "In a post's Content tab, Final Asset now comes straight after the Creative. Once saved, the link under the field opens it.",
+      "The green button in the table and on the post now reads Final Asset, and on the post it stands on its own under the versions.",
+    ],
+  },
+  {
     version: "1.58.0",
     date: "2026-10-29",
     title: "A link to the final asset",

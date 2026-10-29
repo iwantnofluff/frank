@@ -12477,7 +12477,7 @@ button.sortbtn:hover {
   margin-top: auto;
   padding-top: 4px;
 }
-/* Add Thumbnail and Open Asset (phase126) in the Creative cell's foot, one
+/* Add Thumbnail and Final Asset (phase126) in the Creative cell's foot, one
    under the other. */
 .artcell-afters {
   display: flex;
@@ -12487,6 +12487,12 @@ button.sortbtn:hover {
 }
 .asset-open {
   text-decoration: none;
+}
+/* The Content tab's saved link, under its field, opening it. */
+a.asset-saved {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
 }
 /* Room for the phone, the name and the button in a row that's otherwise
    short; a cell's height is only its least. */

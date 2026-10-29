@@ -88,7 +88,6 @@ import { saveDirectionsForNewPost, type DesignDirectionRow } from "@/hooks/use-d
 import { useQueryClient } from "@tanstack/react-query";
 import type { VoicePostFields } from "@/lib/ai/voice-post";
 import { useAssetLink, useSaveAssetLink } from "@/hooks/use-asset-links";
-import { OpenAsset } from "@/components/project/OpenAsset";
 
 const KNOWLEDGE_SECTION_LABELS: Record<string, string> = Object.fromEntries(
   KNOWLEDGE_SECTIONS.map((s) => [s.key, s.label]),
@@ -2348,6 +2347,47 @@ export function CreativeModal(props: CreativeModalProps) {
           )}
           {artworkError && !uploadCarousel.isPending && <p className="autherr">{artworkError}</p>}
 
+          {/* Where the finished creative is (phase126, direct
+              instruction), straight after the Creative. The team's only. */}
+          <div className="msection-h">Final Asset</div>
+          <p className="msection-d">
+            A link to the finished creative, such as its Google Drive folder. It shows as Final Asset in the table and on the post, for
+            your team only.
+          </p>
+          <div className="field" data-focus="asset">
+            <label htmlFor="assetLink">Link</label>
+            <input
+              id="assetLink"
+              type="url"
+              inputMode="url"
+              placeholder="https://drive.google.com/…"
+              value={assetValue}
+              onChange={(e) => {
+                setAssetDraft(e.target.value);
+                setAssetNote(null);
+              }}
+            />
+            {!assetValid && <p className="autherr">Paste the whole link, starting with https://</p>}
+            {/* Once saved, the link itself opens it (direct instruction). */}
+            {assetLink && !pendingAsset && (
+              <a className="fd-ref asset-saved" href={assetLink} target="_blank" rel="noopener noreferrer">
+                {assetLink}
+              </a>
+            )}
+          </div>
+          <div className="field btnrow">
+            <button
+              type="button"
+              className="btn sm primary"
+              disabled={!pendingAsset || !assetValid || saveAsset.isPending}
+              onClick={() => saveAssetIfChanged().catch(() => {})}
+            >
+              {saveAsset.isPending ? "Saving…" : assetLink && !assetValue.trim() ? "Remove Link" : "Save Link"}
+            </button>
+            {assetNote && <span className="bsaved">{assetNote}</span>}
+          </div>
+          {saveAsset.error && <p className="autherr">{errorMessage(saveAsset.error, "Couldn't save the link")}</p>}
+
           {/* A video's Thumbnail and its words (phase118, direct
               instruction), after the Creative. */}
           {isVideo && creativeId && agencyId && (
@@ -2495,42 +2535,6 @@ export function CreativeModal(props: CreativeModalProps) {
           )}
           </>
           )}
-
-          {/* Where the finished creative is (phase126, direct
-              instruction), last in the tab. The team's only. */}
-          <div className="msection-h">Final Asset</div>
-          <p className="msection-d">
-            A link to the finished creative, such as its Google Drive folder. It shows as Open Asset in the table and on the post, for
-            your team only.
-          </p>
-          <div className="field" data-focus="asset">
-            <label htmlFor="assetLink">Link</label>
-            <input
-              id="assetLink"
-              type="url"
-              inputMode="url"
-              placeholder="https://drive.google.com/…"
-              value={assetValue}
-              onChange={(e) => {
-                setAssetDraft(e.target.value);
-                setAssetNote(null);
-              }}
-            />
-            {!assetValid && <p className="autherr">Paste the whole link, starting with https://</p>}
-          </div>
-          <div className="field btnrow">
-            <button
-              type="button"
-              className="btn sm primary"
-              disabled={!pendingAsset || !assetValid || saveAsset.isPending}
-              onClick={() => saveAssetIfChanged().catch(() => {})}
-            >
-              {saveAsset.isPending ? "Saving…" : assetLink && !assetValue.trim() ? "Remove Link" : "Save Link"}
-            </button>
-            {assetLink && !pendingAsset && <OpenAsset url={assetLink} />}
-            {assetNote && <span className="bsaved">{assetNote}</span>}
-          </div>
-          {saveAsset.error && <p className="autherr">{errorMessage(saveAsset.error, "Couldn't save the link")}</p>}
 
           {uploadError && <p className="autherr">{uploadError}</p>}
         </div>

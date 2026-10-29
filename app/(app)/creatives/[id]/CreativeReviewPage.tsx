@@ -584,10 +584,10 @@ export function CreativeReviewPage({ id }: { id: string }) {
                 </select>
               </div>
               {/* The final asset's link, once added (phase126, direct
-                  instruction): under the pickers, the team's only. */}
+                  instruction): under the pickers, the button alone, the
+                  team's only. */}
               {isStaff && assetLink && (
                 <div className="vsel">
-                  <span className="vsel-l">Final Asset</span>
                   <OpenAsset url={assetLink} />
                 </div>
               )}

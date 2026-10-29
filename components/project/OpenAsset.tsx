@@ -1,8 +1,8 @@
 "use client";
 
 // A post's final asset (phase126, direct instruction): Frank's green pill,
-// with the arrow, opening its link (a Google Drive folder, say) in a new
-// tab. The team's only.
+// Final Asset with the arrow, opening its link (a Google Drive folder, say)
+// in a new tab. The team's only.
 export function OpenAsset({ url, className = "" }: { url: string; className?: string }) {
   return (
     <a
@@ -13,7 +13,7 @@ export function OpenAsset({ url, className = "" }: { url: string; className?: st
       title={url}
       onClick={(e) => e.stopPropagation()}
     >
-      Open Asset
+      Final Asset
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M7 17L17 7M9 7h8v8" />
       </svg>

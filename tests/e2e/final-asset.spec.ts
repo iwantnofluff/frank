@@ -2,14 +2,14 @@ import { createClient } from "@supabase/supabase-js";
 import { test, expect, APP_URL } from "./fixtures";
 
 // A post's final asset link (phase126, direct instruction): added in the
-// Content tab, then Open Asset in the table's Creative column and under
-// the post's version pickers; the team's only.
+// Content tab, then a Final Asset button in the table's Creative column and under
+// the post's version pickers, both reading Final Asset; the team's only.
 const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 const LINK = "https://drive.google.com/drive/folders/e2e-final-asset";
 
-test("the team adds a final asset link; Open Asset shows in the table and on the post; removing it takes it away", async ({ page, frank }) => {
+test("the team adds a final asset link; Final Asset shows in the table and on the post; removing it takes it away", async ({ page, frank }) => {
   test.setTimeout(90_000);
   await admin.from("creatives").update({ scheduled_at: new Date().toISOString() }).eq("id", frank.creativeId);
   const saved = async () => (await admin.from("creative_asset_links").select("url").eq("creative_id", frank.creativeId).maybeSingle()).data?.url ?? null;
@@ -30,13 +30,20 @@ test("the team adds a final asset link; Open Asset shows in the table and on the
   await save.click();
   await expect(page.getByText("Link saved.")).toBeVisible();
   await expect.poll(saved).toBe(LINK);
+  // Saved, the link itself opens it, in a new tab; no pill in the tab.
+  const savedLink = page.getByRole("dialog").getByRole("link", { name: LINK });
+  await expect(savedLink).toHaveAttribute("href", LINK);
+  await expect(savedLink).toHaveAttribute("target", "_blank");
+  await expect(page.getByRole("dialog").getByRole("link", { name: "Final Asset" })).toHaveCount(0);
   await page.getByRole("button", { name: "Save and Close" }).click();
 
   // On the post, under the pickers.
-  await expect(page.locator(".vselbar").getByRole("link", { name: "Open Asset" })).toHaveAttribute("href", LINK);
+  await expect(page.locator(".vselbar").getByRole("link", { name: "Final Asset" })).toHaveAttribute("href", LINK);
+  // The button alone, no label beside it.
+  await expect(page.locator(".vselbar .vsel-l", { hasText: "Final Asset" })).toHaveCount(0);
   // In the table's Creative column, opening in a new tab.
   await page.goto(`${APP_URL}/projects/${frank.projectId}`);
-  const pill = page.locator("tr[data-row]").first().getByRole("link", { name: "Open Asset" });
+  const pill = page.locator("tr[data-row]").first().getByRole("link", { name: "Final Asset" });
   await expect(pill).toHaveAttribute("href", LINK, { timeout: 20_000 });
   await expect(pill).toHaveAttribute("target", "_blank");
   // In the project's Activity Log.
@@ -56,7 +63,7 @@ test("the team adds a final asset link; Open Asset shows in the table and on the
   await expect(page.getByText("Link removed.")).toBeVisible();
   await expect.poll(saved).toBeNull();
   await page.getByRole("button", { name: "Save and Close" }).click();
-  await expect(page.getByRole("link", { name: "Open Asset" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Final Asset" })).toHaveCount(0);
 });
 
 test("a client never sees the link, in Frank or the database", async ({ page, frank }) => {
@@ -67,10 +74,10 @@ test("a client never sees the link, in Frank or the database", async ({ page, fr
   await frank.loginAsClient(page);
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
   await expect(page.locator(".stage-h")).toBeVisible();
-  await expect(page.getByRole("link", { name: "Open Asset" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Final Asset" })).toHaveCount(0);
   await page.goto(`${APP_URL}/projects/${frank.projectId}`);
   await expect(page.locator("tr[data-row]").first()).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByRole("link", { name: "Open Asset" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Final Asset" })).toHaveCount(0);
   const c = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { auth: { persistSession: false } });
   await c.auth.signInWithPassword({ email: frank.clientEmail, password: frank.clientPassword });
   expect((await c.from("creative_asset_links").select("url").eq("creative_id", frank.creativeId)).data).toEqual([]);

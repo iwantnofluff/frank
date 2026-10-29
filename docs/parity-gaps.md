@@ -4523,3 +4523,10 @@ phase126 adds creative_asset_links (one a post, its URL starting http(s), the te
 
 **Verified**: phase126 rehearsed on staging (rolled back): the team adds, changes, reads and removes it; not a link refused; a client reads none, changes nothing and can't add one; each change in the Activity Log. Applied to staging; local test database rebuilt. New final-asset.spec: not a link said and not saved; saved, then Open Asset on the post and in the table (new tab), in the Activity Log; emptied and removed; a client with no Open Asset anywhere and none to read. Screenshotted the Content tab, the table's cell (under Add Thumbnail) and the post.
 
+## Final Asset, tidied (1.58.1, 2026-10-29)
+
+Direct instruction: the Final Asset field straight after the Creative field; no pill in the Content tab, the saved link itself clickable; on the post, the button alone reading Final Asset, no label beside it; in the table, Final Asset too.
+
+The Content tab's Final Asset section moves from the tab's end to straight after the Creative (before a video's Thumbnail and the Copy). Once saved, the link shows under the field as a plain link (the brief's reference-link style), opening in a new tab; the pill is gone from the tab. OpenAsset's pill now reads Final Asset, in both tables' Creative cell and on the post, where the "Final Asset" label beside it is dropped. Help updated to match.
+
+**Verified**: final-asset.spec updated and passing on the local test database: the saved link in the tab opens the link in a new tab, with no pill there; Final Asset on the post with no label beside it, and in the table opening in a new tab; removal and the client's view unchanged. Screenshotted the Content tab, the post and the table's Creative cell. tsc and eslint clean.
