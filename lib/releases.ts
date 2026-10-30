@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.60.1",
+    date: "2026-10-30",
+    title: "Tidier on a phone",
+    changes: [
+      "On a phone the menu slides out from the left, with the same motion as the rest of Frank.",
+      "A project's cards show one line of the caption, with See more for the rest, and a See Post button to open the post. Comments are on the post itself.",
+    ],
+  },
+  {
     version: "1.60.0",
     date: "2026-10-29",
     title: "Check Creative reads the artwork",

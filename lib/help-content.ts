@@ -171,11 +171,11 @@ export const HELP_ARTICLES: HelpArticle[] = [
     blocks: [
       {
         kind: "p",
-        text: "On a phone, the menu button at the top left opens the links that sit down the left on a computer: Clients, and the client and project you're in. Your clients and a client's projects show as simple lists.",
+        text: "On a phone, the menu button at the top left slides out the links that sit down the left on a computer: Clients, and the client and project you're in. Tap beside it to close it. Your clients and a client's projects show as simple lists.",
       },
       {
         kind: "p",
-        text: "Open a project on your phone and its posts show as cards, a month at a time, in date order. Each card has its date and stage, its caption with Copy Caption, Final Asset for your team, and Approve Concept while a concept is waiting. The arrows change the month and the menu beside them picks a platform. Tap a post's name to open it.",
+        text: "Open a project on your phone and its posts show as cards, a month at a time, in date order. Each card has its date and stage, the first line of its caption (See more shows the rest), Copy Caption, Final Asset for your team, See Post to open it, and Approve Concept while a concept is waiting. The arrows change the month and the menu beside them picks a platform.",
       },
       {
         kind: "p",

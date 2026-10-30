@@ -28,10 +28,11 @@ test("on a phone the rail's links open from the menu, and computer pages say so"
   await rail.getByRole("link", { name: /Projects$/ }).click();
   await page.waitForURL(/\/clients\/[^/]+$/);
   await expect(rail).toBeHidden();
-  // A tap elsewhere closes it too.
+  // A tap beside it closes it too (it slides out from the left, most of
+  // the screen wide).
   await menu.click();
   await expect(rail).toBeVisible();
-  await page.locator(".view").click({ position: { x: 200, y: 600 } });
+  await page.mouse.click(370, 600);
   await expect(rail).toBeHidden();
 
   // A client's projects: a row each, its name alone; no adding on a phone.

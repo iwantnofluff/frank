@@ -1,11 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { CreativeListRow } from "@/hooks/use-creatives";
 import { useCopyVersionsByCreative } from "@/hooks/use-copy-versions-by-creative";
 import { useAssetLinksByCreative } from "@/hooks/use-asset-links";
-import { useLatestFeedbackByCreative } from "@/hooks/use-latest-feedback-by-creative";
 import { useProjectStatuses } from "@/hooks/use-project-statuses";
 import { canApproveConcept } from "@/hooks/use-approve-concept";
 import { statusOptions } from "@/lib/project-statuses";
@@ -22,14 +21,12 @@ const MONTH_NAMES = [
   "July", "August", "September", "October", "November", "December",
 ];
 
-const when = (iso: string) =>
-  new Date(iso).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-
 // A project on a phone (direct instruction): its posts as cards, a month at
 // a time, in date order, for copying captions and opening Final Assets. Each
-// card: its date and stage (the team's status within it), its name opening
-// the post, its caption with Copy Caption, Final Asset for the team, Approve
-// Concept while one waits, and the client's latest feedback. The table's
+// card: its date and stage (the team's status within it), its name, its
+// caption on one line with See more (direct instruction), and Copy Caption,
+// Final Asset for the team, See Post and Approve Concept while one waits.
+// No comments here (direct instruction): they're on the post. The table's
 // columns, views, Week and Calendar, selecting and changing stage stay on a
 // computer, and so do Ideas (no date to file them under).
 export function MobileProject({
@@ -66,7 +63,6 @@ export function MobileProject({
   const ids = useMemo(() => posts.map((c) => c.id), [posts]);
   const { data: copies } = useCopyVersionsByCreative(ids);
   const { data: assetLinks } = useAssetLinksByCreative(ids, isStaff);
-  const { data: feedback } = useLatestFeedbackByCreative(ids);
   const { data: statuses } = useProjectStatuses(projectId, isStaff);
 
   const step = (by: number) => setAnchor((a) => new Date(a.getFullYear(), a.getMonth() + by, 1));
@@ -110,43 +106,83 @@ export function MobileProject({
         </div>
       )}
 
-      {posts.map((c) => {
-        const caption = copies?.[c.id]?.[0]?.caption?.trim() ? copies[c.id][0].caption! : null;
-        const status = isStaff ? statusOptions(statuses, c.stage).find((o) => o.id === c.status_id) : undefined;
-        const latest = feedback?.[c.id]?.latest;
-        return (
-          <article className="mproj-card" key={c.id}>
-            <div className="mproj-top">
-              <span className="mproj-date">{publishDate(delivery, c.scheduled_at, c.due_on)}</span>
-              <span className="stg" style={{ background: stageColor(c.stage, c.exception ?? null) }}>
-                {c.exception ? exceptionLabel(c.exception) : (status?.text ?? `${c.stage}. ${stageLabel(c.stage, delivery)}`)}
-              </span>
-            </div>
-            <Link className="mproj-name" href={`/creatives/${c.id}`}>
-              {c.name}
-            </Link>
-            <span className="mproj-fmt">{formatsLabel(postFormats(c))}</span>
-            {caption && <p className="mproj-cap">{caption}</p>}
-            {latest && (
-              <div className="mproj-fb feedback-note">
-                <span className="cc-v">
-                  {latest.name}
-                  {latest.name ? " · " : ""}
-                  {when(latest.createdAt)}
-                </span>
-                <span>{latest.body}</span>
-              </div>
-            )}
-            {(caption || (isStaff && assetLinks?.[c.id]) || canApproveConcept(c)) && (
-              <div className="mproj-acts">
-                {caption && <CopyCaptionChip caption={caption} label="Copy Caption" className="btn mpost-copy" />}
-                {isStaff && assetLinks?.[c.id] && <OpenAsset url={assetLinks[c.id]} className="mpost-asset" />}
-                {canApproveConcept(c) && <ApproveConceptButton creativeId={c.id} />}
-              </div>
-            )}
-          </article>
-        );
-      })}
+      {posts.map((c) => (
+        <PostCard
+          key={c.id}
+          post={c}
+          delivery={delivery}
+          caption={copies?.[c.id]?.[0]?.caption?.trim() ? copies[c.id][0].caption! : null}
+          stageText={
+            c.exception
+              ? exceptionLabel(c.exception)
+              : ((isStaff ? statusOptions(statuses, c.stage).find((o) => o.id === c.status_id)?.text : undefined) ??
+                `${c.stage}. ${stageLabel(c.stage, delivery)}`)
+          }
+          assetLink={isStaff ? (assetLinks?.[c.id] ?? null) : null}
+        />
+      ))}
     </div>
+  );
+}
+
+// One post's card. Its caption is one line until See more opens the rest,
+// offered only when there's more than fits.
+function PostCard({
+  post: c,
+  delivery,
+  caption,
+  stageText,
+  assetLink,
+}: {
+  post: CreativeListRow;
+  delivery: "scheduled" | "continuous";
+  caption: string | null;
+  stageText: string;
+  assetLink: string | null;
+}) {
+  const [open, setOpen] = useState(false);
+  const [more, setMore] = useState(false);
+  const cap = useRef<HTMLParagraphElement>(null);
+  useLayoutEffect(() => {
+    const el = cap.current;
+    if (!el || open) return;
+    const measure = () => setMore(el.scrollHeight > el.clientHeight + 1);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [caption, open]);
+
+  return (
+    <article className="mproj-card">
+      <div className="mproj-top">
+        <span className="mproj-date">{publishDate(delivery, c.scheduled_at, c.due_on)}</span>
+        <span className="stg" style={{ background: stageColor(c.stage, c.exception ?? null) }}>
+          {stageText}
+        </span>
+      </div>
+      <b className="mproj-name">{c.name}</b>
+      <span className="mproj-fmt">{formatsLabel(postFormats(c))}</span>
+      {caption && (
+        <>
+          <p ref={cap} className={`mproj-cap${open ? " open" : ""}`}>
+            {caption}
+          </p>
+          {(more || open) && (
+            <button type="button" className="mproj-more" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+              {open ? "See less" : "See more"}
+            </button>
+          )}
+        </>
+      )}
+      <div className="mproj-acts">
+        {caption && <CopyCaptionChip caption={caption} label="Copy Caption" className="btn mpost-copy" />}
+        {assetLink && <OpenAsset url={assetLink} className="mpost-asset" />}
+        <Link className="btn mproj-see" href={`/creatives/${c.id}`}>
+          See Post
+        </Link>
+        {canApproveConcept(c) && <ApproveConceptButton creativeId={c.id} />}
+      </div>
+    </article>
   );
 }

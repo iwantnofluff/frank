@@ -12829,31 +12829,33 @@ a.asset-saved {
   font-size: 15.7px;
   font-weight: 600;
   color: var(--ink);
-  text-decoration: none;
   line-height: 1.3;
 }
 .mproj-fmt {
   font-size: 12.7px;
   color: var(--muted);
 }
-/* The caption as written, at most four lines: Copy Caption copies all of
-   it, and the post shows the rest. */
+/* The caption as written, one line until See more (direct instruction):
+   Copy Caption copies all of it either way. */
 .mproj-cap {
   font-size: 13.7px;
   line-height: 1.42;
   white-space: pre-wrap;
   margin: 6px 0 0;
   display: -webkit-box;
-  -webkit-line-clamp: 4;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.mproj-fb {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+.mproj-cap.open {
+  display: block;
+}
+.mproj-more {
+  align-self: flex-start;
   font-size: 13.2px;
-  margin-top: 6px;
+  font-weight: 600;
+  color: var(--action);
+  padding: 2px 0;
 }
 .mproj-acts {
   display: flex;
@@ -12863,11 +12865,16 @@ a.asset-saved {
 }
 .mproj-acts .mpost-copy,
 .mproj-acts .mpost-asset,
+.mproj-acts .mproj-see,
 .mproj-acts .tpending-btn.approve {
   flex: 1;
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
+  white-space: nowrap;
   min-height: 40px;
-  font-size: 14.2px;
+  padding: 0 8px;
+  font-size: 13.7px;
   border-radius: 8px;
 }
 
@@ -12913,35 +12920,44 @@ a.asset-saved {
   .view {
     border-radius: 0;
   }
-  /* The rail's links, under the header, while the menu is open. */
+  /* The rail's links, a panel from the left under the header while the
+     menu is open (direct instruction), with Help's motion from the other
+     side: in slower on the decelerate curve, out faster on the accelerate
+     one. Hidden once closed, so its links can't be reached. */
   .rail {
-    display: none;
-  }
-  body.railopen .rail {
-    display: flex;
     position: fixed;
     top: 56px;
     left: 0;
-    right: 0;
-    z-index: 40;
-    padding: 6px 10px 12px;
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25);
+    bottom: 0;
+    /* The desktop rail itself (direct instruction): its width, padding and
+       spacing, each icon over its label; 20px higher (direct instruction),
+       right under the header. */
+    width: 84px;
+    padding-top: 2px;
+    z-index: 90;
+    box-shadow: 12px 0 40px rgba(20, 22, 26, 0.25);
+    opacity: 0;
+    transform: translateX(-24px);
+    pointer-events: none;
+    visibility: hidden;
+    transition:
+      opacity var(--dur-close) var(--ease-close),
+      transform var(--dur-close) var(--ease-close),
+      visibility 0s linear var(--dur-close);
   }
-  body.railopen .rail .rail-top,
-  body.railopen .rail .spacer {
+  body.railopen .rail {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+    visibility: visible;
+    transition:
+      opacity var(--dur-open) var(--ease-open),
+      transform var(--dur-open) var(--ease-open),
+      visibility 0s;
+  }
+  .rail .rail-top,
+  .rail .spacer {
     display: none;
-  }
-  .rail .rbtn {
-    grid-template-columns: 36px minmax(0, 1fr);
-    justify-items: start;
-    align-items: center;
-    gap: 10px;
-    padding: 4px 6px;
-  }
-  .rail .rbtn .rlab {
-    font-size: 14.2px;
-    text-align: left;
-    letter-spacing: 0;
   }
   /* The clients and a client's projects: two numbers a row, and each list
      row its name alone (its counts and dates are the computer's). Adding a

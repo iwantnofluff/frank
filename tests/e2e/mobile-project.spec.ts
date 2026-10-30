@@ -2,8 +2,8 @@ import { createClient } from "@supabase/supabase-js";
 import { test, expect, APP_URL } from "./fixtures";
 
 // A project on a phone (direct instruction): its posts as cards, a month at
-// a time, with Copy Caption, Final Asset for the team, and Approve Concept
-// while one waits.
+// a time, its caption one line until See more, with Copy Caption, Final
+// Asset for the team, See Post, and Approve Concept while one waits.
 const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
@@ -36,6 +36,16 @@ test("on a phone the team sees the month's posts as cards: copy, Final Asset, ap
   await expect(cards.nth(1)).toContainText("Concept Waiting");
 
   const first = cards.first();
+  // One line of the caption until See more, and no comments here.
+  const caption = first.locator(".mproj-cap");
+  const oneLine = (await caption.boundingBox())!.height;
+  await first.getByRole("button", { name: "See more" }).click();
+  expect((await caption.boundingBox())!.height).toBeGreaterThan(oneLine * 2);
+  await first.getByRole("button", { name: "See less" }).click();
+  expect((await caption.boundingBox())!.height).toBeLessThan(oneLine + 2);
+  await expect(page.locator(".feedback-note")).toHaveCount(0);
+  // The name is no link: See Post opens it.
+  await expect(first.getByRole("link", { name: "E2E Test Creative" })).toHaveCount(0);
   await first.getByRole("button", { name: "Copy Caption" }).click();
   await expect(first.getByRole("button", { name: "Copied" })).toBeVisible();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(CAPTION);
@@ -58,8 +68,8 @@ test("on a phone the team sees the month's posts as cards: copy, Final Asset, ap
   await expect(cards).toHaveCount(0);
   await page.getByLabel("Platform").selectOption("all");
 
-  // The name opens the post.
-  await first.getByRole("link", { name: "E2E Test Creative" }).click();
+  // See Post opens it.
+  await first.getByRole("link", { name: "See Post" }).click();
   await page.waitForURL(`**/creatives/${frank.creativeId}`);
   await expect(page.locator(".mpost")).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
