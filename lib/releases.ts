@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.61.0",
+    date: "2026-10-30",
+    title: "Check Creative into the comments",
+    changes: [
+      "Check Creative's results now look like the Content tab's proofread: each slide that differs from its Text on Image, with Acknowledge and Ignore.",
+      "Add To Comments, under them, posts what you've acknowledged as one comment from you on the post, for your team only.",
+    ],
+  },
+  {
     version: "1.60.2",
     date: "2026-10-30",
     title: "Today and stages on a phone",

@@ -12606,6 +12606,33 @@ a.asset-saved {
 .proof-pill.fix:hover {
   background: var(--action-soft);
 }
+/* Check Creative's findings, as the proofread's (direct instruction): an
+   acknowledged one tinted, Add To Comments under them all. */
+.creative-proof {
+  margin-bottom: 10px;
+}
+.creative-proof li.ack {
+  background: var(--action-soft);
+}
+.creative-proof .proof-pill.fix[aria-pressed="true"] {
+  background: var(--action);
+  color: #fff;
+}
+.proof-done {
+  font-size: 12.2px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.creative-proof-add {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.creative-proof-add .tdim {
+  font-size: 12.2px;
+}
 /* Close under the field it's about, more room after it (direct
    instruction): the field's own 16px below is taken back to 8px. */
 .proof-note {

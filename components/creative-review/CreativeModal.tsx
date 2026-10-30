@@ -58,6 +58,7 @@ import {
 } from "@/hooks/use-designer-notes";
 import { NotesText } from "@/components/creative-review/NotesText";
 import { ProofreadList } from "@/components/creative-review/ProofreadList";
+import { useCreateComment } from "@/hooks/use-create-comment";
 import { useRunProofread } from "@/hooks/use-proofread";
 import { ThumbnailSection } from "@/components/creative-review/ThumbnailSection";
 import { ProductionChangedError, useProductionVersions, useSaveProduction, type ProductionField } from "@/hooks/use-production-versions";
@@ -230,22 +231,32 @@ function FindingsList({ findings }: { findings: { tone: "ok" | "warn"; title: st
 // (app/api/ai/check-creative). Button-run, as the other checks are.
 function CreativeCheck({
   creativeId,
+  versionId,
   hasArtwork,
   hasText,
 }: {
   creativeId: string;
+  // The latest artwork's version, which a comment from here is about.
+  versionId: string | null;
   hasArtwork: boolean;
   hasText: boolean;
 }) {
   const [findings, setFindings] = useState<CheckFinding[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
+  // By finding, while the window's open: acknowledged, ignored, or posted.
+  const [marks, setMarks] = useState<Record<number, "ack" | "ignored" | "posted">>({});
+  const [posted, setPosted] = useState(false);
+  const comment = useCreateComment(creativeId);
   const canRun = hasArtwork && hasText;
 
   async function run() {
     if (!canRun || running) return;
     setRunning(true);
     setError(null);
+    setMarks({});
+    setPosted(false);
+    comment.reset();
     try {
       const res = await fetch("/api/ai/check-creative", {
         method: "POST",
@@ -268,6 +279,42 @@ function CreativeCheck({
       ? "Write the Text on Image on the Production tab first, then check the artwork against it."
       : null;
 
+  const warns = (findings ?? []).map((f, i) => ({ f, i })).filter(({ f }) => f.tone === "warn");
+  const open = warns.filter(({ i }) => marks[i] !== "ignored");
+  const matched = (findings ?? []).filter((f) => f.tone === "ok").map((f) => f.title);
+  const acked = warns.filter(({ i }) => marks[i] === "ack");
+  const mark = (i: number, m: "ack" | "ignored" | null) =>
+    setMarks((all) => {
+      const next = { ...all };
+      if (m) next[i] = m;
+      else delete next[i];
+      return next;
+    });
+
+  // One team-only comment from the person, listing what they acknowledged
+  // (direct instruction), on the latest artwork's version.
+  const addToComments = () => {
+    if (!acked.length || comment.isPending) return;
+    setPosted(false);
+    const body = [
+      `Check Creative: ${acked.length} thing${acked.length === 1 ? "" : "s"} to fix on the artwork.`,
+      ...acked.map(({ f }) => `${f.title}: ${f.body.trim()}`),
+    ].join(" ");
+    comment.mutate(
+      { body, parentId: null, visibility: "private", creativeVersionId: versionId },
+      {
+        onSuccess: () => {
+          setMarks((all) => {
+            const next = { ...all };
+            for (const { i } of acked) next[i] = "posted";
+            return next;
+          });
+          setPosted(true);
+        },
+      },
+    );
+  };
+
   return (
     <div className="field">
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
@@ -278,10 +325,75 @@ function CreativeCheck({
       </div>
       {!running && disabledReason && <p className="msection-empty" style={{ marginBottom: 6 }}>{disabledReason}</p>}
       {findings && findings.length > 0 && (
-        <div>
-          <FindingsList findings={findings} />
+        <>
+          {/* As the Content tab's proofread (direct instruction): what to
+              look at, each to Acknowledge or Ignore. */}
+          <div className="proof creative-proof" role="region" aria-label="Check Creative findings">
+            <div className="proof-h">
+              <b>Check Creative</b>
+              <span className="tdim">
+                {open.length
+                  ? `${open.length} to look at${matched.length ? `; ${matched.join(", ")} ${matched.length === 1 ? "matches" : "match"}` : ""}`
+                  : warns.length
+                    ? "Nothing left to look at"
+                    : "Every one matches its Text on Image"}
+              </span>
+            </div>
+            {open.length > 0 && (
+              <ul>
+                {open.map(({ f, i }) => (
+                  <li key={i} className={marks[i] === "ack" || marks[i] === "posted" ? "ack" : undefined}>
+                    <span className="proof-t">
+                      <span className="proof-f">{f.title}</span>
+                      {f.body}
+                    </span>
+                    <span className="proof-acts">
+                      {marks[i] === "posted" ? (
+                        <span className="proof-done">In comments</span>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            className="proof-pill fix"
+                            aria-pressed={marks[i] === "ack"}
+                            aria-label={`Acknowledge: ${f.title}`}
+                            onClick={() => mark(i, marks[i] === "ack" ? null : "ack")}
+                          >
+                            {marks[i] === "ack" ? "Acknowledged" : "Acknowledge"}
+                          </button>
+                          <button
+                            type="button"
+                            className="proof-pill"
+                            aria-label={`Ignore: ${f.title}`}
+                            onClick={() => mark(i, "ignored")}
+                          >
+                            Ignore
+                          </button>
+                        </>
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          {warns.length > 0 && (
+            <div className="creative-proof-add">
+              <button type="button" className="btn sm" disabled={!acked.length || comment.isPending} onClick={addToComments}>
+                {comment.isPending ? "Adding…" : "Add To Comments"}
+              </button>
+              <span className="tdim">
+                {posted
+                  ? "Added to the comments, for your team only."
+                  : acked.length
+                    ? `Adds the ${acked.length} acknowledged as one comment from you, for your team only.`
+                    : "Acknowledge what needs fixing, then add it to the comments."}
+              </span>
+              {comment.error && <span className="berr">{errorMessage(comment.error, "Couldn't add the comment")}</span>}
+            </div>
+          )}
           <p className="checksource">Checked the latest artwork against its saved Text on Image.</p>
-        </div>
+        </>
       )}
     </div>
   );
@@ -420,6 +532,7 @@ function LiveCheck({
 function CheckSection({
   kind,
   creativeId,
+  versionId,
   hasArtwork,
   hasText,
   agencyId,
@@ -431,6 +544,7 @@ function CheckSection({
 }: {
   kind: CheckKind;
   creativeId: string;
+  versionId: string | null;
   hasArtwork: boolean;
   hasText: boolean;
   agencyId: string | undefined;
@@ -440,7 +554,8 @@ function CheckSection({
   attachments: CheckAttachmentRef[];
   knowledgeLoading: boolean;
 }) {
-  if (kind === "creative") return <CreativeCheck creativeId={creativeId} hasArtwork={hasArtwork} hasText={hasText} />;
+  if (kind === "creative")
+    return <CreativeCheck creativeId={creativeId} versionId={versionId} hasArtwork={hasArtwork} hasText={hasText} />;
   return (
     <LiveCheck
       kind={kind}
@@ -2622,6 +2737,7 @@ export function CreativeModal(props: CreativeModalProps) {
               <CheckSection
                 kind={kind}
                 creativeId={creativeId}
+                versionId={creativeVersions[0]?.id ?? null}
                 hasArtwork={creativeVersions.length > 0}
                 hasText={!isCreate && !!props.creative.slide_text?.some((t) => t.trim())}
                 agencyId={agencyId}

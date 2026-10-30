@@ -55,7 +55,7 @@ test("artwork Frank can't read is said for its slide, with no AI call; a client 
   await frank.loginAsStaff(page);
   await openChecks(page, frank.creativeId);
   await page.getByRole("button", { name: "Check Creative" }).click();
-  const finding = page.locator(".checkfind.warn", { hasText: "Image 1" });
+  const finding = page.getByRole("region", { name: "Check Creative findings" }).locator("li", { hasText: "Image 1" });
   await expect(finding).toContainText("Frank couldn't read this image's artwork", { timeout: 15_000 });
   expect(await usage(frank.agencyId)).toBe(0);
 
@@ -65,5 +65,68 @@ test("artwork Frank can't read is said for its slide, with no AI call; a client 
   await frank.loginAsClient(cp);
   const res = await cp.request.post(`${APP_URL}/api/ai/check-creative`, { data: { creativeId: frank.creativeId } });
   expect(res.status()).toBe(403);
+  await ctx.close();
+});
+
+test("findings are acknowledged or ignored, and Add To Comments posts the acknowledged as one team-only comment", async ({ page, browser, frank }) => {
+  test.setTimeout(120_000);
+  await admin.from("creatives").update({ slide_text: ["We spot the problem", "Book a free call now", "Hi"] }).eq("id", frank.creativeId);
+  await frank.createArtworkVersion(frank.creativeId, 1, "art.png");
+  const { data: version } = await admin
+    .from("creative_versions")
+    .select("id")
+    .eq("creative_id", frank.creativeId)
+    .order("version_no", { ascending: false })
+    .limit(1)
+    .single();
+  // The AI's answer seeded, never asked for here.
+  await page.route("**/api/ai/check-creative", (route) =>
+    route.fulfill({
+      json: {
+        findings: [
+          { tone: "ok", title: "Image 1", body: "Matches." },
+          { tone: "warn", title: "Image 2", body: "The artwork says BOOK A CALL TODAY; it should say Book a free call now." },
+          { tone: "warn", title: "Image 3", body: "The artwork says HELLO; it should say Hi." },
+        ],
+      },
+    }),
+  );
+  await frank.loginAsStaff(page);
+  await openChecks(page, frank.creativeId);
+  await page.getByRole("button", { name: "Check Creative" }).click();
+  const box = page.getByRole("region", { name: "Check Creative findings" });
+  await expect(box).toContainText("2 to look at; Image 1 matches");
+  const add = page.getByRole("button", { name: "Add To Comments" });
+  await expect(add).toBeDisabled();
+
+  await box.getByRole("button", { name: "Acknowledge: Image 2" }).click();
+  await expect(box.getByRole("button", { name: "Acknowledge: Image 2" })).toHaveAttribute("aria-pressed", "true");
+  await box.getByRole("button", { name: "Ignore: Image 3" }).click();
+  await expect(box).not.toContainText("HELLO");
+  await add.click();
+  await expect(page.getByText("Added to the comments, for your team only.")).toBeVisible();
+  await expect(box.getByText("In comments")).toBeVisible();
+
+  const { data: rows } = await admin
+    .from("comments")
+    .select("body, visibility, creative_version_id, parent_id")
+    .eq("creative_id", frank.creativeId);
+  expect(rows).toHaveLength(1);
+  expect(rows![0].visibility).toBe("private");
+  expect(rows![0].creative_version_id).toBe(version!.id);
+  expect(rows![0].parent_id).toBeNull();
+  expect(rows![0].body).toBe(
+    "Check Creative: 1 thing to fix on the artwork. Image 2: The artwork says BOOK A CALL TODAY; it should say Book a free call now.",
+  );
+
+  // On the post's comments for the team, and not for the client.
+  await page.getByRole("button", { name: "Cancel" }).click();
+  await expect(page.locator(".cmt", { hasText: "BOOK A CALL TODAY" })).toBeVisible();
+  const ctx = await browser.newContext();
+  const cp = await ctx.newPage();
+  await frank.loginAsClient(cp);
+  await cp.goto(`${APP_URL}/creatives/${frank.creativeId}`);
+  await expect(cp.locator(".cmts")).toBeVisible({ timeout: 20_000 });
+  await expect(cp.getByText("BOOK A CALL TODAY")).toHaveCount(0);
   await ctx.close();
 });
