@@ -52,6 +52,28 @@ export function PillMenu({
     setPlace({ left: r.left, top: r.bottom + 4, minWidth: r.width, maxHeight: Math.max(160, window.innerHeight - r.bottom - 16) });
   }, [open]);
 
+  // Kept on the screen, as on a phone: a pill near the right edge opens its
+  // list leftwards as far as it needs, and one near the bottom opens it
+  // above when there's more room there.
+  useLayoutEffect(() => {
+    if (!place || !list.current || !button.current) return;
+    const l = list.current.getBoundingClientRect();
+    const r = button.current.getBoundingClientRect();
+    const over = l.right - (window.innerWidth - 8);
+    const below = window.innerHeight - r.bottom - 12;
+    const above = r.top - 12;
+    const up = l.bottom > window.innerHeight - 8 && above > below && place.top > r.top;
+    if (over > 0.5 || up) {
+      setPlace((p) =>
+        p && {
+          ...p,
+          left: over > 0.5 ? Math.max(8, p.left - over) : p.left,
+          ...(up ? { top: r.top - 4 - Math.min(list.current!.scrollHeight + 2, above), maxHeight: above } : {}),
+        },
+      );
+    }
+  }, [place]);
+
   // The list takes the keys once it's drawn.
   useEffect(() => {
     if (open && place) list.current?.focus();

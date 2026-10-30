@@ -88,6 +88,9 @@ test("on a phone a client's cards have Copy Caption and no Final Asset", async (
   await expect(card).toBeVisible({ timeout: 20_000 });
   await expect(card.getByRole("button", { name: "Copy Caption" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Final Asset" })).toHaveCount(0);
+  // Their stage shows, and isn't theirs to change.
+  await expect(card.locator(".stg")).toBeVisible();
+  await expect(card.getByRole("button", { name: /^Status of / })).toHaveCount(0);
 });
 
 test("on a phone an Other Content project's cards go by their due date", async ({ page, frank }) => {
@@ -103,4 +106,42 @@ test("on a phone an Other Content project's cards go by their due date", async (
   const cards = page.locator(".mproj-card");
   await expect(cards).toHaveCount(1, { timeout: 20_000 });
   await expect(cards.first()).toContainText("Due This Month");
+});
+
+test("on a phone Today goes to the latest day with a post, and the team moves a stage from its card", async ({ page, frank }) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 390, height: 844 });
+  const d = new Date();
+  const last = new Date(d.getFullYear(), d.getMonth() - 1, 10, 10);
+  await admin.from("creatives").update({ scheduled_at: last.toISOString() }).eq("id", frank.creativeId);
+  const later = await frank.createCreativeAtStage(2, "Next Month Post");
+  await admin
+    .from("creatives")
+    .update({ scheduled_at: new Date(d.getFullYear(), d.getMonth() + 1, 10, 10).toISOString() })
+    .eq("id", later);
+
+  await frank.loginAsStaff(page);
+  await page.goto(`${APP_URL}/projects/${frank.projectId}`);
+  const short = (x: Date) => `${x.toLocaleString("en", { month: "short" })} ${x.getFullYear()}`;
+  // Months by their first three letters.
+  await expect(page.locator(".mproj-month b")).toHaveText(short(d), { timeout: 20_000 });
+  await expect(page.locator(".mproj-card")).toHaveCount(0);
+  // Nothing today or earlier this month: Today goes back to last month's post,
+  // not on to next month's.
+  await page.getByRole("button", { name: "Today" }).click();
+  await expect(page.locator(".mproj-month b")).toHaveText(short(last));
+  const card = page.locator(".mproj-card", { hasText: "E2E Test Creative" });
+  await expect(card).toBeInViewport();
+
+  // The pill opens every stage and status, as the table's does, within the screen.
+  await card.getByRole("button", { name: "Status of E2E Test Creative" }).click();
+  const list = page.getByRole("listbox", { name: "Status of E2E Test Creative" });
+  const box = (await list.boundingBox())!;
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(390);
+  await list.getByRole("option", { name: /^5\./ }).click();
+  await expect
+    .poll(async () => (await admin.from("creatives").select("stage").eq("id", frank.creativeId).single()).data!.stage)
+    .toBe(5);
+  await expect(card.getByRole("button", { name: "Status of E2E Test Creative" })).toContainText(/^5\./);
 });

@@ -12786,7 +12786,7 @@ a.asset-saved {
 .mproj-month b {
   font-size: 15.2px;
   font-weight: 600;
-  min-width: 118px;
+  min-width: 78px;
   text-align: center;
 }
 .mproj-platform {
@@ -12824,6 +12824,25 @@ a.asset-saved {
   padding: 3px 7px;
   white-space: normal;
   text-align: right;
+}
+/* The team's pill opens the stages and statuses, as the table's does
+   (direct instruction): its arrow room kept, its words on one line. */
+.mproj-stage {
+  min-width: 0;
+  text-align: right;
+}
+.mproj-top .stg-pick {
+  padding: 4px 20px 4px 8px;
+  background-position: right 6px center;
+  background-size: 10px;
+  white-space: nowrap;
+  text-align: left;
+}
+.mproj-month .mproj-today {
+  font-size: 13.7px;
+  font-weight: 600;
+  color: var(--action);
+  padding: 4px 2px;
 }
 .mproj-name {
   font-size: 15.7px;

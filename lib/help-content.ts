@@ -175,7 +175,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       },
       {
         kind: "p",
-        text: "Open a project on your phone and its posts show as cards, a month at a time, in date order. Each card has its date and stage, the first line of its caption (See more shows the rest), Copy Caption, Final Asset for your team, See Post to open it, and Approve Concept while a concept is waiting. The arrows change the month and the menu beside them picks a platform.",
+        text: "Open a project on your phone and its posts show as cards, a month at a time, in date order. Each card has its date and stage, the first line of its caption (See more shows the rest), Copy Caption, Final Asset for your team, See Post to open it, and Approve Concept while a concept is waiting. The arrows change the month, Today goes to today's posts (or the latest day before with one), and the menu beside them picks a platform. Your team can tap a card's stage to move the post to another stage or status, as in the table.",
       },
       {
         kind: "p",
@@ -188,7 +188,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "Final Asset opens the link to the finished creative, for your team only.",
           "Comments are under the post: read them, reply, and add your own. Approve Concept is there while a concept is waiting.",
           "The project's name at the top takes you back to it.",
-          "Adding clients, projects and posts, the table's columns and views, Ideas, changing stages, editing, sharing, choosing versions and pinning comments on the artwork stay on a computer.",
+          "Adding clients, projects and posts, the table's columns and views, Ideas, editing, sharing, choosing versions and pinning comments on the artwork stay on a computer.",
           "Settings, a client's Settings and Knowledge, Analytics, Calendar and My Profile are made for a computer: on a phone they say so, with a way back to your clients.",
         ],
       },

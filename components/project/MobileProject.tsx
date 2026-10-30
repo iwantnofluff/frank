@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { CreativeListRow } from "@/hooks/use-creatives";
 import { useCopyVersionsByCreative } from "@/hooks/use-copy-versions-by-creative";
 import { useAssetLinksByCreative } from "@/hooks/use-asset-links";
-import { useProjectStatuses } from "@/hooks/use-project-statuses";
+import { useProjectStatuses, type ProjectStatus } from "@/hooks/use-project-statuses";
 import { canApproveConcept } from "@/hooks/use-approve-concept";
 import { statusOptions } from "@/lib/project-statuses";
 import { exceptionLabel, isIdea, stageColor, stageLabel } from "@/lib/stage-labels";
@@ -15,6 +15,7 @@ import { matchesFilter, ALL_STATUSES, PLATFORM_FILTERS, type PlatformFilter } fr
 import { CopyCaptionChip } from "@/components/project/CopyCaptionChip";
 import { OpenAsset } from "@/components/project/OpenAsset";
 import { ApproveConceptButton } from "@/components/project/ApproveConceptButton";
+import { StagePillMenu } from "@/components/project/StagePillMenu";
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -26,9 +27,11 @@ const MONTH_NAMES = [
 // card: its date and stage (the team's status within it), its name, its
 // caption on one line with See more (direct instruction), and Copy Caption,
 // Final Asset for the team, See Post and Approve Concept while one waits.
-// No comments here (direct instruction): they're on the post. The table's
-// columns, views, Week and Calendar, selecting and changing stage stay on a
-// computer, and so do Ideas (no date to file them under).
+// The team moves a post's stage from its pill, as in the table (direct
+// instruction). Today (direct instruction) goes to today's posts, else the
+// latest day before with one. No comments here (direct instruction): they're
+// on the post. The table's columns, views, Week and Calendar and selecting
+// stay on a computer, and so do Ideas (no date to file them under).
 export function MobileProject({
   creatives,
   delivery,
@@ -48,17 +51,23 @@ export function MobileProject({
   const [platform, setPlatform] = useState<PlatformFilter>("all");
   const dateOf = (c: CreativeListRow) => (delivery === "continuous" ? c.due_on : c.scheduled_at);
 
-  const posts = useMemo(
+  // Every dated post the platform shows, in date order.
+  const dated = useMemo(
     () =>
       creatives
         .filter((c) => !isIdea(c) && dateOf(c) && matchesFilter(c, { statuses: ALL_STATUSES, platform }))
         .map((c) => ({ c, dt: new Date(delivery === "continuous" ? `${c.due_on}T00:00:00` : (c.scheduled_at as string)) }))
-        .filter(({ dt }) => dt.getFullYear() === anchor.getFullYear() && dt.getMonth() === anchor.getMonth())
-        .sort((a, b) => a.dt.getTime() - b.dt.getTime())
-        .map(({ c }) => c),
+        .sort((a, b) => a.dt.getTime() - b.dt.getTime()),
     // dateOf reads only delivery.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [creatives, delivery, platform, anchor],
+    [creatives, delivery, platform],
+  );
+  const posts = useMemo(
+    () =>
+      dated
+        .filter(({ dt }) => dt.getFullYear() === anchor.getFullYear() && dt.getMonth() === anchor.getMonth())
+        .map(({ c }) => c),
+    [dated, anchor],
   );
   const ids = useMemo(() => posts.map((c) => c.id), [posts]);
   const { data: copies } = useCopyVersionsByCreative(ids);
@@ -67,8 +76,29 @@ export function MobileProject({
 
   const step = (by: number) => setAnchor((a) => new Date(a.getFullYear(), a.getMonth() + by, 1));
 
+  // Today: the first post on the latest day up to today, in its month;
+  // with none before, this month from the top.
+  const [goTo, setGoTo] = useState<{ id: string | null } | null>(null);
+  const today = () => {
+    const now = new Date();
+    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const last = [...dated].reverse().find(({ dt }) => dt < end);
+    const day = last && dated.find(({ dt }) => dt.toDateString() === last.dt.toDateString());
+    const at = day ? day.dt : now;
+    setAnchor(new Date(at.getFullYear(), at.getMonth(), 1));
+    setGoTo({ id: day ? day.c.id : null });
+  };
+  const root = useRef<HTMLDivElement>(null);
+  const went = useRef<typeof goTo>(null);
+  useEffect(() => {
+    if (!goTo || went.current === goTo) return;
+    went.current = goTo;
+    const card = goTo.id ? root.current?.querySelector(`[data-post="${goTo.id}"]`) : root.current;
+    card?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [goTo, posts]);
+
   return (
-    <div className="mproj">
+    <div className="mproj" ref={root}>
       <div className="mproj-bar">
         <div className="mproj-month">
           <button type="button" className="m-arrow" aria-label="Previous month" onClick={() => step(-1)}>
@@ -77,12 +107,15 @@ export function MobileProject({
             </svg>
           </button>
           <b>
-            {MONTH_NAMES[anchor.getMonth()]} {anchor.getFullYear()}
+            {MONTH_NAMES[anchor.getMonth()].slice(0, 3)} {anchor.getFullYear()}
           </b>
           <button type="button" className="m-arrow" aria-label="Next month" onClick={() => step(1)}>
             <svg viewBox="0 0 24 24">
               <path d="M9 18l6-6-6-6" />
             </svg>
+          </button>
+          <button type="button" className="mproj-today" onClick={today}>
+            Today
           </button>
         </div>
         <select
@@ -111,6 +144,7 @@ export function MobileProject({
           key={c.id}
           post={c}
           delivery={delivery}
+          statuses={isStaff ? statuses : null}
           caption={copies?.[c.id]?.[0]?.caption?.trim() ? copies[c.id][0].caption! : null}
           stageText={
             c.exception
@@ -130,12 +164,15 @@ export function MobileProject({
 function PostCard({
   post: c,
   delivery,
+  statuses,
   caption,
   stageText,
   assetLink,
 }: {
   post: CreativeListRow;
   delivery: "scheduled" | "continuous";
+  // The project's statuses, for the team's pill; null for a client's.
+  statuses: ProjectStatus[] | undefined | null;
   caption: string | null;
   stageText: string;
   assetLink: string | null;
@@ -154,12 +191,18 @@ function PostCard({
   }, [caption, open]);
 
   return (
-    <article className="mproj-card">
+    <article className="mproj-card" data-post={c.id}>
       <div className="mproj-top">
         <span className="mproj-date">{publishDate(delivery, c.scheduled_at, c.due_on)}</span>
-        <span className="stg" style={{ background: stageColor(c.stage, c.exception ?? null) }}>
-          {stageText}
-        </span>
+        {statuses !== null ? (
+          <span className="mproj-stage">
+            <StagePillMenu post={c} statuses={statuses} delivery={delivery} color={stageColor(c.stage, c.exception ?? null)} />
+          </span>
+        ) : (
+          <span className="stg" style={{ background: stageColor(c.stage, c.exception ?? null) }}>
+            {stageText}
+          </span>
+        )}
       </div>
       <b className="mproj-name">{c.name}</b>
       <span className="mproj-fmt">{formatsLabel(postFormats(c))}</span>

@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.60.2",
+    date: "2026-10-30",
+    title: "Today and stages on a phone",
+    changes: [
+      "On a phone, a project's months show as Nov 2026, with a Today link beside them that goes to today's posts, or the latest day before with one.",
+      "Your team can change a post's stage from its card on a phone, with the same list as the table.",
+    ],
+  },
+  {
     version: "1.60.1",
     date: "2026-10-30",
     title: "Tidier on a phone",
