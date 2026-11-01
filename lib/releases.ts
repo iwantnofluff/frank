@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.63.1",
+    date: "2026-11-01",
+    title: "A lighter backdrop for Expand",
+    changes: ["The dark backdrop behind the expanded phone is lighter, so more of the page shows through."],
+  },
+  {
     version: "1.63.0",
     date: "2026-11-01",
     title: "Back to the row, and the phone full size",

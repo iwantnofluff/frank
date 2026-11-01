@@ -3434,7 +3434,7 @@ select.sort:hover {
   z-index: 950;
   display: grid;
   place-items: center;
-  background: rgba(12, 14, 18, 0.94);
+  background: rgba(12, 14, 18, 0.75);
   animation: pexpand-in var(--dur-open) var(--ease-open);
 }
 .pexpand.on .phoneframe {
