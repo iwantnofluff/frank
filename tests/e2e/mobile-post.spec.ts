@@ -36,7 +36,7 @@ test("on a phone the team copies the caption, opens the Final Asset and replies"
   await expect(asset).toHaveAttribute("href", LINK);
   await expect(asset).toHaveAttribute("target", "_blank");
   // Back to the project.
-  await expect(post.getByRole("link", { name: "E2E Test Project" })).toHaveAttribute("href", `/projects/${frank.projectId}`);
+  await expect(post.getByRole("link", { name: "E2E Test Project" })).toHaveAttribute("href", `/projects/${frank.projectId}?post=${frank.creativeId}`);
 
   // The comments under it, and a reply.
   const card = post.locator(".cmt", { hasText: "Tighten the hook" });

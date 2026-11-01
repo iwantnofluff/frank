@@ -7,6 +7,7 @@ import { useCreateCustomColumn } from "@/hooks/use-create-custom-column";
 import { ALL_STATUSES, matchesFilter, PLATFORM_FILTERS, type PlatformFilter, type PostFilter, type StatusKey } from "@/lib/post-filters";
 import { StatusFilterMenu } from "@/components/project/StatusFilterMenu";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { useFocusRow } from "@/components/project/use-focus-row";
 import { usePresence } from "@/hooks/use-presence";
 import { useViewportFit } from "@/hooks/use-viewport-fit";
 import { useRouter } from "next/navigation";
@@ -232,6 +233,7 @@ export function ContinuousCalendarTable({
   canAddColumns = false,
   isStaff,
   initialFocusDate,
+  focusPostId,
   draftRow,
 }: {
   projectId: string;
@@ -258,6 +260,8 @@ export function ContinuousCalendarTable({
   initialFocusDate?: string | null;
   // Set while New Post → Row is open (components/project/draft-post.tsx).
   draftRow?: { onClose: () => void; onCreated: (focusDate: string | null) => void } | null;
+  // The post just come back from (?post=), its row brought into view.
+  focusPostId?: string | null;
 }) {
   const draft = useDraftPost({
     projectId,
@@ -270,6 +274,7 @@ export function ContinuousCalendarTable({
   const { data: roles } = useProjectRoles(projectId);
   const today = useMemo(() => new Date(), []);
   const [anchor, setAnchor] = useState(() => (initialFocusDate ? new Date(initialFocusDate) : today));
+  useFocusRow(focusPostId);
   const [viewMode, setViewMode] = useState<ViewMode>("month");
   if (draftRow && viewMode === "calendar") setViewMode("month");
   // Status and platform (lib/post-filters.ts; direct instruction).
@@ -1097,6 +1102,7 @@ export function ContinuousCalendarTable({
                     return (
                       <tr
                         data-row=""
+                        data-post={c.id}
                         className={rowClasses}
                         key={c.id}
                         // An Idea isn't on the Review page (direct instruction):

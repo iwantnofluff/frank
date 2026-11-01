@@ -13,6 +13,7 @@ import { OpenAsset } from "@/components/project/OpenAsset";
 // review link's phone card (.m-card).
 export function MobilePost({
   projectId,
+  postId,
   projectName,
   stageText,
   stageColor,
@@ -28,6 +29,7 @@ export function MobilePost({
   comments,
 }: {
   projectId: string;
+  postId: string;
   projectName: string;
   // Its stage, or its status within it for the team ("3b. Internal QC").
   stageText: string;
@@ -49,7 +51,7 @@ export function MobilePost({
   return (
     <div className="mpost">
       <div className="mpost-h">
-        <Link className="mpost-back" href={`/projects/${projectId}`}>
+        <Link className="mpost-back" href={`/projects/${projectId}?post=${postId}`}>
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M15 18l-6-6 6-6" />
           </svg>

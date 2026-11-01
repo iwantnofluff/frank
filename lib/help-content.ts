@@ -393,6 +393,14 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "Internal Feedback shows your team's latest open comment, private or public, with who said it and when above it; only your team sees the column. Client Feedback, after it, shows the client's latest open comment the same way. Show All under either lists every comment from that side, newest first, on hover.",
         ],
       },
+      { kind: "h", text: "A post's page" },
+      {
+        kind: "list",
+        items: [
+          "The project's name with a back arrow, above the section icons on the left, takes you back to the table on that post's month, its row brought into view and lit for a moment, so you don't have to scroll to find it. On a phone the name at the top of the post does the same with its card.",
+          "Expand, on the right under Copy, shows the phone over the whole window, as large as it fits, for a video or artwork that's too small on a laptop. The post plays and steps through its slides as usual. Esc, the close button at the top right, or a click outside it closes it.",
+        ],
+      },
     ],
   },
   {

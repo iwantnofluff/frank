@@ -97,6 +97,24 @@ export default function ProjectPage({
   useEffect(() => {
     if (askedNew || askedRow) router.replace(`/projects/${id}`, { scroll: false });
   }, [askedNew, askedRow, id, router]);
+  // Back from a post's page (?post=, direct instruction): the table opens on
+  // its date, its row brought into view and lit (useFocusRow); the address
+  // loses it once read.
+  const askedPost = query.get("post");
+  const [focusPost, setFocusPost] = useState<string | null>(null);
+  const [postHandled, setPostHandled] = useState<string | null>(null);
+  if (askedPost && askedPost !== postHandled && creatives && project) {
+    setPostHandled(askedPost);
+    const post = creatives.find((c) => c.id === askedPost && !c.archived_at);
+    if (post) {
+      const date = project.delivery === "continuous" ? post.due_on : post.scheduled_at;
+      if (date) setCalendarFocusDate(date);
+      setFocusPost(post.id);
+    }
+  }
+  useEffect(() => {
+    if (askedPost && postHandled === askedPost) router.replace(`/projects/${id}`, { scroll: false });
+  }, [askedPost, postHandled, id, router]);
 
   const isLoading = projectLoading || creativesLoading;
   const columns = customColumns ?? [];
@@ -146,6 +164,7 @@ export default function ProjectPage({
             delivery={project.delivery}
             isStaff={confirmedStaff}
             projectId={id}
+            focusPostId={focusPost}
           />
         )}
       </div>
@@ -328,6 +347,7 @@ export default function ProjectPage({
           canAddColumns={isAdmin}
           isStaff={confirmedStaff}
           initialFocusDate={calendarFocusDate}
+          focusPostId={focusPost}
           draftRow={draftRow}
         />
       )}
@@ -346,6 +366,7 @@ export default function ProjectPage({
           canAddColumns={isAdmin}
           isStaff={confirmedStaff}
           initialFocusDate={calendarFocusDate}
+          focusPostId={focusPost}
           draftRow={draftRow}
         />
       )}

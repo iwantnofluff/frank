@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.63.0",
+    date: "2026-11-01",
+    title: "Back to the row, and the phone full size",
+    changes: [
+      "On a post's page, the project's name above the section icons takes you back to the table on that post's row, brought into view and lit for a moment. On a phone, the name at the top of the post does the same.",
+      "Expand, on the right under Copy, shows the phone over the whole window, as large as it fits, for videos and artwork that are small on a laptop. Esc or a click outside closes it.",
+    ],
+  },
+  {
     version: "1.62.1",
     date: "2026-11-01",
     title: "Comments keep their line breaks",

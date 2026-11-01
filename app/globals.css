@@ -3252,6 +3252,46 @@ select.sort:hover {
 .vselbar .vsel + .vsel {
   margin-left: 0;
 }
+/* Back to the project's table, on this post's row (direct instruction):
+   above the sections, which move down to make room for it. */
+.revback {
+  position: absolute;
+  top: 12px;
+  left: 0;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 220px;
+  padding: 4px 8px 4px 4px;
+  border-radius: 8px;
+  font-size: 13.7px;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: none;
+  transition: background-color var(--dur-fast) var(--ease-std);
+}
+.revback:hover {
+  background: var(--line);
+}
+.revback span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.revback ~ .secrail {
+  top: 48px;
+}
+.revback svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 .secrail {
   position: absolute;
   top: 12px;
@@ -3332,6 +3372,91 @@ select.sort:hover {
 .secrail-item[aria-current="true"] .secrail-label {
   opacity: 1;
   transform: translate(0, -50%);
+}
+/* The phone full size (direct instruction: a video small on a laptop):
+   its button under Copy (.vexpand-btn); pressed, the phone is lifted over
+   the whole window on a dark backdrop, fitted to its height (PhoneFrame
+   fill), with no pins or comment marks. A click on the backdrop, the
+   button or Esc puts it back. */
+.pexpand {
+  position: relative;
+}
+/* Under Copy (direct instruction): square, as tall as the pickers above
+   it, drawn as they are; the pickers here held to the same 28px. */
+.vselbar select {
+  height: 28px;
+}
+.vexpand-btn {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--line-2);
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--ink);
+  transition: border-color var(--dur-fast) var(--ease-std);
+}
+.vexpand-btn:hover {
+  border-color: var(--muted);
+}
+.vexpand-btn svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* Its close button, over the window's top right. */
+.pexpand-btn {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  transition: background-color var(--dur-fast) var(--ease-std);
+}
+.pexpand-btn svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.pexpand.on {
+  position: fixed;
+  inset: 0;
+  z-index: 950;
+  display: grid;
+  place-items: center;
+  background: rgba(12, 14, 18, 0.94);
+  animation: pexpand-in var(--dur-open) var(--ease-open);
+}
+.pexpand.on .phoneframe {
+  margin: 0;
+}
+.pexpand.on .pexpand-btn {
+  position: fixed;
+  top: 20px;
+  right: 24px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+.pexpand.on .pexpand-btn:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+.pexpand.on .annot-layer {
+  display: none;
+}
+@keyframes pexpand-in {
+  from {
+    opacity: 0;
+  }
 }
 .canvas {
   flex: 1;
@@ -12854,6 +12979,35 @@ a.asset-saved {
   border-radius: 8px;
   background: var(--surface);
   color: var(--ink);
+}
+/* Back from a post's page (direct instruction): its row, or its card on a
+   phone, lit for a moment, then fading. */
+@keyframes rowflash {
+  0%,
+  45% {
+    background-color: var(--action-soft);
+    box-shadow: inset 3px 0 0 var(--action);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: inset 3px 0 0 transparent;
+  }
+}
+tr.rowflash > td,
+.mproj-card.rowflash {
+  animation: rowflash 2.4s var(--ease-std);
+}
+tr.rowflash > td + td {
+  animation-name: rowflash-cell;
+}
+@keyframes rowflash-cell {
+  0%,
+  45% {
+    background-color: var(--action-soft);
+  }
+  100% {
+    background-color: transparent;
+  }
 }
 .mproj-card {
   background: var(--surface);

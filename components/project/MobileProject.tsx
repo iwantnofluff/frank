@@ -16,6 +16,7 @@ import { CopyCaptionChip } from "@/components/project/CopyCaptionChip";
 import { OpenAsset } from "@/components/project/OpenAsset";
 import { ApproveConceptButton } from "@/components/project/ApproveConceptButton";
 import { StagePillMenu } from "@/components/project/StagePillMenu";
+import { useFocusRow } from "@/components/project/use-focus-row";
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -37,12 +38,15 @@ export function MobileProject({
   delivery,
   isStaff,
   projectId,
+  focusPostId,
 }: {
   // The project's active posts.
   creatives: CreativeListRow[];
   delivery: "scheduled" | "continuous";
   isStaff: boolean;
   projectId: string;
+  // The post just come back from (?post=): its month, its card in view.
+  focusPostId?: string | null;
 }) {
   const [anchor, setAnchor] = useState(() => {
     const d = new Date();
@@ -62,6 +66,15 @@ export function MobileProject({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [creatives, delivery, platform],
   );
+  // Back from a post's page (direct instruction): its month, its card
+  // brought into view and lit (useFocusRow).
+  const [focused, setFocused] = useState<string | null>(null);
+  if (focusPostId && focusPostId !== focused) {
+    setFocused(focusPostId);
+    const at = dated.find(({ c }) => c.id === focusPostId)?.dt;
+    if (at) setAnchor(new Date(at.getFullYear(), at.getMonth(), 1));
+  }
+  useFocusRow(focusPostId);
   const posts = useMemo(
     () =>
       dated

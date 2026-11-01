@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCreative } from "@/hooks/use-creative";
@@ -94,6 +95,16 @@ export function CreativeReviewPage({ id }: { id: string }) {
   const setStatus = useSetCreativeStatus();
   const { data: assetLink } = useAssetLink(id, isStaff);
   const phone = usePhoneScreen();
+  // The phone full size over the page (direct instruction); Esc closes it.
+  const [expanded, setExpanded] = useState(false);
+  useEffect(() => {
+    if (!expanded) return;
+    const escape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setExpanded(false);
+    };
+    document.addEventListener("keydown", escape);
+    return () => document.removeEventListener("keydown", escape);
+  }, [expanded]);
   // The active Production or Internal pill is its status's dropdown (3a,
   // 3b…), for the team.
   const pillOptions = isStaff && creative && !creative.exception ? statusOptions(projectStatuses, creative.stage) : [];
@@ -520,6 +531,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
     return (
       <MobilePost
         projectId={creative.project_id}
+        postId={creative.id}
         projectName={creative.projects?.name ?? "Project"}
         stageText={creative.exception ? exceptionLabel(creative.exception) : (status?.text ?? `${creative.stage}. ${stageLabel(creative.stage, "scheduled")}`)}
         stageColor={stageColor(creative.stage, creative.exception ?? null)}
@@ -721,6 +733,16 @@ export function CreativeReviewPage({ id }: { id: string }) {
         {/* The sections as icons in the centre panel's top-left corner
             (direct instruction: in place of the left column). */}
         <div className="canvas-wrap">
+        {/* Back to the project's table, on this post's row (direct
+            instruction), above the sections. */}
+        {creative.projects && (
+          <Link className="revback" href={`/projects/${creative.project_id}?post=${creative.id}`} title={`Back to ${creative.projects.name}`}>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+            <span>{creative.projects.name}</span>
+          </Link>
+        )}
         <SectionRail active={activeSection} onSelect={setActiveSection} />
         {/* The Creative and Copy versions in the centre panel's top-right
             corner, opposite the sections (direct instruction: to give the
@@ -779,6 +801,25 @@ export function CreativeReviewPage({ id }: { id: string }) {
                   )}
                 </select>
               </div>
+              {/* The phone full size (direct instruction): under Copy,
+                  "Expand" then its button, square, as tall as the pickers. */}
+              {activeSection === "content" && (
+                <div className="vsel">
+                  <label htmlFor="vExpand">Expand</label>
+                  <button
+                    id="vExpand"
+                    type="button"
+                    className="vexpand-btn"
+                    aria-label="See the phone full size"
+                    title="See the phone full size"
+                    onClick={() => setExpanded(true)}
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+                    </svg>
+                  </button>
+                </div>
+              )}
               {/* The final asset's link, once added (phase126, direct
                   instruction): under the pickers, the button alone, the
                   team's only. */}
@@ -815,7 +856,32 @@ export function CreativeReviewPage({ id }: { id: string }) {
               {/* 15% smaller, with the post's date and title above it
                   (direct instruction), to make room beside it. */}
               {/* Room under it for the scroll note (direct instruction). */}
-              <PhoneFrame scale={0.85} reserve={PNAV_CURRENT_H + (hasScrollHint(postFormats(creative)) ? 46 : 0)}>
+              {/* The phone full size over the page (direct instruction: a
+                  video small on a laptop), the same phone lifted out, so a
+                  playing video or a carousel's slide carries on. */}
+              <div
+                className={`pexpand${expanded ? " on" : ""}`}
+                role={expanded ? "dialog" : undefined}
+                aria-modal={expanded ? true : undefined}
+                aria-label={expanded ? "The post full size" : undefined}
+                onClick={(e) => {
+                  if (expanded && e.target === e.currentTarget) setExpanded(false);
+                }}
+              >
+              {expanded && (
+                <button
+                  type="button"
+                  className="pexpand-btn"
+                  aria-label="Close the full-size view"
+                  title="Close (Esc)"
+                  onClick={() => setExpanded(false)}
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />
+                  </svg>
+                </button>
+              )}
+              <PhoneFrame scale={0.85} reserve={PNAV_CURRENT_H + (hasScrollHint(postFormats(creative)) ? 46 : 0)} fill={expanded}>
               <div className="lpv-bar">
                 <button
                   type="button"
@@ -909,6 +975,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
               </div>
               </div>
               </PhoneFrame>
+              </div>
               <ScrollHint formats={postFormats(creative)} />
               </PostNeighbours>
             )}

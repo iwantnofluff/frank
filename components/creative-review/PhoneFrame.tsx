@@ -11,6 +11,10 @@ const LEAST = 0.6;
 // The space kept above it (margin-top), and below so it isn't flush.
 const ABOVE = 20;
 const BELOW = 16;
+// Full size (direct instruction: a video small on a laptop): as tall as the
+// window allows, less a margin, up to this.
+const FILL_MOST = 1.6;
+const FILL_MARGIN = 48;
 
 // A phone around the Feed Preview and the Content post (direct
 // instruction): the outline, notch and side buttons drawn in CSS so they
@@ -22,6 +26,7 @@ export function PhoneFrame({
   children,
   reserve = 0,
   scale = 1,
+  fill = false,
 }: {
   children: ReactNode;
   // Height kept free beside it in the space it fits (a title above, a note
@@ -30,12 +35,20 @@ export function PhoneFrame({
   // A share of its usual size (direct instruction: 0.85 on a post's page,
   // to make room for the previous and next post beside it).
   scale?: number;
+  // Shown full size over the page: fitted to the window instead.
+  fill?: boolean;
 }) {
   const height = HEIGHT;
   const ref = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(MOST * scale);
 
   useLayoutEffect(() => {
+    if (fill) {
+      const fitWindow = () => setZoom(Math.max(LEAST, Math.min(FILL_MOST, (window.innerHeight - FILL_MARGIN * 2) / height)));
+      fitWindow();
+      window.addEventListener("resize", fitWindow);
+      return () => window.removeEventListener("resize", fitWindow);
+    }
     // The Review page's canvas, or the review link's desktop middle.
     const canvas = ref.current?.closest(".canvas, .dk-main");
     if (!(canvas instanceof HTMLElement)) return;
@@ -54,7 +67,7 @@ export function PhoneFrame({
     const observer = new ResizeObserver(fit);
     observer.observe(canvas);
     return () => observer.disconnect();
-  }, [reserve, scale, height]);
+  }, [reserve, scale, height, fill]);
 
   return (
     // --pf-zoom lets text inside be sized as seen, not as drawn.
