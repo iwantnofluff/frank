@@ -16,7 +16,10 @@ export const RELEASES: Release[] = [
     version: "1.63.1",
     date: "2026-11-01",
     title: "A lighter backdrop for Expand",
-    changes: ["The dark backdrop behind the expanded phone is lighter, so more of the page shows through."],
+    changes: [
+      "The dark backdrop behind the expanded phone is lighter, so more of the page shows through.",
+      "The project's name and back arrow on a post's page are blue, as a link.",
+    ],
   },
   {
     version: "1.63.0",

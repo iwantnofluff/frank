@@ -3267,12 +3267,13 @@ select.sort:hover {
   border-radius: 8px;
   font-size: 13.7px;
   font-weight: 600;
-  color: var(--ink);
+  /* Blue, as a link (direct instruction). */
+  color: var(--action);
   text-decoration: none;
   transition: background-color var(--dur-fast) var(--ease-std);
 }
 .revback:hover {
-  background: var(--line);
+  background: var(--action-soft);
 }
 .revback span {
   overflow: hidden;

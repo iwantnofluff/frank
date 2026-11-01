@@ -4632,3 +4632,5 @@ The full-size view: Expand, on the right under Copy (moved there by direct instr
 Direct instruction: the expanded phone's backdrop 20% more transparent. .pexpand.on's background from 94% opaque to 75% (rgba(12, 14, 18, 0.75)).
 
 **Verified**: expanded on a post's page at 1440 × 820: the backdrop's computed colour rgba(12, 14, 18, 0.75), the page showing through; screenshotted.
+
+Then (direct instruction): the post page's back arrow and project name in blue. .revback in the action colour, its hover the action colour's tint; the phone's back link was blue already. **Verified**: computed colour rgb(0, 123, 255) for the words and the arrow; screenshotted; creative-review.png and upload-artwork-modal.png differed only in the link's colour (diffs opened, updated).
