@@ -122,6 +122,16 @@ button {
   border: none;
   cursor: pointer;
 }
+/* Pills, buttons, dropdowns and fields spaced as the words around them
+   (direct instruction): browsers set letter-spacing to normal on form
+   controls, and font: inherit doesn't carry it, so they sat 0.316px
+   tighter than the page's text. */
+button,
+input,
+select,
+textarea {
+  letter-spacing: inherit;
+}
 
 a {
   color: inherit;
@@ -347,7 +357,8 @@ a {
   font-weight: 600;
   line-height: 1.2;
   text-align: center;
-  letter-spacing: 0.3px;
+  /* The page's own spacing, as every link and button (direct instruction). */
+  letter-spacing: 0.316px;
   word-break: break-word;
 }
 /* The client's own Settings, named for it: the name at most two lines. */
@@ -4041,6 +4052,12 @@ select.sort:hover {
   font-size: 13.7px;
   line-height: 1.4;
 }
+/* A comment's words with its own line breaks (direct instruction), not
+   one block. */
+.cbody {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
 .cmt-f {
   display: flex;
   align-items: center;
@@ -5898,6 +5915,13 @@ textarea.cxin {
   top: 0;
   z-index: 3;
   background: var(--surface);
+}
+/* Everything on the artwork (a carousel's count, dots and arrows, pins)
+   scrolls under that header, not over it (direct instruction): the
+   artwork is its own layer, below the header. A Reel playing full size
+   (.ig-media:has(.vplayer.full), static) leaves it. */
+.m-card .ig-media {
+  z-index: 0;
 }
 /* Above a post's card on a phone: "Also waiting for your review". Its
    name and format are in the header now (direct instruction). */
@@ -12765,6 +12789,12 @@ a.asset-saved {
 }
 /* The comments under the post, the page scrolling them; no pins or boxes
    to draw on a phone. */
+/* The page scrolls inside its 12px top padding, so the post's header
+   sticks at the very top: none of the artwork shows above it (direct
+   instruction). */
+.mpost .m-card .ig-h {
+  top: -12px;
+}
 .mpost .cmts {
   background: var(--surface);
   border: 1px solid var(--line);

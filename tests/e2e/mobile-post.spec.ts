@@ -66,3 +66,61 @@ test("on a phone a client copies the caption, with no Final Asset", async ({ pag
   // In Client Review, the client has the comments.
   await expect(post.locator(".cmts")).toBeVisible();
 });
+
+test("on a phone a carousel scrolls under the post's header, and a comment keeps its line breaks", async ({ page, frank }) => {
+  test.setTimeout(90_000);
+  // A 3-slide carousel with real files, so its count, dots and arrows show.
+  await admin.from("creatives").update({ formats: ["ig_carousel"], slide_count: 3 }).eq("id", frank.creativeId);
+  const { data: staffUser } = await admin.from("users").select("id").eq("email", frank.staffEmail).single();
+  await page.setViewportSize({ width: 400, height: 500 });
+  const ids: string[] = [];
+  for (const n of [1, 2, 3]) {
+    const key = `${frank.agencyId}/${frank.creativeId}/mpost-slide-${n}.png`;
+    await page.setContent(`<body style="margin:0;background:#e33"></body>`);
+    await admin.storage.from("assets").upload(key, await page.screenshot(), { contentType: "image/png" });
+    const { data: a } = await admin
+      .from("assets")
+      .insert({ agency_id: frank.agencyId, storage_key: key, filename: `s${n}.png`, mime_type: "image/png", bytes: 1, created_by: staffUser!.id })
+      .select("id")
+      .single();
+    ids.push(a!.id);
+  }
+  const { data: v } = await admin
+    .from("creative_versions")
+    .insert({ creative_id: frank.creativeId, version_no: 1, asset_id: ids[0], created_by: staffUser!.id })
+    .select("id")
+    .single();
+  await admin.from("creative_version_slides").insert(ids.map((a, i) => ({ creative_version_id: v!.id, position: i + 1, asset_id: a })));
+  await frank.insertCommentAsStaff("First line\nSecond line\n\nAfter a blank line", "public");
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await frank.loginAsStaff(page);
+  await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
+  const post = page.locator(".mpost");
+  const count = post.locator(".car-count");
+  await expect(count).toBeVisible({ timeout: 20_000 });
+  // Scrolled until the count is under the header: the header is at the very
+  // top, and it, not the count, is what's there.
+  const header = post.locator(".m-card .ig-h");
+  // Measured once the slide has loaded and the page has its full height.
+  await expect
+    .poll(() => post.locator(".ig-media img").first().evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth > 0))
+    .toBe(true);
+  const top = (await post.boundingBox())!.y;
+  await expect(async () => {
+    const start = (await count.boundingBox())!;
+    await post.evaluate((el, by) => (el.scrollTop += by), start.y - top - 20);
+    expect((await header.boundingBox())!.y).toBe(top);
+  }).toPass({ timeout: 10_000 });
+  const c = (await count.boundingBox())!;
+  const h = (await header.boundingBox())!;
+  expect(c.y).toBeLessThan(h.y + h.height);
+  const atCount = await page.evaluate(([x, y]) => !!document.elementFromPoint(x, y)?.closest(".ig-h"), [c.x + c.width / 2, c.y + c.height / 2]);
+  expect(atCount).toBe(true);
+
+  // The comment shows its line breaks: four lines, not one.
+  const words = post.locator(".cmt .cbody", { hasText: "First line" });
+  await words.scrollIntoViewIfNeeded();
+  const lineHeight = await words.evaluate((el) => parseFloat(getComputedStyle(el).lineHeight));
+  expect((await words.boundingBox())!.height).toBeGreaterThan(lineHeight * 3.5);
+});

@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.62.1",
+    date: "2026-11-01",
+    title: "Comments keep their line breaks",
+    changes: [
+      "Comments now show the line breaks they were written with, on a computer, a phone and the review link, rather than one block of text.",
+      "On a phone, a post's artwork and a carousel's count, dots and arrows scroll under the post's header instead of showing over or above it.",
+      "Buttons, pills, dropdowns, fields and the menu's links now have the same letter spacing as the text around them.",
+    ],
+  },
+  {
     version: "1.62.0",
     date: "2026-11-01",
     title: "Check Design",

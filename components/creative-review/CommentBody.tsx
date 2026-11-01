@@ -21,7 +21,7 @@ export function CommentBody({
 }) {
   if (!editing) {
     return (
-      <p>
+      <p className="cbody">
         {body}
         {editedAt && (
           <span className="cedited" title={`Edited ${new Date(editedAt).toLocaleString()}`}>
