@@ -191,11 +191,12 @@ type CreativeModalProps =
       onClose: () => void;
     };
 
-type CheckKind = "brand" | "wiifm" | "creative";
+type CheckKind = "brand" | "wiifm" | "creative" | "design";
 
 const CHECK_LABELS: Record<CheckKind, string> = {
   wiifm: "Check WIIFM",
   creative: "Check Creative",
+  design: "Check Design",
   brand: "Check Brand",
 };
 
@@ -208,7 +209,29 @@ const CHECK_SECTION_DESCRIPTIONS: Record<CheckKind, string> = {
     "Whether this copy leads with a real reader benefit, and draws on the workspace's own reference material.",
   brand: "Whether this copy fits this client's brand knowledge — tone, protected terms, and anything else documented for them.",
   creative: "Whether each slide of the latest artwork says what its Text on Image says: missing or changed words, misspellings, wrong numbers.",
+  design:
+    "The latest artwork's logo size and position and its fonts, against this client's last 10 Approved or Live posts and any fonts named in their Knowledge, and its visual hierarchy: alignment, size, proximity and spacing.",
 };
+
+// The two checks that read the artwork (direct instruction), each its own
+// route; they share the findings box and Add To Comments.
+const ARTWORK_CHECKS = {
+  creative: {
+    endpoint: "/api/ai/check-creative",
+    needsText: true,
+    source: () => "Checked the latest artwork against its saved Text on Image.",
+    what: "on the artwork",
+  },
+  design: {
+    endpoint: "/api/ai/check-design",
+    needsText: false,
+    source: (compared: number | undefined) =>
+      compared
+        ? `Checked the latest artwork against this client's last ${compared === 1 ? "Approved or Live post" : `${compared} Approved or Live posts`}.`
+        : "No earlier Approved or Live posts with artwork to compare with, so the artwork was judged on its own.",
+    what: "in the design",
+  },
+} as const;
 
 function FindingsList({ findings }: { findings: { tone: "ok" | "warn"; title: string; body: string }[] }) {
   return (
@@ -228,27 +251,33 @@ function FindingsList({ findings }: { findings: { tone: "ok" | "warn"; title: st
 
 // "Check Creative" (direct instruction): the latest uploaded artwork, slide
 // by slide, against its saved Text on Image, read by the AI
-// (app/api/ai/check-creative). Button-run, as the other checks are.
-function CreativeCheck({
+// (app/api/ai/check-creative). "Check Design" (direct instruction): its
+// logo, fonts and hierarchy (app/api/ai/check-design). Button-run, as the
+// other checks are.
+function ArtworkCheck({
+  kind,
   creativeId,
   versionId,
   hasArtwork,
   hasText,
 }: {
+  kind: "creative" | "design";
   creativeId: string;
   // The latest artwork's version, which a comment from here is about.
   versionId: string | null;
   hasArtwork: boolean;
   hasText: boolean;
 }) {
+  const check = ARTWORK_CHECKS[kind];
   const [findings, setFindings] = useState<CheckFinding[] | null>(null);
+  const [compared, setCompared] = useState<number | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   // By finding, while the window's open: acknowledged, ignored, or posted.
   const [marks, setMarks] = useState<Record<number, "ack" | "ignored" | "posted">>({});
   const [posted, setPosted] = useState(false);
   const comment = useCreateComment(creativeId);
-  const canRun = hasArtwork && hasText;
+  const canRun = hasArtwork && (hasText || !check.needsText);
 
   async function run() {
     if (!canRun || running) return;
@@ -258,7 +287,7 @@ function CreativeCheck({
     setPosted(false);
     comment.reset();
     try {
-      const res = await fetch("/api/ai/check-creative", {
+      const res = await fetch(check.endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ creativeId }),
@@ -266,6 +295,7 @@ function CreativeCheck({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Couldn't run this check");
       setFindings(data.findings);
+      setCompared(data.compared);
     } catch (err) {
       setError(errorMessage(err, "Couldn't run this check"));
     } finally {
@@ -274,8 +304,10 @@ function CreativeCheck({
   }
 
   const disabledReason = !hasArtwork
-    ? "Upload the artwork first, then check it against its Text on Image."
-    : !hasText
+    ? kind === "design"
+      ? "Upload the artwork first, then check its design."
+      : "Upload the artwork first, then check it against its Text on Image."
+    : check.needsText && !hasText
       ? "Write the Text on Image on the Production tab first, then check the artwork against it."
       : null;
 
@@ -297,7 +329,7 @@ function CreativeCheck({
     if (!acked.length || comment.isPending) return;
     setPosted(false);
     const body = [
-      `Check Creative: ${acked.length} thing${acked.length === 1 ? "" : "s"} to fix on the artwork.`,
+      `${CHECK_LABELS[kind]}: ${acked.length} thing${acked.length === 1 ? "" : "s"} to fix ${check.what}.`,
       ...acked.map(({ f }) => `${f.title}: ${f.body.trim()}`),
     ].join(" ");
     comment.mutate(
@@ -319,7 +351,7 @@ function CreativeCheck({
     <div className="field">
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
         <button type="button" className="btn sm primary" disabled={running || !canRun} onClick={run}>
-          {running ? "Checking…" : CHECK_LABELS.creative}
+          {running ? "Checking…" : CHECK_LABELS[kind]}
         </button>
         {error && <span className="berr">{error}</span>}
       </div>
@@ -328,15 +360,17 @@ function CreativeCheck({
         <>
           {/* As the Content tab's proofread (direct instruction): what to
               look at, each to Acknowledge or Ignore. */}
-          <div className="proof creative-proof" role="region" aria-label="Check Creative findings">
+          <div className="proof creative-proof" role="region" aria-label={`${CHECK_LABELS[kind]} findings`}>
             <div className="proof-h">
-              <b>Check Creative</b>
+              <b>{CHECK_LABELS[kind]}</b>
               <span className="tdim">
                 {open.length
-                  ? `${open.length} to look at${matched.length ? `; ${matched.join(", ")} ${matched.length === 1 ? "matches" : "match"}` : ""}`
+                  ? `${open.length} to look at${matched.length ? `; ${matched.join(", ")} ${kind === "design" ? (matched.length === 1 ? "looks right" : "look right") : matched.length === 1 ? "matches" : "match"}` : ""}`
                   : warns.length
                     ? "Nothing left to look at"
-                    : "Every one matches its Text on Image"}
+                    : kind === "design"
+                      ? `${matched.join(", ").replace(/, ([^,]*)$/, " and $1")} all look right`
+                      : "Every one matches its Text on Image"}
               </span>
             </div>
             {open.length > 0 && (
@@ -392,7 +426,7 @@ function CreativeCheck({
               {comment.error && <span className="berr">{errorMessage(comment.error, "Couldn't add the comment")}</span>}
             </div>
           )}
-          <p className="checksource">Checked the latest artwork against its saved Text on Image.</p>
+          <p className="checksource">{check.source(compared)}</p>
         </>
       )}
     </div>
@@ -554,8 +588,8 @@ function CheckSection({
   attachments: CheckAttachmentRef[];
   knowledgeLoading: boolean;
 }) {
-  if (kind === "creative")
-    return <CreativeCheck creativeId={creativeId} versionId={versionId} hasArtwork={hasArtwork} hasText={hasText} />;
+  if (kind === "creative" || kind === "design")
+    return <ArtworkCheck kind={kind} creativeId={creativeId} versionId={versionId} hasArtwork={hasArtwork} hasText={hasText} />;
   return (
     <LiveCheck
       kind={kind}

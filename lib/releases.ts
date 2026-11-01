@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.62.0",
+    date: "2026-11-01",
+    title: "Check Design",
+    changes: [
+      "A new Check Design on a post's Checks tab compares the latest artwork with the client's last 10 Approved or Live posts: whether the logo is about the usual size and in the usual place, and whether the fonts match.",
+      "Fonts are checked against the brand's own when they're written in the client's Knowledge. It also checks the visual hierarchy: alignment, size, proximity and spacing.",
+      "Acknowledge what needs fixing, Ignore the rest, and Add To Comments posts it for your team, as Check Creative does. It uses one AI request and needs a Claude model.",
+    ],
+  },
+  {
     version: "1.61.0",
     date: "2026-10-30",
     title: "Check Creative into the comments",
