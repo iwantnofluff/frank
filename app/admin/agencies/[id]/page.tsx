@@ -186,7 +186,7 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
               ? ", trial ended: read-only until it chooses a plan."
               : `, trial ends ${day(agency.trial_ends_at)}.`
             : "."}{" "}
-        The plan is the workspace&rsquo;s to choose, in its Settings → Your Plan. Add to its limits with the override
+        The plan is the workspace&rsquo;s to choose, in its Settings → Billing → Plans. Add to its limits with the override
         below.
       </p>
 

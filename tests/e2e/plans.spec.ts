@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { Page } from "@playwright/test";
 import { test, expect, APP_URL, type Frank, APP_PORT } from "./fixtures";
 
-// Settings → Your Plan → Plans, and the admin area applying a request
+// Settings → Billing → Plans, and the admin area applying a request
 // (phase38). Payments aren't connected yet: choosing a plan asks Frank.
 
 const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
@@ -40,7 +40,8 @@ test("an Admin asks Frank for Enterprise, and the platform admin applies it", as
   await admin.from("agencies").update({ extra_clients: 0, extra_seats: 0 }).eq("id", frank.agencyId);
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/settings/plan`);
-  await page.waitForURL(/\/settings\/plan\/plans$/);
+  // The old address leads to Plans, now under Billing.
+  await page.waitForURL(/\/settings\/billing\/plans$/);
   await expect(page.locator(".panel-h", { hasText: "Current plan: Starter" })).toBeVisible();
   await expect(card(page, "Starter")).toContainText("Active");
   await expect(card(page, "Starter").getByRole("button", { name: "Current plan" })).toBeDisabled();
@@ -109,7 +110,7 @@ test("an Admin asks Frank for Enterprise, and the platform admin applies it", as
 test("a User sees the plans but can't ask for one, and the database agrees", async ({ page, frank }) => {
   await staffRole(frank, "user");
   await frank.loginAsStaff(page);
-  await page.goto(`${APP_URL}/settings/plan/plans`);
+  await page.goto(`${APP_URL}/settings/billing/plans`);
   await expect(page.getByText("Only Admins and Owners can change the plan.")).toBeVisible();
   await expect(card(page, "Growth").getByRole("button", { name: "Choose Growth" })).toBeDisabled();
 

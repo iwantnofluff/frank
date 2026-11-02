@@ -50,35 +50,6 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     ],
   },
   {
-    key: "ai",
-    label: "AI Governance",
-    pages: [
-      { href: "/settings/ai/credit-usage", label: "Credit Usage", soon: true },
-      { href: "/settings/ai/drafting-model", label: "Drafting Model" },
-    ],
-  },
-  {
-    key: "connections",
-    label: "Connections",
-    // A client's Instagram, for the live feed (phase54).
-    pages: [{ href: "/settings/connections/instagram", label: "Instagram" }],
-  },
-  {
-    key: "plan",
-    label: "Your Plan",
-    pages: [{ href: "/settings/plan/plans", label: "Plans" }],
-  },
-  {
-    key: "billing",
-    label: "Billing",
-    pages: [
-      { href: "/settings/billing/overview", label: "Overview" },
-      { href: "/settings/billing/invoice-settings", label: "Invoice Settings", soon: true },
-      { href: "/settings/billing/invoices", label: "Invoices" },
-      { href: "/settings/billing/payment-methods", label: "Payment Methods" },
-    ],
-  },
-  {
     key: "knowledge",
     label: "Knowledge",
     pages: [
@@ -89,11 +60,38 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     ],
   },
   {
+    key: "ai",
+    label: "AI Governance",
+    pages: [
+      { href: "/settings/ai/credit-usage", label: "Credit Usage" },
+      { href: "/settings/ai/drafting-model", label: "Drafting Model" },
+    ],
+  },
+  {
+    key: "connections",
+    label: "Connections",
+    // A client's Instagram, for the live feed (phase54).
+    pages: [{ href: "/settings/connections/instagram", label: "Instagram" }],
+  },
+  {
     // How the work moves from concept to approval (phase71), for Owners and
     // Admins; to become the homepage later.
     key: "analytics",
     label: "Analytics",
     pages: [{ href: "/settings/analytics", label: "Analytics" }],
+  },
+  {
+    // Last (direct instruction, 2 Nov 2026).
+    key: "billing",
+    label: "Billing",
+    pages: [
+      { href: "/settings/billing/overview", label: "Overview" },
+      // Its own Your Plan section until 2 Nov 2026 (direct instruction).
+      { href: "/settings/billing/plans", label: "Plans" },
+      { href: "/settings/billing/invoice-settings", label: "Invoice Settings" },
+      { href: "/settings/billing/invoices", label: "Invoices" },
+      { href: "/settings/billing/payment-methods", label: "Payment Methods" },
+    ],
   },
 ];
 

@@ -7883,13 +7883,14 @@ button.avatar {
   line-height: 1.6;
   color: var(--muted);
 }
-/* Settings → Your Plan → Plans. */
+/* Settings → Billing → Plans. */
 .planbar {
   display: flex;
   align-items: center;
   gap: 14px;
-  /* 20px above the plan cards (direct instruction). */
-  margin: 18px 0 20px;
+  /* 20px above the plan cards, 30px below what's above (direct
+     instruction; was 18px). */
+  margin: 30px 0 20px;
 }
 .planbar .sub {
   margin: 0;
@@ -10806,6 +10807,80 @@ button.hbrand-add:hover {
 /* Short of the promise or the contract, wherever it shows. */
 .analytics .an-late {
   color: var(--rose);
+}
+
+/* Settings → Credit Usage: the allowance used, and the month a column a
+   day, in the Analytics page's own bars (not in the prototype). */
+.cu-meter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: -12px 0 28px;
+}
+.cu-meter .an-bar-t {
+  height: 12px;
+  border-radius: 6px;
+  background: var(--line);
+}
+.creditusage .an-sec .an-bars {
+  margin-top: 12px;
+}
+.cu-days {
+  display: grid;
+  grid-template-rows: 72px auto;
+  gap: 6px 3px;
+  margin-top: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface);
+}
+.cu-days .an-trend-col.future {
+  opacity: 0.45;
+}
+
+/* Settings → Invoice Settings: city, state, postcode and country two to a
+   row (not in the prototype). */
+.invgrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 12px;
+}
+.invform .bsec .sub {
+  font-size: 12.7px;
+  margin-top: 6px;
+}
+.invform .bfoot .berr {
+  flex: 1;
+}
+
+/* Settings → Invoices: each invoice a row, its amount, whether it's paid,
+   and Download (not in the prototype). */
+.invlist-r {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+.invlist-amt {
+  font-size: 13.7px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.invlist-st {
+  font-size: 12.2px;
+  font-weight: 500;
+  min-width: 52px;
+  color: var(--green);
+}
+.invlist-st.due {
+  color: var(--amber);
+}
+.invlist-st.overdue {
+  color: var(--rose);
+}
+.invlist-note {
+  padding: var(--d-set-y) 15px;
+  margin: 0;
 }
 
 /* Editing your own comment in place (phase75), and its "Edited" mark. */

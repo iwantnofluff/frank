@@ -3,36 +3,33 @@
 import Link from "next/link";
 import { useMyAgency } from "@/hooks/use-my-agency";
 import { useMyMembership } from "@/hooks/use-my-membership";
-import { useBilling, useOpenBillingPortal } from "@/hooks/use-billing";
+import { useBilling } from "@/hooks/use-billing";
 import { SettingsHead } from "./SettingsHead";
 import { planById } from "@/lib/plans";
 import { seesAllClients } from "@/lib/roles";
-import { errorMessage } from "@/lib/errors";
 
 const day = (iso: string | null | undefined) =>
   iso ? new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : "—";
 
-// Settings → Billing (phase39). Paddle keeps the invoices and the card, so
-// these pages say where things stand and open Paddle's customer portal for
-// the rest. An agency that doesn't pay through Paddle is told who it
+// Settings → Billing (phase39). Paddle keeps the invoices and the card;
+// each page shows them from Frank (decided directly, 2 Nov 2026: no link to
+// Paddle's portal). An agency that doesn't pay through Paddle is told who it
 // arranges billing with instead.
 export function BillingPage({
   title,
   description,
-  portalLabel,
-  portalNote,
   overview = false,
+  children,
 }: {
   title: string;
   description: string;
-  portalLabel: string;
-  portalNote: string;
   overview?: boolean;
+  // The page's own part, once the workspace pays through Paddle.
+  children?: React.ReactNode;
 }) {
   const { data: agency } = useMyAgency();
   const { data: me } = useMyMembership(agency?.agencyId);
   const { data: billing, isLoading } = useBilling(agency?.agencyId);
-  const portal = useOpenBillingPortal(agency?.agencyId);
   const isAdmin = me?.client_id === null && seesAllClients(me?.role);
   const plan = planById(agency?.plan);
   const live = !!billing?.paddle_subscription_id && billing.status !== "canceled";
@@ -46,7 +43,7 @@ export function BillingPage({
     body =
       agency.plan === "free" ? (
         <p className="sub">
-          {agency.name} is on Free, so there&rsquo;s nothing to pay. <Link href="/settings/plan/plans">See the plans</Link>.
+          {agency.name} is on Free, so there&rsquo;s nothing to pay. <Link href="/settings/billing/plans">See the plans</Link>.
         </p>
       ) : (
         <p className="sub">{agency.name}&rsquo;s plan is arranged with Frank, who sends its invoices directly.</p>
@@ -63,7 +60,7 @@ export function BillingPage({
               </span>
               <span className="planval">
                 {plan?.name}
-                <Link className="btn sm" href="/settings/plan/plans">
+                <Link className="btn sm" href="/settings/billing/plans">
                   Change
                 </Link>
               </span>
@@ -78,7 +75,12 @@ export function BillingPage({
                       : billing.scheduled_plan
                         ? `Moves to ${planById(billing.scheduled_plan)?.name} then`
                         : billing.status === "past_due"
-                          ? "The last payment didn't go through"
+                          ? (
+                            <>
+                              The last payment didn&rsquo;t go through.{" "}
+                              <Link href="/settings/billing/payment-methods">Change the card</Link>
+                            </>
+                          )
                           : "Charged to the card on file"}
                   </span>
                 </span>
@@ -87,21 +89,7 @@ export function BillingPage({
             )}
           </>
         )}
-        <div className="srow">
-          <span className="sl">
-            <b>{portalLabel}</b>
-            <span>{portalNote}</span>
-          </span>
-          <button
-            type="button"
-            className="btn sm"
-            disabled={portal.isPending}
-            onClick={() => portal.mutate(window.open("", "_blank"))}
-          >
-            {portal.isPending ? "Opening…" : "Open"}
-          </button>
-        </div>
-        {portal.error && <p className="autherr">{errorMessage(portal.error, "Couldn't open billing")}</p>}
+        {children}
       </>
     );
   }

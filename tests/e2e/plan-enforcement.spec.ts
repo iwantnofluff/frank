@@ -114,7 +114,7 @@ test("an agency signs itself up at beingfrank.app, confirms, works through its t
     expect(first.error).toBeNull();
     const second = await me.from("clients").insert({ agency_id: agency!.id, name: "Second Client" });
     expect(second.error?.message).toContain("client limit reached (1)");
-    await page.goto(`${home}/settings/plan/plans`);
+    await page.goto(`${home}/settings/billing/plans`);
     await expect(page.locator(".srow", { hasText: "Free trial" })).toContainText("Ends");
 
     // Thirty days on.
@@ -125,7 +125,7 @@ test("an agency signs itself up at beingfrank.app, confirms, works through its t
     const blocked = await me.from("clients").update({ name: "Renamed" }).eq("id", first.data![0].id).select("id");
     expect(blocked.error?.message).toContain("agency is read-only");
     expect((await admin.from("clients").select("name").eq("id", first.data![0].id).single()).data!.name).toBe("First Client");
-    await page.goto(`${home}/settings/plan/plans`);
+    await page.goto(`${home}/settings/billing/plans`);
     await expect(page.locator(".srow", { hasText: "Free trial" })).toContainText("Ended");
     // Paying is still possible: checkout is how a read-only agency gets out.
     const card = page.locator(".plancard", { has: page.locator(".plancard-h b", { hasText: /^Starter$/ }) });
@@ -180,7 +180,7 @@ test("read-only also stops invites and uploads, with the reason", async ({ page,
 test("storage: usage against the plan on the Plans page, counting what's uploaded", async ({ page, frank }) => {
   await admin.from("agencies").update({ plan: "growth" }).eq("id", frank.agencyId);
   await frank.loginAsStaff(page);
-  await page.goto(`${APP_URL}/settings/plan/plans`);
+  await page.goto(`${APP_URL}/settings/billing/plans`);
   const row = page.locator(".srow", { hasText: "Storage" });
   await expect(row).toContainText("0 KB of 25 GB");
 
@@ -193,7 +193,7 @@ test("storage: usage against the plan on the Plans page, counting what's uploade
   });
   await expect(page.locator(".autherr")).toHaveCount(0);
   await expect.poll(async () => (await admin.storage.from("assets").list(`${frank.agencyId}/knowledge`)).data?.length ?? 0).toBe(1);
-  await page.goto(`${APP_URL}/settings/plan/plans`);
+  await page.goto(`${APP_URL}/settings/billing/plans`);
   await expect(row).toContainText("39 KB of 25 GB");
   const { data: files } = await admin.storage.from("assets").list(`${frank.agencyId}/knowledge`);
   await admin.storage.from("assets").remove((files ?? []).map((f) => `${frank.agencyId}/knowledge/${f.name}`));

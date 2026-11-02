@@ -13,6 +13,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.65.0",
+    date: "2026-11-02",
+    title: "Credit Usage, and billing inside Frank",
+    changes: [
+      "Settings → AI Governance → Credit Usage shows how much of this month's AI allowance has been used, what's left and when it resets, day by day, by feature and by person. For Owners and Admins.",
+      "Billing now happens inside Frank. Invoices lists every invoice with its amount and whether it's paid, and each downloads as a PDF. Invoice Settings sets the name, company, GST or VAT number and address on your invoices. Payment Methods shows the card you pay with and changes it.",
+      "Plans is now part of Billing, straight after Overview, and Billing is last in the Settings menu, with Knowledge after Team.",
+      "On Plans, Monthly and Annual sit on the right.",
+    ],
+  },
+  {
     version: "1.64.0",
     date: "2026-11-02",
     title: "Newer AI models, and an allowance per plan",

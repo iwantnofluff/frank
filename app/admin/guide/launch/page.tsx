@@ -43,7 +43,8 @@ export default function AdminLaunchGuidePage() {
         <Item state="yours" title="Paddle in Live mode">
           Live and staging still bill through Paddle&rsquo;s sandbox. Paddle reviews the domain and website before
           approving live payments. Then the live keys, client token and webhook secret go into Vercel&rsquo;s
-          production settings, and live is redeployed.
+          production settings, and live is redeployed. The live API key needs the sandbox key&rsquo;s permissions,
+          including Addresses and Businesses (read and write), or Invoice Settings can&rsquo;t read or save.
         </Item>
         <Item state="todo" title="Terms of Service and a refund policy">
           Neither page exists yet, and Paddle needs both, plus prices on the website. The privacy policy is done.

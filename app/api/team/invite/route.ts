@@ -80,7 +80,7 @@ export async function POST(request: Request) {
   // Free's trial over (phase41): read-only. The membership below is written
   // as the service role, which the database doesn't hold to it, so ask here.
   if (agency && isReadOnly(agency.plan, agency.trial_ends_at)) {
-    return fail("Your workspace's free trial has ended, so Frank is read-only. Choose a plan in Settings → Your Plan to carry on.", 403);
+    return fail("Your workspace's free trial has ended, so Frank is read-only. Choose a plan in Settings → Billing → Plans to carry on.", 403);
   }
 
   const admin = createServiceRoleClient();

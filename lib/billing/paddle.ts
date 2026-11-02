@@ -7,10 +7,13 @@ import { paddleEnv } from "./prices.ts";
 export class PaddleError extends Error {
   status: number;
   code: string | undefined;
-  constructor(message: string, status: number, code: string | undefined) {
+  // Which fields Paddle refused, and why ("tax_identifier", "invalid format").
+  fields: { field: string; message: string }[];
+  constructor(message: string, status: number, code: string | undefined, fields: { field: string; message: string }[] = []) {
     super(message);
     this.status = status;
     this.code = code;
+    this.fields = fields;
   }
 }
 
@@ -24,9 +27,12 @@ export async function paddle<T>(method: "GET" | "POST" | "PATCH", path: string, 
     body: body === undefined ? undefined : JSON.stringify(body),
     cache: "no-store",
   });
-  const json = (await res.json().catch(() => null)) as { data?: T; error?: { code?: string; detail?: string } } | null;
+  const json = (await res.json().catch(() => null)) as {
+    data?: T;
+    error?: { code?: string; detail?: string; errors?: { field: string; message: string }[] };
+  } | null;
   if (!res.ok || !json?.data) {
-    throw new PaddleError(json?.error?.detail ?? `Paddle answered ${res.status}`, res.status, json?.error?.code);
+    throw new PaddleError(json?.error?.detail ?? `Paddle answered ${res.status}`, res.status, json?.error?.code, json?.error?.errors);
   }
   return json.data;
 }

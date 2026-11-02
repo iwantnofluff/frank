@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 
-// Settings → Your Plan (phase38): the agency's pending request to change
+// Settings → Billing → Plans (phase38): the agency's pending request to change
 // plan, if any, and making one (/api/plan-request, which also tells Frank).
 export interface PlanRequestRow {
   id: string;

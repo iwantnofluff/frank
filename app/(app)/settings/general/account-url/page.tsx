@@ -97,7 +97,7 @@ export default function AccountUrlPage() {
       </div>
       {!planAllows ? (
         <p className="sub">
-          Choosing your own address comes with the Agency plan. <Link href="/settings/plan/plans">See the plans</Link>
+          Choosing your own address comes with the Agency plan. <Link href="/settings/billing/plans">See the plans</Link>
         </p>
       ) : (
         !canChange && <p className="sub">Only an Owner or the Primary Owner can change the address.</p>

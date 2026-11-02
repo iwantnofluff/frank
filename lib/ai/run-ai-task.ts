@@ -62,7 +62,7 @@ export async function runAiTask(
     return {
       ok: false,
       status: 403,
-      error: "Your workspace's free trial has ended, so Frank is read-only. Choose a plan in Settings → Your Plan to carry on.",
+      error: "Your workspace's free trial has ended, so Frank is read-only. Choose a plan in Settings → Billing → Plans to carry on.",
     };
   }
 

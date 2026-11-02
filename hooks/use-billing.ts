@@ -95,20 +95,97 @@ export function useUndoPlanChange(agencyId: string | undefined) {
   });
 }
 
-// Paddle's customer portal, in a new tab. The tab is opened by the caller
-// on the click itself (a tab opened after waiting for the link is blocked
-// as a pop-up), and pointed at the link once it arrives.
-export function useOpenBillingPortal(agencyId: string | undefined) {
+// The workspace's invoices (decided directly, 2 Nov 2026), from Paddle,
+// newest first. `total` is in the currency's minor units, as Paddle gives it.
+export interface Invoice {
+  id: string;
+  number: string;
+  billedAt: string | null;
+  total: string;
+  currency: string;
+  status: "paid" | "due" | "overdue";
+}
+
+export function useInvoices(agencyId: string | undefined) {
+  return useQuery({
+    queryKey: ["invoices", agencyId],
+    queryFn: async (): Promise<Invoice[]> => {
+      const res = await fetch(`/api/billing/invoices?agencyId=${encodeURIComponent(agencyId!)}`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Couldn't read your invoices");
+      return data.invoices;
+    },
+    enabled: !!agencyId,
+    retry: false,
+  });
+}
+
+// One invoice's PDF, in a new tab opened on the click (as the portal is,
+// below), pointed at Paddle's short-lived link once it arrives.
+export function useDownloadInvoice(agencyId: string | undefined) {
   return useMutation({
-    mutationFn: async (tab: Window | null) => {
+    mutationFn: async ({ transactionId, tab }: { transactionId: string; tab: Window | null }) => {
       try {
-        const { url } = await post<{ url: string }>("/api/billing/portal", { agencyId }, "Couldn't open billing");
+        const { url } = await post<{ url: string }>("/api/billing/invoices", { agencyId, transactionId }, "Couldn't get the invoice");
         if (tab) tab.location.href = url;
         else window.location.href = url;
       } catch (e) {
         tab?.close();
         throw e;
       }
+    },
+  });
+}
+
+// The card the workspace pays with (decided directly, 2 Nov 2026), from its
+// last successful payment. `live` false: not paying through Paddle.
+export interface PaymentMethod {
+  type: string; // "card", "paypal", "apple_pay", …
+  brand: string | null;
+  last4: string | null;
+  expiry: string | null; // "01/2033"
+  name: string | null;
+}
+export type PaymentMethodState = { live: false } | { live: true; pastDue: boolean; method: PaymentMethod | null };
+
+export function usePaymentMethod(agencyId: string | undefined) {
+  return useQuery({
+    queryKey: ["payment-method", agencyId],
+    queryFn: async (): Promise<PaymentMethodState> => {
+      const res = await fetch(`/api/billing/payment-method?agencyId=${encodeURIComponent(agencyId!)}`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Couldn't read your payment method");
+      return data;
+    },
+    enabled: !!agencyId,
+    retry: false,
+  });
+}
+
+// Changing the card in Paddle's checkout, over the page. Resolves "paid"
+// once Paddle has it; the card shown then follows, read again until it
+// changes (Paddle records the change a moment after).
+export function useChangeCard(agencyId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (before: string | null) => {
+      const { transactionId } = await post<{ transactionId: string }>(
+        "/api/billing/payment-method",
+        { agencyId },
+        "Couldn't start changing the card",
+      );
+      const result = await openCheckout(transactionId, null);
+      if (result !== "paid") return result;
+      for (let i = 0; i < 10; i++) {
+        await queryClient.invalidateQueries({ queryKey: ["payment-method", agencyId], refetchType: "all" });
+        const now = queryClient.getQueryData<PaymentMethodState>(["payment-method", agencyId]);
+        const key = now?.live && now.method ? `${now.method.last4}${now.method.expiry}` : null;
+        if (key !== before) break;
+        await new Promise((r) => setTimeout(r, 1500));
+      }
+      await queryClient.invalidateQueries({ queryKey: ["billing", agencyId], refetchType: "all" });
+      await queryClient.invalidateQueries({ queryKey: ["invoices", agencyId], refetchType: "all" });
+      return result;
     },
   });
 }

@@ -27,7 +27,7 @@ export function ReadOnlyBanner() {
           : `${agency.name}'s free trial has ended, so Frank is read-only: everything is still here, but nothing can be added or changed.`}
       </span>
       {canChoose ? (
-        <Link className="btn sm" href="/settings/plan/plans">
+        <Link className="btn sm" href="/settings/billing/plans">
           Choose a Plan
         </Link>
       ) : (

@@ -29,7 +29,7 @@ export function BrandPartPage({ part, title, description }: { part: BrandPart; t
           </svg>
           <div>
             Your logo and colours show to your team and clients on Growth and up. On your plan, Frank&rsquo;s own look is
-            used; anything already saved here comes back when you move up. <Link href="/settings/plan/plans">See the plans</Link>
+            used; anything already saved here comes back when you move up. <Link href="/settings/billing/plans">See the plans</Link>
           </div>
         </div>
       )}

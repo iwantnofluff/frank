@@ -29,15 +29,15 @@ export function errorMessage(error: unknown, fallback: string): string {
 function friendlyLimit(message: string): string {
   const clients = message.match(/client limit reached \((\d+)\)/);
   if (clients) {
-    return `This workspace's plan allows ${clients[1]} active clients. Archive one, or move to a bigger plan in Settings → Your Plan.`;
+    return `This workspace's plan allows ${clients[1]} active clients. Archive one, or move to a bigger plan in Settings → Billing → Plans.`;
   }
   const members = message.match(/member limit reached \((\d+)\)/);
   if (members) {
-    return `This workspace's plan allows ${members[1]} team members, counting invites not yet accepted. Remove someone, or move to a bigger plan in Settings → Your Plan.`;
+    return `This workspace's plan allows ${members[1]} team members, counting invites not yet accepted. Remove someone, or move to a bigger plan in Settings → Billing → Plans.`;
   }
   // Free's trial over (phase41): nothing changes until a paid plan.
   if (message.includes("agency is read-only")) {
-    return "Your workspace's free trial has ended, so Frank is read-only. Choose a plan in Settings → Your Plan to carry on.";
+    return "Your workspace's free trial has ended, so Frank is read-only. Choose a plan in Settings → Billing → Plans to carry on.";
   }
   const storage = message.match(/storage limit reached \((\d+)\)/);
   if (storage) {

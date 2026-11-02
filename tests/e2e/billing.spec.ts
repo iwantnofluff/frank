@@ -156,7 +156,7 @@ async function seedPaying(frank: Frank, over: Record<string, unknown> = {}) {
 test("an agency on Free chooses a plan by card, in test mode", async ({ page, frank }) => {
   await admin.from("agencies").update({ plan: "free" }).eq("id", frank.agencyId);
   await frank.loginAsStaff(page);
-  await page.goto(`${APP_URL}/settings/plan/plans`);
+  await page.goto(`${APP_URL}/settings/billing/plans`);
   await expect(card(page, "Free").getByRole("button", { name: "Current plan" })).toBeDisabled();
   await expect(card(page, "Growth").getByRole("button", { name: "Choose Growth" })).toBeEnabled();
   await expect(page.getByText("Test mode: card 4242 4242 4242 4242")).toBeVisible();
@@ -170,7 +170,7 @@ test("an agency on Free chooses a plan by card, in test mode", async ({ page, fr
 test("paying through Paddle: renewal, a waiting downgrade, and the billing pages", async ({ page, frank }) => {
   await seedPaying(frank);
   await frank.loginAsStaff(page);
-  await page.goto(`${APP_URL}/settings/plan/plans`);
+  await page.goto(`${APP_URL}/settings/billing/plans`);
   await expect(page.locator(".srow", { hasText: "Renews" })).toContainText("Paid through Paddle, monthly");
   await expect(card(page, "Starter").getByRole("button", { name: "Choose Starter" })).toBeEnabled();
   await expect(card(page, "Free").getByRole("button", { name: "Choose Free" })).toBeEnabled();
@@ -180,11 +180,12 @@ test("paying through Paddle: renewal, a waiting downgrade, and the billing pages
 
   await page.goto(`${APP_URL}/settings/billing/overview`);
   await expect(page.locator(".srow", { hasText: "Next payment" })).toContainText("Charged to the card on file");
-  await expect(page.locator(".srow", { hasText: "Billing details" }).getByRole("button", { name: "Open" })).toBeEnabled();
+  // Billing stays in Frank: no link to Paddle's portal (2 Nov 2026).
+  await expect(page.getByRole("button", { name: "Open" })).toHaveCount(0);
 
   // A downgrade waiting for the end of October.
   await admin.from("agency_billing").update({ scheduled_plan: "starter" }).eq("agency_id", frank.agencyId);
-  await page.goto(`${APP_URL}/settings/plan/plans`);
+  await page.goto(`${APP_URL}/settings/billing/plans`);
   await expect(page.locator(".note")).toContainText("E2E Test Agency moves to Starter on");
   await expect(page.locator(".note").getByRole("button", { name: "Keep Growth" })).toBeVisible();
   await expect(card(page, "Agency").getByRole("button", { name: "Choose Agency" })).toBeDisabled();
@@ -197,10 +198,27 @@ test("a User can't see billing, and the billing routes refuse them", async ({ pa
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/settings/billing/overview`);
   await expect(page.getByText("Only Admins and Owners can see billing.")).toBeVisible();
-  for (const path of ["checkout", "change", "undo", "portal"]) {
+  for (const path of ["checkout", "change", "undo", "invoice-details", "invoices", "payment-method"]) {
     const res = await page.request.post(`${APP_URL}/api/billing/${path}`, {
       data: { agencyId: frank.agencyId, plan: "agency", interval: "monthly" },
     });
     expect(res.status(), path).toBe(403);
   }
+  // Invoice Settings and Invoices: nor can they read the details or the list.
+  expect((await page.request.get(`${APP_URL}/api/billing/invoice-details?agencyId=${frank.agencyId}`)).status()).toBe(403);
+  expect((await page.request.get(`${APP_URL}/api/billing/invoices?agencyId=${frank.agencyId}`)).status()).toBe(403);
+  expect((await page.request.get(`${APP_URL}/api/billing/payment-method?agencyId=${frank.agencyId}`)).status()).toBe(403);
+  await page.goto(`${APP_URL}/settings/billing/invoice-settings`);
+  await expect(page.getByText("Only Admins and Owners can see billing.")).toBeVisible();
+  await expect(page.locator(".invform")).toHaveCount(0);
+});
+
+// Invoice Settings reads and saves Paddle's own records, so the saving is
+// checked by hand against Paddle's sandbox, not here (never a live call in
+// a permanent test).
+test("Invoice Settings on Free says there's nothing to set up", async ({ page, frank }) => {
+  await frank.loginAsStaff(page);
+  await page.goto(`${APP_URL}/settings/billing/invoice-settings`);
+  await expect(page.getByText(/paying through Paddle, so there are no invoices to set up/)).toBeVisible();
+  await expect(page.locator(".setnav-item", { hasText: "Invoice Settings" }).locator(".setnav-soon")).toHaveCount(0);
 });
