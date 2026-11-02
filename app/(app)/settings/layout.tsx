@@ -5,19 +5,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useIsStaff } from "@/hooks/use-is-staff";
 import { SettingsNav } from "@/components/settings/SettingsNav";
 import { SettingsMain } from "@/components/settings/SettingsMain";
-import { useMyAgency } from "@/hooks/use-my-agency";
-import { useMyMembership } from "@/hooks/use-my-membership";
-import { FRANK_HOME_SUBDOMAIN, SETTINGS_SECTIONS, frankAdminSection } from "@/lib/settings-nav";
-import { ROOT_DOMAIN } from "@/lib/tenant";
-
-// Frank Admin's sign-in, beside this address: admin.beingfrank.app on
-// live, admin.frank.localhost locally (from localhost too).
-function adminSignInUrl() {
-  const { protocol, hostname, port } = window.location;
-  const local = hostname === "localhost" || hostname === "frank.localhost" || hostname.endsWith(".frank.localhost");
-  const root = local ? "frank.localhost" : ROOT_DOMAIN;
-  return `${protocol}//admin.${root}${port ? `:${port}` : ""}/login`;
-}
 
 // Settings is a left menu of sections and pages (lib/settings-nav.ts,
 // SettingsNav) beside the page you're on — which owns its own .pad and
@@ -41,9 +28,6 @@ export default function SettingsLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { isStaff, isPending } = useIsStaff();
-  const { data: agency } = useMyAgency();
-  const { data: membership } = useMyMembership(agency?.agencyId);
-  const showAdmin = agency?.subdomain === FRANK_HOME_SUBDOMAIN && membership?.role === "primary_owner";
 
   useEffect(() => {
     if (!isPending && !isStaff) router.replace("/dashboard");
@@ -53,10 +37,7 @@ export default function SettingsLayout({
 
   return (
     <div className="setwrap">
-      <SettingsNav
-        pathname={pathname}
-        sections={showAdmin ? [...SETTINGS_SECTIONS, frankAdminSection(adminSignInUrl())] : SETTINGS_SECTIONS}
-      />
+      <SettingsNav pathname={pathname} />
       <div className="review-sep" aria-hidden="true" />
       <SettingsMain>{children}</SettingsMain>
     </div>

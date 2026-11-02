@@ -11,6 +11,7 @@ import { useMyProfile } from "@/hooks/use-my-profile";
 import { useAvatarUrls } from "@/hooks/use-avatar-urls";
 import { forgetSignedUrls } from "@/hooks/use-avatar-urls";
 import { useMyWorkspaces } from "@/hooks/use-my-workspaces";
+import { useFrankAdminLink } from "@/hooks/use-frank-admin-link";
 
 // Your picture at the top right of the header (direct instruction, moved
 // from the foot of the rail): My Profile, Settings for the agency's team
@@ -37,6 +38,7 @@ export function AccountMenu({
   const pop = usePresence(anchor);
   const [signingOut, setSigningOut] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const adminLink = useFrankAdminLink();
   const { data: profile, isPending: profilePending } = useMyProfile();
   const { data: photos } = useAvatarUrls([profile?.avatar_asset_id]);
   const photoUrl = profile?.avatar_asset_id ? photos?.[profile.avatar_asset_id] : undefined;
@@ -138,6 +140,11 @@ export function AccountMenu({
               <Link href="/settings" role="menuitem" className="cpr" onClick={() => setAnchor(null)}>
                 <span className="cn">Workspace Settings</span>
               </Link>
+            )}
+            {adminLink && (
+              <a href={adminLink} role="menuitem" className="cpr" onClick={() => setAnchor(null)}>
+                <span className="cn">Frank Admin</span>
+              </a>
             )}
             <div className="menusep" role="separator" />
             <button
