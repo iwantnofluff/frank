@@ -82,7 +82,7 @@ export async function POST(request: Request) {
     title: f.title,
   }));
 
-  const result = await runAiTask(supabase, agencyId, user.id, prompt, attachments);
+  const result = await runAiTask(supabase, agencyId, user.id, "check", prompt, attachments);
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }

@@ -97,7 +97,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ overview: existing.overview });
   }
 
-  const result = await runAiTask(supabase, client.agency_id, user.id, overviewPrompt(client.name, what, source));
+  const result = await runAiTask(supabase, client.agency_id, user.id, "strategy_overview", overviewPrompt(client.name, what, source));
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }

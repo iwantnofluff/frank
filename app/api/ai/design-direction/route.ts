@@ -365,7 +365,7 @@ export async function POST(request: Request) {
       const send = (event: Record<string, unknown>) => controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
       try {
         send({ type: "refs", refs });
-        const result = await runAiTask(supabase, agencyId, user.id, prompt, [...referenceImages, ...knowledgeFiles], (text) =>
+        const result = await runAiTask(supabase, agencyId, user.id, "design_direction", prompt, [...referenceImages, ...knowledgeFiles], (text) =>
           send({ type: "text", text }),
         );
         if (!result.ok || !result.text) {

@@ -109,7 +109,7 @@ export async function POST(request: Request) {
   let found: ProofreadSuggestion[] = [];
   if (fields.length && forAi.length) {
     const prompt = buildProofreadPrompt({ fields, clientName: project?.clients?.name ?? null, toneOfVoice: tone, rules: forAi, apart: checkedApart(rules) });
-    const result = await runAiTask(supabase, agencyId, user.id, prompt);
+    const result = await runAiTask(supabase, agencyId, user.id, "proofread", prompt);
     if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
     found = parseProofread(result.text ?? "", byKey, forAi);
   }

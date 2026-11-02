@@ -3,6 +3,7 @@ import { PLANS, isReadOnly, planById } from "@/lib/plans";
 import { planRank } from "@/lib/billing/rules";
 import { all, lastSignIns } from "@/lib/admin/people";
 import { listSuppressions } from "@/lib/email/resend-api";
+import { byTask, lastMonths, monthKey, sumAll, sumBy, type AiFigures, type UsageSummaryRow } from "@/lib/admin/ai-usage";
 
 // The platform admin's overview (decided directly, 4 Oct 2026): how Frank
 // is doing, and which agencies need a look. Read with the service role,
@@ -17,7 +18,14 @@ export interface AgencyRef {
   id: string;
   name: string;
   subdomain: string | null;
+  // The Primary Owner's email, so two workspaces with one name can be told
+  // apart (decided directly, 2 Nov 2026).
+  ownerEmail: string | null;
 }
+
+// What Supabase's Pro plan includes in file storage (lib: the Guide).
+export const STORAGE_INCLUDED_BYTES = 100 * 1024 ** 3;
+const TREND_MONTHS = 6;
 
 export interface AdminOverview {
   revenue: {
@@ -28,7 +36,19 @@ export interface AdminOverview {
     // On a paid plan set by hand, not through Paddle: not in mrr.
     handSet: (AgencyRef & { plan: string })[];
   };
-  counts: { agencies: number; paying: number; onTrial: number; readOnly: number; paused: number };
+  // Internal workspaces (phase130) are left out of every figure but these.
+  counts: { agencies: number; paying: number; onTrial: number; readOnly: number; paused: number; internal: number };
+  // This month's AI, estimated from recorded tokens (phase128). Every
+  // workspace, internal ones included: it's the real bill.
+  ai: {
+    month: AiFigures;
+    internalDollars: number;
+    byTask: (AiFigures & { task: string; label: string })[];
+  };
+  // Everything stored, against what the Supabase plan includes.
+  storage: { bytes: number; files: number; includedBytes: number };
+  // The last six months, oldest first. AI cost only from 1.64.
+  trends: { month: string; signups: number; upgrades: number; aiRequests: number; aiDollars: number }[];
   signups: { week: number; month: number };
   changes: {
     // When the record of plan changes began (phase50); null before any.
@@ -61,13 +81,14 @@ export async function loadOverview(admin: SupabaseClient, now = Date.now()): Pro
   monthStart.setUTCHours(0, 0, 0, 0);
   const quietSince = new Date(now - QUIET_DAYS * DAY).toISOString();
 
-  const [agencies, billing, members, clients, ai, posts, comments, changes, firstChange, signIns, requests] =
+  const trendStart = new Date(Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() - (TREND_MONTHS - 1), 1));
+  const [allAgencies, billing, members, clients, aiRows, posts, comments, changes, firstChange, signIns, requests, stored, buckets] =
     await Promise.all([
       all<Row>((f, t) =>
         admin
           .from("agencies")
           .select(
-            "id, name, subdomain, plan, trial_ends_at, created_at, suspended_at, seat_limit, client_limit, storage_limit_bytes, storage_bytes_used, ai_monthly_request_cap",
+            "id, name, subdomain, plan, trial_ends_at, created_at, suspended_at, seat_limit, client_limit, storage_limit_bytes, ai_monthly_request_cap, is_internal",
           )
           .is("archived_at", null)
           .range(f, t),
@@ -79,12 +100,13 @@ export async function loadOverview(admin: SupabaseClient, now = Date.now()): Pro
           .range(f, t),
       ),
       all<Row>((f, t) =>
-        admin.from("memberships").select("agency_id, user_id, client_id").is("removed_at", null).range(f, t),
+        admin.from("memberships").select("agency_id, user_id, client_id, role").is("removed_at", null).range(f, t),
       ),
       all<Row>((f, t) => admin.from("clients").select("agency_id").is("archived_at", null).range(f, t)),
-      all<Row>((f, t) =>
-        admin.from("ai_usage_events").select("agency_id").gte("created_at", monthStart.toISOString()).range(f, t),
-      ),
+      admin.rpc("admin_ai_usage_by_month", { p_since: trendStart.toISOString() }).then((r) => {
+        if (r.error) throw new Error(r.error.message);
+        return (r.data ?? []) as UsageSummaryRow[];
+      }),
       all<Row>((f, t) =>
         admin.from("creatives").select("agency_id, created_at").gte("created_at", quietSince).range(f, t),
       ),
@@ -95,7 +117,7 @@ export async function loadOverview(admin: SupabaseClient, now = Date.now()): Pro
         admin
           .from("plan_changes")
           .select("agency_id, from_plan, to_plan, changed_at")
-          .gte("changed_at", monthStart.toISOString())
+          .gte("changed_at", trendStart.toISOString())
           .order("changed_at", { ascending: false })
           .range(f, t),
       ),
@@ -109,23 +131,38 @@ export async function loadOverview(admin: SupabaseClient, now = Date.now()): Pro
           .order("created_at")
           .range(f, t),
       ),
+      admin.rpc("admin_storage_by_agency").then((r) => {
+        if (r.error) throw new Error(r.error.message);
+        return new Map(((r.data ?? []) as { agency_id: string; bytes: number | string }[]).map((x) => [x.agency_id, Number(x.bytes)]));
+      }),
+      admin.rpc("admin_storage_by_bucket").then((r) => {
+        if (r.error) throw new Error(r.error.message);
+        return (r.data ?? []) as { bucket: string; bytes: number | string; files: number }[];
+      }),
     ]);
+  const internalIds = new Set(allAgencies.filter((a) => a.is_internal).map((a) => a.id as string));
+  const agencies = allAgencies.filter((a) => !a.is_internal);
+  const thisMonth = monthKey(monthStart);
+  const aiThisMonth = aiRows.filter((r) => r.month === thisMonth);
+  const aiCountOf = sumBy(aiThisMonth, (r) => r.agency_id);
 
   let emailError: string | null = null;
   const suppressed = await listSuppressions().catch((e: Error) => {
     emailError = e.message;
     return [];
   });
-  const userEmails = suppressed.length
-    ? await all<Row>((f, t) => admin.from("users").select("id, email").range(f, t))
-    : [];
+  const userEmails = await all<Row>((f, t) => admin.from("users").select("id, email").range(f, t));
   const blocked = new Set(suppressed.map((s) => s.email.toLowerCase()));
   const emailOf = new Map(userEmails.map((u) => [u.id as string, (u.email as string).toLowerCase()]));
 
+  const ownerOf = new Map(
+    members.filter((m) => m.role === "primary_owner").map((m) => [m.agency_id as string, m.user_id as string]),
+  );
   const ref = (a: Row): AgencyRef => ({
     id: a.id as string,
     name: a.name as string,
     subdomain: a.subdomain as string | null,
+    ownerEmail: emailOf.get(ownerOf.get(a.id as string) ?? "") ?? null,
   });
   const byId = new Map(agencies.map((a) => [a.id as string, a]));
   const billingOf = new Map(billing.map((b) => [b.agency_id as string, b]));
@@ -211,13 +248,8 @@ export async function loadOverview(admin: SupabaseClient, now = Date.now()): Pro
     };
     near("Team", members.filter((m) => m.agency_id === id && !m.client_id).length, a.seat_limit);
     near("Clients", count(clients, id), a.client_limit);
-    near(
-      "Storage",
-      (a.storage_bytes_used as number) ?? 0,
-      a.storage_limit_bytes,
-      (n) => `${(n / 1024 ** 3).toFixed(1)} GB`,
-    );
-    near("AI requests", count(ai, id), a.ai_monthly_request_cap);
+    near("Storage", stored.get(id) ?? 0, a.storage_limit_bytes, (n) => `${(n / 1024 ** 3).toFixed(1)} GB`);
+    near("AI requests", aiCountOf.get(id)?.requests ?? 0, a.ai_monthly_request_cap);
     if (limits.length) attention.nearLimits.push({ ...ref(a), limits });
 
     const bounced = [
@@ -241,7 +273,7 @@ export async function loadOverview(admin: SupabaseClient, now = Date.now()): Pro
 
   const upgrades: AdminOverview["changes"]["upgrades"] = [];
   const downgrades: AdminOverview["changes"]["downgrades"] = [];
-  for (const c of changes) {
+  for (const c of changes.filter((c) => (c.changed_at as string) >= monthStart.toISOString())) {
     const a = byId.get(c.agency_id as string);
     if (!a) continue;
     const item = {
@@ -255,6 +287,25 @@ export async function loadOverview(admin: SupabaseClient, now = Date.now()): Pro
 
   const created = (since: number) => agencies.filter((a) => new Date(a.created_at as string).getTime() >= since).length;
 
+  const aiByMonth = sumBy(
+    aiRows.filter((r) => !internalIds.has(r.agency_id)),
+    (r) => r.month,
+  );
+  const trends = lastMonths(TREND_MONTHS, now).map((month) => ({
+    month,
+    signups: agencies.filter((a) => monthKey(new Date(a.created_at as string)) === month).length,
+    // Into a paid plan from Free: a workspace starting to pay.
+    upgrades: changes.filter(
+      (c) =>
+        byId.has(c.agency_id as string) &&
+        c.from_plan === "free" &&
+        c.to_plan !== "free" &&
+        monthKey(new Date(c.changed_at as string)) === month,
+    ).length,
+    aiRequests: aiByMonth.get(month)?.requests ?? 0,
+    aiDollars: aiByMonth.get(month)?.dollars ?? 0,
+  }));
+
   return {
     revenue: { mrr: planRows.reduce((n, r) => n + r.mrr, 0), byPlan: planRows, handSet },
     counts: {
@@ -263,7 +314,19 @@ export async function loadOverview(admin: SupabaseClient, now = Date.now()): Pro
       onTrial,
       readOnly,
       paused: agencies.filter((a) => a.suspended_at).length,
+      internal: internalIds.size,
     },
+    ai: {
+      month: sumAll(aiThisMonth),
+      internalDollars: sumAll(aiThisMonth.filter((r) => internalIds.has(r.agency_id))).dollars,
+      byTask: byTask(aiThisMonth),
+    },
+    storage: {
+      bytes: buckets.reduce((n, b) => n + Number(b.bytes), 0),
+      files: buckets.reduce((n, b) => n + b.files, 0),
+      includedBytes: STORAGE_INCLUDED_BYTES,
+    },
+    trends,
     signups: { week: created(now - 7 * DAY), month: created(monthStart.getTime()) },
     changes: {
       since: (firstChange.data?.changed_at as string | undefined) ?? null,

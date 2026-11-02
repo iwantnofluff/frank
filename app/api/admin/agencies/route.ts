@@ -6,6 +6,7 @@ import { inviteEmail } from "@/lib/email/invite-email";
 import { addressError } from "@/lib/address";
 import { sendEmail } from "@/lib/email/send-email";
 import { agencyOrigin } from "@/lib/admin/agency-origin";
+import { byTask, monthKey, sumBy, type UsageSummaryRow } from "@/lib/admin/ai-usage";
 
 const count = (rows: { agency_id: string }[] | null, id: string) => (rows ?? []).filter((r) => r.agency_id === id).length;
 
@@ -19,15 +20,16 @@ export async function GET() {
   monthStart.setUTCDate(1);
   monthStart.setUTCHours(0, 0, 0, 0);
 
-  const [agencies, staff, clients, posts, ai, owners, requests, billing] = await Promise.all([
+  const [agencies, staff, clients, posts, ai, owners, requests, billing, storage] = await Promise.all([
     admin
       .from("agencies")
-      .select("id, name, subdomain, plan, seat_limit, client_limit, storage_limit_bytes, trial_ends_at, ai_monthly_request_cap, extra_seats, extra_clients, extra_ai_requests, extra_storage_bytes, created_at, suspended_at, archived_at")
+      .select("id, name, subdomain, plan, seat_limit, client_limit, storage_limit_bytes, trial_ends_at, ai_monthly_request_cap, extra_seats, extra_clients, extra_ai_requests, extra_storage_bytes, created_at, suspended_at, archived_at, is_internal")
       .order("created_at"),
     admin.from("memberships").select("agency_id").is("client_id", null).is("removed_at", null),
     admin.from("clients").select("agency_id").is("archived_at", null),
     admin.from("creatives").select("agency_id").is("archived_at", null),
-    admin.from("ai_usage_events").select("agency_id").gte("created_at", monthStart.toISOString()),
+    // Summed in the database (phase131), with each feature's share.
+    admin.rpc("admin_ai_usage_by_month", { p_since: monthStart.toISOString() }),
     // Not embedded: memberships point at users twice (the member, and who
     // invited them), which leaves an embed ambiguous — it came back empty.
     admin.from("memberships").select("agency_id, user_id").eq("role", "primary_owner").is("removed_at", null),
@@ -37,6 +39,7 @@ export async function GET() {
       .is("handled_at", null)
       .order("created_at", { ascending: false }),
     admin.from("agency_billing").select("agency_id, paddle_subscription_id, status"),
+    admin.rpc("admin_storage_by_agency"),
   ]);
   const ownerIds = [...new Set((owners.data ?? []).map((o) => o.user_id as string))];
   const { data: ownerUsers } = ownerIds.length
@@ -44,14 +47,19 @@ export async function GET() {
     : { data: [] as { id: string; name: string; email: string }[] };
   if (agencies.error) return NextResponse.json({ error: agencies.error.message }, { status: 500 });
 
+  if (ai.error) return NextResponse.json({ error: ai.error.message }, { status: 500 });
+  if (storage.error) return NextResponse.json({ error: storage.error.message }, { status: 500 });
+
   // What each agency has stored, as its storage limit counts it (phase41):
   // the files themselves, not what the assets table says about them.
   const live = (agencies.data ?? []).filter((a) => !a.archived_at);
-  const stored = await Promise.all(
-    live.map((a) => admin.rpc("agency_storage_used", { check_agency_id: a.id }).then((r) => Number(r.data ?? 0))),
+  const stored = new Map(
+    ((storage.data ?? []) as { agency_id: string; bytes: number | string }[]).map((r) => [r.agency_id, Number(r.bytes)]),
   );
+  const aiRows = ((ai.data ?? []) as UsageSummaryRow[]).filter((r) => r.month === monthKey(monthStart));
+  const aiOf = sumBy(aiRows, (r) => r.agency_id);
   const rows = live
-    .map((a, i) => {
+    .map((a) => {
       const ownerId = (owners.data ?? []).find((o) => o.agency_id === a.id)?.user_id;
       const owner = (ownerUsers ?? []).find((u) => u.id === ownerId) ?? null;
       return {
@@ -60,11 +68,14 @@ export async function GET() {
         members: count(staff.data, a.id),
         clients: count(clients.data, a.id),
         posts: count(posts.data, a.id),
-        storage_bytes: stored[i],
+        storage_bytes: stored.get(a.id) ?? 0,
         pays_by_card: (billing.data ?? []).some(
           (b) => b.agency_id === a.id && !!b.paddle_subscription_id && b.status !== "canceled",
         ),
-        ai_this_month: count(ai.data, a.id),
+        ai_this_month: aiOf.get(a.id)?.requests ?? 0,
+        ai_cost_this_month: aiOf.get(a.id)?.dollars ?? 0,
+        ai_unpriced_this_month: aiOf.get(a.id)?.unpriced ?? 0,
+        ai_by_task: byTask(aiRows.filter((r) => r.agency_id === a.id)),
         pending_request: (() => {
           const r = (requests.data ?? []).find((x) => x.agency_id === a.id);
           return r ? { id: r.id, plan: r.requested_plan, interval: r.billing_interval, created_at: r.created_at } : null;

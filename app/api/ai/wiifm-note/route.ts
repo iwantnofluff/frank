@@ -92,7 +92,7 @@ export async function POST(request: Request) {
   // bullets (direct instruction; lib/ai/wiifm-prompt.ts).
   const prompt = buildWiifmPrompt((creative.concept as string | null) ?? null, copyText);
 
-  const result = await runAiTask(supabase, agencyId, user.id, prompt);
+  const result = await runAiTask(supabase, agencyId, user.id, "wiifm_note", prompt);
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }

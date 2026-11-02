@@ -212,7 +212,7 @@ export async function POST(request: Request) {
     currentFields,
   );
 
-  const result = await runAiTask(supabase, agencyId, user.id, prompt, attachments);
+  const result = await runAiTask(supabase, agencyId, user.id, "copy_chat", prompt, attachments);
   if (!result.ok || !result.text) return fail(result.error ?? "Frank didn't answer", result.status || 502);
   const reply = parseCopyChatReply(result.text, covered);
 

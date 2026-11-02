@@ -91,7 +91,7 @@ export async function POST(request: Request) {
     team,
     current,
   });
-  const result = await runAiTask(supabase, agencyId, user.id, prompt);
+  const result = await runAiTask(supabase, agencyId, user.id, "voice_post", prompt);
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
 
   const fields = parseVoicePost(result.text ?? "", {

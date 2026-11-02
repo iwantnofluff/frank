@@ -115,7 +115,7 @@ export async function POST(request: Request) {
   if (!attachments.length) {
     return NextResponse.json({ findings: creativeCheckFindings(checkSlides, "", noun) });
   }
-  const result = await runAiTask(supabase, post.agency_id, user.id, buildCreativeCheckPrompt(checkSlides, noun), attachments);
+  const result = await runAiTask(supabase, post.agency_id, user.id, "check_creative", buildCreativeCheckPrompt(checkSlides, noun), attachments);
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
   return NextResponse.json({ findings: creativeCheckFindings(checkSlides, result.text ?? "", noun) });
 }

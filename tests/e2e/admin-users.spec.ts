@@ -94,6 +94,7 @@ test("the admin finds a person, sees their role, clients, projects and pending i
     // The agency's People: most senior first, Clients last.
     await here.getByRole("link", { name: "E2E Test Agency" }).click();
     await page.waitForURL(`${ADMIN}/admin/agencies/${frank.agencyId}`, { timeout: 20_000 });
+    await page.getByRole("tab", { name: "People" }).click();
     const people = page.locator(".adminpeople .admintbl-row");
     await expect(people).toHaveCount(3);
     await expect(people.nth(0)).toContainText("E2E Staff");

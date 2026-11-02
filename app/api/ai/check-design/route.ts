@@ -163,7 +163,7 @@ export async function POST(request: Request) {
     .map((n) => `[${SECTION_LABELS[n.section] ?? n.section}] ${n.body!.trim()}`);
 
   const prompt = buildDesignCheckPrompt({ noun, slides: shown, earlier, hasLogo, brandNotes });
-  const result = await runAiTask(supabase, post.agency_id, user.id, prompt, attachments);
+  const result = await runAiTask(supabase, post.agency_id, user.id, "check_design", prompt, attachments);
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
   return NextResponse.json({ findings: designCheckFindings(result.text ?? ""), compared: earlier });
 }

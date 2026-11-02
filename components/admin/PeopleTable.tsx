@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { AdminMembership, AdminPerson, PersonStatus } from "@/lib/admin/people";
+import { day } from "@/lib/admin/format";
 
 const STATUS_TONE: Record<PersonStatus, string> = { Active: "green", Invited: "grey", Deactivated: "rose" };
 
 export function formatWhen(value: string | null, empty = "Never") {
-  if (!value) return empty;
-  return new Date(value).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  return day(value, empty);
 }
 
 export function StatusTag({ status }: { status: PersonStatus }) {

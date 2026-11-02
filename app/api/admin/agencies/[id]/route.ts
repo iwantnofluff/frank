@@ -18,7 +18,14 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
   const { admin, user } = auth;
   const { id } = await ctx.params;
 
-  let body: Partial<Record<(typeof EXTRAS)[number], number>> & { plan?: string; suspended?: boolean; reason?: string };
+  let body: Partial<Record<(typeof EXTRAS)[number], number>> & {
+    plan?: string;
+    suspended?: boolean;
+    reason?: string;
+    // Frank's own or a test workspace (phase130): left out of the
+    // admin's figures. Not logged: it's the admin's own bookkeeping.
+    is_internal?: boolean;
+  };
   try {
     body = await request.json();
   } catch {
@@ -36,6 +43,10 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
     const n = Number(body[key]);
     if (!Number.isInteger(n) || n < 0) return NextResponse.json({ error: "Extras are whole numbers, 0 or more." }, { status: 400 });
     update[key] = n;
+  }
+  if (body.is_internal !== undefined) {
+    if (typeof body.is_internal !== "boolean") return NextResponse.json({ error: "Bad request" }, { status: 400 });
+    update.is_internal = body.is_internal;
   }
   // Pausing and unpausing are logged for the agency to see (phase51).
   const reason = reasonFrom(body);

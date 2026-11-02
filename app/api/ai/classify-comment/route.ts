@@ -81,7 +81,7 @@ export async function POST(request: Request) {
   // a guest-authored comment, and ai_usage_events.user_id is not null. A
   // deliberate simplification: this agency's own AI usage, billed to
   // whoever owns the creative the comment landed on.
-  const result = await runAiTask(supabase, comment.agency_id, comment.creatives.created_by, prompt);
+  const result = await runAiTask(supabase, comment.agency_id, comment.creatives.created_by, "classify_comment", prompt);
   if (!result.ok) {
     return NextResponse.json({ skipped: true, reason: "ai_task_failed", error: result.error });
   }

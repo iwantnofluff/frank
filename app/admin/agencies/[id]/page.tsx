@@ -11,8 +11,19 @@ import { useAdminUsers } from "@/hooks/use-admin-users";
 import { roleRank } from "@/lib/roles";
 import { errorMessage } from "@/lib/errors";
 import { ROOT_DOMAIN } from "@/lib/tenant";
+import { day, dayTime, money, num } from "@/lib/admin/format";
 
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+const plural = (n: number, word: string) => `${num(n)} ${word}${n === 1 ? "" : "s"}`;
+
+// The page's tabs (decided directly, 2 Nov 2026): what's done to the
+// workspace first, the rest a click away.
+type Tab = "overview" | "people" | "billing" | "log";
+const TABS: { key: Tab; label: string }[] = [
+  { key: "overview", label: "Overview" },
+  { key: "people", label: "People" },
+  { key: "billing", label: "Billing and Email" },
+  { key: "log", label: "Support Log" },
+];
 
 // One agency: its limits, and pausing it.
 export default function AdminAgencyPage({ params }: { params: Promise<{ id: string }> }) {
@@ -41,6 +52,8 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
   const extend = useAdminAction<{ trialEndsAt: string }>();
   const tier = planById(agency.plan);
   const whole = (v: string) => (v.trim() === "" ? 0 : Number(v));
+  const [tab, setTab] = useState<Tab>("overview");
+  const internal = useUpdateAgency(agency.id);
 
   return (
     <div className="adminform">
@@ -59,14 +72,71 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
       <h1 className="h1">{agency.name}</h1>
       <p className="sub">
         {agency.subdomain ? `${agency.subdomain}.${ROOT_DOMAIN}` : "No address"} ·{" "}
-        {agency.suspended_at ? "Paused" : "Active"} · joined {new Date(agency.created_at).toLocaleDateString()}
+        {agency.suspended_at ? `Paused ${day(agency.suspended_at)}` : "Active"} · joined {day(agency.created_at)}
+        {agency.owner ? ` · ${agency.owner.email}` : ""}
+        {agency.is_internal ? " · Internal" : ""}
       </p>
+
+      <div className="adminactions">
+        {agency.plan === "free" && (
+          <button
+            type="button"
+            className="btn sm"
+            onClick={() => {
+              extend.reset();
+              setExtending(true);
+            }}
+          >
+            Extend Trial
+          </button>
+        )}
+        <button
+          type="button"
+          className="btn sm"
+          disabled={internal.isPending}
+          title="Internal workspaces are left out of the Overview's figures."
+          onClick={() => internal.mutate({ is_internal: !agency.is_internal })}
+        >
+          {agency.is_internal ? "Count as a Customer" : "Mark as Internal"}
+        </button>
+        {agency.suspended_at ? (
+          <button type="button" className="btn sm" onClick={() => setPausing("unpause")}>
+            Reactivate
+          </button>
+        ) : (
+          <button type="button" className="btn sm danger" onClick={() => setPausing("pause")}>
+            Pause Workspace
+          </button>
+        )}
+      </div>
+      {internal.error && <p className="autherr">{errorMessage(internal.error, "Couldn't change that")}</p>}
+
+      <div className="mtabs admintabs" role="tablist" aria-label="Workspace sections">
+        {TABS.map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            className="mtab"
+            role="tab"
+            aria-selected={tab === t.key}
+            onClick={() => setTab(t.key)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "people" && <AgencyPeople agencyId={agency.id} />}
+      {tab === "billing" && <AgencyHealthSections agencyId={agency.id} />}
+      {tab === "log" && <SupportLog agencyId={agency.id} />}
+      {tab === "overview" && (
+        <>
 
       {agency.pending_request && (
         <div className="panel" style={{ marginTop: 16 }}>
           <div className="panel-h">
             <b>Plan request</b>
-            <span className="sync">{new Date(agency.pending_request.created_at).toLocaleDateString()}</span>
+            <span className="sync">{day(agency.pending_request.created_at)}</span>
           </div>
           <div className="srow">
             <span className="sl">
@@ -114,50 +184,11 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
           : agency.plan === "free"
             ? isReadOnly(agency.plan, agency.trial_ends_at)
               ? ", trial ended: read-only until it chooses a plan."
-              : `, trial ends ${new Date(agency.trial_ends_at!).toLocaleDateString()}.`
+              : `, trial ends ${day(agency.trial_ends_at)}.`
             : "."}{" "}
         The plan is the workspace&rsquo;s to choose, in its Settings → Your Plan. Add to its limits with the override
         below.
       </p>
-      {agency.plan === "free" && (
-        <div className="adminactions">
-          <button
-            type="button"
-            className="btn sm"
-            onClick={() => {
-              extend.reset();
-              setExtending(true);
-            }}
-          >
-            Extend Trial
-          </button>
-        </div>
-      )}
-      {extending && (
-        <AdminActionModal
-          title="Extend the Free Trial"
-          message={
-            isReadOnly(agency.plan, agency.trial_ends_at)
-              ? `${agency.name}'s trial is over, so it's read-only. Extending it counts from today and lifts that.`
-              : `${agency.name}'s trial ends ${new Date(agency.trial_ends_at!).toLocaleDateString()}. Extending it adds to that.`
-          }
-          confirmLabel="Extend Trial"
-          isPending={extend.isPending}
-          error={extend.error}
-          onConfirm={(reason) =>
-            extend.mutate(
-              { url: `/api/admin/agencies/${agency.id}/extend-trial`, body: { days: Number(days), reason } },
-              { onSuccess: () => setExtending(false) },
-            )
-          }
-          onClose={() => setExtending(false)}
-        >
-          <div className="field">
-            <label htmlFor="adDays">Days to add</label>
-            <input id="adDays" type="number" min={1} max={90} value={days} onChange={(e) => setDays(e.target.value)} />
-          </div>
-        </AdminActionModal>
-      )}
 
       <div className="msection-h">Limits</div>
       <p className="msection-d">
@@ -167,14 +198,14 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
       </p>
       <div className="panel">
         {[
-          ["Team members", tier?.seats ?? null, agency.extra_seats, agency.seat_limit, limitLabel],
-          ["Active clients", tier?.clients ?? null, agency.extra_clients, agency.client_limit, limitLabel],
+          ["Team members", tier?.seats ?? null, agency.extra_seats, agency.seat_limit, countLabel],
+          ["Active clients", tier?.clients ?? null, agency.extra_clients, agency.client_limit, countLabel],
           [
             "AI requests a month",
             tier?.aiRequests ?? null,
             agency.extra_ai_requests,
             agency.ai_monthly_request_cap,
-            limitLabel,
+            countLabel,
           ],
           ["Storage", tier?.storageBytes ?? null, agency.extra_storage_bytes, agency.storage_limit_bytes, formatBytes],
         ].map(([label, base, extra, total, show]) => {
@@ -194,9 +225,28 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
         })}
       </div>
 
-      <AgencyHealthSections agencyId={agency.id} />
-
-      <AgencyPeople agencyId={agency.id} />
+      <div className="msection-h">AI This Month</div>
+      <p className="msection-d">
+        {plural(agency.ai_this_month, "request")} of {num(agency.ai_monthly_request_cap)}, about{" "}
+        {money(agency.ai_cost_this_month)} to Frank
+        {agency.ai_unpriced_this_month > 0
+          ? ` (${plural(agency.ai_unpriced_this_month, "request")} from before 1.64 can't be priced)`
+          : ""}
+        .
+      </p>
+      {agency.ai_by_task.length > 0 && (
+        <section className="panel" aria-label="AI by feature">
+          {agency.ai_by_task.map((t) => (
+            <div className="srow" key={t.task}>
+              <span className="sl">
+                <b>{t.label}</b>
+                <span>{plural(t.requests, "request")}</span>
+              </span>
+              <span className="srow-note">{t.unpriced === t.requests ? "—" : money(t.dollars)}</span>
+            </div>
+          ))}
+        </section>
+      )}
 
       <div className="msection-h">Admin Override</div>
       <p className="msection-d">
@@ -272,20 +322,32 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
         {saved && <span className="bsaved">Saved.</span>}
       </div>
 
-      <div className="msection-h">{agency.suspended_at ? "Paused" : "Pause this Workspace"}</div>
-      <p className="msection-d">
-        {agency.suspended_at
-          ? `Paused on ${new Date(agency.suspended_at).toLocaleDateString()}. Nobody can sign in, and its review links show that it's paused.`
-          : "Nobody in the workspace, or its clients, can sign in or open review links until it's turned back on. Nothing is deleted."}
-      </p>
-      {agency.suspended_at ? (
-        <button type="button" className="btn" onClick={() => setPausing("unpause")}>
-          Reactivate
-        </button>
-      ) : (
-        <button type="button" className="btn danger" onClick={() => setPausing("pause")}>
-          Pause Workspace
-        </button>
+        </>
+      )}
+      {extending && (
+        <AdminActionModal
+          title="Extend the Free Trial"
+          message={
+            isReadOnly(agency.plan, agency.trial_ends_at)
+              ? `${agency.name}'s trial is over, so it's read-only. Extending it counts from today and lifts that.`
+              : `${agency.name}'s trial ends ${day(agency.trial_ends_at)}. Extending it adds to that.`
+          }
+          confirmLabel="Extend Trial"
+          isPending={extend.isPending}
+          error={extend.error}
+          onConfirm={(reason) =>
+            extend.mutate(
+              { url: `/api/admin/agencies/${agency.id}/extend-trial`, body: { days: Number(days), reason } },
+              { onSuccess: () => setExtending(false) },
+            )
+          }
+          onClose={() => setExtending(false)}
+        >
+          <div className="field">
+            <label htmlFor="adDays">Days to add</label>
+            <input id="adDays" type="number" min={1} max={90} value={days} onChange={(e) => setDays(e.target.value)} />
+          </div>
+        </AdminActionModal>
       )}
       {pausing && (
         <AdminActionModal
@@ -307,11 +369,12 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
           onClose={() => setPausing(null)}
         />
       )}
-
-      <SupportLog agencyId={agency.id} />
     </div>
   );
 }
+
+// "Unlimited", or "1,000".
+const countLabel = (n: number | null) => (n === null ? limitLabel(n) : num(n));
 
 // Everyone in this agency, most senior first (view-only). Each opens their
 // page under Users.
@@ -372,12 +435,7 @@ function SupportLog({ agencyId }: { agencyId: string }) {
               <span className="srow-note">
                 {a.actor_name}
                 <br />
-                {new Date(a.created_at).toLocaleString(undefined, {
-                  day: "numeric",
-                  month: "short",
-                  hour: "numeric",
-                  minute: "2-digit",
-                })}
+                {dayTime(a.created_at)}
               </span>
             </div>
           ))}
@@ -394,8 +452,7 @@ const STATUS_LABEL: Record<string, string> = {
   paused: "Paused",
   canceled: "Canceled",
 };
-const when = (v: string | null) =>
-  v ? new Date(v).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : "—";
+const when = (v: string | null) => day(v, "—");
 
 // Billing (our record and Paddle's recent payments) and email problems
 // (Resend), read-only.

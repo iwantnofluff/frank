@@ -13,9 +13,10 @@ export interface AiModelOption {
   retired?: boolean;
 }
 
-// Relative cost tiers, not $ figures — provider pricing changes often
-// enough that a hardcoded number here would go stale and mislead. One
-// option per provider per tier is enough for an agency to pick a
+// Relative cost tiers for the agency, not $ figures — provider pricing
+// changes often enough that a number shown to agencies would go stale and
+// mislead. (The admin area's cost estimates keep dated prices in cost.ts.)
+// One option per provider per tier is enough for an agency to pick a
 // reasonable default without needing to compare exact pricing.
 export const AI_MODELS: AiModelOption[] = [
   { id: "claude-opus-5-5", provider: "anthropic", label: "Claude Opus 5.5", tier: "capable", tierLabel: "Most capable" },

@@ -112,6 +112,7 @@ test("the admin resends an invite and changes a role, each with a reason that's 
 
     // The agency page's Support Log shows both.
     await page.goto(`${ADMIN}/admin/agencies/${frank.agencyId}`);
+    await page.getByRole("tab", { name: "Support Log" }).click();
     const supportLog = page.getByRole("region", { name: "Support log" });
     await expect(supportLog.locator(".srow")).toHaveCount(3);
     await supportLog.screenshot({ path: `${process.env.SHOT_DIR ?? "test-results"}/admin-support-log.png`, animations: "disabled" });

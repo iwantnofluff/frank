@@ -1,14 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useAdminOverview } from "@/hooks/use-admin-overview";
-import type { AgencyRef } from "@/lib/admin/overview";
+import type { AdminOverview, AgencyRef } from "@/lib/admin/overview";
+import { day, money, monthLabel, num } from "@/lib/admin/format";
+import { formatBytes } from "@/lib/plans";
 import { errorMessage } from "@/lib/errors";
 
-const day = (value: string | null) =>
-  value ? new Date(value).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : "never";
-const money = (n: number) => `$${n.toLocaleString()}`;
-const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+const plural = (n: number, one: string, many = `${one}s`) => `${num(n)} ${n === 1 ? one : many}`;
 
 // One agency in a list: its name and address, opening its page; a note on
 // the right.
@@ -19,7 +19,9 @@ function AgencyRow({ agency, note }: { agency: AgencyRef; note: React.ReactNode 
         <Link href={`/admin/agencies/${agency.id}`} className="admintbl-name">
           {agency.name}
         </Link>
-        {agency.subdomain && <span>{agency.subdomain}</span>}
+        {(agency.subdomain || agency.ownerEmail) && (
+          <span>{[agency.subdomain, agency.ownerEmail].filter(Boolean).join(" · ")}</span>
+        )}
       </span>
       <span className="srow-note">{note}</span>
     </div>
@@ -48,6 +50,77 @@ function Group<T extends AgencyRef>({
         <AgencyRow key={a.id} agency={a} note={note(a)} />
       ))}
     </section>
+  );
+}
+
+// One measure over the last six months (decided directly, 2 Nov 2026):
+// a small bar chart of its own, so no two measures share a scale. The
+// latest month is the headline; hovering a bar shows its month and value.
+function Trend({
+  title,
+  months,
+  values,
+  show,
+}: {
+  title: string;
+  months: string[];
+  values: number[];
+  show: (n: number) => string;
+}) {
+  const [hover, setHover] = useState<number | null>(null);
+  const max = Math.max(...values, 0);
+  const W = 240;
+  const H = 72;
+  const slot = W / values.length;
+  const barW = slot - 8;
+  const at = hover ?? values.length - 1;
+  return (
+    <div className="admintrend">
+      <div className="admintrend-h">
+        <span>{title}</span>
+        <b>{show(values[at] ?? 0)}</b>
+        <span className="admintrend-m">{hover === null ? "This month" : monthLabel(months[at])}</span>
+      </div>
+      <svg
+        viewBox={`0 0 ${W} ${H + 16}`}
+        role="img"
+        aria-label={`${title}: ${months.map((m, i) => `${monthLabel(m)} ${show(values[i])}`).join(", ")}`}
+        onMouseLeave={() => setHover(null)}
+      >
+        <line x1="0" x2={W} y1={H} y2={H} className="admintrend-base" />
+        {values.map((v, i) => {
+          const h = max > 0 ? Math.max(v > 0 ? 5 : 0, (v / max) * (H - 4)) : 0;
+          const x = i * slot + 4;
+          return (
+            <g key={months[i]} onMouseEnter={() => setHover(i)}>
+              {/* The hit area: the whole slot, taller than the bar. */}
+              <rect x={i * slot} y={0} width={slot} height={H + 16} fill="transparent" />
+              {h > 0 && (
+                <path
+                  className={`admintrend-bar${i === at ? " on" : ""}`}
+                  d={`M${x},${H} v${-(h - 4)} q0,-4 4,-4 h${barW - 8} q4,0 4,4 v${h - 4} z`}
+                />
+              )}
+              <text x={x + barW / 2} y={H + 13} className="admintrend-x">
+                {monthLabel(months[i]).slice(0, 1)}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
+function Trends({ trends }: { trends: AdminOverview["trends"] }) {
+  const months = trends.map((t) => t.month);
+  return (
+    <div className="admintrends">
+      <Trend title="Sign-ups" months={months} values={trends.map((t) => t.signups)} show={num} />
+      <Trend title="Started paying" months={months} values={trends.map((t) => t.upgrades)} show={num} />
+      <Trend title="AI requests" months={months} values={trends.map((t) => t.aiRequests)} show={num} />
+      <Trend title="AI cost" months={months} values={trends.map((t) => t.aiDollars)} show={money} />
+    </div>
   );
 }
 
@@ -87,7 +160,28 @@ export default function AdminOverviewPage() {
               <div className="n">{o.signups.week}</div>
               <div className="l">Sign-ups this week</div>
             </div>
+            <div className="stat">
+              <div className="n">{money(o.ai.month.dollars)}</div>
+              <div className="l">AI cost this month</div>
+            </div>
+            <div className="stat">
+              <div className="n">{formatBytes(o.storage.bytes)}</div>
+              <div className="l">Files stored, of {formatBytes(o.storage.includedBytes)} included</div>
+            </div>
           </div>
+          {o.counts.internal > 0 && (
+            <p className="msection-d">
+              {plural(o.counts.internal, "internal workspace")} left out of these figures, except AI cost (
+              <Link href="/admin/agencies?internal=1">see them</Link>).
+            </p>
+          )}
+
+          <div className="msection-h">Last Six Months</div>
+          <p className="msection-d">
+            Workspaces signing up and starting to pay, and AI use. AI cost is estimated from the tokens each request
+            used, recorded from 1.64 (2 Nov 2026), so earlier months show requests but no cost.
+          </p>
+          <Trends trends={o.trends} />
 
           <div className="admincols">
             <div>
@@ -121,6 +215,28 @@ export default function AdminOverviewPage() {
                   items={o.revenue.handSet}
                   note={(a) => a.plan}
                 />
+              )}
+
+              <div className="msection-h">AI This Month</div>
+              <p className="msection-d">
+                {money(o.ai.month.dollars)} estimated across {plural(o.ai.month.requests, "request")}
+                {o.revenue.mrr > 0 ? `, ${Math.round((o.ai.month.dollars / o.revenue.mrr) * 100)}% of monthly revenue` : ""}
+                {o.ai.internalDollars > 0.005 ? `; ${money(o.ai.internalDollars)} of it internal` : ""}.
+                {o.ai.month.unpriced > 0 ? ` ${plural(o.ai.month.unpriced, "request")} from before 1.64 can't be priced.` : ""}{" "}
+                See <Link href="/admin/guide/costs">Costs and Monitoring</Link>.
+              </p>
+              {o.ai.byTask.length > 0 && (
+                <section className="panel" aria-label="AI by feature">
+                  {o.ai.byTask.map((t) => (
+                    <div className="srow" key={t.task}>
+                      <span className="sl">
+                        <b>{t.label}</b>
+                        <span>{plural(t.requests, "request")}</span>
+                      </span>
+                      <span className="srow-note">{t.unpriced === t.requests ? "—" : money(t.dollars)}</span>
+                    </div>
+                  ))}
+                </section>
               )}
 
               <div className="msection-h">This Month</div>

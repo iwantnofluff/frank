@@ -34,6 +34,13 @@ export interface AdminAgency {
   posts: number;
   storage_bytes: number;
   ai_this_month: number;
+  // Estimated from recorded tokens (phase128); unpriced are requests from
+  // before 1.64, which recorded none.
+  ai_cost_this_month: number;
+  ai_unpriced_this_month: number;
+  ai_by_task: { task: string; label: string; requests: number; dollars: number; unpriced: number }[];
+  // Frank's own or a test workspace (phase130).
+  is_internal: boolean;
 }
 
 async function call<T>(url: string, init?: RequestInit): Promise<T> {
@@ -74,12 +81,16 @@ export function useUpdateAgency(id: string) {
         suspended: boolean;
         // Pausing and unpausing need one; it's logged (phase51).
         reason: string;
+        // Left out of the admin's figures (phase130).
+        is_internal: boolean;
       }>,
     ) => call<{ ok: true }>(`/api/admin/agencies/${id}`, { method: "PATCH", body: JSON.stringify(input) }),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin-agencies"] }),
         queryClient.invalidateQueries({ queryKey: ["admin-actions", id] }),
+        // Internal changes what the overview counts.
+        queryClient.invalidateQueries({ queryKey: ["admin-overview"] }),
       ]);
     },
   });

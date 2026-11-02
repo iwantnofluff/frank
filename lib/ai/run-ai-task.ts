@@ -24,10 +24,24 @@ function monthStartIso(): string {
 // provider call shouldn't count against the cap). The caller is
 // responsible for its own staff-membership check first — this assumes
 // that's already happened.
+// Which feature a request is for (phase130), recorded with its usage.
+export type AiTask =
+  | "copy_chat"
+  | "design_direction"
+  | "proofread"
+  | "check"
+  | "check_creative"
+  | "check_design"
+  | "wiifm_note"
+  | "voice_post"
+  | "strategy_overview"
+  | "classify_comment";
+
 export async function runAiTask(
   supabase: SupabaseClient,
   agencyId: string,
   userId: string,
+  task: AiTask,
   // One string, or parts (copy chat): every part but the last is the same
   // across a conversation's messages, so a provider can keep it.
   prompt: string | string[],
@@ -86,6 +100,7 @@ export async function runAiTask(
       agency_id: agencyId,
       user_id: userId,
       model: agency.ai_default_model,
+      task,
       input_tokens: usage?.input ?? null,
       cache_read_tokens: usage?.cacheRead ?? null,
       output_tokens: usage?.output ?? null,

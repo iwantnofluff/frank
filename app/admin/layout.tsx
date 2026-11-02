@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { SignOutButton } from "./SignOutButton";
 import { AdminNav } from "./AdminNav";
+import { CURRENT_RELEASE } from "@/lib/releases";
+import { displayVersion } from "@/lib/release-version";
 
 // admin.beingfrank.app (phase37): only for accounts on platform_admins,
 // checked here for the pages and again by every /api/admin call.
@@ -32,8 +34,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <Link href="/admin" className="adminbar-t">
           <span className="mark">F</span> Frank Admin
         </Link>
+        {/* The version this site runs (decided directly, 2 Nov 2026): on
+            admin.beingfrank.app, the same build as live, so a push can be
+            seen to have landed. */}
+        <span className="adminbar-v" title="The version of Frank this site is running">
+          {displayVersion(CURRENT_RELEASE.version)}
+        </span>
         <span className="grow" />
-        <span className="sub">{user!.email}</span>
+        <span className="sub adminbar-email">{user!.email}</span>
         <SignOutButton small />
       </header>
       <div className="setwrap adminsetwrap">

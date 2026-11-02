@@ -12,6 +12,15 @@ export const ADMIN_SECTIONS: SettingsSection[] = [
     ],
   },
   {
+    // Notes on running Frank (direct instruction, 2 Nov 2026).
+    key: "guide",
+    label: "Guide",
+    pages: [
+      { href: "/admin/guide/costs", label: "Costs and Monitoring" },
+      { href: "/admin/guide/launch", label: "Launch Checklist" },
+    ],
+  },
+  {
     key: "settings",
     label: "Settings",
     pages: [

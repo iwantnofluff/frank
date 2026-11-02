@@ -59,7 +59,8 @@ test("the overview reports plan changes, a trial ending, a failed payment and a 
     );
     await page.screenshot({ path: `${process.env.SHOT_DIR ?? "test-results"}/admin-overview.png`, animations: "disabled" });
 
-    // …then Growth by card, its payment failing, its storage nearly full.
+    // …then Growth by card, its payment failing, its AI allowance nearly
+    // used (320 of Growth's 400).
     await admin.from("agencies").update({ plan: "growth" }).eq("id", frank.agencyId);
     await admin.from("agency_billing").insert({
       agency_id: frank.agencyId,
@@ -67,22 +68,33 @@ test("the overview reports plan changes, a trial ending, a failed payment and a 
       status: "past_due",
       billing_interval: "monthly",
     });
-    const { data: a } = await admin.from("agencies").select("storage_limit_bytes").eq("id", frank.agencyId).single();
-    await admin
-      .from("agencies")
-      .update({ storage_bytes_used: Math.floor(a!.storage_limit_bytes * 0.9) })
-      .eq("id", frank.agencyId);
+    const { data: owner } = await admin.from("memberships").select("user_id").eq("agency_id", frank.agencyId).is("client_id", null).limit(1).single();
+    const { error: aiError } = await admin.from("ai_usage_events").insert(
+      Array.from({ length: 320 }, () => ({
+        agency_id: frank.agencyId,
+        user_id: owner!.user_id,
+        model: "claude-haiku-5-5",
+        task: "proofread",
+        input_tokens: 1000,
+        cache_read_tokens: 0,
+        output_tokens: 500,
+      })),
+    );
+    expect(aiError).toBeNull();
 
     await page.reload();
     await expect(group(page, "Upgrades").locator(".srow", { hasText: "E2E Test Agency" })).toContainText("Free → Growth");
     await expect(group(page, "Failed payments").locator(".srow", { hasText: "E2E Test Agency" })).toBeVisible();
     await expect(group(page, "Revenue by plan").locator(".srow", { hasText: "Growth" })).toContainText("a month");
-    await expect(group(page, "Near a limit").locator(".srow", { hasText: "E2E Test Agency" })).toContainText("Storage");
+    await expect(group(page, "Near a limit").locator(".srow", { hasText: "E2E Test Agency" })).toContainText("AI requests 320 of 400");
+    // The month's AI, priced from the tokens, by feature.
+    await expect(group(page, "AI by feature").locator(".srow", { hasText: "Proofreading" })).toContainText("$");
     await expect(group(page, "Trials ending").locator(".srow", { hasText: "E2E Test Agency" })).toHaveCount(0);
 
     // A row opens the agency.
     await group(page, "Failed payments").getByRole("link", { name: "E2E Test Agency" }).click();
     await page.waitForURL(`${ADMIN}/admin/agencies/${frank.agencyId}`, { timeout: 20_000 });
+    await page.getByRole("tab", { name: "Billing and Email" }).click();
     // Its billing, from our record (Paddle has no such test subscription, so
     // its payments are either none or Paddle's own answer, shown as such).
     const billing = page.getByRole("region", { name: "Billing" });
