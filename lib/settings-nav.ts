@@ -99,6 +99,16 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
 
 export const FIRST_SETTINGS_PAGE = SETTINGS_SECTIONS[0].pages[0].href;
 
+// Frank's own team's workspace (No Fluff, who build Frank): its Primary
+// Owner gets a link to Frank Admin at the foot of Settings (decided
+// directly, 2 Nov 2026). The admin area keeps its own sign-in, apart from
+// any workspace (phase37), so the link opens that sign-in page.
+export const FRANK_HOME_SUBDOMAIN = "nofluff";
+
+export function frankAdminSection(signInUrl: string): SettingsSection {
+  return { key: "frank-admin", label: "Frank Admin", pages: [{ href: signInUrl, label: "Open Frank Admin" }] };
+}
+
 // The page a path is on: the longest address that matches, so /admin
 // (Agencies) doesn't swallow /admin/settings/... in the admin area's menu.
 export function settingsPageFor(pathname: string, sections: SettingsSection[] = SETTINGS_SECTIONS) {
