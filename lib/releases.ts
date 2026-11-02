@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.64.0",
+    date: "2026-11-02",
+    title: "Newer AI models, and an allowance per plan",
+    changes: [
+      "Frank's AI now uses Claude Opus 5.5, Sonnet 5.5 and Haiku 5.5. Workspaces on an earlier Claude model have moved to its newer version; nothing needs doing.",
+      "Each plan has its own monthly AI allowance: 30 requests on the free trial, 150 on Starter, 400 on Growth and 1,000 on Agency. The Plans page lists it with each plan.",
+    ],
+  },
+  {
     version: "1.63.1",
     date: "2026-11-01",
     title: "A lighter backdrop for Expand",

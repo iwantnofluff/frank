@@ -47,7 +47,7 @@ test("Check Design waits for artwork, needs a Claude model, and is the team's on
 
 test("artwork Frank can't read is said, with no AI call", async ({ page, frank }) => {
   test.setTimeout(90_000);
-  await admin.from("agencies").update({ ai_default_model: "claude-sonnet-5" }).eq("id", frank.agencyId);
+  await admin.from("agencies").update({ ai_default_model: "claude-sonnet-5-5" }).eq("id", frank.agencyId);
   // An asset row with no file behind it.
   await frank.createArtworkVersion(frank.creativeId, 1, "missing.png");
   await frank.loginAsStaff(page);

@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { Attachment } from "../attachment";
+import type { AiGeneration, AiUsage } from "../generate-draft";
 
 // Claude can end a turn with stop_reason "refusal" and zero content blocks
 // — its own safety classifier declining, not an error on our side.
@@ -18,7 +19,7 @@ export async function generate(
   // direct instruction: shown as it's written). Streamed, and not retried
   // on a refusal, since what was shown can't be taken back.
   onText?: (text: string) => void,
-): Promise<string> {
+): Promise<AiGeneration> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     throw new Error("ANTHROPIC_API_KEY is not configured");
@@ -62,11 +63,20 @@ export async function generate(
     block.cache_control = { type: "ephemeral" };
   }
 
+  // Every attempt is billed, a refused one included.
+  const usage: AiUsage = { input: 0, cacheRead: 0, output: 0 };
+  const add = (m: Anthropic.Messages.Message) => {
+    usage.input += m.usage.input_tokens + (m.usage.cache_creation_input_tokens ?? 0);
+    usage.cacheRead += m.usage.cache_read_input_tokens ?? 0;
+    usage.output += m.usage.output_tokens;
+  };
+
   let message: Anthropic.Messages.Message | undefined;
   if (onText) {
     const stream = client.messages.stream({ model, max_tokens: 8192, messages: [{ role: "user", content }] });
     stream.on("text", (text) => onText(text));
     message = await stream.finalMessage();
+    add(message);
   }
   for (let attempt = 0; !onText && attempt <= REFUSAL_RETRIES; attempt++) {
     message = await client.messages.create({
@@ -78,6 +88,7 @@ export async function generate(
       max_tokens: 8192,
       messages: [{ role: "user", content }],
     });
+    add(message);
     if (message.stop_reason !== "refusal") break;
   }
 
@@ -91,5 +102,5 @@ export async function generate(
   if (!block || block.type !== "text") {
     throw new Error("Claude returned no text");
   }
-  return block.text;
+  return { text: block.text, usage };
 }

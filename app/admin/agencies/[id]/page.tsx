@@ -3,7 +3,7 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import { useAdminAgencies, useHandlePlanRequest, useUpdateAgency, type AdminAgency } from "@/hooks/use-admin-agencies";
-import { AI_REQUESTS_PER_MONTH, formatBytes, isReadOnly, limitLabel, planById } from "@/lib/plans";
+import { formatBytes, isReadOnly, limitLabel, planById } from "@/lib/plans";
 import { AdminActionModal } from "@/components/admin/AdminActionModal";
 import { useAdminAction, useAgencyActions, useAgencyHealth } from "@/hooks/use-admin-actions";
 import { PeopleTable } from "@/components/admin/PeopleTable";
@@ -171,7 +171,7 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
           ["Active clients", tier?.clients ?? null, agency.extra_clients, agency.client_limit, limitLabel],
           [
             "AI requests a month",
-            AI_REQUESTS_PER_MONTH,
+            tier?.aiRequests ?? null,
             agency.extra_ai_requests,
             agency.ai_monthly_request_cap,
             limitLabel,

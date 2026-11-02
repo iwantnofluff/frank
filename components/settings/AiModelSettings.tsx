@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useAgencyAiSettings, type AgencyAiSettings } from "@/hooks/use-agency-ai-settings";
 import { useUpdateAgencyAiModel } from "@/hooks/use-update-agency-ai-model";
-import { AI_MODELS } from "@/lib/ai/models";
+import { OFFERED_MODELS } from "@/lib/ai/models";
 import { errorMessage } from "@/lib/errors";
 
 // The model an agency drafts with — a cost-affecting setting (platform
@@ -53,7 +53,7 @@ function AiModelForm({
       <div className="bsec">
         <div className="bl">Model</div>
         <select className="bin one" value={model} onChange={(e) => setModel(e.target.value)}>
-          {AI_MODELS.map((m) => (
+          {OFFERED_MODELS.map((m) => (
             <option key={m.id} value={m.id}>
               {m.label} — {m.tierLabel}
             </option>
@@ -62,7 +62,7 @@ function AiModelForm({
         <p className="sub" style={{ marginTop: 6 }}>
           Every AI draft across this workspace uses this model. The platform
           covers usage up to the workspace&rsquo;s monthly cap (
-          {settings.ai_monthly_request_cap} requests).
+          {settings.ai_monthly_request_cap.toLocaleString("en")} requests).
         </p>
       </div>
       <div className="bfoot">

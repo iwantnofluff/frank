@@ -322,6 +322,7 @@ export default function PlansPage() {
                 <li>{plan.clients === null ? "Unlimited clients" : `${plan.clients} active client${plan.clients === 1 ? "" : "s"}`}</li>
                 <li>{plan.seats === null ? "Unlimited team members" : `${plan.seats} team members`}</li>
                 <li>{plan.storage} storage</li>
+                <li>{plan.aiRequests.toLocaleString("en")} AI requests a month</li>
                 {plan.highlights.map((h) => (
                   <li key={h}>{h}</li>
                 ))}

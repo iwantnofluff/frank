@@ -2,7 +2,9 @@
 // Prices are USD; annual is billed upfront, per-month shown, 20% off.
 // Limits: null means unlimited. Picking a plan applies its limits
 // (agencies.client_limit / seat_limit); the platform admin can still
-// override one agency's.
+// override one agency's. plan_limits() in the database keeps the same
+// table (phase42, AI allowances phase128) and works each agency's limits
+// out from it, so nothing here writes them.
 
 export type PlanId = "free" | "starter" | "growth" | "agency" | "enterprise";
 
@@ -15,6 +17,7 @@ export interface Plan {
   seats: number | null;
   storage: string;
   storageBytes: number | null; // null: unlimited (custom)
+  aiRequests: number; // a month (phase128)
   whiteLabel: "none" | "partial" | "full";
   highlights: string[];
 }
@@ -29,6 +32,7 @@ export const PLANS: Plan[] = [
     seats: 2,
     storage: "500 MB",
     storageBytes: 524288000,
+    aiRequests: 30,
     whiteLabel: "none",
     highlights: ["Read-only after the trial", "Review, annotations and approvals"],
   },
@@ -41,6 +45,7 @@ export const PLANS: Plan[] = [
     seats: 5,
     storage: "5 GB",
     storageBytes: 5368709120,
+    aiRequests: 150,
     whiteLabel: "none",
     highlights: ["3 projects per client", "10 versions per post"],
   },
@@ -53,6 +58,7 @@ export const PLANS: Plan[] = [
     seats: 15,
     storage: "25 GB",
     storageBytes: 26843545600,
+    aiRequests: 400,
     whiteLabel: "partial",
     highlights: ["Your logo and colours for clients", "Client-level analytics"],
   },
@@ -65,6 +71,7 @@ export const PLANS: Plan[] = [
     seats: null,
     storage: "75 GB",
     storageBytes: 80530636800,
+    aiRequests: 1000,
     whiteLabel: "full",
     highlights: ["Full white-label", "Scheduled reports and workspace-level analytics"],
   },
@@ -77,6 +84,7 @@ export const PLANS: Plan[] = [
     seats: null,
     storage: "Custom",
     storageBytes: null,
+    aiRequests: 1000,
     whiteLabel: "full",
     highlights: ["SSO (SAML)", "Custom terms"],
   },
@@ -92,12 +100,6 @@ export function limitLabel(n: number | null | undefined): string {
 }
 
 export const PLAN_ORDER: PlanId[] = PLANS.map((p) => p.id);
-
-// AI requests a month, the same on every plan: the spec gives no allowance
-// per plan (phase12's 300). plan_limits() in the database keeps this table
-// too (phase42), and works each agency's limits out from it plus the admin
-// override, so nothing here writes them.
-export const AI_REQUESTS_PER_MONTH = 300;
 
 const rank = (plan: string | null | undefined) => PLAN_ORDER.indexOf((plan ?? "free") as PlanId);
 

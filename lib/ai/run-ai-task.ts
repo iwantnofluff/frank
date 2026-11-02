@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { generateDraft } from "./generate-draft";
+import { generateDraft, type AiUsage } from "./generate-draft";
 import type { Attachment } from "./attachment";
 import { isReadOnly } from "@/lib/plans";
 
@@ -69,8 +69,9 @@ export async function runAiTask(
   }
 
   let text: string;
+  let usage: AiUsage | undefined;
   try {
-    text = await generateDraft(agency.ai_default_model, prompt, attachments, onText);
+    ({ text, usage } = await generateDraft(agency.ai_default_model, prompt, attachments, onText));
   } catch (err) {
     return {
       ok: false,
@@ -81,7 +82,14 @@ export async function runAiTask(
 
   const { error: logError } = await supabase
     .from("ai_usage_events")
-    .insert({ agency_id: agencyId, user_id: userId, model: agency.ai_default_model });
+    .insert({
+      agency_id: agencyId,
+      user_id: userId,
+      model: agency.ai_default_model,
+      input_tokens: usage?.input ?? null,
+      cache_read_tokens: usage?.cacheRead ?? null,
+      output_tokens: usage?.output ?? null,
+    });
   if (logError) {
     // The call already succeeded and the caller is waiting on its result —
     // an un-logged usage event undercounts the cap slightly, far less

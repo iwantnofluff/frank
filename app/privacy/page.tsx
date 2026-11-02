@@ -50,7 +50,7 @@ export default function PrivacyPage() {
             payment provider, Paddle, and never reach us.
           </li>
           <li>
-            <b>Usage of AI features:</b> a record of each AI request (who made it, which AI model and when), so
+            <b>Usage of AI features:</b> a record of each AI request (who made it, which AI model, when and how much it used), so
             the agency&rsquo;s monthly limit can be applied. The record doesn&rsquo;t include the content.
           </li>
           <li>

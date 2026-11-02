@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import type { Attachment } from "../attachment";
+import type { AiGeneration } from "../generate-draft";
 
 // Attachments are accepted for signature parity with the Anthropic
 // provider but not sent — this provider doesn't have native-PDF support
@@ -10,7 +11,7 @@ export async function generate(
   model: string,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _attachments: Attachment[] = [],
-): Promise<string> {
+): Promise<AiGeneration> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     throw new Error("OPENAI_API_KEY is not configured");
@@ -26,5 +27,10 @@ export async function generate(
   if (!text) {
     throw new Error("ChatGPT returned no text");
   }
-  return text;
+  const usage = completion.usage;
+  const cached = usage?.prompt_tokens_details?.cached_tokens ?? 0;
+  return {
+    text,
+    usage: usage && { input: usage.prompt_tokens - cached, cacheRead: cached, output: usage.completion_tokens },
+  };
 }
