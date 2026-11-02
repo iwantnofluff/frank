@@ -14,13 +14,19 @@ import { useMyMembership } from "@/hooks/use-my-membership";
 import { seesAllClients } from "@/lib/roles";
 import { SplitButton } from "@/components/ui/SplitButton";
 import { errorMessage } from "@/lib/errors";
-import { CreativeModal } from "@/components/creative-review/CreativeModal";
 import { ProjectCalendarTable } from "@/components/project/ProjectCalendarTable";
 import { ContinuousCalendarTable } from "@/components/project/ContinuousCalendarTable";
 import { ProjectSettings } from "@/components/project/ProjectSettings";
 import { ProjectPanel, type ProjectPanelView } from "@/components/project/ProjectPanel";
 import { MobileProject } from "@/components/project/MobileProject";
 import { usePhoneScreen } from "@/hooks/use-phone-screen";
+import { lazyWindow } from "@/components/ui/lazyWindow";
+import { useWarmUp } from "@/components/ui/useWarmUp";
+
+// The post editor opens on a click: loaded then, not with the page (and
+// warmed once the page settles, so it still opens at once).
+const CreativeModal = lazyWindow(() => import("@/components/creative-review/CreativeModal").then((m) => m.CreativeModal));
+const WINDOWS = [CreativeModal.preload];
 
 type ArchiveFilter = "active" | "archived";
 
@@ -29,6 +35,7 @@ export default function ProjectPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  useWarmUp(WINDOWS);
   const { id } = use(params);
   const { data: project, isLoading: projectLoading } = useProject(id);
   const {

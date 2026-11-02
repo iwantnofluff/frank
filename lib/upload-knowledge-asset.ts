@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { signedInUser } from "@/lib/supabase/signed-in-user";
 import { validateKnowledgeFile } from "@/lib/knowledge-file-validation";
 import { assertCanUpload } from "@/lib/upload-guard";
 import { friendlyUploadError } from "@/lib/upload-limits";
@@ -17,7 +18,7 @@ export async function uploadKnowledgeAsset(agencyId: string, file: File): Promis
   const supabase = createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await signedInUser(supabase);
   if (!user) throw new Error("Not signed in");
   await assertCanUpload(agencyId, file.size);
 

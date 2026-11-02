@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { signedInUser } from "@/lib/supabase/signed-in-user";
 
 export function useCurrentUser() {
   return useQuery({
@@ -11,7 +12,7 @@ export function useCurrentUser() {
       const {
         data: { user },
         error,
-      } = await supabase.auth.getUser();
+      } = await signedInUser(supabase);
       if (error) throw error;
       return user;
     },

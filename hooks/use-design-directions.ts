@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { signedInUser } from "@/lib/supabase/signed-in-user";
 import type { DesignDirection as Body } from "@/lib/ai/design-direction";
 
 export interface DesignDirectionRef {
@@ -163,7 +164,7 @@ export async function saveDirectionsForNewPost(
   const supabase = createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await signedInUser(supabase);
   if (!user) throw new Error("Not signed in");
   const { error } = await supabase.from("design_directions").insert(
     [...runs].reverse().map((r) => ({

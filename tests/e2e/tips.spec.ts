@@ -37,7 +37,11 @@ test("See it in Action opens a new post and lights up Design with Frank", async 
   const id = await staffId(frank.staffEmail);
   await frank.loginAsStaff(page);
   // Due once signed in, so it's on the project's page, not used up on the
-  // dashboard that signing in lands on.
+  // dashboard that signing in lands on. Off the dashboard first, and its
+  // own reads and writes given a moment to finish: otherwise, depending on
+  // timing, it read the reset itself, showed the tip and marked it seen.
+  await page.goto("about:blank");
+  await page.waitForTimeout(500);
   await admin.from("users").update({ tips_every_hours: 24, tips_seen: [], tips_last_at: null }).eq("id", id);
   await page.goto(`/projects/${frank.projectId}`);
   await page.locator(".tipcard.is-open").getByRole("button", { name: "See it in Action" }).click({ timeout: 15_000 });

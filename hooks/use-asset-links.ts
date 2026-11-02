@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { signedInUser } from "@/lib/supabase/signed-in-user";
 
 // A post's final asset link (phase126): where the finished creative is, a
 // Google Drive folder say. The team's only; one a post.
@@ -45,7 +46,7 @@ export function useSaveAssetLink(creativeId: string) {
       if (!/^https?:\/\//i.test(link)) throw new Error("Paste the whole link, starting with https://");
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await signedInUser(supabase);
       const { data, error } = await supabase
         .from("creative_asset_links")
         .upsert({ creative_id: creativeId, url: link, updated_by: user?.id ?? null, updated_at: new Date().toISOString() }, { onConflict: "creative_id" })

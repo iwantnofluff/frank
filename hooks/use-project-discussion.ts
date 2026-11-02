@@ -50,7 +50,10 @@ export function useProjectDiscussion(projectId: string, enabled: boolean) {
 // Who can be @mentioned: the project's team.
 export function useProjectTeam(projectId: string, enabled: boolean) {
   return useQuery({
-    queryKey: ["project-team", projectId],
+    // Not "project-team": that's use-project-team's list of ids, a
+    // different shape. Sharing the key let one's cached answer stand in for
+    // the other's (the @ list came up empty once answers were kept).
+    queryKey: ["project-team-members", projectId],
     enabled: enabled && !!projectId,
     queryFn: async (): Promise<TeamMember[]> => {
       const supabase = createClient();

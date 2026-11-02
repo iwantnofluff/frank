@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { signedInUser } from "@/lib/supabase/signed-in-user";
 import { assertCanUpload } from "@/lib/upload-guard";
 
 // Same shape as uploadAvatar: file, then its assets row, then point the
@@ -8,7 +9,7 @@ export async function uploadClientLogo(agencyId: string, clientId: string, file:
   const supabase = createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await signedInUser(supabase);
   if (!user) throw new Error("Not signed in");
   await assertCanUpload(agencyId, file.size);
 

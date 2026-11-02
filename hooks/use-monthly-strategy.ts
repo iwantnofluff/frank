@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { signedInUser } from "@/lib/supabase/signed-in-user";
 import type { StrategyFields } from "@/lib/monthly-strategy";
 
 // A client's monthly strategies (phase78): every month written so far,
@@ -42,7 +43,7 @@ export function useSaveMonthlyStrategy(clientId: string) {
       const supabase = createClient();
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await signedInUser(supabase);
       const clean = Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, v?.trim() ? v.trim() : null]));
       const { data, error } = await supabase
         .from("client_monthly_strategies")

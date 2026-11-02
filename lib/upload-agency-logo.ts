@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { signedInUser } from "@/lib/supabase/signed-in-user";
 import { assertCanUpload } from "@/lib/upload-guard";
 
 // Same shape as uploadClientLogo, pointing agency_settings.logo_asset_id at
@@ -12,7 +13,7 @@ export async function setAgencyLogo(agencyId: string, file: File | null) {
   if (file) {
     const {
       data: { user },
-    } = await supabase.auth.getUser();
+    } = await signedInUser(supabase);
     if (!user) throw new Error("Not signed in");
     await assertCanUpload(agencyId, file.size);
     const ext = file.type === "image/png" ? "png" : "jpg";

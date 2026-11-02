@@ -499,11 +499,25 @@ export function ContinuousCalendarTable({
     e.preventDefault();
     e.stopPropagation();
     const startX = e.clientX;
+    // The table redrawn at most once a frame while dragging, with the
+    // latest width (the whole table re-renders for each).
+    let frame = 0;
+    let latest = startWidth;
     function onMove(moveEvent: MouseEvent) {
-      const next = Math.max(60, startWidth + (moveEvent.clientX - startX));
-      setColumnWidths((prev) => ({ ...prev, [key]: next }));
+      latest = Math.max(60, startWidth + (moveEvent.clientX - startX));
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        setColumnWidths((prev) => ({ ...prev, [key]: latest }));
+      });
     }
     function onUp() {
+      // A width still waiting for its frame is written now; a click on the
+      // handle with no drag changes nothing.
+      if (frame) {
+        cancelAnimationFrame(frame);
+        setColumnWidths((prev) => ({ ...prev, [key]: latest }));
+      }
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
     }

@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { signedInUser } from "@/lib/supabase/signed-in-user";
 import { postFormats } from "@/lib/formats";
 
 export interface BriefFields {
@@ -90,7 +91,7 @@ export function useUpdateBrief(creativeId: string) {
         // window, the stage): nothing of anyone else's to lose, so saved.
         const {
           data: { user: me },
-        } = await supabase.auth.getUser();
+        } = await signedInUser(supabase);
         if (now && expectedUpdatedAt && now.updated_at !== expectedUpdatedAt && now.updated_by === me?.id) {
           const { data: again, error: againError } = await save(now.updated_at as string);
           if (againError) throw againError;

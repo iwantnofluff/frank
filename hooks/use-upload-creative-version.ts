@@ -2,10 +2,11 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { signedInUser } from "@/lib/supabase/signed-in-user";
 import { validateUploadFile, MAX_STORED_VIDEO_BYTES } from "@/lib/upload-validation";
 import { compressVideo } from "@/lib/compress-video";
 import { uploadWithProgress } from "@/lib/upload-with-progress";
-import { makePreview, previewKey, withPreviews } from "@/lib/artwork-preview";
+import { makePreview, makeThumb, previewKey, thumbKey, withPreviews } from "@/lib/artwork-preview";
 import { assertCanUpload } from "@/lib/upload-guard";
 import { MAX_UPLOAD_MB } from "@/lib/upload-limits";
 
@@ -93,19 +94,23 @@ export async function uploadAsset(
 
   // In confirmed pieces, with progress (lib/upload-with-progress.ts).
   await uploadWithProgress(path, file, onUploaded, onRetry);
-  // Its lighter copy for the phone (lib/artwork-preview.ts). If it can't be
-  // made or saved, the original shows instead, so the upload carries on.
-  try {
-    const preview = await makePreview(file);
-    if (preview) {
-      const { error } = await supabase.storage
-        .from("assets")
-        .upload(previewKey(path), preview, { contentType: preview.type, upsert: true });
-      if (error) console.warn("Artwork preview not saved; the original will show", error.message);
+  // Its lighter copy for the phone, and its small copy for tables and feed
+  // grids (lib/artwork-preview.ts), made and saved together. If one can't
+  // be, the next larger shows instead, so the upload carries on.
+  const saveCopy = async (name: string, key: string, make: () => Promise<Blob | null>) => {
+    try {
+      const copy = await make();
+      if (!copy) return;
+      const { error } = await supabase.storage.from("assets").upload(key, copy, { contentType: copy.type, upsert: true });
+      if (error) console.warn(`Artwork ${name} not saved; a larger one will show`, error.message);
+    } catch (e) {
+      console.warn(`Artwork ${name} not made; a larger one will show`, e);
     }
-  } catch (e) {
-    console.warn("Artwork preview not made; the original will show", e);
-  }
+  };
+  await Promise.all([
+    saveCopy("preview", previewKey(path), () => makePreview(file)),
+    saveCopy("thumbnail", thumbKey(path), () => makeThumb(file)),
+  ]);
 
   const dimensions = await probeImageDimensions(file);
 
@@ -162,7 +167,7 @@ export function useUploadCarouselVersion(
       const supabase = createClient();
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await signedInUser(supabase);
       if (!user) throw new Error("Not signed in");
 
       const placed: { position: number; assetId: string }[] = [];

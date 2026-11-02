@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
@@ -24,15 +25,22 @@ export default async function AppLayout({
     redirect("/login");
   }
 
+  const requestHeaders = await headers();
+
   // A deactivated or removed person still holds a valid session; RLS already
   // shows them nothing, but they'd see an empty app with no explanation.
-  const { data: active } = await supabase
-    .from("memberships")
-    .select("id")
-    .eq("user_id", user.id)
-    .is("removed_at", null)
-    .not("accepted_at", "is", null)
-    .limit(1);
+  // Not asked again where the proxy has just found them a member of this
+  // address's workspace (x-frank-member, set only by the proxy).
+  const verified = requestHeaders.get("x-frank-member") === "1";
+  const { data: active } = verified
+    ? { data: [{ id: "verified" }] }
+    : await supabase
+        .from("memberships")
+        .select("id")
+        .eq("user_id", user.id)
+        .is("removed_at", null)
+        .not("accepted_at", "is", null)
+        .limit(1);
   if (!active?.length) {
     // RLS hides every row of an agency the caller is no longer in, so the
     // name comes from the service-role client — read only, only their own row.
@@ -52,19 +60,30 @@ export default async function AppLayout({
   // alongside the profile so the first paint names it.
   const [{ data: profile }, seed] = await Promise.all([
     supabase.from("users").select("name").eq("id", user.id).maybeSingle(),
-    railSeed(supabase, (await headers()).get("x-frank-path")),
+    railSeed(supabase, requestHeaders.get("x-frank-path")),
   ]);
 
   const userInitials = initials(profile?.name, user.email ?? "?");
 
+  // Who's signed in, handed to the browser with the page (useCurrentUser),
+  // so the server's drawing and the browser's first agree on it, and the
+  // queries that need it start at once rather than after the browser has
+  // looked for itself. The plain HydrationBoundary: nothing above has asked
+  // for it yet, so it's filled in on the first draw (SeedQueries' first-draw
+  // handling is the post page's, and must stay its own).
+  const queryClient = new QueryClient();
+  queryClient.setQueryData(["current-user"], user);
+
   return (
-    <AppShell
-      userInitials={userInitials}
-      userName={profile?.name ?? null}
-      userEmail={user.email ?? ""}
-      railSeed={seed}
-    >
-      {children}
-    </AppShell>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <AppShell
+        userInitials={userInitials}
+        userName={profile?.name ?? null}
+        userEmail={user.email ?? ""}
+        railSeed={seed}
+      >
+        {children}
+      </AppShell>
+    </HydrationBoundary>
   );
 }

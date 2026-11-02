@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { signedInUser } from "@/lib/supabase/signed-in-user";
 import { uploadAsset } from "@/hooks/use-upload-creative-version";
 
 // A video post's Thumbnail (phase118, direct instruction): one image, saved
@@ -81,7 +82,7 @@ export function useSaveThumbnail(creativeId: string, agencyId: string) {
       const supabase = createClient();
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await signedInUser(supabase);
       if (!user) throw new Error("Not signed in");
       const assetId = await uploadAsset(supabase, agencyId, creativeId, user.id, file);
       const { data, error } = await supabase

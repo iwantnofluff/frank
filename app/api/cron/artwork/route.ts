@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
-import { PREVIEW_SUFFIX, withPreviews } from "@/lib/artwork-preview";
+import { isCopy, withPreviews } from "@/lib/artwork-preview";
 import { logLiveDates } from "@/lib/instagram/live-dates";
 
 // The daily artwork run (phase60), called by Vercel's cron (vercel.json)
@@ -39,8 +39,8 @@ export async function GET(request: Request) {
     // The rows are gone already; a file left behind is the known
     // storage-sweep gap, so it's logged rather than failing the run.
     if (removeError) console.error("Artwork file removal failed", removeError);
-    // Originals only: their lighter copies (lib/artwork-preview.ts) go too.
-    filesRemoved += (data ?? []).filter((f) => !f.name.endsWith(PREVIEW_SUFFIX)).length;
+    // Originals only: their copies (lib/artwork-preview.ts) go too.
+    filesRemoved += (data ?? []).filter((f) => !isCopy(f.name)).length;
   }
   // Read notifications past the time their workspace keeps them (phase90).
   // Its own step: a failure here is logged, not a failed artwork run.

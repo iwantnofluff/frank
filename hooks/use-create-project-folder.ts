@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { signedInUser } from "@/lib/supabase/signed-in-user";
 
 // project_folders_set_agency_id derives agency_id from client_id on
 // insert — never set here, same shape as use-create-project.ts.
@@ -14,7 +15,7 @@ export function useCreateProjectFolder() {
       const supabase = createClient();
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await signedInUser(supabase);
       if (!user) throw new Error("Not signed in");
 
       const { data, error } = await supabase

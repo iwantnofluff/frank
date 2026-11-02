@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { signedInUser } from "@/lib/supabase/signed-in-user";
 
 // Notes for Designer (phase112, direct instruction): the post's overall
 // note and one per image, the team's only, so in their own table rather
@@ -141,7 +142,7 @@ export function useSaveDesignerNotes(projectId: string) {
       const supabase = createClient();
       const {
         data: { user: me },
-      } = await supabase.auth.getUser();
+      } = await signedInUser(supabase);
       if (!me) throw new Error("Not signed in");
       const { data: latestRow, error: latestError } = await supabase
         .from("designer_note_versions")

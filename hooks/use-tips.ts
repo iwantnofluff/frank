@@ -2,6 +2,9 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { signedInUser } from "@/lib/supabase/signed-in-user";
+import { useCurrentUser } from "./use-current-user";
+import { myProfileQuery, type MyProfile } from "./use-my-profile";
 
 export interface MyTips {
   everyHours: number;
@@ -12,27 +15,15 @@ export interface MyTips {
 // This person's tips (phase116): how often, which they've seen, and when the
 // last one showed. Kept on them, so it follows them across devices.
 export function useMyTips(enabled: boolean) {
+  const { data: user } = useCurrentUser();
   return useQuery({
-    queryKey: ["my-tips"],
-    enabled,
-    queryFn: async (): Promise<MyTips | null> => {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return null;
-      const { data, error } = await supabase
-        .from("users")
-        .select("tips_every_hours, tips_seen, tips_last_at")
-        .eq("id", user.id)
-        .single();
-      if (error) throw error;
-      return {
-        everyHours: (data.tips_every_hours as number | null) ?? 24,
-        seen: (data.tips_seen as string[] | null) ?? [],
-        lastAt: (data.tips_last_at as string | null) ?? null,
-      };
-    },
+    ...myProfileQuery(user?.id),
+    enabled: enabled && !!user?.id,
+    select: (p: MyProfile): MyTips => ({
+      everyHours: p.tips_every_hours ?? 24,
+      seen: p.tips_seen ?? [],
+      lastAt: p.tips_last_at ?? null,
+    }),
   });
 }
 
@@ -40,7 +31,7 @@ async function updateMine(fields: Record<string, unknown>) {
   const supabase = createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await signedInUser(supabase);
   if (!user) throw new Error("Not signed in");
   const { data, error } = await supabase.from("users").update(fields).eq("id", user.id).select("id");
   if (error) throw error;
@@ -55,7 +46,7 @@ export function useMarkTipShown() {
     mutationFn: async ({ id, seen }: { id: string; seen: string[] }) => {
       await updateMine({ tips_seen: [...new Set([...seen, id])], tips_last_at: new Date().toISOString() });
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ["my-tips"] }),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["my-profile"] }),
   });
 }
 
@@ -64,7 +55,7 @@ export function useSetTipsEvery() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (hours: number) => updateMine({ tips_every_hours: hours }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["my-tips"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["my-profile"] }),
   });
 }
 

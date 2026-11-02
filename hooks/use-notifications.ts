@@ -50,7 +50,8 @@ export function useNotifications(enabled = true) {
       // embedded (a guest's comment has no author; see use-comments.ts).
       const commentIds = data.map((n) => n.comment_id as string | null).filter((id): id is string => !!id);
       const comments = new Map<string, { id: string; body: string; who: string }>();
-      if (commentIds.length) {
+      const readComments = async () => {
+        if (!commentIds.length) return;
         const { data: rows } = await supabase.from("comments").select("id, body, guest_name, author_id").in("id", commentIds);
         const authorIds = [...new Set((rows ?? []).map((r) => r.author_id as string | null).filter((id): id is string => !!id))];
         const names = new Map<string, string>();
@@ -65,11 +66,12 @@ export function useNotifications(enabled = true) {
             who: (r.guest_name as string | null) ?? names.get(r.author_id as string) ?? "The client",
           });
         }
-      }
+      };
       // Mentions: the message, its author and its project.
       const mentionIds = data.map((n) => n.discussion_id as string | null).filter((id): id is string => !!id);
       const mentions = new Map<string, NonNullable<NotificationRow["mention"]>>();
-      if (mentionIds.length) {
+      const readMentions = async () => {
+        if (!mentionIds.length) return;
         const { data: msgs } = await supabase
           .from("project_discussion")
           .select("id, body, author_id, project:projects(id, name, client:clients(name))")
@@ -89,7 +91,9 @@ export function useNotifications(enabled = true) {
             project: { id: project.id, name: project.name, client: project.client?.name ?? null },
           });
         }
-      }
+      };
+      // The two are independent: read together, not one after the other.
+      await Promise.all([readComments(), readMentions()]);
       return data.map((n) => ({
         ...n,
         comment: n.comment_id ? (comments.get(n.comment_id as string) ?? null) : null,

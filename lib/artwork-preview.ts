@@ -12,10 +12,29 @@ export function previewKey(storageKey: string): string {
   return `${storageKey}${PREVIEW_SUFFIX}`;
 }
 
-// Every original and its copy, for removing files (removing a copy that
+// A smaller copy again, for the small places: a project table's Creative
+// cell and the feed grids (decided directly, 2 Nov 2026: a 1080px image in
+// a cell a few dozen pixels wide was most of a table's download). Saved
+// at upload beside the other copy, `${storage_key}.thumb`; shown wherever
+// it exists, else the lighter copy, else the original — so anything
+// uploaded before it shows as it did.
+export const THUMB_SUFFIX = ".thumb";
+// A feed tile's width on a high-density screen; the table's cell is smaller.
+export const THUMB_WIDTH = 400;
+
+export function thumbKey(storageKey: string): string {
+  return `${storageKey}${THUMB_SUFFIX}`;
+}
+
+// Every original and its copies, for removing files (removing a copy that
 // doesn't exist is harmless).
 export function withPreviews(paths: string[]): string[] {
-  return paths.flatMap((p) => [p, previewKey(p)]);
+  return paths.flatMap((p) => [p, previewKey(p), thumbKey(p)]);
+}
+
+// A copy's name, not an original's: for counting the files a removal took.
+export function isCopy(name: string): boolean {
+  return name.endsWith(PREVIEW_SUFFIX) || name.endsWith(THUMB_SUFFIX);
 }
 
 // Images that get a copy: not GIFs (it would stop moving) or SVGs.
@@ -26,12 +45,23 @@ export function takesPreview(mimeType: string): boolean {
 // The copy, in the browser: at most PREVIEW_WIDTH wide. A JPEG stays JPEG;
 // anything else (it may be transparent) WebP, or JPEG on white where the
 // browser can't make WebP. Null when it wouldn't be any lighter.
-export async function makePreview(file: File): Promise<Blob | null> {
+export function makePreview(file: File): Promise<Blob | null> {
+  return makeCopy(file, PREVIEW_WIDTH, 400_000);
+}
+
+// The small copy, made the same way at most THUMB_WIDTH wide.
+export function makeThumb(file: File): Promise<Blob | null> {
+  return makeCopy(file, THUMB_WIDTH, 60_000);
+}
+
+// Null when the image is already that small (no wider, and under
+// smallBytes) or a copy wouldn't be any lighter.
+async function makeCopy(file: File, maxWidth: number, smallBytes: number): Promise<Blob | null> {
   if (!takesPreview(file.type)) return null;
   const bitmap = await createImageBitmap(file);
   try {
-    if (bitmap.width <= PREVIEW_WIDTH && file.size < 400_000) return null;
-    const width = Math.min(PREVIEW_WIDTH, bitmap.width);
+    if (bitmap.width <= maxWidth && file.size < smallBytes) return null;
+    const width = Math.min(maxWidth, bitmap.width);
     const height = Math.round((bitmap.height * width) / bitmap.width);
     const canvas = document.createElement("canvas");
     canvas.width = width;

@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { signedInUser } from "@/lib/supabase/signed-in-user";
 import { assertCanUpload } from "@/lib/upload-guard";
 import { friendlyUploadError } from "@/lib/upload-limits";
 
@@ -80,7 +81,7 @@ export async function uploadReferenceImages(
   const supabase = createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await signedInUser(supabase);
   if (!user) throw new Error("Not signed in");
   await assertCanUpload(agencyId, files.reduce((n, f) => n + f.size, 0));
   const saved: { id: string; key: string }[] = [];

@@ -14,26 +14,37 @@ export interface MyProfile {
   designation: string | null;
   bio: string | null;
   avatar_asset_id: string | null;
+  // Read here for useReleasesSeen and useMyTips too: one read of the
+  // person's own row per page, not three.
+  releases_seen: string | null;
+  tips_every_hours: number | null;
+  tips_seen: string[] | null;
+  tips_last_at: string | null;
 }
 
-const PROFILE_COLUMNS = "id, email, name, first_name, last_name, designation, bio, avatar_asset_id";
+const PROFILE_COLUMNS =
+  "id, email, name, first_name, last_name, designation, bio, avatar_asset_id, releases_seen, tips_every_hours, tips_seen, tips_last_at";
 
-export function useMyProfile() {
-  const { data: user } = useCurrentUser();
-  return useQuery({
-    queryKey: ["my-profile", user?.id],
+export function myProfileQuery(userId: string | undefined) {
+  return {
+    queryKey: ["my-profile", userId],
     queryFn: async (): Promise<MyProfile> => {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("users")
         .select(PROFILE_COLUMNS)
-        .eq("id", user!.id)
+        .eq("id", userId!)
         .single();
       if (error) throw error;
       return data;
     },
-    enabled: !!user?.id,
-  });
+    staleTime: 5 * 60_000,
+  };
+}
+
+export function useMyProfile() {
+  const { data: user } = useCurrentUser();
+  return useQuery({ ...myProfileQuery(user?.id), enabled: !!user?.id });
 }
 
 // Names and designation come back title-cased by the database trigger

@@ -7,6 +7,7 @@ import { notifyClientActivity } from "@/lib/notify-client-activity";
 import { classifyComment } from "@/lib/ai/classify-comment-client";
 import type { CommentRow } from "./use-comments";
 import type { MyMembership } from "./use-my-membership";
+import type { MyAgency } from "./use-my-agency";
 
 type NewComment = {
   body: string;
@@ -83,10 +84,11 @@ export function useCreateComment(creativeId: string) {
         .getQueriesData<{ name: string | null; avatar_asset_id: string | null }>({ queryKey: ["my-profile"] })
         .map(([, d]) => d)
         .find(Boolean);
-      const membership = queryClient
-        .getQueriesData<MyMembership | null>({ queryKey: ["my-membership"] })
-        .map(([, d]) => d)
-        .find(Boolean);
+      // Read with the agency (useMyAgency), or on its own on a legacy address.
+      const membership = [
+        ...queryClient.getQueriesData<MyAgency | null>({ queryKey: ["my-agency"] }).map(([, d]) => d?.membership),
+        ...queryClient.getQueriesData<MyMembership | null>({ queryKey: ["my-membership"] }).map(([, d]) => d),
+      ].find(Boolean);
       const isClient = !!membership?.client_id;
       const shown: CommentRow = {
         id: `pending-${Date.now()}`,

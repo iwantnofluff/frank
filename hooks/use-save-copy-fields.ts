@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { signedInUser } from "@/lib/supabase/signed-in-user";
 import type { CopyVersionRow } from "./use-copy-versions";
 
 // Every save creates a new copy version rather than updating one in place
@@ -23,7 +24,7 @@ export function useSaveCopyFields(creativeId: string) {
       const supabase = createClient();
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await signedInUser(supabase);
       if (!user) throw new Error("Not signed in");
 
       const { data, error } = await supabase

@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { signedInUser } from "@/lib/supabase/signed-in-user";
 import { uploadKnowledgeAsset } from "@/lib/upload-knowledge-asset";
 
 export function useCreateAgencyKnowledgeEntry(agencyId: string | undefined) {
@@ -12,7 +13,7 @@ export function useCreateAgencyKnowledgeEntry(agencyId: string | undefined) {
       const supabase = createClient();
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await signedInUser(supabase);
 
       const { error } = await supabase.from("agency_knowledge_entries").insert({
         agency_id: agencyId,
@@ -40,7 +41,7 @@ export function useCreateAgencyKnowledgeFile(agencyId: string | undefined) {
       const supabase = createClient();
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await signedInUser(supabase);
 
       const { error } = await supabase.from("agency_knowledge_entries").insert({
         agency_id: agencyId,

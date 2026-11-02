@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { signedInUser } from "@/lib/supabase/signed-in-user";
 import { assertCanUpload } from "@/lib/upload-guard";
 
 export const AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -31,7 +32,7 @@ export async function uploadAvatar(agencyId: string, file: File): Promise<string
   const supabase = createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await signedInUser(supabase);
   if (!user) throw new Error("Not signed in");
   await assertCanUpload(agencyId, file.size);
 

@@ -27,13 +27,16 @@ export interface SharedCreative {
   // A continuous project's Live Date (the list's date after the name).
   due_on?: string | null;
   // A video's latest thumbnail, and the words on it (phase118).
-  thumbnail?: { version_no: number; filename: string; signed_url: string | null } | null;
+  // small_url: its small copy (lib/artwork-preview.ts), for the feed grid.
+  thumbnail?: { version_no: number; filename: string; signed_url: string | null; small_url?: string | null } | null;
   thumbnail_text?: string | null;
   asset: {
     version_no: number;
     mime_type: string;
     filename: string;
     signed_url: string | null;
+    // Its small copy, for the feed grid (lib/artwork-preview.ts).
+    small_url?: string | null;
   } | null;
   copy: {
     version_no: number;
@@ -164,14 +167,25 @@ function keepSignedUrls(prev: SharedReviewResult | undefined, next: SharedReview
         was.asset && c.asset && was.asset.version_no === c.asset.version_no && was.asset.filename === c.asset.filename;
       return {
         ...c,
-        asset: c.asset && sameAsset ? { ...c.asset, signed_url: reuse(was.asset!.signed_url, c.asset.signed_url) } : c.asset,
+        asset:
+          c.asset && sameAsset
+            ? {
+                ...c.asset,
+                signed_url: reuse(was.asset!.signed_url, c.asset.signed_url),
+                small_url: reuse(was.asset!.small_url, c.asset.small_url ?? null),
+              }
+            : c.asset,
         slides: c.slides.map((s) => {
           const old = was.slides.find((o) => o.position === s.position && o.filename === s.filename);
           return old ? { ...s, signed_url: reuse(old.signed_url, s.signed_url) } : s;
         }),
         thumbnail:
           c.thumbnail && was.thumbnail && was.thumbnail.version_no === c.thumbnail.version_no
-            ? { ...c.thumbnail, signed_url: reuse(was.thumbnail.signed_url, c.thumbnail.signed_url) }
+            ? {
+                ...c.thumbnail,
+                signed_url: reuse(was.thumbnail.signed_url, c.thumbnail.signed_url),
+                small_url: reuse(was.thumbnail.small_url, c.thumbnail.small_url ?? null),
+              }
             : c.thumbnail,
       };
     }),

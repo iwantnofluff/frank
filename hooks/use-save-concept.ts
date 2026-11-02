@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { signedInUser } from "@/lib/supabase/signed-in-user";
 
 // Save Concept, References and Notes on a saved post's Brief (direct
 // instruction, as Save Content is on the Content tab): the Concept and the
@@ -42,7 +43,7 @@ export function useSaveConcept(creativeId: string) {
       const { data: now } = await supabase.from("creatives").select("updated_at, updated_by").eq("id", creativeId).maybeSingle();
       const {
         data: { user: me },
-      } = await supabase.auth.getUser();
+      } = await signedInUser(supabase);
       // Their own save from another window: nothing of anyone else's to undo.
       if (now && now.updated_by === me?.id) {
         const { data: again, error: againError } = await save(now.updated_at as string);

@@ -1,9 +1,14 @@
 "use client";
 
-import { CreativeModal, type FocusTarget } from "@/components/creative-review/CreativeModal";
+import { lazyWindow } from "@/components/ui/lazyWindow";
+import type { FocusTarget } from "@/components/creative-review/CreativeModal";
 import { useCreative } from "@/hooks/use-creative";
 import { useCreativeVersions } from "@/hooks/use-creative-versions";
 import { useCopyVersions } from "@/hooks/use-copy-versions";
+
+// The editor itself loads when the window first opens, not with the table.
+// (The project page warms it once it settles.)
+const CreativeModal = lazyWindow(() => import("@/components/creative-review/CreativeModal").then((m) => m.CreativeModal));
 
 // A post's Edit window, opened from a project table's Pending cell (direct
 // instruction) without leaving the table: the post and its versions loaded

@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentUser } from "./use-current-user";
+import { myAgencyQuery, type MyAgency } from "./use-my-agency";
 import type { AgencyRole } from "@/lib/roles";
 
 export interface MyMembership {
@@ -16,10 +17,24 @@ export interface MyMembership {
 // (frank-schema.docx — memberships). A Client can be on several clients,
 // one membership each (phase59), so this is any one of them: what's read
 // from it (Client or not, and their role) is the same for all.
+//
+// Read from useMyAgency's row when it's the same agency (always, on an
+// agency's own address): no request of its own. Asked separately only
+// where the agency differs (a legacy address, which isn't narrowed).
 export function useMyMembership(agencyId: string | undefined) {
   const { data: user } = useCurrentUser();
+  const { data: agency, isPending: agencyPending } = useQuery({
+    ...myAgencyQuery(user?.id),
+    enabled: !!agencyId && !!user?.id,
+  });
+  const own = !!agency && agency.agencyId === agencyId;
 
-  return useQuery({
+  const shared = useQuery({
+    ...myAgencyQuery(user?.id),
+    enabled: !!agencyId && !!user?.id,
+    select: (a: MyAgency | null): MyMembership | null => (a && a.agencyId === agencyId ? a.membership : null),
+  });
+  const separate = useQuery({
     queryKey: ["my-membership", agencyId, user?.id],
     queryFn: async (): Promise<MyMembership | null> => {
       const supabase = createClient();
@@ -37,6 +52,7 @@ export function useMyMembership(agencyId: string | undefined) {
       if (error) throw error;
       return data[0] ?? null;
     },
-    enabled: !!agencyId && !!user?.id,
+    enabled: !!agencyId && !!user?.id && !agencyPending && !own,
   });
+  return own || agencyPending ? shared : separate;
 }

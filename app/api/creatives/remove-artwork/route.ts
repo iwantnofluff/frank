@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
-import { PREVIEW_SUFFIX, withPreviews } from "@/lib/artwork-preview";
+import { isCopy, withPreviews } from "@/lib/artwork-preview";
 
 // Removing a post's artwork now, from its notification's window (phase60):
 // the versions keep their rows and comments, the files go. The access check
@@ -30,8 +30,8 @@ export async function POST(request: Request) {
   if (paths.length) {
     try {
       const { data } = await createServiceRoleClient().storage.from("assets").remove(withPreviews(paths));
-      // Originals only: their lighter copies (lib/artwork-preview.ts) go too.
-      filesRemoved = (data ?? []).filter((f) => !f.name.endsWith(PREVIEW_SUFFIX)).length;
+      // Originals only: their copies (lib/artwork-preview.ts) go too.
+      filesRemoved = (data ?? []).filter((f) => !isCopy(f.name)).length;
     } catch {
       // The rows are already gone; a file left in storage is the known
       // storage-sweep gap, not a reason to report the removal as failed.

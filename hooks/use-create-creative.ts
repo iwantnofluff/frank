@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { signedInUser } from "@/lib/supabase/signed-in-user";
 
 export interface CreateCreativeInput {
   name: string;
@@ -43,7 +44,7 @@ export function useCreateCreative(projectId: string) {
       const supabase = createClient();
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await signedInUser(supabase);
       if (!user) throw new Error("Not signed in");
 
       // Computed from the project's current max, not the column's bare

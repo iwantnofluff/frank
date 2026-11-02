@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { signedInUser } from "@/lib/supabase/signed-in-user";
 import type { CommentRow } from "./use-comments";
 
 export function useToggleCommentResolved(creativeId: string) {
@@ -24,7 +25,7 @@ export function useToggleCommentResolved(creativeId: string) {
       if (resolve) {
         const {
           data: { user },
-        } = await supabase.auth.getUser();
+        } = await signedInUser(supabase);
         const { data, error } = await supabase
           .from("comments")
           .update({ resolved_at: new Date().toISOString(), resolved_by: user?.id })

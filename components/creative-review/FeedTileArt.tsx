@@ -1,8 +1,8 @@
 "use client";
 
-import { useCreativeVersions } from "@/hooks/use-creative-versions";
-import { useArtworkUrl } from "@/hooks/use-asset-signed-url";
-import { useThumbnailVersions } from "@/hooks/use-thumbnails";
+import { useArtworkThumbUrl } from "@/hooks/use-asset-signed-url";
+import { useArtworkByCreative } from "@/hooks/use-artwork-by-creative";
+import { useThumbnailsByCreative } from "@/hooks/use-thumbnails";
 import type { CreativeListRow } from "@/hooks/use-creatives";
 
 // Real artwork when a creative has one, a plain "No Creative" tile when it
@@ -16,29 +16,33 @@ import type { CreativeListRow } from "@/hooks/use-creatives";
 // (CreativePreviewPopover's own PlaceholderArt is untouched — this
 // component never used it for anything but this one fallback case.)
 //
-// One signed-URL fetch per tile (useAssetSignedUrl, the same hook the
-// single-creative Content view already uses for its own artwork);
-// TanStack Query caches by storage_key, so re-opening the same grid
-// doesn't refetch.
+// Each tile is given the whole grid's ids (gridIds), so every tile reads
+// the same two batched queries (latest artwork, latest thumbnail) rather
+// than two of its own, and the links are signed together
+// (useArtworkUrl batches). TanStack Query caches by storage_key, so
+// re-opening the same grid doesn't refetch.
 export function FeedTileArt({
   creative,
+  gridIds,
   timeLabel,
   overdue = false,
 }: {
   creative: CreativeListRow;
+  gridIds: string[];
   timeLabel: string;
   // Past its date and not live (lib/post-live.ts): the date in bold red.
   overdue?: boolean;
 }) {
-  const { data: versions } = useCreativeVersions(creative.id);
-  const latest = versions?.[0] ?? null;
+  const { data: artwork } = useArtworkByCreative(gridIds);
+  const latest = artwork?.[creative.id]?.first ?? null;
   // A video's thumbnail when it has one (phase118, direct instruction), as
   // the feed shows it; else the artwork.
-  const { data: thumbnails } = useThumbnailVersions(creative.id);
-  const thumb = thumbnails?.find((t) => t.asset)?.asset ?? null;
-  const shown = thumb ?? latest?.asset ?? null;
-  const { data: signedUrl } = useArtworkUrl(shown?.storage_key);
-  const isVideo = !thumb && (latest?.asset?.mime_type?.startsWith("video/") ?? false);
+  const { data: thumbnails } = useThumbnailsByCreative(gridIds);
+  const thumb = thumbnails?.[creative.id] ?? null;
+  const shown = thumb ?? latest;
+  // The small copy (lib/artwork-preview.ts), as a tile needs.
+  const { data: signedUrl } = useArtworkThumbUrl(shown?.storage_key);
+  const isVideo = !thumb && (latest?.mime_type.startsWith("video/") ?? false);
 
   if (!signedUrl) {
     return (
@@ -61,7 +65,7 @@ export function FeedTileArt({
         // next/image's static optimisation (same reasoning as the
         // Content view's own img, app/(app)/creatives/[id]/page.tsx).
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={signedUrl} alt={creative.name} />
+        <img src={signedUrl} alt={creative.name} loading="lazy" decoding="async" />
       )}
       <div className="pp-art-overlay">
         <div className="pp-art-title">{creative.name}</div>

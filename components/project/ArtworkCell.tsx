@@ -2,7 +2,7 @@
 
 import type { PostArtwork } from "@/hooks/use-artwork-by-creative";
 import type { ThumbnailAsset } from "@/hooks/use-thumbnails";
-import { useArtworkUrl } from "@/hooks/use-asset-signed-url";
+import { useArtworkThumbUrl } from "@/hooks/use-asset-signed-url";
 
 // The table's Creative cell (direct instruction): a small phone with the
 // post's thumbnail (phase118) or its artwork, a video's first frame, at
@@ -20,7 +20,8 @@ export function ArtworkCell({
 }) {
   const shown = thumbnail ?? artwork.first;
   const video = !thumbnail && artwork.first.mime_type.startsWith("video/");
-  const { data: url } = useArtworkUrl(shown.storage_key);
+  // The small copy (lib/artwork-preview.ts): the cell is a few dozen pixels.
+  const { data: url } = useArtworkThumbUrl(shown.storage_key);
   return (
     <span className="artcell">
       <span className="artmini" aria-hidden="true">
@@ -29,7 +30,7 @@ export function ArtworkCell({
             <video src={`${url}#t=0.1`} muted playsInline preload="metadata" />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element -- a short-lived signed URL
-            <img src={url} alt="" />
+            <img src={url} alt="" loading="lazy" decoding="async" />
           ))}
       </span>
       <span className="artname">

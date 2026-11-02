@@ -96,6 +96,8 @@ export function FeedPreviewGrid({
   // The post being looked at too: once it's live, the real one stands for
   // it, as for any other (direct instruction: it showed twice).
   const planned = connected ? creatives.filter((c) => !isLive(c, now)) : creatives;
+  // Both tabs' tiles read their artwork in one batch (FeedTileArt).
+  const plannedIds = planned.map((c) => c.id);
   const shown = tab === "reels" ? planned.filter((c) => postFormats(c).includes("ig_reel")) : planned;
 
   // Same hover-preview pattern as ProjectCalendarTable's own creative
@@ -170,7 +172,7 @@ export function FeedPreviewGrid({
                 onMouseLeave={scheduleHide}
                 title={c.name}
               >
-                <FeedTileArt creative={c} timeLabel={timeLabel} overdue={isOverdue(c, now)} />
+                <FeedTileArt creative={c} gridIds={plannedIds} timeLabel={timeLabel} overdue={isOverdue(c, now)} />
                 {/* Its stage, as a review link's Feed shows it (direct
                     instruction: in place of "Planned", the two the same). */}
                 {isLive(c, now) ? <span className="stagepill stg live">Live</span> : <StagePill stage={c.stage} />}

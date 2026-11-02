@@ -1,4 +1,4 @@
-import { Upload, type DetailedError } from "tus-js-client";
+import type { DetailedError } from "tus-js-client";
 import { createClient } from "@/lib/supabase/client";
 import { friendlyUploadError } from "@/lib/upload-limits";
 
@@ -20,6 +20,9 @@ export async function uploadWithProgress(
   // so the bar can say so rather than freeze.
   onRetry?: () => void,
 ): Promise<void> {
+  // Loaded on the first upload, not with every page that can upload (the
+  // public review page reaches this file through the feed grid).
+  const { Upload } = await import("tus-js-client");
   const supabase = createClient();
   let accepted = 0;
   let tried = false;

@@ -20,7 +20,10 @@ test("dashboard — clients list", async ({ page, frank }) => {
   // of both queries above and fails closed (hidden) until it does — wait
   // for it too, or this screenshot can race ahead under worker
   // concurrency and land on a rail missing Settings.
-  await page.waitForSelector(".hbrand-agency");
+  // Not the blank stand-in (.hbrand-wait) it shows while the workspace's
+  // settings load: the stats above no longer wait for the workspace, so
+  // they can be ready first.
+  await page.waitForSelector(".hbrand-agency:not(.hbrand-wait)");
   // The greeting changes with every sign-in — checked on its own below.
   await expect(page.locator(".greeting")).not.toHaveText("\u00a0");
   await expect(page).toHaveScreenshot("dashboard.png", { mask: [page.locator(".greeting")] });

@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { createAnonServerClient } from "@/lib/supabase/anon-server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { brandingAllowed } from "@/lib/plans";
-import { previewKey } from "@/lib/artwork-preview";
+import { previewKey, thumbKey } from "@/lib/artwork-preview";
 
 interface RpcCreative {
   id: string;
@@ -55,10 +55,33 @@ export async function POST(request: Request) {
   }
 
   const anon = createAnonServerClient();
-  const { data, error } = await anon.rpc("get_shared_review", {
-    p_token: token,
-    p_passcode: passcode ?? null,
-  });
+  let serviceRole: ReturnType<typeof createServiceRoleClient> | null = null;
+  try {
+    serviceRole = createServiceRoleClient();
+  } catch {
+    // Key not configured — degrade to "no preview" rather than a hard
+    // failure of the whole page. Every prior phase has treated a missing
+    // asset pipeline this way rather than erroring the page out.
+  }
+  // The review itself (the token and passcode checked by the function),
+  // and the link's agency (paused? which plan?) and its project's client
+  // logo, read once for everything below — at the same time (speed pass,
+  // 2 Nov 2026: this runs for every visit and every 8-second check). The
+  // link's row is only used once the function has accepted the token.
+  // Reported directly: the link took 5–6s to load, mostly lookups waiting
+  // on one another; they now run together where they can, and every
+  // address is signed in one request.
+  const [{ data, error }, linkRow] = await Promise.all([
+    anon.rpc("get_shared_review", { p_token: token, p_passcode: passcode ?? null }),
+    serviceRole
+      ? serviceRole
+          .from("shared_links")
+          .select("agency_id, scope, creative_id, picked_creatives, agencies(name, suspended_at, plan), projects(client_id, clients(name, logo_asset_id))")
+          .eq("token", token)
+          .maybeSingle()
+          .then(({ data: row }) => row as unknown as LinkRow | null, () => null)
+      : Promise.resolve(null),
+  ]);
 
   if (error) {
     return NextResponse.json({ status: "not_found" }, { status: 500 });
@@ -69,29 +92,11 @@ export async function POST(request: Request) {
   }
 
   const creatives = data.creatives as RpcCreative[];
-  let serviceRole: ReturnType<typeof createServiceRoleClient> | null = null;
-  // The link's agency (paused? which plan?) and its project's client logo,
-  // read once for everything below. Reported directly: the link took 5–6s
-  // to load, mostly lookups waiting on one another; they now run together
-  // where they can, and every address is signed in one request.
-  let link: LinkRow | null = null;
-  try {
-    serviceRole = createServiceRoleClient();
-    const { data: row } = await serviceRole
-      .from("shared_links")
-      .select("agency_id, scope, creative_id, picked_creatives, agencies(name, suspended_at, plan), projects(client_id, clients(name, logo_asset_id))")
-      .eq("token", token)
-      .maybeSingle();
-    link = row as unknown as LinkRow | null;
-    // A paused agency's review links stop working (phase37) — on every
-    // address, including ones the proxy doesn't gate (the old vercel.app).
-    if (link?.agencies?.suspended_at) {
-      return NextResponse.json({ status: "not_found" });
-    }
-  } catch {
-    // Key not configured — degrade to "no preview" rather than a hard
-    // failure of the whole page. Every prior phase has treated a missing
-    // asset pipeline this way rather than erroring the page out.
+  const link: LinkRow | null = linkRow;
+  // A paused agency's review links stop working (phase37) — on every
+  // address, including ones the proxy doesn't gate (the old vercel.app).
+  if (link?.agencies?.suspended_at) {
+    return NextResponse.json({ status: "not_found" });
   }
 
   if (body.pulse) {
@@ -266,10 +271,13 @@ export async function POST(request: Request) {
   const keys = new Set<string>();
   // Each artwork's lighter copy too (lib/artwork-preview.ts), shown where it
   // exists; a missing one just doesn't sign.
+  // And the small copy of each post's artwork and thumbnail, for the feed
+  // grid's tiles.
   for (const c of creatives)
-    if (c.asset?.storage_key && !emptied.has(c.id)) keys.add(c.asset.storage_key).add(previewKey(c.asset.storage_key));
+    if (c.asset?.storage_key && !emptied.has(c.id))
+      keys.add(c.asset.storage_key).add(previewKey(c.asset.storage_key)).add(thumbKey(c.asset.storage_key));
   for (const r of slideRows) if (r.asset) keys.add(r.asset.storage_key).add(previewKey(r.asset.storage_key));
-  for (const t of thumbById.values()) keys.add(t.storage_key).add(previewKey(t.storage_key));
+  for (const t of thumbById.values()) keys.add(t.storage_key).add(previewKey(t.storage_key)).add(thumbKey(t.storage_key));
   if (settings?.logo_asset) keys.add(settings.logo_asset.storage_key);
   if (clientLogo) keys.add(clientLogo.storage_key);
   const signedByKey = new Map<string, string>();
@@ -280,6 +288,8 @@ export async function POST(request: Request) {
   const signedUrl = (key: string | null | undefined) => (key ? (signedByKey.get(key) ?? null) : null);
   // For showing artwork: its copy if there is one, else the original.
   const artworkUrl = (key: string) => signedUrl(previewKey(key)) ?? signedUrl(key);
+  // For a small tile: its small copy, else as above.
+  const smallUrl = (key: string) => signedUrl(thumbKey(key)) ?? artworkUrl(key);
 
   const creativeOf = new Map([...latest].map(([cid, vid]) => [vid, cid]));
   const slidesById = new Map<string, { position: number; signed_url: string | null; mime_type: string; filename: string }[]>();
@@ -306,7 +316,9 @@ export async function POST(request: Request) {
       // A video's thumbnail and its words (phase118); no storage key leaves.
       thumbnail: (() => {
         const t = thumbById.get(raw.id);
-        return t ? { version_no: t.version_no, filename: t.filename, signed_url: artworkUrl(t.storage_key) } : null;
+        return t
+          ? { version_no: t.version_no, filename: t.filename, signed_url: artworkUrl(t.storage_key), small_url: smallUrl(t.storage_key) }
+          : null;
       })(),
       thumbnail_text: thumbTextById.get(raw.id) ?? null,
       comments: raw.comments.map((m) => ({
@@ -326,6 +338,7 @@ export async function POST(request: Request) {
             mime_type: asset.mime_type,
             filename: asset.filename,
             signed_url: serviceRole ? artworkUrl(asset.storage_key) : null,
+            small_url: serviceRole ? smallUrl(asset.storage_key) : null,
           }
         : null,
     };

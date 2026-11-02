@@ -9,12 +9,17 @@ import { useIsStaff } from "@/hooks/use-is-staff";
 import { useProjectFolders, type ProjectFolderRow } from "@/hooks/use-project-folders";
 import { useDeleteProjectFolder } from "@/hooks/use-delete-project-folder";
 import { KBadge } from "@/components/project/KBadge";
-import { NewProjectModal } from "@/components/project/NewProjectModal";
-import { FolderModal } from "@/components/project/FolderModal";
 import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
 import { BrandReminder } from "@/components/clients/BrandReminder";
 import { useProjectSortStore, type ProjectSort } from "@/store/project-sort-store";
 import { STAGE } from "@/lib/stage-labels";
+import { lazyWindow } from "@/components/ui/lazyWindow";
+import { useWarmUp } from "@/components/ui/useWarmUp";
+
+// Opened on a click: loaded then, not with the page (warmed once it settles).
+const NewProjectModal = lazyWindow(() => import("@/components/project/NewProjectModal").then((m) => m.NewProjectModal));
+const FolderModal = lazyWindow(() => import("@/components/project/FolderModal").then((m) => m.FolderModal));
+const WINDOWS = [NewProjectModal.preload, FolderModal.preload];
 
 // How a client's projects can be ordered (direct instruction, in place of
 // searching them).
@@ -51,6 +56,7 @@ export default function ClientWorkspacePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  useWarmUp(WINDOWS);
   const { id } = use(params);
   const {
     data: client,

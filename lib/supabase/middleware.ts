@@ -1,4 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { agencyHeader, hostWithSubdomain, sessionCookieOptions, tenantFromHost } from "@/lib/tenant";
 
@@ -66,10 +67,36 @@ function isPublicPath(pathname: string) {
 // layout uses it to name the client in the rail in the first paint
 // (direct instruction: no delay on a fresh load). Built from the request's
 // headers as they stand, so cookies refreshed below go along too.
-function nextWithPath(request: NextRequest) {
+//
+// x-frank-member: "1" once this proxy has itself found the person to be a
+// member of this address's workspace, so the app's layout needn't ask the
+// database again. Whatever the browser sent under that name is dropped:
+// only the proxy says it.
+function nextWithPath(request: NextRequest, member = false) {
   const headers = new Headers(request.headers);
   headers.set("x-frank-path", request.nextUrl.pathname);
+  headers.delete("x-frank-member");
+  if (member) headers.set("x-frank-member", "1");
   return NextResponse.next({ request: { headers } });
+}
+
+type Gate = { name: string; suspended: boolean; isMember: boolean };
+
+// The workspace at an agency's address, and whether the person signed in
+// belongs to it: one call (gate_for_subdomain, phase132). Where the
+// database doesn't have that yet, the two calls it replaced.
+async function workspaceGate(supabase: SupabaseClient, subdomain: string, signedIn: boolean): Promise<Gate | null> {
+  const { data, error } = await supabase.rpc("gate_for_subdomain", { p_subdomain: subdomain });
+  if (!error) {
+    const row = (data as { name: string; suspended: boolean; is_member: boolean }[] | null)?.[0];
+    return row ? { name: row.name, suspended: row.suspended, isMember: row.is_member } : null;
+  }
+  const { data: workspace } = await supabase.rpc("workspace_for_subdomain", { p_subdomain: subdomain });
+  const found = (workspace as { name: string; suspended: boolean }[] | null)?.[0];
+  if (!found) return null;
+  if (!signedIn || found.suspended) return { ...found, isMember: false };
+  const { data: mine } = await supabase.rpc("current_agency_ids");
+  return { ...found, isMember: Array.isArray(mine) && mine.length > 0 };
 }
 
 export async function updateSession(request: NextRequest) {
@@ -147,11 +174,16 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  // Do not add logic between createServerClient and getUser — the session
+  // Do not add logic between createServerClient and getClaims — the session
   // refresh has to happen on every request or users get silently logged out.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims checks the session's signature here, against the project's
+  // published key (cached between requests), rather than asking the auth
+  // server as getUser does: one round trip fewer on every request. It
+  // refreshes an expired session just the same. The database checks the
+  // session itself on every query, and pages that need the full user
+  // (the app's layout, API routes) still call getUser.
+  const { data: claims } = await supabase.auth.getClaims();
+  const user = claims?.claims.sub ? { id: claims.claims.sub } : null;
 
   const { pathname } = request.nextUrl;
 
@@ -175,10 +207,12 @@ export async function updateSession(request: NextRequest) {
     return response;
   }
 
+  // Found here to be a member of this address's workspace (below).
+  let member = false;
+
   // agencyname.beingfrank.app: the workspace has to exist…
   if (tenant.kind === "agency" && pathname !== "/no-workspace") {
-    const { data: workspace } = await supabase.rpc("workspace_for_subdomain", { p_subdomain: tenant.subdomain });
-    const found = (workspace as { name: string; suspended: boolean }[] | null)?.[0];
+    const found = await workspaceGate(supabase, tenant.subdomain, !!user);
     if (!found) {
       // An address the agency used to have (phase41): the same page at its
       // new one, so links already sent keep working.
@@ -198,10 +232,8 @@ export async function updateSession(request: NextRequest) {
     // …and someone signed in has to belong to it. Their memberships are
     // already narrowed to this agency, so none means they're not in it.
     if (user && !isPublicPath(pathname)) {
-      const { data: mine } = await supabase.rpc("current_agency_ids");
-      if (!mine || (Array.isArray(mine) && mine.length === 0)) {
-        return showInstead("/not-a-member", 403);
-      }
+      if (!found.isMember) return showInstead("/not-a-member", 403);
+      member = true;
     }
   }
 
@@ -212,12 +244,21 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && pathname === "/login") {
+  // Away from sign-in only once the auth server agrees: a session ended
+  // there (signed out elsewhere, removed) still has a well-signed token
+  // until it expires, which the app's layout (getUser) refuses — sending
+  // it here, and this sending it back, round and round. Asked only on this
+  // one page, so it costs nothing elsewhere.
+  if (user && pathname === "/login" && !(await supabase.auth.getUser()).error) {
     const url = request.nextUrl.clone();
     url.pathname = tenant.kind === "admin" ? "/admin" : "/dashboard";
     url.search = "";
     return NextResponse.redirect(url);
   }
 
-  return supabaseResponse;
+  if (!member) return supabaseResponse;
+  // Tell the page what was found, keeping any session cookies just refreshed.
+  const response = nextWithPath(request, true);
+  supabaseResponse.cookies.getAll().forEach((c) => response.cookies.set(c));
+  return response;
 }

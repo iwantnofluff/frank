@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { signedInUser } from "@/lib/supabase/signed-in-user";
 import type { ProofreadRuleRow } from "@/lib/proofread-rules";
 
 // The workspace's proofreading rules (phase122): a row per built-in that's
@@ -63,7 +64,7 @@ export function useAddProofreadRule(agencyId: string | undefined) {
       const supabase = createClient();
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await signedInUser(supabase);
       const { data, error } = await supabase
         .from("proofread_rules")
         .insert({ agency_id: agencyId, created_by: user?.id ?? null, ...input })

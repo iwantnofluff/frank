@@ -72,8 +72,9 @@ export function SharedFeedGrid({ controller, brandName }: { controller: ReviewCo
           }
           // A video's thumbnail when it has one (phase118, direct
           // instruction), as the feed shows it; else the artwork.
-          const thumb = c.thumbnail?.signed_url ?? null;
-          const url = thumb ?? c.asset?.signed_url ?? null;
+          // Small copies first (lib/artwork-preview.ts): a tile is small.
+          const thumb = c.thumbnail?.small_url ?? c.thumbnail?.signed_url ?? null;
+          const url = thumb ?? c.asset?.small_url ?? c.asset?.signed_url ?? null;
           const video = !thumb && !!c.asset?.mime_type.startsWith("video/");
           return (
             <button
@@ -93,7 +94,7 @@ export function SharedFeedGrid({ controller, brandName }: { controller: ReviewCo
                 <video src={`${url}#t=0.1`} muted playsInline preload="metadata" aria-label={c.name} />
               ) : url ? (
                 // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
-                <img src={url} alt={c.name} />
+                <img src={url} alt={c.name} loading="lazy" decoding="async" />
               ) : null}
               {/* Its title and live date, centred, as on the Review page's
                   Feed Preview (direct instruction: the two the same). */}

@@ -42,13 +42,11 @@ import { PNAV_CURRENT_H, PostNeighbours } from "@/components/creative-review/Pos
 import { StoryReplyBar } from "@/components/creative-review/StoryReplyBar";
 import { useClientInstagramFeed } from "@/hooks/use-instagram";
 import { CommentsPanel } from "@/components/creative-review/CommentsPanel";
-import { ShareModal } from "@/components/creative-review/ShareModal";
 import { AnnotationLayer, type ToolMode } from "@/components/creative-review/AnnotationLayer";
 import { NoArtwork } from "@/components/creative-review/NoArtwork";
 import { CarouselNav } from "@/components/creative-review/CarouselNav";
 import { VideoPlayer, type TimelineMarker } from "@/components/creative-review/VideoPlayer";
 import { CaptionHighlighter } from "@/components/creative-review/CaptionHighlighter";
-import { CreativeModal } from "@/components/creative-review/CreativeModal";
 import { useProjectPresence } from "@/hooks/use-project-presence";
 import { PresenceAvatars } from "@/components/app-shell/PresenceAvatars";
 import { STAGE, exceptionLabel, stageColor, stageLabel } from "@/lib/stage-labels";
@@ -61,6 +59,14 @@ import { usePhoneScreen } from "@/hooks/use-phone-screen";
 import { MobilePost } from "@/components/creative-review/MobilePost";
 import { publishDate } from "@/lib/publish-date";
 import { OpenAsset } from "@/components/project/OpenAsset";
+import { lazyWindow } from "@/components/ui/lazyWindow";
+import { useWarmUp } from "@/components/ui/useWarmUp";
+
+// Edit and Share open on a click: loaded then, not with the page (and
+// warmed once the page settles, so they still open at once).
+const CreativeModal = lazyWindow(() => import("@/components/creative-review/CreativeModal").then((m) => m.CreativeModal));
+const ShareModal = lazyWindow(() => import("@/components/creative-review/ShareModal").then((m) => m.ShareModal));
+const WINDOWS = [CreativeModal.preload, ShareModal.preload];
 
 // How close, in seconds, the paused moment has to be to a pin's for it to
 // show on the frame — about a frame or two either side.
@@ -69,6 +75,7 @@ const VIDEO_FRAME_TOLERANCE = 0.25;
 // The post page itself; page.tsx reads its post, versions and artwork
 // links on the server first, so the artwork shows with the page.
 export function CreativeReviewPage({ id }: { id: string }) {
+  useWarmUp(WINDOWS);
   const router = useRouter();
   const {
     data: creative,

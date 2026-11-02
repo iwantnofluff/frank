@@ -126,7 +126,7 @@ export function LiveTile({ post, onOpen }: { post: LiveFeed["posts"][number]; on
     >
       {post.imageUrl && (
         // eslint-disable-next-line @next/next/no-img-element -- Instagram's own short-lived image URL
-        <img src={post.imageUrl} alt={post.caption ?? ""} loading="lazy" />
+        <img src={post.imageUrl} alt={post.caption ?? ""} loading="lazy" decoding="async" />
       )}
       {(post.carousel || post.videoUrl) && (
         <span className="feedgrid-kind" aria-hidden="true">

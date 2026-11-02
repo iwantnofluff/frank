@@ -44,6 +44,7 @@ const SCOPE_OPTIONS: {
 // for looking like the same grid.
 function PieceTile({
   creative,
+  gridIds,
   selected,
   selectable,
   ineligible,
@@ -52,6 +53,8 @@ function PieceTile({
   onHoverLeave,
 }: {
   creative: CreativeListRow;
+  // Every tile's id, so the tiles share one artwork read (FeedTileArt).
+  gridIds: string[];
   selected: boolean;
   // False under scope "one" — the grid still shows every piece so the
   // current one's selection reads in context, but only "Multiple Posts"
@@ -84,7 +87,7 @@ function PieceTile({
       onMouseEnter={(e) => onHoverEnter(creative, e.currentTarget)}
       onMouseLeave={onHoverLeave}
     >
-      <FeedTileArt creative={creative} timeLabel={timeLabel} />
+      <FeedTileArt creative={creative} gridIds={gridIds} timeLabel={timeLabel} />
       <span className="pktile-check">
         <svg viewBox="0 0 24 24">
           <path d="M20 6L9 17l-5-5" />
@@ -136,6 +139,7 @@ export function ShareModal({
   // returns them too, for the project page's own Active/Archived toggle.
   // Nor are Ideas (direct instruction): the link never carries one (phase106).
   const creatives = useMemo(() => (allCreatives ?? []).filter((c) => !c.archived_at && !isIdea(c)), [allCreatives]);
+  const creativeIds = useMemo(() => creatives.map((c) => c.id), [creatives]);
   const createLink = useCreateSharedLink();
 
   // Same hover-preview pattern as ProjectCalendarTable's own creative rows
@@ -392,6 +396,7 @@ export function ShareModal({
                 <PieceTile
                   key={c.id}
                   creative={c}
+                  gridIds={creativeIds}
                   selected={selectedIds.has(c.id)}
                   selectable={scope === "pick" && c.stage >= STAGE.review}
                   ineligible={scope === "pick" && c.stage < STAGE.review}

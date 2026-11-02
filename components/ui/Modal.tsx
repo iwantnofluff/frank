@@ -60,14 +60,22 @@ export function Modal({
       // and torn down in the same moment).
       if (!el || !el.isConnected || !el.classList.contains("is-open")) return;
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      // Copied as it is now (still open), but only left behind once React
+      // has finished: if the window is still in the page then, this was
+      // an effect run again over a window staying put (React does so in
+      // development, after the paint for a window that opened a moment
+      // after the click, e.g. once its code had loaded), not a close.
       const ghost = el.cloneNode(true) as HTMLElement;
-      ghost.classList.add("closing");
-      ghost.setAttribute("aria-hidden", "true");
-      ghost.inert = true;
-      document.body.appendChild(ghost);
-      // Removed one frame later, so it starts from open, plays, and goes.
-      requestAnimationFrame(() => ghost.classList.remove("is-open"));
-      setTimeout(() => ghost.remove(), CLOSE_MS + 40);
+      queueMicrotask(() => {
+        if (el.isConnected) return;
+        ghost.classList.add("closing");
+        ghost.setAttribute("aria-hidden", "true");
+        ghost.inert = true;
+        document.body.appendChild(ghost);
+        // Removed one frame later, so it starts from open, plays, and goes.
+        requestAnimationFrame(() => ghost.classList.remove("is-open"));
+        setTimeout(() => ghost.remove(), CLOSE_MS + 40);
+      });
     };
   }, []);
 

@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { signedInUser } from "@/lib/supabase/signed-in-user";
 
 // Who's looking at a review link (direct instruction): signed in to Frank
 // or not, and if so whether they're on this workspace's team (not one of
@@ -16,7 +17,7 @@ export function useReviewViewer() {
       const supabase = createClient();
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await signedInUser(supabase);
       if (!user) return { signedIn: false, isTeam: false };
       const { data } = await supabase
         .from("memberships")

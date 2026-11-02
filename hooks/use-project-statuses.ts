@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { signedInUser } from "@/lib/supabase/signed-in-user";
 
 // A project's statuses within In Production and Internal Review (phase123):
 // the team reads them, Owners and Admins change them in the project's
@@ -59,7 +60,7 @@ export function useAddProjectStatus(projectId: string) {
     const supabase = createClient();
     const {
       data: { user },
-    } = await supabase.auth.getUser();
+    } = await signedInUser(supabase);
     const { data, error } = await supabase
       .from("project_statuses")
       .insert({ project_id: projectId, created_by: user?.id ?? null, ...input })

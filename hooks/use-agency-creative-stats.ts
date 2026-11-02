@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
-import { bandOf } from "@/lib/stage-labels";
+import { bandOf, type Exception } from "@/lib/stage-labels";
 
 export interface AgencyCreativeStats {
   liveProjects: number;
@@ -17,40 +17,47 @@ export interface AgencyCreativeStats {
 // empirically, not just assumed — see
 // docs/agency-creative-stats-verification.md.
 //
-// Plain selects aggregated client-side rather than a count-by-group RPC:
-// no such aggregate exists in the schema, and adding one would be inventing
-// a database object for a hook-building task, not a schema decision this
-// pass is positioned to make. Fine at today's data volumes; a real
-// performance problem later is a reason to add a SECURITY DEFINER
-// aggregate function, not a reason to guess at one now.
-export function useAgencyCreativeStats(agencyId: string | undefined) {
+// Counted in the database (creative_stage_counts, phase133), as the
+// person asking: their own row rules decide what's counted, as the plain
+// selects this replaced did. Those selects downloaded every post's stage,
+// which grew with the workspace and stopped at 1,000 rows (a silent
+// undercount past that). They stay as the fallback for a database that
+// doesn't have the function yet. Not waiting on the agency: nothing here
+// filters by it.
+export function useAgencyCreativeStats() {
   return useQuery({
-    queryKey: ["agency-creative-stats", agencyId],
+    queryKey: ["agency-creative-stats"],
     queryFn: async (): Promise<AgencyCreativeStats> => {
       const supabase = createClient();
 
-      const { count, error: projectsError } = await supabase
-        .from("projects")
-        .select("id", { count: "exact", head: true })
-        .is("archived_at", null);
-      if (projectsError) throw projectsError;
+      const [projects, grouped] = await Promise.all([
+        supabase.from("projects").select("id", { count: "exact", head: true }).is("archived_at", null),
+        supabase.rpc("creative_stage_counts"),
+      ]);
+      if (projects.error) throw projects.error;
 
-      const { data: creatives, error: creativesError } = await supabase
-        .from("creatives")
-        .select("stage, exception")
-        .is("archived_at", null);
-      if (creativesError) throw creativesError;
+      type Group = { stage: number; exception: Exception | null; n: number };
+      let groups: Group[];
+      if (!grouped.error) {
+        groups = (grouped.data ?? []) as Group[];
+      } else {
+        const { data: creatives, error: creativesError } = await supabase
+          .from("creatives")
+          .select("stage, exception")
+          .is("archived_at", null);
+        if (creativesError) throw creativesError;
+        groups = creatives.map((c) => ({ stage: c.stage, exception: c.exception, n: 1 }));
+      }
 
       let waitingOnApproval = 0;
       let feedbackToAction = 0;
-      for (const c of creatives) {
-        const band = bandOf(c.stage, c.exception);
-        if (band === "review") waitingOnApproval++;
-        else if (band === "changes_requested" || band === "rejected") feedbackToAction++;
+      for (const g of groups) {
+        const band = bandOf(g.stage, g.exception);
+        if (band === "review") waitingOnApproval += Number(g.n);
+        else if (band === "changes_requested" || band === "rejected") feedbackToAction += Number(g.n);
       }
 
-      return { liveProjects: count ?? 0, waitingOnApproval, feedbackToAction };
+      return { liveProjects: projects.count ?? 0, waitingOnApproval, feedbackToAction };
     },
-    enabled: !!agencyId,
   });
 }

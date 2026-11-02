@@ -13,6 +13,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.66.0",
+    date: "2026-11-02",
+    title: "Faster everywhere",
+    changes: [
+      "Pages open quicker and moving between them is snappier: Frank asks for less, asks once instead of several times, and remembers what it has just shown you.",
+      "Project tables and feeds load lighter, smaller images. Images uploaded from now on also get a small copy for these views.",
+      "The post editor and Share open straight away, and a page shows it's working the moment you click.",
+      "The dashboard's counts are now right however many posts a workspace has.",
+    ],
+  },
+  {
     version: "1.65.0",
     date: "2026-11-02",
     title: "Credit Usage, and billing inside Frank",

@@ -12,16 +12,27 @@ export interface ClientListStats {
   lastActivityAt: string | null;
 }
 
-// Dashboard's "Projects" and "Last Activity" columns — both previously
-// hardcoded "—", never wired to any real data. No agency_id filter on any
-// of the three queries — RLS (clients_select/projects_select/
-// creatives_select) already scopes each to the caller's own agency,
-// matching use-agency-creative-stats.ts's own reasoning.
-export function useClientListStats(agencyId: string | undefined) {
+// Dashboard's "Projects" and "Last Activity" columns. Counted in the
+// database (client_list_stats, phase133), as the person asking, so RLS
+// (clients_select/projects_select/creatives_select) scopes it exactly as
+// the three plain reads it replaced did; those downloaded every post's
+// date, and stopped at 1,000. They stay as the fallback for a database
+// that doesn't have the function yet. Not waiting on the agency: nothing
+// here filters by it.
+export function useClientListStats() {
   return useQuery({
-    queryKey: ["client-list-stats", agencyId],
+    queryKey: ["client-list-stats"],
     queryFn: async (): Promise<Record<string, ClientListStats>> => {
       const supabase = createClient();
+
+      const { data: rows, error: rpcError } = await supabase.rpc("client_list_stats");
+      if (!rpcError) {
+        const stats: Record<string, ClientListStats> = {};
+        for (const r of (rows ?? []) as { client_id: string; active_projects: number; last_activity: string | null }[]) {
+          stats[r.client_id] = { activeProjectCount: Number(r.active_projects), lastActivityAt: r.last_activity };
+        }
+        return stats;
+      }
 
       const { data: clients, error: clientsError } = await supabase
         .from("clients")
@@ -65,6 +76,5 @@ export function useClientListStats(agencyId: string | undefined) {
 
       return stats;
     },
-    enabled: !!agencyId,
   });
 }

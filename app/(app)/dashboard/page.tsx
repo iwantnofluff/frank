@@ -44,16 +44,13 @@ function formatDate(value: string | null) {
 export default function DashboardPage() {
   const { data: clients, isLoading, isError, error } = useClients();
   const { data: agency } = useMyAgency();
-  // isPending, not isLoading: this query stays disabled (and isLoading
-  // false, since it isn't fetching) until agency.agencyId resolves, so
-  // isLoading alone would flash a false "done, no data" state — the same
-  // shape as the isStaff loading-flash bug — before the query has even
-  // started. isPending stays true the whole time there's no data yet,
-  // disabled or not.
+  // isPending: true the whole time there's no data yet, so the stats never
+  // flash a false "done, no data" state (the same shape as the isStaff
+  // loading-flash bug).
   const { data: creativeStats, isPending: statsLoading } =
-    useAgencyCreativeStats(agency?.agencyId);
+    useAgencyCreativeStats();
   const { data: clientListStats, isPending: clientStatsPending } =
-    useClientListStats(agency?.agencyId);
+    useClientListStats();
   const { isStaff, isPending: isStaffPending } = useIsStaff();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("active");
@@ -207,7 +204,7 @@ export default function DashboardPage() {
                   {c.logo_asset_id ? (
                     logoUrls?.[c.logo_asset_id] ? (
                       // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
-                      <img src={logoUrls[c.logo_asset_id]} alt="" />
+                      <img src={logoUrls[c.logo_asset_id]} alt="" loading="lazy" decoding="async" />
                     ) : null
                   ) : (
                     clientInitials(c.name)

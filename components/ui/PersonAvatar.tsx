@@ -21,7 +21,7 @@ export function PersonAvatar({
     <span className={`${className} pavatar`} style={style}>
       {photoUrl ? (
         // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
-        <img src={photoUrl} alt="" />
+        <img src={photoUrl} alt="" decoding="async" />
       ) : hasPhoto ? null : (
         initials
       )}
