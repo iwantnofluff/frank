@@ -11779,6 +11779,16 @@ a.pj-post:hover {
 .pj-pick button:hover {
   background: var(--canvas);
 }
+/* A post's comment box sits at the panel's foot: its @ list opens above
+   the box instead (phase138). */
+.composer .pj-pick,
+.cedit .pj-pick {
+  top: auto;
+  bottom: calc(100% - 6px);
+}
+.cedit {
+  position: relative;
+}
 .pj-thread {
   background: var(--surface);
   border: 1px solid var(--line);

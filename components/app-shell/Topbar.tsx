@@ -311,6 +311,11 @@ export function Topbar({
             return;
           }
           if (!n.creative) return;
+          // A mention in a comment: the post, at that comment (phase138).
+          if (n.kind === "comment_mention" && n.comment) {
+            router.push(`/creatives/${n.creative.id}?comment=${n.comment.id}`);
+            return;
+          }
           // The client's comment or approval: the post itself (phase80).
           if (n.kind !== "artwork_removal") router.push(`/creatives/${n.creative.id}`);
           else setDeciding(n.creative);

@@ -299,6 +299,26 @@ export function CreativeReviewPage({ id }: { id: string }) {
     }
   }
 
+  // From the bell (a mention, phase138): ?comment= opens at that comment's
+  // thread, once the comments are here, then leaves the address.
+  // Asked again from the bell while already here, it does so again.
+  const askedComment = useSearchParams().get("comment");
+  const [commentAsked, setCommentAsked] = useState<string | null>(null);
+  if (askedComment && askedComment !== commentAsked && allComments?.length) {
+    setCommentAsked(askedComment);
+    const asked = allComments.find((c) => c.id === askedComment);
+    if (asked) setHighlightedCommentId(asked.parent_id ?? asked.id);
+  } else if (!askedComment && commentAsked) {
+    setCommentAsked(null);
+  }
+  useEffect(() => {
+    if (!commentAsked) return;
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has("comment")) return;
+    url.searchParams.delete("comment");
+    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+  }, [commentAsked]);
+
   const { pins, regions, nextAnnotationNumber, captionHighlights } = (() => {
     // Only the pins and boxes on the slide being shown.
     const onVersion = (allComments ?? []).filter(

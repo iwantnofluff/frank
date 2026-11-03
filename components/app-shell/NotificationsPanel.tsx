@@ -26,6 +26,7 @@ function ago(iso: string): string {
 function personOf(n: NotificationRow): string {
   if (n.kind === "discussion_mention") return n.mention?.who ?? "Someone";
   if (n.kind === "client_comment") return n.comment?.who ?? "The client";
+  if (n.kind === "comment_mention") return n.comment?.who ?? "Someone";
   if (n.kind === "client_approval") return n.creative?.approved_by_name ?? "The client";
   return "Frank";
 }
@@ -138,6 +139,12 @@ export function NotificationsPanel({
                 <b>{n.mention?.who ?? "Someone"}</b> mentioned you in <b>{n.mention?.project.name ?? "a project"}</b>
                 {client ? ` · ${client}` : ""}
                 {n.mention?.body && <span className="nq">“{n.mention.body}”</span>}
+              </>
+            ) : n.kind === "comment_mention" ? (
+              <>
+                <b>{n.comment?.who ?? "Someone"}</b> mentioned you on <b>{post?.name ?? "a post"}</b>
+                {client ? ` · ${client}` : ""}
+                {n.comment?.body && <span className="nq">“{n.comment.body}”</span>}
               </>
             ) : n.kind === "client_comment" ? (
               <>

@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.67.0",
+    date: "2026-11-03",
+    title: "Mention your team in comments",
+    changes: [
+      "Type @ in a post's comment box, or a reply, to mention someone on the project's team. They get a notice in the bell that opens the post at that comment.",
+      "Edit a comment to add someone, and only the newly added person is told.",
+    ],
+  },
+  {
     version: "1.66.0",
     date: "2026-11-02",
     title: "Faster everywhere",

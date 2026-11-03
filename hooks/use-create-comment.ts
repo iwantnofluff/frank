@@ -16,6 +16,7 @@ type NewComment = {
   creativeVersionId?: string | null;
   copyVersionId?: string | null;
   anchor?: Anchor | null;
+  mentions?: string[];
 };
 
 export function useCreateComment(creativeId: string) {
@@ -29,6 +30,7 @@ export function useCreateComment(creativeId: string) {
       creativeVersionId = null,
       copyVersionId = null,
       anchor = null,
+      mentions = [],
     }: {
       body: string;
       parentId: string | null;
@@ -39,6 +41,8 @@ export function useCreateComment(creativeId: string) {
       creativeVersionId?: string | null;
       copyVersionId?: string | null;
       anchor?: Anchor | null;
+      // The team it @mentions (phase138): each gets a notice in the bell.
+      mentions?: string[];
     }) => {
       const supabase = createClient();
       // The session already on this device, not a round trip to ask.
@@ -62,6 +66,7 @@ export function useCreateComment(creativeId: string) {
           creative_version_id: creativeVersionId,
           copy_version_id: copyVersionId,
           anchor,
+          mentions,
         })
         .select("id")
         .single();
@@ -104,6 +109,7 @@ export function useCreateComment(creativeId: string) {
         resolved_at: null,
         created_at: new Date().toISOString(),
         edited_at: null,
+        mentions: input.mentions ?? [],
         author: { name: profile?.name ?? user?.email ?? "You", avatar_asset_id: profile?.avatar_asset_id ?? null },
         from: isClient ? "client" : "agency",
       };

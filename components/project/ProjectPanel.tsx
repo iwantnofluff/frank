@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { usePresence } from "@/hooks/use-presence";
 import { useLiveUpdates } from "@/hooks/use-live-updates";
@@ -16,6 +16,7 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import { activityLine, namesPost } from "@/lib/project-activity";
 import { errorMessage } from "@/lib/errors";
 import { BRAND } from "@/lib/brand";
+import { MentionPicker, MentionText, useMentions } from "@/components/ui/mentions";
 
 export type ProjectPanelView = "activity" | "discussion";
 
@@ -179,26 +180,6 @@ function Discussion({ projectId }: { projectId: string }) {
   );
 }
 
-// The words, with each @Name that's a mention marked.
-function Body({ text, mentions, team }: { text: string; mentions: string[]; team: TeamMember[] }) {
-  const names = team.filter((t) => mentions.includes(t.user_id)).map((t) => `@${t.name}`);
-  if (!names.length) return <>{text}</>;
-  const pattern = new RegExp(`(${names.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`, "g");
-  return (
-    <>
-      {text.split(pattern).map((part, i) =>
-        names.includes(part) ? (
-          <span className="pj-mention" key={i}>
-            {part}
-          </span>
-        ) : (
-          part
-        ),
-      )}
-    </>
-  );
-}
-
 function Message({
   projectId,
   message,
@@ -245,7 +226,7 @@ function Message({
           />
         ) : (
           <p className="pj-text">
-            <Body text={message.body} mentions={message.mentions} team={team} />
+            <MentionText text={message.body} mentions={message.mentions} team={team} />
           </p>
         )}
         {mine && !message.deleted_at && !editing && (
@@ -278,8 +259,7 @@ function Message({
   );
 }
 
-// Writing a thread, a reply, or an edit. Typing @ offers the project's team;
-// picking one puts @Name in and remembers who, kept only while @Name stays.
+// Writing a thread, a reply, or an edit, with @mentions (components/ui/mentions).
 function Composer({
   projectId,
   parentId,
@@ -298,51 +278,19 @@ function Composer({
   onDone?: () => void;
 }) {
   const { post, edit } = useDiscussionActions(projectId);
-  const [text, setText] = useState(editing?.body ?? "");
-  const [picked, setPicked] = useState<string[]>(editing?.mentions ?? []);
-  const [query, setQuery] = useState<string | null>(null);
-  const box = useRef<HTMLTextAreaElement>(null);
-  // Where the caret goes once a picked name is in: straight after it, the
-  // moment the new words are on screen, before anything else is typed.
-  const caretAt = useRef<number | null>(null);
-  useLayoutEffect(() => {
-    if (caretAt.current === null) return;
-    box.current?.focus();
-    box.current?.setSelectionRange(caretAt.current, caretAt.current);
-    caretAt.current = null;
-  }, [text]);
+  const { text, box, matches, onChange, pick, mentionsIn, reset, closePicker } = useMentions(
+    team,
+    editing?.body ?? "",
+    editing?.mentions ?? [],
+  );
   const action = editing ? edit : post;
-
-  const matches = query === null ? [] : team.filter((t) => t.name.toLowerCase().includes(query.toLowerCase())).slice(0, 6);
-
-  function onChange(value: string, caret: number) {
-    setText(value);
-    // An @ word being typed, right before the caret.
-    const m = value.slice(0, caret).match(/(?:^|\s)@([^\s@]{0,30})$/);
-    setQuery(m ? m[1] : null);
-  }
-
-  function pick(member: TeamMember) {
-    const el = box.current;
-    const caret = el?.selectionStart ?? text.length;
-    const start = text.slice(0, caret).lastIndexOf("@");
-    const next = `${text.slice(0, start)}@${member.name} ${text.slice(caret)}`;
-    setText(next);
-    setPicked((p) => (p.includes(member.user_id) ? p : [...p, member.user_id]));
-    setQuery(null);
-    caretAt.current = start + member.name.length + 2;
-  }
 
   function submit() {
     const body = text.trim();
     if (!body) return;
-    const mentions = picked.filter((id) => {
-      const name = team.find((t) => t.user_id === id)?.name;
-      return name && body.includes(`@${name}`);
-    });
+    const mentions = mentionsIn(body);
     const done = () => {
-      setText("");
-      setPicked([]);
+      reset();
       onDone?.();
     };
     if (editing) edit.mutate({ id: editing.id, body, mentions }, { onSuccess: done });
@@ -360,28 +308,11 @@ function Composer({
         aria-label={editing ? "Edit message" : parentId ? "Reply" : "New message"}
         onChange={(e) => onChange(e.target.value, e.target.selectionStart)}
         onKeyDown={(e) => {
-          if (e.key === "Escape") setQuery(null);
+          if (e.key === "Escape") closePicker();
           if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submit();
         }}
       />
-      {matches.length > 0 && (
-        <div className="pj-pick" role="listbox" aria-label="Mention someone">
-          {matches.map((m) => (
-            <button
-              type="button"
-              role="option"
-              aria-selected="false"
-              key={m.user_id}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                pick(m);
-              }}
-            >
-              @{m.name}
-            </button>
-          ))}
-        </div>
-      )}
+      <MentionPicker matches={matches} onPick={pick} />
       <div className="pj-comp-f">
         {action.isError && <span className="pj-err">{errorMessage(action.error, "Couldn't save it")}</span>}
         {editing && (

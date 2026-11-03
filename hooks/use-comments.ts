@@ -18,6 +18,8 @@ export interface CommentRow {
   created_at: string;
   // When its author last changed it (phase75).
   edited_at: string | null;
+  // The team it @mentions (phase138).
+  mentions: string[];
   author: { name: string; avatar_asset_id: string | null } | null;
   // Whose side it came from (direct instruction: shown after the name):
   // the agency's team, or the client — its people, or a guest on a review
@@ -42,7 +44,7 @@ export function useComments(creativeId: string) {
       const { data: rows, error } = await supabase
         .from("comments")
         .select(
-          "id, agency_id, parent_id, author_id, guest_name, body, visibility, anchor, creative_version_id, copy_version_id, resolved_at, created_at, edited_at",
+          "id, agency_id, parent_id, author_id, guest_name, body, visibility, anchor, creative_version_id, copy_version_id, resolved_at, created_at, edited_at, mentions",
         )
         .eq("creative_id", creativeId)
         .is("deleted_at", null)
@@ -110,6 +112,7 @@ export function applyLiveComment(
     resolved_at: (row.resolved_at as string | null) ?? null,
     created_at: row.created_at as string,
     edited_at: (row.edited_at as string | null) ?? null,
+    mentions: (row.mentions as string[] | null) ?? [],
   };
   const existing = list.find((c) => c.id === id);
   if (existing) return list.map((c) => (c.id === id ? { ...c, ...fields } : c));

@@ -5,6 +5,8 @@ import { errorMessage } from "@/lib/errors";
 import { CommentWhen } from "./CommentWhen";
 import { CommentBody, EditCommentButton } from "./CommentBody";
 import { useEffect, useMemo, useState } from "react";
+import { useProjectTeam, type TeamMember } from "@/hooks/use-project-discussion";
+import { MentionPicker, useMentions } from "@/components/ui/mentions";
 import { avatarColour } from "@/lib/avatar-colour";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import { useAvatarUrls } from "@/hooks/use-avatar-urls";
@@ -116,20 +118,28 @@ function Composer({
   submitLabel = "Post",
   moment = null,
   beside,
+  team = [],
 }: {
+  // The project's team, offered on @ (phase138); none for a client.
+  team?: TeamMember[];
   // Another action beside Post (Approve Concept, phase115).
   beside?: React.ReactNode;
   // A video paused at this moment: the comment is attached to it unless
   // the chip is turned off. Receives the moment it was posted at, or null.
   moment?: number | null;
-  onSubmit: (body: string, visibility: "private" | "public", at?: number | null) => Promise<unknown>;
+  onSubmit: (
+    body: string,
+    visibility: "private" | "public",
+    at: number | null,
+    mentions: string[],
+  ) => Promise<unknown>;
   showInternalToggle: boolean;
   lockedPrivate?: boolean;
   placeholder: string;
   autoFocus?: boolean;
   submitLabel?: string;
 }) {
-  const [body, setBody] = useState("");
+  const { text: body, box, matches, onChange, pick, mentionsIn, reset, closePicker } = useMentions(team);
   const [internal, setInternal] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -148,8 +158,8 @@ function Composer({
     setSubmitting(true);
     setError(null);
     try {
-      await onSubmit(body.trim(), visibility, moment !== null && atMoment ? moment : null);
-      setBody("");
+      await onSubmit(body.trim(), visibility, moment !== null && atMoment ? moment : null, mentionsIn(body.trim()));
+      reset();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't post that comment");
     } finally {
@@ -160,13 +170,18 @@ function Composer({
   return (
     <div className="composer">
       <textarea
+        ref={box}
         className="bin"
         rows={2}
         placeholder={placeholder}
         value={body}
-        onChange={(e) => setBody(e.target.value)}
+        onChange={(e) => onChange(e.target.value, e.target.selectionStart)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") closePicker();
+        }}
         autoFocus={autoFocus}
       />
+      <MentionPicker matches={matches} onPick={pick} />
       {moment !== null && (
         <button
           type="button"
@@ -270,18 +285,21 @@ function CommentCard({
   onDelete,
   photos,
   fromName,
+  team,
 }: {
+  // The project's team, for @mentions; empty for a client.
+  team: TeamMember[];
   thread: CommentRow;
   replies: CommentRow[];
   isStaff: boolean;
   currentUserId: string | undefined;
   isHighlighted: boolean;
   onSelect: () => void;
-  onReply: (body: string, visibility: "private" | "public") => Promise<unknown>;
+  onReply: (body: string, visibility: "private" | "public", mentions: string[]) => Promise<unknown>;
   onToggleResolved: (resolve: boolean) => void;
   onToggleVisibility: (commentId: string, next: "private" | "public") => void;
   // Your own comment's new words (phase75).
-  onEdit: (commentId: string, body: string) => Promise<unknown>;
+  onEdit: (commentId: string, body: string, mentions?: string[]) => Promise<unknown>;
   // Owners and the Primary Owner (phase97): asks first; a thread's
   // replies go with it.
   onDelete?: (comment: CommentRow, replyCount: number) => void;
@@ -338,7 +356,9 @@ function CommentCard({
         editedAt={thread.edited_at}
         editing={editingId === thread.id}
         onEditingChange={(on) => setEditingId(on ? thread.id : null)}
-        onSave={(body) => onEdit(thread.id, body)}
+        onSave={(body, mentions) => onEdit(thread.id, body, mentions)}
+        mentions={thread.mentions}
+        team={team}
       />
 
       {!pending && <div className="cmt-f">
@@ -402,7 +422,9 @@ function CommentCard({
                     editedAt={r.edited_at}
                     editing={editingId === r.id}
                     onEditingChange={(on) => setEditingId(on ? r.id : null)}
-                    onSave={(body) => onEdit(r.id, body)}
+                    onSave={(body, mentions) => onEdit(r.id, body, mentions)}
+                    mentions={r.mentions}
+                    team={team}
                   />
                   {r.author_id === currentUserId && !r.id.startsWith("pending-") && editingId !== r.id && (
                     <EditCommentButton className="cedit-btn" onClick={() => setEditingId(r.id)} />
@@ -435,8 +457,9 @@ function CommentCard({
             lockedPrivate={thread.visibility === "private" || undefined}
             submitLabel="Reply"
             autoFocus
-            onSubmit={async (body, visibility) => {
-              await onReply(body, visibility);
+            team={team}
+            onSubmit={async (body, visibility, _at, mentions) => {
+              await onReply(body, visibility, mentions);
               setReplying(false);
             }}
           />
@@ -502,6 +525,13 @@ export function CommentsPanel({
   }, [highlightedCommentId]);
 
   const isStaff = membership ? membership.client_id === null : false;
+  // Who can be @mentioned (phase138): the project's team, offered to the
+  // team only, not including yourself (the database drops that anyway).
+  const { data: teamData } = useProjectTeam(creative?.project_id ?? "", isStaff);
+  const team = useMemo(
+    () => (isStaff ? (teamData ?? []).filter((t) => t.user_id !== currentUser?.id) : []),
+    [isStaff, teamData, currentUser?.id],
+  );
   // Owners and the Primary Owner delete any comment (phase97).
   const canDelete = isStaff && (membership?.role === "owner" || membership?.role === "primary_owner");
 
@@ -587,12 +617,14 @@ export function CommentsPanel({
             isHighlighted={highlightedCommentId === thread.id}
             photos={photos}
             fromName={fromName}
+            team={team}
             onSelect={() => onHighlight?.(thread.id)}
-            onReply={(body, visibility) =>
+            onReply={(body, visibility, mentions) =>
               createComment.mutateAsync({
                 body,
                 parentId: thread.id,
                 visibility,
+                mentions,
               })
             }
             onToggleResolved={(resolve) =>
@@ -601,7 +633,7 @@ export function CommentsPanel({
             onToggleVisibility={(commentId, visibility) =>
               toggleVisibility.mutate({ commentId, visibility })
             }
-            onEdit={(commentId, body) => editComment.mutateAsync({ commentId, body })}
+            onEdit={(commentId, body, mentions) => editComment.mutateAsync({ commentId, body, mentions })}
             onDelete={canDelete ? (comment, replies) => setDeleting({ comment, replies }) : undefined}
           />
         ))}
@@ -640,6 +672,7 @@ export function CommentsPanel({
         placeholder="Add a comment…"
         showInternalToggle={isStaff}
         moment={videoMoment}
+        team={team}
         beside={
           // Approve Concept (phase115, direct instruction): while the post
           // is in Concept with one written, for the client or the team.
@@ -654,11 +687,12 @@ export function CommentsPanel({
             </button>
           ) : null
         }
-        onSubmit={(body, visibility, at) =>
+        onSubmit={(body, visibility, at, mentions) =>
           createComment.mutateAsync({
             body,
             parentId: null,
             visibility,
+            mentions,
             ...(at != null
               ? {
                   creativeVersionId,

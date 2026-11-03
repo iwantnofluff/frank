@@ -6,11 +6,18 @@ import { createClient } from "@/lib/supabase/client";
 // One of the signed-in person's notifications: an Approved post with no
 // live date whose artwork is waiting on an Owner's or Admin's decision
 // (phase60), the client commenting on or approving a post (phase80), or
-// someone @mentioning them in a project's Discussion (phase84).
+// someone @mentioning them in a project's Discussion (phase84) or a post's
+// comments (phase138).
 export interface NotificationRow {
   id: string;
-  kind: "artwork_removal" | "client_comment" | "client_approval" | "discussion_mention" | "live_unapproved";
-  // For a comment: who, and what they said.
+  kind:
+    | "artwork_removal"
+    | "client_comment"
+    | "client_approval"
+    | "discussion_mention"
+    | "live_unapproved"
+    | "comment_mention";
+  // For a comment, or a mention in one: who, and what they said.
   comment: { id: string; body: string; who: string } | null;
   // For a mention: who, what they wrote, and the project.
   mention: { who: string; body: string; project: { id: string; name: string; client: string | null } } | null;

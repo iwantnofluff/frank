@@ -1,28 +1,36 @@
 "use client";
 
 import { useState } from "react";
+import type { TeamMember } from "@/hooks/use-project-discussion";
+import { MentionPicker, MentionText, useMentions } from "@/components/ui/mentions";
 
 // A comment's words, and editing them in place when they're the viewer's
 // own (direct instruction; phase75). Marked "Edited" once changed. The
 // place that shows it owns whether it's being edited, so its Edit button
-// can sit wherever that place's other actions are.
+// can sit wherever that place's other actions are. With the project's team
+// (the team's own view), its @mentions are marked and the editor offers @
+// (phase138); a review link passes none.
 export function CommentBody({
   body,
   editedAt,
   editing,
   onEditingChange,
   onSave,
+  mentions = [],
+  team = [],
 }: {
   body: string;
   editedAt: string | null | undefined;
   editing: boolean;
   onEditingChange: (editing: boolean) => void;
-  onSave: (body: string) => Promise<unknown>;
+  onSave: (body: string, mentions?: string[]) => Promise<unknown>;
+  mentions?: string[];
+  team?: TeamMember[];
 }) {
   if (!editing) {
     return (
       <p className="cbody">
-        {body}
+        <MentionText text={body} mentions={mentions} team={team} />
         {editedAt && (
           <span className="cedited" title={`Edited ${new Date(editedAt).toLocaleString()}`}>
             Edited
@@ -31,20 +39,24 @@ export function CommentBody({
       </p>
     );
   }
-  return <CommentEditor body={body} onEditingChange={onEditingChange} onSave={onSave} />;
+  return <CommentEditor body={body} mentions={mentions} team={team} onEditingChange={onEditingChange} onSave={onSave} />;
 }
 
 // Mounted only while editing, so each edit starts from the words as they are.
 function CommentEditor({
   body,
+  mentions,
+  team,
   onEditingChange,
   onSave,
 }: {
   body: string;
+  mentions: string[];
+  team: TeamMember[];
   onEditingChange: (editing: boolean) => void;
-  onSave: (body: string) => Promise<unknown>;
+  onSave: (body: string, mentions?: string[]) => Promise<unknown>;
 }) {
-  const [draft, setDraft] = useState(body);
+  const { text: draft, box, matches, onChange, pick, mentionsIn, closePicker } = useMentions(team, body, mentions);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,7 +67,9 @@ function CommentEditor({
     setSaving(true);
     setError(null);
     try {
-      await onSave(next);
+      // Without the team (a client, or not loaded yet), who it mentions is
+      // left as it was.
+      await onSave(next, team.length ? mentionsIn(next) : undefined);
       onEditingChange(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't save the change");
@@ -67,17 +81,23 @@ function CommentEditor({
   return (
     <div className="cedit" onClick={(e) => e.stopPropagation()}>
       <textarea
+        ref={box}
         className="bin"
         rows={2}
         aria-label="Edit comment"
         value={draft}
         autoFocus
-        onChange={(e) => setDraft(e.target.value)}
+        onChange={(e) => onChange(e.target.value, e.target.selectionStart)}
         onKeyDown={(e) => {
-          if (e.key === "Escape") onEditingChange(false);
+          // Escape closes the @ list first, if it's open.
+          if (e.key === "Escape") {
+            if (matches.length) closePicker();
+            else onEditingChange(false);
+          }
           if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void save();
         }}
       />
+      <MentionPicker matches={matches} onPick={pick} />
       {error && <p className="autherr">{error}</p>}
       <div className="cedit-acts">
         <button
