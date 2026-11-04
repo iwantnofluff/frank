@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePresence } from "@/hooks/use-presence";
 import { useViewportFit } from "@/hooks/use-viewport-fit";
-import { FORMAT_CATEGORIES, formatsByCategory, formatsLabel } from "@/lib/formats";
+import { categoriesFor, formatById, formatsByCategory, formatsLabel, formatsOffLimits } from "@/lib/formats";
 
 // The New/Edit Post window's Format field: tick any number of formats, from
 // any content type. Replaces the prototype's Content Type + Format selects
@@ -14,14 +14,20 @@ import { FORMAT_CATEGORIES, formatsByCategory, formatsLabel } from "@/lib/format
 // Preview shape). A new post starts with none ticked (direct instruction);
 // once a post exists, at least one always stays ticked. Done at the foot
 // closes it (direct instruction: clicking outside wasn't obvious).
+//
+// Only the formats the project's kind offers (lib/formats.ts); one already
+// ticked that the project no longer offers shows under its own heading,
+// first, so it can be unticked.
 export function FormatPicker({
   id,
   value,
+  delivery,
   onChange,
   allowEmpty = false,
 }: {
   id?: string;
   value: string[];
+  delivery: "scheduled" | "continuous";
   onChange: (next: string[]) => void;
   // A new post's: the last one can be unticked too.
   allowEmpty?: boolean;
@@ -97,8 +103,15 @@ export function FormatPicker({
             <input placeholder="Find a format" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus />
           </div>
           <div className="cp-b">
-            {FORMAT_CATEGORIES.map((cat) => {
-              const rows = formatsByCategory(cat).filter((f) => !q || f.label.toLowerCase().includes(q));
+            {/* One no longer offered first, where its tick can be seen. */}
+            {[
+              {
+                cat: "No longer offered here",
+                list: formatsOffLimits(value, delivery).flatMap((fid) => formatById(fid) ?? []),
+              },
+              ...categoriesFor(delivery).map((cat) => ({ cat, list: formatsByCategory(cat) })),
+            ].map(({ cat, list }) => {
+              const rows = list.filter((f) => !q || f.label.toLowerCase().includes(q));
               if (!rows.length) return null;
               return (
                 <div key={cat} role="group" aria-label={cat}>

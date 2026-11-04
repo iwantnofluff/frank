@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { signedInUser } from "@/lib/supabase/signed-in-user";
-import { postFormats } from "@/lib/formats";
+import { postFormats, type FormatSizes } from "@/lib/formats";
 
 export interface BriefFields {
   name: string;
@@ -14,6 +14,8 @@ export interface BriefFields {
   // Every reference link (phase58), already tidied.
   referenceUrls: string[];
   slideCount: number | null; // carousels only
+  // A size for each format, where not its default (phase139).
+  sizes: FormatSizes;
   // Exactly one side is meaningful, matching the project's own delivery
   // mode (fixed at the project level, never edited here) — the caller
   // decides which, same convention as useCreateCreative.
@@ -69,6 +71,7 @@ export function useUpdateBrief(creativeId: string) {
           concept: fields.concept.trim() || null,
           reference_urls: fields.referenceUrls,
           slide_count: fields.slideCount,
+          sizes: fields.sizes,
           scheduled_at: fields.scheduledAt,
           destination: fields.destination,
           due_on: fields.dueOn,
@@ -84,7 +87,7 @@ export function useUpdateBrief(creativeId: string) {
         // Changed since it was opened, or not yours to change: which.
         const { data: now } = await supabase
           .from("creatives")
-          .select("name, format, formats, team_user_ids, concept, reference_urls, slide_count, scheduled_at, destination, due_on, updated_at, updated_by")
+          .select("name, format, formats, team_user_ids, concept, reference_urls, slide_count, sizes, scheduled_at, destination, due_on, updated_at, updated_by")
           .eq("id", creativeId)
           .maybeSingle();
         // Changed since, but by this same person (another part of the
@@ -108,6 +111,7 @@ export function useUpdateBrief(creativeId: string) {
             concept: (now.concept as string | null) ?? "",
             referenceUrls: (now.reference_urls as string[] | null) ?? [],
             slideCount: (now.slide_count as number | null) ?? null,
+            sizes: (now.sizes as FormatSizes | null) ?? {},
             scheduledAt: (now.scheduled_at as string | null) ?? null,
             destination: (now.destination as string | null) ?? null,
             dueOn: (now.due_on as string | null) ?? null,

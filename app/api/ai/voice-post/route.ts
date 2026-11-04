@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { runAiTask } from "@/lib/ai/run-ai-task";
-import { FORMATS } from "@/lib/formats";
+import { formatById, formatsFor } from "@/lib/formats";
 import { buildVoicePostPrompt, parseVoicePost, type VoicePostCurrent } from "@/lib/ai/voice-post";
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -61,7 +61,8 @@ export async function POST(request: Request) {
     const u = p.user as unknown as { name: string | null; email: string } | null;
     return { id: p.user_id as string, name: u?.name || u?.email || "" };
   });
-  const formats = FORMATS.map((f) => ({ id: f.id, label: f.label }));
+  // Only those this kind of project offers, so none other is suggested.
+  const formats = formatsFor(delivery === "continuous" ? "continuous" : "scheduled").map((f) => ({ id: f.id, label: f.label }));
 
   // An existing post's brief, from the window (direct instruction): only
   // plain values are passed on, as the prompt's starting point.
@@ -95,7 +96,9 @@ export async function POST(request: Request) {
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
 
   const fields = parseVoicePost(result.text ?? "", {
-    formatIds: new Set(formats.map((f) => f.id)),
+    // A post's own formats stay allowed, even one its project no longer
+    // offers, so a spoken change doesn't quietly drop it.
+    formatIds: new Set([...formats.map((f) => f.id), ...(current?.formats ?? []).filter((id) => formatById(id))]),
     teamIds: new Set(team.map((t) => t.id)),
   });
   return NextResponse.json({ fields });

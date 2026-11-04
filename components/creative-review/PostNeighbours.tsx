@@ -4,6 +4,7 @@ import { isIdea } from "@/lib/stage-labels";
 import Link from "next/link";
 import { useCreatives, type CreativeListRow } from "@/hooks/use-creatives";
 import { formatsLabel, postFormats } from "@/lib/formats";
+import { FormatSwitch } from "./FormatSwitch";
 import { publishDate } from "@/lib/publish-date";
 import { liveTiming } from "@/lib/post-live";
 import { usePostLiveDate } from "@/hooks/use-post-live-date";
@@ -43,6 +44,9 @@ export function PostNeighbours({
   scheduledAt,
   dueOn,
   formats,
+  shownFormat,
+  onShowFormat,
+  wide = false,
   children,
 }: {
   creativeId: string;
@@ -53,6 +57,11 @@ export function PostNeighbours({
   dueOn: string | null;
   // The post's formats, main first.
   formats: string[];
+  // Which of them the post is shown as, and choosing another.
+  shownFormat?: string | null;
+  onShowFormat?: (format: string) => void;
+  // An iPad between them: the posts either side shrink to their arrows.
+  wide?: boolean;
   children: React.ReactNode;
 }) {
   const { data: rows } = useCreatives(projectId);
@@ -95,7 +104,7 @@ export function PostNeighbours({
   };
 
   return (
-    <div className="pnav-row">
+    <div className={`pnav-row${wide ? " wide" : ""}`}>
       {side(prev, "prev")}
       <div className="pnav-mid">
         <div className="pnav-cur">
@@ -115,7 +124,7 @@ export function PostNeighbours({
           </span>
           <b>{name}</b>
           {/* Its type and format too (direct instruction). */}
-          <span className="pnav-fmt">{formatsLabel(formats)}</span>
+          <FormatSwitch className="pnav-fmt" formats={formats} shown={shownFormat ?? formats[0] ?? null} onShow={onShowFormat} />
         </div>
         {children}
       </div>

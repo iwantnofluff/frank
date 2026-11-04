@@ -15,6 +15,7 @@ import {
   useEditSharedComment,
 } from "./use-shared-actions";
 import { useGuestIdentityStore } from "@/store/guest-identity-store";
+import { postFormats } from "@/lib/formats";
 import { DEFAULT_APPROVED_DAYS, reviewGroup, reviewSections } from "@/components/review/review-group";
 
 // One data assembly, one set of handlers — the mobile and desktop layouts
@@ -32,6 +33,8 @@ export function useReviewController(token: string) {
   const [attachMoment, setAttachMoment] = useState(true);
   const [highlightedCommentId, setHighlightedCommentId] = useState<string | null>(null);
   const [videoSeek, setVideoSeek] = useState<{ t: number; nonce: number; slide?: number } | null>(null);
+  // Another of the post's formats picked to show it as (FormatSwitch).
+  const [viewFormat, setViewFormat] = useState<string | null>(null);
 
   const { data, isLoading, isError } = useSharedReview(token, passcode);
   // The client's real Instagram, if connected (phase54): a Feed view beside
@@ -210,6 +213,10 @@ export function useReviewController(token: string) {
     setHighlightedCommentId,
     videoSeek,
     selectComment,
+    // The format the post is shown as: its main one unless another of its
+    // formats is picked.
+    shownFormat: active && viewFormat && postFormats(active).includes(viewFormat) ? viewFormat : (active?.format ?? null),
+    setShownFormat: setViewFormat,
   };
 }
 

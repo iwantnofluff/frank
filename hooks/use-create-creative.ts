@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { signedInUser } from "@/lib/supabase/signed-in-user";
+import type { FormatSizes } from "@/lib/formats";
 
 export interface CreateCreativeInput {
   name: string;
@@ -15,6 +16,8 @@ export interface CreateCreativeInput {
   // Every reference link (phase58), already tidied.
   referenceUrls: string[];
   slideCount: number | null; // carousels only
+  // A size for each format, where not its default (phase139).
+  sizes?: FormatSizes;
   cx: Record<string, string | number | boolean | null>;
   // Exactly one side is meaningful, matching the project's delivery —
   // the caller decides which, this hook doesn't guess.
@@ -70,6 +73,7 @@ export function useCreateCreative(projectId: string) {
           concept: input.concept.trim() || null,
           reference_urls: input.referenceUrls,
           slide_count: input.slideCount,
+          sizes: input.sizes ?? {},
           // approach_notes is left null here — system-generated from copy
           // once it exists (app/api/ai/wiifm-note), not settable at
           // brief-creation time when there's no copy yet to derive it from.

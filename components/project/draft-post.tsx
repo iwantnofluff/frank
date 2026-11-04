@@ -8,7 +8,7 @@ import { useProjectTeam } from "@/hooks/use-project-team";
 import { TeamPicker } from "@/components/ui/TeamPicker";
 import { DateField, TimeField } from "@/components/ui/DateField";
 import { errorMessage } from "@/lib/errors";
-import { COPY_FIELD_LABELS, FORMAT_CATEGORIES, copyFieldsFor, formatsByCategory, frameLimits, hasVideoFormat } from "@/lib/formats";
+import { COPY_FIELD_LABELS, categoriesFor, copyFieldsFor, formatsByCategory, frameLimits, hasVideoFormat } from "@/lib/formats";
 import { IDEA, stageColor, stageLabel } from "@/lib/stage-labels";
 
 // The prototype's "Row" way of adding a brief (#briefMore → startDraft()):
@@ -279,7 +279,8 @@ export function DraftField({
       return (
         <select className="ecell one" aria-label="Post type" value={values.format} onChange={(e) => set("format", e.target.value)}>
           <option value="">No format yet</option>
-          {FORMAT_CATEGORIES.map((cat) => (
+          {/* Only the formats this kind of project offers (lib/formats.ts). */}
+          {categoriesFor(draft.delivery).map((cat) => (
             <optgroup key={cat} label={cat}>
               {formatsByCategory(cat).map((f) => (
                 <option key={f.id} value={f.id}>

@@ -21,6 +21,7 @@ test("carousel limits: 20 for Instagram and LinkedIn, Meta holds a mix to 10, no
   assert.equal(carouselMaxSlides(["li_doc"]), 20);
   assert.equal(carouselMaxSlides(["ig_carousel", "meta_carousel"]), 10);
   assert.equal(carouselMaxSlides(["ig_feed", "meta_feed"]), null);
-  assert.equal(aspectRatioCss("ig_carousel"), "4 / 5");
+  // Its default size, 1080 × 1350 (4:5, phase139).
+  assert.equal(aspectRatioCss("ig_carousel"), "1080 / 1350");
   assert.equal(aspectRatioCss("em_full"), "1 / 1");
 });

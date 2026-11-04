@@ -4,10 +4,13 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { CopyCaptionChip } from "@/components/project/CopyCaptionChip";
 import { OpenAsset } from "@/components/project/OpenAsset";
+import { FormatSwitch } from "./FormatSwitch";
+import { PlatformPost } from "./PlatformPost";
 
 // A post's page on a phone (direct instruction): for copying its caption
 // and opening its Final Asset, and for reading and replying to its
-// comments. One column: where it sits, the post as Instagram shows it, then
+// comments. One column: where it sits, the post as its platform shows it
+// (PlatformPost), then
 // Copy Caption and Final Asset, then the comments. Editing, sharing, the
 // versions and drawing on the artwork stay on a computer. The card is the
 // review link's phone card (.m-card).
@@ -19,7 +22,10 @@ export function MobilePost({
   stageColor,
   date,
   name,
-  format,
+  formats,
+  shownFormat,
+  onShowFormat,
+  fields,
   accountName,
   avatarUrl,
   media,
@@ -36,7 +42,12 @@ export function MobilePost({
   stageColor: string;
   date: string | null;
   name: string;
-  format: string;
+  // Its formats, main first, and which it's shown as (FormatSwitch).
+  formats: string[];
+  shownFormat: string | null;
+  onShowFormat: (format: string) => void;
+  // The copy version's fields.
+  fields: Record<string, string> | null | undefined;
   accountName: string;
   avatarUrl: string | null;
   // The artwork, its slides or its video, as on the computer.
@@ -61,35 +72,22 @@ export function MobilePost({
           {stageText}
         </span>
         <b className="mpost-t">{name}</b>
-        <span className="mpost-d">{[date, format].filter(Boolean).join(" · ")}</span>
+        <span className="mpost-d">
+          {date && `${date} · `}
+          <FormatSwitch className="mpost-fmt" formats={formats} shown={shownFormat} onShow={onShowFormat} />
+        </span>
       </div>
 
       <div className="m-card">
-        <div className="ig-h">
-          <div className="ig-av">
-            {avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element -- Instagram's or storage's short-lived URL
-              <img src={avatarUrl} alt="" />
-            ) : (
-              <i />
-            )}
-          </div>
-          <div>
-            <b>{accountName}</b>
-          </div>
-          <div className="dots">•••</div>
-        </div>
-        <div className="ig-media">{media}</div>
-        <div className="ig-cap">
-          {caption ? (
-            <>
-              <b>{accountName}</b>
-              <span>{caption}</span>
-            </>
-          ) : (
-            copy
-          )}
-        </div>
+        <PlatformPost
+          format={shownFormat}
+          frame="card"
+          accountName={accountName}
+          avatarUrl={avatarUrl}
+          media={media}
+          fields={fields}
+          fallback={copy}
+        />
       </div>
 
       {(caption || assetLink) && (

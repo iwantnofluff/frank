@@ -3,6 +3,7 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { CREATIVE_SELECT } from "@/lib/creative-queries";
+import type { FormatSizes } from "@/lib/formats";
 
 export interface CreativeRow {
   id: string;
@@ -26,6 +27,8 @@ export interface CreativeRow {
   // Every reference link, in order (phase58); reference_url is no longer written.
   reference_urls: string[];
   slide_count: number | null; // carousels only (phase31)
+  // A size for each format, where not its default (phase139).
+  sizes: FormatSizes;
   // Text on Image, one entry per slide (phase57: on the post, not versions).
   slide_text: string[];
   // The words on a video's thumbnail (phase118).

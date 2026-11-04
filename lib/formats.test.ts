@@ -2,7 +2,7 @@
 // (or `npm run test:unit`).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { FORMATS, FORMAT_CATEGORIES, formatById, formatsByCategory, postFormats, formatsLabel, copyFieldsFor, copySummary, copySummaryParts, VIDEO_FORMAT_IDS, hasVideoFormat, frameLimits, expectedContent } from "./formats.ts";
+import { FORMATS, FORMAT_CATEGORIES, formatById, formatsByCategory, postFormats, formatsLabel, copyFieldsFor, copySummary, copySummaryParts, VIDEO_FORMAT_IDS, hasVideoFormat, frameLimits, expectedContent, categoriesFor, formatsFor, formatsOffLimits, defaultSize, postSize, sizePresets, sizeLabel, hasSize, aspectRatioCss, formatRatio } from "./formats.ts";
 
 test("FORMATS has the prototype's 41 entries, plus Listing Image Set", () => {
   assert.equal(FORMATS.length, 42);
@@ -99,4 +99,55 @@ test("expectedContent: what a post's formats call for, so the table can say Pend
   assert.deepEqual(expectedContent(["ig_story"]), { slides: true, voiceover: true, copy: false, alt: false });
   assert.equal(expectedContent(["ig_reel"]).voiceover, true);
   assert.deepEqual(expectedContent(["amz_main"]), { slides: false, voiceover: false, copy: false, alt: false });
+});
+
+test("a Content Planner offers social and performance formats, Other Content the rest, both Other Creative", () => {
+  const planner = formatsFor("scheduled").map((f) => f.category);
+  const other = formatsFor("continuous").map((f) => f.category);
+  assert.deepEqual([...new Set(planner)], ["Social — organic", "Performance marketing", "General"]);
+  assert.deepEqual([...new Set(other)], ["Amazon", "Email and messaging", "Web and print", "General"]);
+  // Every format is offered somewhere.
+  const offered = new Set([...formatsFor("scheduled"), ...formatsFor("continuous")].map((f) => f.id));
+  assert.equal(offered.size, FORMATS.length);
+  // A project of unknown kind is treated as a Content Planner, as elsewhere.
+  assert.deepEqual(categoriesFor(null), categoriesFor("scheduled"));
+});
+
+test("formatsOffLimits: a post's formats its project no longer offers", () => {
+  assert.deepEqual(formatsOffLimits(["meta_feed", "amz_main", "general"], "continuous"), ["meta_feed"]);
+  assert.deepEqual(formatsOffLimits(["ig_feed", "general"], "scheduled"), []);
+});
+
+test("each format's default size keeps the shape it had before sizes (phase139)", () => {
+  for (const f of FORMATS) {
+    const m = f.aspectRatio.match(/^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)$/);
+    if (!m) continue;
+    const size = defaultSize(f.id);
+    assert.ok(size, `${f.id} has a ratio but no default size`);
+    const was = Number(m[1]) / Number(m[2]);
+    assert.ok(Math.abs(size!.w / size!.h - was) / was < 0.02, `${f.id}: ${size!.w}×${size!.h} isn't ${f.aspectRatio}`);
+  }
+});
+
+test("a post's chosen size wins over the default, per format; none falls back to square", () => {
+  assert.deepEqual(postSize("ig_feed"), { w: 1080, h: 1350 });
+  assert.deepEqual(postSize("ig_feed", { ig_feed: { w: 1080, h: 1080 } }), { w: 1080, h: 1080 });
+  assert.deepEqual(postSize("li_image", { ig_feed: { w: 1080, h: 1080 } }), { w: 1200, h: 627 });
+  assert.equal(aspectRatioCss("ig_feed", { ig_feed: { w: 1080, h: 566 } }), "1080 / 566");
+  assert.equal(aspectRatioCss("packaging"), "1 / 1");
+  assert.equal(aspectRatioCss(null), "1 / 1");
+  assert.equal(formatRatio("ig_reel"), 1080 / 1920);
+  // Text-only formats have no size; the rest do, even with no default.
+  assert.equal(hasSize("sms"), false);
+  assert.equal(hasSize("packaging"), true);
+  assert.deepEqual(sizePresets("packaging"), []);
+});
+
+test("sizeLabel names the shape", () => {
+  assert.equal(sizeLabel({ w: 1080, h: 1350 }), "1080 × 1350 · 4:5");
+  assert.equal(sizeLabel({ w: 2480, h: 3508 }), "2480 × 3508 · A4");
+  assert.equal(sizeLabel({ w: 1200, h: 627 }), "1200 × 627 · 1.91:1");
+  assert.equal(sizeLabel({ w: 1000, h: 2100 }), "1000 × 2100 · 10:21");
+  assert.equal(sizeLabel({ w: 160, h: 600 }), "160 × 600 · 4:15");
+  assert.equal(sizeLabel({ w: 1080, h: 566 }), "1080 × 566 · 1.91:1");
 });

@@ -120,12 +120,16 @@ test("a carousel gets a slide count, and Text on Image one field per slide", asy
 
 test("a Listing Image Set takes up to 9 images, Text on Image for each, and the listing's copy", async ({ page, frank }) => {
   test.setTimeout(60_000);
+  // An Amazon format, so in an Other Content project (the format split).
+  const other = await frank.createContinuousProject();
+  const staffId = (await admin.from("users").select("id").eq("email", frank.staffEmail).single()).data!.id;
+  const mem = (await admin.from("memberships").select("id").eq("user_id", staffId).eq("agency_id", frank.agencyId).single()).data!;
+  await admin.from("project_access").insert({ membership_id: mem.id, project_id: other });
   await frank.loginAsStaff(page);
-  await page.goto(`${APP_URL}/projects/${frank.projectId}`);
+  await page.goto(`${APP_URL}/projects/${other}`);
   await page.waitForSelector(".tblwrap, .empty");
   await page.getByRole("button", { name: "New Post", exact: true }).click();
   await page.fill("#nbName", "Listing Gallery E2E");
-  await page.fill("#nbDate", "2027-03-12");
   await page.click("#nbFmt");
   await page.getByRole("dialog", { name: "Formats" }).getByRole("checkbox", { name: "Listing Image Set" }).click();
   await page.keyboard.press("Escape");

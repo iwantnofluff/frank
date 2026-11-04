@@ -24,6 +24,8 @@ export function ReviewMedia({
   // moment and slide (both layouts are drawn).
   shown: boolean;
 }) {
+  // As the format it's shown as (FormatSwitch).
+  const format = controller.shownFormat;
   const slides = active.slides?.length
     ? active.slides
     : active.asset
@@ -69,18 +71,19 @@ export function ReviewMedia({
   if (!frames.length) {
     return active.artwork_removed_at ? (
       <NoArtwork
-        format={active.format}
+        format={format}
+        sizes={active.sizes}
         title="Artwork removed"
         note={`Removed on ${dayMonth(active.artwork_removed_at)}, after the post went live. Its copy and comments are kept.`}
       />
     ) : (
-      <NoArtwork format={active.format} note="The agency hasn't uploaded the artwork for this post yet." />
+      <NoArtwork format={format} sizes={active.sizes} note="The agency hasn't uploaded the artwork for this post yet." />
     );
   }
   return (
     <>
       {!slide ? (
-        <NoArtwork format={active.format} note={`Slide ${at + 1} has no artwork yet.`} />
+        <NoArtwork format={format} sizes={active.sizes} note={`Slide ${at + 1} has no artwork yet.`} />
       ) : !slide.signed_url ? (
         <div className="ig-noasset">No preview available</div>
       ) : slide.mime_type.startsWith("video/") ? (
@@ -89,8 +92,8 @@ export function ReviewMedia({
         <VideoPlayer
           key={`${active.id}:${slide.position}`}
           src={stableSrc!}
-          ratio={formatRatio(active.format)}
-          expandable={isReelFormat(active.format)}
+          ratio={formatRatio(format, active.sizes)}
+          expandable={isReelFormat(format)}
           // A video's thumbnail as its cover until it plays, as the
           // platform shows it (phase118, direct instruction): the first
           // slide only.
@@ -121,7 +124,7 @@ export function ReviewMedia({
           src={slide.signed_url}
           alt={active.name}
           // The format's shape until the image's own is known.
-          style={{ width: "100%", aspectRatio: `auto ${aspectRatioCss(active.format)}` }}
+          style={{ width: "100%", aspectRatio: `auto ${aspectRatioCss(format, active.sizes)}` }}
         />
       )}
       <CarouselNav
@@ -133,7 +136,7 @@ export function ReviewMedia({
           controller.setVideoMoment(null);
         }}
         overVideo={!!slide?.mime_type.startsWith("video/")}
-        story={isStoryFormat(active.format)}
+        story={isStoryFormat(format)}
       />
     </>
   );

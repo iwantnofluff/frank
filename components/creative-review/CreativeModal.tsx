@@ -44,6 +44,7 @@ import {
   aspectRatioCss,
   COPY_FIELD_LABELS,
   hasVideoFormat,
+  type FormatSizes,
 } from "@/lib/formats";
 import { slideFields, tidySlideText } from "@/lib/slide-text";
 import {
@@ -66,6 +67,7 @@ import { copyCaption } from "@/lib/copy-text";
 import { ListEditor } from "@/components/ui/ListEditor";
 import { linkHref, tidyReferences } from "@/lib/links";
 import { FormatPicker } from "./FormatPicker";
+import { FormatSizeFields } from "./FormatSizeFields";
 import {
   applySlideDraft,
   slideTextAsFields,
@@ -639,6 +641,7 @@ function briefChanges(
   if ((opened.concept ?? "") !== theirs.concept) out.push("Concept");
   if (!same(opened.reference_urls ?? [], theirs.referenceUrls)) out.push("References");
   if ((opened.slide_count ?? null) !== theirs.slideCount) out.push(`Slides: ${theirs.slideCount ?? "none"}`);
+  if (!same(opened.sizes ?? {}, theirs.sizes)) out.push("Sizes");
   if ((opened.scheduled_at ?? null) !== theirs.scheduledAt) out.push(`Live date: ${day(theirs.scheduledAt)}`);
   if ((opened.destination ?? null) !== theirs.destination) out.push("Where it goes");
   if ((opened.due_on ?? null) !== theirs.dueOn) out.push(`Due: ${day(theirs.dueOn)}`);
@@ -691,6 +694,10 @@ export function CreativeModal(props: CreativeModalProps) {
     isCreate ? [] : postFormats(props.creative),
   );
   const format = formats[0];
+  // A size for each format, where not its default (phase139).
+  const [sizes, setSizes] = useState<FormatSizes>(isCreate ? {} : (props.creative.sizes ?? {}));
+  // Only the chosen formats' sizes are kept.
+  const keptSizes: FormatSizes = Object.fromEntries(Object.entries(sizes).filter(([fid]) => formats.includes(fid)));
   // Carousels (phase31) and stories (direct instruction): a count appears
   // when any chosen format is one, Slides from 2 or Stories from 1, capped
   // at the tightest of their limits. Each then has its own upload and Text
@@ -829,6 +836,7 @@ export function CreativeModal(props: CreativeModalProps) {
             concept: f.concept || null,
             reference_urls: f.referenceUrls,
             slide_count: f.slideCount,
+            sizes: f.sizes,
             scheduled_at: f.scheduledAt,
             destination: f.destination,
             due_on: f.dueOn,
@@ -901,6 +909,7 @@ export function CreativeModal(props: CreativeModalProps) {
         concept,
         referenceUrls: tidyReferences(referenceUrls),
         slideCount,
+        sizes: keptSizes,
         cx: {
           ...cx,
           ...(delivery === "continuous" && principles.trim() ? { principles: principles.trim() } : {}),
@@ -966,6 +975,7 @@ export function CreativeModal(props: CreativeModalProps) {
         concept,
         referenceUrls: tidyReferences(referenceUrls),
         slideCount,
+        sizes: keptSizes,
         scheduledAt,
         destination: delivery === "continuous" ? destination.trim() || null : null,
         dueOn: delivery === "continuous" ? dueOn || null : null,
@@ -995,6 +1005,7 @@ export function CreativeModal(props: CreativeModalProps) {
       concept,
       referenceUrls: tidyReferences(referenceUrls),
       slideCount,
+      sizes: keptSizes,
       scheduledAt,
       destination: delivery === "continuous" ? destination.trim() : null,
       dueOn: delivery === "continuous" ? dueOn || null : null,
@@ -1057,6 +1068,7 @@ export function CreativeModal(props: CreativeModalProps) {
     if ((o.concept ?? "") !== t.concept) setConcept(t.concept);
     if (!same(o.reference_urls ?? [], t.referenceUrls)) setReferenceUrls(t.referenceUrls.length ? t.referenceUrls : [""]);
     if ((o.slide_count ?? null) !== t.slideCount && t.slideCount) setSlideCountChoice(t.slideCount);
+    if (!same(o.sizes ?? {}, t.sizes)) setSizes(t.sizes);
     if ((o.scheduled_at ?? null) !== t.scheduledAt) {
       setDate(isoToDateInput(t.scheduledAt));
       setTime(isoToTimeInput(t.scheduledAt));
@@ -1903,6 +1915,7 @@ export function CreativeModal(props: CreativeModalProps) {
             <FormatPicker
               id="nbFmt"
               value={formats}
+              delivery={delivery}
               allowEmpty={isCreate && !creativeId}
               onChange={(next) => {
                 setFormats(next);
@@ -1911,6 +1924,8 @@ export function CreativeModal(props: CreativeModalProps) {
             />
             {formatError && <p className="autherr">{formatError}</p>}
           </div>
+
+          <FormatSizeFields formats={formats} value={sizes} onChange={setSizes} />
 
           {frames && (
             <div className="field">
@@ -2489,7 +2504,7 @@ export function CreativeModal(props: CreativeModalProps) {
                 noun={frameNoun}
                 latest={creativeVersions[0] ?? null}
                 readOnlyVersion={isViewingLatestCreative ? null : viewedCreativeVersion}
-                aspectRatio={aspectRatioCss(format)}
+                aspectRatio={aspectRatioCss(format, keptSizes)}
                 nextVersionNo={nextCreativeVersionNo}
                 saving={uploadCarousel.isPending}
                 savingLabel={savingLabel}
@@ -2552,7 +2567,7 @@ export function CreativeModal(props: CreativeModalProps) {
             <ThumbnailSection
               creativeId={creativeId}
               agencyId={agencyId}
-              aspectRatio={aspectRatioCss(format)}
+              aspectRatio={aspectRatioCss(format, keptSizes)}
             />
           )}
 

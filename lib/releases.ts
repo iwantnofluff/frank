@@ -13,6 +13,18 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.68.0",
+    date: "2026-11-04",
+    title: "Posts that look like their platform",
+    changes: [
+      "Posts on the review screen and the review link now look as they will on their platform: Facebook, LinkedIn, YouTube and Pinterest as those apps show them, Meta, LinkedIn and Google ads with their call to action, and WhatsApp, SMS and push notifications as the phone shows them.",
+      "Other Content is shown on an iPad: Amazon listings and A+ modules on a product page, emails in a mail app, web formats in a browser, and print, slides and packaging on a plain board.",
+      "A post with several formats can be viewed as each one: pick a format under the post's name.",
+      "Every format now has a default size, such as 1080 × 1350 for an Instagram Post. Change it in the post window under Format, picking from the platform's common sizes or typing a custom width and height. The post is shown at the size chosen.",
+      "A Content Planner now offers social and performance formats, and Other Content projects offer Amazon, email and messaging, and web and print. Other Creative is in both. A post already in a format its project no longer offers keeps it.",
+    ],
+  },
+  {
     version: "1.67.0",
     date: "2026-11-03",
     title: "Mention your team in comments",

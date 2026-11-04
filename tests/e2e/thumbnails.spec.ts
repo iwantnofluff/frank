@@ -60,8 +60,8 @@ test("a Reel's thumbnail saves as versions with its words, shows in the table an
   await expect(cell.locator(".artmini img")).toBeVisible({ timeout: 15_000 });
   await expect(cell).toContainText("reel-cut.png");
   await cell.hover();
-  await expect(page.locator(".phonepop .pp-media img")).toBeVisible({ timeout: 15_000 });
-  await expect(page.locator(".phonepop .pp-media video")).toHaveCount(0);
+  await expect(page.locator(".phonepop :is(.pp-media, .ig-media) img")).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator(".phonepop :is(.pp-media, .ig-media) video")).toHaveCount(0);
 
   // The client, on the post's page, sees it.
   const ctx = await browser.newContext();

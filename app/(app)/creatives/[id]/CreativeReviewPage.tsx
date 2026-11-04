@@ -10,7 +10,7 @@ import { dayMonth, ARTWORK_KEEP_DAYS } from "@/lib/artwork-removal";
 import { useClientPreferences } from "@/hooks/use-client-preferences";
 import { useLiveUpdates } from "@/hooks/use-live-updates";
 import { useClientLogoUrl } from "@/hooks/use-client-logo-url";
-import { aspectRatioCss, copySummaryParts, formatRatio, formatsLabel, hasVideoFormat, isReelFormat, isStoryFormat, postFormats } from "@/lib/formats";
+import { aspectRatioCss, copySummaryParts, formatRatio, hasVideoFormat, isReelFormat, isStoryFormat, postFormats, postSize } from "@/lib/formats";
 import { CopyFieldsPreview } from "@/components/creative-review/CopyFieldsPreview";
 import { useCopyVersions } from "@/hooks/use-copy-versions";
 import { useArtworkUrl, usePreloadAssets } from "@/hooks/use-asset-signed-url";
@@ -39,7 +39,6 @@ import { PhoneFrame } from "@/components/creative-review/PhoneFrame";
 import { useThumbnailVersions } from "@/hooks/use-thumbnails";
 import { ScrollHint, hasScrollHint } from "@/components/creative-review/ScrollHint";
 import { PNAV_CURRENT_H, PostNeighbours } from "@/components/creative-review/PostNeighbours";
-import { StoryReplyBar } from "@/components/creative-review/StoryReplyBar";
 import { useClientInstagramFeed } from "@/hooks/use-instagram";
 import { CommentsPanel } from "@/components/creative-review/CommentsPanel";
 import { AnnotationLayer, type ToolMode } from "@/components/creative-review/AnnotationLayer";
@@ -57,6 +56,8 @@ import { PillMenu } from "@/components/project/PillMenu";
 import { useAssetLink } from "@/hooks/use-asset-links";
 import { usePhoneScreen } from "@/hooks/use-phone-screen";
 import { MobilePost } from "@/components/creative-review/MobilePost";
+import { PlatformPost } from "@/components/creative-review/PlatformPost";
+import { postTemplate, tabletOrientation } from "@/lib/post-templates";
 import { publishDate } from "@/lib/publish-date";
 import { OpenAsset } from "@/components/project/OpenAsset";
 import { lazyWindow } from "@/components/ui/lazyWindow";
@@ -104,6 +105,8 @@ export function CreativeReviewPage({ id }: { id: string }) {
   const phone = usePhoneScreen();
   // The phone full size over the page (direct instruction); Esc closes it.
   const [expanded, setExpanded] = useState(false);
+  // Another of the post's formats picked to show it as (FormatSwitch).
+  const [viewFormat, setViewFormat] = useState<string | null>(null);
   useEffect(() => {
     if (!expanded) return;
     const escape = (e: KeyboardEvent) => {
@@ -393,6 +396,15 @@ export function CreativeReviewPage({ id }: { id: string }) {
 
   // The artwork, its slides or its video: the same on a computer and on a
   // phone.
+  // The format the post is shown as (FormatSwitch): its main one unless
+  // another is picked.
+  const shownFormat = viewFormat && postFormats(creative).includes(viewFormat) ? viewFormat : creative.format;
+  // Other Content's formats sit in an iPad (decided directly).
+  const tablet = postTemplate(shownFormat).device === "tablet";
+  // Which way the iPad's held: an email upright, a board as its artwork
+  // is (tabletOrientation), the iPad a fixed size (decided directly).
+  const orientation = (artRatio: number | null) => tabletOrientation(shownFormat, postSize(shownFormat, creative.sizes), artRatio);
+
   const media = (
     <>
       {/* Until the versions are known, the post's own shape holds
@@ -400,16 +412,17 @@ export function CreativeReviewPage({ id }: { id: string }) {
       {creativeVersions === undefined ? (
         // A tall format (a Reel, a Story) is nearly always a
         // video: held as an empty player, timeline and all.
-        formatRatio(creative.format) < 0.8 ? (
-          <VideoPlayer src={undefined} ratio={formatRatio(creative.format)} markers={[]} highlightedCommentId={null} onMarker={() => {}} seek={null} />
+        formatRatio(shownFormat, creative.sizes) < 0.8 ? (
+          <VideoPlayer src={undefined} ratio={formatRatio(shownFormat, creative.sizes)} markers={[]} highlightedCommentId={null} onMarker={() => {}} seek={null} />
         ) : (
-          <div className="ig-hold" style={{ aspectRatio: aspectRatioCss(creative.format) }} />
+          <div className="ig-hold" style={{ aspectRatio: aspectRatioCss(shownFormat, creative.sizes) }} />
         )
       ) : /* No version yet, one saved with every slide removed, or a
           carousel slide with nothing on it yet. */
       !currentSlide ? (
         <NoArtwork
-          format={creative.format}
+          format={shownFormat}
+          sizes={creative.sizes}
           title={creative.artwork_removed_at ? "Artwork removed" : undefined}
           note={
             membershipLoading
@@ -439,7 +452,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
           )}
         </NoArtwork>
       ) : !signedUrl && signing && !isVideo ? (
-        <div className="ig-hold" style={{ aspectRatio: aspectRatioCss(creative.format) }} />
+        <div className="ig-hold" style={{ aspectRatio: aspectRatioCss(shownFormat, creative.sizes) }} />
       ) : !signedUrl && !isVideo ? (
         <div className="ig-noasset">
           {currentSlide?.asset.filename ?? "No preview available"}
@@ -451,8 +464,8 @@ export function CreativeReviewPage({ id }: { id: string }) {
           src={signedUrl ?? undefined}
           // The post's thumbnail as its cover, on its first frame.
           cover={slidePosition === 1 ? (thumbnailUrl ?? null) : null}
-          ratio={formatRatio(creative.format)}
-          expandable={isReelFormat(creative.format)}
+          ratio={formatRatio(shownFormat, creative.sizes)}
+          expandable={isReelFormat(shownFormat)}
           markers={videoMarkers}
           highlightedCommentId={highlightedCommentId}
           onMarker={setHighlightedCommentId}
@@ -501,7 +514,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
             src={signedUrl ?? undefined}
             alt={creative.name}
             // The format's shape until the image's own is known.
-            style={{ aspectRatio: `auto ${aspectRatioCss(creative.format)}` }}
+            style={{ aspectRatio: `auto ${aspectRatioCss(shownFormat, creative.sizes)}` }}
           />
           <AnnotationLayer
             mode={toolMode}
@@ -530,7 +543,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
         count={frames.length}
         onChange={goToSlide}
         overVideo={!!isVideo}
-        story={isStoryFormat(creative.format)}
+        story={isStoryFormat(shownFormat)}
       />
     </>
   );
@@ -564,7 +577,10 @@ export function CreativeReviewPage({ id }: { id: string }) {
         stageColor={stageColor(creative.stage, creative.exception ?? null)}
         date={publishDate(creative.projects?.delivery, creative.scheduled_at, creative.due_on)}
         name={creative.name}
-        format={formatsLabel(postFormats(creative))}
+        formats={postFormats(creative)}
+        shownFormat={shownFormat}
+        onShowFormat={setViewFormat}
+        fields={activeCopyVersion?.fields}
         accountName={accountName}
         avatarUrl={igProfile?.pictureUrl ?? clientLogoUrl ?? null}
         media={media}
@@ -879,6 +895,9 @@ export function CreativeReviewPage({ id }: { id: string }) {
                 scheduledAt={creative.scheduled_at}
                 dueOn={creative.due_on}
                 formats={postFormats(creative)}
+                shownFormat={shownFormat}
+                onShowFormat={setViewFormat}
+                wide={tablet}
               >
               {/* 15% smaller, with the post's date and title above it
                   (direct instruction), to make room beside it. */}
@@ -908,56 +927,38 @@ export function CreativeReviewPage({ id }: { id: string }) {
                   </svg>
                 </button>
               )}
-              <PhoneFrame scale={0.85} reserve={PNAV_CURRENT_H + (hasScrollHint(postFormats(creative)) ? 46 : 0)} fill={expanded}>
-              <div className="lpv-bar">
-                <button
-                  type="button"
-                  className="lpv-back"
-                  aria-label="Back to the feed"
-                  onClick={() => setActiveSection("feed")}
-                >
-                  <svg viewBox="0 0 24 24">
-                    <path d="M15 18l-6-6 6-6" />
-                  </svg>
-                </button>
-                <b>Posts</b>
-              </div>
+              <PhoneFrame device={tablet ? "tablet" : "phone"} orientation={orientation} reserveX={tablet ? 320 : 0} scale={0.85} reserve={PNAV_CURRENT_H + (postFormats(creative).length > 3 ? 10 : 0) + (hasScrollHint(postFormats(creative)) ? 46 : 0)} fill={expanded}>
+              {/* The phone's "Posts" bar, back to the feed; not on an iPad
+                  (reported directly: it's Instagram's, not the iPad's). */}
+              {!tablet && (
+                <div className="lpv-bar">
+                  <button
+                    type="button"
+                    className="lpv-back"
+                    aria-label="Back to the feed"
+                    onClick={() => setActiveSection("feed")}
+                  >
+                    <svg viewBox="0 0 24 24">
+                      <path d="M15 18l-6-6 6-6" />
+                    </svg>
+                  </button>
+                  <b>Posts</b>
+                </div>
+              )}
               <div className="pf-scroll">
-              {/* A Story as Instagram shows one (direct instruction). */}
-              <div className={`ig${isStoryFormat(creative.format) ? " story" : ""}`}>
-                <div className="ig-h">
-                  <div className="ig-av">
-                    {/* The connected Instagram's own picture, else the
-                        client's logo (direct instruction), else the ring. */}
-                    {igProfile?.pictureUrl || clientLogoUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element -- Instagram's or storage's short-lived URL
-                      <img src={igProfile?.pictureUrl ?? clientLogoUrl!} alt="" />
-                    ) : (
-                      <i />
-                    )}
-                  </div>
-                  <div>
-                    <b>{accountName}</b>
-                  </div>
-                  <div className="dots">•••</div>
-                </div>
-                <div className="ig-media">{media}</div>
-                <div className="ig-acts">
-                  <svg viewBox="0 0 24 24">
-                    <path d="M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 1 0-7.1 7.1L12 21.5l8.8-8.8a5 5 0 0 0 0-7.1z" />
-                  </svg>
-                  <svg viewBox="0 0 24 24">
-                    <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.9 8.9 0 0 1-3.8-.9L3 20.5l1.5-4.4A8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4z" />
-                  </svg>
-                  <svg viewBox="0 0 24 24">
-                    <path d="M22 2L11 13" />
-                    <path d="M22 2l-7 20-4-9-9-4z" />
-                  </svg>
-                </div>
-                {isStoryFormat(creative.format) && <StoryReplyBar />}
-                <div className="ig-cap">
-                  <b>{accountName}</b>
-                  {caption ? (
+              {/* As the shown format's platform draws it (decided
+                  directly); a Story as Instagram shows one. */}
+              <PlatformPost
+                format={shownFormat}
+                frame="phone"
+                accountName={accountName}
+                // The connected Instagram's own picture, else the client's
+                // logo (direct instruction), else the ring.
+                avatarUrl={igProfile?.pictureUrl ?? clientLogoUrl ?? null}
+                media={media}
+                fields={activeCopyVersion?.fields}
+                captionNode={
+                  caption ? (
                     <CaptionHighlighter
                       text={caption}
                       field="caption"
@@ -975,7 +976,10 @@ export function CreativeReviewPage({ id }: { id: string }) {
                         });
                       }}
                     />
-                  ) : copySummaryParts(activeCopyVersion?.fields ?? {}, postFormats(creative)).others.length ? (
+                  ) : undefined
+                }
+                fallback={
+                  copySummaryParts(activeCopyVersion?.fields ?? {}, postFormats(creative)).others.length ? (
                     <CopyFieldsPreview fields={activeCopyVersion?.fields} formatIds={postFormats(creative)} />
                   ) : (
                     <span className="ig-nocopy">
@@ -990,16 +994,18 @@ export function CreativeReviewPage({ id }: { id: string }) {
                         </button>
                       )}
                     </span>
-                  )}
-                </div>
-                <div className="ig-time">
-                  {slides.length > 0 && activeCreativeVersion
-                    ? `Uploaded ${new Date(activeCreativeVersion.created_at).toLocaleDateString()}`
-                    : activeCopyVersion
-                      ? `Copy saved ${new Date(activeCopyVersion.created_at).toLocaleDateString()}`
-                      : null}
-                </div>
-              </div>
+                  )
+                }
+                footer={
+                  <div className="ig-time">
+                    {slides.length > 0 && activeCreativeVersion
+                      ? `Uploaded ${new Date(activeCreativeVersion.created_at).toLocaleDateString()}`
+                      : activeCopyVersion
+                        ? `Copy saved ${new Date(activeCopyVersion.created_at).toLocaleDateString()}`
+                        : null}
+                  </div>
+                }
+              />
               </div>
               </PhoneFrame>
               </div>

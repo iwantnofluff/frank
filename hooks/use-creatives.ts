@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import type { FormatSizes } from "@/lib/formats";
 
 export interface CreativeListRow {
   id: string;
@@ -20,6 +21,8 @@ export interface CreativeListRow {
   // Every reference link, in order (phase58); reference_url is no longer written.
   reference_urls: string[];
   slide_count: number | null; // carousels only (phase31)
+  // A size for each format, where not its default (phase139).
+  sizes: FormatSizes;
   // Text on Image, one entry per slide (phase57: on the post, not versions).
   slide_text: string[];
   // A video post's VO script (phase88).
@@ -57,7 +60,7 @@ export function useCreatives(projectId: string) {
       const { data: rows, error } = await supabase
         .from("creatives")
         .select(
-          "id, name, format, stage, exception, status_id, lead_user_id, team_user_ids, concept, reference_url, reference_urls, slide_count, slide_text, voiceover, approach_notes, scheduled_at, formats, destination, added_on, due_on, published_at, artwork_removed_at, cx, archived_at",
+          "id, name, format, stage, exception, status_id, lead_user_id, team_user_ids, concept, reference_url, reference_urls, slide_count, sizes, slide_text, voiceover, approach_notes, scheduled_at, formats, destination, added_on, due_on, published_at, artwork_removed_at, cx, archived_at",
         )
         .eq("project_id", projectId)
         .order("position");

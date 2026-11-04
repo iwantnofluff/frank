@@ -2,12 +2,15 @@
 
 import { useEffect, useRef } from "react";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { FormatSizes } from "@/lib/formats";
 
 export interface SharedCreative {
   id: string;
   name: string;
   format: string | null;
   formats: string[]; // every format, main first
+  // A size for each format, where not its default (phase139).
+  sizes?: FormatSizes;
   // A carousel's slides, signed, in order — empty for a single image.
   slides: { position: number; signed_url: string | null; mime_type: string; filename: string }[];
   slide_count: number | null; // carousels only

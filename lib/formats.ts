@@ -152,6 +152,31 @@ export function formatsByCategory(category: string): FormatDefinition[] {
   return FORMATS.filter((f) => f.category === category);
 }
 
+// The groups each kind of project offers (direct instruction): a Content
+// Planner its social and performance formats, Other Content the rest, and
+// both Other Creative, the catch-all. A post already in a format outside
+// its project's list keeps it (see formatsOffLimits).
+const DELIVERY_CATEGORIES: Record<"scheduled" | "continuous", readonly string[]> = {
+  scheduled: ["Social — organic", "Performance marketing", "General"],
+  continuous: ["Amazon", "Email and messaging", "Web and print", "General"],
+};
+
+export function categoriesFor(delivery: "scheduled" | "continuous" | null | undefined): readonly string[] {
+  return DELIVERY_CATEGORIES[delivery === "continuous" ? "continuous" : "scheduled"];
+}
+
+export function formatsFor(delivery: "scheduled" | "continuous" | null | undefined): FormatDefinition[] {
+  const cats = categoriesFor(delivery);
+  return FORMATS.filter((f) => cats.includes(f.category));
+}
+
+// Of a post's formats, those its project no longer offers: shown so they
+// can be unticked, never offered to be picked again.
+export function formatsOffLimits(ids: string[], delivery: "scheduled" | "continuous" | null | undefined): string[] {
+  const offered = new Set(formatsFor(delivery).map((f) => f.id));
+  return ids.filter((id) => !offered.has(id));
+}
+
 // A post can have several formats (creatives.formats, phase29). The first
 // is the main one — it sets the Feed Preview's shape and is what
 // creatives.format mirrors. An older row with no formats falls back to its
@@ -204,18 +229,118 @@ export function frameLimits(ids: string[]): { min: number; max: number; noun: "S
   return limits.length ? { min: STORY_MIN_FRAMES, max: Math.min(...limits), noun: "Story" } : null;
 }
 
-// A format's shape as a CSS aspect-ratio ("4:5" → "4 / 5"); square for
-// the formats with none ("—", "varies"), and for a post without a format
-// yet (phase114).
-// The same shape as a number, width over height.
-export function formatRatio(id: string | null | undefined): number {
-  const [w, h] = aspectRatioCss(id).split(" / ").map(Number);
-  return w / h;
+// A size, in pixels (phase139).
+export interface FormatSize {
+  w: number;
+  h: number;
+}
+// A post's chosen sizes, by format (creatives.sizes); a format left out
+// uses its default.
+export type FormatSizes = Record<string, FormatSize>;
+
+// Each format's sizes to choose from, its default first (decided directly:
+// a default per format, changed in the post window under Format). The
+// defaults are the prototype's own (its FORMATS' `d`); the rest are the
+// platforms' other common sizes. Print is at 300dpi. A format with none
+// (Email Campaign, Landing Page, Packaging, Other Creative) is drawn at its
+// artwork's own shape unless a custom size is chosen; the text-only ones
+// have no size at all.
+const SIZE_PRESETS: Record<string, [number, number][]> = {
+  ig_feed: [[1080, 1350], [1080, 1080], [1080, 566]],
+  ig_carousel: [[1080, 1350], [1080, 1080], [1080, 566]],
+  ig_reel: [[1080, 1920]],
+  ig_story: [[1080, 1920]],
+  fb_feed: [[1200, 630], [1080, 1080], [1080, 1350]],
+  fb_story: [[1080, 1920]],
+  li_image: [[1200, 627], [1200, 1200], [1080, 1350]],
+  li_doc: [[1080, 1080], [1080, 1350]],
+  li_video: [[1920, 1080], [1080, 1080], [1080, 1920]],
+  yt_video: [[1920, 1080], [3840, 2160]],
+  yt_short: [[1080, 1920]],
+  yt_thumb: [[1280, 720]],
+  wa_status: [[1080, 1920]],
+  pin: [[1000, 1500], [1000, 1000], [1000, 2100]],
+  meta_feed: [[1080, 1080], [1080, 1350], [1200, 628]],
+  meta_story: [[1080, 1920]],
+  meta_carousel: [[1080, 1080]],
+  g_display: [[300, 250], [728, 90], [160, 600], [320, 50], [336, 280], [300, 600]],
+  g_pmax: [[1200, 628], [1200, 1200], [960, 1200]],
+  yt_preroll: [[1920, 1080]],
+  li_sponsored: [[1200, 627], [1200, 1200]],
+  apl_module: [[970, 600], [970, 300], [300, 300]],
+  apl_premium: [[1464, 600], [1464, 625]],
+  amz_main: [[2000, 2000]],
+  amz_info: [[2000, 2000]],
+  amz_gallery: [[2000, 2000]],
+  amz_sb: [[1200, 628]],
+  amz_store: [[1500, 750], [3000, 600]],
+  em_banner: [[600, 200], [600, 300]],
+  wa_broadcast: [[1080, 1080], [1200, 628]],
+  web_hero: [[1920, 800], [1920, 1080], [1440, 600]],
+  blog: [[1600, 900], [1200, 630]],
+  deck: [[1920, 1080], [1024, 768]],
+  ooh: [[4800, 1400], [4800, 2400]],
+  print: [[2480, 3508], [3508, 4961], [1748, 2480]],
+};
+
+// Names for sizes that have one, so a choice reads as more than numbers.
+const SIZE_NAMES: Record<string, string> = {
+  "2480x3508": "A4",
+  "3508x4961": "A3",
+  "1748x2480": "A5",
+  "4800x1400": "48 × 14 ft",
+  "4800x2400": "48 × 24 ft",
+};
+
+// Formats with no artwork at all: no size to choose.
+const TEXT_ONLY_FORMAT_IDS = new Set(["g_rsa", "sms", "push"]);
+
+export function hasSize(id: string): boolean {
+  return !!formatById(id) && !TEXT_ONLY_FORMAT_IDS.has(id);
 }
 
-export function aspectRatioCss(id: string | null | undefined): string {
-  const m = (id ? formatById(id) : undefined)?.aspectRatio.match(/^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)$/);
-  return m ? `${m[1]} / ${m[2]}` : "1 / 1";
+export function sizePresets(id: string): FormatSize[] {
+  return (SIZE_PRESETS[id] ?? []).map(([w, h]) => ({ w, h }));
+}
+
+export function defaultSize(id: string): FormatSize | null {
+  return sizePresets(id)[0] ?? null;
+}
+
+// The size a post is drawn at in this format: its chosen one, else the
+// format's default, else none (the artwork's own shape).
+export function postSize(id: string | null | undefined, sizes?: FormatSizes | null): FormatSize | null {
+  if (!id) return null;
+  return sizes?.[id] ?? defaultSize(id);
+}
+
+// "1080 × 1350 · 4:5", "1200 × 627 · 1.91:1", "2480 × 3508 · A4".
+export function sizeLabel(size: FormatSize): string {
+  const name = SIZE_NAMES[`${size.w}x${size.h}`];
+  const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : a);
+  const g = gcd(size.w, size.h);
+  const near = (n: number) => String(Math.round(n * 100) / 100);
+  const ratio =
+    size.w / g <= 32 && size.h / g <= 32
+      ? `${size.w / g}:${size.h / g}`
+      : size.w >= size.h
+        ? `${near(size.w / size.h)}:1`
+        : `1:${near(size.h / size.w)}`;
+  return `${size.w} × ${size.h} · ${name ?? ratio}`;
+}
+
+// A format's shape as a CSS aspect-ratio ("1080 × 1350" → "1080 / 1350"):
+// the post's chosen size, else the format's default; square for a format
+// with no size, and for a post without a format yet (phase114).
+export function aspectRatioCss(id: string | null | undefined, sizes?: FormatSizes | null): string {
+  const size = postSize(id, sizes);
+  return size ? `${size.w} / ${size.h}` : "1 / 1";
+}
+
+// The same shape as a number, width over height.
+export function formatRatio(id: string | null | undefined, sizes?: FormatSizes | null): number {
+  const [w, h] = aspectRatioCss(id, sizes).split(" / ").map(Number);
+  return w / h;
 }
 
 // A copy version for the calendar tables' Caption/Copy column (direct

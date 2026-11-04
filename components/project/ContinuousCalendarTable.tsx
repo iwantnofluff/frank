@@ -1327,7 +1327,7 @@ export function ContinuousCalendarTable({
                                   onMouseLeave={art ? scheduleHide : undefined}
                                 >
                                   {art ? (
-                                    <ArtworkCell artwork={art} thumbnail={thumbnailsByCreative?.[c.id]} after={after} />
+                                    <ArtworkCell artwork={art} thumbnail={thumbnailsByCreative?.[c.id]} after={after} format={c.format} sizes={c.sizes} />
                                   ) : (
                                     <span className="artadds">
                                       <MissingContent expected={!c.artwork_removed_at} {...fill(c, "artwork")} />
