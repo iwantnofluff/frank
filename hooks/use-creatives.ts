@@ -33,6 +33,8 @@ export interface CreativeListRow {
   destination: string | null;
   added_on: string;
   due_on: string | null;
+  // An Other Content post's Publish Date: when it goes live (phase140).
+  publish_on: string | null;
   published_at: string | null;
   // When its artwork was removed after going live (phase60).
   artwork_removed_at: string | null;
@@ -60,7 +62,7 @@ export function useCreatives(projectId: string) {
       const { data: rows, error } = await supabase
         .from("creatives")
         .select(
-          "id, name, format, stage, exception, status_id, lead_user_id, team_user_ids, concept, reference_url, reference_urls, slide_count, sizes, slide_text, voiceover, approach_notes, scheduled_at, formats, destination, added_on, due_on, published_at, artwork_removed_at, cx, archived_at",
+          "id, name, format, stage, exception, status_id, lead_user_id, team_user_ids, concept, reference_url, reference_urls, slide_count, sizes, slide_text, voiceover, approach_notes, scheduled_at, formats, destination, added_on, due_on, publish_on, published_at, artwork_removed_at, cx, archived_at",
         )
         .eq("project_id", projectId)
         .order("position");

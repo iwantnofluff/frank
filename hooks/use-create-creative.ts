@@ -24,6 +24,8 @@ export interface CreateCreativeInput {
   scheduledAt: string | null;
   destination: string | null;
   dueOn: string | null;
+  // An Other Content post's Publish Date (phase140).
+  publishOn?: string | null;
   // Typed straight into a new row of the table (direct instruction): a
   // video's VO, Text on Image, and copy fields, saved as its first copy
   // version. The New Post window adds these on its Content tab instead.
@@ -80,6 +82,7 @@ export function useCreateCreative(projectId: string) {
           scheduled_at: input.scheduledAt,
           destination: input.destination,
           due_on: input.dueOn,
+          publish_on: input.publishOn ?? null,
           position,
           cx: input.cx,
           ...(input.voiceover?.trim() ? { voiceover: input.voiceover.trim() } : {}),

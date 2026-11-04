@@ -19,9 +19,9 @@ test("buildVoicePostPrompt: today, the formats and team by id, and what was said
   assert.match(p, /u1: Hannah Cardozo/);
   assert.match(p, /"""A carousel on the 20th with Hannah"""/);
   assert.match(p, /"date": the Publish Date/);
-  // A continuous project asks for its Live Date instead.
+  // A continuous project asks for its Due Date instead (phase140).
   const c = buildVoicePostPrompt({ transcript: "x", today: "2026-10-17", weekday: "Saturday", delivery: "continuous", formats: [], team: [] });
-  assert.match(c, /"dueOn": the Live Date/);
+  assert.match(c, /"dueOn": the Due Date/);
   assert.doesNotMatch(c, /"date": the Publish Date/);
 });
 

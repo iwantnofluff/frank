@@ -66,10 +66,17 @@ export function BriefPanel({
         </div>
       ) : (
         <>
+          {/* When the work is due, and when it goes live (phase140). */}
           <div className="bsec">
-            <div className="bl">Needed By</div>
+            <div className="bl">Due Date</div>
             <p className="fd-d">
-              {creative.due_on ? new Date(creative.due_on).toLocaleDateString() : "—"}
+              {creative.due_on ? new Date(`${creative.due_on}T00:00:00`).toLocaleDateString() : "—"}
+            </p>
+          </div>
+          <div className="bsec">
+            <div className="bl">Publish Date</div>
+            <p className="fd-d">
+              {creative.publish_on ? new Date(`${creative.publish_on}T00:00:00`).toLocaleDateString() : "—"}
             </p>
           </div>
         </>

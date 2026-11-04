@@ -1,7 +1,7 @@
 "use client";
 
 import { isIdea } from "@/lib/stage-labels";
-import { isLive, isOverdue } from "@/lib/post-live";
+import { goLiveDay, isLive, isOverdue } from "@/lib/post-live";
 import { useMemo, useRef, useState } from "react";
 import { useCreatives, type CreativeListRow } from "@/hooks/use-creatives";
 import { FeedTileArt, EmptyTileArt } from "@/components/creative-review/FeedTileArt";
@@ -57,7 +57,8 @@ export function FeedPreviewGrid({
   // project's Live Date. Ideas (no date yet) are left out.
   const creatives = useMemo(() => {
     const when = (c: CreativeListRow) => {
-      const at = c.scheduled_at ?? (c.due_on ? `${c.due_on}T00:00:00` : null);
+      const day = goLiveDay(c);
+      const at = c.scheduled_at ?? (day ? `${day}T00:00:00` : null);
       return at ? new Date(at).getTime() : Infinity;
     };
     // Ideas aren't on the Review page (direct instruction).
@@ -154,7 +155,8 @@ export function FeedPreviewGrid({
           {shown.map((c) => {
             // Its Publish Date, or a continuous project's Live Date (read
             // as the day it names).
-            const when = c.scheduled_at ?? (c.due_on ? `${c.due_on}T00:00:00` : null);
+            const day = goLiveDay(c);
+            const when = c.scheduled_at ?? (day ? `${day}T00:00:00` : null);
             const timeLabel = when
               ? new Date(when).toLocaleDateString(undefined, {
                   month: "short",

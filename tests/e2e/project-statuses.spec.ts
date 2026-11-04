@@ -139,6 +139,11 @@ test("a post takes its stage's first status, the team picks another from its pil
   await expect.poll(async () => (await now()).stage).toBe(1);
   await admin.from("creatives").update({ concept: "Autumn oats, slow mornings" }).eq("id", frank.creativeId);
   await page.reload();
+  // The table settled first: Status sits right of Caption, Text on Image
+  // and Creative since phase140, so a click mid-load scrolls the table to
+  // it, and a scroll closes the menu.
+  await expect(tablePill).toHaveText("1. Concept", { timeout: 20_000 });
+  await page.waitForLoadState("networkidle");
   await pick("2a. In Progress (Content)");
   const ask = page.getByRole("dialog", { name: "Approve the Concept first?" });
   await expect(ask).toContainText("then moves it to 2a. In Progress (Content).");

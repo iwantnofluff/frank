@@ -68,22 +68,29 @@ test("a new project's columns: untick defaults, add its own, fill them in on a p
   await page.fill("#newName", "Columns E2E");
   await page.getByRole("button", { name: "Next" }).click();
 
-  // Every column ticked to start.
+  // The default columns ticked to start; Alt Text and Team not (decided
+  // directly, phase140).
   const group = page.getByRole("group", { name: "Columns" });
   const boxes = group.getByRole("checkbox");
   const total = await boxes.count();
   expect(total).toBeGreaterThan(10);
-  for (let i = 0; i < total; i++) await expect(boxes.nth(i)).toBeChecked();
+  const unticked = ["Show Alt Text", "Show Team"];
+  for (let i = 0; i < total; i++) {
+    const label = await boxes.nth(i).getAttribute("aria-label");
+    if (unticked.includes(label ?? "")) await expect(boxes.nth(i)).not.toBeChecked();
+    else await expect(boxes.nth(i)).toBeChecked();
+  }
   await page.getByLabel("Show Time").uncheck();
   // Each column's type shows beside it.
   await expect(group.locator(".coled-row", { has: page.getByLabel("Show Status") }).locator(".coled-type")).toHaveText("Stage");
-  // Rename a built-in column, and drag Copy above VO.
+  // Rename a built-in column, and drag VO above it (Caption/Copy comes
+  // before VO by default since phase140).
   const copyName = page.getByLabel("Name of Caption/Copy");
   await copyName.fill("Caption");
   await copyName.press("Enter");
   await expect(page.getByLabel("Show Caption")).toBeVisible();
   const rows = group.locator(".coled-row");
-  await rows.filter({ has: page.getByLabel("Show Caption") }).locator(".coled-grip").dragTo(rows.filter({ has: page.getByLabel("Show VO") }));
+  await rows.filter({ has: page.getByLabel("Show VO") }).locator(".coled-grip").dragTo(rows.filter({ has: page.getByLabel("Show Caption") }));
 
   // Two of its own: Thumbnail Text, shown; Shoot Date, hidden.
   await page.getByRole("button", { name: "+ Add Column" }).click();
@@ -102,12 +109,13 @@ test("a new project's columns: untick defaults, add its own, fill them in on a p
   expect(cols!.map((c) => [c.label, c.type])).toEqual([["Thumbnail Text", "text"], ["Shoot Date", "date"]]);
   const shoot = cols!.find((c) => c.label === "Shoot Date")!;
   const { data: proj } = await admin.from("projects").select("default_hidden_columns, default_column_order, column_labels").eq("id", projectId).single();
-  expect(proj!.default_hidden_columns.sort()).toEqual(["time", `cx:${shoot.id}`].sort());
+  // What was unticked, with the defaults left unticked (Alt Text, Team).
+  expect(proj!.default_hidden_columns.sort()).toEqual(["time", `cx:${shoot.id}`, "altText", "lead"].sort());
   expect(proj!.column_labels).toEqual({ postCopy: "Caption" });
   const order = proj!.default_column_order as string[];
-  expect(order.indexOf("postCopy")).toBe(order.indexOf("voiceover") - 1);
+  expect(order.indexOf("voiceover")).toBe(order.indexOf("postCopy") - 1);
   expect(proj!.default_column_order.slice(-2)).toEqual(cols!.map((c) => `cx:${c.id}`));
-  // The table starts as set: Caption renamed and above VO; Time hidden.
+  // The table starts as set: Caption renamed, VO above it; Time hidden.
   await page.waitForSelector(".tbl, .empty");
 
   // Later, from the table's Columns picker: a Large Text column.

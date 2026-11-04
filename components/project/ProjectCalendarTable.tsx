@@ -130,47 +130,57 @@ const FROZEN_COLUMNS = [
 // by hand rather than through the `columns` array below.
 const CHECKBOX_COL_WIDTH = 36;
 
-// Order and sub-labels from the real content-planner template used on
-// live client work (Hapi Dental's Sep '26 planner). The names match the
-// New Post window's own (direct instruction), so a field reads the same
-// in both: Post Name, Format, Slides, Concept and Reference, Text on
-// Image, Copy, WIIFM Direction; the table's is Concept & Reference
-// (direct instruction). Sub-labels in sentence case (direct instruction).
-// Keys stay as they were, so saved views keep their columns.
+// Sub-labels from the real content-planner template used on live client
+// work (Hapi Dental's Sep '26 planner). The names match the New Post
+// window's own (direct instruction), so a field reads the same in both:
+// Post Name, Format, Slides, Concept and Reference, Text on Image, Copy,
+// WIIFM Direction; the table's is Concept & Reference (direct
+// instruction). Sub-labels in sentence case (direct instruction). Keys
+// stay as they were, so saved views keep their columns.
+//
+// The default order (decided directly, 4 Nov 2026): after Week, Publish
+// Date and Day, Time, Post Name, Format, Slides, Status, Caption/Copy, Text
+// on Image, Creative, Concept & Reference, VO, Notes for Designer, WIIFM
+// Direction and the two Feedbacks; Alt Text and Team hidden by default
+// (DEFAULT_HIDDEN_COLUMNS), at the end.
 export const TOGGLABLE_COLUMNS = [
   { key: "time", label: "Time", sub: "Time of post", width: 84 },
-  { key: "status", label: "Status", sub: "Status of post", width: 184 },
+  { key: "creative", label: "Post Name", sub: "Post identifier", width: 196 },
   { key: "type", label: "Format", sub: "Platform and type", width: 141 },
   // Wide enough for its "Add Slides" button (direct instruction).
   { key: "slides", label: "Slides", sub: "#", width: 108 },
-  // Renamed Team, then wider twice (direct instruction), for a role after
-  // the name.
-  { key: "lead", label: "Team", sub: "Person and role", width: 154 },
-  { key: "creative", label: "Post Name", sub: "Post identifier", width: 196 },
+  { key: "status", label: "Status", sub: "Status of post", width: 184 },
+  // The copy before the visual it goes with (direct instruction).
+  { key: "postCopy", label: "Caption/Copy", sub: "Post copy checked by Frank", width: 330 },
+  { key: "imageOnText", label: "Text on Image", sub: "Image text checked by Frank", width: 220 },
+  // The latest creative version's file name, with its preview on hover
+  // (direct instruction; the preview moved here off Post Name).
+  { key: "artwork", label: "Creative", sub: "Latest post visual", width: 200 },
   { key: "concept", label: "Concept & Reference", sub: "Directions for creative and copy", width: 236 },
   // One column each, not three (1/2/3) — the cell shows the latest
   // copy_versions row; older ones show on hover instead of their own
   // columns (CopyVersionHistoryPopover), per explicit direction.
-  // A video post's VO script (phase88), before its Text on Image.
+  // A video post's VO script (phase88).
   { key: "voiceover", label: "VO", sub: "Voiceover script", width: 220 },
   // Notes for Designer, as on Other Content's table, as wide as Caption
   // (direct instruction).
   { key: "notes", label: "Notes for Designer", sub: "Design feedback", width: 330 },
-  // The latest creative version's file name, with its preview on hover
-  // (direct instruction; the preview moved here off Post Name).
-  { key: "artwork", label: "Creative", sub: "Latest post visual", width: 200 },
-  { key: "imageOnText", label: "Text on Image", sub: "Image text checked by Frank", width: 220 },
-  { key: "postCopy", label: "Caption/Copy", sub: "Post copy checked by Frank", width: 330 },
-  // The latest copy's Alt Text, its own column after Copy (direct
-  // instruction).
-  { key: "altText", label: "Alt Text", sub: "For screen readers", width: 220 },
   // As wide as Copy (direct instruction), now that it's a few short points.
   { key: "approach", label: "WIIFM Direction", sub: "WIIFM of latest copy", width: 330 },
   // The team's own latest open comment, before the client's (direct
   // instruction); the team only.
   { key: "internalFeedback", label: "Internal Feedback", sub: "", width: 220 },
   { key: "clientFeedback", label: "Client Feedback", sub: "", width: 220 },
+  // The latest copy's Alt Text (direct instruction), hidden by default.
+  { key: "altText", label: "Alt Text", sub: "For screen readers", width: 220 },
+  // Renamed Team, then wider twice (direct instruction), for a role after
+  // the name; hidden by default.
+  { key: "lead", label: "Team", sub: "Person and role", width: 154 },
 ] as const;
+
+// Hidden in a new project's Main Table until turned on (decided directly);
+// phase140 set every existing project's to the same.
+export const DEFAULT_HIDDEN_COLUMNS: string[] = ["altText", "lead"];
 
 const CUSTOM_COLUMN_WIDTH = 140;
 const DEFAULT_COLUMN_ORDER = TOGGLABLE_COLUMNS.map((c) => c.key);

@@ -22,6 +22,8 @@ export interface CreativeRow {
   formats: string[]; // every format, main first (phase29)
   destination: string | null;
   due_on: string | null;
+  // An Other Content post's Publish Date: when it goes live (phase140).
+  publish_on: string | null;
   concept: string | null;
   reference_url: string | null;
   // Every reference link, in order (phase58); reference_url is no longer written.

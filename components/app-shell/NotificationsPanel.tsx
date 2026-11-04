@@ -165,7 +165,7 @@ export function NotificationsPanel({
             ) : (
               <>
                 <b>{post?.name ?? "A post"}</b>
-                {client ? ` · ${client}` : ""}. {post?.due_on ? "Past its due date" : "Approved a while ago"}, with
+                {client ? ` · ${client}` : ""}. {post?.publish_on ? "Past its publish date" : post?.due_on ? "Past its due date" : "Approved a while ago"}, with
                 no live date: remove its artwork?
               </>
             )}

@@ -8,7 +8,7 @@ import { errorMessage } from "@/lib/errors";
 
 // A post's date and time changed from a project's table (direct
 // instruction: hover and click the date). A scheduled post's Publish Date
-// and time, or a continuous post's Live Date; Frank's own date and time
+// and time, or a continuous post's Due Date or Publish Date (phase140); Frank's own date and time
 // dropdowns (components/ui/DateField), the one clicked opened straight
 // away. Enter saves; Escape closes.
 export function DatePopover({
@@ -18,6 +18,7 @@ export function DatePopover({
   delivery,
   value,
   focus,
+  field = "due",
   onClose,
 }: {
   creativeId: string;
@@ -29,6 +30,8 @@ export function DatePopover({
   value: string;
   // Which was clicked: its picker opens first.
   focus: "date" | "time";
+  // A continuous post's: its Due Date or its Publish Date.
+  field?: "due" | "publish";
   onClose: () => void;
 }) {
   const scheduled = delivery === "scheduled";
@@ -69,7 +72,9 @@ export function DatePopover({
     reschedule.mutate(
       scheduled
         ? { creativeId, scheduledAt: date ? new Date(`${date}T${time}`).toISOString() : null }
-        : { creativeId, dueOn: date || null },
+        : field === "publish"
+          ? { creativeId, publishOn: date || null }
+          : { creativeId, dueOn: date || null },
       { onSuccess: onClose },
     );
   }
@@ -79,7 +84,7 @@ export function DatePopover({
       ref={ref}
       className="colpop on datepop"
       role="dialog"
-      aria-label={`${name}'s ${scheduled ? "Publish Date" : "Live Date"}`}
+      aria-label={`${name}'s ${scheduled || field === "publish" ? "Publish Date" : "Due Date"}`}
       onClick={(e) => e.stopPropagation()}
       onKeyDown={(e) => {
         if (e.key === "Enter") save();
@@ -87,7 +92,7 @@ export function DatePopover({
     >
       <div className="datepop-b">
         <label className="datepop-f">
-          <span>{scheduled ? "Publish Date" : "Live Date"}</span>
+          <span>{scheduled || field === "publish" ? "Publish Date" : "Due Date"}</span>
           <DateField value={date} onChange={setDate} autoOpen={!scheduled || focus === "date"} />
         </label>
         {scheduled && (

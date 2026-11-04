@@ -102,7 +102,8 @@ export function DesktopReview({
                   )}
                   {sec.items.map((c, k) => {
                     const i = start + k;
-                    const date = publishDate(projectDelivery, c.scheduled_at, c.due_on);
+                    // The client's: when it goes live (phase140).
+                    const date = publishDate(projectDelivery, c.scheduled_at, c.publish_on ?? c.due_on);
                     return (
                       <button
                         key={c.id}

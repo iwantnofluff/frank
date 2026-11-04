@@ -34,7 +34,7 @@ export interface VoicePostFields {
   slideCount?: number;
   date?: string; // YYYY-MM-DD, a scheduled post's Publish Date
   time?: string; // HH:MM
-  dueOn?: string; // YYYY-MM-DD, a continuous post's Live Date
+  dueOn?: string; // YYYY-MM-DD, a continuous post's Due Date (phase140)
   concept?: string;
   referenceUrls?: string[];
   teamUserIds?: string[];
@@ -56,7 +56,7 @@ export function buildVoicePostPrompt(input: VoicePostInput): string {
     '- "slideCount": how many slides or stories, a number, only for carousels and stories.',
     scheduled
       ? '- "date": the Publish Date, YYYY-MM-DD. "time": its time, 24-hour HH:MM.'
-      : '- "dueOn": the Live Date, YYYY-MM-DD.',
+      : '- "dueOn": the Due Date (when the work is due), YYYY-MM-DD.',
     cur
       ? '- "concept": only if they talk about what the post is or how it should look: the whole updated concept, keeping what\'s there and working in what they said (replace it only if they say to), tidied into one to four sentences. Don\'t invent details they didn\'t give.'
       : '- "concept": what the post is and how it should look, in their words, tidied into a clear brief of one to four sentences. Don\'t invent details they didn\'t give.',

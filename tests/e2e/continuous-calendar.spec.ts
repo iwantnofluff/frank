@@ -48,9 +48,10 @@ test("continuous calendar — the template's columns, named as in the New Post w
   await goToMonth(page, "March 2027");
   await page.waitForSelector(".tbl");
 
-  // In the Social Media table's order, Notes for Designer before Creative
-  // (direct instruction); Destination, Funnel, TG and Final Creative gone.
-  await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 15/15");
+  // The default order (decided directly, phase140): Due Date, Publish
+  // Date, then the rest; every column shows on a project that hides none.
+  // Destination, Funnel, TG and Final Creative gone.
+  await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 16/16");
   // Each heading's name, without its <small> subtitle.
   const headings = await page.locator("thead tr").first().locator("th").evaluateAll((ths) =>
     ths
@@ -62,8 +63,8 @@ test("continuous calendar — the template's columns, named as in the New Post w
       .filter(Boolean),
   );
   expect(headings).toEqual([
-    "Live Date", "Status", "Format", "Slides", "Team", "Post Name", "Concept & Reference", "VO", "Notes for Designer",
-    "Creative", "Text on Image", "Caption/Copy", "Alt Text", "WIIFM Direction", "Principles",
+    "Due Date", "Publish Date", "Post Name", "Format", "Caption/Copy", "Text on Image", "Creative", "Status", "Team",
+    "Concept & Reference", "Slides", "VO", "Notes for Designer", "Alt Text", "WIIFM Direction", "Principles",
   ]);
 });
 

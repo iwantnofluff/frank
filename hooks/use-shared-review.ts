@@ -29,6 +29,8 @@ export interface SharedCreative {
   approved_at: string | null;
   // A continuous project's Live Date (the list's date after the name).
   due_on?: string | null;
+  // Its Publish Date: when it goes live (phase140).
+  publish_on?: string | null;
   // A video's latest thumbnail, and the words on it (phase118).
   // small_url: its small copy (lib/artwork-preview.ts), for the feed grid.
   thumbnail?: { version_no: number; filename: string; signed_url: string | null; small_url?: string | null } | null;

@@ -4910,3 +4910,49 @@ thumbnails.spec now finds the preview's artwork in either the story or the post 
 **"No copy yet" on the iPad (reported directly, same release).** On a web page in the iPad (Website Banner / Hero, Landing Page), "No copy yet · Write Copy" sat against the artwork and the screen's left edge, and on every iPad look it was drawn at the phone's size and then scaled down with the iPad, so it read tiny. It now sits on its own line, 18px under the artwork and 24px in from the edge. In the iPad, it and Write Copy are sized to read at 12px as seen whatever the iPad's scale, the size of the format's name under the post's title (reported directly).
 
 **Verified**: In the real app (dev server, staging), a post in Website Banner / Hero, Email Campaign and Other Creative with artwork and no copy was screenshotted in each. Before the size was matched to the format's name, the text measured 28–30px as drawn (about 13.7px as seen), clear of the artwork and the screen's edges. After matching, it measured 12.0px as seen against the format name's 12px, screenshotted on a Website Banner / Hero. The template and post page specs passed on a rerun (9). The first run had two failures, each taking over a minute, from load.
+
+**Released 4 Nov 2026 as 1.68.0** (commit 9ff6e44). phase139 is on staging, the local test database and live (run by the user on 4 Nov; the column, its check and format_sizes_valid read back on live).
+
+## Due Date and Publish Date, and the tables' default columns (phase140, 1.69.0, 2026-11-04)
+
+Decided directly.
+
+**Two dates for Other Content.** An Other Content post now has a Due Date and a Publish Date.
+- **Due Date** is when the work is due. It's `creatives.due_on`, until now shown as Live Date. It still groups the table into weeks, places the post on the calendar and orders the posts either side of it. A post without one is still an Idea (phase106, unchanged).
+- **Publish Date** is when it goes live (`creatives.publish_on`, new). Whatever means "goes live" counts from it, falling back to the Due Date while it's empty:
+  - a post counting as live once Approved and past it
+  - the red "not live yet" mark
+  - whether it went live on time or late, including the planned date kept when it goes Live
+  - when Approved artwork is removed, and the notice about it
+  - the review link feed's newest-first order
+  - the date beside each post in the review link's list
+  - the Feed preview
+
+phase140 copied every existing Live Date into the Publish Date, so nothing moved.
+- **The table:** a frozen Due Date column, red once it's over and the work isn't Approved, and a Publish Date column, red once it's over and the post isn't live. Each is set from its own cell.
+- **Elsewhere:** the post window and the Brief show both. Speak It sets the Due Date. The Help article says so.
+
+**Default columns.** These come after the frozen date columns:
+- **Content Planner:** Time, Post Name, Format, Slides, Status, Caption/Copy, Text on Image, Creative, Concept & Reference, VO, Notes for Designer, WIIFM Direction, Internal Feedback and Client Feedback. Alt Text and Team are hidden, at the end.
+- **Other Content:** Publish Date, Post Name, Format, Creative, Status, Team and Concept & Reference. Caption/Copy and Text on Image sit before Creative, and they, Slides, VO, Notes for Designer, Alt Text, WIIFM Direction and Principles are hidden.
+
+In the user's list Creative appeared twice for the Content Planner. It sits after Status, as chosen. Caption/Copy and Text on Image were then moved before it (direct instruction).
+
+Saved arrangements were replaced, as chosen. phase140 cleared every project's saved order and set its hidden columns to the defaults. Renamed columns and saved table views were left alone. The New Project window's Columns step starts with the same columns unticked.
+
+**Verified**: phase140 rehearsed on staging and rolled back (8 posts got a Publish Date, all equal to their date), then applied to staging. The column read back, as did the three functions now reading publish_on and every project's columns reset. In the real app (dev server, staging), a new Content Planner and a new Other Content project made through the New Project window were screenshotted, both in the default order. New default-columns.spec (2 tests):
+- a new Content Planner's header order, with Alt Text and Team hidden
+- a new Other Content project's header order and names, setting the Publish Date from its cell with Frank's calendar (leaving the Due Date as it was), and both dates in the post window
+
+Unit tests updated for Speak It's wording (280 pass).
+
+Tests updated for the new order:
+- continuous-calendar's headings: 16 columns, Due Date and Publish Date first.
+- new-project: Alt Text and Team start unticked, and VO is dragged above Caption, since Caption/Copy is already ahead of it.
+- project-calendar: the drag test is wider, so Concept, now further right, is on screen. The Pending buttons' order is updated.
+- project-statuses: waits for the table to finish loading after a reload before using a status pill.
+- dashboard.png: regenerated after looking at its diff, which was only the Last Activity date.
+
+Found, not fixed: a status pill clicked while the table is still loading can find the table scrolling under it, and the menu closes on any scroll. Status now sits further right, behind Caption/Copy, Text on Image and Creative, so a click mid-load is more likely to scroll the table first. Once the table has loaded it opens as before.
+
+Full suite on a local database rebuilt with phase140: 334 passed, 1 skipped, 1 failed (project-statuses, the case above). It passed (2) once it waited for the table. phase140 is on staging and live: the user ran it on live on 4 Nov, and the column, both posts' Publish Dates, the three functions and every project's reset columns read back.

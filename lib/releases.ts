@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.69.0",
+    date: "2026-11-04",
+    title: "Due and Publish Dates, and a tidier table",
+    changes: [
+      "Other Content posts now have a Due Date, when the work is due, and a Publish Date, when it goes live. The Due Date sorts the table into weeks and places posts on the calendar. Live, late and artwork removal count from the Publish Date. Existing posts start with both dates set to their old Live Date.",
+      "Every project's table starts in a new default order. Content Planner: Week, Publish Date, Day, Time, Post Name, Format, Slides, Status, Caption/Copy, Text on Image, Creative, Concept & Reference, VO, Notes for Designer, WIIFM Direction and the two Feedbacks, with Alt Text and Team hidden. Other Content: Due Date, Publish Date, Post Name, Format, Creative, Status, Team and Concept & Reference, with the rest hidden. Any hidden column can be turned back on from Columns.",
+    ],
+  },
+  {
     version: "1.68.0",
     date: "2026-11-04",
     title: "Posts that look like their platform",

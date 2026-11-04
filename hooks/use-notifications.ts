@@ -28,6 +28,7 @@ export interface NotificationRow {
     name: string;
     format: string;
     due_on: string | null;
+    publish_on: string | null;
     approved_at: string | null;
     approved_by_name: string | null;
     project: { id: string; name: string; client: { id: string; name: string } | null } | null;
@@ -43,7 +44,7 @@ export function useNotifications(enabled = true) {
       const { data, error } = await supabase
         .from("notifications")
         .select(
-          "id, kind, comment_id, discussion_id, created_at, read_at, creative:creatives(id, name, format, due_on, approved_at, approved_by_name, project:projects(id, name, client:clients(id, name)))",
+          "id, kind, comment_id, discussion_id, created_at, read_at, creative:creatives(id, name, format, due_on, publish_on, approved_at, approved_by_name, project:projects(id, name, client:clients(id, name)))",
         )
         // Only those meant for the bell (a client may want email only).
         .eq("in_app", true)

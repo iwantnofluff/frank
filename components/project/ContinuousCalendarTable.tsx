@@ -47,7 +47,7 @@ import { useCopyVersionsByCreative } from "@/hooks/use-copy-versions-by-creative
 import { VersionedTextCell } from "@/components/project/VersionedTextCell";
 import { copySummary, expectedContent, formatsLabel, postFormats, hasVideoFormat } from "@/lib/formats";
 import { EditContent, MissingContent } from "@/components/project/MissingContent";
-import { isOverdue } from "@/lib/post-live";
+import { isOverdue, isPastDue } from "@/lib/post-live";
 import { EditPostWindow } from "@/components/project/EditPostWindow";
 import { usePrefetchPost } from "@/hooks/use-prefetch-post";
 import { DatePopover } from "@/components/project/DatePopover";
@@ -110,10 +110,12 @@ type ViewMode = "week" | "month" | "calendar";
 // Scheduled has, since that's not part of the 13-field template this
 // table was built against (see docs/parity-gaps.md).
 const FROZEN_COLUMNS = [
-  { key: "date", label: "Live Date", sub: "Launch date", width: 104, stickyClass: "sk1", left: 0 },
+  // When the work is due (phase140; it was the Live Date): it groups the
+  // table into weeks and places the post on the calendar.
+  { key: "date", label: "Due Date", sub: "Work due", width: 104, stickyClass: "sk1", left: 0 },
 ] as const;
 
-// Staff-only checkbox column, sticky ahead of Live Date when shown — not
+// Staff-only checkbox column, sticky ahead of Due Date when shown — not
 // one of FROZEN_COLUMNS: it's a selection affordance, not a data column,
 // so it's excluded from the Columns picker's counts and rendered by hand
 // rather than through the `columns` array below.
@@ -136,30 +138,36 @@ const CHECKBOX_COL_WIDTH = 36;
 // longer shown. Notes for Designer is its own text (cx.designer_notes),
 // also in the window; it used to show the WIIFM direction, which now has
 // its own column.
-// In the Social Media table's order (direct instruction), with Notes for
-// Designer before Creative and Principles after; Live Date stays first,
-// frozen. Destination, Funnel, TG and Final Creative went (direct
+// The default order (decided directly, 4 Nov 2026): after Due Date,
+// Publish Date, Post Name, Format, Creative, Status, Team and Concept &
+// Reference; the rest hidden by default (DEFAULT_HIDDEN_COLUMNS), after
+// them, but Caption/Copy and Text on Image, which sit before Creative. Destination, Funnel, TG and Final Creative went (direct
 // instruction); what they held stays on the posts, unshown.
 export const TOGGLABLE_COLUMNS = [
-  { key: "status", label: "Status", sub: "Workflow state", width: 184 },
+  // When the post goes live (phase140); Due Date, frozen first, is when
+  // the work is due.
+  { key: "publishDate", label: "Publish Date", sub: "Goes live", width: 112 },
+  { key: "creative", label: "Post Name", sub: "Post identifier", width: 196 },
   { key: "type", label: "Format", sub: "Platform and type", width: 141 },
-  // Wide enough for its "Add Slides" button (direct instruction).
-  { key: "slides", label: "Slides", sub: "#", width: 108 },
+  // The copy before the visual it goes with (direct instruction); hidden
+  // by default here.
+  { key: "copy", label: "Caption/Copy", sub: "Post copy checked by Frank", width: 330 },
+  { key: "imageOnText", label: "Text on Image", sub: "Image text checked by Frank", width: 220 },
+  // The latest creative version's file name, with its preview on hover
+  // (direct instruction; the preview moved here off Post Name).
+  { key: "artwork", label: "Creative", sub: "Latest post visual", width: 200 },
+  { key: "status", label: "Status", sub: "Workflow state", width: 184 },
   // Renamed Team, then wider twice (direct instruction), for a role after
   // the name. Format, Slides and Status are as wide as their longest
   // words, as on the scheduled table.
   { key: "lead", label: "Team", sub: "Person and role", width: 154 },
-  { key: "creative", label: "Post Name", sub: "Post identifier", width: 196 },
   { key: "conceptRef", label: "Concept & Reference", sub: "Directions for creative and copy", width: 260 },
+  // Wide enough for its "Add Slides" button (direct instruction).
+  { key: "slides", label: "Slides", sub: "#", width: 108 },
   // A video post's VO script (phase88), before its Text on Image.
   { key: "voiceover", label: "VO", sub: "Voiceover script", width: 220 },
   // As wide as Caption/Copy (direct instruction).
   { key: "notes", label: "Notes for Designer", sub: "Design feedback", width: 330 },
-  // The latest creative version's file name, with its preview on hover
-  // (direct instruction; the preview moved here off Post Name).
-  { key: "artwork", label: "Creative", sub: "Latest post visual", width: 200 },
-  { key: "imageOnText", label: "Text on Image", sub: "Image text checked by Frank", width: 220 },
-  { key: "copy", label: "Caption/Copy", sub: "Post copy checked by Frank", width: 330 },
   // The latest copy's Alt Text, its own column after Copy (direct
   // instruction).
   { key: "altText", label: "Alt Text", sub: "For screen readers", width: 220 },
@@ -167,6 +175,10 @@ export const TOGGLABLE_COLUMNS = [
   { key: "approach", label: "WIIFM Direction", sub: "WIIFM of latest copy", width: 330 },
   { key: "principles", label: "Principles", sub: "Psychological angle", width: 180 },
 ] as const;
+
+// Hidden in a new project's Main Table until turned on (decided directly);
+// phase140 set every existing project's to the same.
+export const DEFAULT_HIDDEN_COLUMNS: string[] = ["slides", "voiceover", "notes", "imageOnText", "copy", "altText", "approach", "principles"];
 
 const CUSTOM_COLUMN_WIDTH = 140;
 const DEFAULT_COLUMN_ORDER = TOGGLABLE_COLUMNS.map((c) => c.key);
@@ -565,14 +577,19 @@ export function ContinuousCalendarTable({
   const { data: assetLinks } = useAssetLinksByCreative(creativeIds, isStaff);
   // A post's date changed from the table (direct instruction): its date
   // or time a button for the team, opening the pickers right there.
-  const [datePick, setDatePick] = useState<{ c: CreativeListRow; rect: DOMRect; focus: "date" | "time" } | null>(null);
-  const pickDate = (c: CreativeListRow, focus: "date" | "time") =>
+  // Its Due Date, or its Publish Date (phase140).
+  const [datePick, setDatePick] = useState<{ c: CreativeListRow; rect: DOMRect; focus: "date" | "time"; field: "due" | "publish" } | null>(null);
+  const pickDate = (c: CreativeListRow, focus: "date" | "time", field: "due" | "publish" = "due") =>
     isStaff
       ? (e: React.MouseEvent<HTMLElement>) => {
           e.stopPropagation();
-          setDatePick({ c, rect: e.currentTarget.getBoundingClientRect(), focus });
+          setDatePick({ c, rect: e.currentTarget.getBoundingClientRect(), focus, field });
         }
       : undefined;
+  const shortDate = (iso: string) => {
+    const d = new Date(`${iso}T00:00:00`);
+    return `${d.getDate()} ${MONTH_ABBR[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`;
+  };
 
   // A Pending cell's button (direct instruction): the post's Edit window,
   // here on the table, at that field. The team only.
@@ -616,7 +633,7 @@ export function ContinuousCalendarTable({
       .filter((w) => w.items.length > 0);
   }, [filtered, anchor, viewMode]);
 
-  // Ideas (direct instruction): posts with no Live Date yet, in their own
+  // Ideas (direct instruction): posts with no Due Date yet, in their own
   // section under the weeks whatever the month, while Idea is among the
   // statuses shown. Only the team ever gets them (phase106).
   const ideas = useMemo(() => creatives.filter((c) => isIdea(c) && matchesFilter(c, filter)), [creatives, filter]);
@@ -661,7 +678,7 @@ export function ContinuousCalendarTable({
   const visibleOrderedKeys = resolvedOrder.filter((k) => columnVisibility[k] !== false);
   // Frozen columns' left offsets shift right by the checkbox column's own
   // width whenever it's shown, so both keep sitting flush against each
-  // other rather than the checkbox overlapping Live Date.
+  // other rather than the checkbox overlapping Due Date.
   const skOffset = isStaff ? CHECKBOX_COL_WIDTH : 0;
   const columns = [
     ...FROZEN_COLUMNS.map((c) => ({ ...c, draggable: false, left: c.left + skOffset })),
@@ -1137,11 +1154,12 @@ export function ContinuousCalendarTable({
                             />
                           </td>
                         )}
-                        {/* Past its Live Date and not live: red (direct instruction). */}
-                        <td className={`sk1${isOverdue(c) ? " tlate" : ""}`} style={{ left: skOffset }}>
+                        {/* Its Due Date (phase140): red once over and the
+                            work isn't Approved yet. */}
+                        <td className={`sk1${isPastDue(c) ? " tlate" : ""}`} style={{ left: skOffset }}>
                           {!dt ? (
                             isStaff && (
-                              <button type="button" className="tpending-btn" title="Give it a Live Date" onClick={pickDate(c, "date")}>
+                              <button type="button" className="tpending-btn" title="Give it a Due Date" onClick={pickDate(c, "date")}>
                                 Add Date
                                 {/* The Add buttons' small diagonal arrow (direct instruction). */}
                                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -1162,6 +1180,31 @@ export function ContinuousCalendarTable({
                         {visibleOrderedKeys.map((key) => {
                           const exp = expectedContent(postFormats(c));
                           switch (key) {
+                            // When it goes live (phase140): red once over
+                            // and it isn't live, as a Publish Date is.
+                            case "publishDate":
+                              return (
+                                <td key={key} className={c.publish_on && isOverdue(c) ? "tlate" : undefined}>
+                                  {c.publish_on ? (
+                                    isStaff ? (
+                                      <button type="button" className="tdate-btn" title="Change the Publish Date" onClick={pickDate(c, "date", "publish")}>
+                                        {shortDate(c.publish_on)}
+                                      </button>
+                                    ) : (
+                                      shortDate(c.publish_on)
+                                    )
+                                  ) : isStaff ? (
+                                    <button type="button" className="tpending-btn" title="Give it a Publish Date" onClick={pickDate(c, "date", "publish")}>
+                                      Add Date
+                                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M7 17L17 7M9 7h8v8" />
+                                      </svg>
+                                    </button>
+                                  ) : (
+                                    <span className="tdim">—</span>
+                                  )}
+                                </td>
+                              );
                             case "creative":
                               return (
                                 <td key={key}>
@@ -1543,8 +1586,9 @@ export function ContinuousCalendarTable({
           name={datePick.c.name}
           anchorRect={datePick.rect}
           delivery="continuous"
-          value={datePick.c.due_on ?? ""}
+          value={(datePick.field === "publish" ? datePick.c.publish_on : datePick.c.due_on) ?? ""}
           focus={datePick.focus}
+          field={datePick.field}
           onClose={() => setDatePick(null)}
         />
       )}

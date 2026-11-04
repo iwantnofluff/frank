@@ -30,7 +30,12 @@ export function ArtworkDecisionModal({
   // The client's own keep time (phase70), 7 unless set.
   const { data: prefs } = useClientPreferences(post.project?.client?.id);
   const keepDays = prefs?.artwork_keep_days ?? ARTWORK_KEEP_DAYS;
-  const since = post.due_on ? `its due date, ${dayMonth(post.due_on)}` : post.approved_at ? `it was approved, ${dayMonth(post.approved_at)}` : null;
+  // Counted from its Publish Date, else its Due Date (phase140).
+  const since = post.publish_on
+    ? `its publish date, ${dayMonth(post.publish_on)}`
+    : post.due_on
+      ? `its due date, ${dayMonth(post.due_on)}`
+      : post.approved_at ? `it was approved, ${dayMonth(post.approved_at)}` : null;
 
   return (
     <Modal

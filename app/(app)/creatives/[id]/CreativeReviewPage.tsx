@@ -894,6 +894,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
                 name={creative.name}
                 scheduledAt={creative.scheduled_at}
                 dueOn={creative.due_on}
+                publishOn={creative.publish_on}
                 formats={postFormats(creative)}
                 shownFormat={shownFormat}
                 onShowFormat={setViewFormat}

@@ -8,8 +8,8 @@ import { PROJECT_TYPE_OPTS } from "@/lib/project-types";
 import { errorMessage } from "@/lib/errors";
 import { useSetProjectColumns } from "@/hooks/use-set-project-columns";
 import { AddColumnForm, type ColumnSpec } from "@/components/project/AddColumnForm";
-import { TOGGLABLE_COLUMNS as SCHEDULED_COLUMNS } from "@/components/project/ProjectCalendarTable";
-import { TOGGLABLE_COLUMNS as CONTINUOUS_COLUMNS } from "@/components/project/ContinuousCalendarTable";
+import { TOGGLABLE_COLUMNS as SCHEDULED_COLUMNS, DEFAULT_HIDDEN_COLUMNS as SCHEDULED_HIDDEN } from "@/components/project/ProjectCalendarTable";
+import { TOGGLABLE_COLUMNS as CONTINUOUS_COLUMNS, DEFAULT_HIDDEN_COLUMNS as CONTINUOUS_HIDDEN } from "@/components/project/ContinuousCalendarTable";
 import { ColumnEditor } from "@/components/project/ColumnEditor";
 import { columnTypeLabel, customTypeLabel } from "@/lib/column-types";
 
@@ -34,8 +34,8 @@ export function NewProjectModal({
   const [delivery, setDelivery] = useState<Delivery>("scheduled");
   const [type, setType] = useState(PROJECT_TYPE_OPTS.scheduled[0]);
   const [nameError, setNameError] = useState<string | null>(null);
-  // The second step, Columns (phase96, direct instruction): every column
-  // ticked; unticked ones are hidden in the Main Table. Columns of the
+  // The second step, Columns (phase96, direct instruction): the default
+  // columns ticked; unticked ones are hidden in the Main Table. Columns of the
   // project's own are added here too, kept until the project is made.
   const [step, setStep] = useState<"details" | "columns">("details");
   const setColumns = useSetProjectColumns();
@@ -44,7 +44,8 @@ export function NewProjectModal({
   // The step's columns: their order (built-in keys and "new:<n>" for ones
   // added here), which are unticked, any renamed, and the added ones.
   const [order, setOrder] = useState<string[]>(() => SCHEDULED_COLUMNS.map((c) => c.key));
-  const [hidden, setHidden] = useState<Set<string>>(new Set());
+  // Each kind's own default hidden columns to start (decided directly).
+  const [hidden, setHidden] = useState<Set<string>>(() => new Set(SCHEDULED_HIDDEN));
   const [labels, setLabels] = useState<Record<string, string>>({});
   const [added, setAdded] = useState<Record<string, ColumnSpec>>({});
   const [nextNew, setNextNew] = useState(1);
@@ -54,7 +55,7 @@ export function NewProjectModal({
     setType(PROJECT_TYPE_OPTS[next][0]);
     // The other kind of project has its own columns.
     setOrder((next === "scheduled" ? SCHEDULED_COLUMNS : CONTINUOUS_COLUMNS).map((c) => c.key));
-    setHidden(new Set());
+    setHidden(new Set(next === "scheduled" ? SCHEDULED_HIDDEN : CONTINUOUS_HIDDEN));
     setLabels({});
     setAdded({});
   }
@@ -238,7 +239,7 @@ export function NewProjectModal({
               <b>Other Content</b>
               <span>
                 Approved then handed over. You get a list ordered by what is due, by
-                its Live Date.
+                its Due Date.
               </span>
               <span className="keg">Amazon A+ · Website · Emailers · Print and Events</span>
             </span>

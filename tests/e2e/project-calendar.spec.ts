@@ -365,9 +365,9 @@ test("project calendar — resizing a column shows the Save button, Discard Chan
 });
 
 test("project calendar — dragging a column header reorders the table", async ({ page, frank }) => {
-  // Wide enough that Concept's header is on screen to drag (the Status
-  // column is wider since 1.56.1).
-  await page.setViewportSize({ width: 1600, height: 900 });
+  // Wide enough that Concept's header is on screen to drag (it sits after
+  // Caption/Copy, Text on Image and Creative since phase140).
+  await page.setViewportSize({ width: 2600, height: 900 });
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${frank.projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
@@ -447,14 +447,16 @@ test("project calendar — a post past its date is red, and Pending opens its Ed
   // on the table, with the cursor in the Concept.
   // Each says what it adds (direct instruction).
   await expect(row.locator(".tpending-btn")).toHaveText([
-    "Add Team",
+    // In the default order (phase140): Caption/Copy, Text on Image and
+    // Creative, Concept, Notes, WIIFM Direction's, Alt Text, then Team.
+    "Add Caption",
+    "Add Text on Image",
+    "Add Creative",
     "Add Concept",
     "Add Notes",
-    "Add Creative",
-    "Add Text on Image",
     "Add Caption",
     "Add Alt Text",
-    "Add Caption",
+    "Add Team",
   ]);
   await row.getByRole("button", { name: "Add Concept", exact: true }).click();
   await expect(page.locator("#nbConcept")).toBeFocused();

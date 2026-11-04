@@ -113,7 +113,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         kind: "list",
         items: [
           "A client is a brand you work for. Its Client Settings hold its details, its people, its Knowledge and its Instagram.",
-          "A project is a piece of work for that client. A Content Planner project schedules posts by publish date and time. An Other Content project tracks deliverables by live date and destination.",
+          "A project is a piece of work for that client. A Content Planner project schedules posts by publish date and time. An Other Content project tracks deliverables by due date, with a publish date for when each goes live.",
           "A post is one piece of content: its brief, its artwork, its Text on Image and its copy.",
         ],
       },
@@ -428,7 +428,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     id: "other-content",
     title: "Track Other Content",
     category: "posts",
-    summary: "Deliverables with a live date.",
+    summary: "Deliverables with a due date and a publish date.",
     blocks: [
       {
         kind: "p",
@@ -437,7 +437,8 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         kind: "list",
         items: [
-          "Each post has a Live Date; a post without one is an Idea.",
+          "Each post has a Due Date, when the work is due, which sorts the table into weeks and places it on the calendar; a post without one is an Idea.",
+          "Its Publish Date is when it goes live. Live, late and when Approved artwork is removed all count from it.",
           "Notes for Designer are set in the post window, and a post with several images has one for each. They're your team's only.",
           "The table also shows Principles. As in every table, each cell's Edit or Add button opens the post at that field.",
         ],

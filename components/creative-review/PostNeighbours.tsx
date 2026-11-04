@@ -43,6 +43,7 @@ export function PostNeighbours({
   name,
   scheduledAt,
   dueOn,
+  publishOn,
   formats,
   shownFormat,
   onShowFormat,
@@ -55,6 +56,9 @@ export function PostNeighbours({
   name: string;
   scheduledAt: string | null;
   dueOn: string | null;
+  // An Other Content post's Publish Date: whether it went live on time is
+  // against this (phase140).
+  publishOn?: string | null;
   // The post's formats, main first.
   formats: string[];
   // Which of them the post is shown as, and choosing another.
@@ -68,7 +72,7 @@ export function PostNeighbours({
   // When it really went live, after its planned date: green on time, red
   // late (phase99, direct instruction).
   const { data: live } = usePostLiveDate(creativeId);
-  const timing = live ? liveTiming({ scheduled_at: scheduledAt, due_on: dueOn }, delivery, live.live_at) : null;
+  const timing = live ? liveTiming({ scheduled_at: scheduledAt, due_on: dueOn, publish_on: publishOn }, delivery, live.live_at) : null;
   const liveDate = live ? publishDate("scheduled", live.live_at, null) : null;
   // Ideas aren't on the Review page (direct instruction): only dated posts.
   const list = rows ? inDateOrder(rows.filter((c) => !isIdea(c)), delivery) : [];

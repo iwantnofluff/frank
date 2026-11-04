@@ -22,6 +22,8 @@ export interface BriefFields {
   scheduledAt: string | null;
   destination: string | null;
   dueOn: string | null;
+  // An Other Content post's Publish Date (phase140).
+  publishOn: string | null;
 }
 
 // The post as someone else left it, when it changed while it was open
@@ -75,6 +77,7 @@ export function useUpdateBrief(creativeId: string) {
           scheduled_at: fields.scheduledAt,
           destination: fields.destination,
           due_on: fields.dueOn,
+          publish_on: fields.publishOn,
         })
           .eq("id", creativeId);
         if (at) q = q.eq("updated_at", at);
@@ -87,7 +90,7 @@ export function useUpdateBrief(creativeId: string) {
         // Changed since it was opened, or not yours to change: which.
         const { data: now } = await supabase
           .from("creatives")
-          .select("name, format, formats, team_user_ids, concept, reference_urls, slide_count, sizes, scheduled_at, destination, due_on, updated_at, updated_by")
+          .select("name, format, formats, team_user_ids, concept, reference_urls, slide_count, sizes, scheduled_at, destination, due_on, publish_on, updated_at, updated_by")
           .eq("id", creativeId)
           .maybeSingle();
         // Changed since, but by this same person (another part of the
@@ -115,6 +118,7 @@ export function useUpdateBrief(creativeId: string) {
             scheduledAt: (now.scheduled_at as string | null) ?? null,
             destination: (now.destination as string | null) ?? null,
             dueOn: (now.due_on as string | null) ?? null,
+            publishOn: (now.publish_on as string | null) ?? null,
             updatedAt: now.updated_at as string,
           });
         }

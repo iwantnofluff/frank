@@ -645,6 +645,7 @@ function briefChanges(
   if ((opened.scheduled_at ?? null) !== theirs.scheduledAt) out.push(`Live date: ${day(theirs.scheduledAt)}`);
   if ((opened.destination ?? null) !== theirs.destination) out.push("Where it goes");
   if ((opened.due_on ?? null) !== theirs.dueOn) out.push(`Due: ${day(theirs.dueOn)}`);
+  if ((opened.publish_on ?? null) !== theirs.publishOn) out.push(`Publish: ${day(theirs.publishOn)}`);
   return out;
 }
 
@@ -736,6 +737,8 @@ export function CreativeModal(props: CreativeModalProps) {
   // else's save with the rest of their brief).
   const [destination, setDestination] = useState(isCreate ? "" : (props.creative.destination ?? ""));
   const [dueOn, setDueOn] = useState(isCreate ? "" : (props.creative.due_on ?? ""));
+  // An Other Content post's Publish Date, beside its Due Date (phase140).
+  const [publishOn, setPublishOn] = useState(isCreate ? "" : (props.creative.publish_on ?? ""));
   const [concept, setConcept] = useState(isCreate ? "" : (props.creative.concept ?? ""));
   // The Concept as last saved with Save Concept, Update or Create Post; on
   // a new post, as locked in by Save Concept (direct instruction: nothing
@@ -840,6 +843,7 @@ export function CreativeModal(props: CreativeModalProps) {
             scheduled_at: f.scheduledAt,
             destination: f.destination,
             due_on: f.dueOn,
+            publish_on: f.publishOn,
           }
         : o,
     );
@@ -917,6 +921,7 @@ export function CreativeModal(props: CreativeModalProps) {
         scheduledAt,
         destination: delivery === "continuous" ? destination.trim() || null : null,
         dueOn: delivery === "continuous" ? dueOn || null : null,
+        publishOn: delivery === "continuous" ? publishOn || null : null,
       });
       setCreatedCreativeId(newId);
       setSavedBrief({ formats, slideCount });
@@ -979,6 +984,7 @@ export function CreativeModal(props: CreativeModalProps) {
         scheduledAt,
         destination: delivery === "continuous" ? destination.trim() || null : null,
         dueOn: delivery === "continuous" ? dueOn || null : null,
+        publishOn: delivery === "continuous" ? publishOn || null : null,
         expectedUpdatedAt: overBase ?? briefBase,
       });
     } catch (e) {
@@ -1009,6 +1015,7 @@ export function CreativeModal(props: CreativeModalProps) {
       scheduledAt,
       destination: delivery === "continuous" ? destination.trim() : null,
       dueOn: delivery === "continuous" ? dueOn || null : null,
+      publishOn: delivery === "continuous" ? publishOn || null : null,
     });
     setConflict(null);
     setSavedBrief({ formats, slideCount });
@@ -1075,6 +1082,7 @@ export function CreativeModal(props: CreativeModalProps) {
     }
     if ((o.destination ?? null) !== t.destination) setDestination(t.destination ?? "");
     if ((o.due_on ?? null) !== t.dueOn) setDueOn(t.dueOn ?? "");
+    if ((o.publish_on ?? null) !== t.publishOn) setPublishOn(t.publishOn ?? "");
     setBriefBase(t.updatedAt);
     knowBrief(t);
     setConflict(null);
@@ -1990,9 +1998,15 @@ export function CreativeModal(props: CreativeModalProps) {
             </div>
           ) : (
             <div className="frow">
+              {/* When the work is due, and when it goes live (phase140,
+                  decided directly). */}
               <div className="field">
-                <label htmlFor="nbDue">Live Date</label>
+                <label htmlFor="nbDue">Due Date</label>
                 <DateField id="nbDue" className="bin one" value={dueOn} onChange={setDueOn} />
+              </div>
+              <div className="field">
+                <label htmlFor="nbPublish">Publish Date</label>
+                <DateField id="nbPublish" className="bin one" value={publishOn} onChange={setPublishOn} />
               </div>
             </div>
           )}
