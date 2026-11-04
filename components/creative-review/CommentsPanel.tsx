@@ -574,21 +574,18 @@ export function CommentsPanel({
       <div className="cmts-h">
         <b>Comments</b>
         <span className="n">{openCount} open</span>
-      </div>
-
-      <div className="cfilters">
-        {/* Private is the team's: a client never sees a private comment. */}
-        {FILTERS.filter((f) => isStaff || f.key !== "internal").map((f) => (
-          <button
-            key={f.key}
-            type="button"
-            className="chip"
-            aria-pressed={filter === f.key}
-            onClick={() => setFilter(f.key)}
-          >
-            {f.label}
-          </button>
-        ))}
+        {/* Which comments show, a dropdown as Creative and Copy's (direct
+            instruction: cleaner than a row of pills). Private is the
+            team's: a client never sees a private comment. */}
+        <span className="vsel cfilter">
+          <select id="cFilter" aria-label="Show comments" value={filter} onChange={(e) => setFilter(e.target.value as Filter)}>
+            {FILTERS.filter((f) => isStaff || f.key !== "internal").map((f) => (
+              <option key={f.key} value={f.key}>
+                {f.label}
+              </option>
+            ))}
+          </select>
+        </span>
       </div>
 
       <div className="cmts-b">

@@ -83,7 +83,7 @@ export default function CreditUsagePage() {
           <section className="an-sec">
             <div className="an-sec-h">
               <h2>Day by day</h2>
-              <span>{new Date(data!.readAt).toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" })}</span>
+              <span>{new Date(data!.readAt).toLocaleDateString("en-GB", { month: "short", year: "numeric", timeZone: "UTC" })}</span>
             </div>
             <DayChart days={s.byDay} />
           </section>

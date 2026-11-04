@@ -29,10 +29,11 @@ test("the project's name on a post's page goes back to the table on its row, on 
   await page.setViewportSize({ width: 1440, height: 700 });
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
-  await page.getByRole("link", { name: "E2E Test Project" }).filter({ has: page.locator("svg") }).click();
+  // Exactly: the rail's "E2E Test Project Planner" is a link too.
+  await page.getByRole("link", { name: "E2E Test Project", exact: true }).filter({ has: page.locator("svg") }).click();
   await page.waitForURL(`**/projects/${frank.projectId}`);
   // Next month, not this one, and the row in view without scrolling, lit.
-  await expect(page.locator(".calmonth")).toHaveText(`${when.toLocaleString("en", { month: "long" })} ${when.getFullYear()}`);
+  await expect(page.locator(".calmonth")).toHaveText(`${when.toLocaleString("en", { month: "short" })} ${when.getFullYear()}`);
   const row = page.locator(`tr[data-post="${frank.creativeId}"]`);
   await expect(row).toBeInViewport({ timeout: 10_000 });
   await expect(row).toHaveClass(/rowflash/);

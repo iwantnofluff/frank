@@ -39,7 +39,7 @@ test("project calendar — jumps to the month of a newly created brief", async (
   await chooseFormat(page);
   await page.click('button:has-text("Create Post")');
 
-  await expect(page.locator(".calmonth")).toHaveText("June 2027");
+  await expect(page.locator(".calmonth")).toHaveText("Jun 2027");
   await expect(page.locator(".pname", { hasText: "Calendar Jump E2E" })).toBeVisible();
 });
 
@@ -514,7 +514,7 @@ test("project calendar — a post's date and time change from the table", async 
   await row.getByRole("button", { name: "18 Mar 27" }).click();
   const third = page.getByRole("dialog", { name: "E2E Test Creative's Publish Date" });
   const cal = page.locator(".caldrop");
-  await expect(cal.locator(".cal-title")).toHaveText("March 2027");
+  await expect(cal.locator(".cal-title")).toHaveText("Mar 2027");
   expect(await cal.evaluate((e) => getComputedStyle(e).fontFamily)).toMatch(/^Urbanist/);
   await cal.getByRole("button", { name: "Monday, 22 March 2027" }).click();
   await expect(cal).toHaveCount(0);

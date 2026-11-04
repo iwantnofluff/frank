@@ -4956,3 +4956,30 @@ Tests updated for the new order:
 Found, not fixed: a status pill clicked while the table is still loading can find the table scrolling under it, and the menu closes on any scroll. Status now sits further right, behind Caption/Copy, Text on Image and Creative, so a click mid-load is more likely to scroll the table first. Once the table has loaded it opens as before.
 
 Full suite on a local database rebuilt with phase140: 334 passed, 1 skipped, 1 failed (project-statuses, the case above). It passed (2) once it waited for the table. phase140 is on staging and live: the user ran it on live on 4 Nov, and the column, both posts' Publish Dates, the three functions and every project's reset columns read back.
+
+## Months written short (1.69.1, 2026-11-04)
+
+Direct instruction: no month in full anywhere. Every visible month is now short:
+- the Content Planner and Other Content tables' month ("Nov 2026") and the phone list's "No posts in Nov"
+- the date picker's month title
+- the monthly strategy's month, which also reaches Draft with Frank's prompt
+- Credit Usage's month
+- the Updates list's dates ("4 Nov 2026")
+- a live post's date
+
+Kept in full: the date picker's day buttons' screen-reader names ("Wednesday, 4 November 2026"), which aren't seen. The weekday given to Speak It is also unchanged.
+
+Tests: goToMonth takes a month either way and matches the short form. Four specs and three unit tests were updated for the short form. project-calendar.png was regenerated after looking at its diff, which was only the shorter empty-state line.
+
+**Verified**: In the real app, the comment filter pills' letter spacing measured 0.316px, the same as the page's text, the stage pills and the buttons (the 1.62.1 fix covers them). They differ only in size: 12.2px text with 4px 10px padding, against 13.2px with 3px 11px for the pills elsewhere. Unit tests (280) pass. Full suite on the local database: 332 passed, 1 skipped, 3 failed: project-calendar.png and review-back-expand (both expected the full month and were updated), and team-manage, which passed on rerun. After the updates, project-calendar, continuous-calendar, quick-add-row, review-back-expand and team-manage passed (45), and project-calendar.png passed against its new baseline.
+
+**The comments filter, a dropdown (direct instruction, same release).** The row of filter pills under Comments (All, Unresolved, Resolved, Mine, Private) is now a dropdown at the right end of the Comments header line, styled like the Creative and Copy version dropdowns beside the post. That gives the comments the row back. Private is still the team's only. A client's dropdown has no Private. The pills' styles (.cfilters) went with them.
+
+**Verified**: In the real app (dev server, staging), as the team: the dropdown offered All, Unresolved, Resolved, Mine and Private. Choosing Resolved hid an open comment, and All brought it back. It was screenshotted at desktop and phone width. client-view.spec now checks a client's dropdown has no Private, and that it's gone when comments are hidden. Full suite on the local database: 331 passed, 1 skipped, 4 failed. Three were the screenshots that show the comments panel (comment-cards.png, creative-review.png and upload-artwork-modal.png). Each diff was only the pill row gone, the dropdown in the header and the comments moved up, so they were regenerated. The fourth, team-invite, passed on rerun. Those specs plus client-view and comment-mentions then passed (14).
+
+**Comments start where the review starts (direct instruction, same release).** The space between the Comments header's line and the first comment matches the review panel's, from the line under the stage pills to the post: 22px, up from 6px. Both lines sit at 142.8px, and the first comment and the post's date now both start at 164.8px (measured in the real app at 1440 × 900). comment-cards.png, creative-review.png and upload-artwork-modal.png were regenerated after looking at their diffs, which only showed the comments moved down. Those specs plus client-view, mobile-post and comment-mentions passed.
+
+**The rail names the project (direct instruction, same release).** The side rail's link to a project's table read "<client> Planner", or just "Other Content". It now names the project: "<project> Planner" for a Content Planner and "<project> Content" for Other Content, e.g. "Test5 Planner". On a fresh page load the project's name comes from the rail's server-side seed (lib/rail-seed.ts, now also reading the project's name), so it shows straight away. A long name stops at two lines, and Planner or Content always shows.
+
+**Verified**: nav-rail.spec now checks "E2E Test Project Planner" on the table and a post, and "<project> Content" on an Other Content project (4 passed). creative-review.png, upload-artwork-modal.png and project-calendar.png were regenerated after looking at their diffs, which only showed the rail's "Client" now reading "Project". review-back-expand clicked "the link named E2E Test Project with an icon", which the rail's link now also matched (and came first), so it matches exactly now. The first full run on the local database had 17 failures, most of them 30-second timeouts while the Mac was out of memory (about 70MB free, load 8). The failed specs rerun two at a time: 69 passed, plus carousel and review-back-expand on their own after the fix above. review-back-expand, mobile-post and shared-review-public passed (18).
+

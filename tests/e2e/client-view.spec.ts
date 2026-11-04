@@ -27,7 +27,8 @@ test("a client sees a post's stage but can't change it, share it, or filter by P
   expect((await admin.from("creatives").select("stage").eq("id", frank.creativeId).single()).data!.stage).toBe(4);
   await expect(page.getByRole("button", { name: "Share for review" })).toHaveCount(0);
   await expect(page.locator(".cmt", { hasText: "A public note from the team" })).toBeVisible();
-  await expect(page.locator(".cfilters button", { hasText: "Private" })).toHaveCount(0);
+  // No Private in the comments' filter: a client never sees one.
+  await expect(page.locator("#cFilter option", { hasText: "Private" })).toHaveCount(0);
 
   // The database refuses a client's stage change.
   const client = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
@@ -51,7 +52,7 @@ test("a client sees a post's stage but can't change it, share it, or filter by P
 test("a client sees a post's comments only in Client Review", async ({ page, frank }) => {
   test.setTimeout(90_000);
   await frank.insertCommentAsStaff("A public note from the team", "public");
-  const panel = page.locator(".cfilters");
+  const panel = page.locator("#cFilter");
   await frank.loginAsClient(page);
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
   await expect(page.locator(".stagesw.ro")).toBeVisible({ timeout: 15_000 });

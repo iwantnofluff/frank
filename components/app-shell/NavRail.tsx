@@ -77,15 +77,21 @@ export function NavRail({ seed }: { seed: RailSeed | null }) {
   const knownProject = routeProjectId ?? creative?.project_id ?? seeded?.projectId ?? undefined;
   const knownDelivery =
     (routeProjectId ? project?.delivery : creative?.projects?.delivery) ?? seeded?.delivery ?? undefined;
+  const knownProjectName =
+    (routeProjectId ? project?.name : creative?.projects?.name) ?? seeded?.projectName ?? undefined;
   const [keptClient, setKeptClient] = useState(knownClient);
-  const [keptProject, setKeptProject] = useState({ id: knownProject, delivery: knownDelivery });
+  const [keptProject, setKeptProject] = useState({ id: knownProject, delivery: knownDelivery, name: knownProjectName });
   if (knownClient && knownClient !== keptClient) setKeptClient(knownClient);
-  if (knownProject && (knownProject !== keptProject.id || knownDelivery !== keptProject.delivery)) {
-    setKeptProject({ id: knownProject, delivery: knownDelivery });
+  if (
+    knownProject &&
+    (knownProject !== keptProject.id || knownDelivery !== keptProject.delivery || knownProjectName !== keptProject.name)
+  ) {
+    setKeptProject({ id: knownProject, delivery: knownDelivery, name: knownProjectName });
   }
   const clientId = knownClient ?? keptClient;
   const projectId = knownProject ?? keptProject.id;
   const delivery = knownDelivery ?? keptProject.delivery;
+  const projectName = knownProjectName ?? keptProject.name;
 
   // Named for the client (direct instruction): "Casa Carigar Settings".
   const { data: clientRow } = useClientDetail(clientId ?? "");
@@ -120,15 +126,14 @@ export function NavRail({ seed }: { seed: RailSeed | null }) {
       <RailSlot show={(!!routeProjectId || !!routeCreativeId) && !!projectId} swapKey={projectId}>
         <RailLink
           href={`/projects/${projectId}`}
-          // The client's planner by name (direct instruction): "No Fluff
-          // Planner". A long name stops at two lines; Planner always shows.
-          label={delivery === "continuous" ? "Other Content" : client?.name ? `${client.name} Planner` : "Content Planner"}
+          // The project by name (direct instruction): "Test5 Planner" for
+          // a Content Planner, "Test5 Content" for Other Content. A long
+          // name stops at two lines; Planner or Content always shows.
+          label={`${projectName ?? (delivery === "continuous" ? "Other" : "Content")} ${delivery === "continuous" ? "Content" : "Planner"}`}
           labelNode={
-            delivery === "continuous" ? undefined : (
-              <>
-                <span className="rlab-name">{client?.name ?? "Content"}</span> Planner
-              </>
-            )
+            <>
+              <span className="rlab-name">{projectName ?? "\u00a0"}</span> {delivery === "continuous" ? "Content" : "Planner"}
+            </>
           }
           icon={CalendarIcon}
           current={pathname === `/projects/${projectId}`}

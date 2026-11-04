@@ -171,7 +171,7 @@ test("continuous calendar — jumps to the month of a newly created brief", asyn
   await chooseFormat(page, "A+ Content Module");
   await page.click('button:has-text("Create Post")');
 
-  await expect(page.locator(".calmonth")).toHaveText("June 2027");
+  await expect(page.locator(".calmonth")).toHaveText("Jun 2027");
   await expect(page.locator(".pname", { hasText: "Continuous Calendar Jump E2E" })).toBeVisible();
 });
 

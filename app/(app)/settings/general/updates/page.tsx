@@ -13,7 +13,7 @@ import { useMarkReleasesSeen } from "@/hooks/use-releases-seen";
 // update so far.
 const anchor = (v: string) => `v${v.replace(/\./g, "-")}`;
 const day = (d: string) =>
-  new Date(`${d}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+  new Date(`${d}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 
 export default function UpdatesPage() {
   const markSeen = useMarkReleasesSeen();

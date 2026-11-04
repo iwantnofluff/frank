@@ -724,7 +724,8 @@ export function ContinuousCalendarTable({
   }
 
   const monthLabel = useMemo(() => {
-    if (viewMode !== "week") return `${MONTH_NAMES[anchor.getMonth()]} ${anchor.getFullYear()}`;
+    // The month short, never in full (direct instruction): "Nov 2026".
+    if (viewMode !== "week") return `${MONTH_ABBR[anchor.getMonth()]} ${anchor.getFullYear()}`;
     const days = getWeekDays(anchor);
     const [start, end] = [days[0], days[6]];
     return `${start.getDate()} ${MONTH_ABBR[start.getMonth()]} – ${end.getDate()} ${MONTH_ABBR[end.getMonth()]} ${end.getFullYear()}`;

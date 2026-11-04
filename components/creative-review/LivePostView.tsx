@@ -6,7 +6,7 @@ import type { LiveFeed, LiveSlide } from "@/lib/instagram/store";
 type LivePost = LiveFeed["posts"][number];
 
 const when = (iso: string) =>
-  new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
+  new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 
 // One of the client's live posts, opened from the feed grid (phase54), read
 // like Instagram's own post view: the account, the post, then its caption

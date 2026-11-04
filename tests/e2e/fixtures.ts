@@ -510,16 +510,18 @@ export const test = base.extend<{ frank: Frank }>({
 
 export { expect };
 
-/** Steps a calendar forward to the given month header (e.g. "March 2027").
+/** Steps a calendar forward to the given month header (e.g. "March 2027", shown "Mar 2027").
  * Not a fixed number of Next clicks: those counted from whatever month it
  * was when written, and broke every calendar spec when the date rolled
  * over a month. */
 export async function goToMonth(page: Page, label: string) {
   const header = page.locator(".calmonth");
   await expect(header).toBeVisible();
+  // The month is shown short ("Mar 2027"); a label may name it in full.
+  const want = label.replace(/^([A-Z][a-z]{2})[a-z]*/, "$1");
   for (let i = 0; i < 60; i++) {
     const current = (await header.textContent())?.trim();
-    if (current === label) return;
+    if (current === want) return;
     await page.click('.calnav button[title="Next"]');
     await expect(header).not.toHaveText(current ?? "");
   }

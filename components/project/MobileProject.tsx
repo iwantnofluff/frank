@@ -147,7 +147,7 @@ export function MobileProject({
 
       {posts.length === 0 && (
         <div className="empty">
-          <b>No posts in {MONTH_NAMES[anchor.getMonth()]}</b>
+          <b>No posts in {MONTH_NAMES[anchor.getMonth()].slice(0, 3)}</b>
           <span>Use the arrows to see another month.</span>
         </div>
       )}

@@ -22,7 +22,7 @@ export function monthOf(date: Date | string): string {
 
 // "October 2026".
 export function monthLabel(month: string): string {
-  return new Date(`${month}T00:00:00Z`).toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
+  return new Date(`${month}T00:00:00Z`).toLocaleDateString("en-GB", { month: "short", year: "numeric", timeZone: "UTC" });
 }
 
 // The month after (or before, with -1).

@@ -10,14 +10,14 @@ test("a month is its first day, from a date or a live date", () => {
   assert.equal(monthOf("2026-11-01"), "2026-11-01");
   assert.equal(addMonths("2026-12-01", 1), "2027-01-01");
   assert.equal(addMonths("2026-01-01", -1), "2025-12-01");
-  assert.equal(monthLabel("2026-10-01"), "October 2026");
+  assert.equal(monthLabel("2026-10-01"), "Oct 2026");
 });
 
 test("only filled fields go to drafting, and an empty month gives nothing", () => {
   const row = { objective: "Launch the new range", key_messages: "  ", themes: null, offers: "20% off first order", key_dates: "", notes: null };
   assert.deepEqual(filledFields(row).map((f) => f.key), ["objective", "offers"]);
   const text = strategyForPrompt("2026-11-01", row)!;
-  assert.match(text, /November 2026/);
+  assert.match(text, /Nov 2026/);
   assert.match(text, /Objective: Launch the new range/);
   assert.match(text, /Offers and promotions: 20% off first order/);
   assert.doesNotMatch(text, /Key messages|Themes|Key dates|Notes/);
@@ -38,7 +38,7 @@ test("Draft with Frank's prompt carries the month's strategy when there is one",
     fields: [{ key: "caption", label: "Caption" }],
   };
   const withIt = buildCopyChatPrompt({ ...context, strategy: strategyForPrompt("2026-11-01", { objective: "Launch the new range" }) }, [], {});
-  assert.match(withIt, /strategy for November 2026/);
+  assert.match(withIt, /strategy for Nov 2026/);
   assert.match(withIt, /Objective: Launch the new range/);
   assert.doesNotMatch(buildCopyChatPrompt(context, [], {}), /strategy for/);
 });

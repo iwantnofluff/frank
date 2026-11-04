@@ -57,7 +57,7 @@ test("a Content Planner post can be added straight into the table", async ({ pag
   await expect(page.locator("tr.draft")).toHaveCount(0);
 
   // Lands on the post's own month, like the window does.
-  await expect(page.locator(".calmonth")).toHaveText("March 2027");
+  await expect(page.locator(".calmonth")).toHaveText("Mar 2027");
   await expect(page.locator(".pname", { hasText: "Quick Row E2E" })).toBeVisible();
   const { data: c } = await admin
     .from("creatives")

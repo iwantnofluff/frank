@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.69.1",
+    date: "2026-11-04",
+    title: "Shorter months, and a comments filter",
+    changes: [
+      "Months are written short everywhere: a table's month reads \"Nov 2026\", and so do the date picker, the monthly strategy, credit usage and the Updates list.",
+      "A post's comments are filtered from a dropdown beside \"Comments\" instead of a row of pills, so the comments get the room.",
+      "The side rail names the project you're in: \"Test5 Planner\" for a Content Planner, \"Test5 Content\" for Other Content.",
+    ],
+  },
+  {
     version: "1.69.0",
     date: "2026-11-04",
     title: "Due and Publish Dates, and a tidier table",

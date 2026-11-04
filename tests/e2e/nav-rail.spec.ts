@@ -1,5 +1,10 @@
-import { test, expect, APP_URL } from "./fixtures";
+import { createClient } from "@supabase/supabase-js";
 import type { Page } from "@playwright/test";
+import { test, expect, APP_URL } from "./fixtures";
+
+const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
 
 async function railLinks(page: Page) {
   const rail = page.getByRole("navigation", { name: "Main" });
@@ -23,27 +28,36 @@ test("the rail follows where you are inside a client", async ({ page, frank }) =
     `E2E Test Client Projects -> /clients/${frank.clientId}`,
   ]);
 
-  // On a project's table, its planner too, named for the client ("E2E Test Client
-  // Planner", direct instruction), as the page you're on.
+  // On a project's table, its planner too, named for the project ("E2E Test
+  // Project Planner", direct instruction), as the page you're on.
   await page.goto(`${APP_URL}/projects/${frank.projectId}`);
   await expect(page.locator("#navClient")).toBeVisible();
   await expect.poll(() => railLinks(page)).toEqual([
     "Clients -> /dashboard",
     `E2E Test Client Projects -> /clients/${frank.clientId}`,
-    `E2E Test Client Planner -> /projects/${frank.projectId}`,
+    `E2E Test Project Planner -> /projects/${frank.projectId}`,
   ]);
-  await expect(page.getByRole("link", { name: "E2E Test Client Planner" })).toHaveAttribute("aria-current", "true");
+  await expect(page.getByRole("link", { name: "E2E Test Project Planner" })).toHaveAttribute("aria-current", "true");
 
   // The fixture's project is a Content Planner one.
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
-  await expect(page.getByRole("link", { name: "E2E Test Client Planner" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "E2E Test Project Planner" })).toBeVisible();
   await expect.poll(() => railLinks(page)).toEqual([
     "Clients -> /dashboard",
     `E2E Test Client Projects -> /clients/${frank.clientId}`,
-    `E2E Test Client Planner -> /projects/${frank.projectId}`,
+    `E2E Test Project Planner -> /projects/${frank.projectId}`,
   ]);
 
-  await page.getByRole("link", { name: "E2E Test Client Planner" }).click();
+  // An Other Content project's reads "<project> Content".
+  const other = await frank.createContinuousProject();
+  const { data: otherRow } = await admin.from("projects").select("name").eq("id", other).single();
+  const mem = (await admin.from("memberships").select("id").eq("user_id", (await admin.from("users").select("id").eq("email", frank.staffEmail).single()).data!.id).eq("agency_id", frank.agencyId).single()).data!;
+  await admin.from("project_access").insert({ membership_id: mem.id, project_id: other });
+  await page.goto(`${APP_URL}/projects/${other}`);
+  await expect(page.getByRole("link", { name: `${otherRow!.name} Content` })).toHaveAttribute("aria-current", "true", { timeout: 15_000 });
+  await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
+
+  await page.getByRole("link", { name: "E2E Test Project Planner" }).click();
   await page.waitForURL(`${APP_URL}/projects/${frank.projectId}`);
   await page.locator("#navClient").click();
   await page.waitForURL(`${APP_URL}/clients/${frank.clientId}`);
@@ -58,11 +72,11 @@ test("the rail follows where you are inside a client", async ({ page, frank }) =
 test("a client-side member gets the same rail, opening their Knowledge", async ({ page, frank }) => {
   await frank.loginAsClient(page);
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
-  await expect(page.getByRole("link", { name: "E2E Test Client Planner" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "E2E Test Project Planner" })).toBeVisible();
   await expect.poll(() => railLinks(page)).toEqual([
     "Clients -> /dashboard",
     `E2E Test Client Projects -> /clients/${frank.clientId}`,
-    `E2E Test Client Planner -> /projects/${frank.projectId}`,
+    `E2E Test Project Planner -> /projects/${frank.projectId}`,
   ]);
   // Their Client Settings is Knowledge only; other pages send them there.
   await page.goto(`${APP_URL}/clients/${frank.clientId}/settings/details`);

@@ -24,7 +24,8 @@ type Common = Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "value" | "on
 
 const pad = (n: number) => String(n).padStart(2, "0");
 const ymd = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+// Short, never in full (direct instruction): "Nov 2026".
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const DAYS = ["S", "M", "T", "W", "T", "F", "S"];
 
 function useDrop(autoOpen: boolean | undefined) {
