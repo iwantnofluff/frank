@@ -1186,21 +1186,41 @@ export function CreativeModal(props: CreativeModalProps) {
     if (!text) return;
     if (!creativeId) {
       setSavedConcept(text);
-      setConceptNote("Saved. Create Post adds them to the post.");
+      setConceptNote("Saved. Create Post adds it to the post.");
       return;
     }
     try {
-      if (text !== savedConcept || pendingRefsChange) {
-        const refs = tidyReferences(referenceUrls);
-        const at = await saveConcept.mutateAsync({ concept: text, referenceUrls: refs, expectedUpdatedAt: briefBase });
+      if (text !== savedConcept) {
+        // The References as saved: they save on their own (under Design).
+        const at = await saveConcept.mutateAsync({ concept: text, referenceUrls: savedRefs, expectedUpdatedAt: briefBase });
         setBriefBase(at);
-        setOpened((o) => (o ? { ...o, concept: text, reference_urls: refs } : o));
+        setOpened((o) => (o ? { ...o, concept: text } : o));
         setSavedConcept(text);
-        setSavedRefs(refs);
       }
       setConceptNote("Saved.");
     } catch {
       // Shown under the button, or under the notes.
+    }
+  }
+
+  // The References on their own (direct instruction: under Notes for
+  // Designer), the Concept kept as saved.
+  const [refsNote, setRefsNote] = useState<string | null>(null);
+  async function handleSaveReferences() {
+    if (!creativeId) return;
+    const refs = tidyReferences(referenceUrls);
+    try {
+      const at = await saveConcept.mutateAsync({
+        concept: savedConcept ?? opened?.concept ?? "",
+        referenceUrls: refs,
+        expectedUpdatedAt: briefBase,
+      });
+      setBriefBase(at);
+      setOpened((o) => (o ? { ...o, reference_urls: refs } : o));
+      setSavedRefs(refs);
+      setRefsNote("Saved.");
+    } catch {
+      // Shown under the Concept's button.
     }
   }
   const [notesBefore, setNotesBefore] = useState<{ overall: string; slides: string[] } | null>(null);
@@ -2047,87 +2067,28 @@ export function CreativeModal(props: CreativeModalProps) {
             />
           </div>
 
-          {/* Links, and images pasted into any of it (phase111, direct
-              instruction). */}
-          <div
-            className="field"
-            onPaste={(e) => {
-              const files = imageFiles(e.clipboardData?.items);
-              if (!files.length) return;
-              e.preventDefault();
-              setPastedRefImages({ files, at: Date.now() });
-            }}
-          >
-            <label htmlFor="nbRef">
-              References <span className="bnote">optional</span>
-            </label>
-            {referenceUrls.map((url, i) => {
-              const href = linkHref(url);
-              return (
-                <div className="refrow" key={i}>
-                  <input
-                    id={i === 0 ? "nbRef" : undefined}
-                    className="bin one"
-                    aria-label={`Reference ${i + 1}`}
-                    value={url}
-                    onChange={(e) =>
-                      setReferenceUrls((prev) => prev.map((u, k) => (k === i ? e.target.value : u)))
-                    }
-                    placeholder="A post, article or page this is modelled on"
-                  />
-                  {href && (
-                    <a className="btn sm" href={href} target="_blank" rel="noreferrer" aria-label={`Open reference ${i + 1}`}>
-                      Open
-                    </a>
-                  )}
-                  {referenceUrls.length > 1 && (
-                    <button
-                      type="button"
-                      className="refx"
-                      aria-label={`Remove reference ${i + 1}`}
-                      onClick={() => setReferenceUrls((prev) => prev.filter((_, k) => k !== i))}
-                    >
-                      ×
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-            <button type="button" className="badd" onClick={() => setReferenceUrls((prev) => [...prev, ""])}>
-              + Add Reference
-            </button>
-            <ReferenceImages
-              creativeId={creativeId}
-              agencyId={agencyId}
-              pending={pendingRefImages}
-              onPendingChange={setPendingRefImages}
-              incoming={pastedRefImages}
-            />
-            {refSaveError && <p className="autherr">{refSaveError}</p>}
-          </div>
-
-          {/* Save Concept and References (direct instruction, as Save
-              Content is on the Content tab): on a saved post, those two; on
-              a new one, the Concept locked in for Design with Frank, saved
-              by Create Post. Notes for Designer save on their own, as
-              versions (phase117). */}
+          {/* Save Concept (direct instruction, as Save Content is on the
+              Content tab): on a saved post, the Concept; on a new one, the
+              Concept locked in for Design with Frank, saved by Create Post.
+              References (under Design) and Notes for Designer save on their
+              own. */}
           <div className="field btnrow">
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <button
                 type="button"
                 className="btn sm primary"
-                disabled={!concept.trim() || (conceptReady && !(creativeId && pendingRefsChange)) || saveConcept.isPending}
+                disabled={!concept.trim() || conceptReady || saveConcept.isPending}
                 onClick={handleSaveConcept}
               >
-                {saveConcept.isPending ? "Saving…" : "Save Concept and References"}
+                {saveConcept.isPending ? "Saving…" : "Save Concept"}
               </button>
-              {conceptNote && conceptReady && !(creativeId && pendingRefsChange) && <span className="bsaved">{conceptNote}</span>}
+              {conceptNote && conceptReady && <span className="bsaved">{conceptNote}</span>}
             </div>
             {saveConcept.error && (
               <p className="autherr">
                 {saveConcept.error instanceof ConceptChangedError
                   ? saveConcept.error.message
-                  : errorMessage(saveConcept.error, "Couldn't save the Concept and References")}
+                  : errorMessage(saveConcept.error, "Couldn't save the Concept")}
               </p>
             )}
           </div>
@@ -2135,7 +2096,9 @@ export function CreativeModal(props: CreativeModalProps) {
               Notes for Designer, overall then by slide, in versions as the
               Content tab's copy is (phase117), saved on their own. */}
           <div className="msection-h">Design</div>
-          <p className="msection-d">How it should look, for the designer. The team&rsquo;s only: clients don&rsquo;t see it.</p>
+          <p className="msection-d">
+            How it should look, for the designer. The notes and reference images are the team&rsquo;s only; clients see the reference links.
+          </p>
 
           {/* Notes for Designer on the Brief (direct instruction): the post's
               overall note, on every post, and one per slide or story once
@@ -2277,6 +2240,89 @@ export function CreativeModal(props: CreativeModalProps) {
             </p>
           ) : (
             saveNotes.error && <p className="autherr">{errorMessage(saveNotes.error, "Couldn't save the Notes for Designer")}</p>
+          )}
+
+          {/* References (direct instruction: under Notes for Designer, not
+              Concept): links, and images pasted into any of it (phase111).
+              Clients still read the links (their Brief, the table); the
+              images are the team's only. Saved on their own. */}
+          <div
+            className="field"
+            onPaste={(e) => {
+              const files = imageFiles(e.clipboardData?.items);
+              if (!files.length) return;
+              e.preventDefault();
+              setPastedRefImages({ files, at: Date.now() });
+            }}
+          >
+            <label htmlFor="nbRef">
+              References <span className="bnote">optional</span>
+            </label>
+            {referenceUrls.map((url, i) => {
+              const href = linkHref(url);
+              return (
+                <div className="refrow" key={i}>
+                  <input
+                    id={i === 0 ? "nbRef" : undefined}
+                    className="bin one"
+                    aria-label={`Reference ${i + 1}`}
+                    value={url}
+                    onChange={(e) =>
+                      setReferenceUrls((prev) => prev.map((u, k) => (k === i ? e.target.value : u)))
+                    }
+                    placeholder="A post, article or page this is modelled on"
+                  />
+                  {href && (
+                    <a className="btn sm" href={href} target="_blank" rel="noreferrer" aria-label={`Open reference ${i + 1}`}>
+                      Open
+                    </a>
+                  )}
+                  {referenceUrls.length > 1 && (
+                    <button
+                      type="button"
+                      className="refx"
+                      aria-label={`Remove reference ${i + 1}`}
+                      onClick={() => setReferenceUrls((prev) => prev.filter((_, k) => k !== i))}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+            <button type="button" className="badd" onClick={() => setReferenceUrls((prev) => [...prev, ""])}>
+              + Add Reference
+            </button>
+            <ReferenceImages
+              creativeId={creativeId}
+              agencyId={agencyId}
+              pending={pendingRefImages}
+              onPendingChange={setPendingRefImages}
+              incoming={pastedRefImages}
+            />
+            {refSaveError && <p className="autherr">{refSaveError}</p>}
+          </div>
+          {creativeId && (
+            <div className="field btnrow">
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <button
+                  type="button"
+                  className="btn sm primary"
+                  disabled={!pendingRefsChange || saveConcept.isPending}
+                  onClick={handleSaveReferences}
+                >
+                  {saveConcept.isPending ? "Saving…" : "Save References"}
+                </button>
+                {refsNote && !pendingRefsChange && <span className="bsaved">{refsNote}</span>}
+              </div>
+              {saveConcept.error && pendingRefsChange && (
+                <p className="autherr">
+                  {saveConcept.error instanceof ConceptChangedError
+                    ? saveConcept.error.message
+                    : errorMessage(saveConcept.error, "Couldn't save the References")}
+                </p>
+              )}
+            </div>
           )}
 
           {/* Everything else the brief records (direct instruction: not

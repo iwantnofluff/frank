@@ -13,6 +13,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.70.0",
+    date: "2026-11-05",
+    title: "Comment on Text on Image, and References with the designer's notes",
+    changes: [
+      "Until a post has artwork, its Text on Image shows where the artwork goes, a slide at a time, from the top, with Upload Artwork below. Select its words to comment, as on a caption. The client can too, and the review link shows the words.",
+      "The caption reads larger in the phone, at the same size as Text on Image, on the post page and the review link.",
+      "In the table, the Creative column shows its version (V1, V2) above the artwork and an Edit button under it, and every cell's Copy and Edit buttons now sit just under its content.",
+      "References now sit under Notes for Designer, in the post window (with their own Save References) and in the table's Notes for Designer column. The Concept & Reference column is now just Concept. Clients still see the reference links, under the Concept.",
+    ],
+  },
+  {
     version: "1.69.1",
     date: "2026-11-04",
     title: "Shorter months, and a comments filter",

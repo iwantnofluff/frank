@@ -161,7 +161,7 @@ export const TOGGLABLE_COLUMNS = [
   // the name. Format, Slides and Status are as wide as their longest
   // words, as on the scheduled table.
   { key: "lead", label: "Team", sub: "Person and role", width: 154 },
-  { key: "conceptRef", label: "Concept & Reference", sub: "Directions for creative and copy", width: 260 },
+  { key: "conceptRef", label: "Concept", sub: "Directions for creative and copy", width: 260 },
   // Wide enough for its "Add Slides" button (direct instruction).
   { key: "slides", label: "Slides", sub: "#", width: 108 },
   // A video post's VO script (phase88), before its Text on Image.
@@ -603,6 +603,8 @@ export function ContinuousCalendarTable({
   // the window, never edited in the cell): the overall note, then each
   // image's own. The team's only (phase112), read for the posts in view.
   const { data: designerNotes } = useProjectDesignerNotes(projectId, creativeIds, isStaff);
+  // Notes for Designer, then the post's reference links (direct
+  // instruction: moved here from Concept).
   const notesCell = (c: CreativeListRow, key: string) => (
     <td key={key} className="cellw">
       <NotesCell
@@ -611,6 +613,11 @@ export function ContinuousCalendarTable({
         onToggle={() => toggleRow(c.id)}
         onFill={fill(c, "notes").onFill}
       />
+      {!!c.reference_urls?.length && (
+        <span className="notes-refs">
+          <ReferenceLinks urls={c.reference_urls} preview />
+        </span>
+      )}
     </td>
   );
 
@@ -1293,7 +1300,10 @@ export function ContinuousCalendarTable({
                             case "conceptRef":
                               return (
                                 <td key={key} className="cellw">
-                                  {c.concept || c.reference_urls?.length ? (
+                                  {/* The references are under Notes for Designer
+                                      for the team (direct instruction); a client,
+                                      who has no Notes column, still reads them here. */}
+                                  {c.concept || (!isStaff && c.reference_urls?.length) ? (
                                     <span className="copyc">
                                       {c.concept && (
                                         <ClampText expanded={expandedRow === c.id} onToggle={() => toggleRow(c.id)}>
@@ -1301,7 +1311,7 @@ export function ContinuousCalendarTable({
                                           {expandedRow === c.id ? <ConceptText text={c.concept} /> : c.concept}
                                         </ClampText>
                                       )}
-                                      <ReferenceLinks urls={c.reference_urls ?? []} preview />
+                                      {!isStaff && <ReferenceLinks urls={c.reference_urls ?? []} preview />}
                                       {/* After the references, so a long concept's
                                           Read more stays with it. */}
                                       {(isStaff || canApproveConcept(c)) && (
@@ -1356,9 +1366,13 @@ export function ContinuousCalendarTable({
                               // Its final asset's link, once added (phase126): Open
                               // Asset, for the team.
                               const asset = isStaff && assetLinks?.[c.id] ? <OpenAsset url={assetLinks[c.id]} /> : null;
+                              // Under it, with the other cells' buttons: Edit for
+                              // the team (direct instruction), opening the post at
+                              // its artwork, then Add Thumbnail and Open Asset.
                               const after =
-                                addThumb || asset ? (
-                                  <span className="artcell-afters">
+                                isStaff || asset ? (
+                                  <span className="cc-after">
+                                    {isStaff && <EditContent onFill={fill(c, "artwork").onFill} label="Creative" />}
                                     {addThumb}
                                     {asset}
                                   </span>
@@ -1366,7 +1380,7 @@ export function ContinuousCalendarTable({
                               return (
                                 <td
                                   key={key}
-                                  className={art ? `artcell-td${after ? " has-after" : ""}` : undefined}
+                                  className={art ? "artcell-td" : undefined}
                                   onMouseEnter={art ? (e) => handleEnter(c, e.currentTarget) : undefined}
                                   onMouseLeave={art ? scheduleHide : undefined}
                                 >

@@ -71,7 +71,15 @@ function AnchorBadge({ anchor }: { anchor: CommentRow["anchor"] }) {
     );
   }
   if (isHighlightAnchor(anchor)) {
-    return <span className="anchor hl-a">&ldquo;{anchor.quote}&rdquo;</span>;
+    // Text on Image's words (shown where the artwork goes until there is
+    // some) say so, and which slide.
+    const slide = (anchor as { slide?: number }).slide;
+    return (
+      <span className="anchor hl-a">
+        {anchor.field === "slide_text" && <>Text on Image{slide ? `, Slide ${slide}` : ""}: </>}
+        &ldquo;{anchor.quote}&rdquo;
+      </span>
+    );
   }
   return null;
 }

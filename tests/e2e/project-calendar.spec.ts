@@ -295,7 +295,7 @@ test("project calendar — matches the real content-planner template's default c
   await expect(page.locator(".calbar button", { hasText: "Columns" })).toHaveText("Columns 19/19");
   for (const label of [
     "Week", "Publish Date", "Day", "Time", "Status", "Format", "Slides", "Team",
-    "Post Name", "Concept & Reference", "VO", "Notes for Designer", "Creative", "Text on Image", "Caption/Copy", "Alt Text", "WIIFM Direction", "Internal Feedback", "Client Feedback",
+    "Post Name", "Concept", "VO", "Notes for Designer", "Creative", "Text on Image", "Caption/Copy", "Alt Text", "WIIFM Direction", "Internal Feedback", "Client Feedback",
   ]) {
     // Anchored at the start: a th's text is always {label}{sub} with no
     // separator, and hasText's substring match is case-insensitive, so an

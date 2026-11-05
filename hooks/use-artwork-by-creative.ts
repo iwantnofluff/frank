@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 
 export interface PostArtwork {
+  // The latest version's number, shown above it as V1 (direct instruction).
+  versionNo: number;
   // The latest version's file names, in slide order.
   names: string[];
   // Its first file, for the cell's small phone (direct instruction).
@@ -34,6 +36,7 @@ export function useArtworkByCreative(creativeIds: string[]) {
       type File = { filename: string; storage_key: string; mime_type: string };
       type Row = {
         creative_id: string;
+        version_no: number;
         asset: File | null;
         slides: { position: number; asset: File | null }[];
       };
@@ -49,6 +52,7 @@ export function useArtworkByCreative(creativeIds: string[]) {
             : [];
         if (files.length) {
           result[row.creative_id] = {
+            versionNo: row.version_no,
             names: files.map((f) => f.filename),
             first: { storage_key: files[0].storage_key, mime_type: files[0].mime_type },
           };

@@ -46,6 +46,8 @@ export function ArtworkCell({
   const { data: url } = useArtworkThumbUrl(shown.storage_key);
   return (
     <span className="artcell">
+      {/* Its version, as Caption/Copy's (direct instruction). */}
+      <span className="cc-v">V{artwork.versionNo}</span>
       <span className={`artmini${tablet ? ` tablet${fill}` : ""}`} aria-hidden="true" style={{ aspectRatio: String(ratio) }}>
         {url &&
           (video ? (
@@ -68,8 +70,8 @@ export function ArtworkCell({
         <span className="artname-f">{artwork.names[0]}</span>
         {artwork.names.length > 1 && <span className="tdim">+{artwork.names.length - 1}</span>}
       </span>
-      {/* At the cell's bottom left, as the other columns' buttons are. */}
-      {after && <span className="artcell-after">{after}</span>}
+      {/* Under it, as the other columns' buttons are. */}
+      {after}
     </span>
   );
 }

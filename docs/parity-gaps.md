@@ -4983,3 +4983,29 @@ Tests: goToMonth takes a month either way and matches the short form. Four specs
 
 **Verified**: nav-rail.spec now checks "E2E Test Project Planner" on the table and a post, and "<project> Content" on an Other Content project (4 passed). creative-review.png, upload-artwork-modal.png and project-calendar.png were regenerated after looking at their diffs, which only showed the rail's "Client" now reading "Project". review-back-expand clicked "the link named E2E Test Project with an icon", which the rail's link now also matched (and came first), so it matches exactly now. The first full run on the local database had 17 failures, most of them 30-second timeouts while the Mac was out of memory (about 70MB free, load 8). The failed specs rerun two at a time: 69 passed, plus carousel and review-back-expand on their own after the fix above. review-back-expand, mobile-post and shared-review-public passed (18).
 
+
+## Text on Image where the artwork goes, and References under Notes for Designer (1.70.0, 2026-11-05)
+
+Decided directly.
+
+**Text on Image before there's artwork.** While a post (or one of its slides) has no artwork, its Text on Image for that slide shows in the artwork's place, under "No artwork yet" and above the team's Upload Artwork. This is on the post page at desktop and phone width.
+- **Comments:** the team and a signed-in client select its words and comment, as on a caption. The comment is anchored `{type: "highlight", field: "slide_text", slide, start, end, quote}`, with no version (Text on Image is on the post, not in versions). The comments panel labels it "Text on Image, Slide 2: “…”".
+- **Highlights:** they show only while the quoted words are still where they were, since the text can be edited. The comment always keeps its quote.
+- **Review link:** it shows the words read-only, as it shows a caption. Guests have no word-level commenting there.
+- **No schema change:** comment anchors were already free-form. The review link's route now also reads slide_text.
+
+**References under Notes for Designer.** In the post window, References (the links and pasted images) moved from the Concept section to the Design section, under Notes for Designer, with their own Save References. Save Concept now saves only the Concept (it was Save Concept and References).
+- **Table:** in both tables, "Concept & Reference" is now "Concept". The team sees a post's reference links in the Notes for Designer column, under the notes. A client, who has no Notes column, still sees them under the Concept, and on the post's Brief, as before.
+- **Who can see what:** the links stay readable by clients (decided directly). The pasted reference images were already the team's only (phase111).
+
+**Verified**: In the real app, new text-on-image-comments.spec (2 tests):
+- The team selected "50% off" in a post's Text on Image and commented. The card read "Text on Image: “50% off”", the words were highlighted, and the anchor was saved as slide_text. A signed-in client commented on "this weekend" the same way, and the review link showed the words without the selectable layer.
+- References sat after the Design heading and the Notes for Designer field. Save References saved the link and left the Concept as it was. The table's column read Concept, the link showed in Notes for Designer for the team and not under Concept, and a client had no Notes column and saw the link under Concept.
+
+**Follow-ups (direct instruction, same release).**
+- **Text on Image, roomier.** Where the artwork goes, the words now start at the top, with no "Text on Image" label and no "No artwork yet" wording. The lower half holds only the picture and, for the team, Upload Artwork (NoArtwork's `top`). The words stay selectable for a comment, and the top half grows to show the comment box while it's open. On the review link the words sit the same way, read-only.
+- **The caption's size.** In the phone or iPad, the caption (.ig-cap), a Facebook or LinkedIn post's text (.pp-text) and Text on Image all read at 13.7px as seen, whatever the device's scale. This applies on the post page and the review link. Before, the caption was drawn at 14.2px and scaled down with the phone, to about 11px as seen.
+- **The Creative column's version and Edit.** The Creative cell shows the latest version's number (V1, V2) above its artwork, as Caption/Copy does. For the team, Edit (opening the post at its artwork) sits under the file name, before Add Thumbnail and Open Asset. The cell is now laid out in flow, with the small device at 56px high, where before it was laid over the cell at half the row's height.
+- **Buttons under the content.** Every table cell's buttons (Copy, Edit, Approve Concept and the rest) now sit 10px under the cell's content. Before, they were pinned to the cell's foot so they lined up across the row (an earlier direct instruction, now replaced).
+
+**Verified** (follow-ups): In the real app (dev server, staging), a post with two lines of Text on Image and no artwork showed the words at the top and the picture with Upload Artwork in the lower half. With a caption, both measured the same (21.78px drawn, 13.7px as seen at the phone's scale). In a table with artwork and a caption, the Creative cell read V1 over the artwork with Edit under the file name, and Post Name's, Caption/Copy's and Concept's buttons sat just under their text. Full suite on the local database, two at a time: 336 passed, 1 skipped, 1 failed. The failure was creative-review.png, whose diff was only the caption line, now larger. It was regenerated and passed.

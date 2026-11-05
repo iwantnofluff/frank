@@ -64,7 +64,7 @@ test("continuous calendar — the template's columns, named as in the New Post w
   );
   expect(headings).toEqual([
     "Due Date", "Publish Date", "Post Name", "Format", "Caption/Copy", "Text on Image", "Creative", "Status", "Team",
-    "Concept & Reference", "Slides", "VO", "Notes for Designer", "Alt Text", "WIIFM Direction", "Principles",
+    "Concept", "Slides", "VO", "Notes for Designer", "Alt Text", "WIIFM Direction", "Principles",
   ]);
 });
 

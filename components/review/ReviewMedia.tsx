@@ -77,13 +77,18 @@ export function ReviewMedia({
         note={`Removed on ${dayMonth(active.artwork_removed_at)}, after the post went live. Its copy and comments are kept.`}
       />
     ) : (
-      <NoArtwork format={format} sizes={active.sizes} note="The agency hasn't uploaded the artwork for this post yet." />
+      <NoArtwork
+        format={format}
+        sizes={active.sizes}
+        note="The agency hasn't uploaded the artwork for this post yet."
+        top={slideTextTop(active.slide_text?.[0])}
+      />
     );
   }
   return (
     <>
       {!slide ? (
-        <NoArtwork format={format} sizes={active.sizes} note={`Slide ${at + 1} has no artwork yet.`} />
+        <NoArtwork format={format} sizes={active.sizes} note={`Slide ${at + 1} has no artwork yet.`} top={slideTextTop(active.slide_text?.[at])} />
       ) : !slide.signed_url ? (
         <div className="ig-noasset">No preview available</div>
       ) : slide.mime_type.startsWith("video/") ? (
@@ -140,4 +145,10 @@ export function ReviewMedia({
       />
     </>
   );
+}
+
+// Text on Image where the artwork goes, until there is some (direct
+// instruction), read only, as the caption is on a review link.
+function slideTextTop(text: string | undefined) {
+  return text?.trim() ? <div className="noart-toi">{text}</div> : undefined;
 }

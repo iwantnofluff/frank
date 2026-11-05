@@ -2513,7 +2513,7 @@ body.lightrail .search input::placeholder {
   overflow: hidden;
 }
 /* The references under a concept, each on its own line and clickable
-   (phase58; the column is Concept & Reference in both tables). */
+   (phase58; the Concept column for a client, Notes for Designer for the team). */
 .cc-ref {
   display: block;
   margin-top: 3px;
@@ -4574,6 +4574,62 @@ select.sort:hover {
 }
 .tb .ig-media img {
   width: 100%;
+}
+/* Text on Image where the artwork goes, until there is some (direct
+   instruction): its words from the top, selectable for a comment as a
+   caption's are; the picture and Upload Artwork in the lower half. */
+.ig-noart.has-top {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 0;
+  padding: 0;
+}
+.noart-top {
+  flex: 1 1 50%;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px 20px 8px;
+}
+/* Commenting on its words: the top grows to show the comment box. */
+.noart-top:has(.hl-composer) {
+  flex-basis: auto;
+  overflow: visible;
+}
+.noart-foot {
+  flex: 0 0 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.noart-toi {
+  text-align: left;
+  white-space: pre-wrap;
+  font-size: 14.2px;
+  line-height: 1.45;
+  color: var(--ink);
+}
+/* Its words in the text's own colour and width, not the placeholder
+   note's (.awaiting span). */
+.noart-toi span {
+  color: inherit;
+  font-size: inherit;
+  max-width: none;
+}
+/* In the phone or iPad, read at 13.7px whatever its scale (direct
+   instruction: the caption at the same size). */
+.phoneframe .noart-toi,
+.phoneframe .ig-cap,
+.phoneframe .pp-text {
+  font-size: calc(13.7px / var(--pf-zoom, 1));
+}
+/* A post's reference links under its Notes for Designer in the table. */
+.notes-refs {
+  display: block;
+  margin-top: 8px;
 }
 .tb-muted {
   color: var(--muted);
@@ -13382,25 +13438,16 @@ td.tlate .tdate-btn:hover {
 }
 
 /* A filled cell's Edit, beside its Copy (direct instruction): the Copy
-   chip's look, with the Add buttons' arrow. A cell's buttons sit at its
-   foot (direct instruction), as far from the bottom as the text is from
-   the left, so they line up across the row however long each cell is;
-   the cell keeps room for them under its text. */
+   chip's look, with the Add buttons' arrow. A cell's buttons sit under
+   its content, a little apart from it (direct instruction; they were at
+   the cell's foot). */
 .cc-after {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
 }
-.tbl td:has(.cc-after) {
-  position: relative;
-  padding-bottom: calc(var(--d-cell-x) * 2 + 21px);
-}
 .tbl td .cc-after {
-  position: absolute;
-  left: var(--d-cell-x);
-  right: var(--d-cell-x);
-  bottom: var(--d-cell-x);
-  margin: 0;
+  margin: 10px 0 0;
 }
 .tedit-btn svg {
   width: 9px;
@@ -13996,17 +14043,20 @@ button.sortbtn:hover {
    it. Laid over the cell, so whatever the row's other cells make its
    height, this never adds to it. */
 .tbl td.artcell-td {
-  position: relative;
   min-width: 120px;
 }
+/* Its version (V1), the latest artwork in a small device, the file name,
+   then its buttons, one under another in the cell (direct instruction:
+   the version and Edit, as Caption/Copy's). */
 .artcell-td .artcell {
-  position: absolute;
-  inset: var(--d-cell-y) var(--d-cell-x);
   display: flex;
   flex-direction: column;
   gap: 3px;
   align-items: flex-start;
   min-width: 0;
+}
+.artcell-td .artcell .cc-v {
+  margin-bottom: 0;
 }
 .artmini {
   height: 50%;
@@ -14055,25 +14105,10 @@ button.sortbtn:hover {
 .ntext .nt-sb + .nt-sb {
   margin-top: 10px;
 }
-/* A video's Add Thumbnail at the cell's bottom left, as the other columns'
-   buttons are (direct instruction); the phone gives up height before the
-   row would have to grow. */
+/* The small device a fixed height in the cell. */
 .artcell-td .artmini {
-  flex: 0 1 50%;
-  height: auto;
-  min-height: 16px;
-}
-.artcell-after {
-  margin-top: auto;
-  padding-top: 4px;
-}
-/* Add Thumbnail and Final Asset (phase126) in the Creative cell's foot, one
-   under the other. */
-.artcell-afters {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
+  height: 56px;
+  min-height: 0;
 }
 .asset-open {
   text-decoration: none;
@@ -14083,11 +14118,6 @@ a.asset-saved {
   display: block;
   margin-top: 6px;
   font-size: 13px;
-}
-/* Room for the phone, the name and the button in a row that's otherwise
-   short; a cell's height is only its least. */
-.tbl td.artcell-td.has-after {
-  height: 112px;
 }
 /* No artwork yet: Add Creative, and a video's Add Thumbnail under it. */
 .artadds {

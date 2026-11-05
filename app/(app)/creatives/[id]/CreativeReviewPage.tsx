@@ -353,6 +353,22 @@ export function CreativeReviewPage({ id }: { id: string }) {
     return { pins, regions, nextAnnotationNumber, captionHighlights };
   })();
 
+  // Text on Image, shown where the artwork goes until there is some (direct
+  // instruction), and commented on as a caption is: the slide's own words,
+  // its comments' highlights while their words are still where they were
+  // (the text is on the post, not in versions, so it can change).
+  const slideTextRaw = creative?.slide_text?.[slidePosition - 1] ?? "";
+  const slideTextNow = slideTextRaw.trim() ? slideTextRaw : "";
+  const slideTextHighlights = (allComments ?? [])
+    .filter(
+      (c) =>
+        isHighlightAnchor(c.anchor) &&
+        c.anchor.field === "slide_text" &&
+        ((c.anchor as { slide?: number }).slide ?? 1) === slidePosition &&
+        slideTextNow.slice(c.anchor.start, c.anchor.end) === c.anchor.quote,
+    )
+    .map((c) => ({ ...(c.anchor as HighlightAnchor), commentId: c.id }));
+
   if (creativeLoading) {
     return (
       <div className="pad">
@@ -423,6 +439,30 @@ export function CreativeReviewPage({ id }: { id: string }) {
         <NoArtwork
           format={shownFormat}
           sizes={creative.sizes}
+          // Its Text on Image from the top, selectable for a comment as a
+          // caption is (direct instruction).
+          top={
+            slideTextNow && !creative.artwork_removed_at ? (
+              <div className="noart-toi">
+                <CaptionHighlighter
+                  text={slideTextNow}
+                  field="slide_text"
+                  highlights={slideTextHighlights}
+                  highlightedCommentId={highlightedCommentId}
+                  showVisibilityToggle={isStaff}
+                  onSelect={setHighlightedCommentId}
+                  onCreate={(anchor, body, visibility) => {
+                    createComment.mutate({
+                      body,
+                      parentId: null,
+                      visibility,
+                      anchor: { ...anchor, ...(frames.length > 1 ? { slide: slidePosition } : {}) },
+                    });
+                  }}
+                />
+              </div>
+            ) : undefined
+          }
           title={creative.artwork_removed_at ? "Artwork removed" : undefined}
           note={
             membershipLoading

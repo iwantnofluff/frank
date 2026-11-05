@@ -3,7 +3,7 @@
 import { useApproveConcept } from "@/hooks/use-approve-concept";
 import { errorMessage } from "@/lib/errors";
 
-// Approve Concept in a table's Concept & Reference cell (phase115, direct
+// Approve Concept in a table's Concept cell (phase115, direct
 // instruction): the Add buttons' small pill, in Frank's green, for the
 // client or the team. Moves the post to In Production and records the
 // approval as a comment in the presser's name.

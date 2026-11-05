@@ -133,7 +133,7 @@ export async function POST(request: Request) {
         // Looked up for exactly the creatives that function just returned
         // for this validated token, nothing wider.
         ids.length
-          ? serviceRole.from("creatives").select("id, formats, slide_count, sizes, artwork_removed_at, due_on, publish_on, thumbnail_text").in("id", ids).then((r) => r.data ?? [])
+          ? serviceRole.from("creatives").select("id, formats, slide_count, sizes, artwork_removed_at, due_on, publish_on, thumbnail_text, slide_text").in("id", ids).then((r) => r.data ?? [])
           : [],
         // Each comment's anchor — get_shared_review returns only the text —
         // so a comment made at a moment in a video can show, and jump to,
@@ -195,10 +195,12 @@ export async function POST(request: Request) {
   const removedById = new Map<string, string | null>();
   const dueOnById = new Map<string, string | null>();
   const publishOnById = new Map<string, string | null>();
+  const slideTextById = new Map<string, string[]>();
   const thumbTextById = new Map<string, string | null>();
   for (const r of creativeRows) {
     dueOnById.set(r.id, r.due_on);
     publishOnById.set(r.id, (r as { publish_on?: string | null }).publish_on ?? null);
+    slideTextById.set(r.id, (r as { slide_text?: string[] | null }).slide_text ?? []);
     thumbTextById.set(r.id, (r as { thumbnail_text?: string | null }).thumbnail_text ?? null);
     formatsById.set(r.id, r.formats);
     // Each format's chosen size (phase139).
@@ -320,6 +322,7 @@ export async function POST(request: Request) {
       // name in the list (scheduled_at comes from get_shared_review).
       due_on: dueOnById.get(raw.id) ?? null,
       publish_on: publishOnById.get(raw.id) ?? null,
+      slide_text: slideTextById.get(raw.id) ?? [],
       // A video's thumbnail and its words (phase118); no storage key leaves.
       thumbnail: (() => {
         const t = thumbById.get(raw.id);

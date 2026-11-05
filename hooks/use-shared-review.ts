@@ -31,6 +31,9 @@ export interface SharedCreative {
   due_on?: string | null;
   // Its Publish Date: when it goes live (phase140).
   publish_on?: string | null;
+  // Text on Image, one a slide: shown where the artwork goes until there's
+  // some.
+  slide_text?: string[];
   // A video's latest thumbnail, and the words on it (phase118).
   // small_url: its small copy (lib/artwork-preview.ts), for the feed grid.
   thumbnail?: { version_no: number; filename: string; signed_url: string | null; small_url?: string | null } | null;
