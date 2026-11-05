@@ -11,8 +11,8 @@ const headerKeys = (page: Page) =>
 
 // A new project's Main Table starts in the default order, with the
 // default columns hidden (decided directly, 4 Nov 2026; phase140 set every
-// existing project's to the same).
-test("a new Content Planner's table starts in the default order, Alt Text and Team hidden", async ({ page, frank }) => {
+// existing project's to the same, and phase141 hid Slides too).
+test("a new Content Planner's table starts in the default order, Slides, Alt Text and Team hidden", async ({ page, frank }) => {
   test.setTimeout(120_000);
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/clients/${frank.clientId}`);
@@ -28,7 +28,7 @@ test("a new Content Planner's table starts in the default order, Alt Text and Te
   await page.reload();
   await expect(page.locator(".tbl thead")).toBeVisible({ timeout: 20_000 });
   expect(await headerKeys(page)).toEqual([
-    "week", "date", "day", "time", "creative", "type", "slides", "status", "postCopy", "imageOnText", "artwork",
+    "week", "date", "day", "time", "creative", "type", "status", "postCopy", "imageOnText", "artwork",
     "concept", "voiceover", "notes", "approach", "internalFeedback", "clientFeedback",
   ]);
 });

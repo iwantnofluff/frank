@@ -4597,13 +4597,18 @@ select.sort:hover {
   flex-basis: auto;
   overflow: visible;
 }
+/* At least the lower half, and never less than its picture, button and
+   the room under it: on a short (wide) artwork the words above scroll. */
 .noart-foot {
-  flex: 0 0 50%;
+  flex: 0 0 auto;
+  min-height: 50%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 4px;
+  /* Room under Upload Artwork (direct instruction). */
+  padding: 8px 0 calc(18px / var(--pf-zoom, 1));
 }
 .noart-toi {
   text-align: left;

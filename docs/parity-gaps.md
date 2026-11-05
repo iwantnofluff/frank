@@ -5009,3 +5009,17 @@ Decided directly.
 - **Buttons under the content.** Every table cell's buttons (Copy, Edit, Approve Concept and the rest) now sit 10px under the cell's content. Before, they were pinned to the cell's foot so they lined up across the row (an earlier direct instruction, now replaced).
 
 **Verified** (follow-ups): In the real app (dev server, staging), a post with two lines of Text on Image and no artwork showed the words at the top and the picture with Upload Artwork in the lower half. With a caption, both measured the same (21.78px drawn, 13.7px as seen at the phone's scale). In a table with artwork and a caption, the Creative cell read V1 over the artwork with Edit under the file name, and Post Name's, Caption/Copy's and Concept's buttons sat just under their text. Full suite on the local database, two at a time: 336 passed, 1 skipped, 1 failed. The failure was creative-review.png, whose diff was only the caption line, now larger. It was regenerated and passed.
+
+## Slides hidden by default, and room under Upload Artwork (phase141, 1.70.1, 2026-11-05)
+
+Direct instruction: a Content Planner's table hides Slides by default, as it does Alt Text and Team. DEFAULT_HIDDEN_COLUMNS in ProjectCalendarTable.tsx now starts a new project's table, and its column list in the New Project window, with Slides unticked. phase141 adds Slides to every existing Content Planner's hidden columns and keeps whatever else each one hides (unlike phase140, which reset them). Saved table views are left as they are. Other Content already hid Slides.
+
+**Verified**: phase141 applied to staging. All 9 staging planners now hide Slides, and the 5 Other Content projects are unchanged. default-columns.spec reads the new table's headers in the real app, now without Slides, and new-project.spec checks that Slides starts unticked and is saved as hidden (7 passed against staging). Full suite on the local database: 336 passed, 1 skipped, 1 failed (admin-overview, two leftover "E2E Test Agency" rows), which passed on rerun.
+
+**Room under Upload Artwork (direct instruction, same release).** On a post with no artwork, the Upload Artwork button sat on the bottom edge of the placeholder on a wide artwork (LinkedIn Single Image, 1.91:1). The lower half now has 18px of screen space under the button, sized against the phone's zoom as the text is, and it never shrinks below its picture, button and that space. On a short artwork, the words above scroll instead.
+
+**Verified**: In the real app (dev server, staging), measured from the button to the placeholder's bottom edge: LinkedIn Single Image 18px (was 0 to 11px), LinkedIn Document 37px, Instagram Post 53px. Screenshots were checked for LinkedIn Single Image and Instagram Post. text-on-image-comments, creative-review and admin-overview passed on the local database (5).
+
+**A cell's buttons last (direct instruction, same release).** In an opened table row, a cell's Copy and Edit buttons came before its Read less link. They now come after it, 10px below. ClampText, which every clamped cell goes through, draws Read more or Read less first and then the buttons. A cell whose text fits shows its buttons straight under the text, as before.
+
+**Verified**: In the real app (dev server, staging), a planner row's Text on Image cell with three long slides was opened. Read less came first, then Edit, 10px below (measured), and a screenshot was checked. project-calendar and continuous-calendar passed on the local database (30).

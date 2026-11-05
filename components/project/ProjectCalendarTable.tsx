@@ -141,8 +141,8 @@ const CHECKBOX_COL_WIDTH = 36;
 // The default order (decided directly, 4 Nov 2026): after Week, Publish
 // Date and Day, Time, Post Name, Format, Slides, Status, Caption/Copy, Text
 // on Image, Creative, Concept, VO, Notes for Designer, WIIFM
-// Direction and the two Feedbacks; Alt Text and Team hidden by default
-// (DEFAULT_HIDDEN_COLUMNS), at the end.
+// Direction and the two Feedbacks; Slides, Alt Text and Team hidden by
+// default (DEFAULT_HIDDEN_COLUMNS, Slides from 5 Nov 2026).
 export const TOGGLABLE_COLUMNS = [
   { key: "time", label: "Time", sub: "Time of post", width: 84 },
   { key: "creative", label: "Post Name", sub: "Post identifier", width: 196 },
@@ -179,8 +179,9 @@ export const TOGGLABLE_COLUMNS = [
 ] as const;
 
 // Hidden in a new project's Main Table until turned on (decided directly);
-// phase140 set every existing project's to the same.
-export const DEFAULT_HIDDEN_COLUMNS: string[] = ["altText", "lead"];
+// phase140 set every existing project's to the same, and phase141 added
+// Slides to them (direct instruction).
+export const DEFAULT_HIDDEN_COLUMNS: string[] = ["slides", "altText", "lead"];
 
 const CUSTOM_COLUMN_WIDTH = 140;
 const DEFAULT_COLUMN_ORDER = TOGGLABLE_COLUMNS.map((c) => c.key);

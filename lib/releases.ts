@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.70.1",
+    date: "2026-11-05",
+    title: "Slides hidden by default",
+    changes: [
+      "A Content Planner's table hides the Slides column by default, as it does Alt Text and Team. Turn it back on from the table's columns.",
+      "Upload Artwork, where a post's artwork goes, has room under it, even on a wide LinkedIn image.",
+      "In the table, a cell's Copy and Edit buttons now come last, under Read less.",
+    ],
+  },
+  {
     version: "1.70.0",
     date: "2026-11-05",
     title: "Comment on Text on Image, and References with the designer's notes",

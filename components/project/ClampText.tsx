@@ -15,8 +15,8 @@ export function ClampText({
   expanded: boolean;
   onToggle: () => void;
   children: ReactNode;
-  // Shown at the end of the text once all of it is in view: straight away
-  // when it fits, after Read more when it doesn't (the Copy column's Copy
+  // Shown at the end of the cell once all of it is in view: straight away
+  // when it fits, under Read less when it doesn't (the Copy column's Copy
   // Caption, direct instruction).
   after?: ReactNode;
 }) {
@@ -40,7 +40,6 @@ export function ClampText({
       <span ref={ref} className={`cc-t${expanded ? " open" : ""}`}>
         {children}
       </span>
-      {after && (!overflows || expanded) && <span className="cc-after">{after}</span>}
       {(overflows || expanded) && (
         <button
           type="button"
@@ -54,6 +53,8 @@ export function ClampText({
           {expanded ? "Read less" : "Read more"}
         </button>
       )}
+      {/* The cell's buttons last, under Read less (direct instruction). */}
+      {after && (!overflows || expanded) && <span className="cc-after">{after}</span>}
     </>
   );
 }

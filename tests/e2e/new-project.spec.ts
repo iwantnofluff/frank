@@ -68,13 +68,13 @@ test("a new project's columns: untick defaults, add its own, fill them in on a p
   await page.fill("#newName", "Columns E2E");
   await page.getByRole("button", { name: "Next" }).click();
 
-  // The default columns ticked to start; Alt Text and Team not (decided
-  // directly, phase140).
+  // The default columns ticked to start; Slides, Alt Text and Team not
+  // (decided directly, phase140 and phase141).
   const group = page.getByRole("group", { name: "Columns" });
   const boxes = group.getByRole("checkbox");
   const total = await boxes.count();
   expect(total).toBeGreaterThan(10);
-  const unticked = ["Show Alt Text", "Show Team"];
+  const unticked = ["Show Slides", "Show Alt Text", "Show Team"];
   for (let i = 0; i < total; i++) {
     const label = await boxes.nth(i).getAttribute("aria-label");
     if (unticked.includes(label ?? "")) await expect(boxes.nth(i)).not.toBeChecked();
@@ -109,8 +109,8 @@ test("a new project's columns: untick defaults, add its own, fill them in on a p
   expect(cols!.map((c) => [c.label, c.type])).toEqual([["Thumbnail Text", "text"], ["Shoot Date", "date"]]);
   const shoot = cols!.find((c) => c.label === "Shoot Date")!;
   const { data: proj } = await admin.from("projects").select("default_hidden_columns, default_column_order, column_labels").eq("id", projectId).single();
-  // What was unticked, with the defaults left unticked (Alt Text, Team).
-  expect(proj!.default_hidden_columns.sort()).toEqual(["time", `cx:${shoot.id}`, "altText", "lead"].sort());
+  // What was unticked, with the defaults left unticked (Slides, Alt Text, Team).
+  expect(proj!.default_hidden_columns.sort()).toEqual(["time", `cx:${shoot.id}`, "slides", "altText", "lead"].sort());
   expect(proj!.column_labels).toEqual({ postCopy: "Caption" });
   const order = proj!.default_column_order as string[];
   expect(order.indexOf("voiceover")).toBe(order.indexOf("postCopy") - 1);
