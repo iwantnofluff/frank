@@ -10,7 +10,19 @@ import { IDEA, stageColor } from "@/lib/stage-labels";
 // and the six stages, ticked in a list like the Format picker's, with All
 // Statuses at the top to tick or clear them all. Reads like the Platform
 // select beside it.
-export function StatusFilterMenu({ value, onChange }: { value: StatusKey[]; onChange: (next: StatusKey[]) => void }) {
+export function StatusFilterMenu({
+  value,
+  onChange,
+  showHidden,
+  onShowHidden,
+}: {
+  value: StatusKey[];
+  onChange: (next: StatusKey[]) => void;
+  // Posts on a status that hides them (phase143: Cancel), brought back
+  // (direct instruction: hidden, with a way back). The team's only.
+  showHidden?: boolean;
+  onShowHidden?: (next: boolean) => void;
+}) {
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
   const pop = usePresence(anchor);
   const ref = useRef<HTMLDivElement>(null);
@@ -63,6 +75,7 @@ export function StatusFilterMenu({ value, onChange }: { value: StatusKey[]; onCh
         }}
       >
         {statusFilterLabel(value)}
+        {showHidden ? " + Hidden" : ""}
       </button>
       {pop.shown && (
         <div className={`colpop on fmtpop motion${pop.isOpen ? " is-open" : ""}`} ref={ref} role="dialog" aria-label="Statuses" style={{ width: 240 }}>
@@ -88,6 +101,19 @@ export function StatusFilterMenu({ value, onChange }: { value: StatusKey[]; onCh
                 <span className="cn">{o.label}</span>
               </button>
             ))}
+            {onShowHidden && (
+              <button
+                type="button"
+                className="cpr sf-hidden"
+                role="checkbox"
+                aria-checked={!!showHidden}
+                title="Posts on a status set to hide them, such as Cancel"
+                onClick={() => onShowHidden(!showHidden)}
+              >
+                {tick(!!showHidden)}
+                <span className="cn">Show Hidden</span>
+              </button>
+            )}
           </div>
           <div className="fmtpop-f">
             <button type="button" className="btn primary sm" onClick={() => setAnchor(null)}>

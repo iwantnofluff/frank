@@ -5,7 +5,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { CreativeListRow } from "@/hooks/use-creatives";
 import { useCopyVersionsByCreative } from "@/hooks/use-copy-versions-by-creative";
 import { useAssetLinksByCreative } from "@/hooks/use-asset-links";
-import { useProjectStatuses, type ProjectStatus } from "@/hooks/use-project-statuses";
+import { useHiddenStatusIds, useProjectStatuses, type ProjectStatus } from "@/hooks/use-project-statuses";
 import { canApproveConcept } from "@/hooks/use-approve-concept";
 import { statusOptions } from "@/lib/project-statuses";
 import { exceptionLabel, isIdea, stageColor, stageLabel } from "@/lib/stage-labels";
@@ -55,16 +55,18 @@ export function MobileProject({
   const [platform, setPlatform] = useState<PlatformFilter>("all");
   const dateOf = (c: CreativeListRow) => (delivery === "continuous" ? c.due_on : c.scheduled_at);
 
+  // Posts on a status that hides them (phase143) aren't listed.
+  const { data: hiddenStatuses } = useHiddenStatusIds();
   // Every dated post the platform shows, in date order.
   const dated = useMemo(
     () =>
       creatives
-        .filter((c) => !isIdea(c) && dateOf(c) && matchesFilter(c, { statuses: ALL_STATUSES, platform }))
+        .filter((c) => !isIdea(c) && dateOf(c) && matchesFilter(c, { statuses: ALL_STATUSES, platform, hidden: hiddenStatuses }))
         .map((c) => ({ c, dt: new Date(delivery === "continuous" ? `${c.due_on}T00:00:00` : (c.scheduled_at as string)) }))
         .sort((a, b) => a.dt.getTime() - b.dt.getTime()),
     // dateOf reads only delivery.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [creatives, delivery, platform],
+    [creatives, delivery, platform, hiddenStatuses],
   );
   // Back from a post's page (direct instruction): its month, its card
   // brought into view and lit (useFocusRow).

@@ -4,6 +4,7 @@ import { isIdea } from "@/lib/stage-labels";
 import { goLiveDay, isLive, isOverdue } from "@/lib/post-live";
 import { useMemo, useRef, useState } from "react";
 import { useCreatives, type CreativeListRow } from "@/hooks/use-creatives";
+import { isHiddenPost, useHiddenStatusIds } from "@/hooks/use-project-statuses";
 import { FeedTileArt, EmptyTileArt } from "@/components/creative-review/FeedTileArt";
 import { StagePill } from "@/components/creative-review/StagePill";
 import { FeedCaptionPopover } from "@/components/creative-review/FeedCaptionPopover";
@@ -50,6 +51,8 @@ export function FeedPreviewGrid({
   onSelect: (creativeId: string) => void;
 }) {
   const { data: allCreatives, isLoading } = useCreatives(projectId);
+  // Nor a post on a status that hides it (phase143), unless it's this one.
+  const { data: hiddenStatuses, isPending: hiddenPending } = useHiddenStatusIds();
   // Deleted (archived_at) posts never show here — useCreatives now
   // returns them too, for the project page's own Active/Archived toggle.
   // Newest first, as Instagram's grid reads (direct instruction: they were
@@ -63,11 +66,11 @@ export function FeedPreviewGrid({
     };
     // Ideas aren't on the Review page (direct instruction).
     return (allCreatives ?? [])
-      .filter((c) => !c.archived_at && !isIdea(c))
+      .filter((c) => !c.archived_at && !isIdea(c) && (c.id === activeCreativeId || !isHiddenPost(c, hiddenStatuses)))
       .map((c, i) => ({ c, i, t: when(c) }))
       .sort((a, b) => (a.t === b.t ? a.i - b.i : b.t - a.t))
       .map(({ c }) => c);
-  }, [allCreatives]);
+  }, [allCreatives, activeCreativeId, hiddenStatuses]);
   // The client's real feed, once connected (phase54): the planned posts
   // first, then the real ones after them, the way the grid will read once
   // these go live.
@@ -146,7 +149,7 @@ export function FeedPreviewGrid({
       />
       <FeedTabs tab={tab} onTab={setTab} />
 
-      {isLoading ? (
+      {isLoading || hiddenPending ? (
         <div className="awaiting">
           <span>Frank is working…</span>
         </div>

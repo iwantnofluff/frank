@@ -5114,7 +5114,7 @@ Already right and unchanged: comments, the phone's caption, the older-version po
 
 Full suite on the local database: 338 passed, 1 failed (admin-overview, a leftover "E2E Test Agency" row), which passed on rerun.
 
-**The hydration warning (same release).** The dev overlay's "1 Issue" on the post page, long on the open list, was the phone's "Uploaded" or "Copy saved" date. It was written with `toLocaleDateString()` and no locale, so the server wrote "11/5/2026" (en-US), the browser wrote "05/11/2026" (en-GB), and React redrew it. Every date written that way is now fixed to en-GB, which is what UK and Indian browsers already showed:
+**A hydration warning (same release).** One cause of the dev overlay's "1 Issue" on the post page was the phone's "Uploaded" or "Copy saved" date. Two other recorded causes are not fixed by this and can still show it now and then: the stage pills drawn from a membership the top bar already fetched (see "Found, not fixed here" in the speed pass), and the `stage-wait` class on a Reel with no artwork. It was written with `toLocaleDateString()` and no locale, so the server wrote "11/5/2026" (en-US), the browser wrote "05/11/2026" (en-GB), and React redrew it. Every date written that way is now fixed to en-GB, which is what UK and Indian browsers already showed:
 - the phone's date
 - the Brief's Due Date and Publish Date
 - the review link's comment dates (desktop and phone)
@@ -5124,3 +5124,37 @@ Full suite on the local database: 338 passed, 1 failed (admin-overview, a leftov
 The phone's date also has `suppressHydrationWarning`, since the day itself can differ across midnight between the server's time zone and the person's. Numbers with `toLocaleString()` (followers, counts) were left alone: they're drawn after the data loads in the browser, so they don't mismatch.
 
 **Verified**: In the real app (dev server, staging), the post page and table loaded with no page or console errors (they had a hydration error before), and the phone read "Copy saved 06/11/2026". The specs that show these dates or pages passed on the local database (40, then 24).
+
+## Statuses that hide their posts: Cancel (phase143, 1.72.0, 2026-11-06)
+
+Direct instruction: a post whose status is Cancel shouldn't appear. Decided directly: a switch on each status rather than matching the name, so it survives renames, and hidden everywhere it's listed or counted, with a way back.
+
+- **Schema (phase143):**
+  - `project_statuses.hides_post`, set for every project's Cancel (and any status named Cancelled or Canceled). `seed_project_statuses` gives new projects a Cancel that hides its posts.
+  - `creative_stage_counts` and `client_list_stats` (the dashboard) leave hidden posts out.
+  - `get_shared_review_feed` (the review link's feed grid, which showed it as a placeholder tile) leaves them out.
+- **The app:**
+  - `useHiddenStatusIds` reads every hiding status the person can see, and `isHiddenPost` checks a post against them.
+  - `PostFilter` gained `hidden`, so `matchesFilter` drops those posts. That covers both tables, both calendar views, the "N scheduled posts" line and the phone list.
+  - A table's status filter has a **Show Hidden** tick at the bottom (the team's only). The button then reads "All Statuses + Hidden".
+  - The post page's feed grid and previous/next posts leave them out, except the post that's open, so a cancelled post's own page still works. So does the Share window's list. The client page's project counts (`useProjectCreativeStats`) skip them.
+  - The project page, the feed grid and the arrows wait for the hidden-status lookup before drawing, so a hidden post never flashes up.
+  - Project Settings → Statuses has a "Hides its posts" switch per status. Those who can't change statuses see "Hides its posts" beside the name.
+- **Left as they are:** the activity feed, notifications and analytics, which are history. The dashboard's browser fallbacks (used only if their database function fails) still count hidden posts. Clients never read statuses, and never see a post in the stages that have them.
+- **Behaviour to know:** picking Cancel for a post in the table removes its row at once (Show Hidden brings it back). On a phone there's no Show Hidden, so a cancelled post is only reachable from a computer.
+
+**Verified**:
+- phase143 rehearsed and applied to staging: Cancel hides its posts in all 14 projects, nothing else does. The local test database was rebuilt from it.
+- A unit test checks `matchesFilter` with and without the hidden set.
+- New hidden-statuses.spec, on a real session:
+  - A new project's Cancel hides its posts.
+  - A Cancelled post isn't in the table ("Nothing scheduled") or in the dashboard's count (0 through `creative_stage_counts` as the staff member).
+  - Show Hidden brings it back, reading "All Statuses + Hidden", and unticking hides it again.
+  - Turning Cancel's switch off in Settings saves, brings the post back and counts it (1).
+- Checked by hand in the real app (dev server, staging), with a second post set to Cancel:
+  - On the other post's page, no previous/next arrow led to it and the feed grid had one tile. The first try showed both, from the lookup arriving after the lists drew. That was fixed by waiting for it, then three runs in a row were right.
+  - On the cancelled post's own page, the grid still showed it.
+  - The review link's feed (`get_shared_review_feed`) returned only the other post.
+  - Settings screenshot checked.
+- project-calendar.spec's list of filter options now ends with Show Hidden.
+- Full suite on the local database: 338 passed, 2 failed (admin-overview and project-calendar's option list, now updated). Rerun with hidden-statuses and project-statuses: 24 passed, 1 failed (project-statuses' table-pill test, which picks Hold, not Cancel). It passed on its own and has failed this way before.

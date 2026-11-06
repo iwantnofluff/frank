@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { useCreatives, type CreativeListRow } from "@/hooks/use-creatives";
+import { isHiddenPost, useHiddenStatusIds } from "@/hooks/use-project-statuses";
 import {
   useCreateSharedLink,
   type SharedLinkScope,
@@ -135,10 +136,15 @@ export function ShareModal({
   const [copied, setCopied] = useState<"yes" | "failed" | null>(null);
 
   const { data: allCreatives } = useCreatives(projectId);
+  // Nor a post on a status that hides it (phase143), such as a Cancelled one.
+  const { data: hiddenStatuses } = useHiddenStatusIds();
   // Deleted (archived_at) posts are never shareable — useCreatives now
   // returns them too, for the project page's own Active/Archived toggle.
   // Nor are Ideas (direct instruction): the link never carries one (phase106).
-  const creatives = useMemo(() => (allCreatives ?? []).filter((c) => !c.archived_at && !isIdea(c)), [allCreatives]);
+  const creatives = useMemo(
+    () => (allCreatives ?? []).filter((c) => !c.archived_at && !isIdea(c) && !isHiddenPost(c, hiddenStatuses)),
+    [allCreatives, hiddenStatuses],
+  );
   const creativeIds = useMemo(() => creatives.map((c) => c.id), [creatives]);
   const createLink = useCreateSharedLink();
 

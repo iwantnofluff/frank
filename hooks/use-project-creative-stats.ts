@@ -66,14 +66,22 @@ export function useProjectCreativeStats(clientId: string) {
       const projectIds = projects.map((p) => p.id);
       if (projectIds.length === 0) return stats;
 
-      const { data: creatives, error: creativesError } = await supabase
-        .from("creatives")
-        .select("project_id, stage, exception, approved_at, created_at")
-        .in("project_id", projectIds)
-        .is("archived_at", null);
+      const [{ data: creatives, error: creativesError }, { data: hiding, error: hidingError }] = await Promise.all([
+        supabase
+          .from("creatives")
+          .select("project_id, stage, exception, approved_at, created_at, status_id")
+          .in("project_id", projectIds)
+          .is("archived_at", null),
+        // Posts on a status that hides them (phase143) aren't counted. A
+        // client reads no statuses, and sees no post in their stages.
+        supabase.from("project_statuses").select("id").in("project_id", projectIds).eq("hides_post", true),
+      ]);
       if (creativesError) throw creativesError;
+      if (hidingError) throw hidingError;
+      const hidden = new Set((hiding ?? []).map((r) => r.id as string));
 
       for (const c of creatives) {
+        if (c.status_id && hidden.has(c.status_id)) continue;
         const s = stats[c.project_id];
         if (!s) continue;
         s.total++;

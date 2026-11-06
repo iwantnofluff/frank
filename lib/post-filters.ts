@@ -50,6 +50,9 @@ export function platformOf(formatId: string): PlatformFilter | null {
 export interface PostFilter {
   statuses: StatusKey[];
   platform: PlatformFilter;
+  // Statuses whose posts are hidden (phase143: Cancel by default), unless
+  // Show Hidden is ticked.
+  hidden?: ReadonlySet<string>;
 }
 
 export const NO_FILTER: PostFilter = { statuses: ALL_STATUSES, platform: "all" };
@@ -57,9 +60,10 @@ export const NO_FILTER: PostFilter = { statuses: ALL_STATUSES, platform: "all" }
 // Whether a post shows: its status (Idea or stage), and any of its formats
 // on the platform.
 export function matchesFilter(
-  post: { stage: number; format: string | null; formats?: string[] | null; scheduled_at?: string | null; due_on?: string | null },
+  post: { stage: number; format: string | null; formats?: string[] | null; scheduled_at?: string | null; due_on?: string | null; status_id?: string | null },
   filter: PostFilter,
 ): boolean {
+  if (post.status_id && filter.hidden?.has(post.status_id)) return false;
   if (!filter.statuses.includes(statusKey(post))) return false;
   if (filter.platform !== "all" && !postFormats(post).some((f) => platformOf(f) === filter.platform)) return false;
   return true;

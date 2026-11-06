@@ -50,7 +50,7 @@ import { ConceptText } from "@/components/creative-review/ConceptText";
 import { EarlierVersions } from "@/components/project/EarlierVersions";
 import { FeedbackCell } from "@/components/project/FeedbackCell";
 import { useProjectProductionVersions } from "@/hooks/use-production-versions";
-import { useProjectStatuses } from "@/hooks/use-project-statuses";
+import { useHiddenStatusIds, useProjectStatuses } from "@/hooks/use-project-statuses";
 import { useAssetLinksByCreative } from "@/hooks/use-asset-links";
 import { OpenAsset } from "@/components/project/OpenAsset";
 import { StagePillMenu } from "@/components/project/StagePillMenu";
@@ -297,7 +297,14 @@ export function ProjectCalendarTable({
   // Status and platform (lib/post-filters.ts; direct instruction).
   const [statusFilter, setStatusFilter] = useState<StatusKey[]>(ALL_STATUSES);
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>("all");
-  const filter = useMemo<PostFilter>(() => ({ statuses: statusFilter, platform: platformFilter }), [statusFilter, platformFilter]);
+  // Posts on a status that hides them (phase143) are left out unless
+  // Show Hidden is ticked.
+  const [showHidden, setShowHidden] = useState(false);
+  const { data: hiddenStatuses } = useHiddenStatusIds();
+  const filter = useMemo<PostFilter>(
+    () => ({ statuses: statusFilter, platform: platformFilter, hidden: showHidden ? undefined : hiddenStatuses }),
+    [statusFilter, platformFilter, showHidden, hiddenStatuses],
+  )
 
   // Checkbox multi-select — table views only (Week/Month), not the
   // Calendar grid. Cleared whenever the underlying row set changes (the
@@ -918,7 +925,7 @@ export function ProjectCalendarTable({
           </button>
         </div>
         <div style={{ flex: 1 }} />
-        <StatusFilterMenu value={statusFilter} onChange={setStatusFilter} />
+        <StatusFilterMenu value={statusFilter} onChange={setStatusFilter} showHidden={showHidden} onShowHidden={isStaff ? setShowHidden : undefined} />
         <select
           className="sort"
           value={platformFilter}

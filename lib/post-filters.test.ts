@@ -39,3 +39,14 @@ test("platforms from formats; a post with several matches each", () => {
   assert.equal(matchesFilter(both, { statuses: ALL_STATUSES, platform: "linkedin" }), true);
   assert.equal(matchesFilter(both, { statuses: ALL_STATUSES, platform: "youtube" }), false);
 });
+
+test("a post on a status that hides it is left out, unless Show Hidden takes the set away (phase143)", () => {
+  const cancelled = { stage: 3, format: "ig_feed", scheduled_at: "2026-11-01T10:00:00Z", status_id: "cancel" };
+  const held = { ...cancelled, status_id: "hold" };
+  const none = { ...cancelled, status_id: null };
+  const hidden = new Set(["cancel"]);
+  assert.equal(matchesFilter(cancelled, { statuses: ALL_STATUSES, platform: "all", hidden }), false);
+  assert.equal(matchesFilter(held, { statuses: ALL_STATUSES, platform: "all", hidden }), true);
+  assert.equal(matchesFilter(none, { statuses: ALL_STATUSES, platform: "all", hidden }), true);
+  assert.equal(matchesFilter(cancelled, { statuses: ALL_STATUSES, platform: "all" }), true);
+});

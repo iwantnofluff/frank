@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.72.0",
+    date: "2026-11-06",
+    title: "Cancelled posts are hidden",
+    changes: [
+      "A post set to Cancel no longer shows in the tables, the calendar view, the phone list, the post page's feed grid or its previous and next posts, the Share window or the review link's feed. It isn't counted on the dashboard or the client's page either.",
+      "To find one again, tick Show Hidden in a table's status filter. Its own page still opens from a link or the bell.",
+      "In a project's Settings, any status can be set to hide its posts (Cancel is, to start), so a renamed Cancel or a new \"Dropped\" works the same way.",
+    ],
+  },
+  {
     version: "1.71.2",
     date: "2026-11-06",
     title: "Read-only text keeps its paragraphs",

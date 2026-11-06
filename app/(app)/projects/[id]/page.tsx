@@ -7,6 +7,7 @@ import { useLiveUpdates } from "@/hooks/use-live-updates";
 import { useProjectPresence } from "@/hooks/use-project-presence";
 import { PresenceAvatars } from "@/components/app-shell/PresenceAvatars";
 import { useCreatives } from "@/hooks/use-creatives";
+import { useHiddenStatusIds } from "@/hooks/use-project-statuses";
 import { useCustomColumns } from "@/hooks/use-custom-columns";
 import { useIsStaff } from "@/hooks/use-is-staff";
 import { useMyAgency } from "@/hooks/use-my-agency";
@@ -123,7 +124,11 @@ export default function ProjectPage({
     if (askedPost && postHandled === askedPost) router.replace(`/projects/${id}`, { scroll: false });
   }, [askedPost, postHandled, id, router]);
 
-  const isLoading = projectLoading || creativesLoading;
+  // Which statuses hide their posts (phase143), before the posts are
+  // drawn, so a hidden one never shows for a moment. Read here and kept
+  // for the tables, which filter with it.
+  const { isPending: hiddenPending } = useHiddenStatusIds();
+  const isLoading = projectLoading || creativesLoading || hiddenPending;
   const columns = customColumns ?? [];
   // Fails closed like every other isStaff gate this session: hidden/
   // read-only while still resolving, not shown/editable by default.

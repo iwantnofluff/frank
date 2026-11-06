@@ -56,10 +56,11 @@ test("project calendar — status filter narrows the visible rows", async ({ pag
   await goToMonth(page, "March 2027");
   await expect(page.locator(".pname", { hasText: "Concept-Stage E2E" })).toBeVisible();
 
-  // Idea, then the six stages (In Production, phase102), any combination.
+  // Idea, then the six stages (In Production, phase102), any combination;
+  // then Show Hidden, for posts on a status that hides them (phase143).
   await page.getByRole("button", { name: "Status", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "Statuses" }).getByRole("checkbox")).toHaveText([
-    "All Statuses", "0. Idea", "1. Concept", "2. In Production", "3. Internal Review", "4. Client Review", "5. Approved", "6. Live",
+    "All Statuses", "0. Idea", "1. Concept", "2. In Production", "3. Internal Review", "4. Client Review", "5. Approved", "6. Live", "Show Hidden",
   ]);
   await page.keyboard.press("Escape");
   await showStatuses(page, ["4. Client Review"]);

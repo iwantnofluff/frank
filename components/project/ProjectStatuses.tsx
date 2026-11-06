@@ -8,8 +8,7 @@ import {
   useRenameProjectStatus,
   useStatusPostCount,
   useSwapProjectStatuses,
-  type ProjectStatus,
-} from "@/hooks/use-project-statuses";
+  type ProjectStatus, useSetStatusHides } from "@/hooks/use-project-statuses";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { errorMessage } from "@/lib/errors";
 import { STAGE } from "@/lib/stage-labels";
@@ -68,19 +67,22 @@ export function ProjectStatuses({ projectId, canManage }: { projectId: string; c
   const rename = useRenameProjectStatus(projectId);
   const swap = useSwapProjectStatuses(projectId);
   const remove = useDeleteProjectStatus(projectId);
+  const hides = useSetStatusHides(projectId);
   const [adding, setAdding] = useState<2 | 3 | null>(null);
   const [draft, setDraft] = useState("");
   const [removing, setRemoving] = useState<ProjectStatus | null>(null);
   const { data: onIt } = useStatusPostCount(removing?.id ?? null);
-  const busy = add.isPending || rename.isPending || swap.isPending || remove.isPending;
-  const error = add.error ?? rename.error ?? swap.error;
+  const busy = add.isPending || rename.isPending || swap.isPending || remove.isPending || hides.isPending;
+  const error = add.error ?? rename.error ?? swap.error ?? hides.error;
 
   return (
     <>
       <div className="msection-h">Statuses</div>
       <p className="msection-d">
         The steps a post moves through within In Production and Internal Review, for your team only. A post takes the first
-        when it gets to that stage.{canManage ? " Changes save as they're made." : " Owners and Admins change them."}
+        when it gets to that stage. A post on a status that hides its posts, such as Cancel, is left out of the
+        tables, the feed and the counts; Show Hidden in a table&rsquo;s status filter brings it back.
+        {canManage ? " Changes save as they're made." : " Owners and Admins change them."}
       </p>
       {isError && <p className="autherr">Couldn&rsquo;t load the statuses</p>}
       {error && <p className="autherr">{errorMessage(error, "Couldn't save that")}</p>}
@@ -96,10 +98,24 @@ export function ProjectStatuses({ projectId, canManage }: { projectId: string; c
                   {canManage ? (
                     <StatusName status={s} onRename={(next) => rename.mutate({ id: s.id, label: next })} />
                   ) : (
-                    <span className="ps-label">{s.label}</span>
+                    <span className="ps-label">
+                      {s.label}
+                      {s.hides_post && <span className="ps-hidden-tag">Hides its posts</span>}
+                    </span>
                   )}
                   {canManage && (
                     <span className="ps-acts">
+                      {/* Its posts hidden from the lists and counts (phase143,
+                          direct instruction: a Cancelled post shouldn't show). */}
+                      <label className="ps-hide">
+                        <input
+                          type="checkbox"
+                          checked={s.hides_post}
+                          disabled={busy}
+                          onChange={(e) => hides.mutate({ id: s.id, hides: e.target.checked })}
+                        />
+                        Hides its posts
+                      </label>
                       <button
                         type="button"
                         className="ps-btn"

@@ -13,6 +13,9 @@ export interface ProjectStatus {
   stage: 2 | 3;
   label: string;
   position: number;
+  // Its posts are hidden from the lists and counts (phase143): Cancel, by
+  // default.
+  hides_post: boolean;
 }
 
 const key = (projectId: string | undefined) => ["project-statuses", projectId];
@@ -23,7 +26,7 @@ export function useProjectStatuses(projectId: string | undefined, enabled = true
     queryFn: async (): Promise<ProjectStatus[]> => {
       const { data, error } = await createClient()
         .from("project_statuses")
-        .select("id, stage, label, position")
+        .select("id, stage, label, position, hides_post")
         .eq("project_id", projectId!)
         .order("stage")
         .order("position")
@@ -48,7 +51,10 @@ function useStatusMutation<T>(projectId: string, run: (input: T) => Promise<unkn
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: key(projectId), refetchType: "all" });
-      // Renaming or deleting one changes what posts show.
+      // Renaming, hiding or deleting one changes what posts show.
+      await queryClient.invalidateQueries({ queryKey: ["hidden-statuses"], refetchType: "all" });
+      await queryClient.invalidateQueries({ queryKey: ["project-creative-stats"] });
+      await queryClient.invalidateQueries({ queryKey: ["agency-creative-stats"] });
       await queryClient.invalidateQueries({ queryKey: ["creatives"], refetchType: "all" });
       await queryClient.invalidateQueries({ queryKey: ["creative"] });
     },
@@ -69,6 +75,35 @@ export function useAddProjectStatus(projectId: string) {
     return data;
   });
 }
+
+// Whether a status's posts are hidden (phase143).
+export function useSetStatusHides(projectId: string) {
+  return useStatusMutation(projectId, async (input: { id: string; hides: boolean }) => {
+    const { data, error } = await createClient().from("project_statuses").update({ hides_post: input.hides }).eq("id", input.id).select("id");
+    if (error) throw error;
+    return data;
+  });
+}
+
+// Every status the person can read that hides its posts (phase143), across
+// projects: the lists, the feed grid and the counts leave those posts out.
+// The team's only: a client reads no statuses, and never sees a post in the
+// stages that have them.
+export function useHiddenStatusIds() {
+  return useQuery({
+    queryKey: ["hidden-statuses"],
+    queryFn: async (): Promise<Set<string>> => {
+      const { data, error } = await createClient().from("project_statuses").select("id").eq("hides_post", true);
+      if (error) throw error;
+      return new Set((data ?? []).map((r) => r.id as string));
+    },
+    staleTime: 60_000,
+  });
+}
+
+// Whether a post is hidden by its status.
+export const isHiddenPost = (post: { status_id?: string | null }, hidden: Set<string> | undefined) =>
+  !!post.status_id && !!hidden?.has(post.status_id);
 
 export function useRenameProjectStatus(projectId: string) {
   return useStatusMutation(projectId, async (input: { id: string; label: string }) => {
