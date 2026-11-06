@@ -5046,3 +5046,11 @@ Direct instruction: where a post's Text on Image stands in for its artwork, the 
 - Instagram Post with no Text on Image: the picture, "No artwork yet", the note and the button with its arrow, centred.
 
 A first try showed the button centred under the words (the placeholder's `text-align: center`), so .noart-act is set left. creative-review.png was regenerated after looking at its diff, which was only the arrow on the button. carousel, copy-only-post, text-on-image-comments, comment-cards, mobile-post and client-view passed (22). Full suite on the local database: 334 passed, 1 skipped, 3 failed. admin-overview and project-statuses passed on rerun. dashboard.png differed only in Last Activity, "Nov 5" to "Nov 6", from the date rolling over, and was regenerated.
+
+## Text on Image comments go to their slide (1.70.4, 2026-11-06)
+
+Direct instruction: on a carousel, picking a comment made on a slide's Text on Image now moves the post to that slide, where its words are marked. Pins, boxes and video moments already did this through highlightComment in CreativeReviewPage. A highlight on `slide_text` (which carries its slide since 1.70.0) now does the same. A caption highlight has no slide and stays where it is.
+
+Not done: opening a comment from the bell (`?comment=`) still highlights it without moving to its slide, for any kind of comment. That path predates this change and is unchanged.
+
+**Verified**: The new text-on-image-comments test "picking a Text on Image comment moves to its slide" goes to slide 3 of three, selects "nuance" and comments. It goes back to slide 1, clicks the comment, and checks the post is on 3 / 3 with "nuance" marked. It failed without the change (stayed on 1 / 3) and passes with it. carousel, text-on-image-comments, comment-cards, video-review, creative-review and comment-mentions passed on the local database (26).

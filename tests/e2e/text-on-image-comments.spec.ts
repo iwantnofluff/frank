@@ -93,6 +93,43 @@ test("Text on Image shows where the artwork goes, and its words take comments", 
   await expect(page.locator(".dk-card .noart-toi .hl-target")).toHaveCount(0);
 });
 
+// On a carousel, a comment on a slide's Text on Image is on that slide:
+// picking it from another slide moves the post to it (direct instruction),
+// as a pin's does.
+test("picking a Text on Image comment moves to its slide", async ({ page, frank }) => {
+  test.setTimeout(150_000);
+  await admin
+    .from("creatives")
+    .update({ format: "ig_carousel", formats: ["ig_carousel"], slide_count: 3, slide_text: ["First slide words", "Second slide words", "Third slide nuance here"] })
+    .eq("id", frank.creativeId);
+  await frank.loginAsStaff(page);
+  await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
+  const media = page.locator(".ig-media");
+  const box = page.locator(".noart-toi");
+  await expect(box).toContainText("First slide words", { timeout: 20_000 });
+  await media.getByRole("button", { name: "Next slide" }).click();
+  await media.getByRole("button", { name: "Next slide" }).click();
+  await expect(media.locator(".car-count")).toHaveText("3 / 3");
+  await expect(box).toContainText("Third slide nuance here");
+  await expect(async () => {
+    await selectWords(page, "nuance");
+    await expect(page.locator(".hl-composer")).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 30_000 });
+  await page.locator(".hl-composer").getByPlaceholder("Comment on this text…").fill("Hello");
+  await page.locator(".hl-composer").getByRole("button", { name: "Post" }).click();
+  const card = page.locator(".cmt", { hasText: "Hello" });
+  await expect(card.locator(".hl-a")).toHaveText("Text on Image, Slide 3: “nuance”");
+
+  // Back to the first slide, then the comment: the post moves to slide 3,
+  // its words marked.
+  await media.getByRole("button", { name: "Previous slide" }).click();
+  await media.getByRole("button", { name: "Previous slide" }).click();
+  await expect(media.locator(".car-count")).toHaveText("1 / 3");
+  await card.locator(".hl-a").click();
+  await expect(media.locator(".car-count")).toHaveText("3 / 3");
+  await expect(box.locator(".hl-mark")).toHaveText("nuance");
+});
+
 // References sit under Notes for Designer (direct instruction): in the post
 // window with their own save, and in the table's Notes for Designer column
 // for the team; the column once Concept & Reference is just Concept. A

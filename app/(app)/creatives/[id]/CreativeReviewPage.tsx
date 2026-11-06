@@ -285,16 +285,18 @@ export function CreativeReviewPage({ id }: { id: string }) {
   const [videoMoment, setVideoMoment] = useState<number | null>(null);
   const [videoSeek, setVideoSeek] = useState<{ t: number; nonce: number } | null>(null);
 
-  // Picking a comment pinned to another slide moves to that slide; one made
+  // Picking a comment on another slide moves to that slide; one made
   // at a moment in a video goes to that moment.
   function highlightComment(commentId: string | null) {
     setHighlightedCommentId(commentId);
     const anchor = (allComments ?? []).find((c) => c.id === commentId)?.anchor;
     const at = commentTime(anchor);
     if (at !== null) setVideoSeek({ t: at, nonce: Date.now() });
-    // Any anchor can sit on a slide: a pin, a box, or a moment in a video.
-    if (anchor && (isPinAnchor(anchor) || isRegionAnchor(anchor) || isTimeAnchor(anchor))) {
-      const i = (anchor.slide ?? 1) - 1;
+    // Any anchor can sit on a slide: a pin, a box, a moment in a video, or
+    // words in a slide's Text on Image (direct instruction).
+    const onSlideText = !!anchor && isHighlightAnchor(anchor) && anchor.field === "slide_text";
+    if (anchor && (isPinAnchor(anchor) || isRegionAnchor(anchor) || isTimeAnchor(anchor) || onSlideText)) {
+      const i = ((anchor as { slide?: number }).slide ?? 1) - 1;
       if (i < frames.length && i !== frameIndex) {
         setSlideIndex(i);
         setVideoMoment(null);

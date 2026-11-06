@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.70.4",
+    date: "2026-11-06",
+    title: "Text on Image comments go to their slide",
+    changes: [
+      "On a carousel, clicking a comment made on a slide's Text on Image moves the post to that slide, with the words marked, as a pinned comment does.",
+    ],
+  },
+  {
     version: "1.70.3",
     date: "2026-11-06",
     title: "Upload Artwork under the Text on Image",
