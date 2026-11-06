@@ -214,7 +214,7 @@ export function DesktopReview({
                     {c.author_name.slice(0, 1).toUpperCase()}
                   </span>
                   <b>{c.author_name}</b>
-                  <CommentWhen iso={c.created_at} date={new Date(c.created_at).toLocaleDateString()} />
+                  <CommentWhen iso={c.created_at} date={new Date(c.created_at).toLocaleDateString("en-GB")} />
                 </div>
                 <MomentBadge comment={c} controller={controller} />
                 <SharedCommentText comment={c} controller={controller} />

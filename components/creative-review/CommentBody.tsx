@@ -32,7 +32,7 @@ export function CommentBody({
       <p className="cbody">
         <MentionText text={body} mentions={mentions} team={team} />
         {editedAt && (
-          <span className="cedited" title={`Edited ${new Date(editedAt).toLocaleString()}`}>
+          <span className="cedited" title={`Edited ${new Date(editedAt).toLocaleString("en-GB")}`}>
             Edited
           </span>
         )}

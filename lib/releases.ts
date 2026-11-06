@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.71.2",
+    date: "2026-11-06",
+    title: "Read-only text keeps its paragraphs",
+    changes: [
+      "An earlier copy version, the post's Brief and Checks, and the post window's read-only text now keep their line breaks and paragraphs instead of running into one block.",
+      "In the table, copy with paragraphs keeps its lines too: it shows Read more when it runs past two lines, and opens laid out as written.",
+      "Dates on a post (Uploaded, Copy saved, the Brief's dates, a comment's) are written the same way everywhere, day first.",
+    ],
+  },
+  {
     version: "1.71.1",
     date: "2026-11-06",
     title: "Clean My Draft reads like an editor's notes",

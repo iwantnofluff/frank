@@ -5099,3 +5099,28 @@ Decided directly: the one cleaned version with those fixes in still follows as a
 - The third matched the example's shape: a verdict, `1. "(It wasn't funny.)"` with why and a fix, three notes, a keep note, and one "Cleaned up" version.
 
 Which lines Frank flags varies from run to run. copy-chat.spec passed (4).
+
+## Read-only text keeps its paragraphs (1.71.2, 2026-11-06)
+
+Direct instruction: wherever written text is shown read-only, it keeps its formatting rather than running into one block. Two rules changed:
+- `.fd-d`, the read-only text of the post window and the post page's side panels, is now `white-space: pre-wrap`. That covers an earlier copy version (the case reported), the Brief's latest copy and Text on Image, Checks' copy, and the post window's Production text. Its old `.fd-pre` variant for VO and Thumbnail Text is now redundant but left in place.
+- `.cc-t`, a table cell's clamped text, is now `pre-line`. Before, copy with paragraphs that fit in two lines once its breaks were dropped showed as one run-on line with no Read more, so the table never showed it as written. Now its lines count toward the two-line clamp, so it gets Read more and opens laid out (it was already `pre-line` once opened). A cell's preview shows less text when it has paragraphs: that's the trade.
+
+Already right and unchanged: comments, the phone's caption, the older-version popup in the table (`.cp-row span`), Draft with Frank's messages, and the review link.
+
+**Verified**: A throwaway audit seeded multi-paragraph text into the concept, Text on Image, two caption versions and a comment. It visited each page in the real app (dev server, staging) and listed every visible element holding a seeded line break whose white-space collapses it. The pages were the post page, its Brief and Checks, each tab of the post window (with V1 open), the table (with the version popup and a cell opened) and the review link.
+- Without the change, it flagged `.fd-d` in Brief, Checks, every window tab and V1, plus every table cell.
+- With it, nothing was flagged, and the table showed Read more on four cells, which opened as written (screenshots checked).
+
+Full suite on the local database: 338 passed, 1 failed (admin-overview, a leftover "E2E Test Agency" row), which passed on rerun.
+
+**The hydration warning (same release).** The dev overlay's "1 Issue" on the post page, long on the open list, was the phone's "Uploaded" or "Copy saved" date. It was written with `toLocaleDateString()` and no locale, so the server wrote "11/5/2026" (en-US), the browser wrote "05/11/2026" (en-GB), and React redrew it. Every date written that way is now fixed to en-GB, which is what UK and Indian browsers already showed:
+- the phone's date
+- the Brief's Due Date and Publish Date
+- the review link's comment dates (desktop and phone)
+- an edited comment's tooltip
+- a pending plan change's date in Billing
+
+The phone's date also has `suppressHydrationWarning`, since the day itself can differ across midnight between the server's time zone and the person's. Numbers with `toLocaleString()` (followers, counts) were left alone: they're drawn after the data loads in the browser, so they don't mismatch.
+
+**Verified**: In the real app (dev server, staging), the post page and table loaded with no page or console errors (they had a hydration error before), and the phone read "Copy saved 06/11/2026". The specs that show these dates or pages passed on the local database (40, then 24).

@@ -2511,6 +2511,10 @@ body.lightrail .search input::placeholder {
   -webkit-line-clamp: var(--d-clamp);
   -webkit-box-orient: vertical;
   overflow: hidden;
+  /* Its lines as written, clamped (direct instruction): copy with
+     paragraphs gets Read more, and opens laid out, rather than running
+     together in two lines. */
+  white-space: pre-line;
 }
 /* The references under a concept, each on its own line and clickable
    (phase58; the Concept column for a client, Notes for Designer for the team). */
@@ -6122,6 +6126,9 @@ textarea.cxin {
   font-size: 12.7px;
   line-height: 1.6;
   color: var(--ink);
+  /* Read-only text keeps the lines and paragraphs it was written with
+     (direct instruction): an earlier copy version, the brief, the checks. */
+  white-space: pre-wrap;
 }
 
 /* Generic modal — .scrim matches frank-prototype.html's own name for this

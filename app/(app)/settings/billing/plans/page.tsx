@@ -275,7 +275,7 @@ export default function PlansPage() {
           </svg>
           <div>
             You&rsquo;ve asked to move to {planById(pending.requested_plan)?.name ?? pending.requested_plan}, billed{" "}
-            {pending.billing_interval}, on {new Date(pending.created_at).toLocaleDateString()}. Frank will confirm it with
+            {pending.billing_interval}, on {new Date(pending.created_at).toLocaleDateString("en-GB")}. Frank will confirm it with
             you, and set up payment, before anything changes.
           </div>
         </div>

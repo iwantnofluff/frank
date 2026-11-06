@@ -1044,11 +1044,15 @@ export function CreativeReviewPage({ id }: { id: string }) {
                   )
                 }
                 footer={
-                  <div className="ig-time">
+                  // One date format on the server and in the browser (it
+                  // was each one's own locale, a hydration mismatch); the
+                  // day itself can still differ across midnight between
+                  // the server's time zone and the person's.
+                  <div className="ig-time" suppressHydrationWarning>
                     {slides.length > 0 && activeCreativeVersion
-                      ? `Uploaded ${new Date(activeCreativeVersion.created_at).toLocaleDateString()}`
+                      ? `Uploaded ${new Date(activeCreativeVersion.created_at).toLocaleDateString("en-GB")}`
                       : activeCopyVersion
-                        ? `Copy saved ${new Date(activeCopyVersion.created_at).toLocaleDateString()}`
+                        ? `Copy saved ${new Date(activeCopyVersion.created_at).toLocaleDateString("en-GB")}`
                         : null}
                   </div>
                 }
