@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.70.3",
+    date: "2026-11-06",
+    title: "Upload Artwork under the Text on Image",
+    changes: [
+      "Where a post's Text on Image stands in for its artwork, Upload Artwork now sits on the left just under the words, without the picture above it.",
+      "Upload Artwork has the table's diagonal arrow, as it opens the post window.",
+    ],
+  },
+  {
     version: "1.70.2",
     date: "2026-11-06",
     title: "Select Text on Image to comment",

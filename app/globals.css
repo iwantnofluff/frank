@@ -3681,7 +3681,7 @@ select.sort:hover {
   padding: 34px 22px;
   text-align: center;
 }
-.awaiting svg:not(.noart-top *) {
+.awaiting svg:not(.noart-top *, .noart-up *) {
   width: 26px;
   height: 26px;
   stroke: var(--muted);
@@ -4589,32 +4589,40 @@ select.sort:hover {
   padding: 0;
 }
 .noart-top {
-  flex: 1 1 50%;
+  flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   /* Clear of a carousel's 1 / 4 in the corner (direct instruction). */
-  padding: calc(40px / var(--pf-zoom, 1)) 20px 8px;
+  padding: calc(40px / var(--pf-zoom, 1)) 20px calc(18px / var(--pf-zoom, 1));
 }
 /* Commenting on its words: the top grows to show the comment box. */
 .noart-top:has(.hl-composer) {
   flex-basis: auto;
   overflow: visible;
 }
-/* At least the lower half, and never less than its picture, button and
-   the room under it: on a short (wide) artwork the words above scroll. */
-.noart-foot {
-  flex: 0 0 auto;
-  min-height: 50%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  /* Room under Upload Artwork (direct instruction). */
-  padding: 8px 0 calc(18px / var(--pf-zoom, 1));
+/* Upload Artwork on the left, just under the words (direct instruction). */
+.noart-act {
+  margin-top: calc(14px / var(--pf-zoom, 1));
+  text-align: left;
 }
-/* Its words selectable for a comment, though the artwork area isn't
-   (.ig-media). */
+/* Its button's diagonal arrow, as the table's Add buttons have. */
+.noart-up {
+  display: inline-flex;
+  align-items: center;
+}
+.ig-noart:not(.has-top) .noart-up {
+  margin-top: 10px;
+}
+.noart-up svg {
+  width: 10px;
+  height: 10px;
+  margin: 0 0 0 4px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 .noart-toi {
   -webkit-user-select: text;
   user-select: text;
@@ -10100,7 +10108,7 @@ a.profproject:hover .pp-t b {
   font-size: calc(13.7px / var(--pf-zoom, 1));
   max-width: calc(290px / var(--pf-zoom, 1));
 }
-.phoneframe .ig-noart svg:not(.noart-top *) {
+.phoneframe .ig-noart svg:not(.noart-top *, .noart-up *) {
   width: 52px;
   height: 52px;
 }

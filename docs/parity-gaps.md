@@ -5035,3 +5035,14 @@ Two more fixes came with it:
 Also by direct instruction, the words start lower: 40px of screen space from the top, sized against the phone's zoom, so they clear a carousel's 1 / 4.
 
 **Verified**: In the real app (dev server, staging), on an Instagram Carousel with no artwork, before the fix the words and their surroundings measured `user-select: none` and a drag selected nothing. After it, a drag opened the comment box, drawn as the caption's is (screenshot checked). The words' top sat 20px below the 1 / 4 counter's bottom (measured). On a single Instagram Post, a drag let go past the last word opened the comment box once CaptionHighlighter was fixed. text-on-image-comments' new drag check failed without the CSS fix and passed twice with it (2 passed each run). Full suite on the local database: 324 passed, 1 skipped, 13 failed. The 13 were the bell's new-version notice and the screenshots that show its badge: the test app on port 3100 had been running since before 1.70.2 was added to lib/releases.ts. After restarting it, the ten files those tests were in passed (48).
+
+## Upload Artwork under the Text on Image (1.70.3, 2026-11-06)
+
+Direct instruction: where a post's Text on Image stands in for its artwork, the picture is gone and Upload Artwork sits on the left, 14px of screen space under the words, as a table cell's buttons sit under its content. The button is now inside the words' area (.noart-act in .noart-top), so it scrolls with them on a short artwork. The lower half it used to take (.noart-foot) has been removed. Upload Artwork also has the table's Add buttons' diagonal arrow (M7 17L17 7M9 7h8v8), at the button's own scale, wherever it shows. With no Text on Image, the placeholder still has its picture, "No artwork yet" and note, centred, as before. The placeholder's picture sizes (`.awaiting svg`, `.phoneframe .ig-noart svg`) now skip the arrow (`:not(.noart-up *)`).
+
+**Verified**: In the real app (dev server, staging), measured and screenshotted:
+- Instagram Carousel with four slides: no picture, the button's left edge matching the words' at 376px, 14px under them, with its arrow.
+- LinkedIn Single Image: the same.
+- Instagram Post with no Text on Image: the picture, "No artwork yet", the note and the button with its arrow, centred.
+
+A first try showed the button centred under the words (the placeholder's `text-align: center`), so .noart-act is set left. creative-review.png was regenerated after looking at its diff, which was only the arrow on the button. carousel, copy-only-post, text-on-image-comments, comment-cards, mobile-post and client-view passed (22). Full suite on the local database: 334 passed, 1 skipped, 3 failed. admin-overview and project-statuses passed on rerun. dashboard.png differed only in Last Activity, "Nov 5" to "Nov 6", from the date rolling over, and was regenerated.

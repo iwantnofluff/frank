@@ -17,8 +17,8 @@ export function NoArtwork({
   format: string | null;
   sizes?: FormatSizes | null;
   // What goes in the artwork's place from the top (its Text on Image,
-  // direct instruction): the picture and its button then take the lower
-  // half, without the title and note.
+  // direct instruction), with its button under it, and no picture, title
+  // or note.
   top?: ReactNode;
   // "Artwork removed", once it has gone after the post went live (phase60).
   title?: string;
@@ -28,14 +28,11 @@ export function NoArtwork({
   if (top) {
     return (
       <div className="awaiting ig-noart has-top" style={{ aspectRatio: aspectRatioCss(format, sizes) }}>
-        <div className="noart-top">{top}</div>
-        <div className="noart-foot">
-          <svg viewBox="0 0 24 24" aria-label={title}>
-            <rect x="3" y="4" width="18" height="16" rx="2" />
-            <path d="M3 15l5-5 4 4 3-3 6 6" />
-            <circle cx="9" cy="9" r="1.4" />
-          </svg>
-          {children}
+        {/* Its button on the left, just under the words, as in the
+            table; no picture (direct instruction). */}
+        <div className="noart-top">
+          {top}
+          {children && <div className="noart-act">{children}</div>}
         </div>
       </div>
     );

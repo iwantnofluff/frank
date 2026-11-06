@@ -483,11 +483,15 @@ export function CreativeReviewPage({ id }: { id: string }) {
           {isStaff && !phone && !creative.artwork_removed_at && (
             <button
               type="button"
-              className="btn primary sm"
-              style={{ marginTop: 10 }}
+              className="btn primary sm noart-up"
               onClick={() => setCreativeModalTab("upload")}
             >
               Upload Artwork
+              {/* It opens the post window: the table's diagonal arrow
+                  (direct instruction). */}
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M7 17L17 7M9 7h8v8" />
+              </svg>
             </button>
           )}
         </NoArtwork>
