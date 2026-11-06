@@ -185,6 +185,16 @@ export function CopyChat({
           <button type="button" className="btn primary sm" disabled={send.isPending} onClick={() => start("draft")}>
             Draft from the Concept
           </button>
+          {/* The copy as written, tidied (direct instruction). */}
+          <button
+            type="button"
+            className="btn sm"
+            disabled={send.isPending || !hasCopy}
+            title={hasCopy ? undefined : scope === "production" ? "Write some first" : "Write some copy first"}
+            onClick={() => start("clean")}
+          >
+            Clean My Draft
+          </button>
           <button
             type="button"
             className="btn sm"
@@ -234,7 +244,7 @@ export function CopyChat({
                     aria-pressed={c.id === chatId}
                     onClick={() => setChatId(c.id)}
                   >
-                    <b>{c.mode === "draft" ? "Drafted from the concept" : "Reviewed a draft"}</b>
+                    <b>{c.mode === "draft" ? "Drafted from the concept" : c.mode === "clean" ? "Cleaned a draft" : "Reviewed a draft"}</b>
                     <span>
                       {c.author ?? "Someone"} · {when(c.updated_at)}
                     </span>

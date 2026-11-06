@@ -154,3 +154,22 @@ test("the workspace's proofreading rules go in as house rules, in the part kept 
   assert.match(stable, /house rules[^\n]*\n- No colons/);
   assert.doesNotMatch(buildCopyChatPrompt(context, [], {}), /house rules/);
 });
+
+test("Clean My Draft: only the written fields, the draft quoted, and one tidied version asked for", () => {
+  const written = { caption: "Tasty and good", alt: "" };
+  assert.deepEqual(chatFields("clean", fields, written).map((f) => f.key), ["caption"]);
+  assert.deepEqual(chatFields("clean", fields, {}), []);
+  const opening = openingMessage("clean", written, fields);
+  assert.match(opening, /^Clean up my draft: keep what I've written, just tidy and refine it\./);
+  assert.match(opening, /Caption:\nTasty and good/);
+  assert.doesNotMatch(opening, /Alt text/);
+  const clean = buildCopyChatPrompt({ ...context, mode: "clean", fields: [fields[0]] }, [{ role: "user", body: opening }], written);
+  assert.match(clean, /clean up their draft, not rewrite it/);
+  assert.match(clean, /Don't add new ideas/);
+  assert.match(clean, /Offer exactly one draft: the cleaned version/);
+  assert.doesNotMatch(clean, /Offer up to three drafts|Offer one or two drafts/);
+  // Drafting and reviewing are told nothing about it.
+  const draft = buildCopyChatPrompt(context, [], {});
+  assert.doesNotMatch(draft, /clean up their draft|exactly one/);
+  assert.match(draft, /Offer up to three drafts, each different\./);
+});

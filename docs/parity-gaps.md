@@ -5054,3 +5054,32 @@ Direct instruction: on a carousel, picking a comment made on a slide's Text on I
 Not done: opening a comment from the bell (`?comment=`) still highlights it without moving to its slide, for any kind of comment. That path predates this change and is unchanged.
 
 **Verified**: The new text-on-image-comments test "picking a Text on Image comment moves to its slide" goes to slide 3 of three, selects "nuance" and comments. It goes back to slide 1, clicks the comment, and checks the post is on 3 / 3 with "nuance" marked. It failed without the change (stayed on 1 / 3) and passes with it. carousel, text-on-image-comments, comment-cards, video-review, creative-review and comment-mentions passed on the local database (26).
+
+## Clean My Draft in Draft with Frank (phase142, 1.71.0, 2026-11-06)
+
+Direct instruction: a third way to start a Draft with Frank conversation, between Draft from the Concept and Review My Draft. It keeps most of what's written and just cleans and refines it. Decided directly: one cleaned version, not several. On both the Content and Production tabs.
+
+- **Mode:** `clean`, kept on the conversation as `draft` and `review` are. phase142 widens `copy_chats_mode_check` to allow it. Earlier conversations list it as "Cleaned a draft".
+- **Fields:** like Review, only the fields that are filled in (chatFields), and the button is off until something is written. The route refuses an empty one ("Write a first draft to clean").
+- **The prompt:** the opening message quotes the draft ("Clean up my draft: keep what I've written, just tidy and refine it."). The prompt tells Frank to:
+  - keep the colleague's words, structure, angle and voice
+  - fix grammar, spelling and punctuation, smooth the flow, tighten loose phrasing and apply the house rules
+  - add no new ideas, hooks, lines or claims
+  - say briefly what changed
+  - offer exactly one draft, labelled "Cleaned up", in place of the usual "up to three"
+- **Cost:** one AI call per click through runAiTask, as Review is, counted against the agency's cap under Draft with Frank.
+- **Help:** a line in Help, beside the other two.
+
+**Verified**:
+- phase142 applied to staging, and the constraint read back with `clean`. The local test database was rebuilt from it.
+- Unit tests:
+  - Clean covers only the written fields and quotes the draft.
+  - The prompt asks for exactly one draft, without "up to three".
+  - Drafting and reviewing don't get the clean instructions.
+  - A first version told Frank both "up to three" and "exactly one" in one sentence. The test caught it, and clean now replaces that sentence.
+- copy-chat.spec:
+  - Clean My Draft is off with nothing written and on with a caption.
+  - The route refuses an empty clean.
+  - A seeded clean conversation lists as "Cleaned a draft", has one draft, and its Use This fills the Caption. The buttons read Draft from the Concept, Clean My Draft, Review My Draft (4 passed).
+- Checked by hand with the real model on staging, using a messy caption. Frank kept the words and casual voice and fixed spelling, grammar and capitals. It returned one "Cleaned up" version and said what it had changed (screenshot checked).
+- Full suite on the local database (rebuilt with phase142): 339 passed, none failed.

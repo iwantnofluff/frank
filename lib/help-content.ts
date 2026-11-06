@@ -517,6 +517,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         items: [
           "Draft from the Concept: Frank offers a few drafts of that tab's fields.",
           "Review My Draft: Frank says what works in what you've written and how to improve it, looking only at the fields you've filled in.",
+          "Clean My Draft: Frank tidies what you've written, keeping your words, structure and angle. It fixes grammar, spelling and flow, tightens loose phrasing and applies your proofreading rules, then offers one cleaned version of the fields you've filled in.",
           "Ask for changes in your own words: shorter, warmer, a different hook.",
           "Each part of a draft has its own Use This: the Caption, the Alt Text and the Text on Image each go into the editor on their own, and the button says Added.\n\nPress Added again to take it back out (the editor goes back to what it had), or Use This on another draft's to swap it in.\n\nOpen Draft with Frank again later and what you used still says Added; change any of it in the editor and it doesn't. Nothing is saved until you save it.",
         ],

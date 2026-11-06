@@ -19,6 +19,9 @@ export interface CopyChatContext {
   // Knowledge files sent alongside (PDFs, images), by title.
   fileTitles: string[];
   fields: CopyChatField[];
+  // How the conversation began (Clean My Draft keeps to one tidied
+  // version); drafting when not given.
+  mode?: CopyChatMode;
   // Which tab's Draft with Frank (phase119): Content's drafts the copy,
   // Production's the words for making the creative. Copy when not given.
   scope?: CopyChatScope;
@@ -105,7 +108,8 @@ export interface CopyDraft {
   fields: Record<string, string>;
 }
 
-export type CopyChatMode = "draft" | "review";
+// Clean My Draft (direct instruction): the copy as written, tidied.
+export type CopyChatMode = "draft" | "review" | "clean";
 export type CopyChatScope = "copy" | "production";
 
 // A video's Thumbnail Text on Image (phase118), on Production's Draft with
@@ -150,10 +154,10 @@ export function applySlideDraft(slideText: string[], fields: Record<string, stri
 // What the person asked when they started, in their own words, so the
 // conversation reads naturally afterwards.
 // The fields a conversation covers (direct instruction): reviewing a draft
-// reads, reviews and suggests only what's been written; drafting covers
-// every field.
+// reads, reviews and suggests only what's been written, as does cleaning
+// it; drafting covers every field.
 export function chatFields(mode: CopyChatMode, fields: CopyChatField[], currentFields: Record<string, string>): CopyChatField[] {
-  return mode === "review" ? fields.filter((f) => currentFields[f.key]?.trim()) : fields;
+  return mode === "draft" ? fields : fields.filter((f) => currentFields[f.key]?.trim());
 }
 
 export function openingMessage(
@@ -174,6 +178,7 @@ export function openingMessage(
     .filter((f) => currentFields[f.key]?.trim())
     .map((f) => `${f.label}:\n${currentFields[f.key].trim()}`)
     .join("\n\n");
+  if (mode === "clean") return `Clean up my draft: keep what I've written, just tidy and refine it.\n\n${draft}`;
   return `Here's my first draft. What works, what doesn't, and how would you improve it?\n\n${draft}`;
 }
 
@@ -237,9 +242,16 @@ export function buildCopyChatPromptParts(
     context.formatLabel.includes(" + ")
       ? `This post goes out as ${context.formatLabel}, and they share one set of fields: write one version of each field that works for all of them. Never split a field by platform ("IG: … LinkedIn: …").`
       : null,
+    context.mode === "clean"
+      ? "Your colleague has asked you to clean up their draft, not rewrite it. Keep their words, structure, angle and voice: most of what they wrote should stand. Fix grammar, spelling and punctuation, smooth the flow, tighten loose or repeated phrasing, and bring it in line with the house rules. Don't add new ideas, hooks, lines or claims, don't change the angle, and don't change what already works. In your reply, say briefly what you changed."
+      : null,
     "Write your reply as plain text: no markdown, no asterisks, no headings. Keep it to a few sentences; the drafts carry the copy.",
     `When you propose copy, end your reply with one JSON block, fenced as \`\`\`json, shaped {"drafts":[{"label":"a few words on the angle","fields":{...}}]}, where fields uses only these keys: ${fieldList}. ${
-      context.fields.length > 4 ? "Offer one or two drafts, each different." : "Offer up to three drafts, each different."
+      context.mode === "clean"
+        ? 'Offer exactly one draft: the cleaned version of every field given, labelled "Cleaned up".'
+        : context.fields.length > 4
+          ? "Offer one or two drafts, each different."
+          : "Offer up to three drafts, each different."
     } When you're only commenting or answering, leave the JSON out. Never mention the JSON in your prose.`,
   ];
   const turn = [

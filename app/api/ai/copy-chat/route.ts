@@ -109,16 +109,16 @@ export async function POST(request: Request) {
     if (!message) return fail("Write a message", 400);
     if (message.length > 4000) return fail("Keep a message under 4,000 characters", 400);
   } else {
-    if (body.mode !== "draft" && body.mode !== "review") return fail("Choose to draft or review", 400);
+    if (body.mode !== "draft" && body.mode !== "review" && body.mode !== "clean") return fail("Choose to draft, review or clean", 400);
     mode = body.mode;
     message = openingMessage(body.mode, currentFields, fields, scope);
   }
   // Reviewing a draft covers only what's been written (direct
   // instruction): Frank reads, reviews and suggests the filled fields, not
   // the empty ones, for the whole conversation, as filled when each message
-  // is sent. Drafting covers every field.
+  // is sent; so does cleaning it. Drafting covers every field.
   const covered = chatFields(mode, fields, currentFields);
-  if (mode === "review" && !covered.length) return fail("Write a first draft to review", 400);
+  if (mode !== "draft" && !covered.length) return fail(`Write a first draft to ${mode}`, 400);
 
   // The context. The client's strategy is the month the post goes live in,
   // or this month without a live date (decided directly, phase78).
@@ -207,6 +207,7 @@ export async function POST(request: Request) {
       writingRules: writingRules(resolveRules((ruleRows.data ?? []) as ProofreadRuleRow[])),
       fields: covered,
       scope,
+      mode,
     },
     [...history, { role: "user", body: message }],
     currentFields,

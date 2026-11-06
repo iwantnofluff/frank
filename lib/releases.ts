@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.71.0",
+    date: "2026-11-06",
+    title: "Clean My Draft",
+    changes: [
+      "Draft with Frank has a new Clean My Draft button. Frank keeps what you've written (your words, structure and angle) and just tidies it: grammar, spelling, flow, loose phrasing and your proofreading rules. It offers one cleaned version of the fields you've filled in, with a line on what it changed.",
+    ],
+  },
+  {
     version: "1.70.4",
     date: "2026-11-06",
     title: "Text on Image comments go to their slide",

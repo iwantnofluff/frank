@@ -43,8 +43,9 @@ test("Draft with Frank reopens a conversation, and each field's Use This adds, r
   await post.getByRole("button", { name: "Draft with Frank" }).click();
 
   const chat = page.getByRole("dialog", { name: "Draft with Frank" });
-  // Nothing written yet, so there's nothing to review.
+  // Nothing written yet, so there's nothing to review or clean.
   await expect(chat.getByRole("button", { name: "Review My Draft" })).toBeDisabled();
+  await expect(chat.getByRole("button", { name: "Clean My Draft" })).toBeDisabled();
   await chat.getByRole("button", { name: /Drafted from the concept/ }).click();
   await expect(chat.locator(".cchat-msg.user")).toContainText("Draft some copy for this post from the concept.");
   await expect(chat.locator(".cchat-draft").first()).toContainText("Dessert, but make it daily.");
@@ -77,9 +78,10 @@ test("Draft with Frank reopens a conversation, and each field's Use This adds, r
   await expect(caption).toHaveValue("Dessert, but make it daily.");
   await expect(alt).toHaveValue("A spoon in a bowl of kheer.");
   expect((await admin.from("copy_versions").select("id").eq("creative_id", frank.creativeId)).data).toEqual([]);
-  // With copy in, a review can be asked for.
+  // With copy in, a review or a clean-up can be asked for.
   await post.getByRole("button", { name: "Draft with Frank" }).click();
   await expect(chat.getByRole("button", { name: "Review My Draft" })).toBeEnabled();
+  await expect(chat.getByRole("button", { name: "Clean My Draft" })).toBeEnabled();
   // Opened again, what's in the editor is still Added (direct instruction).
   await chat.getByRole("button", { name: /Drafted from the concept/ }).click();
   await expect(playful.getByRole("button", { name: "Added: Caption" })).toBeVisible();
@@ -109,6 +111,11 @@ test("the route refuses a review with no draft and anyone but staff; Clients can
   });
   expect(empty.status()).toBe(400);
   expect((await empty.json()).error).toBe("Write a first draft to review");
+  const emptyClean = await page.request.post(`${APP_URL}/api/ai/copy-chat`, {
+    data: { creativeId: frank.creativeId, mode: "clean", currentFields: {} },
+  });
+  expect(emptyClean.status()).toBe(400);
+  expect((await emptyClean.json()).error).toBe("Write a first draft to clean");
 
   const ctx = await browser.newContext();
   try {
@@ -167,4 +174,36 @@ test("Production has its own Draft with Frank: its own conversations, drafting t
   await expect(post.locator("#nbThumbText")).toHaveValue("No rushing this");
   await expect(post.locator("#nbVo")).toHaveValue("Pour it slow.");
   await expect(post.locator('[data-focus="imageOnText"] textarea').first()).toHaveValue("SLOW IS THE METHOD");
+});
+
+// Clean My Draft (direct instruction): a conversation begun by cleaning a
+// draft is listed as one, and its one tidied version goes in like any
+// other. Seeded, as every conversation here is.
+test("a Clean My Draft conversation reopens as Cleaned a draft, its version used like any other", async ({ page, frank }) => {
+  test.setTimeout(90_000);
+  const staffId = (await admin.from("users").select("id").eq("email", frank.staffEmail).single()).data!.id;
+  const { data: chat, error } = await admin
+    .from("copy_chats")
+    .insert({ creative_id: frank.creativeId, mode: "clean", created_by: staffId })
+    .select("id")
+    .single();
+  if (error) throw new Error(`Seeding the conversation failed: ${error.message}`);
+  await admin.from("copy_chat_messages").insert([
+    { chat_id: chat!.id, role: "user", body: "Clean up my draft: keep what I've written, just tidy and refine it.\n\nCaption:\ndessert but its daily", drafts: [], created_by: staffId },
+    { chat_id: chat!.id, role: "assistant", body: "Fixed the capital and the apostrophe.", created_by: null, drafts: [{ label: "Cleaned up", fields: { caption: "Dessert, but it's daily." } }] },
+  ]);
+  await frank.loginAsStaff(page);
+  await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
+  await page.getByRole("button", { name: "Write Copy" }).click();
+  const post = page.locator(".scrim .modal").first();
+  await post.getByRole("button", { name: "Draft with Frank" }).click();
+  const dlg = page.getByRole("dialog", { name: "Draft with Frank" });
+  await expect(dlg.locator(".cchat-side .btn")).toHaveText(["Draft from the Concept", "Clean My Draft", "Review My Draft"]);
+  await dlg.getByRole("button", { name: /Cleaned a draft/ }).click();
+  await expect(dlg.locator(".cchat-msg.user")).toContainText("Clean up my draft");
+  await expect(dlg.locator(".cchat-draft")).toHaveCount(1);
+  await dlg.locator(".cchat-draft").getByRole("button", { name: "Use This for Caption" }).click();
+  await page.keyboard.press("Escape");
+  const caption = post.locator(".field", { has: page.locator("label", { hasText: /^Caption$/ }) }).locator("textarea");
+  await expect(caption).toHaveValue("Dessert, but it's daily.");
 });
