@@ -3681,7 +3681,7 @@ select.sort:hover {
   padding: 34px 22px;
   text-align: center;
 }
-.awaiting svg {
+.awaiting svg:not(.noart-top *) {
   width: 26px;
   height: 26px;
   stroke: var(--muted);
@@ -3689,11 +3689,13 @@ select.sort:hover {
   stroke-width: 1.5;
   margin-bottom: 3px;
 }
-.awaiting b {
+.awaiting b:not(.noart-top *) {
   font-size: 14.7px;
   font-weight: 600;
 }
-.awaiting span {
+/* Not inside the Text on Image (.noart-top), whose comment box keeps
+   its own look. */
+.awaiting span:not(.noart-top *) {
   font-size: 13.2px;
   color: var(--muted);
   max-width: 290px;
@@ -4590,7 +4592,8 @@ select.sort:hover {
   flex: 1 1 50%;
   min-height: 0;
   overflow-y: auto;
-  padding: 18px 20px 8px;
+  /* Clear of a carousel's 1 / 4 in the corner (direct instruction). */
+  padding: calc(40px / var(--pf-zoom, 1)) 20px 8px;
 }
 /* Commenting on its words: the top grows to show the comment box. */
 .noart-top:has(.hl-composer) {
@@ -4610,19 +4613,16 @@ select.sort:hover {
   /* Room under Upload Artwork (direct instruction). */
   padding: 8px 0 calc(18px / var(--pf-zoom, 1));
 }
+/* Its words selectable for a comment, though the artwork area isn't
+   (.ig-media). */
 .noart-toi {
+  -webkit-user-select: text;
+  user-select: text;
   text-align: left;
   white-space: pre-wrap;
   font-size: 14.2px;
   line-height: 1.45;
   color: var(--ink);
-}
-/* Its words in the text's own colour and width, not the placeholder
-   note's (.awaiting span). */
-.noart-toi span {
-  color: inherit;
-  font-size: inherit;
-  max-width: none;
 }
 /* In the phone or iPad, read at 13.7px whatever its scale (direct
    instruction: the caption at the same size). */
@@ -10093,14 +10093,14 @@ a.profproject:hover .pp-t b {
 /* "No artwork yet" in the phone reads at the comments panel's empty-state
    size whatever the phone's zoom (direct instruction): 15.2px and 13.7px
    as seen. Its picture twice its size, in the phone's own scale. */
-.phoneframe .ig-noart b {
+.phoneframe .ig-noart b:not(.noart-top *) {
   font-size: calc(15.2px / var(--pf-zoom, 1));
 }
-.phoneframe .ig-noart span {
+.phoneframe .ig-noart span:not(.noart-top *) {
   font-size: calc(13.7px / var(--pf-zoom, 1));
   max-width: calc(290px / var(--pf-zoom, 1));
 }
-.phoneframe .ig-noart svg {
+.phoneframe .ig-noart svg:not(.noart-top *) {
   width: 52px;
   height: 52px;
 }

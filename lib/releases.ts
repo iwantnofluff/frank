@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.70.2",
+    date: "2026-11-06",
+    title: "Select Text on Image to comment",
+    changes: [
+      "Until a post has artwork, its Text on Image can be selected with the mouse to comment on, as a caption can. Its words also start a little lower, clear of a carousel's 1 / 4.",
+      "Selecting words to comment on now works even if you let go past the last word, on captions as well as Text on Image.",
+    ],
+  },
+  {
     version: "1.70.1",
     date: "2026-11-05",
     title: "Slides hidden by default",

@@ -5023,3 +5023,15 @@ Direct instruction: a Content Planner's table hides Slides by default, as it doe
 **A cell's buttons last (direct instruction, same release).** In an opened table row, a cell's Copy and Edit buttons came before its Read less link. They now come after it, 10px below. ClampText, which every clamped cell goes through, draws Read more or Read less first and then the buttons. A cell whose text fits shows its buttons straight under the text, as before.
 
 **Verified**: In the real app (dev server, staging), a planner row's Text on Image cell with three long slides was opened. Read less came first, then Edit, 10px below (measured), and a screenshot was checked. project-calendar and continuous-calendar passed on the local database (30).
+
+## Text on Image selectable with the mouse (1.70.2, 2026-11-05)
+
+Direct instruction: Text on Image, shown where the artwork goes until there is some (1.70.0), couldn't be selected with the mouse, so no comment box opened. The artwork area (.ig-media) has `user-select: none`, which the words inherited. They now have `user-select: text` (.noart-toi). The 1.70.0 test missed this because it set the selection in code rather than dragging. It now drags with the mouse as well.
+
+Two more fixes came with it:
+- The placeholder's own styles (`.awaiting svg/b/span` and `.phoneframe .ig-noart svg/b/span`) reached into the comment box: a 52px lock icon, muted text and squashed buttons. They now skip anything inside the Text on Image (`:not(.noart-top *)`). The 1.70.0 `.noart-toi span` override, which did the same job for the words, was removed.
+- CaptionHighlighter only opened the comment box if the mouse was let go over the words. A drag that ran past the last word, which is common, did nothing. A drag that starts on the words now counts wherever it's let go, and only the part of the selection inside the text is used. This applies to captions too.
+
+Also by direct instruction, the words start lower: 40px of screen space from the top, sized against the phone's zoom, so they clear a carousel's 1 / 4.
+
+**Verified**: In the real app (dev server, staging), on an Instagram Carousel with no artwork, before the fix the words and their surroundings measured `user-select: none` and a drag selected nothing. After it, a drag opened the comment box, drawn as the caption's is (screenshot checked). The words' top sat 20px below the 1 / 4 counter's bottom (measured). On a single Instagram Post, a drag let go past the last word opened the comment box once CaptionHighlighter was fixed. text-on-image-comments' new drag check failed without the CSS fix and passed twice with it (2 passed each run). Full suite on the local database: 324 passed, 1 skipped, 13 failed. The 13 were the bell's new-version notice and the screenshots that show its badge: the test app on port 3100 had been running since before 1.70.2 was added to lib/releases.ts. After restarting it, the ten files those tests were in passed (48).

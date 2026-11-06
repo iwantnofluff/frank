@@ -40,6 +40,19 @@ test("Text on Image shows where the artwork goes, and its words take comments", 
   await expect(box).toContainText("Big sale, 50% off this weekend", { timeout: 20_000 });
   await expect(page.locator(".ig-noart").getByRole("button", { name: "Upload Artwork" })).toBeVisible();
 
+  // A person's drag selects its words, though the artwork area around them
+  // can't be selected (.ig-media), and opens the comment box, even let go
+  // past the last word.
+  await expect(async () => {
+    const b = (await box.boundingBox())!;
+    await page.mouse.move(b.x + 1, b.y + b.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(b.x + b.width + 6, b.y + b.height / 2, { steps: 8 });
+    await page.mouse.up();
+    await expect(page.locator(".hl-composer")).toBeVisible({ timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
+  await page.locator(".hl-composer").getByRole("button", { name: "Cancel" }).click();
+
   // Again until its comment box opens: a selection made before the page
   // is ready to take it does nothing.
   await expect(async () => {

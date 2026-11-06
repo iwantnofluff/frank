@@ -37,13 +37,18 @@ export function CaptionHighlighter({
     if (!sel || sel.isCollapsed || !spanRef.current || sel.rangeCount === 0) {
       return;
     }
-    const range = sel.getRangeAt(0);
-    if (!spanRef.current.contains(range.commonAncestorContainer)) return;
+    // Only the part of the selection that's in the text: a drag often
+    // runs on past its last word.
+    const span = spanRef.current;
+    const range = sel.getRangeAt(0).cloneRange();
+    if (!range.intersectsNode(span)) return;
+    if (!span.contains(range.startContainer)) range.setStart(span, 0);
+    if (!span.contains(range.endContainer)) range.setEnd(span, span.childNodes.length);
 
     // Character offset within the caption's own text, not the page — a
     // plain DOM measurement, so it needs no viewport/resize handling at all.
     const pre = document.createRange();
-    pre.selectNodeContents(spanRef.current);
+    pre.selectNodeContents(span);
     pre.setEnd(range.startContainer, range.startOffset);
     const start = pre.toString().length;
     const quote = range.toString();
@@ -53,11 +58,17 @@ export function CaptionHighlighter({
     sel.removeAllRanges();
   }
 
+  // A drag that starts on the words counts wherever it's let go, on them
+  // or past them.
+  function handleMouseDown() {
+    document.addEventListener("mouseup", () => setTimeout(handleMouseUp), { once: true });
+  }
+
   const segments = buildSegments(text, highlights);
 
   return (
     <span>
-      <span ref={spanRef} className="hl-target" onMouseUp={handleMouseUp}>
+      <span ref={spanRef} className="hl-target" onMouseDown={handleMouseDown} onMouseUp={handleMouseUp}>
         {segments.map((seg, i) =>
           seg.highlight ? (
             <mark
