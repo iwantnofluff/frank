@@ -242,10 +242,21 @@ export function buildCopyChatPromptParts(
     context.formatLabel.includes(" + ")
       ? `This post goes out as ${context.formatLabel}, and they share one set of fields: write one version of each field that works for all of them. Never split a field by platform ("IG: … LinkedIn: …").`
       : null,
+    // Clean My Draft reads like an editor's notes (direct instruction, from
+    // an example the team preferred): a verdict, then the lines that trip
+    // the reader, each quoted with why and a fix, then the draft with those
+    // fixes in.
     context.mode === "clean"
-      ? "Your colleague has asked you to clean up their draft, not rewrite it. Keep their words, structure, angle and voice: most of what they wrote should stand. Fix grammar, spelling and punctuation, smooth the flow, tighten loose or repeated phrasing, and bring it in line with the house rules. Don't add new ideas, hooks, lines or claims, don't change the angle, and don't change what already works. In your reply, say briefly what you changed."
+      ? [
+          "Your colleague has asked you to clean up their draft, not rewrite it. Edit it the way a sharp, friendly editor would.",
+          "Start with a verdict of one or two sentences: does it work, what's right about it (its tone, its best line, quoted), and that a few spots trip the reader.",
+          "Read every line closely, as the reader will, for logic that doesn't hold, a line more formal or more storybook than the rest, clichés, a list or rhythm that breaks its pattern, and a word that says something the writer didn't mean. Then a numbered list of those spots, most important first, a handful at most. For each: a first line of just its number and the words in quotation marks, like 1. \"So began the hunt.\"; then, on the next line, plainly and briefly, why they trip the reader (the logic is off, it's more formal than the rest, it's a cliché, it breaks a pattern, a word says the wrong thing); then the fix, in their voice, or that it should be cut. When there's more than one field, say which field each note is on; with one, never name it. Where a line they might doubt works, say so and to keep it. Only real problems: never a note for the sake of one.",
+          "Then the cleaned version: their draft with those fixes in, and grammar, spelling, punctuation and the house rules put right. Change nothing else. Keep their words, structure, angle and voice; add no new ideas, hooks, lines or claims.",
+        ].join(" ")
       : null,
-    "Write your reply as plain text: no markdown, no asterisks, no headings. Keep it to a few sentences; the drafts carry the copy.",
+    context.mode === "clean"
+      ? "Write your reply as plain text: no markdown, no asterisks, no headings. The verdict, then the numbered notes, each on its own lines; the cleaned version goes in the drafts, not the reply."
+      : "Write your reply as plain text: no markdown, no asterisks, no headings. Keep it to a few sentences; the drafts carry the copy.",
     `When you propose copy, end your reply with one JSON block, fenced as \`\`\`json, shaped {"drafts":[{"label":"a few words on the angle","fields":{...}}]}, where fields uses only these keys: ${fieldList}. ${
       context.mode === "clean"
         ? 'Offer exactly one draft: the cleaned version of every field given, labelled "Cleaned up".'

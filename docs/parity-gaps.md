@@ -5083,3 +5083,19 @@ Direct instruction: a third way to start a Draft with Frank conversation, betwee
   - A seeded clean conversation lists as "Cleaned a draft", has one draft, and its Use This fills the Caption. The buttons read Draft from the Concept, Clean My Draft, Review My Draft (4 passed).
 - Checked by hand with the real model on staging, using a messy caption. Frank kept the words and casual voice and fixed spelling, grammar and capitals. It returned one "Cleaned up" version and said what it had changed (screenshot checked).
 - Full suite on the local database (rebuilt with phase142): 339 passed, none failed.
+
+## Clean My Draft reads like an editor's notes (1.71.1, 2026-11-06)
+
+Direct instruction, from an example reply the team preferred. Clean My Draft used to tidy quietly and list what it had changed. Now its reply works like an editor's notes:
+- A verdict of one or two sentences, quoting the best line.
+- A numbered list of the spots that trip the reader, most important first and only real ones. Each is `1. "the words"`, then why on the next line (logic, a line more formal than the rest, a cliché, a broken pattern, a wrong word), then a fix in the writer's voice or "cut it".
+- A word on any line worth keeping.
+
+Decided directly: the one cleaned version with those fixes in still follows as a draft with Use This. The verdict and notes replace the usual "a few sentences" reply for this mode only. A note names its field only when there's more than one.
+
+**Verified**: Unit tests check the clean prompt asks for the verdict, the numbered quoted notes with why, the keep note and the version in the drafts, and that Draft and Review don't. I ran it three times with the real model on staging, on a draft like the team's example (the house move post):
+- The first run went lightly and labelled every note "(Caption)". The instructions then asked Frank to read every line closely and not to name a lone field.
+- The second caught "So began the hunt", "back home" and "full throttle for", but put the number on its own line without quote marks. The form was then given by example.
+- The third matched the example's shape: a verdict, `1. "(It wasn't funny.)"` with why and a fix, three notes, a keep note, and one "Cleaned up" version.
+
+Which lines Frank flags varies from run to run. copy-chat.spec passed (4).

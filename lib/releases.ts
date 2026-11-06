@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.71.1",
+    date: "2026-11-06",
+    title: "Clean My Draft reads like an editor's notes",
+    changes: [
+      "Clean My Draft now starts with a short verdict, then numbers the spots that trip the reader: each line quoted, why it doesn't work and a fix in your voice, and which lines to keep. The cleaned version with those fixes still follows, with Use This.",
+    ],
+  },
+  {
     version: "1.71.0",
     date: "2026-11-06",
     title: "Clean My Draft",

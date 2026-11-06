@@ -165,11 +165,20 @@ test("Clean My Draft: only the written fields, the draft quoted, and one tidied 
   assert.doesNotMatch(opening, /Alt text/);
   const clean = buildCopyChatPrompt({ ...context, mode: "clean", fields: [fields[0]] }, [{ role: "user", body: opening }], written);
   assert.match(clean, /clean up their draft, not rewrite it/);
-  assert.match(clean, /Don't add new ideas/);
+  // An editor's notes: a verdict, the spots quoted with why and a fix,
+  // then the draft with them in (direct instruction).
+  assert.match(clean, /Start with a verdict/);
+  assert.match(clean, /numbered list of those spots/);
+  assert.match(clean, /why they trip the reader/);
+  assert.match(clean, /say so and to keep it/);
+  assert.match(clean, /add no new ideas/);
+  assert.match(clean, /the cleaned version goes in the drafts/);
+  assert.doesNotMatch(clean, /Keep it to a few sentences/);
   assert.match(clean, /Offer exactly one draft: the cleaned version/);
   assert.doesNotMatch(clean, /Offer up to three drafts|Offer one or two drafts/);
   // Drafting and reviewing are told nothing about it.
   const draft = buildCopyChatPrompt(context, [], {});
-  assert.doesNotMatch(draft, /clean up their draft|exactly one/);
+  assert.doesNotMatch(draft, /clean up their draft|exactly one|Start with a verdict/);
+  assert.match(draft, /Keep it to a few sentences/);
   assert.match(draft, /Offer up to three drafts, each different\./);
 });
