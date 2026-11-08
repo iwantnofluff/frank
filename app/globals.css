@@ -6,6 +6,9 @@
    5 Oct 2026): px sizes here, inline fontSize in components, and --d-fs. */
 :root {
   --canvas: #edf1f6;
+  /* Where a post's artwork goes before there is any (direct instruction:
+     a shade apart from the page, which it merged with on a phone). */
+  --art-empty: #e2e7ee;
   --surface: #ffffff;
   --rail: #003c61;
   --rail-2: #00547f;
@@ -2362,7 +2365,7 @@ body.lightrail .search input::placeholder {
 }
 /* No artwork yet: the review page's own visual, on its light ground. */
 .pp-media .ig-noart {
-  background: var(--canvas);
+  background: var(--art-empty);
 }
 .pp-art {
   position: relative;
@@ -3913,7 +3916,7 @@ select.sort:hover {
 .ig-noart {
   width: 100%;
   justify-content: center;
-  background: var(--canvas);
+  background: var(--art-empty);
 }
 .ig-noasset {
   aspect-ratio: 1 / 1;

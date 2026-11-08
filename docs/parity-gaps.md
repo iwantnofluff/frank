@@ -5158,3 +5158,9 @@ Direct instruction: a post whose status is Cancel shouldn't appear. Decided dire
   - Settings screenshot checked.
 - project-calendar.spec's list of filter options now ends with Show Hidden.
 - Full suite on the local database: 338 passed, 2 failed (admin-overview and project-calendar's option list, now updated). Rerun with hidden-statuses and project-statuses: 24 passed, 1 failed (project-statuses' table-pill test, which picks Hold, not Cancel). It passed on its own and has failed this way before.
+
+## Empty artwork a shade apart (1.72.1, 2026-11-08)
+
+Direct instruction: on a phone, where a post's artwork goes before there is any (its Text on Image, or "No artwork yet") had the page's own colour (`--canvas`, #edf1f6) and merged with it. It now has its own token, `--art-empty` (#e2e7ee), a step deeper and still cool, on `.ig-noart` and `.pp-media .ig-noart`. The phone frame, the iPad and the review link use the same placeholder, so they changed too.
+
+**Verified**: In the real app (dev server, staging), the placeholder measured rgb(226, 231, 238) on a phone (390 × 844) and on a computer. Screenshots of both, and of the review link, checked: the empty space now reads apart from the page. Full suite on the local database: 338 passed, 2 failed. admin-overview (a leftover "E2E Test Agency" row) passed on rerun. dashboard.png differed only in Last Activity ("Nov 6" to "Nov 8", the date rolling over) and was regenerated. creative-review.png passed within its tolerance.

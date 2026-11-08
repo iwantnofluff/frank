@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.72.1",
+    date: "2026-11-08",
+    title: "Empty artwork stands out",
+    changes: [
+      "Where a post's artwork goes before there is any, the space is now a shade deeper than the page, so on a phone it no longer merges with the background.",
+    ],
+  },
+  {
     version: "1.72.0",
     date: "2026-11-06",
     title: "Cancelled posts are hidden",
