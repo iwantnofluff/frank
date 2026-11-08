@@ -7066,6 +7066,45 @@ textarea.cxin {
   color: var(--muted);
   white-space: nowrap;
 }
+/* A post's comment count on a phone (direct instruction): the speech
+   bubble and the number, at the right of the post's header, going to the
+   comment box. */
+.mcmt-jump {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: var(--r);
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13.2px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.mcmt-jump svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+}
+.m-aside {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+/* On the post's page, top right of its header, level with the back link. */
+.mpost-h {
+  position: relative;
+}
+.mpost-cmts {
+  position: absolute;
+  top: -4px;
+  right: 0;
+}
 .m-step {
   display: flex;
   align-items: center;

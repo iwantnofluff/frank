@@ -5164,3 +5164,17 @@ Direct instruction: a post whose status is Cancel shouldn't appear. Decided dire
 Direct instruction: on a phone, where a post's artwork goes before there is any (its Text on Image, or "No artwork yet") had the page's own colour (`--canvas`, #edf1f6) and merged with it. It now has its own token, `--art-empty` (#e2e7ee), a step deeper and still cool, on `.ig-noart` and `.pp-media .ig-noart`. The phone frame, the iPad and the review link use the same placeholder, so they changed too.
 
 **Verified**: In the real app (dev server, staging), the placeholder measured rgb(226, 231, 238) on a phone (390 × 844) and on a computer. Screenshots of both, and of the review link, checked: the empty space now reads apart from the page. Full suite on the local database: 338 passed, 2 failed. admin-overview (a leftover "E2E Test Agency" row) passed on rerun. dashboard.png differed only in Last Activity ("Nov 6" to "Nov 8", the date rolling over) and was regenerated. creative-review.png passed within its tolerance.
+
+## Comment count in a post's header on a phone (1.72.2, 2026-11-08)
+
+Direct instruction: on a phone, the post's page in Frank and the review link show a small speech bubble with the post's comment count at the right of the post's header. Tapping it goes straight to the comment box, scrolled into view and focused, ready to type. CommentCountJump (components/review/mobile-gestures.tsx) sits beside the Instagram-style comment icon under the post (CommentJump).
+- **Post page:** top right of MobilePost's header, level with the back link. It counts every comment the person can read, replies included, and is left out where the client's comments are switched off.
+- **Review link:** on the post's header row, before "1 / 1" and its arrows, in the post view (not the feed). It counts the post's comments as the link shows them.
+- **No comment box** (a visitor the link has no name for): it scrolls to the comments instead.
+
+**Verified**: In the real app (dev server, staging) at 390 × 844, with three comments:
+- On the post page the count read 3. A tap focused the comment box at 717–775px of the 844px screen.
+- On the review link, as a visitor with a client contact to comment as, the count read 3 and a tap focused the box at 633–696px.
+- As a visitor with no name to comment as, it scrolled to the comments. Screenshots checked.
+
+mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.

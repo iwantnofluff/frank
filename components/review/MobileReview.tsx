@@ -7,7 +7,7 @@ import { ICONS } from "@/components/creative-review/ReviewNav";
 import { ReviewBrandHeader } from "./ReviewBrandHeader";
 import { useReviewViewer } from "@/hooks/use-review-viewer";
 import { CommentWhen } from "@/components/creative-review/CommentWhen";
-import { CommentJump, useSwipe } from "./mobile-gestures";
+import { CommentCountJump, CommentJump, useSwipe } from "./mobile-gestures";
 import { copySummaryParts, postFormats } from "@/lib/formats";
 import { FormatSwitch } from "@/components/creative-review/FormatSwitch";
 import { PlatformPost } from "@/components/creative-review/PlatformPost";
@@ -110,7 +110,10 @@ export function MobileReview({
             }
             aside={
               // Which post of how many, with the arrows beside it (direct
-              // instruction: in place of the bar under the switch).
+              // instruction: in place of the bar under the switch); the
+              // post's comment count before them, to its comment box.
+              <div className="m-aside">
+              {active && controller.view === "post" && <CommentCountJump count={active.comments.length} scope="review" />}
               <div className="m-step">
                 {creatives.length > 1 && (
                   <button
@@ -141,6 +144,7 @@ export function MobileReview({
                     </svg>
                   </button>
                 )}
+              </div>
               </div>
             }
           />

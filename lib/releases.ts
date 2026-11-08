@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.72.2",
+    date: "2026-11-08",
+    title: "Comment count on a phone",
+    changes: [
+      "On a phone, a post's page and the review link show its comment count at the right of the post's header. Tap it to go straight to the comment box, ready to type.",
+    ],
+  },
+  {
     version: "1.72.1",
     date: "2026-11-08",
     title: "Empty artwork stands out",

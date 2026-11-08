@@ -47,3 +47,31 @@ export function CommentJump({ variant }: { variant: "mobile" | "desktop" }) {
     </button>
   );
 }
+
+// A post's comment count at the right of its header on a phone (direct
+// instruction): the speech bubble and how many, going straight to the
+// comment box, ready to type in. On the post's own page in Frank ("app")
+// and on a review link ("review"). Where there's no box (a review link's
+// visitor who can't comment), it goes to the comments instead.
+export function CommentCountJump({ count, scope }: { count: number; scope: "app" | "review" }) {
+  return (
+    <button
+      type="button"
+      className="mcmt-jump"
+      aria-label={`${count} ${count === 1 ? "comment" : "comments"}: go to the comment box`}
+      onClick={() => {
+        const box = document.querySelector<HTMLTextAreaElement>(
+          scope === "app" ? '.mpost textarea[placeholder="Add a comment…"]' : ".m-bar textarea",
+        );
+        const near = box ?? document.querySelector(scope === "app" ? ".mpost .cmt" : ".m-cmt, .m-bar");
+        near?.scrollIntoView({ behavior: "smooth", block: "center" });
+        box?.focus({ preventScroll: true });
+      }}
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.9 8.9 0 0 1-3.8-.9L3 20.5l1.5-4.4A8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4z" />
+      </svg>
+      <span>{count}</span>
+    </button>
+  );
+}

@@ -33,6 +33,7 @@ export function MobilePost({
   copy,
   assetLink,
   comments,
+  commentJump,
 }: {
   projectId: string;
   postId: string;
@@ -58,10 +59,13 @@ export function MobilePost({
   // The team's only; null for a client.
   assetLink: string | null;
   comments: ReactNode;
+  // The comment count, at the header's right (direct instruction).
+  commentJump?: ReactNode;
 }) {
   return (
     <div className="mpost">
       <div className="mpost-h">
+        {commentJump && <div className="mpost-cmts">{commentJump}</div>}
         <Link className="mpost-back" href={`/projects/${projectId}?post=${postId}`}>
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M15 18l-6-6 6-6" />

@@ -124,3 +124,34 @@ test("on a phone a carousel scrolls under the post's header, and a comment keeps
   const lineHeight = await words.evaluate((el) => parseFloat(getComputedStyle(el).lineHeight));
   expect((await words.boundingBox())!.height).toBeGreaterThan(lineHeight * 3.5);
 });
+
+// The comment count at the right of the post's header (direct
+// instruction), on the post's page and on a review link: tapping it goes
+// straight to the comment box, ready to type in.
+test("on a phone the comment count in the header goes to the comment box, on the post and the review link", async ({ page, browser, frank }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const body of ["First thought", "Second thought", "Third thought"]) await frank.insertCommentAsStaff(body, "public");
+  const landsInBox = async (p: typeof page) => {
+    const count = p.locator(".mcmt-jump");
+    await expect(count).toHaveText("3", { timeout: 20_000 });
+    await expect(count).toHaveAttribute("aria-label", "3 comments: go to the comment box");
+    await count.click();
+    await expect(p.getByPlaceholder("Add a comment…")).toBeFocused();
+    await expect(p.getByPlaceholder("Add a comment…")).toBeInViewport();
+  };
+  await frank.loginAsStaff(page);
+  await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
+  await landsInBox(page);
+
+  await frank.createClientContact("Casey Client", "casey@example.com");
+  const token = await frank.createSharedLink();
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  try {
+    const guest = await ctx.newPage();
+    await guest.goto(`${APP_URL}/review/${token}`);
+    await landsInBox(guest);
+  } finally {
+    await ctx.close();
+  }
+});

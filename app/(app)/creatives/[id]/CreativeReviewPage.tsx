@@ -56,6 +56,7 @@ import { PillMenu } from "@/components/project/PillMenu";
 import { useAssetLink } from "@/hooks/use-asset-links";
 import { usePhoneScreen } from "@/hooks/use-phone-screen";
 import { MobilePost } from "@/components/creative-review/MobilePost";
+import { CommentCountJump } from "@/components/review/mobile-gestures";
 import { PlatformPost } from "@/components/creative-review/PlatformPost";
 import { postTemplate, tabletOrientation } from "@/lib/post-templates";
 import { publishDate } from "@/lib/publish-date";
@@ -642,6 +643,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
         }
         assetLink={isStaff ? (assetLink ?? null) : null}
         comments={comments}
+        commentJump={showComments ? <CommentCountJump count={(allComments ?? []).length} scope="app" /> : null}
       />
     );
   }
