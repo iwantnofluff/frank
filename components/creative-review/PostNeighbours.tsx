@@ -93,23 +93,25 @@ export function PostNeighbours({
     const label = dir === "prev" ? "Previous post" : "Next post";
     return (
       <div className={`pnav ${dir}`}>
-        <Link href={`/creatives/${c.id}`} prefetch={true} className="pnav-arrow" aria-label={label} title={label}>
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d={dir === "prev" ? "M15 18l-6-6 6-6" : "M9 18l6-6-6-6"} />
-          </svg>
-        </Link>
         <Link
           href={`/creatives/${c.id}`}
           prefetch={true}
-          className="pnav-d"
+          className="pnav-arrow"
+          aria-label={`${label}: ${c.name}`}
           // The details on hover too, for when the canvas is narrow and only
           // the arrow shows.
           title={`${date} · ${c.name} · ${formatsLabel(postFormats(c))}`}
         >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d={dir === "prev" ? "M15 18l-6-6 6-6" : "M9 18l6-6-6-6"} />
+          </svg>
+        </Link>
+        {/* Read only (direct instruction): the arrow is what opens the post. */}
+        <div className="pnav-d" aria-hidden="true">
           <span className="pnav-date">{date}</span>
           <b>{c.name}</b>
           <span className="pnav-fmt">{formatsLabel(postFormats(c))}</span>
-        </Link>
+        </div>
       </div>
     );
   };

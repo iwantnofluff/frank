@@ -5179,6 +5179,14 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Arrows the same distance from the phone (1.72.4, 2026-11-09)
+
+Direct instruction: with the details hidden until hover (1.72.3), each arrow still sat on the far side of its post's hidden details, so the two arrows sat at different distances from the phone depending on the titles' lengths, which looked like an error. Each arrow now sits against the phone, 42px from it on both sides, and its post's details appear out beyond the arrow (right-aligned on the left, left-aligned on the right). Where the canvas is narrow and only the arrows show, nothing changes.
+
+Also by direct instruction, the details are read only, since the arrow already opens the post. They were a second link; they are now plain text (`aria-hidden`, `pointer-events: none`), so the pointer passes through them and they simply fade out when it leaves the arrow (no lingering delay, no hover background). For screen readers the arrow's name now carries the post's title ("Next post: …"), and its tooltip still gives the date, title and format for when only the arrows show.
+
+**Verified**: post-neighbours.spec now checks that clicking the shown details leaves the page where it is, and that the arrow still steps on; it passed against staging. In the real app (dev server, staging), with a long title before and a short one after, the arrows measured 42px from the phone on both sides at 1728 and 1100 wide. Screenshots of each side hovered at 1728 showed the details outside the arrow. post-neighbours and creative-review passed against staging (3).
+
 ## Previous and next arrows: details on hover (1.72.3, 2026-11-09)
 
 Direct instruction: the arrows either side of the phone on a post's page keep their round arrow, but show the post's date, title and format only while the arrow is hovered or focused from the keyboard. The details keep their place (hidden, not removed), so nothing moves when they appear. They stay up a moment after the pointer leaves the arrow (0.35s), long enough to move across and click them. Also by direct instruction, the arrow reacts from 10px outside its circle (a transparent `::before` ring), for hover and for click. On an iPad, where the sides are already just arrows, nothing changes.

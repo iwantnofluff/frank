@@ -3530,8 +3530,7 @@ select.sort:hover {
    and format, which open it too, each with its own hover. 30px from the
    phone; an empty side keeps its width so the phone stays centred. Above
    the phone, the current post's date and title. */
-/* 50px from the phone to the post's details either side (direct
-   instruction): 42px here plus the details' own 8px padding. */
+/* 42px from the phone to each arrow, either side. */
 .pnav-row {
   display: flex;
   align-items: center;
@@ -3585,14 +3584,16 @@ select.sort:hover {
   flex: 0 1 auto;
   display: flex;
   align-items: center;
-  /* Packed against the phone, so a short title sits 50px from it rather
-     than out by the far edge (direct instruction). */
-  justify-content: flex-end;
+  /* Each arrow packed against the phone, the same 42px from it on both
+     sides, with its post's details out beyond it (direct instruction). */
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+  text-align: right;
   gap: 8px;
 }
 .pnav.next {
-  flex-direction: row-reverse;
-  text-align: right;
+  flex-direction: row;
+  text-align: left;
 }
 .pnav-arrow {
   position: relative;
@@ -3629,34 +3630,22 @@ select.sort:hover {
   color: var(--action);
 }
 /* The post's date, title and format only while its arrow is hovered or
-   focused (direct instruction), in their place so nothing moves. They
-   stay a moment after, long enough to move onto them and click. */
+   focused (direct instruction), in their place so nothing moves. Read
+   only: the arrow opens the post, so the pointer passes through them. */
 .pnav-d {
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
   padding: 6px 8px;
-  border-radius: 8px;
   color: var(--ink);
-  text-decoration: none;
+  pointer-events: none;
   opacity: 0;
-  visibility: hidden;
-  transition: background 0.15s, opacity 0.15s 0.2s, visibility 0s 0.35s;
+  transition: opacity 0.15s;
 }
 .pnav:has(.pnav-arrow:hover) .pnav-d,
-.pnav:has(.pnav-arrow:focus-visible) .pnav-d,
-.pnav-d:hover,
-.pnav-d:focus-visible {
+.pnav:has(.pnav-arrow:focus-visible) .pnav-d {
   opacity: 1;
-  visibility: visible;
-  transition: background 0.15s, opacity 0.15s, visibility 0s;
-}
-.pnav-d:hover {
-  background: var(--surface);
-}
-.pnav-d:hover b {
-  color: var(--action);
 }
 /* The same size as the current post's heading above the phone (direct
    instruction). */

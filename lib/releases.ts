@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.72.4",
+    date: "2026-11-09",
+    title: "Arrows beside the phone, details to read",
+    changes: [
+      "On a post's page, the previous and next arrows now sit the same distance from the phone on both sides. Hovering one shows that post's details out beyond the arrow, not between it and the phone.",
+      "Those details are just for reading now. The arrow is what opens the post.",
+    ],
+  },
+  {
     version: "1.72.3",
     date: "2026-11-09",
     title: "Quieter arrows, easier checkboxes",
