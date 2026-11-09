@@ -5178,3 +5178,27 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 - As a visitor with no name to comment as, it scrolled to the comments. Screenshots checked.
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
+
+## Previous and next arrows: details on hover (1.72.3, 2026-11-09)
+
+Direct instruction: the arrows either side of the phone on a post's page keep their round arrow, but show the post's date, title and format only while the arrow is hovered or focused from the keyboard. The details keep their place (hidden, not removed), so nothing moves when they appear. They stay up a moment after the pointer leaves the arrow (0.35s), long enough to move across and click them. Also by direct instruction, the arrow reacts from 10px outside its circle (a transparent `::before` ring), for hover and for click. On an iPad, where the sides are already just arrows, nothing changes.
+
+**Verified**: In the real app (dev server, staging) at 1728 × 1000, with a post either side, screenshots checked. At rest only the two round arrows showed. With the pointer 9px outside the left circle, the arrow took its hover colour and its post's date, title and format appeared. post-neighbours.spec now checks the details are hidden at first, shown with the pointer 8px outside the next arrow, hidden again when it leaves, and clickable after moving onto them from the arrow (passed twice). post-neighbours, creative-review, review-back-expand, platform-templates, carousel and hidden-statuses passed on the local database (26).
+
+**Checkboxes from 10px outside (direct instruction, same release).** Every checkbox in the app can now be ticked from 10px outside its box. A browser's own checkbox only takes clicks on itself, and padding or outlines don't change that: tested in Chrome's and Safari's engines, a click 8px outside never ticked it. So every `input[type="checkbox"]` is now drawn by the app (`appearance: none`), in the look of the menus' ticks (`.cbx`): a bordered box, blue with a white tick when on, a dash for part-selected, faded when disabled. An invisible ring 10px wide (`::after`) takes the clicks, except on a disabled box. Size and margins stay as they were (14px), so nothing moves. The menus' drawn ticks (Status, Format, team and client pickers) were left as they are, since each sits in a full-width row button that already takes the click.
+
+**Verified**: In the real app (dev server, staging), a throwaway audit found every checkbox clickable at its centre on these pages:
+- the project table (row and select-all)
+- Project Settings (statuses' "Hides its posts", columns, team defaults)
+- the post page's Private toggle
+- the bell
+- the New Project window's columns
+
+For each of the 27, it checked that a point 8px outside on all four sides hits that checkbox (or its label): all passed. A first pass also flagged boxes under the Settings window or scrolled behind its footer, which can't be clicked anyway, so the audit was changed to skip them. Clicking 8px left of a table row's box ticked it. Screenshots of the table, Settings, the New Project columns and the comment box checked.
+
+The full suite on the local database had 6 failures:
+- comment-cards.png, intog-checked-internal.png, creative-review.png and upload-artwork-modal.png differed only in the Private toggle's box (rounder, a finer tick). They were regenerated after looking at each diff, with intog-unchecked-public.png alongside them.
+- dashboard.png differed only in Last Activity (the date rolling over) and was regenerated.
+- admin-overview passed on rerun.
+
+Those files then passed (9).

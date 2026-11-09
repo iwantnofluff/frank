@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.72.3",
+    date: "2026-11-09",
+    title: "Quieter arrows, easier checkboxes",
+    changes: [
+      "On a post's page, the previous and next arrows beside the phone show just the arrow. Hover one to see that post's date, title and format, which you can still click.",
+      "The arrows react from a little outside their circle, so they're easier to hit.",
+      "Checkboxes across the app tick from a little outside their box too, and all share the same look as the filter menus' ticks.",
+    ],
+  },
+  {
     version: "1.72.2",
     date: "2026-11-08",
     title: "Comment count on a phone",

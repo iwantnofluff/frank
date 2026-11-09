@@ -40,13 +40,23 @@ test("a post's page names the previous and next post beside the phone, and opens
   await expect(page.locator(".pnav-cur b")).toHaveText("E2E Test Creative");
   await expect(page.locator(".pnav-cur .pnav-fmt")).toHaveText("Instagram Post");
 
+  // Its details show only while the arrow is hovered (direct instruction),
+  // from 10px outside its circle too.
+  await expect(next.locator(".pnav-d")).toBeHidden();
+  const arrow = (await next.locator(".pnav-arrow").boundingBox())!;
+  await page.mouse.move(arrow.x + arrow.width + 8, arrow.y + arrow.height / 2);
+  await expect(next.locator(".pnav-d")).toBeVisible();
+  await page.mouse.move(5, 5);
+  await expect(next.locator(".pnav-d")).toBeHidden();
+
   // The arrow steps to the next post...
   await next.locator(".pnav-arrow").click();
   await page.waitForURL(`**/creatives/${after}`);
   await expect(prev.locator("b")).toHaveText("E2E Test Creative");
   await expect(next.locator("b")).toHaveText("A Week After");
   await expect(page.locator(".pnav-cur b")).toHaveText("Three Days After");
-  // ...and the post's details open it too.
+  // ...and the post's details open it too, moved onto from the arrow.
+  await next.locator(".pnav-arrow").hover();
   await next.locator(".pnav-d").click();
   await page.waitForURL((u) => !u.pathname.endsWith(after));
   await expect(prev.locator("b")).toHaveText("Three Days After");
