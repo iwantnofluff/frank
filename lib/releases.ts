@@ -13,6 +13,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.77.0",
+    date: "2026-11-10",
+    title: "Frank Tour shows the sample client",
+    changes: [
+      "Frank Tour now always walks through Lumen Skin, the sample client: the carousel for the stages, the post with your client's comments for commenting, and its Launch Month table.",
+      "The sample client is never deleted any more. After 7 days, or with Hide Now, it's hidden from your lists, and the tour still uses it. Show it again, or Reset it to how it started, in Workspace Settings → General → Preferences.",
+      "Every workspace has one: a workspace made before samples gets it, hidden, the first time someone starts the tour. Everyone on the team can see it.",
+      "The sample client is left out of Analytics.",
+    ],
+  },
+  {
     version: "1.76.0",
     date: "2026-11-10",
     title: "Every artwork version in view",

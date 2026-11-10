@@ -4,19 +4,39 @@ import { useEffect, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 
-// The sample client's Remove now (phase145): the client, its project, posts
-// and files, for good.
-export function useRemoveSample() {
+// Hide or show the sample client (phase146: it's never deleted). Hidden is
+// archived, which every list, count and search leaves out; Frank Tour and
+// Show Me still use it. Either way it's kept from then on, the clock done.
+export function useHideSample() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (clientId: string) => {
-      const res = await fetch("/api/sample/remove", {
+    mutationFn: async ({ clientId, hide }: { clientId: string; hide: boolean }) => {
+      const { data, error } = await createClient()
+        .from("clients")
+        .update({ archived_at: hide ? new Date().toISOString() : null, sample_expires_at: SAMPLE_KEPT })
+        .eq("id", clientId)
+        .eq("is_sample", true)
+        .select("id");
+      if (error) throw error;
+      // A blocked update reports no error, only no rows.
+      if (!data?.length) throw new Error(hide ? "Couldn't hide the sample client" : "Couldn't show the sample client");
+    },
+    onSuccess: () => queryClient.invalidateQueries({ refetchType: "all" }),
+  });
+}
+
+// Put it back as it was (Preferences), shown or hidden as it is.
+export function useResetSample(agencyId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/sample/reset", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientId }),
+        body: JSON.stringify({ agencyId }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error ?? "Couldn't remove the sample client");
+      if (!res.ok) throw new Error(data.error ?? "Couldn't reset the sample client");
     },
     onSuccess: () => queryClient.invalidateQueries({ refetchType: "all" }),
   });

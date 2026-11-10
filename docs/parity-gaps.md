@@ -5179,6 +5179,43 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## The sample client is never deleted, and Frank Tour always uses it (1.77.0, phase146, 2026-11-10)
+
+Decided directly:
+- Frank Tour (and the Show Me buttons to come) always use the workspace's sample client, and never anything else.
+- So the sample is hidden instead of deleted.
+- Every workspace has one.
+- Every User on the team can see it.
+- Client reviewers keep their own client's posts in their tour; that's the work they're there to review, so it isn't a fallback.
+- Reset puts the sample back as it was, and the tour resets it by itself when something it needs is missing.
+
+How:
+- **Hidden is archived.** The client list, search, counts and the side rail already leave archived clients out. The dashboard's Archived tab leaves the sample out too.
+  - The daily job hides an expired sample instead of deleting it.
+  - The banner's Remove Now is **Hide Now**, with no confirmation, since it can be undone. A hidden sample's banner says it's shown for Frank Tour and Show Me, with **Show It**.
+  - Preferences shows it, hides it or keeps it, and has **Reset**, which confirms first.
+- **Nobody signed in can delete it** (phase146):
+  - delete_sample_client is no longer open to them; only the service role's reset uses it.
+  - delete_client_permanently refuses a sample.
+  - The /api/sample/remove route is gone.
+- **Users:** a trigger gives every User on the team access to the sample, when it's made and whenever someone joins or becomes a User. Those already on teams got it in the migration.
+- **Getting the tour ready** (`/api/sample/ensure`, `lib/sample/ensure.ts`, anyone on the team):
+  - The tour first makes sure the sample is there, and that it has a project and the three posts it points at: one in Internal Review with artwork (the stages), one in Client Review with a comment (comments), and one dated in Concept with its concept (approving).
+  - A workspace without a sample (made before 1.75.0) gets one, hidden, the first time someone starts the tour. That's instead of a one-off run against live: the same result, with nothing written to live by hand.
+  - A sample missing any of the three is reset: removed and made again, shown or hidden and kept as it was.
+  - While that happens the tour shows "Getting Frank Tour ready…". If it fails, it says so and offers Close; it never tours anything else.
+- **The tour's steps:** the table is the sample's project. The stages and Edit steps use the Internal Review carousel. Comments uses the Client Review post with Maya's comments.
+- **Analytics** now leaves the sample client out. 1.75.0 said it would, and it didn't, until now.
+
+**Verified**: phase146 applied to staging after a rolled-back rehearsal. sample-client.spec, with a real session, checks:
+- **Hide Now:** the sample leaves the client list, Archived tab included, while its project and files stay.
+- **Deleting:** a signed-in Owner is refused by both delete functions.
+- **Users:** a User already on the team is given the sample when it's made, sees its banner, and has no Hide Now.
+- **Automatic reset:** with the sample hidden and its comments deleted, getting the tour ready makes it again, still hidden, with Maya's two comments.
+- **Reset in Preferences** makes it again, still hidden, and Show It shows it, kept.
+
+frank-tour.spec's tours now go through a sample made for the test workspace, never its own posts. The full suite on the local database had 2 failures: admin-overview's known flake, and the Reset test's last check, which found the closing "Reset the sample client" dialog by its label. It now asks for the exact label, and passed 18 of 18 times repeated. In the real app (dev server, staging), screenshots checked: a User's tour showing "Getting Frank Tour ready…", then its Comments step on "Why Niacinamide?" with Maya's comments in view.
+
 ## Artwork versions in a row (1.76.0, 2026-11-10)
 
 Direct instruction: in a post's window, the Content tab's Creative shows every artwork version at once, latest first and the oldest last, with an empty Add New Version placeholder first. The V1/V2 tabs above a single slot are gone (`components/creative-review/VersionStrip.tsx`).

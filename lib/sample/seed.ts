@@ -139,16 +139,28 @@ const POSTS: SamplePost[] = [
 
 // Makes the sample client in a new workspace. Never throws: a sample that
 // can't be made is skipped, never a failed sign-up.
-export async function seedSampleClient(admin: SupabaseClient, agencyId: string, ownerId: string): Promise<string | null> {
+export async function seedSampleClient(
+  admin: SupabaseClient,
+  agencyId: string,
+  ownerId: string,
+  // Made hidden (an older workspace's, for the tour), or put back as it was
+  // (a reset).
+  state: { archived_at?: string | null; sample_expires_at?: string | null } = {},
+): Promise<string | null> {
   try {
-    return await seed(admin, agencyId, ownerId);
+    return await seed(admin, agencyId, ownerId, state);
   } catch (e) {
     console.error("sample client:", e instanceof Error ? e.message : e);
     return null;
   }
 }
 
-async function seed(admin: SupabaseClient, agencyId: string, ownerId: string): Promise<string> {
+async function seed(
+  admin: SupabaseClient,
+  agencyId: string,
+  ownerId: string,
+  state: { archived_at?: string | null; sample_expires_at?: string | null },
+): Promise<string> {
   const { data: client, error: clientError } = await admin
     .from("clients")
     .insert({
@@ -157,6 +169,8 @@ async function seed(admin: SupabaseClient, agencyId: string, ownerId: string): P
       industry: "Skincare",
       description: "A made-up skincare brand to explore Frank with.",
       is_sample: true,
+      archived_at: state.archived_at ?? null,
+      sample_expires_at: state.sample_expires_at ?? null,
     })
     .select("id")
     .single();

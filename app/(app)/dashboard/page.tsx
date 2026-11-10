@@ -63,8 +63,10 @@ export default function DashboardPage() {
     if (!clients) return [];
     const q = query.trim().toLowerCase();
     return clients.filter((c) => {
+      // A hidden sample client is archived, but isn't one of the agency's
+      // archived clients (phase146): never listed there.
       const matchesFilter =
-        filter === "active" ? !c.archived_at : !!c.archived_at;
+        filter === "active" ? !c.archived_at : !!c.archived_at && !c.is_sample;
       const matchesQuery =
         !q ||
         c.name.toLowerCase().includes(q) ||
@@ -140,7 +142,7 @@ export default function DashboardPage() {
             onClick={() => setFilter("archived")}
             type="button"
           >
-            Archived ({(clients?.length ?? 0) - activeCount})
+            Archived ({clients?.filter((c) => c.archived_at && !c.is_sample).length ?? 0})
           </button>
           {confirmedStaff && <span className="toolsep" />}
           {confirmedStaff && (

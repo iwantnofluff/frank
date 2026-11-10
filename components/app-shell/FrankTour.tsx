@@ -7,8 +7,9 @@ import { useMyAgency } from "@/hooks/use-my-agency";
 import { useMyMembership } from "@/hooks/use-my-membership";
 import { useMyProfile } from "@/hooks/use-my-profile";
 import { usePhoneScreen } from "@/hooks/use-phone-screen";
-import { useMarkTourSeen, useTourTargets, type TourTargets } from "@/hooks/use-tour";
+import { useMarkTourSeen, useSampleTargets, useTourTargets, type TourTargets } from "@/hooks/use-tour";
 import { isOwnerOrAbove } from "@/lib/roles";
+import { errorMessage } from "@/lib/errors";
 import { TOURS, TOUR_AUTO_OFF_KEY, TOUR_START_EVENT, setTouring, tourKind, type TourPlace, type TourStep } from "@/lib/tour";
 
 // How long to look for a step's place (a page loading, a table filling)
@@ -19,7 +20,7 @@ const PAD = 8;
 const GAP = 14;
 const EDGE = 16;
 
-function pathFor(place: TourPlace, t: TourTargets): string | null {
+function pathFor(place: TourPlace, t: TourTargets, post: TourStep["post"] = "stages"): string | null {
   switch (place) {
     case "dashboard":
       return "/dashboard";
@@ -28,7 +29,7 @@ function pathFor(place: TourPlace, t: TourTargets): string | null {
     case "project":
       return t.projectId ? `/projects/${t.projectId}` : null;
     case "post":
-      return t.postId ? `/creatives/${t.postId}` : null;
+      return t.posts ? `/creatives/${t.posts[post]}` : t.postId ? `/creatives/${t.postId}` : null;
     case "team":
       return "/settings/team";
     default:
@@ -40,7 +41,7 @@ function pathFor(place: TourPlace, t: TourTargets): string | null {
 // is left out, as is inviting for someone who can't.
 function available(step: TourStep, t: TourTargets, canInvite: boolean) {
   if (step.invites && !canInvite) return false;
-  return step.place === "here" || pathFor(step.place, t) !== null;
+  return step.place === "here" || pathFor(step.place, t, step.post) !== null;
 }
 
 function onPage(pathname: string, path: string | null) {
@@ -72,12 +73,18 @@ export function FrankTour() {
   const [index, setIndex] = useState(0);
   // Each move to a step, so going Back looks for its place afresh.
   const [visit, setVisit] = useState(0);
-  const { data: targets } = useTourTargets(running);
+  // The team's tours use the sample client, got ready first; a client
+  // reviewer's, their own work.
+  const [run, setRun] = useState(0);
+  const sample = useSampleTargets(agency?.agencyId, run, running && !!kind && kind !== "client");
+  const own = useTourTargets(running && kind === "client");
+  const targets = kind === "client" ? own.data : sample.data;
 
   // From the menu, any time.
   useEffect(() => {
     function onStart() {
       setIndex(0);
+      setRun((r) => r + 1);
       setRunning(true);
     }
     window.addEventListener(TOUR_START_EVENT, onStart);
@@ -96,6 +103,7 @@ export function FrankTour() {
     }
     if (!profile.tour_seen_at && !off) {
       setIndex(0);
+      setRun((r) => r + 1);
       setRunning(true);
     }
   }
@@ -117,7 +125,7 @@ export function FrankTour() {
     [kind, targets, canInvite],
   );
   const step = running ? (steps[index] ?? null) : null;
-  const path = step && targets ? pathFor(step.place, targets) : null;
+  const path = step && targets ? pathFor(step.place, targets, step.post) : null;
   const here = step ? onPage(pathname, path) : false;
 
   // To the step's page.
@@ -185,9 +193,9 @@ export function FrankTour() {
     const vh = window.innerHeight;
     const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(v, hi));
     if (!box) {
-      // Its place found but not yet measured: wait a frame, not jump.
-      if (target) setPos(null);
-      else setPos({ top: (vh - h) / 2, left: (vw - w) / 2 });
+      // Its place found but not yet measured: wait a frame (the card stays
+      // hidden till then), not jump.
+      if (!target) setPos({ top: (vh - h) / 2, left: (vw - w) / 2 });
       return;
     }
     const centredX = clamp(box.left + box.width / 2 - w / 2, EDGE, vw - w - EDGE);
@@ -247,6 +255,25 @@ export function FrankTour() {
       {/* Takes every click: the page waits while the tour runs. */}
       <div className="tour-scrim" onClick={(e) => e.stopPropagation()} />
       {box && <div className="tour-hole" style={{ top: box.top, left: box.left, width: box.width, height: box.height }} />}
+      {/* The sample client being got ready (made or reset the first time,
+          a few seconds), or why it couldn't be: never a tour of anything
+          else. */}
+      {kind !== "client" && !targets && (
+        <div className="tour-card" role="dialog" aria-modal="true" aria-labelledby="tourWait" style={{ top: "40%", left: "50%", transform: "translate(-50%, -50%)" }}>
+          <h2 id="tourWait">{sample.error ? "Frank Tour couldn’t start" : "Getting Frank Tour ready…"}</h2>
+          <p>
+            {sample.error
+              ? errorMessage(sample.error, "Couldn't get the sample client ready")
+              : "It uses Lumen Skin, your sample client. This takes a moment the first time."}
+          </p>
+          <div className="tour-f">
+            <span className="grow" />
+            <button type="button" className="btn sm" onClick={end}>
+              {sample.error ? "Close" : "Skip Tour"}
+            </button>
+          </div>
+        </div>
+      )}
       {step && ready && (
         <div
           ref={card}
@@ -255,7 +282,7 @@ export function FrankTour() {
           aria-modal="true"
           aria-labelledby="tourTitle"
           aria-describedby="tourBody"
-          style={pos ? { top: pos.top, left: pos.left } : { visibility: "hidden" }}
+          style={pos && (box || !target) ? { top: pos.top, left: pos.left } : { visibility: "hidden" }}
         >
           <div className="tour-n">
             {index + 1} of {steps.length}

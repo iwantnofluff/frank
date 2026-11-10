@@ -41,7 +41,8 @@ export function useAnalytics(enabled: boolean) {
     queryFn: async (): Promise<AnalyticsData> => {
       const s = createClient();
       const [clients, projects, creatives, events, creativeVersions, copyVersions, comments, members, prefs] = await Promise.all([
-        all((a, b) => s.from("clients").select("id, name").order("name").range(a, b)),
+        // The sample client (phase145) isn't the agency's work: left out.
+        all((a, b) => s.from("clients").select("id, name").eq("is_sample", false).order("name").range(a, b)),
         all((a, b) => s.from("projects").select("id, name, client_id").order("name").range(a, b)),
         all((a, b) =>
           s
@@ -67,7 +68,10 @@ export function useAnalytics(enabled: boolean) {
         all((a, b) => s.from("client_preferences").select("client_id, lead_days, contracted_posts_per_month").range(a, b)),
       ]);
 
-      const clientOfProject = new Map(projects.map((p) => [p.id, p.client_id as string]));
+      const realClients = new Set(clients.map((c) => c.id as string));
+      const ownProjects = projects.filter((p) => realClients.has(p.client_id as string));
+      const clientOfProject = new Map(ownProjects.map((p) => [p.id, p.client_id as string]));
+      const ownPosts = new Set(creatives.filter((c) => clientOfProject.has(c.project_id as string)).map((c) => c.id as string));
       // Who's on the client's side: a guest (no author), or anyone whose
       // place in this agency is at a client (phase63: never both).
       const clientPeople = new Set(members.filter((m) => m.client_id).map((m) => m.user_id as string));
@@ -79,7 +83,7 @@ export function useAnalytics(enabled: boolean) {
 
       return {
         clients: clients as { id: string; name: string }[],
-        projects: projects.map((p) => ({ id: p.id as string, name: p.name as string, clientId: p.client_id as string })),
+        projects: ownProjects.map((p) => ({ id: p.id as string, name: p.name as string, clientId: p.client_id as string })),
         leadDays: Object.fromEntries(prefs.map((p) => [p.client_id as string, p.lead_days as number])),
         contracts: Object.fromEntries(
           prefs
@@ -101,7 +105,7 @@ export function useAnalytics(enabled: boolean) {
             approvedAt: c.approved_at as string | null,
             scheduledAt: c.scheduled_at as string | null,
           })),
-        events: events.map((e) => ({
+        events: events.filter((e) => ownPosts.has(e.creative_id as string)).map((e) => ({
           creativeId: e.creative_id as string,
           fromStage: e.from_stage as number | null,
           toStage: e.to_stage as number,
@@ -109,10 +113,10 @@ export function useAnalytics(enabled: boolean) {
           at: e.at as string,
         })),
         versions: [
-          ...creativeVersions.map((v) => ({ creativeId: v.creative_id as string, kind: "creative" as const, createdAt: v.created_at as string })),
-          ...copyVersions.map((v) => ({ creativeId: v.creative_id as string, kind: "copy" as const, createdAt: v.created_at as string })),
+          ...creativeVersions.filter((v) => ownPosts.has(v.creative_id as string)).map((v) => ({ creativeId: v.creative_id as string, kind: "creative" as const, createdAt: v.created_at as string })),
+          ...copyVersions.filter((v) => ownPosts.has(v.creative_id as string)).map((v) => ({ creativeId: v.creative_id as string, kind: "copy" as const, createdAt: v.created_at as string })),
         ],
-        comments: comments.map((c) => ({
+        comments: comments.filter((c) => ownPosts.has(c.creative_id as string)).map((c) => ({
           creativeId: c.creative_id as string,
           clientSide: !c.author_id || clientPeople.has(c.author_id as string),
           category: c.issue_category as string | null,

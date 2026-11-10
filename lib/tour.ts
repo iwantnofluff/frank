@@ -19,6 +19,10 @@ export interface TourStep {
   spot?: string[];
   // Only for someone who can invite people (Owners, and Admins let to).
   invites?: boolean;
+  // Which of the sample's posts a "post" step shows (phase146): one in
+  // Internal Review with artwork, one in Client Review with a comment, or
+  // one waiting for its concept to be approved. The stages one by default.
+  post?: "stages" | "comments" | "concept";
   title: string;
   body: string;
 }
@@ -137,6 +141,7 @@ export const TOURS: Record<TourKind, TourStep[]> = {
     {
       id: "comments",
       place: "post",
+      post: "comments",
       spot: [".composer"],
       title: "Comments",
       body: "Leave feedback here. Private keeps a comment within your team. Select the post's text, or click its artwork, to comment on that spot.",
@@ -168,6 +173,7 @@ export const TOURS: Record<TourKind, TourStep[]> = {
     {
       id: "comments",
       place: "post",
+      post: "comments",
       spot: [".composer"],
       title: "Comment and approve",
       body: "Leave feedback here. While a post is a concept, Approve Concept sits beside Post. For the finished post, your agency sends a review link to approve it.",

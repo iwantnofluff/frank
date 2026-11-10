@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { seedSampleClient } from "@/lib/sample/seed";
+import { sampleCaller } from "@/lib/sample/route-auth";
 
 // Add the Sample Client, from Workspace Settings → Preferences (direct
 // instruction): for a workspace without one, made before samples were, or
@@ -16,22 +16,9 @@ export async function POST(request: Request) {
   }
   if (!agencyId) return NextResponse.json({ error: "agencyId is required" }, { status: 400 });
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Sign in first" }, { status: 401 });
-  const { data: membership } = await supabase
-    .from("memberships")
-    .select("role")
-    .eq("agency_id", agencyId)
-    .eq("user_id", user.id)
-    .is("client_id", null)
-    .is("removed_at", null)
-    .not("accepted_at", "is", null)
-    .in("role", ["admin", "owner", "primary_owner"])
-    .maybeSingle();
-  if (!membership) return NextResponse.json({ error: "Only Owners and Admins can add the sample client" }, { status: 403 });
+  const caller = await sampleCaller(agencyId);
+  if (!caller?.admin) return NextResponse.json({ error: "Only Owners and Admins can add the sample client" }, { status: 403 });
+  const user = { id: caller.userId };
 
   const admin = createServiceRoleClient();
   const { data: existing } = await admin.from("clients").select("id").eq("agency_id", agencyId).eq("is_sample", true).limit(1);

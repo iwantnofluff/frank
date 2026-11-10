@@ -32,10 +32,35 @@ export interface TourTargets {
   clientId: string | null;
   projectId: string | null;
   postId: string | null;
+  // The sample's posts by what each shows best (the team's tours).
+  posts?: { stages: string; comments: string; concept: string };
 }
 
-// Somewhere real for the tour to show: the latest post this person can
-// see, its project and client; failing a post, the latest project; failing
+// The team's tours always use the workspace's sample client (phase146,
+// decided directly): got ready first, made (hidden) or reset if it needs to
+// be, so a tour never falls back on anything else. Once per tour run.
+export function useSampleTargets(agencyId: string | undefined, run: number, enabled: boolean) {
+  return useQuery({
+    queryKey: ["tour-sample", agencyId, run],
+    enabled: enabled && !!agencyId,
+    staleTime: Infinity,
+    gcTime: 0,
+    retry: false,
+    queryFn: async (): Promise<TourTargets> => {
+      const res = await fetch("/api/sample/ensure", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agencyId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Couldn't get the tour ready");
+      return { clientId: data.clientId, projectId: data.projectId, postId: data.posts.stages, posts: data.posts };
+    },
+  });
+}
+
+// A client reviewer's tour (their own work, decided directly): the latest
+// post they can see, its project and client; failing a post, the latest project; failing
 // that, the latest client. Whatever's missing, its steps are left out.
 export function useTourTargets(enabled: boolean) {
   return useQuery({

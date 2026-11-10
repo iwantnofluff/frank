@@ -8,14 +8,17 @@ import { seesAllClients } from "@/lib/roles";
 import { errorMessage } from "@/lib/errors";
 import Link from "next/link";
 import { useClients } from "@/hooks/use-clients";
-import { isSampleKept, useAddSample, useKeepSample } from "@/hooks/use-sample";
+import { isSampleKept, useAddSample, useHideSample, useKeepSample, useResetSample } from "@/hooks/use-sample";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useState } from "react";
 import { SampleBanner } from "@/components/clients/SampleBanner";
 
 // Settings → General → Preferences (direct instruction; was Notifications),
 // for the whole workspace, in sections: how long the bell keeps a
 // notification once it's been read (phase90; unread ones always stay), and
 // how far back a review link lists Approved posts (phase92), and the sample
-// client: add it, keep it, or let it go (phase145). Owners and
+// client: add it, keep it in your lists or hide it, or reset it (phase145,
+// phase146: never deleted). Owners and
 // Admins change them; each saves the moment it's picked, as a client's
 // Preferences do.
 export default function PreferencesSettingsPage() {
@@ -37,6 +40,9 @@ export default function PreferencesSettingsPage() {
   const sample = clients?.find((c) => c.is_sample) ?? null;
   const addSample = useAddSample(agency?.agencyId);
   const keepSample = useKeepSample();
+  const hideSample = useHideSample();
+  const resetSample = useResetSample(agency?.agencyId);
+  const [confirmReset, setConfirmReset] = useState(false);
   const kept = keepSample.isPending ? keepSample.variables.keep : isSampleKept(sample?.sample_expires_at);
 
   return (
@@ -102,14 +108,33 @@ export default function PreferencesSettingsPage() {
           <b>Sample Client</b>
           {keepSample.isSuccess && !keepSample.isPending && <span className="sync">Saved</span>}
         </div>
-        {sample ? (
+        {sample?.archived_at ? (
+          <div className="srow">
+            <span className="sl">
+              <b>
+                <Link href={`/clients/${sample.id}`}>{sample.name}</Link>
+              </b>
+              <span>Hidden from your lists. Frank Tour and Help&rsquo;s Show Me still use it.</span>
+            </span>
+            {canEdit && (
+              <button
+                type="button"
+                className="btn sm"
+                disabled={hideSample.isPending}
+                onClick={() => hideSample.mutate({ clientId: sample.id, hide: false })}
+              >
+                Show It
+              </button>
+            )}
+          </div>
+        ) : sample ? (
           <>
             <div className="srow">
               <span className="sl">
                 <b>
                   <Link href={`/clients/${sample.id}`}>{sample.name}</Link>
                 </b>
-                <span>Keep it to show people around, or have it removed with everything in it.</span>
+                <span>In your lists for now. It&rsquo;s never deleted: hidden, Frank Tour and Help&rsquo;s Show Me still use it.</span>
               </span>
               <select
                 aria-label="Sample client"
@@ -117,7 +142,7 @@ export default function PreferencesSettingsPage() {
                 disabled={!canEdit || keepSample.isPending}
                 onChange={(e) => keepSample.mutate({ clientId: sample.id, keep: e.target.value === "keep" })}
               >
-                <option value="remove">Remove after 7 days</option>
+                <option value="remove">Hide after 7 days</option>
                 <option value="keep">Keep it</option>
               </select>
             </div>
@@ -131,7 +156,7 @@ export default function PreferencesSettingsPage() {
               <b>Lumen Skin</b>
               <span>
                 A made-up skincare client with a Content Planner and posts at every stage, some with artwork and client comments,
-                to explore Frank with. It doesn&rsquo;t count towards your plan, and is removed after 7 days unless you keep it.
+                to explore Frank with. It doesn&rsquo;t count towards your plan, and is hidden after 7 days unless you keep it.
               </span>
               {addSample.error && <span className="autherr">{errorMessage(addSample.error, "Couldn't add the sample client")}</span>}
             </span>
@@ -141,6 +166,36 @@ export default function PreferencesSettingsPage() {
               </button>
             )}
           </div>
+        )}
+        {sample && (
+          <div className="srow">
+            <span className="sl">
+              <b>Reset the Sample Client</b>
+              <span>Puts {sample.name} back as it was: its project, posts, comments and artwork. Anything changed in it is lost.</span>
+              {(resetSample.error || hideSample.error) && (
+                <span className="autherr">{errorMessage(resetSample.error ?? hideSample.error, "Couldn't change the sample client")}</span>
+              )}
+              {resetSample.isSuccess && <span className="bsaved">Reset.</span>}
+            </span>
+            {canEdit && (
+              <button type="button" className="btn sm" disabled={resetSample.isPending} onClick={() => setConfirmReset(true)}>
+                {resetSample.isPending ? "Resetting…" : "Reset"}
+              </button>
+            )}
+          </div>
+        )}
+        {confirmReset && sample && (
+          <ConfirmDialog
+            title="Reset the sample client"
+            message={`this puts ${sample.name} back as it was. Anything changed in it, its comments and versions included, is lost.`}
+            confirmLabel="Reset"
+            pendingLabel="Resetting…"
+            isPending={resetSample.isPending}
+            error={resetSample.error}
+            errorFallback="Couldn't reset the sample client"
+            onClose={() => setConfirmReset(false)}
+            onConfirm={() => resetSample.mutate(undefined, { onSuccess: () => setConfirmReset(false) })}
+          />
         )}
       </section>
     </div>

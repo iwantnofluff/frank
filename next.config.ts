@@ -12,10 +12,13 @@ const nextConfig: NextConfig = {
   // runs beside the dev server without either touching the other's files.
   distDir: process.env.NEXT_DIST_DIR || ".next",
   // The sample client's artwork (lib/sample/seed.ts), read from disk by
-  // the routes that make the sample: sign-up, and Add in Preferences.
+  // the routes that make the sample: sign-up, Add and Reset in Preferences,
+  // and getting it ready for the tour.
   outputFileTracingIncludes: {
     "/api/signup": ["./lib/sample/art/**/*"],
     "/api/sample/add": ["./lib/sample/art/**/*"],
+    "/api/sample/ensure": ["./lib/sample/art/**/*"],
+    "/api/sample/reset": ["./lib/sample/art/**/*"],
   },
 };
 

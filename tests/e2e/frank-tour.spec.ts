@@ -17,16 +17,18 @@ test("someone new gets the tour on their first visit, once", async ({ page, fran
   await page.setViewportSize({ width: 1440, height: 900 });
   await frank.loginAsStaff(page);
   const card = page.locator(".tour-card");
-  await expect(card).toBeVisible({ timeout: 20_000 });
-  await expect(card.locator("h2")).toHaveText("Welcome to Frank");
+  // The workspace has no sample client: it's made, hidden, first (phase146),
+  // and the tour goes through it, never the workspace's own posts.
+  await expect(card.locator("h2")).toHaveText("Welcome to Frank", { timeout: 60_000 });
+  const sampleId = (await admin.from("clients").select("id, archived_at").eq("agency_id", frank.agencyId).eq("is_sample", true).single()).data!.id;
   // An Admin who can't invite: no invite step; the rest, each on its page.
   const titles = ["Welcome to Frank", "Your workspace", "Add a client", "Create a project", "Add a post", "From concept to live", "You're all set"];
   for (let i = 0; i < titles.length; i++) {
     await expect(card.locator(".tour-n")).toHaveText(`${i + 1} of ${titles.length}`, { timeout: 15_000 });
     await expect(card.locator("h2")).toHaveText(titles[i]);
     if (titles[i] === "Add a client") await expect(page.locator(".tour-hole")).toBeVisible();
-    if (titles[i] === "Create a project") await expect(page).toHaveURL(new RegExp(`/clients/${frank.clientId}`));
-    if (titles[i] === "Add a post") await expect(page).toHaveURL(new RegExp(`/projects/${frank.projectId}`));
+    if (titles[i] === "Create a project") await expect(page).toHaveURL(new RegExp(`/clients/${sampleId}`));
+    if (titles[i] === "Add a post") await expect(page).not.toHaveURL(new RegExp(frank.projectId));
     if (titles[i] === "From concept to live") await expect(page).toHaveURL(/\/creatives\//);
     await card.getByRole("button", { name: i === titles.length - 1 ? "Done" : "Next" }).click();
   }
@@ -40,13 +42,15 @@ test("someone new gets the tour on their first visit, once", async ({ page, fran
 });
 
 test("Frank Tour in the menu starts it; Skip Tour or Esc ends it, and the dimmed page takes no clicks", async ({ page, frank }) => {
+  test.setTimeout(120_000);
   await page.setViewportSize({ width: 1440, height: 900 });
   await frank.loginAsStaff(page);
   for (const how of ["skip", "esc"]) {
     await page.getByRole("button", { name: "Your account" }).click();
     await page.getByRole("menuitem", { name: "Frank Tour" }).click();
     const card = page.locator(".tour-card");
-    await expect(card).toBeVisible();
+    // After the sample is got ready (made, the first time).
+    await expect(card.locator("h2")).toHaveText("Welcome to Frank", { timeout: 60_000 });
     // The arrow keys move through it too.
     await page.keyboard.press("ArrowRight");
     await expect(card.locator("h2")).toHaveText("Your workspace");
