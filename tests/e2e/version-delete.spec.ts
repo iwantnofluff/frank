@@ -93,7 +93,7 @@ test("copy versions have tabs, and one without comments can be deleted", async (
   await expect(page.getByRole("tab", { name: /^V\d$/ })).toHaveText(["V1", "V2"]);
 });
 
-test("an artwork version can be deleted from its tab", async ({ page, frank }) => {
+test("an artwork version can be deleted from its card", async ({ page, frank }) => {
   test.setTimeout(90_000);
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
@@ -104,11 +104,14 @@ test("an artwork version can be deleted from its tab", async ({ page, frank }) =
     await page.getByRole("button", { name: `Save Creative V${n}` }).click();
     await expect(page.getByText(`Saved as version ${n}.`)).toBeVisible({ timeout: 20_000 });
   }
-  await page.getByRole("tab", { name: "V1" }).hover();
+  // Every version in a row, newest first, after Add New Version (direct
+  // instruction).
+  await expect(page.locator(".vcard-l")).toHaveText(["V3 · New", "V2 · Latest", /^V1 · /]);
+  await page.getByRole("button", { name: "Version 1", exact: true }).hover();
   await page.getByRole("button", { name: "Delete Version 1" }).click();
   await page.getByRole("dialog", { name: "Delete Creative Version 1?" }).getByRole("button", { name: "Delete Version" }).click();
-  await expect(page.getByRole("tab", { name: "V1" })).toHaveCount(0);
-  await expect(page.getByRole("tab", { name: "V2" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("button", { name: "Version 1", exact: true })).toHaveCount(0);
+  await expect(page.locator(".vcard-l")).toHaveText(["V3 · New", "V2 · Latest"]);
   const { data } = await admin.from("creative_versions").select("version_no").eq("creative_id", frank.creativeId);
   expect(data!.map((v) => v.version_no)).toEqual([2]);
 });

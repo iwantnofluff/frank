@@ -290,3 +290,9 @@ function SlotImage({ slot }: { slot: Slot }) {
   // eslint-disable-next-line @next/next/no-img-element -- short-lived signed URL or a local preview
   return <img src={src} alt={name} />;
 }
+
+// A saved file as a thumbnail (a version's card): an image, or a video's
+// first frame.
+export function AssetThumb({ asset }: { asset: VersionAsset | null }) {
+  return <SlotImage slot={asset ? { kind: "asset", asset } : null} />;
+}

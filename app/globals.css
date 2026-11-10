@@ -14961,3 +14961,135 @@ tr.rowflash > td + td {
   flex: 1;
   margin: 0;
 }
+
+/* A post's artwork versions in the Edit window (VersionStrip, direct
+   instruction): Add New Version first, then the newest to the oldest, four
+   across, all in view. Cards as the slots are. */
+.vstrip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.vcard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.vcard-img {
+  position: relative;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--canvas);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+  transition: box-shadow var(--dur-fast) var(--ease-std);
+}
+.vcard-img img,
+.vcard-img video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.vcard-img:hover {
+  box-shadow: 0 0 0 1px var(--line-2);
+}
+.vcard-img.on {
+  box-shadow: 0 0 0 2px var(--action);
+}
+.vcard-new {
+  border: 1.5px dashed var(--line-2);
+  cursor: default;
+}
+.vcard-new.filled {
+  border-style: solid;
+  border-color: var(--line);
+}
+.vcard-new:hover .cslot-acts,
+.vcard-new:focus-within .cslot-acts {
+  display: flex;
+}
+.vcard-add {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 12.7px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.vcard-add span {
+  font-size: 22.2px;
+  line-height: 1;
+}
+.vcard-add:hover {
+  color: var(--action);
+  background: var(--action-soft);
+}
+/* How many slides a version has, over its first one. */
+.vcard-n {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(20, 22, 26, 0.72);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  pointer-events: none;
+}
+.vcard-l {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Delete a version: on the card's corner, shown on hover or focus. */
+.vcard-x {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(20, 22, 26, 0.72);
+  color: #fff;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-std);
+}
+.vcard:hover .vcard-x,
+.vcard-x:focus-visible {
+  opacity: 1;
+}
+.vcard-x svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+/* What's under the row: a version clicked, or a carousel's new slots. */
+.vstrip-below {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.vstrip-h {
+  margin-bottom: 8px;
+  font-size: 13.2px;
+  font-weight: 600;
+}

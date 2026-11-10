@@ -23,7 +23,7 @@ import {
   type UploadProgress,
 } from "@/hooks/use-upload-creative-version";
 import { UploadProgressBar } from "./UploadProgressBar";
-import { CarouselSlots } from "./CarouselSlots";
+import { VersionStrip, type ShownVersion } from "./VersionStrip";
 import { useSaveCopyFields } from "@/hooks/use-save-copy-fields";
 import { useUpdateCopyVersion } from "@/hooks/use-update-copy-version";
 import { useRefreshWiifmNote } from "@/hooks/use-refresh-wiifm-note";
@@ -1053,7 +1053,7 @@ export function CreativeModal(props: CreativeModalProps) {
       return; // Shown in the warning itself.
     }
     setFormatWarning(null);
-    setViewingCreativeVersionNo(0);
+    setShownCreative(null);
     await handleSaveBrief({ artworkCleared: true });
   }
 
@@ -1121,14 +1121,10 @@ export function CreativeModal(props: CreativeModalProps) {
     setDraftFields(latestCopyVersion.fields ?? {});
   }
 
-  // Version tabs, for the artwork and (by direct instruction, the same way)
-  // the copy: older versions open read only; the latest is where new work
-  // happens. A tab whose version has just been deleted falls back to the
-  // latest rather than pointing at nothing.
-  const [viewingCreativeVersionNo, setViewingCreativeVersionNo] = useState(latestCreativeVersionNo);
-  const viewedCreativeVersion =
-    creativeVersions.find((v) => v.version_no === viewingCreativeVersionNo) ?? creativeVersions[0] ?? null;
-  const isViewingLatestCreative = !viewedCreativeVersion || viewedCreativeVersion.id === creativeVersions[0]?.id;
+  // Version tabs for the copy: older versions open read only; the latest is
+  // where new work happens. A tab whose version has just been deleted falls
+  // back to the latest rather than pointing at nothing. (The artwork's
+  // versions are a row of cards, VersionStrip.)
   const [viewingCopyVersionNo, setViewingCopyVersionNo] = useState(latestCopyVersion?.version_no ?? 0);
   const viewedCopyVersion = copyVersions.find((v) => v.version_no === viewingCopyVersionNo) ?? latestCopyVersion;
   const isViewingLatestCopy = !viewedCopyVersion || viewedCopyVersion.id === latestCopyVersion?.id;
@@ -1164,9 +1160,8 @@ export function CreativeModal(props: CreativeModalProps) {
       }
       setViewingCopyVersionNo(remaining[0]?.version_no ?? 0);
     } else {
-      const remaining = creativeVersions.filter((v) => v.id !== id);
-      setViewingCreativeVersionNo(remaining[0]?.version_no ?? 0);
       setCreativeSaveNote(null);
+      setShownCreative(null);
     }
     setDeleteTarget(null);
   }
@@ -1273,6 +1268,10 @@ export function CreativeModal(props: CreativeModalProps) {
   const uploadCarousel = useUploadCarouselVersion(creativeId ?? "", agencyId ?? "", latestCreativeVersionNo, setUploadProgress);
   const savingLabel = "Saving…";
   const [carouselPending, setCarouselPending] = useState(false);
+  // What's under the versions' row (VersionStrip): a version clicked, a
+  // carousel's new slots (its default), or nothing.
+  const [pickedCreative, setShownCreative] = useState<ShownVersion>(null);
+  const shownCreative: ShownVersion = pickedCreative ?? ((slideCount ?? 1) > 1 ? "new" : null);
 
   // A carousel's whole set of slides, saved as the next version.
   async function handleSaveCarousel(slides: SlideSource[]) {
@@ -1281,8 +1280,8 @@ export function CreativeModal(props: CreativeModalProps) {
     try {
       const versionId = await uploadCarousel.mutateAsync(slides);
       if (!isCreate) props.onCreativeVersionCreated(versionId);
-      setViewingCreativeVersionNo(targetVersionNo);
       setCreativeSaveNote(`Saved as version ${targetVersionNo}.`);
+      setShownCreative(null);
     } catch {
       // Surfaced via uploadCarousel.error / uploadError below.
     } finally {
@@ -2546,36 +2545,24 @@ export function CreativeModal(props: CreativeModalProps) {
           <div className="msection-h">Creative</div>
           <p className="msection-d">The artwork or video for this {word.lower}.</p>
           <div className="field">
-            {creativeVersions.length > 0 && (
-                <div className="viewbar" style={{ marginBottom: 10 }}>
-                  {[...creativeVersions].reverse().map((v) => (
-                    <VersionTab
-                      key={v.version_no}
-                      versionNo={v.version_no}
-                      selected={viewedCreativeVersion?.id === v.id}
-                      onSelect={() => setViewingCreativeVersionNo(v.version_no)}
-                      onDelete={() => setDeleteTarget({ kind: "creative", id: v.id, versionNo: v.version_no })}
-                    />
-                  ))}
-                </div>
-              )}
-
-              {/* One slot per slide, or one for a post that isn't a
-                  carousel: the same layout either way (direct instruction). */}
-              <CarouselSlots
-                slideCount={slideCount ?? 1}
-                noun={frameNoun}
-                latest={creativeVersions[0] ?? null}
-                readOnlyVersion={isViewingLatestCreative ? null : viewedCreativeVersion}
-                aspectRatio={aspectRatioCss(format, keptSizes)}
-                nextVersionNo={nextCreativeVersionNo}
-                saving={uploadCarousel.isPending}
-                savingLabel={savingLabel}
-                saveNote={creativeSaveNote}
-                onSave={handleSaveCarousel}
-                onPendingChange={setCarouselPending}
-                onError={setFileError}
-              />
+            {/* Every version in a row, Add New Version first, then the
+                newest to the oldest (direct instruction). */}
+            <VersionStrip
+              versions={creativeVersions}
+              slideCount={slideCount ?? 1}
+              noun={frameNoun}
+              aspectRatio={aspectRatioCss(format, keptSizes)}
+              shown={shownCreative}
+              onShow={setShownCreative}
+              onDelete={(v) => setDeleteTarget({ kind: "creative", id: v.id, versionNo: v.version_no })}
+              nextVersionNo={nextCreativeVersionNo}
+              saving={uploadCarousel.isPending}
+              savingLabel={savingLabel}
+              saveNote={creativeSaveNote}
+              onSave={handleSaveCarousel}
+              onPendingChange={setCarouselPending}
+              onError={setFileError}
+            />
             </div>
 
           {uploadProgress && uploadCarousel.isPending && (

@@ -5179,6 +5179,20 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Artwork versions in a row (1.76.0, 2026-11-10)
+
+Direct instruction: in a post's window, the Content tab's Creative shows every artwork version at once, latest first and the oldest last, with an empty Add New Version placeholder first. The V1/V2 tabs above a single slot are gone (`components/creative-review/VersionStrip.tsx`).
+- **The row:** four cards across, wrapping. Add New Version comes first, then each version labelled "V3 · Latest", "V2 · 8 Nov" and so on. Hover a card for its × to delete it, which confirms as before. The copy's versions keep their tabs.
+- **One image or video:** the new version is dropped or picked straight into the Add New Version card ("V4 · New"), with Replace and Remove on hover. Save Creative V4 and Discard Changes sit under the row, and so does the "Not added yet" warning while it's unsaved.
+- **A carousel or stories:** decided directly, from two offered (one row per version, every slide shown, was turned down as too long). Each card shows the version's first slide with a "3 slides" badge. Add New Version, the default, opens the slots under the row, filled with the latest version's slides, so only the slide that changed needs uploading. Looking at an old version keeps those slots, hidden, so unsaved changes aren't lost.
+- **Looking at an old version:** clicking one shows it under the row, read only. Clicking it again closes it.
+
+**Verified**: In the real app (dev server, staging), with the sample client's posts given three versions each, screenshots checked:
+- a single image's row (Add New Version, V3 Latest, V2, V1) and V1 shown under it
+- a carousel's row with slide-count badges, the new version's three slots under it, and V1's slides read only
+
+version-delete.spec now deletes from a card and checks the row's labels. carousel.spec checks the row after saving and Add New Version once the artwork is cleared. Those and stories, video-review, designer-note-versions, production-versions and plan-enforcement passed against staging. upload-artwork-modal.png differed only by the Add New Version card replacing the empty slot, and was regenerated after looking at its diff. The full suite on the local database then passed 349 of 350, the one failure admin-overview's known flake.
+
 ## Keeping or adding the sample client (1.75.1, 2026-11-10)
 
 Direct instruction: an Owner wants to see the sample client in their own workspace, and keep it permanently or choose in Preferences. Workspace Settings → General → Preferences has a **Sample Client** section, for Owners and Admins:

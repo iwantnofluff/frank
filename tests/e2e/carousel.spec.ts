@@ -297,8 +297,8 @@ test("every slide can be removed and saved, leaving the post with no artwork", a
   await expect(page.locator(".cslot.filled")).toHaveCount(0);
   await page.getByRole("button", { name: "Save Creative V2" }).click();
   await expect(page.getByText("Saved as version 2.")).toBeVisible({ timeout: 30_000 });
-  // V1 is still there to go back to.
-  await expect(page.getByRole("tab", { name: /^V\d$/ }).first()).toHaveText("V1");
+  // V1 is still there to go back to, after the new V2.
+  await expect(page.locator(".vcard-l")).toHaveText(["V3 · New", "V2 · Latest", /^V1 · /]);
 
   const { data: v2 } = await admin
     .from("creative_versions")
@@ -470,7 +470,7 @@ test("a format change the artwork no longer fits warns, and confirming removes a
 
   // The Content tab is back to an empty upload.
   await page.getByRole("tab", { name: "Content" }).click();
-  await expect(page.getByRole("button", { name: "Add the artwork" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add New Version" })).toBeVisible();
 });
 
 test("the database refuses to remove artwork for a client", async ({ frank }) => {

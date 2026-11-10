@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.76.0",
+    date: "2026-11-10",
+    title: "Every artwork version in view",
+    changes: [
+      "In a post's window, the Content tab shows all its artwork versions in a row: an empty Add New Version first, then the newest to the oldest, each with its number and date.",
+      "For one image or video, drop the new version straight into Add New Version. For a carousel or stories, each version shows its first slide and how many it has; Add New Version opens the slides under the row, starting from the latest, so you only replace the ones that changed.",
+      "Click a version to see it under the row. Hover one to delete it.",
+    ],
+  },
+  {
     version: "1.75.1",
     date: "2026-11-10",
     title: "Keep the sample client",
