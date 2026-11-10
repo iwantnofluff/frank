@@ -212,7 +212,10 @@ export default function DashboardPage() {
                   )}
                 </div>
                 <div className="t">
-                  <b>{c.name}</b>
+                  <b>
+                    {c.name}
+                    {c.is_sample && <span className="tag amber sample-tag">Sample</span>}
+                  </b>
                   <span>{c.industry || "—"}</span>
                 </div>
               </div>
@@ -236,7 +239,8 @@ export default function DashboardPage() {
       {newClientOpen && agency && (
         <ClientModal
           agencyId={agency.agencyId}
-          activeClientCount={activeCount}
+          // The sample client doesn't count towards the limit (phase145).
+          activeClientCount={clients?.filter((c) => !c.archived_at && !c.is_sample).length ?? 0}
           onClose={() => setNewClientOpen(false)}
         />
       )}

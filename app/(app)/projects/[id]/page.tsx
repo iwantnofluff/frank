@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useEffect, useMemo, useState } from "react";
+import { SampleBanner } from "@/components/clients/SampleBanner";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useProject } from "@/hooks/use-project";
 import { useLiveUpdates } from "@/hooks/use-live-updates";
@@ -188,6 +189,7 @@ export default function ProjectPage({
     // projpage: the table scrolls in place under its own sticky headers,
     // the page above it staying put (direct instruction).
     <div className="pad projpage">
+      <SampleBanner clientId={project?.client_id} />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
         <div>
           <h1 className="h1">

@@ -5179,6 +5179,58 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## A sample client in every new workspace (1.75.0, phase145, 2026-11-10)
+
+Decided directly: a new workspace has nothing in it, so Frank Tour could only describe things, and there was nothing to try. Every new workspace now gets a made-up client to explore. The user decided:
+- **Who gets it:** every new workspace, automatically.
+- **When its 7 days start:** on the first visit.
+- **AI used on it:** counts as normal.
+- **What it is:** a made-up skincare brand.
+
+The brand is **Lumen Skin**.
+
+What it holds (`lib/sample/seed.ts`):
+- **Knowledge:** About, Tone of Voice, Target Audience and Prioritised Features. Their Strategy overviews are saved with the fingerprint the client page checks, so nothing is rewritten, and no AI is spent, on the first visit.
+- **One Content Planner, "Launch Month",** with six posts dated over the next fortnight:
+  - an Approved launch post
+  - a three-slide carousel in Internal Review
+  - a post in Client Review, with two comments from the client's Maya Fernandes, one highlighting a line of the caption
+  - a Reel in Production
+  - a post in Concept
+  - an Idea with no date
+- **Five images** (`lib/sample/art/`), drawn for it in HTML and saved as JPEGs, so there are no rights questions.
+
+Sign-up makes it with the service role once its reply has gone (`after()`), so signing up never waits on it. A sample that fails is skipped, never a failed sign-up. Its two comments leave two notices in the bell, as a real client's would.
+
+How it stays a sample (phase145):
+- **The database:** `clients.is_sample` and `sample_expires_at`.
+- **Limits:** the client limit skips samples. The sample can be made over a full limit, and doesn't take a place. Its files sit under `{agency}/sample/`, left out of storage used and the storage limit.
+- **Counts:** the New Client window's "N of M clients used", the Plans page and Frank Admin's client counts leave it out. The workspace's own dashboard counts it, so a first look isn't "0 clients" beside a visible client.
+- **Labels:** an amber Sample tag beside its name in the client list and on its page. On its client and project pages, a banner says what it is, when it's removed ("in 7 days", "tomorrow", "today") and that it doesn't count. Owners and Admins get **Remove Now** there, which confirms first.
+- **The 7 days:** start the first time anyone on the team opens Frank (`start_sample_clock`, which only ever sets the date once).
+- **Removal:** `delete_sample_client` (Owners and Admins, or the service role) removes it as delete_client_permanently does, without needing it archived first, and refuses anything that isn't a sample. Its files go too (`lib/sample/remove.ts`). The daily cron removes expired samples.
+- **Nobody real is involved:** inviting someone as one of its client people is refused. Review links still work, since they send nothing: whoever makes one shares it themselves, and trying the client's view is part of exploring.
+
+Deliberately not done:
+- **Existing workspaces** don't get a sample. It's for new ones only.
+- **Post pages** don't show the banner. The Sample tag is on its client page, and the banner on its client and project pages, but a post page has no room above the phone without moving it.
+- **Picking the sample when inviting a client person** isn't hidden in the window. The server refuses it, with the reason.
+
+**Verified**: phase145 applied to staging after a rolled-back rehearsal. In the real app (dev server, staging), a sample seeded into a test workspace in about 10 seconds. Screenshots checked:
+- the client page, with its strategy boxes filled from the saved overviews
+- the project table, with five dated posts at their stages and one Idea
+- the Client Review post, with Maya's two comments, one on the caption
+- the carousel, showing 1 / 3
+
+sample-client.spec (4 tests, passed against staging) checks, with a real session:
+- **The limit:** with a limit of 3 and 2 clients of the agency's own, the sample was made over a full limit. The window said "2 of 3 clients used", and a third client of its own could still be added.
+- **The first visit:** it set the end date 7 days out.
+- **The pages:** the banner and tag showed. Remove Now removed the client, its project and every file, and left the agency's own client.
+- **Invites:** inviting a client person to the sample was refused with its reason.
+- **A User:** saw the banner with no Remove Now, and was refused (403) by the server.
+
+The daily clean-up's path (service role: expired sample found, removed, 5 files gone; a client that isn't a sample refused) was checked in a throwaway spec. A production build traces all five images into the sign-up route. A real sign-up wasn't run: it sends real emails (the confirmation, and the platform admins' "signed up" email).
+
 ## Formats that are just the asset (1.74.2, 2026-11-10)
 
 Decided directly: a Project's pieces are often only the asset, with no separate copy. The user asked whether to remove Caption/Copy from a Project's table and window. It wasn't removed, because listings (title, bullets, description), emails (subject, preview, body), SMS, WhatsApp, push and landing pages do have copy of their own. Caption/Copy is already hidden by default in Projects (phase140). Instead, the formats whose copy isn't real lost their copy fields: Print (Flyer or Poster), Hoarding / OOH, Website Banner / Hero, Storefront Tile and Email Header Banner. Any words on them go in Text on Image. A+ Content and Premium Modules keep Headline and Body (the user's call: their text is typed into Seller Central). Sponsored Brands Banner keeps its Headline, which is typed into the ad.

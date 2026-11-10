@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.75.0",
+    date: "2026-11-10",
+    title: "A sample client to explore",
+    changes: [
+      "Every new workspace starts with Lumen Skin, a made-up skincare brand with a Content Planner and six posts at different stages, with artwork, copy and client comments, so there's something real to click around and Frank Tour can show it all.",
+      "It's marked Sample, doesn't count towards your plan's clients or storage, and nobody can be invited to it. It's removed 7 days after the workspace's first visit, or sooner with Remove Now on its page (Owners and Admins).",
+    ],
+  },
+  {
     version: "1.74.2",
     date: "2026-11-10",
     title: "Just the asset",

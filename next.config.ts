@@ -11,6 +11,11 @@ const nextConfig: NextConfig = {
   // The test app (npm run test:local) builds into its own folder, so it
   // runs beside the dev server without either touching the other's files.
   distDir: process.env.NEXT_DIST_DIR || ".next",
+  // The sample client's artwork (lib/sample/seed.ts), read from disk by
+  // sign-up, which makes the sample.
+  outputFileTracingIncludes: {
+    "/api/signup": ["./lib/sample/art/**/*"],
+  },
 };
 
 export default nextConfig;

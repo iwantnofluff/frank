@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useMemo, useState } from "react";
+import { SampleBanner } from "@/components/clients/SampleBanner";
 import Link from "next/link";
 import { useClientDetail } from "@/hooks/use-client";
 import { useProjects, type ProjectListRow } from "@/hooks/use-projects";
@@ -188,9 +189,13 @@ export default function ClientWorkspacePage({
 
   return (
     <div className="pad">
+      <SampleBanner clientId={client?.is_sample ? client.id : null} />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
         <div>
-          <h1 className="h1">{client?.name ?? "Client"}</h1>
+          <h1 className="h1">
+            {client?.name ?? "Client"}
+            {client?.is_sample && <span className="tag amber sample-tag">Sample</span>}
+          </h1>
           <p className="sub">
             {client?.description
               ? client.description

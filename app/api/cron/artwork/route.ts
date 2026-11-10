@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { removeSampleFiles, type SampleRemoval } from "@/lib/sample/remove";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { isCopy, withPreviews } from "@/lib/artwork-preview";
 import { logLiveDates } from "@/lib/instagram/live-dates";
@@ -46,5 +47,23 @@ export async function GET(request: Request) {
   // Its own step: a failure here is logged, not a failed artwork run.
   const { data: notificationsRemoved, error: purgeError } = await admin.rpc("purge_read_notifications");
   if (purgeError) console.error("Notification purge failed", purgeError);
-  return NextResponse.json({ ok: true, files: paths.length, filesRemoved, notificationsRemoved: notificationsRemoved ?? 0, live });
+  // Sample clients past their 7 days (phase145), each with its files. Its
+  // own step too.
+  let samplesRemoved = 0;
+  const { data: expired, error: sampleError } = await admin
+    .from("clients")
+    .select("id")
+    .eq("is_sample", true)
+    .lt("sample_expires_at", new Date().toISOString());
+  if (sampleError) console.error("Sample clean-up failed", sampleError);
+  for (const c of expired ?? []) {
+    const { data: removal, error: removeError } = await admin.rpc("delete_sample_client", { p_client_id: c.id });
+    if (removeError) {
+      console.error("Sample removal failed", c.id, removeError);
+      continue;
+    }
+    await removeSampleFiles(admin, removal as SampleRemoval);
+    samplesRemoved += 1;
+  }
+  return NextResponse.json({ ok: true, files: paths.length, filesRemoved, notificationsRemoved: notificationsRemoved ?? 0, live, samplesRemoved });
 }

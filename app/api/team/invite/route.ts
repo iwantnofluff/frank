@@ -72,10 +72,12 @@ export async function POST(request: Request) {
     supabase.from("agencies").select("name, plan, trial_ends_at").eq("id", agencyId).single(),
     supabase.from("users").select("name").eq("id", caller.id).single(),
     isClient
-      ? supabase.from("clients").select("id, name").eq("id", clientIds[0]).maybeSingle()
+      ? supabase.from("clients").select("id, name, is_sample").eq("id", clientIds[0]).maybeSingle()
       : Promise.resolve({ data: null }),
   ]);
   if (isClient && !client) return fail("Choose the client they're from", 400);
+  // The sample client is made up (phase145): nobody real is invited to it.
+  if (isClient && client?.is_sample) return fail("The sample client is made up, so nobody can be invited to it. Add your own client to invite their people.", 400);
 
   // Free's trial over (phase41): read-only. The membership below is written
   // as the service role, which the database doesn't hold to it, so ask here.

@@ -102,7 +102,7 @@ export async function loadOverview(admin: SupabaseClient, now = Date.now()): Pro
       all<Row>((f, t) =>
         admin.from("memberships").select("agency_id, user_id, client_id, role").is("removed_at", null).range(f, t),
       ),
-      all<Row>((f, t) => admin.from("clients").select("agency_id").is("archived_at", null).range(f, t)),
+      all<Row>((f, t) => admin.from("clients").select("agency_id").is("archived_at", null).eq("is_sample", false).range(f, t)),
       admin.rpc("admin_ai_usage_by_month", { p_since: trendStart.toISOString() }).then((r) => {
         if (r.error) throw new Error(r.error.message);
         return (r.data ?? []) as UsageSummaryRow[];

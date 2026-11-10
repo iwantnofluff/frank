@@ -14926,3 +14926,33 @@ tr.rowflash > td + td {
     transition: none;
   }
 }
+
+/* The sample client (phase145): its tag beside its name, and the banner on
+   its pages, with when it's removed and Remove Now. */
+.sample-tag {
+  margin-left: 8px;
+  vertical-align: 3px;
+  font-size: 11px;
+}
+.h1 .sample-tag {
+  vertical-align: 5px;
+}
+.samplebar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 10px 12px 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  font-size: 13.2px;
+}
+.samplebar-t {
+  flex: 1;
+  color: var(--muted);
+  line-height: 1.45;
+}
+.samplebar .tag {
+  flex: none;
+}

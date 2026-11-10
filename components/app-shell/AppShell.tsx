@@ -9,6 +9,7 @@ import { UpdateReady } from "./UpdateReady";
 import { TipCard } from "./TipCard";
 import { TipSpotlight } from "./TipSpotlight";
 import { FrankTour } from "./FrankTour";
+import { SampleClock } from "./SampleClock";
 import { BRAND } from "@/lib/brand";
 import type { RailSeed } from "@/lib/rail-seed";
 
@@ -50,6 +51,7 @@ export function AppShell({
           <TipSpotlight />
         </Suspense>
         <FrankTour />
+        <SampleClock />
       </div>
     </div>
   );

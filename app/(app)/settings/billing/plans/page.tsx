@@ -74,7 +74,8 @@ export default function PlansPage() {
   // The spec: billing is managed by the agency's Admins and Owners.
   const canChange = me?.client_id === null && seesAllClients(me?.role);
   const current = planById(agency?.plan) ?? null;
-  const activeClients = (clients ?? []).filter((c) => !c.archived_at).length;
+  // The sample client doesn't count towards the plan (phase145).
+  const activeClients = (clients ?? []).filter((c) => !c.archived_at && !c.is_sample).length;
   const seatsUsed = (team ?? []).filter((m) => !m.removed_at).length;
 
   const live = !!billing?.paddle_subscription_id && billing.status !== "canceled";

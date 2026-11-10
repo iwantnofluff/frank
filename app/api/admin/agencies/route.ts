@@ -26,7 +26,8 @@ export async function GET() {
       .select("id, name, subdomain, plan, seat_limit, client_limit, storage_limit_bytes, trial_ends_at, ai_monthly_request_cap, extra_seats, extra_clients, extra_ai_requests, extra_storage_bytes, created_at, suspended_at, archived_at, is_internal")
       .order("created_at"),
     admin.from("memberships").select("agency_id").is("client_id", null).is("removed_at", null),
-    admin.from("clients").select("agency_id").is("archived_at", null),
+    // Sample clients (phase145) aren't the agency's own.
+    admin.from("clients").select("agency_id").is("archived_at", null).eq("is_sample", false),
     admin.from("creatives").select("agency_id").is("archived_at", null),
     // Summed in the database (phase131), with each feature's share.
     admin.rpc("admin_ai_usage_by_month", { p_since: monthStart.toISOString() }),

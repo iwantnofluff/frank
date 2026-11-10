@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
+import { seedSampleClient } from "@/lib/sample/seed";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { addressProblem } from "@/lib/address-check";
 import { addressError } from "@/lib/address";
@@ -95,6 +96,9 @@ export async function POST(request: Request) {
     await undo();
     return fail("We couldn't send the confirmation email. Check the address and try again.", 502);
   }
+  // The sample client to explore with (phase145), made once this reply has
+  // gone, so signing up doesn't wait on it. A failure skips the sample.
+  after(() => seedSampleClient(admin, agency.id, userId));
   await emailPlatformAdmins(admin, "signups", `${agencyName} signed up`, `${agencyName} signed up at ${origin.replace(/^https?:\/\//, "")}, on Free, by ${firstName} ${lastName} (${email}).`);
   return NextResponse.json({ address: origin.replace(/^https?:\/\//, "") }, { status: 201 });
 }

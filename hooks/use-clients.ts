@@ -11,6 +11,10 @@ export interface ClientRow {
   archived_at: string | null;
   logo_asset_id: string | null;
   description: string | null;
+  // The sample client (phase145): not counted towards the limits, and
+  // removed when sample_expires_at passes (null until the first visit).
+  is_sample: boolean;
+  sample_expires_at: string | null;
 }
 
 export function useClients() {
@@ -23,7 +27,7 @@ export function useClients() {
       // here, the database enforces it regardless of what this query says.
       const { data, error } = await supabase
         .from("clients")
-        .select("id, name, industry, accent_colour, archived_at, logo_asset_id, description")
+        .select("id, name, industry, accent_colour, archived_at, logo_asset_id, description, is_sample, sample_expires_at")
         .order("name");
 
       if (error) throw error;
