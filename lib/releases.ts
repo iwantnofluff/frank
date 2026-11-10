@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.74.2",
+    date: "2026-11-10",
+    title: "Just the asset",
+    changes: [
+      "Print (Flyer or Poster), Hoarding / OOH, Website Banner, Storefront Tile and Email Header Banner no longer ask for copy: the asset is the whole of it, and any words on it go in Text on Image.",
+      "Their page no longer says No copy yet, the table shows a dash for their copy, and the window has no copy to fill in. A+ modules, listings, emails, messages, landing pages and Sponsored Brands banners keep theirs.",
+    ],
+  },
+  {
     version: "1.74.1",
     date: "2026-11-10",
     title: "Assets in a Project",

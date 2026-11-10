@@ -5179,6 +5179,25 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Formats that are just the asset (1.74.2, 2026-11-10)
+
+Decided directly: a Project's pieces are often only the asset, with no separate copy. The user asked whether to remove Caption/Copy from a Project's table and window. It wasn't removed, because listings (title, bullets, description), emails (subject, preview, body), SMS, WhatsApp, push and landing pages do have copy of their own. Caption/Copy is already hidden by default in Projects (phase140). Instead, the formats whose copy isn't real lost their copy fields: Print (Flyer or Poster), Hoarding / OOH, Website Banner / Hero, Storefront Tile and Email Header Banner. Any words on them go in Text on Image. A+ Content and Premium Modules keep Headline and Body (the user's call: their text is typed into Seller Central). Sponsored Brands Banner keeps its Headline, which is typed into the ad.
+
+What follows from a format having no copy:
+- The table's Caption/Copy cell shows a dash.
+- The window's Content tab has no copy section.
+- The post page no longer says "No copy yet" or offers Write Copy for it.
+- The iPad's email no longer shows "No subject yet" for a header banner.
+
+An asset already in one of these formats with copy keeps it in the database, but it no longer shows.
+
+**Verified**: In the real app (dev server, staging), with a Print asset in a Project, screenshots checked:
+- the table's Caption/Copy cell was a dash.
+- its page showed the Brief with no copy note.
+- the window's Content tab had only Creative and Final Asset.
+
+Unit tests passed (282). platform-templates, format-split, carousel, continuous-calendar, quick-add-row and new-brief passed against staging. Four failed on a first run with three workers at once and passed on rerun.
+
 ## A Project's pieces are assets (1.74.1, 2026-11-10)
 
 Decided directly: in a Project (the kind for one-off pieces), the Post Name column is **Asset Name** by default. "Post" is changed to "asset" across a Project's own screens, not a Content Planner's. Other names were weighed (Deliverable, Piece, Item, Title). `lib/item-word.ts` gives the word from the project's kind, so shared screens pick it up.

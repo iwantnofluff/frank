@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { DEFAULT_CTA, postTemplate } from "@/lib/post-templates";
+import { copyFieldsFor } from "@/lib/formats";
 import { StoryReplyBar } from "./StoryReplyBar";
 
 // A post as its platform shows it (decided directly), for the post page and
@@ -454,7 +455,8 @@ export function PlatformPost({
     return (
       <div className="tb mail" data-platform="email">
         <div className="mail-head">
-          <h3>{text ?? <span className="tb-muted">No subject yet</span>}</h3>
+          {/* Only where the format has a subject: a header banner has none. */}
+          {(text || copyFieldsFor(format ? [format] : []).includes("subject")) && <h3>{text ?? <span className="tb-muted">No subject yet</span>}</h3>}
           <div className="mail-from">
             {avatar}
             <div>

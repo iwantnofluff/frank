@@ -11,7 +11,7 @@ import { dayMonth, ARTWORK_KEEP_DAYS } from "@/lib/artwork-removal";
 import { useClientPreferences } from "@/hooks/use-client-preferences";
 import { useLiveUpdates } from "@/hooks/use-live-updates";
 import { useClientLogoUrl } from "@/hooks/use-client-logo-url";
-import { aspectRatioCss, copySummaryParts, formatRatio, hasVideoFormat, isReelFormat, isStoryFormat, postFormats, postSize } from "@/lib/formats";
+import { aspectRatioCss, copyFieldsFor, copySummaryParts, formatRatio, hasVideoFormat, isReelFormat, isStoryFormat, postFormats, postSize } from "@/lib/formats";
 import { CopyFieldsPreview } from "@/components/creative-review/CopyFieldsPreview";
 import { useCopyVersions } from "@/hooks/use-copy-versions";
 import { useArtworkUrl, usePreloadAssets } from "@/hooks/use-asset-signed-url";
@@ -396,6 +396,8 @@ export function CreativeReviewPage({ id }: { id: string }) {
   const isVideoPost = hasVideoFormat(postFormats(creative));
   const accountName = igProfile?.username ?? clientName;
   const caption = activeCopyVersion?.fields?.caption;
+  // Formats with no copy of their own (Print, a website banner): just the asset.
+  const noCopyFormat = postFormats(creative).length > 0 && copyFieldsFor(postFormats(creative)).length === 0;
   const isVideo = currentSlide?.asset.mime_type.startsWith("video/");
   // Every comment on this version made at a moment, as timeline markers.
   const videoMarkers: TimelineMarker[] = (allComments ?? [])
@@ -634,7 +636,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
         media={media}
         caption={caption || null}
         copy={
-          copySummaryParts(activeCopyVersion?.fields ?? {}, postFormats(creative)).others.length ? (
+          noCopyFormat ? null : copySummaryParts(activeCopyVersion?.fields ?? {}, postFormats(creative)).others.length ? (
             <CopyFieldsPreview fields={activeCopyVersion?.fields} formatIds={postFormats(creative)} />
           ) : (
             <span className="ig-nocopy">
@@ -1030,7 +1032,9 @@ export function CreativeReviewPage({ id }: { id: string }) {
                   ) : undefined
                 }
                 fallback={
-                  copySummaryParts(activeCopyVersion?.fields ?? {}, postFormats(creative)).others.length ? (
+                  // A format with no copy of its own (Print, say) says nothing
+                  // about copy (direct instruction).
+                  noCopyFormat ? undefined : copySummaryParts(activeCopyVersion?.fields ?? {}, postFormats(creative)).others.length ? (
                     <CopyFieldsPreview fields={activeCopyVersion?.fields} formatIds={postFormats(creative)} />
                   ) : (
                     <span className="ig-nocopy">

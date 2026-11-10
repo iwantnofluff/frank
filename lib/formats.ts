@@ -77,7 +77,9 @@ export const FORMATS: FormatDefinition[] = [
   { id: "yt_preroll", category: "Performance marketing", label: "YouTube Pre-roll / Bumper", aspectRatio: "16:9", copyFields: ["headline", "cta"] },
   { id: "li_sponsored", category: "Performance marketing", label: "LinkedIn Sponsored Content", aspectRatio: "1.91:1", copyFields: ["primary", "headline", "cta"] },
 
-  // Amazon
+  // Amazon. Storefront Tile, Email Header Banner, Website Banner, Hoarding
+  // and Print have no copy of their own (decided directly, 10 Nov 2026): the
+  // asset is the whole of it, and any words on it go in Text on Image.
   { id: "apl_module", category: "Amazon", label: "A+ Content Module", aspectRatio: "1.6:1", copyFields: ["headline", "body"] },
   { id: "apl_premium", category: "Amazon", label: "A+ Premium Module", aspectRatio: "2.4:1", copyFields: ["headline", "body"] },
   { id: "amz_main", category: "Amazon", label: "Listing Main Image", aspectRatio: "1:1", copyFields: [] },
@@ -87,22 +89,22 @@ export const FORMATS: FormatDefinition[] = [
   // carousel's slides, with the listing's own copy. Not in the prototype.
   { id: "amz_gallery", category: "Amazon", label: "Listing Image Set", aspectRatio: "1:1", copyFields: ["title", "bullets", "description"] },
   { id: "amz_sb", category: "Amazon", label: "Sponsored Brands Banner", aspectRatio: "1.91:1", copyFields: ["headline"] },
-  { id: "amz_store", category: "Amazon", label: "Storefront Tile", aspectRatio: "2:1", copyFields: ["headline"] },
+  { id: "amz_store", category: "Amazon", label: "Storefront Tile", aspectRatio: "2:1", copyFields: [] },
 
   // Email and messaging
   { id: "em_full", category: "Email and messaging", label: "Email Campaign", aspectRatio: "—", copyFields: ["subject", "preview", "body"] },
-  { id: "em_banner", category: "Email and messaging", label: "Email Header Banner", aspectRatio: "3:1", copyFields: ["subject"] },
+  { id: "em_banner", category: "Email and messaging", label: "Email Header Banner", aspectRatio: "3:1", copyFields: [] },
   { id: "wa_broadcast", category: "Email and messaging", label: "WhatsApp Broadcast", aspectRatio: "1:1", copyFields: ["body"] },
   { id: "sms", category: "Email and messaging", label: "SMS", aspectRatio: "—", copyFields: ["body"] },
   { id: "push", category: "Email and messaging", label: "Push Notification", aspectRatio: "—", copyFields: ["title", "body"] },
 
   // Web and print
   { id: "lp", category: "Web and print", label: "Landing Page", aspectRatio: "—", copyFields: ["headline", "body", "cta"] },
-  { id: "web_hero", category: "Web and print", label: "Website Banner / Hero", aspectRatio: "2.4:1", copyFields: ["headline", "cta"] },
+  { id: "web_hero", category: "Web and print", label: "Website Banner / Hero", aspectRatio: "2.4:1", copyFields: [] },
   { id: "blog", category: "Web and print", label: "Blog Header", aspectRatio: "16:9", copyFields: ["title"] },
   { id: "deck", category: "Web and print", label: "Presentation Slide", aspectRatio: "16:9", copyFields: [] },
-  { id: "ooh", category: "Web and print", label: "Hoarding / OOH", aspectRatio: "varies", copyFields: ["headline"] },
-  { id: "print", category: "Web and print", label: "Print — Flyer or Poster", aspectRatio: "varies", copyFields: ["headline", "body"] },
+  { id: "ooh", category: "Web and print", label: "Hoarding / OOH", aspectRatio: "varies", copyFields: [] },
+  { id: "print", category: "Web and print", label: "Print — Flyer or Poster", aspectRatio: "varies", copyFields: [] },
   { id: "packaging", category: "Web and print", label: "Packaging", aspectRatio: "varies", copyFields: [] },
 
   // General
