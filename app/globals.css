@@ -14956,3 +14956,8 @@ tr.rowflash > td + td {
 .samplebar .tag {
   flex: none;
 }
+/* In Preferences' Sample Client section, the banner fills its row. */
+.srow .samplebar {
+  flex: 1;
+  margin: 0;
+}

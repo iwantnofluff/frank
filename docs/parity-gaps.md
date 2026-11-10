@@ -5179,6 +5179,24 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Keeping or adding the sample client (1.75.1, 2026-11-10)
+
+Direct instruction: an Owner wants to see the sample client in their own workspace, and keep it permanently or choose in Preferences. Workspace Settings → General → Preferences has a **Sample Client** section, for Owners and Admins:
+- **With no sample** (any workspace made before 1.75.0, or one whose sample was removed): **Add the Sample Client** makes Lumen Skin, as sign-up does (`/api/sample/add`), with its 7 days starting then. One at a time: a second is refused (409).
+- **With one:** a choice of **Remove after 7 days** or **Keep it**, and its banner with Remove Now.
+
+"Kept" is stored as an end date of `infinity` (`SAMPLE_KEPT` in `hooks/use-sample.ts`), so no database change was needed:
+- the daily clean-up only takes samples whose date has passed, and infinity never passes.
+- `start_sample_clock` only sets an empty date.
+
+Switching back to Remove after 7 days sets a fresh 7 days from then. The banner reads "kept until you remove it" for a kept sample. A kept sample still doesn't count towards the plan's clients or storage, and nobody can be invited to it.
+
+**Verified**: In the real app (dev server, staging), screenshots of the section with no sample and with a kept one were checked. sample-client.spec now also checks, with a real session:
+- Add makes the sample with 7 days.
+- Keep it saves `infinity`, which the clean-up's query doesn't find, and survives a reload.
+- Back to 7 days works.
+- Add is gone once there's a sample, and the route refuses a second one.
+
 ## A sample client in every new workspace (1.75.0, phase145, 2026-11-10)
 
 Decided directly: a new workspace has nothing in it, so Frank Tour could only describe things, and there was nothing to try. Every new workspace now gets a made-up client to explore. The user decided:

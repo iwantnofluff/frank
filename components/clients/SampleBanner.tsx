@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useClientDetail } from "@/hooks/use-client";
 import { useMyAgency } from "@/hooks/use-my-agency";
 import { useMyMembership } from "@/hooks/use-my-membership";
-import { useRemoveSample } from "@/hooks/use-sample";
+import { isSampleKept, useRemoveSample } from "@/hooks/use-sample";
 import { seesAllClients } from "@/lib/roles";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
@@ -36,8 +36,11 @@ export function SampleBanner({ clientId }: { clientId: string | null | undefined
     <div className="samplebar" role="note">
       <span className="tag amber">Sample</span>
       <span className="samplebar-t">
-        {client.name} is a made-up client to explore Frank with. It&rsquo;s removed {removedIn(client.sample_expires_at)}, with
-        everything in it, and doesn&rsquo;t count towards your plan.
+        {client.name} is a made-up client to explore Frank with.{" "}
+        {isSampleKept(client.sample_expires_at)
+          ? "It’s kept until you remove it,"
+          : `It’s removed ${removedIn(client.sample_expires_at)}, with everything in it,`}{" "}
+        and doesn&rsquo;t count towards your plan.
       </span>
       {canRemove && (
         <button type="button" className="btn sm" onClick={() => setConfirming(true)}>

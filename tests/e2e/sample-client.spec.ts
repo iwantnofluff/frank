@@ -106,3 +106,35 @@ test("a User sees the banner but can't remove the sample", async ({ page, frank 
   expect(res.status()).toBe(403);
   expect((await admin.from("clients").select("id").eq("id", clientId)).data).toHaveLength(1);
 });
+
+test("Preferences adds the sample to a workspace without one, keeps it, or lets it go after 7 days", async ({ page, frank }) => {
+  test.setTimeout(150_000);
+  await frank.loginAsStaff(page);
+  await page.goto(`${APP_URL}/settings/general/preferences`);
+  const add = page.getByRole("button", { name: "Add the Sample Client" });
+  await add.click();
+  const choice = page.getByLabel("Sample client");
+  await expect(choice).toHaveValue("remove", { timeout: 60_000 });
+  const sample = (await admin.from("clients").select("id, sample_expires_at").eq("agency_id", frank.agencyId).eq("is_sample", true).single()).data!;
+  expect(Math.abs(Date.parse(sample.sample_expires_at!) - (Date.now() + 7 * 86_400_000))).toBeLessThan(10 * 60_000);
+  await expect(page.locator(".samplebar")).toContainText("removed in 7 days");
+
+  // Kept: a date that never comes, so the clean-up never takes it.
+  await choice.selectOption("keep");
+  await expect(page.locator(".samplebar")).toContainText("kept until you remove it,");
+  await expect
+    .poll(async () => (await admin.from("clients").select("sample_expires_at").eq("id", sample.id).single()).data!.sample_expires_at)
+    .toBe("infinity");
+  const { data: expired } = await admin.from("clients").select("id").eq("id", sample.id).lt("sample_expires_at", new Date().toISOString());
+  expect(expired).toEqual([]);
+  await page.reload();
+  await expect(page.getByLabel("Sample client")).toHaveValue("keep");
+
+  // Back to 7 days, from now.
+  await page.getByLabel("Sample client").selectOption("remove");
+  await expect(page.locator(".samplebar")).toContainText("removed in 7 days");
+  // One at a time.
+  await expect(add).toHaveCount(0);
+  const again = await page.request.post(`${APP_URL}/api/sample/add`, { data: { agencyId: frank.agencyId } });
+  expect(again.status()).toBe(409);
+});

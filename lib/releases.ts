@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.75.1",
+    date: "2026-11-10",
+    title: "Keep the sample client",
+    changes: [
+      "Workspace Settings → General → Preferences has a Sample Client section. Owners and Admins can add Lumen Skin to a workspace that doesn't have it, keep it for as long as they like, or have it removed 7 days from now.",
+    ],
+  },
+  {
     version: "1.75.0",
     date: "2026-11-10",
     title: "A sample client to explore",
