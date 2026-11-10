@@ -893,10 +893,10 @@ export function CreativeReviewPage({ id }: { id: string }) {
                 </select>
               </div>
               {/* The phone full size (direct instruction): under Copy,
-                  "Expand" then its button, square, as tall as the pickers. */}
+                  "Fullscreen" then its button, square, as tall as the pickers. */}
               {activeSection === "content" && (
                 <div className="vsel">
-                  <label htmlFor="vExpand">Expand</label>
+                  <label htmlFor="vExpand">Fullscreen</label>
                   <button
                     id="vExpand"
                     type="button"

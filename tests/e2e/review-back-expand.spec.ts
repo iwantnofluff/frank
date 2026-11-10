@@ -93,7 +93,7 @@ test("the phone opens full size over the page, on the same slide, and closes wit
   expect(b.height).toBe(copy.height);
   expect(b.width).toBe(b.height);
   expect(b.y).toBeGreaterThan(copy.y);
-  await expect(page.locator(".vsel", { has: open })).toContainText("Expand");
+  await expect(page.locator(".vsel", { has: open })).toContainText("Fullscreen");
   await open.click();
   const dialog = page.getByRole("dialog", { name: "The post full size" });
   await expect(dialog).toBeVisible();

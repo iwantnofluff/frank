@@ -5179,6 +5179,12 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Expand renamed Fullscreen (1.73.1, 2026-11-10)
+
+Direct instruction: the label beside the button under Copy on a post's page, which shows the phone over the whole window, reads Fullscreen instead of Expand. The help article says the same. The video player's own expand button inside the phone was left as it is, since it wasn't asked about and only enlarges the video.
+
+**Verified**: In the real app (dev server, staging), a screenshot showed "Fullscreen" lined up with Creative and Copy above it, the button beside it unchanged. review-back-expand.spec now checks for "Fullscreen" and passed against staging.
+
 ## Other Content renamed Project (1.73.0, 2026-11-10)
 
 Decided directly: the kind of project for one-off pieces was called Other Content, which described it by what it isn't. It is now **Project**, the base kind, with Content Planner the kind that adds a schedule. Other names were weighed (One-off Content, Standalone Content, Content Requests); the user chose Project, accepting that "project" is also the umbrella word for both kinds. Also decided directly: in the New Project window Project comes first and is selected to start, so a new window opens on Project's type list (Amazon first) and columns.

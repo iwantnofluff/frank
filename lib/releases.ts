@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.73.1",
+    date: "2026-11-10",
+    title: "Fullscreen, not Expand",
+    changes: [
+      "On a post's page, the button under Copy that shows the phone over the whole window is now labelled Fullscreen.",
+    ],
+  },
+  {
     version: "1.73.0",
     date: "2026-11-10",
     title: "Other Content is now Project",
