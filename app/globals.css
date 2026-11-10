@@ -14834,3 +14834,95 @@ tr.rowflash > td + td {
   align-items: center;
   gap: 12px;
 }
+
+/* Frank Tour (phase144, direct instruction): the page dimmed but for the
+   one thing a step is about, a card beside it. Above everything, windows
+   included; the scrim takes every click while it runs. The hole slides from
+   one place to the next. */
+.tour {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+}
+.tour-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  animation: tour-in var(--dur-open) var(--ease-open);
+}
+/* With something lit, the hole's own shadow does the dimming. */
+.tour[data-lit="true"] .tour-scrim {
+  background: transparent;
+}
+.tour-hole {
+  position: fixed;
+  border-radius: 10px;
+  box-shadow:
+    0 0 0 2px var(--action),
+    0 0 0 9999px rgba(15, 23, 42, 0.55);
+  pointer-events: none;
+  transition:
+    top 0.3s var(--ease-std),
+    left 0.3s var(--ease-std),
+    width 0.3s var(--ease-std),
+    height 0.3s var(--ease-std);
+}
+.tour-card {
+  position: fixed;
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  padding: 14px 16px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 14px 44px rgba(20, 22, 26, 0.24);
+  animation: tour-in var(--dur-open) var(--ease-open);
+}
+.tour-n {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.tour-card h2 {
+  margin: 4px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+.tour-card p {
+  margin: 4px 0 14px;
+  font-size: 13.2px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.tour-f {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tour-f .grow {
+  flex: 1;
+}
+.tour-skip {
+  padding: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.tour-skip:hover {
+  color: var(--ink);
+}
+@keyframes tour-in {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tour-scrim,
+  .tour-card {
+    animation: none;
+  }
+  .tour-hole {
+    transition: none;
+  }
+}

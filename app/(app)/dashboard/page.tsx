@@ -147,6 +147,7 @@ export default function DashboardPage() {
             <button
               className="btn sm"
               type="button"
+              data-tour="new-client"
               onClick={() => setNewClientOpen(true)}
             >
               New Client
@@ -180,7 +181,7 @@ export default function DashboardPage() {
       )}
 
       {!isError && filtered.length > 0 && (
-        <div className="clients">
+        <div className="clients" data-tour="clients">
           <div className="crow head" style={{ gridTemplateColumns: CLIENT_ROW_COLUMNS }}>
             <div>Client</div>
             <div className="ago">Projects</div>

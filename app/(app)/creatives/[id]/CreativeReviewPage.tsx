@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { itemWord } from "@/lib/item-word";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCreative } from "@/hooks/use-creative";
@@ -801,8 +802,8 @@ export function CreativeReviewPage({ id }: { id: string }) {
                   <button
                     type="button"
                     className="btn primary newpost"
-                    title="New Post"
-                    aria-label="New Post"
+                    title={`New ${itemWord(creative.projects.delivery).one}`}
+                    aria-label={`New ${itemWord(creative.projects.delivery).one}`}
                     // To the project's table, the New Post window open there
                     // (direct instruction).
                     onClick={() => router.push(`/projects/${creative.projects!.id}?new=1`)}
@@ -813,6 +814,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
                 <button
                   type="button"
                   className="btn primary"
+                  data-tour="edit"
                   onClick={() => setCreativeModalTab("upload")}
                 >
                   Edit

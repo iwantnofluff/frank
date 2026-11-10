@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from "crypto";
 import { createClient } from "@supabase/supabase-js";
 import type { Browser } from "@playwright/test";
-import { test, expect, APP_URL, type Frank } from "./fixtures";
+import { test, expect, APP_URL, type Frank, TOUR_SEEN } from "./fixtures";
 
 const admin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -37,7 +37,7 @@ async function seedMember(
   });
   if (error) throw error;
   const userId = data.user.id;
-  await admin.from("users").insert({ id: userId, email, name: opts.name });
+  await admin.from("users").insert({ tour_seen_at: TOUR_SEEN, id: userId, email, name: opts.name });
   const { data: m, error: mErr } = await admin
     .from("memberships")
     .insert({
@@ -411,7 +411,7 @@ test("Users lists each client's people, invited ones with Resend and Revoke", as
   const email = `e2e-cm-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
   const { data: u } = await admin.auth.admin.createUser({ email, email_confirm: true });
   try {
-    await admin.from("users").insert({ id: u.user!.id, email, name: "Ivy Invitee" });
+    await admin.from("users").insert({ tour_seen_at: TOUR_SEEN, id: u.user!.id, email, name: "Ivy Invitee" });
     const { data: m, error } = await admin
       .from("memberships")
       .insert({ agency_id: frank.agencyId, user_id: u.user!.id, role: "user", client_id: frank.clientId, accepted_at: null, invited_at: new Date().toISOString() })

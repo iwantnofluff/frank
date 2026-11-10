@@ -5179,6 +5179,49 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## A Project's pieces are assets (1.74.1, 2026-11-10)
+
+Decided directly: in a Project (the kind for one-off pieces), the Post Name column is **Asset Name** by default. "Post" is changed to "asset" across a Project's own screens, not a Content Planner's. Other names were weighed (Deliverable, Piece, Item, Title). `lib/item-word.ts` gives the word from the project's kind, so shared screens pick it up.
+
+What says asset in a Project:
+- **Its table:** Asset Name and its line (Asset identifier), "Asset copy checked by Frank", "Latest asset visual", "N assets due in this view", the empty table ("No assets yet", "Use New Asset above"), "No archived assets", and the warning about hiding the Asset Name column.
+- **Adding one:** + New's name (New Asset), on the table and on an asset's page. The quick-add row (its name field, "Name this asset", "New asset row", its errors).
+- **The window:** New Asset, Asset Name, Create Asset, "Asset updated.", Speak It's note, the save-conflict note and the artwork line.
+- **Elsewhere:** the phone view's empty month, and the help article on Projects.
+
+Left as it is: notifications, comments, Share and review links, the client-facing review page, Settings ("Hides its posts") and AI wording still say post. They're shared across both kinds, and the instruction was a Project's own screens. A project's saved column name wins over the default: one Project on staging has its column renamed "Creative Name", and keeps it.
+
+**Verified**: In the real app (dev server, staging), screenshots of a Project's table (Asset Name, "1 asset due in this view") and the New Asset window (Asset Name, Speak It's note, Create Asset) were checked. A Content Planner's still says Post. The tests that add to a Project now use the Asset wording. carousel, continuous-calendar, format-split, new-brief, quick-add-row, platform-templates, default-columns, mobile-project, client-preferences, frank-tour and nav-rail passed against staging.
+
+## Frank Tour (1.74.0, phase144, 2026-11-10)
+
+Direct instruction: a walkthrough of the basics for someone's first visit, the rest of the page greyed out and the person pointed at one thing at a time, and a link in the account menu, under Workspace Settings, to replay it. The user named it Frank Tour and decided:
+- **Who sees it on their own:** only people who haven't signed in before. phase144 adds `users.tour_seen_at` and marks everyone who has signed in already, so existing people only see it if they choose Frank Tour. Someone invited before this but not yet signed in sees it on their first visit.
+- **How it moves:** show and tell, with Next, Back and Skip Tour (and the arrow keys and Esc). It doesn't wait for the person to do each thing, so it can't get stuck.
+- **What it covers**, a tour per kind of person:
+  - Owners and Admins: the menu and Workspace Settings, Add a client, Create a project (Project or Content Planner), Add a post, the stages and Share, Invite your team.
+  - Users: their clients, a project's table, the stages, Edit and Draft with Frank, comments and Private, the bell, the menu.
+  - Clients: their work, the post (commenting on its text or artwork), commenting and Approve Concept, the bell.
+
+How it works (`components/app-shell/FrankTour.tsx`, steps in `lib/tour.ts`): it sits in the app shell, so it carries on across pages. Each step names the page it needs and what to light up. It goes to that page, finds the thing (marked with `data-tour` where no existing label picks it out), and dims everything else with a cut-out around it. The card sits beside it, wherever there's room. The page takes no clicks while it runs. It's saved as seen as soon as it starts, so a reload doesn't restart it. Tip cards wait while it runs. The client, project and post it shows are the latest the person can see (RLS decides). A step with nothing to show yet is left out: a brand-new workspace has no client, project or post, so its Owner gets the menu, Add a client and Invite your team. If the thing a step points at doesn't appear within 4 seconds, its card shows in the middle without a cut-out. Where a project has nothing scheduled this month, the "Nothing scheduled" message is lit in place of the table.
+
+Deliberately not done:
+- **Phones:** no tour, and no Frank Tour in the menu. The phone layout is different; a phone tour would be its own piece of work.
+- **Finance:** no tour, since their part of Frank is billing.
+- **Admins who can't invite people** skip "Invite your team", as there's no button for them.
+- **Clients approving a finished post:** in Frank itself clients approve concepts only, and the finished post through the review link. The tour says so rather than pointing at a button that isn't there.
+
+Tests: every test account is new, so the tour would start over every test. The test fixture sets `frank:tour-auto-off` in its browsers, which the tour honours only for starting on its own; Frank Tour in the menu still starts it. Its two accounts, and accounts that specs make themselves, are saved as having seen it (`TOUR_SEEN`), for specs that open browsers of their own.
+
+**Verified**: phase144 applied to staging after a rolled-back rehearsal (263 users, 128 never signed in, left unseen). In the real app (dev server, staging), all three tours walked end to end with screenshots of each step checked:
+- an Admin's started by itself after signing in, went from the clients list to the client, its project and a post, and lit the account menu, New Client, New Project, + New and the stage pills. It was saved as seen, and didn't come back on reload.
+- a User's lit their clients, the stage pills, Edit, the comment box, the bell and the menu. Its project step showed the "Nothing scheduled" fallback.
+- a client's lit their work, the phone, the comment box and the bell.
+
+Skip Tour and Esc ended it, a click on the dimmed page did nothing, and on a phone the menu has no Frank Tour. frank-tour.spec covers these (4 tests, passed against staging).
+
+The full suite on the local database then had 4 failures, all expected. admin-overview passed on rerun. nav-rail's menu list now includes Frank Tour. creative-review.png differed only by the Fullscreen label (1.73.1), and dashboard.png by the date rolling over; both were regenerated after looking at their diffs. With 1.74.1 alongside, the full suite passed: 345 of 345.
+
 ## Expand renamed Fullscreen (1.73.1, 2026-11-10)
 
 Direct instruction: the label beside the button under Copy on a post's page, which shows the phone over the whole window, reads Fullscreen instead of Expand. The help article says the same. The video player's own expand button inside the phone was left as it is, since it wasn't asked about and only enlarges the video.

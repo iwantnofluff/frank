@@ -270,6 +270,7 @@ export default function ClientWorkspacePage({
             <button
               className="btn sm"
               type="button"
+              data-tour="new-project"
               onClick={() => setNewProjectOpen(true)}
             >
               New Project

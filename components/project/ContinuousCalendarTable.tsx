@@ -83,7 +83,7 @@ import {
 
 // What a Pending button says it adds (direct instruction): "Add Creative".
 const ADD_LABELS: Partial<Record<FocusTarget, string>> = {
-  name: "Post Name",
+  name: "Asset Name",
   team: "Team",
   concept: "Concept",
   slides: "Slides",
@@ -147,15 +147,15 @@ export const TOGGLABLE_COLUMNS = [
   // When the post goes live (phase140); Due Date, frozen first, is when
   // the work is due.
   { key: "publishDate", label: "Publish Date", sub: "Goes live", width: 112 },
-  { key: "creative", label: "Post Name", sub: "Post identifier", width: 196 },
+  { key: "creative", label: "Asset Name", sub: "Asset identifier", width: 196 },
   { key: "type", label: "Format", sub: "Platform and type", width: 141 },
   // The copy before the visual it goes with (direct instruction); hidden
   // by default here.
-  { key: "copy", label: "Caption/Copy", sub: "Post copy checked by Frank", width: 330 },
+  { key: "copy", label: "Caption/Copy", sub: "Asset copy checked by Frank", width: 330 },
   { key: "imageOnText", label: "Text on Image", sub: "Image text checked by Frank", width: 220 },
   // The latest creative version's file name, with its preview on hover
   // (direct instruction; the preview moved here off Post Name).
-  { key: "artwork", label: "Creative", sub: "Latest post visual", width: 200 },
+  { key: "artwork", label: "Creative", sub: "Latest asset visual", width: 200 },
   { key: "status", label: "Status", sub: "Workflow state", width: 184 },
   // Renamed Team, then wider twice (direct instruction), for a role after
   // the name. Format, Slides and Status are as wide as their longest
@@ -750,7 +750,7 @@ export function ContinuousCalendarTable({
   return (
     <>
       <p className="sub" style={{ marginTop: 14, marginBottom: 14 }}>
-        {totalShown} creative{totalShown === 1 ? "" : "s"} due in this view
+        {totalShown} asset{totalShown === 1 ? "" : "s"} due in this view
         {ideas.length > 0 && `, and ${ideas.length} idea${ideas.length === 1 ? "" : "s"}`}.
       </p>
 
@@ -998,7 +998,7 @@ export function ContinuousCalendarTable({
         </div>
       )}
       {archiveCreatives.error && (
-        <p className="autherr">{errorMessage(archiveCreatives.error, "Couldn't update these posts")}</p>
+        <p className="autherr">{errorMessage(archiveCreatives.error, "Couldn't update these assets")}</p>
       )}
       {confirmDeleteOpen && (
         <PermanentDeleteConfirm
@@ -1012,8 +1012,9 @@ export function ContinuousCalendarTable({
 
       {draftRow && (
         <DraftEditBar
+          noun="asset"
           blocked={
-            !visibleOrderedKeys.includes("creative") ? "Show the Post Name column to name the post" : null
+            !visibleOrderedKeys.includes("creative") ? "Show the Asset Name column to name the asset" : null
           }
           problem={draft.problem}
           saving={draft.saving}
@@ -1034,7 +1035,7 @@ export function ContinuousCalendarTable({
           <b>Nothing due</b>
           <span>
             {!hasAnyDue
-              ? `Nothing due in ${projectName} yet.${isStaff ? " Use New Post to write the first one." : ""}`
+              ? `Nothing due in ${projectName} yet.${isStaff ? " Use New Asset to add the first one." : ""}`
               : `No creatives match these filters in ${monthLabel}.`}
           </span>
         </div>
@@ -1236,7 +1237,7 @@ export function ContinuousCalendarTable({
                                   </button>
                                   {isStaff && (
                                     <span className="cc-after">
-                                      <EditContent onFill={fill(c, "name").onFill} label="Post Name" />
+                                      <EditContent onFill={fill(c, "name").onFill} label="Asset Name" />
                                     </span>
                                   )}
                                 </td>

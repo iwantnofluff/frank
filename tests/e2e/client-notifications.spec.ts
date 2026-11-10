@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { test, expect, APP_URL, PHONE_VIEWPORT, type Frank } from "./fixtures";
+import { test, expect, APP_URL, PHONE_VIEWPORT, type Frank, TOUR_SEEN } from "./fixtures";
 
 const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
   auth: { persistSession: false, autoRefreshToken: false },
@@ -88,7 +88,7 @@ async function teamUser(frank: Frank) {
   const { data, error } = await admin.auth.admin.createUser({ email, email_confirm: true });
   if (error) throw error;
   const userId = data.user.id;
-  await admin.from("users").insert({ id: userId, email, name: "Project User" });
+  await admin.from("users").insert({ tour_seen_at: TOUR_SEEN, id: userId, email, name: "Project User" });
   const { data: m, error: mErr } = await admin
     .from("memberships")
     .insert({ agency_id: frank.agencyId, user_id: userId, role: "user", accepted_at: new Date().toISOString() })

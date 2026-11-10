@@ -384,7 +384,7 @@ export function TeamSettings({ view }: { view: View }) {
             </select>
           )}
           {inviteRoles.length > 0 && agency && view === "people" && (
-            <button type="button" className="btn sm" onClick={() => setInviting(true)}>
+            <button type="button" className="btn sm" data-tour="invite" onClick={() => setInviting(true)}>
               Invite Member
             </button>
           )}

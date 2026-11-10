@@ -90,6 +90,7 @@ import { ConceptChangedError, useSaveConcept } from "@/hooks/use-save-concept";
 import { saveDirectionsForNewPost, type DesignDirectionRow } from "@/hooks/use-design-directions";
 import { useQueryClient } from "@tanstack/react-query";
 import type { VoicePostFields } from "@/lib/ai/voice-post";
+import { itemWord } from "@/lib/item-word";
 import { useAssetLink, useSaveAssetLink } from "@/hooks/use-asset-links";
 
 const KNOWLEDGE_SECTION_LABELS: Record<string, string> = Object.fromEntries(
@@ -850,6 +851,8 @@ export function CreativeModal(props: CreativeModalProps) {
   }
   const updateCx = useUpdateCreativeCx(projectId);
   const delivery = isCreate ? props.delivery : (props.creative.projects?.delivery ?? "scheduled");
+  // A Project's are assets, a Content Planner's posts (direct instruction).
+  const word = itemWord(delivery);
 
   const initialFocus = isCreate ? undefined : props.initialFocus;
   const [activeTab, setActiveTab] = useState<Tab>(
@@ -946,7 +949,7 @@ export function CreativeModal(props: CreativeModalProps) {
           setKnownNotes(await saveNotes.mutateAsync({ creativeId: newId, notes: draftNotes, known: NO_NOTES, mode: "new" }));
         }
       } catch (e) {
-        setRefSaveError(errorMessage(e, "The post was made, but its reference images, Notes for Designer or directions couldn't be saved"));
+        setRefSaveError(errorMessage(e, `The ${word.lower} was made, but its reference images, Notes for Designer or directions couldn't be saved`));
       }
       setSavedFields({ principles: principles.trim() });
       props.onCreated?.(scheduledAt, delivery === "continuous" ? dueOn || null : null);
@@ -1186,7 +1189,7 @@ export function CreativeModal(props: CreativeModalProps) {
     if (!text) return;
     if (!creativeId) {
       setSavedConcept(text);
-      setConceptNote("Saved. Create Post adds it to the post.");
+      setConceptNote(`Saved. Create ${word.one} adds it to the ${word.lower}.`);
       return;
     }
     try {
@@ -1761,7 +1764,7 @@ export function CreativeModal(props: CreativeModalProps) {
   // real post name nor a settled format yet, so it keeps the plain,
   // single-line title.
   const title = isCreate ? (
-    "New Post"
+    `New ${word.one}`
   ) : (
     <>
       <div className="modal-title-project">{props.creative.projects?.name ?? "Untitled Project"}</div>
@@ -1771,7 +1774,7 @@ export function CreativeModal(props: CreativeModalProps) {
     </>
   );
   const titleAriaLabel = isCreate
-    ? "New Post"
+    ? `New ${word.one}`
     : `${props.creative.projects?.name ?? "Untitled Project"} — ${props.creative.name}`;
 
   return (
@@ -1801,7 +1804,7 @@ export function CreativeModal(props: CreativeModalProps) {
               Design with Frank
             </button>
             <div className="grow" />
-            {showUpdatedNote && <span className="bsaved">Post updated.</span>}
+            {showUpdatedNote && <span className="bsaved">{word.one} updated.</span>}
             <button type="button" className="btn" onClick={requestClose}>
               Cancel
             </button>
@@ -1811,7 +1814,7 @@ export function CreativeModal(props: CreativeModalProps) {
               disabled={briefSaving}
               onClick={() => handleSaveBrief()}
             >
-              {briefSaving ? "Saving…" : isCreate && !creativeId ? "Create Post" : "Update"}
+              {briefSaving ? "Saving…" : isCreate && !creativeId ? `Create ${word.one}` : "Update"}
             </button>
           </>
         ) : (
@@ -1922,7 +1925,7 @@ export function CreativeModal(props: CreativeModalProps) {
           <p className="msection-d">The basics — what this is, its format, when it&rsquo;s due, and who&rsquo;s on it.</p>
 
           <div className="field">
-            <label htmlFor="nbName">Post Name</label>
+            <label htmlFor="nbName">{word.one} Name</label>
             <input
               id="nbName"
               className="bin one"
@@ -2541,7 +2544,7 @@ export function CreativeModal(props: CreativeModalProps) {
       {activeTab === "upload" && creativeId && !!formats.length && (
         <div className="mtabbody">
           <div className="msection-h">Creative</div>
-          <p className="msection-d">The artwork or video for this post.</p>
+          <p className="msection-d">The artwork or video for this {word.lower}.</p>
           <div className="field">
             {creativeVersions.length > 0 && (
                 <div className="viewbar" style={{ marginBottom: 10 }}>
@@ -2889,7 +2892,7 @@ export function CreativeModal(props: CreativeModalProps) {
         }
       >
         <p className="sub">
-          {conflict.byName ?? "Someone"} saved this post at{" "}
+          {conflict.byName ?? "Someone"} saved this {word.lower} at{" "}
           {new Date(conflict.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}, after you
           opened it.
         </p>
@@ -2970,7 +2973,7 @@ export function CreativeModal(props: CreativeModalProps) {
         newPost={creativeId ? null : { projectId, name: name.trim(), formats, images: pendingRefImages }}
         unsavedRuns={unsavedRuns}
         onUnsavedRunsChange={setUnsavedRuns}
-        postName={name || (isCreate ? "New post" : props.creative.name)}
+        postName={name || (isCreate ? `New ${word.lower}` : props.creative.name)}
         clientId={clientId ?? null}
         concept={concept}
         referenceUrls={tidyReferences(referenceUrls)}
@@ -3010,7 +3013,7 @@ export function CreativeModal(props: CreativeModalProps) {
         scope={chatScope}
         creativeId={creativeId}
         designerNotes={draftNotes}
-        postName={name || (isCreate ? "New post" : props.creative.name)}
+        postName={name || (isCreate ? `New ${word.lower}` : props.creative.name)}
         clientId={clientId ?? null}
         fields={
           chatScope === "production"

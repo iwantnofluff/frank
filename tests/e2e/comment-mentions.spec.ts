@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Browser } from "@playwright/test";
-import { test, expect, APP_URL } from "./fixtures";
+import { test, expect, APP_URL, TOUR_SEEN } from "./fixtures";
 
 const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
   auth: { persistSession: false, autoRefreshToken: false },
@@ -13,7 +13,7 @@ async function teammate(browser: Browser, agencyId: string, name: string) {
   const password = "E2e-Second-Test-1234!";
   const { data: u } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
   const id = u.user!.id;
-  await admin.from("users").insert({ id, email, name });
+  await admin.from("users").insert({ tour_seen_at: TOUR_SEEN, id, email, name });
   const { data: m } = await admin
     .from("memberships")
     .insert({ agency_id: agencyId, user_id: id, role: "admin", accepted_at: new Date().toISOString() })

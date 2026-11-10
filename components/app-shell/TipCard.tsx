@@ -8,6 +8,7 @@ import { usePresence } from "@/hooks/use-presence";
 import { nextTip, tipDue, type Tip } from "@/lib/tips";
 import { openHelpArticle } from "./HelpPanel";
 import { TIP_SPOT_EVENT } from "./TipSpotlight";
+import { useTouring } from "@/lib/tour";
 
 const SHOW_MS = 5000;
 
@@ -17,7 +18,9 @@ const SHOW_MS = 5000;
 // the feature, Read More opens its Help article.
 export function TipCard() {
   const { isStaff, isPending } = useIsStaff();
-  const enabled = isStaff && !isPending;
+  // None while Frank Tour runs.
+  const touring = useTouring();
+  const enabled = isStaff && !isPending && !touring;
   const { data: tips } = useMyTips(enabled);
   const mark = useMarkTipShown();
   const router = useRouter();

@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { test, expect, APP_URL, type Frank } from "./fixtures";
+import { test, expect, APP_URL, type Frank, TOUR_SEEN } from "./fixtures";
 
 // Per-project access (phase46): Users and Clients are on chosen projects of
 // their clients; Owners and Admins see every project.
@@ -84,7 +84,7 @@ async function seedUser(frank: Frank) {
   const email = `e2e-onproj-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
   const password = "E2e-OnProj-1234!";
   const { data } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
-  await admin.from("users").insert({ id: data.user!.id, email, name: "Proj User" });
+  await admin.from("users").insert({ tour_seen_at: TOUR_SEEN, id: data.user!.id, email, name: "Proj User" });
   const { data: m } = await admin
     .from("memberships")
     .insert({ agency_id: frank.agencyId, user_id: data.user!.id, role: "user", accepted_at: new Date().toISOString() })

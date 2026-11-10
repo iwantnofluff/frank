@@ -20,10 +20,12 @@ export interface MyProfile {
   tips_every_hours: number | null;
   tips_seen: string[] | null;
   tips_last_at: string | null;
+  // When Frank Tour was shown to them (phase144); null, not yet.
+  tour_seen_at: string | null;
 }
 
 const PROFILE_COLUMNS =
-  "id, email, name, first_name, last_name, designation, bio, avatar_asset_id, releases_seen, tips_every_hours, tips_seen, tips_last_at";
+  "id, email, name, first_name, last_name, designation, bio, avatar_asset_id, releases_seen, tips_every_hours, tips_seen, tips_last_at, tour_seen_at";
 
 export function myProfileQuery(userId: string | undefined) {
   return {

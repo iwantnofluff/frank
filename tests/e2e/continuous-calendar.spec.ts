@@ -63,7 +63,7 @@ test("continuous calendar — the template's columns, named as in the New Post w
       .filter(Boolean),
   );
   expect(headings).toEqual([
-    "Due Date", "Publish Date", "Post Name", "Format", "Caption/Copy", "Text on Image", "Creative", "Status", "Team",
+    "Due Date", "Publish Date", "Asset Name", "Format", "Caption/Copy", "Text on Image", "Creative", "Status", "Team",
     "Concept", "Slides", "VO", "Notes for Designer", "Alt Text", "WIIFM Direction", "Principles",
   ]);
 });
@@ -165,11 +165,11 @@ test("continuous calendar — jumps to the month of a newly created brief", asyn
   await page.goto(`/projects/${projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
 
-  await page.getByRole("button", { name: "New Post", exact: true }).click();
+  await page.getByRole("button", { name: "New Asset", exact: true }).click();
   await page.fill("#nbName", "Continuous Calendar Jump E2E");
   await page.fill("#nbDue", "2027-06-10");
   await chooseFormat(page, "A+ Content Module");
-  await page.click('button:has-text("Create Post")');
+  await page.click('button:has-text("Create Asset")');
 
   await expect(page.locator(".calmonth")).toHaveText("Jun 2027");
   await expect(page.locator(".pname", { hasText: "Continuous Calendar Jump E2E" })).toBeVisible();

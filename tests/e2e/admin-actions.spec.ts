@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Page } from "@playwright/test";
-import { test, expect, APP_URL, type Frank, APP_PORT } from "./fixtures";
+import { test, expect, APP_URL, type Frank, APP_PORT, TOUR_SEEN } from "./fixtures";
 
 // The admin area acting inside an agency (phase51): each action asks for a
 // reason, is logged, and the agency's Owners can read the log.
@@ -16,7 +16,7 @@ async function makePlatformAdmin() {
   const email = `e2e-platform-admin-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
   const { data } = await admin.auth.admin.createUser({ email, password: PASSWORD, email_confirm: true });
   const id = data.user!.id;
-  await admin.from("users").insert({ id, email, name: "Support Sam" });
+  await admin.from("users").insert({ tour_seen_at: TOUR_SEEN, id, email, name: "Support Sam" });
   await admin.from("platform_admins").insert({ user_id: id });
   return {
     email,
@@ -52,7 +52,7 @@ test("the admin resends an invite and changes a role, each with a reason that's 
   // An invited User, the way the app leaves one.
   const email = `e2e-support-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
   const { data: u } = await admin.auth.admin.createUser({ email, email_confirm: true });
-  await admin.from("users").insert({ id: u.user!.id, email, name: "Ivy Invited" });
+  await admin.from("users").insert({ tour_seen_at: TOUR_SEEN, id: u.user!.id, email, name: "Ivy Invited" });
   const staffId = await userIdOf(frank.staffEmail);
   const { data: m } = await admin
     .from("memberships")

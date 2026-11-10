@@ -1,5 +1,6 @@
 import { test as base, expect, type Cookie, type Page } from "@playwright/test";
 import { CURRENT_RELEASE } from "../../lib/releases";
+import { TOUR_AUTO_OFF_KEY } from "../../lib/tour";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { admin, ANON_KEY, SUPABASE_URL, sweepAgency, TEST_AGENCY_NAME } from "./sweep";
 
@@ -202,7 +203,24 @@ async function signInPage(page: Page, email: string, password: string) {
   pageSessions.set(email, (await page.context().cookies()).filter((c) => c.name.startsWith("sb-")));
 }
 
+// Frank Tour already shown (phase144), for accounts a spec makes itself, so
+// the tour doesn't start over what it clicks in a browser of its own.
+export const TOUR_SEEN = "2026-11-10T00:00:00.000Z";
+
 export const test = base.extend<{ frank: Frank }>({
+  // Frank Tour (phase144) starts on its own for anyone new, and every test
+  // account is: kept from starting in the tests' browsers. tour.spec starts
+  // it from the menu, or clears this.
+  context: async ({ context }, provideFixture) => {
+    await context.addInitScript((key) => {
+      try {
+        window.localStorage.setItem(key, "1");
+      } catch {
+        // No storage on this page.
+      }
+    }, TOUR_AUTO_OFF_KEY);
+    await provideFixture(context);
+  },
   frank: async ({}, provideFixture, testInfo) => {
     const stamp = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const slot = testInfo.parallelIndex;
@@ -234,8 +252,8 @@ export const test = base.extend<{ frank: Frank }>({
       // don't hang on when that check loads; updates.spec clears it. Tips
       // off (phase116), so none slides over what a test clicks; tips.spec
       // turns them on.
-      { id: staffAuth.user.id, email: staffEmail, name: "E2E Staff", releases_seen: CURRENT_RELEASE.version, tips_every_hours: 0 },
-      { id: clientAuth.user.id, email: clientEmail, name: "E2E Client User" },
+      { id: staffAuth.user.id, email: staffEmail, name: "E2E Staff", releases_seen: CURRENT_RELEASE.version, tips_every_hours: 0, tour_seen_at: TOUR_SEEN },
+      { id: clientAuth.user.id, email: clientEmail, name: "E2E Client User", tour_seen_at: TOUR_SEEN },
     ];
     // A field one row leaves out takes its default, not null.
     let { error: usersError } = await admin.from("users").insert(usersRows, { defaultToNull: false });

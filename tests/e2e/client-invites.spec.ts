@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { test, expect, APP_URL, type Frank, PHONE_VIEWPORT } from "./fixtures";
+import { test, expect, APP_URL, type Frank, PHONE_VIEWPORT, TOUR_SEEN } from "./fixtures";
 
 // Inviting people as a client is created (phase44): Owner, Admin, User or
 // Client, names and all; the links to share; a Client seeing only public
@@ -20,7 +20,7 @@ async function seedAdmin(frank: Frank) {
   const email = `e2e-admin2-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
   const password = "E2e-Admin2-1234!";
   const { data } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
-  await admin.from("users").insert({ id: data.user!.id, email, name: "Second Admin" });
+  await admin.from("users").insert({ tour_seen_at: TOUR_SEEN, id: data.user!.id, email, name: "Second Admin" });
   const { data: m } = await admin
     .from("memberships")
     .insert({ agency_id: frank.agencyId, user_id: data.user!.id, role: "admin", accepted_at: new Date().toISOString() })
@@ -166,7 +166,7 @@ test("an Owner lets an Admin invite: Admins, Users and Clients, never an Owner â
   // refuses it (phase63's team-or-client rule would refuse a Client first).
   const outsiderEmail = `e2e-outsider-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
   const { data: outsider } = await admin.auth.admin.createUser({ email: outsiderEmail, email_confirm: true });
-  await admin.from("users").insert({ id: outsider.user!.id, email: outsiderEmail, name: "Outsider" });
+  await admin.from("users").insert({ tour_seen_at: TOUR_SEEN, id: outsider.user!.id, email: outsiderEmail, name: "Outsider" });
   const direct = await c
     .from("memberships")
     .insert({ agency_id: frank.agencyId, user_id: outsider.user!.id, role: "owner", invited_by: second.userId });

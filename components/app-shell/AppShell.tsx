@@ -8,6 +8,7 @@ import { ViewTransition } from "./ViewTransition";
 import { UpdateReady } from "./UpdateReady";
 import { TipCard } from "./TipCard";
 import { TipSpotlight } from "./TipSpotlight";
+import { FrankTour } from "./FrankTour";
 import { BRAND } from "@/lib/brand";
 import type { RailSeed } from "@/lib/rail-seed";
 
@@ -48,6 +49,7 @@ export function AppShell({
         <Suspense fallback={null}>
           <TipSpotlight />
         </Suspense>
+        <FrankTour />
       </div>
     </div>
   );

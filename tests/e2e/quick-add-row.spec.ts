@@ -81,7 +81,7 @@ test("a Content Planner post can be added straight into the table", async ({ pag
   ]);
 });
 
-test("an Other Content post can be added straight into an empty table", async ({ page, frank }) => {
+test("an asset can be added straight into an empty table", async ({ page, frank }) => {
   test.setTimeout(60_000);
   const { data: proj } = await admin
     .from("projects")
@@ -90,12 +90,12 @@ test("an Other Content post can be added straight into an empty table", async ({
     .single();
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/projects/${proj!.id}`);
-  await expect(page.getByText("No creatives yet")).toBeVisible();
+  await expect(page.getByText("No assets yet")).toBeVisible();
 
   await openRow(page);
   const row = page.locator("tr.draft");
-  const bar = page.getByRole("region", { name: "New post row" });
-  await row.getByLabel("Post name").fill("Listing Refresh E2E");
+  const bar = page.getByRole("region", { name: "New asset row" });
+  await row.getByLabel("Asset name").fill("Listing Refresh E2E");
   // No Destination any more (direct instruction): a name and date will do.
   await expect(row.getByLabel("Destination")).toHaveCount(0);
   await row.getByLabel("Date").fill("2027-03-18");

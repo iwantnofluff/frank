@@ -137,7 +137,8 @@ export const HELP_ARTICLES: HelpArticle[] = [
       { kind: "p", text: "Once a post is Live, the date it really went live shows in brackets after its planned date, above the phone: green if it went live that day or earlier, red if later. Posts planned before 14 Oct 2026 count as live on their planned day." },
       { kind: "h", text: "Getting around" },
       { kind: "p", text: "The left rail follows where you are, and names the client: anywhere inside a client you'll see Clients and the client's projects (Casa Carigar Projects, with a buildings icon, opening its page); in a project and on its posts, the client's planner (Casa Carigar Planner) or project (Casa Carigar Project) as well. The client's Settings are on its page, the settings icon (the cog) at the top right." },
-      { kind: "p", text: "Frank's logo in the top left corner takes you back to Clients. Your picture at the top right holds My Profile, Settings for your whole workspace, and Sign out." },
+      { kind: "p", text: "Frank's logo in the top left corner takes you back to Clients. Your picture at the top right holds My Profile, Settings for your whole workspace, Frank Tour and Sign out." },
+      { kind: "p", text: "Frank Tour walks you through the basics, one thing at a time, with the rest of the page dimmed: Next and Back (or the arrow keys) to move, Skip Tour or Esc to stop. It starts by itself the first time you open Frank, on a computer, and you can replay it from your menu whenever you like. Owners and Admins see how to set up; the team, how to work on posts; clients, how to review them." },
       { kind: "p", text: "If you belong to more than one workspace, it lists them too: pick one to switch, still signed in." },
     ],
   },
@@ -432,15 +433,15 @@ export const HELP_ARTICLES: HelpArticle[] = [
     blocks: [
       {
         kind: "p",
-        text: "Projects suit one-off pieces: ads, listings and other deliverables that go live somewhere rather than on a posting schedule.",
+        text: "Projects suit one-off pieces: ads, listings and other deliverables that go live somewhere rather than on a posting schedule. Each piece is an asset, named in the table's Asset Name column, and New Asset adds one.",
       },
       {
         kind: "list",
         items: [
-          "Each post has a Due Date, when the work is due, which sorts the table into weeks and places it on the calendar; a post without one is an Idea.",
+          "Each asset has a Due Date, when the work is due, which sorts the table into weeks and places it on the calendar; an asset without one is an Idea.",
           "Its Publish Date is when it goes live. Live, late and when Approved artwork is removed all count from it.",
-          "Notes for Designer are set in the post window, and a post with several images has one for each. They're your team's only.",
-          "The table also shows Principles. As in every table, each cell's Edit or Add button opens the post at that field.",
+          "Notes for Designer are set in the asset's window, and an asset with several images has one for each. They're your team's only.",
+          "The table also shows Principles. As in every table, each cell's Edit or Add button opens the asset at that field.",
         ],
       },
     ],

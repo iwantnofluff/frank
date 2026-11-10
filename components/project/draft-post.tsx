@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { itemWord } from "@/lib/item-word";
 import { useCreateCreative } from "@/hooks/use-create-creative";
 import { useMyAgency } from "@/hooks/use-my-agency";
 import { useTeamMembers } from "@/hooks/use-team-members";
@@ -89,7 +90,7 @@ export function useDraftPost({
 
   async function save() {
     // Same checks, in the same order, as the window's handleSaveBrief.
-    if (!values.name.trim()) return setProblem("Give the post a name");
+    if (!values.name.trim()) return setProblem(`Give the ${itemWord(delivery).lower} a name`);
     const scheduledAt =
       delivery === "scheduled" && values.date ? new Date(`${values.date}T${values.time || "09:00"}:00`).toISOString() : null;
     const formats = values.format ? [values.format] : [];
@@ -117,7 +118,7 @@ export function useDraftPost({
       });
       onCreated(scheduledAt ?? (values.date || null));
     } catch (e) {
-      setProblem(errorMessage(e, "Couldn't add the post"));
+      setProblem(errorMessage(e, `Couldn't add the ${itemWord(delivery).lower}`));
     }
   }
 
@@ -136,12 +137,15 @@ export function useDraftPost({
 // the selection bar's look, "1 added" with Cancel and Save on the right,
 // in place of the prototype's .editbar fixed at the bottom right.
 export function DraftEditBar({
+  noun = "post",
   blocked,
   problem,
   saving,
   onCancel,
   onSave,
 }: {
+  // What's being added: "asset" in a Project (direct instruction).
+  noun?: string;
   // A required column is hidden, so the row has nowhere to type it.
   blocked: string | null;
   problem: string | null;
@@ -151,7 +155,7 @@ export function DraftEditBar({
 }) {
   const note = blocked ?? problem;
   return (
-    <div className="selectionbar" role="region" aria-label="New post row">
+    <div className="selectionbar" role="region" aria-label={`New ${noun} row`}>
       <span>1 added</span>
       {note && <span className="sb-note">{note}</span>}
       <div style={{ flex: 1 }} />
@@ -230,7 +234,7 @@ export function DraftField({
     case "imageOnText":
       // Several slides each have their own, added in the post's window.
       return (slides ?? 1) > 1 ? (
-        <span className="tdim">In the post, by {frames?.noun.toLowerCase() ?? "slide"}</span>
+        <span className="tdim">In the {itemWord(draft.delivery).lower}, by {frames?.noun.toLowerCase() ?? "slide"}</span>
       ) : (
         <textarea className="ecell" aria-label="Text on Image" rows={3} placeholder="The words on the artwork" value={values.textOnImage} onChange={(e) => set("textOnImage", e.target.value)} />
       );
@@ -265,9 +269,9 @@ export function DraftField({
       return (
         <input
           className="ecell one"
-          aria-label="Post name"
+          aria-label={`${itemWord(draft.delivery).one} name`}
           autoFocus
-          placeholder="Name this post"
+          placeholder={`Name this ${itemWord(draft.delivery).lower}`}
           value={values.name}
           onChange={(e) => set("name", e.target.value)}
           onKeyDown={(e) => {

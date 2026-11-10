@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useSyncExternalStore } from "react";
+import { itemWord } from "@/lib/item-word";
 import type { VoicePostCurrent, VoicePostFields } from "@/lib/ai/voice-post";
 
 // The browser's own speech-to-text (Chrome and Safari; not Firefox), not in
@@ -205,10 +206,10 @@ export function VoicePost({
             {phase === "thinking"
               ? `“${heard}”`
               : phase === "done"
-                ? `Filled in from what you said. Check each field, then ${current ? "Update" : "Create Post"}.`
+                ? `Filled in from what you said. Check each field, then ${current ? "Update" : `Create ${itemWord(delivery).one}`}.`
                 : current
-                  ? "Change this post by speaking: one of your monthly AI requests."
-                  : "Make this post by speaking: one of your monthly AI requests."}
+                  ? `Change this ${itemWord(delivery).lower} by speaking: one of your monthly AI requests.`
+                  : `Make this ${itemWord(delivery).lower} by speaking: one of your monthly AI requests.`}
           </span>
         </div>
       )}

@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { test, expect, APP_URL, type Frank } from "./fixtures";
+import { test, expect, APP_URL, type Frank, TOUR_SEEN } from "./fixtures";
 
 // Giving a team User another client from that client's People (phase59/62):
 // picked in the invite window, given it straight away with no invite. Only
@@ -23,7 +23,7 @@ async function session(email: string, password: string) {
 async function seedMember(frank: Frank, role: string, name: string, opts: { clientId?: string; pending?: boolean } = {}) {
   const email = `e2e-add-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@example.invalid`;
   const { data } = await admin.auth.admin.createUser({ email, email_confirm: true });
-  await admin.from("users").insert({ id: data.user!.id, email, name });
+  await admin.from("users").insert({ tour_seen_at: TOUR_SEEN, id: data.user!.id, email, name });
   await admin.from("memberships").insert({
     agency_id: frank.agencyId,
     user_id: data.user!.id,

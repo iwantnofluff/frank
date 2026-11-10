@@ -21,6 +21,7 @@ import { ProjectSettings } from "@/components/project/ProjectSettings";
 import { ProjectPanel, type ProjectPanelView } from "@/components/project/ProjectPanel";
 import { MobileProject } from "@/components/project/MobileProject";
 import { usePhoneScreen } from "@/hooks/use-phone-screen";
+import { itemWord } from "@/lib/item-word";
 import { lazyWindow } from "@/components/ui/lazyWindow";
 import { useWarmUp } from "@/components/ui/useWarmUp";
 
@@ -295,7 +296,7 @@ export default function ProjectPage({
             <SplitButton
               // "+ New" (direct instruction), its full name for screen readers.
               label="+ New"
-              ariaLabel="New Post"
+              ariaLabel={`New ${itemWord(project.delivery).one}`}
               onClick={() => setNewBriefOpen(true)}
               menuLabel="How to add it"
               items={[
@@ -329,10 +330,10 @@ export default function ProjectPage({
 
       {!isError && !isLoading && project?.delivery === "continuous" && archiveFilter === "active" && activeCreatives.length === 0 && !draftRowOpen && (
         <div className="empty">
-          <b>No creatives yet</b>
+          <b>No assets yet</b>
           <span>
             {showNewBrief
-              ? "Use New Post above to add the first one."
+              ? "Use New Asset above to add the first one."
               : "Your team hasn't briefed anything here yet."}
           </span>
         </div>
@@ -340,7 +341,7 @@ export default function ProjectPage({
 
       {!isError && !isLoading && project?.delivery === "continuous" && archiveFilter === "archived" && visibleCreatives.length === 0 && (
         <div className="empty">
-          <b>No archived creatives</b>
+          <b>No archived assets</b>
           <span>Nothing has been deleted yet.</span>
         </div>
       )}

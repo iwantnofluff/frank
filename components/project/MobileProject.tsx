@@ -11,6 +11,7 @@ import { statusOptions } from "@/lib/project-statuses";
 import { exceptionLabel, isIdea, stageColor, stageLabel } from "@/lib/stage-labels";
 import { publishDate } from "@/lib/publish-date";
 import { formatsLabel, postFormats } from "@/lib/formats";
+import { itemWord } from "@/lib/item-word";
 import { matchesFilter, ALL_STATUSES, PLATFORM_FILTERS, type PlatformFilter } from "@/lib/post-filters";
 import { CopyCaptionChip } from "@/components/project/CopyCaptionChip";
 import { OpenAsset } from "@/components/project/OpenAsset";
@@ -149,7 +150,7 @@ export function MobileProject({
 
       {posts.length === 0 && (
         <div className="empty">
-          <b>No posts in {MONTH_NAMES[anchor.getMonth()].slice(0, 3)}</b>
+          <b>No {itemWord(delivery).manyLower} in {MONTH_NAMES[anchor.getMonth()].slice(0, 3)}</b>
           <span>Use the arrows to see another month.</span>
         </div>
       )}

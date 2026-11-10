@@ -12,6 +12,10 @@ import { useAvatarUrls } from "@/hooks/use-avatar-urls";
 import { forgetSignedUrls } from "@/hooks/use-avatar-urls";
 import { useMyWorkspaces } from "@/hooks/use-my-workspaces";
 import { useFrankAdminLink } from "@/hooks/use-frank-admin-link";
+import { useMyAgency } from "@/hooks/use-my-agency";
+import { useMyMembership } from "@/hooks/use-my-membership";
+import { usePhoneScreen } from "@/hooks/use-phone-screen";
+import { TOUR_START_EVENT, tourKind } from "@/lib/tour";
 
 // Your picture at the top right of the header (direct instruction, moved
 // from the foot of the rail): My Profile, Settings for the agency's team
@@ -38,6 +42,11 @@ export function AccountMenu({
   const pop = usePresence(anchor);
   const [signingOut, setSigningOut] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  // Frank Tour (phase144): for anyone with a tour, on a computer.
+  const { data: agency } = useMyAgency();
+  const { data: membership } = useMyMembership(agency?.agencyId);
+  const phone = usePhoneScreen();
+  const hasTour = !phone && !!tourKind(membership?.role, membership?.client_id);
   const adminLink = useFrankAdminLink();
   const { data: profile, isPending: profilePending } = useMyProfile();
   const { data: photos } = useAvatarUrls([profile?.avatar_asset_id]);
@@ -140,6 +149,20 @@ export function AccountMenu({
               <Link href="/settings" role="menuitem" className="cpr" onClick={() => setAnchor(null)}>
                 <span className="cn">Workspace Settings</span>
               </Link>
+            )}
+            {/* Under Workspace Settings (direct instruction): replays the tour. */}
+            {hasTour && (
+              <button
+                type="button"
+                role="menuitem"
+                className="cpr"
+                onClick={() => {
+                  setAnchor(null);
+                  window.dispatchEvent(new Event(TOUR_START_EVENT));
+                }}
+              >
+                <span className="cn">Frank Tour</span>
+              </button>
             )}
             {adminLink && (
               <a href={adminLink} role="menuitem" className="cpr" onClick={() => setAnchor(null)}>

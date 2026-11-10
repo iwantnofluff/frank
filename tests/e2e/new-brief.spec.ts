@@ -1,4 +1,4 @@
-import { test, expect, goToMonth, chooseFormat } from "./fixtures";
+import { test, expect, goToMonth, chooseFormat, TOUR_SEEN } from "./fixtures";
 
 // This is the first code path in the app that creates a creatives row —
 // verified empirically against real staff/client sessions before the form
@@ -33,7 +33,7 @@ test("creates a continuous creative end to end", async ({ page, frank }) => {
   await page.goto(`/projects/${continuousProjectId}`);
   await page.waitForSelector(".tblwrap, .empty");
 
-  await page.getByRole("button", { name: "New Post", exact: true }).click();
+  await page.getByRole("button", { name: "New Asset", exact: true }).click();
   await page.fill("#nbName", "New Brief E2E — Continuous");
   // No Destination any more (direct instruction).
   await expect(page.locator("#nbDest")).toHaveCount(0);
@@ -42,7 +42,7 @@ test("creates a continuous creative end to end", async ({ page, frank }) => {
   // that has one — fill it so this brief actually appears afterward.
   await page.fill("#nbDue", "2027-04-01");
   await chooseFormat(page, "A+ Content Module");
-  await page.click('button:has-text("Create Post")');
+  await page.click('button:has-text("Create Asset")');
 
   await expect(page.getByRole("tab", { name: "Content" })).toBeEnabled();
   await page.click('button:has-text("Cancel")');
@@ -294,7 +294,7 @@ test("a post's Team offers only the project's team: a User not added to it isn't
     const email = `e2e-user-${name.toLowerCase()}-${stamp}@example.invalid`;
     const { data, error } = await admin.auth.admin.createUser({ email, password: "E2e-User-Test-1234!", email_confirm: true });
     if (error) throw error;
-    await admin.from("users").insert({ id: data.user.id, email, name: `${name} User` });
+    await admin.from("users").insert({ tour_seen_at: TOUR_SEEN, id: data.user.id, email, name: `${name} User` });
     const { data: m, error: mError } = await admin
       .from("memberships")
       .insert({ agency_id: frank.agencyId, user_id: data.user.id, role: "user", accepted_at: new Date().toISOString() })

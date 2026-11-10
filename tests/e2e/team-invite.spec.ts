@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "crypto";
 import { createClient } from "@supabase/supabase-js";
-import { test, expect, APP_URL, type Frank } from "./fixtures";
+import { test, expect, APP_URL, type Frank, TOUR_SEEN } from "./fixtures";
 
 const ONE_PIXEL_PNG = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
@@ -35,7 +35,7 @@ async function seedInvite(frank: Frank, opts: { expiresInMs: number }) {
   const { data: created, error } = await admin.auth.admin.createUser({ email, email_confirm: true });
   if (error) throw error;
   const userId = created.user.id;
-  await admin.from("users").insert({ id: userId, email, name: "placeholder" });
+  await admin.from("users").insert({ tour_seen_at: TOUR_SEEN, id: userId, email, name: "placeholder" });
   const { data: m, error: mErr } = await admin
     .from("memberships")
     .insert({ agency_id: frank.agencyId, user_id: userId, role: "admin", accepted_at: null })

@@ -128,7 +128,7 @@ test("a Listing Image Set takes up to 9 images, Text on Image for each, and the 
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/projects/${other}`);
   await page.waitForSelector(".tblwrap, .empty");
-  await page.getByRole("button", { name: "New Post", exact: true }).click();
+  await page.getByRole("button", { name: "New Asset", exact: true }).click();
   await page.fill("#nbName", "Listing Gallery E2E");
   await page.click("#nbFmt");
   await page.getByRole("dialog", { name: "Formats" }).getByRole("checkbox", { name: "Listing Image Set" }).click();
@@ -136,7 +136,7 @@ test("a Listing Image Set takes up to 9 images, Text on Image for each, and the 
   // 2 to 9, an Amazon gallery's main image and eight more (direct instruction).
   await expect(page.locator("#nbSlides option")).toHaveCount(8);
   await page.selectOption("#nbSlides", "3");
-  await page.click('button:has-text("Create Post")');
+  await page.click('button:has-text("Create Asset")');
   await page.getByRole("tab", { name: "Production" }).click();
   await expect(page.locator('[data-focus="imageOnText"] .brow textarea')).toHaveCount(3);
   await page.getByRole("tab", { name: "Content" }).click();

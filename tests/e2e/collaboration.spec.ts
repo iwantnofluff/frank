@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Page } from "@playwright/test";
-import { test, expect, APP_URL } from "./fixtures";
+import { test, expect, APP_URL, TOUR_SEEN } from "./fixtures";
 
 const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
   auth: { persistSession: false, autoRefreshToken: false },
@@ -15,7 +15,7 @@ test("two people saving one post: the second is asked, and nothing is lost", asy
   const password = "E2e-Second-Test-1234!";
   const { data: u } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
   const otherId = u.user!.id;
-  await admin.from("users").insert({ id: otherId, email, name: "Raj Second" });
+  await admin.from("users").insert({ tour_seen_at: TOUR_SEEN, id: otherId, email, name: "Raj Second" });
   const { data: m } = await admin.from("memberships").insert({ agency_id: frank.agencyId, user_id: otherId, role: "admin", accepted_at: new Date().toISOString() }).select("id").single();
   const openBrief = async (p: Page) => {
     await p.goto(APP_URL + "/creatives/" + frank.creativeId);
@@ -93,7 +93,7 @@ test("the team sees who's on a project and post, and who's editing", async ({ pa
   const password = "E2e-Second-Test-1234!";
   const { data: u } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
   const otherId = u.user!.id;
-  await admin.from("users").insert({ id: otherId, email, name: "Raj Second" });
+  await admin.from("users").insert({ tour_seen_at: TOUR_SEEN, id: otherId, email, name: "Raj Second" });
   const { data: m } = await admin.from("memberships").insert({ agency_id: frank.agencyId, user_id: otherId, role: "admin", accepted_at: new Date().toISOString() }).select("id").single();
   try {
     await frank.loginAsStaff(page);

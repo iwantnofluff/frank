@@ -13,6 +13,24 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.74.1",
+    date: "2026-11-10",
+    title: "Assets in a Project",
+    changes: [
+      "A Project's pieces are now called assets. Its table's first name column is Asset Name, and + New, the window, the quick-add row and the empty table say New Asset and Create Asset.",
+      "A Content Planner still has posts. A Project whose column was renamed keeps its own name.",
+    ],
+  },
+  {
+    version: "1.74.0",
+    date: "2026-11-10",
+    title: "Frank Tour",
+    changes: [
+      "Frank Tour walks new people through the basics, one thing at a time, with the rest of the page dimmed. Owners and Admins see how to set up a client, a project and its posts; the team sees how to work on posts; clients see how to review them.",
+      "It starts by itself the first time someone opens Frank on a computer. Anyone can replay it from Frank Tour in their menu, under Workspace Settings.",
+    ],
+  },
+  {
     version: "1.73.1",
     date: "2026-11-10",
     title: "Fullscreen, not Expand",

@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Page } from "@playwright/test";
-import { test, expect, APP_PORT } from "./fixtures";
+import { test, expect, APP_PORT, TOUR_SEEN } from "./fixtures";
 
 // The admin area's Overview (decided directly, 4 Oct 2026): revenue, this
 // month's plan changes, and the agencies that need a look. The fixture
@@ -17,7 +17,7 @@ async function makePlatformAdmin() {
   const email = `e2e-platform-admin-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
   const { data } = await admin.auth.admin.createUser({ email, password: PASSWORD, email_confirm: true });
   const id = data.user!.id;
-  await admin.from("users").insert({ id, email, name: "E2E Platform Admin" });
+  await admin.from("users").insert({ tour_seen_at: TOUR_SEEN, id, email, name: "E2E Platform Admin" });
   await admin.from("platform_admins").insert({ user_id: id });
   return {
     email,

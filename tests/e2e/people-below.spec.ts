@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { test, expect, APP_URL, type Frank } from "./fixtures";
+import { test, expect, APP_URL, type Frank, TOUR_SEEN } from "./fixtures";
 
 // Everyone manages the people below them (phase49): switching a User and a
 // Client, resending and removing invites, and the database holding the line.
@@ -25,7 +25,7 @@ async function staffSession(frank: Frank) {
 async function seedMember(frank: Frank, role: string, name: string, pending = false) {
   const email = `e2e-below-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@example.invalid`;
   const { data } = await admin.auth.admin.createUser({ email, email_confirm: true });
-  await admin.from("users").insert({ id: data.user!.id, email, name });
+  await admin.from("users").insert({ tour_seen_at: TOUR_SEEN, id: data.user!.id, email, name });
   const { data: m } = await admin
     .from("memberships")
     .insert({
