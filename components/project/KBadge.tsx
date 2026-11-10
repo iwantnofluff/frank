@@ -10,7 +10,7 @@ export function KBadge({ delivery }: { delivery: "scheduled" | "continuous" }) {
           <path d="M4 6h16M4 12h16M4 18h10" />
           <path d="M17 16l2 2 4-4" />
         </svg>
-        Other Content
+        Project
       </span>
     );
   }

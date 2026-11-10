@@ -113,7 +113,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         kind: "list",
         items: [
           "A client is a brand you work for. Its Client Settings hold its details, its people, its Knowledge and its Instagram.",
-          "A project is a piece of work for that client. A Content Planner project schedules posts by publish date and time. An Other Content project tracks deliverables by due date, with a publish date for when each goes live.",
+          "A project is a piece of work for that client. A Content Planner project schedules posts by publish date and time. A Project tracks one-off pieces by due date, with a publish date for when each goes live.",
           "A post is one piece of content: its brief, its artwork, its Text on Image and its copy.",
         ],
       },
@@ -136,7 +136,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       { kind: "p", text: "A post in Concept with no artwork or copy yet opens on its Brief." },
       { kind: "p", text: "Once a post is Live, the date it really went live shows in brackets after its planned date, above the phone: green if it went live that day or earlier, red if later. Posts planned before 14 Oct 2026 count as live on their planned day." },
       { kind: "h", text: "Getting around" },
-      { kind: "p", text: "The left rail follows where you are, and names the client: anywhere inside a client you'll see Clients and the client's projects (Casa Carigar Projects, with a buildings icon, opening its page); in a project and on its posts, the client's planner (Casa Carigar Planner) or Other Content as well. The client's Settings are on its page, the settings icon (the cog) at the top right." },
+      { kind: "p", text: "The left rail follows where you are, and names the client: anywhere inside a client you'll see Clients and the client's projects (Casa Carigar Projects, with a buildings icon, opening its page); in a project and on its posts, the client's planner (Casa Carigar Planner) or project (Casa Carigar Project) as well. The client's Settings are on its page, the settings icon (the cog) at the top right." },
       { kind: "p", text: "Frank's logo in the top left corner takes you back to Clients. Your picture at the top right holds My Profile, Settings for your whole workspace, and Sign out." },
       { kind: "p", text: "If you belong to more than one workspace, it lists them too: pick one to switch, still signed in." },
     ],
@@ -155,7 +155,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         kind: "list",
         items: [
           "Type a page's name to open it: Clients, a Settings page such as Users or Reference Material, or a client's Client Settings pages such as Discovery.",
-          "Type a project's type to list them all: planner finds every Content Planner, other content every Other Content project.",
+          "Type planner to list every Content Planner.",
           "Press ⌘K (Ctrl K on Windows) to jump into search from anywhere.",
           "Use the arrow keys to move through the results and Enter to open one, or click it.",
           "Projects show their client and type, so similar names are easy to tell apart.",
@@ -216,7 +216,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         items: [
           "Open the client from your clients list.",
           "Choose New Project and give it a name.",
-          "Pick Content Planner for scheduled posts, or Other Content for deliverables such as ads or listings.",
+          "Pick Project for one-off pieces such as ads or listings (it's selected to start), or Content Planner for scheduled posts.",
         ],
       },
       {
@@ -420,19 +420,19 @@ export const HELP_ARTICLES: HelpArticle[] = [
         ],
       },
       { kind: "h", text: "Posts with no live date" },
-      { kind: "p", text: "An Approved post with no live date, in Other Content say, isn't removed on its own unless the client's Preferences say to remove it. Otherwise, the same number of days after its due date, Owners and Admins get a notification under the bell in the header." },
+      { kind: "p", text: "An Approved post with no live date, in a Project say, isn't removed on its own unless the client's Preferences say to remove it. Otherwise, the same number of days after its due date, Owners and Admins get a notification under the bell in the header." },
       { kind: "p", text: "Opening it shows the post with Keep Artwork or Remove Artwork. Keep is for good: you won't be asked about that post again." },
     ],
   },
   {
     id: "other-content",
-    title: "Track Other Content",
+    title: "Track a Project",
     category: "posts",
     summary: "Deliverables with a due date and a publish date.",
     blocks: [
       {
         kind: "p",
-        text: "Other Content projects suit ads, listings and other deliverables that go live somewhere rather than on a posting schedule.",
+        text: "Projects suit one-off pieces: ads, listings and other deliverables that go live somewhere rather than on a posting schedule.",
       },
       {
         kind: "list",

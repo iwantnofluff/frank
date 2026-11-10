@@ -31,8 +31,8 @@ export function NewProjectModal({
   const createProject = useCreateProject();
 
   const [name, setName] = useState("");
-  const [delivery, setDelivery] = useState<Delivery>("scheduled");
-  const [type, setType] = useState(PROJECT_TYPE_OPTS.scheduled[0]);
+  const [delivery, setDelivery] = useState<Delivery>("continuous");
+  const [type, setType] = useState(PROJECT_TYPE_OPTS.continuous[0]);
   const [nameError, setNameError] = useState<string | null>(null);
   // The second step, Columns (phase96, direct instruction): the default
   // columns ticked; unticked ones are hidden in the Main Table. Columns of the
@@ -43,9 +43,9 @@ export function NewProjectModal({
   const builtInLabels: Record<string, string> = Object.fromEntries(builtIn.map((c) => [c.key, c.label]));
   // The step's columns: their order (built-in keys and "new:<n>" for ones
   // added here), which are unticked, any renamed, and the added ones.
-  const [order, setOrder] = useState<string[]>(() => SCHEDULED_COLUMNS.map((c) => c.key));
+  const [order, setOrder] = useState<string[]>(() => CONTINUOUS_COLUMNS.map((c) => c.key));
   // Each kind's own default hidden columns to start (decided directly).
-  const [hidden, setHidden] = useState<Set<string>>(() => new Set(SCHEDULED_HIDDEN));
+  const [hidden, setHidden] = useState<Set<string>>(() => new Set(CONTINUOUS_HIDDEN));
   const [labels, setLabels] = useState<Record<string, string>>({});
   const [added, setAdded] = useState<Record<string, ColumnSpec>>({});
   const [nextNew, setNextNew] = useState(1);
@@ -202,6 +202,29 @@ export function NewProjectModal({
       <div className="field">
         <label>How does this work get delivered?</label>
         <div className="kindpick">
+          {/* Project first and selected (direct instruction): the base kind,
+              Content Planner the one with a schedule. */}
+          <button
+            type="button"
+            className="kopt"
+            aria-pressed={delivery === "continuous"}
+            onClick={() => handleDeliveryChange("continuous")}
+          >
+            <span className="kic">
+              <svg viewBox="0 0 24 24">
+                <path d="M4 6h16M4 12h16M4 18h10" />
+                <path d="M17 16l2 2 4-4" />
+              </svg>
+            </span>
+            <span className="kt">
+              <b>Project</b>
+              <span>
+                One-off pieces, approved then handed over. You get a list ordered by
+                what is due, by its Due Date.
+              </span>
+              <span className="keg">Amazon A+ · Website · Emailers · Print and Events</span>
+            </span>
+          </button>
           <button
             type="button"
             className="kopt"
@@ -221,27 +244,6 @@ export function NewProjectModal({
                 on every piece.
               </span>
               <span className="keg">Social Media · Paid Campaigns</span>
-            </span>
-          </button>
-          <button
-            type="button"
-            className="kopt"
-            aria-pressed={delivery === "continuous"}
-            onClick={() => handleDeliveryChange("continuous")}
-          >
-            <span className="kic">
-              <svg viewBox="0 0 24 24">
-                <path d="M4 6h16M4 12h16M4 18h10" />
-                <path d="M17 16l2 2 4-4" />
-              </svg>
-            </span>
-            <span className="kt">
-              <b>Other Content</b>
-              <span>
-                Approved then handed over. You get a list ordered by what is due, by
-                its Due Date.
-              </span>
-              <span className="keg">Amazon A+ · Website · Emailers · Print and Events</span>
             </span>
           </button>
         </div>

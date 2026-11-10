@@ -46,7 +46,7 @@ export interface ClientProjectRow {
   id: string;
   name: string;
   client_id: string;
-  // For the header search's type matches ("planner", "other content").
+  // For the header search's type matches ("planner").
   delivery: "scheduled" | "continuous";
   type: string | null;
 }

@@ -5179,6 +5179,14 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Other Content renamed Project (1.73.0, 2026-11-10)
+
+Decided directly: the kind of project for one-off pieces was called Other Content, which described it by what it isn't. It is now **Project**, the base kind, with Content Planner the kind that adds a schedule. Other names were weighed (One-off Content, Standalone Content, Content Requests); the user chose Project, accepting that "project" is also the umbrella word for both kinds. Also decided directly: in the New Project window Project comes first and is selected to start, so a new window opens on Project's type list (Amazon first) and columns.
+
+What changed, on screen only: the project list's tag, the project page's subtitle, the New Project window (with "One-off pieces" leading its description), the side rail ("<name> Project"), header search's detail line, and the help pages ("Track a Project"). The stored value stays `continuous` and nothing in the database changed. Search no longer matches the type by typing its name, since "project" would match every project; "planner" still lists every Content Planner. Past release notes and code comments keep the old name, as history. The help article keeps its `other-content` id so links to it still work.
+
+**Verified**: In the real app (dev server, staging), screenshots checked: the New Project window opens with Project first and selected (Amazon as its type), the client's project list tags a Project "Project" beside "Content Planner", and a Project's page reads "E2E Test Client · Project" with the rail showing "<name> Project". new-project.spec now checks Project is first and selected; the tests that make a Content Planner through the window now pick it. new-project, default-columns, nav-rail, project-access, header and client-workspace passed against staging; three failed on a first run with a stuck sign-in and a reused account caught mid-teardown, and passed on rerun (13).
+
 ## Arrows the same distance from the phone (1.72.4, 2026-11-09)
 
 Direct instruction: with the details hidden until hover (1.72.3), each arrow still sat on the far side of its post's hidden details, so the two arrows sat at different distances from the phone depending on the titles' lengths, which looked like an error. Each arrow now sits against the phone, 42px from it on both sides, and its post's details appear out beyond the arrow (right-aligned on the left, left-aligned on the right). Where the canvas is narrow and only the arrows show, nothing changes.

@@ -48,13 +48,13 @@ test("the rail follows where you are inside a client", async ({ page, frank }) =
     `E2E Test Project Planner -> /projects/${frank.projectId}`,
   ]);
 
-  // An Other Content project's reads "<project> Content".
+  // A Project's reads "<project> Project".
   const other = await frank.createContinuousProject();
   const { data: otherRow } = await admin.from("projects").select("name").eq("id", other).single();
   const mem = (await admin.from("memberships").select("id").eq("user_id", (await admin.from("users").select("id").eq("email", frank.staffEmail).single()).data!.id).eq("agency_id", frank.agencyId).single()).data!;
   await admin.from("project_access").insert({ membership_id: mem.id, project_id: other });
   await page.goto(`${APP_URL}/projects/${other}`);
-  await expect(page.getByRole("link", { name: `${otherRow!.name} Content` })).toHaveAttribute("aria-current", "true", { timeout: 15_000 });
+  await expect(page.getByRole("link", { name: `${otherRow!.name} Project` })).toHaveAttribute("aria-current", "true", { timeout: 15_000 });
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
 
   await page.getByRole("link", { name: "E2E Test Project Planner" }).click();

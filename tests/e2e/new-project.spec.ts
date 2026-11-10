@@ -6,6 +6,7 @@ test("creates a scheduled project end to end and lands on its page", async ({ pa
   await page.waitForSelector(".clients, .empty");
 
   await page.click('button:has-text("New Project")');
+  await page.click('.kopt:has-text("Content Planner")');
   await page.fill("#newName", "New Project E2E — Scheduled");
   await page.getByRole("button", { name: "Next" }).click();
   await page.getByRole("button", { name: "Create" }).click();
@@ -20,7 +21,9 @@ test("creates a continuous project with its type", async ({ page, frank }) => {
   await page.waitForSelector(".clients, .empty");
 
   await page.click('button:has-text("New Project")');
-  await page.click('.kopt:has-text("Other Content")');
+  // Project is first and selected to start (direct instruction).
+  await expect(page.locator(".kopt").first()).toContainText("Project");
+  await expect(page.locator('.kopt:has-text("One-off pieces")')).toHaveAttribute("aria-pressed", "true");
   await expect(page.locator("#newType")).toHaveValue("Amazon");
   await page.fill("#newName", "New Project E2E — Continuous");
   await page.getByRole("button", { name: "Next" }).click();
@@ -65,6 +68,7 @@ test("a new project's columns: untick defaults, add its own, fill them in on a p
   await page.goto(`/clients/${frank.clientId}`);
   await page.waitForSelector(".clients, .empty");
   await page.click('button:has-text("New Project")');
+  await page.click('.kopt:has-text("Content Planner")');
   await page.fill("#newName", "Columns E2E");
   await page.getByRole("button", { name: "Next" }).click();
 

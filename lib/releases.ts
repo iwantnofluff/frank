@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.73.0",
+    date: "2026-11-10",
+    title: "Other Content is now Project",
+    changes: [
+      "The kind of project for one-off pieces (ads, listings, emailers, print) is now called Project, with Content Planner as the kind with a schedule. Existing projects keep everything; only the name changes.",
+      "In the New Project window, Project comes first and is selected to start. Pick Content Planner for scheduled posts.",
+      "The side rail names these projects \"<name> Project\", beside \"<name> Planner\" for a Content Planner.",
+    ],
+  },
+  {
     version: "1.72.4",
     date: "2026-11-09",
     title: "Arrows beside the phone, details to read",

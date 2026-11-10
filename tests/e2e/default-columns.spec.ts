@@ -18,6 +18,7 @@ test("a new Content Planner's table starts in the default order, Slides, Alt Tex
   await page.goto(`${APP_URL}/clients/${frank.clientId}`);
   await page.waitForSelector(".clients, .empty");
   await page.click('button:has-text("New Project")');
+  await page.click('.kopt:has-text("Content Planner")');
   await page.fill("#newName", "Default Columns Planner");
   await page.getByRole("button", { name: "Next" }).click();
   await page.getByRole("button", { name: "Create" }).click();
@@ -43,7 +44,6 @@ test("Other Content leads with Due Date and Publish Date, and the Publish Date c
   await page.goto(`${APP_URL}/clients/${frank.clientId}`);
   await page.waitForSelector(".clients, .empty");
   await page.click('button:has-text("New Project")');
-  await page.click('.kopt:has-text("Other Content")');
   await page.fill("#newName", "Default Columns Other");
   await page.getByRole("button", { name: "Next" }).click();
   await page.getByRole("button", { name: "Create" }).click();

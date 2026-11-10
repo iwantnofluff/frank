@@ -208,7 +208,7 @@ export default function ProjectPage({
               {project && (
                 <>
                   {" "}
-                  · {project.delivery === "scheduled" ? "Content Planner" : "Other Content"}
+                  · {project.delivery === "scheduled" ? "Content Planner" : "Project"}
                 </>
               )}
             </p>

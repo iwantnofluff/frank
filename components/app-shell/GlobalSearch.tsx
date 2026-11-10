@@ -14,7 +14,7 @@ type Hit = { kind: "page" | "client" | "project"; id: string; name: string; deta
 
 const MAX = 10;
 
-const DELIVERY_LABEL = { scheduled: "Content Planner", continuous: "Other Content" } as const;
+const DELIVERY_LABEL = { scheduled: "Content Planner", continuous: "Project" } as const;
 
 // Pages anyone can open, and the words that find them.
 const APP_PAGES: { name: string; href: string; words: string[] }[] = [

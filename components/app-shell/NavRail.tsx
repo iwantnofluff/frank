@@ -127,12 +127,12 @@ export function NavRail({ seed }: { seed: RailSeed | null }) {
         <RailLink
           href={`/projects/${projectId}`}
           // The project by name (direct instruction): "Test5 Planner" for
-          // a Content Planner, "Test5 Content" for Other Content. A long
-          // name stops at two lines; Planner or Content always shows.
-          label={`${projectName ?? (delivery === "continuous" ? "Other" : "Content")} ${delivery === "continuous" ? "Content" : "Planner"}`}
+          // a Content Planner, "Test5 Project" for a Project. A long name
+          // stops at two lines; Planner or Project always shows.
+          label={delivery === "continuous" ? (projectName ? `${projectName} Project` : "Project") : `${projectName ?? "Content"} Planner`}
           labelNode={
             <>
-              <span className="rlab-name">{projectName ?? "\u00a0"}</span> {delivery === "continuous" ? "Content" : "Planner"}
+              <span className="rlab-name">{projectName ?? "\u00a0"}</span> {delivery === "continuous" ? "Project" : "Planner"}
             </>
           }
           icon={CalendarIcon}
