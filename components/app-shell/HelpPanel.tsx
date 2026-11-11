@@ -19,6 +19,7 @@ import { useTouring } from "@/lib/use-touring";
 import { usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useClients } from "@/hooks/use-clients";
+import { useProjectsOfClients } from "@/hooks/use-projects";
 import { useMyAgency } from "@/hooks/use-my-agency";
 import { useIsStaff } from "@/hooks/use-is-staff";
 import { usePhoneScreen } from "@/hooks/use-phone-screen";
@@ -62,28 +63,37 @@ const TOPIC_ICONS: Record<string, ReactNode> = {
 
 // A list item in short paragraphs (direct instruction: no chunky blocks);
 // a blank line in its text starts the next.
-// Where a help link's client page is (phase147, direct instruction): the
-// client you're in (its page, or one of its projects), else the sample
-// client. None for a client's own people, who don't have those pages.
-function useLinkClient(): string | null {
+// Where a help link's client and project pages are (phase147, direct
+// instruction): the client and project you're in (a client's page, or a
+// project's), else the sample client's, its Content Planner (project:) or
+// its Project (assets:). None for a client's own people, who don't have
+// those pages.
+function useLinkPlaces(): { client: string | null; project: string | null; assets: string | null } {
   const pathname = usePathname();
   const queryClient = useQueryClient();
   const { data: clients } = useClients();
   const { isStaff } = useIsStaff();
-  if (!isStaff) return null;
-  const inClient = pathname.match(/^\/clients\/([^/]+)/)?.[1];
-  if (inClient) return inClient;
+  const sample = clients?.find((c) => c.is_sample)?.id ?? null;
+  const { data: sampleProjects } = useProjectsOfClients(isStaff && sample ? [sample] : []);
+
+  if (!isStaff) return { client: null, project: null, assets: null };
   const inProject = pathname.match(/^\/projects\/([^/]+)/)?.[1];
-  const project = inProject ? queryClient.getQueryData<{ client_id: string }>(["project", inProject]) : undefined;
-  if (project?.client_id) return project.client_id;
-  return clients?.find((c) => c.is_sample)?.id ?? null;
+  const project = inProject ? queryClient.getQueryData<{ client_id: string; delivery: string }>(["project", inProject]) : undefined;
+  const inClient = pathname.match(/^\/clients\/([^/]+)/)?.[1] ?? project?.client_id;
+  const samplePlanner = sampleProjects?.find((p) => p.delivery === "scheduled")?.id ?? null;
+  const sampleAssets = sampleProjects?.find((p) => p.delivery === "continuous")?.id ?? null;
+  return {
+    client: inClient ?? sample,
+    project: inProject && project?.delivery !== "continuous" ? inProject : samplePlanner,
+    assets: inProject && project?.delivery === "continuous" ? inProject : sampleAssets,
+  };
 }
 
 // Help text with its links: a link goes to that page, Help staying open
 // where it is (direct instruction).
 function Rich({ text, onHelp, onShow }: { text: string; onHelp?: (id: string) => void; onShow?: (id: string) => void }) {
   const router = useRouter();
-  const client = useLinkClient();
+  const places = useLinkPlaces();
   const out: ReactNode[] = [];
   let at = 0;
   for (const m of text.matchAll(HELP_LINK)) {
@@ -106,7 +116,15 @@ function Rich({ text, onHelp, onShow }: { text: string; onHelp?: (id: string) =>
       at = m.index + m[0].length;
       continue;
     }
-    const href = target.startsWith("client:") ? (client ? `/clients/${client}${target.slice(7)}` : null) : target.startsWith("/") ? target : null;
+    const href = target.startsWith("client:")
+      ? places.client && `/clients/${places.client}${target.slice(7)}`
+      : target.startsWith("project:")
+        ? places.project && `/projects/${places.project}`
+        : target.startsWith("assets:")
+          ? places.assets && `/projects/${places.assets}`
+          : target.startsWith("/")
+            ? target
+            : null;
     out.push(
       href ? (
         <a
@@ -130,14 +148,14 @@ function Rich({ text, onHelp, onShow }: { text: string; onHelp?: (id: string) =>
   return <>{out}</>;
 }
 
-function Item({ text }: { text: string }) {
+function Item({ text, onHelp }: { text: string; onHelp?: (id: string) => void }) {
   const parts = text.split("\n\n");
   return (
     <>
-      <Rich text={parts[0]} />
+      <Rich text={parts[0]} onHelp={onHelp} />
       {parts.slice(1).map((p) => (
         <span className="li-p" key={p}>
-          <Rich text={p} />
+          <Rich text={p} onHelp={onHelp} />
         </span>
       ))}
     </>
@@ -212,7 +230,7 @@ function Blocks({ blocks, onHelp }: { blocks: HelpBlock[]; onHelp?: (id: string)
               <ul key={i}>
                 {b.items.map((t) => (
                   <li key={t}>
-                    <Item text={t} />
+                    <Item text={t} onHelp={onHelp} />
                   </li>
                 ))}
               </ul>
@@ -222,7 +240,7 @@ function Blocks({ blocks, onHelp }: { blocks: HelpBlock[]; onHelp?: (id: string)
               <ol key={i}>
                 {b.items.map((t) => (
                   <li key={t}>
-                    <Item text={t} />
+                    <Item text={t} onHelp={onHelp} />
                   </li>
                 ))}
               </ol>
@@ -248,7 +266,7 @@ function Blocks({ blocks, onHelp }: { blocks: HelpBlock[]; onHelp?: (id: string)
                   <path d="M12 10v4M12 17.2v.01" />
                 </svg>
                 <p>
-                  <b>Note:</b> {b.text}
+                  <b>Note:</b> <Rich text={b.text} onHelp={onHelp} />
                 </p>
               </div>
             );
@@ -328,6 +346,24 @@ export function HelpPanel({
   // Ask Frank (phase147, direct instruction): a conversation for this visit
   // only, answered as it's written.
   const { data: agency } = useMyAgency();
+  // A workspace from before samples gets its (hidden) one when Ask Frank
+  // first opens, so its links to a client or project have somewhere to go,
+  // as Frank Tour makes it (phase146). Once, here, not per link.
+  const queryClient = useQueryClient();
+  const { data: clients } = useClients();
+  const hasSample = !!clients?.some((c) => c.is_sample);
+  const madeFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (!open || !isStaff || !clients || hasSample || !agency?.agencyId || madeFor.current === agency.agencyId) return;
+    madeFor.current = agency.agencyId;
+    void fetch("/api/sample/ensure", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ agencyId: agency.agencyId }),
+    }).then((res) => {
+      if (res.ok) void queryClient.invalidateQueries({ queryKey: ["clients"] });
+    });
+  }, [open, isStaff, clients, hasSample, agency?.agencyId, queryClient]);
   const pathname = usePathname();
   const [turns, setTurns] = useState<AskTurn[]>([]);
   const [draft, setDraft] = useState("");

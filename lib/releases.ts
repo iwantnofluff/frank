@@ -13,6 +13,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.79.1",
+    date: "2026-11-11",
+    title: "Links all through Ask Frank",
+    changes: [
+      "Every Ask Frank topic now links the pages it talks about: Clients, a client's settings and knowledge, a project's table, each Workspace Settings page, your AI allowance, and other topics like Draft with Frank. Over 140 links in all.",
+      "A link to a client or project goes to the one you're in, or else your sample client's.",
+      "Frank's own answers now link every page and section they name, in the steps themselves.",
+      "Plan Posts in the Content Planner now explains Columns: showing, hiding, moving, renaming and adding the project's own.",
+    ],
+  },
+  {
     version: "1.79.0",
     date: "2026-11-11",
     title: "Ask Frank",

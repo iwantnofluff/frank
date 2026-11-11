@@ -5179,6 +5179,39 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Links all through Ask Frank (1.79.1, phase148, 2026-11-11)
+
+Direct instruction: text in Help that names a place in Frank should link to it, through every topic (Connect a Client's Instagram given as an example). All 22 topics were read through, and 143 links now sit wherever a page, a section, a project's table or another topic is named:
+- **Workspace pages:** Clients, My Profile, every Workspace Settings page by its path, and the AI allowance (Credit Usage).
+- **A client's pages:** its page, About, People, Preferences, Discovery, Strategy, Instagram.
+- **A project:** a Content Planner's table or page (`project:`), or a Project's (`assets:`).
+- **Other topics:** Draft with Frank, Design with Frank, the checks.
+
+Left unlinked on purpose:
+- role names (Users, Clients as people)
+- headings
+- a topic naming itself
+- Frank on Your Phone, whose pages are for a computer
+- instagram.com, outside Frank
+
+**Where links go:** client and project links go to the client or project you're in (a client's pages, or a project's), else the sample's: its Launch Month planner, or its Launch Assets Project.
+
+**The sample itself:** a workspace without one gets it (hidden) the first time Ask Frank opens, so the links have somewhere to go. That's done once in the panel, not per link. Two things making it at once (the tour and the panel) could have made two: phase148 allows one sample a workspace, and the readiness routine uses the one that won.
+
+**Two fixes:** notes now render their links (they showed the raw markup), and topic links inside lists open their topic.
+
+**A content gap the answers showed:** asked how to add a column, Frank rightly said Help didn't cover it. Plan Posts in the Content Planner now explains Columns, checked against the code: tick to show, drag to move, rename and + Add Column for Owners and Admins (Single Line Text, Large Text, Number, Date, Dropdown or Checkbox), filled in under Other Fields, the order and what's shown belonging to the view.
+
+**Frank's answers:** its instructions now say to link every page, section, table or topic it names, in the steps themselves. They also list the project links.
+
+**Verified**:
+- **The links:** `lib/help-links.test.ts` checks every one of the 143 targets exists: settings paths against Settings' menu, client paths against Client Settings' menu, topic ids against the topics.
+- **Frank's answers,** asked four real questions: the Instagram answer now links Client Settings and Connections → Instagram. Artwork links Clients and Profile → Preferences, with Show Me. Inviting links Team → Users and People.
+- **Two at once:** two simultaneous readiness calls on staging made one sample, and both got it back.
+- **frank-tour.spec,** in a workspace with no sample: opening Ask Frank makes one. Content Planner project goes to its planner, with the topic still open. Instagram goes to its Instagram page. A note's link renders.
+- **A screenshot** of Connect a Client's Instagram was checked, which is how the note's raw markup was caught.
+- **The full suite** on the local database then passed: 358 of 358.
+
 ## Ask Frank (1.79.0, phase147, 2026-11-11)
 
 Direct instruction: Help is renamed **Ask Frank**, with an AI chat at its foot, "Ask Frank anything", answering questions about using Frank as well as it can, with links. Decided directly:

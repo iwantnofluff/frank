@@ -48,7 +48,17 @@ export async function ensureSample(admin: SupabaseClient, agencyId: string, acto
     archived_at: sample ? sample.archived_at : new Date().toISOString(),
     sample_expires_at: sample ? sample.sample_expires_at : "infinity",
   });
-  if (!id) throw new Error("Couldn't make the sample client");
+  if (!id) {
+    // Made at the same moment by someone else (one a workspace, phase148):
+    // theirs, once it's ready.
+    for (let i = 0; i < 20; i++) {
+      const { data: other } = await admin.from("clients").select("id").eq("agency_id", agencyId).eq("is_sample", true).limit(1);
+      const targets = other?.[0] ? await find(admin, other[0].id as string) : null;
+      if (targets) return targets;
+      await new Promise((r) => setTimeout(r, 1000));
+    }
+    throw new Error("Couldn't make the sample client");
+  }
   const targets = await find(admin, id);
   if (!targets) throw new Error("The sample client was made without what the tour needs");
   return targets;

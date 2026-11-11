@@ -154,3 +154,29 @@ test("a client reviewer's Help has no Show Me", async ({ page, frank }) => {
   await expect(help.getByRole("heading", { name: "Reviews and Approvals" })).toBeVisible();
   await expect(help.getByRole("button", { name: /^Show me/ })).toHaveCount(0);
 });
+
+test("outside any client, Help's links go to the sample client's pages, made if the workspace has none", async ({ page, frank }) => {
+  test.setTimeout(150_000);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await frank.loginAsStaff(page);
+  await page.getByRole("button", { name: "Ask Frank", exact: true }).click();
+  const help = page.locator(".helppanel");
+  await help.getByPlaceholder("Search topics").fill("plan posts");
+  await help.getByRole("button", { name: /^Plan Posts in the Content Planner/ }).click();
+  // The workspace had no sample: opening Ask Frank made one.
+  const link = help.getByRole("link", { name: "Content Planner project" });
+  await expect(link).toBeVisible({ timeout: 60_000 });
+  const sample = (await admin.from("clients").select("id").eq("agency_id", frank.agencyId).eq("is_sample", true).single()).data!.id;
+  const planner = (await admin.from("projects").select("id").eq("client_id", sample).eq("delivery", "scheduled").single()).data!.id;
+  await link.click();
+  await page.waitForURL(`**/projects/${planner}`);
+  await expect(help.locator(".help-title")).toHaveText("Plan Posts in the Content Planner");
+  // A client page link, on another topic.
+  await help.getByRole("button", { name: "Back" }).click();
+  await help.getByPlaceholder("Search topics").fill("instagram");
+  await help.getByRole("button", { name: /^Connect a Client's Instagram/ }).click();
+  // Links in a note render too.
+  await expect(help.getByRole("link", { name: "Workspace Settings → Connections → Instagram" })).toBeVisible();
+  await help.getByRole("link", { name: "Instagram", exact: true }).click();
+  await page.waitForURL(`**/clients/${sample}/settings/instagram`);
+});

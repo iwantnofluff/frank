@@ -112,7 +112,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         kind: "list",
         items: [
-          "A client is a brand you work for. Its Client Settings hold its details, its people, its Knowledge and its Instagram.",
+          "A client is a brand you work for. Its [Client Settings](client:/settings/details) hold its [details](client:/settings/details), its [people](client:/settings/people), its [Knowledge](client:/settings/knowledge) and its [Instagram](client:/settings/instagram).",
           "A project is a piece of work for that client. A Content Planner project schedules posts by publish date and time. A Project tracks one-off pieces by due date, with a publish date for when each goes live.",
           "A post is one piece of content: its brief, its artwork, its Text on Image and its copy.",
         ],
@@ -130,17 +130,17 @@ export const HELP_ARTICLES: HelpArticle[] = [
         ],
       },
       { kind: "p", text: "On a post, the stage switch shows all six as numbered pills, the post's own stage in its colour: Concept and In Production red, Internal Review and Client Review orange, Approved and Live green." },
-      { kind: "p", text: "A post moves to In Production when someone approves its Concept: Approve Concept, beside Post in its comments, or the green Approve Concept button in the table's Concept column. The client can approve it too. It moves to Internal Review by itself when its first artwork or copy is saved, approved or not. Pick Internal Review, Client Review, Approved or Live to move it on from there." },
-      { kind: "p", text: "In Production and Internal Review each have statuses for your team, set per project in its Settings, under Statuses: In Progress (Content) and In Progress (Creative); Internal QC (Copy), Internal QC (Creative), Hold and Cancel to begin with. A post takes its stage's first status when it gets there, and its stage pill shows it, lettered within the stage: 2a. In Progress (Content), 3b. Internal QC (Creative). For your team that pill opens a list: on the post, the stage alone (3. Internal) and its statuses; in the table's Status column, every stage and status, so a post can be moved to any of them from there, back to Concept or Production too. A post still in Concept moves on once its Concept is approved: Frank asks first, with Approve Concept. Owners and Admins add, rename, reorder and remove them; removing one moves its posts to the first left in that stage. Clients don't see them." },
-      { kind: "p", text: "A post with no date yet is an Idea (0. Idea), listed under No Scheduled Date at the foot of the table, where Add Date gives it one. Ideas are your team's only: clients don't see them." },
+      { kind: "p", text: "A post moves to In Production when someone approves its Concept: Approve Concept, beside Post in its comments, or the green Approve Concept button in [the table's](project:) Concept column. The client can approve it too. It moves to Internal Review by itself when its first artwork or copy is saved, approved or not. Pick Internal Review, Client Review, Approved or Live to move it on from there." },
+      { kind: "p", text: "In Production and Internal Review each have statuses for your team, set per project in its Settings (the cog on [the project's page](project:)), under Statuses: In Progress (Content) and In Progress (Creative); Internal QC (Copy), Internal QC (Creative), Hold and Cancel to begin with. A post takes its stage's first status when it gets there, and its stage pill shows it, lettered within the stage: 2a. In Progress (Content), 3b. Internal QC (Creative). For your team that pill opens a list: on the post, the stage alone (3. Internal) and its statuses; in [the table's](project:) Status column, every stage and status, so a post can be moved to any of them from there, back to Concept or Production too. A post still in Concept moves on once its Concept is approved: Frank asks first, with Approve Concept. Owners and Admins add, rename, reorder and remove them; removing one moves its posts to the first left in that stage. Clients don't see them." },
+      { kind: "p", text: "A post with no date yet is an Idea (0. Idea), listed under No Scheduled Date at the foot of [the table](project:), where Add Date gives it one. Ideas are your team's only: clients don't see them." },
       { kind: "p", text: "A post in Concept with no artwork or copy yet opens on its Brief." },
       { kind: "p", text: "Once a post is Live, the date it really went live shows in brackets after its planned date, above the phone: green if it went live that day or earlier, red if later. Posts planned before 14 Oct 2026 count as live on their planned day." },
       { kind: "h", text: "Getting around" },
-      { kind: "p", text: "The left rail follows where you are, and names the client: anywhere inside a client you'll see Clients and the client's projects (Casa Carigar Projects, with a buildings icon, opening its page); in a project and on its posts, the client's planner (Casa Carigar Planner) or project (Casa Carigar Project) as well. The client's Settings are on its page, the settings icon (the cog) at the top right." },
-      { kind: "p", text: "Frank's logo in the top left corner takes you back to Clients. Your picture at the top right holds My Profile, Settings for your whole workspace, Frank Tour and Sign out." },
-      { kind: "p", text: "Every workspace has a sample client, Lumen Skin: a made-up skincare brand with a Content Planner of posts at every stage and a Project of launch assets, some with artwork, copy and client comments, to explore Frank with. It's marked Sample, doesn't count towards your plan's clients or storage, and nobody can be invited to it. Everyone on your team can see it. It's never deleted, because Frank Tour uses it: 7 days after your first visit it's hidden from your lists. In [Workspace Settings → General → Preferences](/settings/general/preferences), under Sample Client, Owners and Admins can keep it in the lists, hide it or show it again, and Reset it to how it started." },
+      { kind: "p", text: "The left rail follows where you are, and names the client: anywhere inside a client you'll see [Clients](/dashboard) and [the client's projects](client:) (Casa Carigar Projects, with a buildings icon, opening its page); in a project and on its posts, the client's planner (Casa Carigar Planner) or project (Casa Carigar Project) as well. [The client's Settings](client:/settings/details) are on [its page](client:), the settings icon (the cog) at the top right." },
+      { kind: "p", text: "Frank's logo in the top left corner takes you back to [Clients](/dashboard). Your picture at the top right holds [My Profile](/profile), [Settings for your whole workspace](/settings/general/account-name), Frank Tour and Sign out." },
+      { kind: "p", text: "Every workspace has a sample client, [Lumen Skin](client:): a made-up skincare brand with a Content Planner of posts at every stage and a Project of launch assets, some with artwork, copy and client comments, to explore Frank with. It's marked Sample, doesn't count towards your plan's clients or storage, and nobody can be invited to it. Everyone on your team can see it. It's never deleted, because Frank Tour uses it: 7 days after your first visit it's hidden from your lists. In [Workspace Settings → General → Preferences](/settings/general/preferences), under Sample Client, Owners and Admins can keep it in the lists, hide it or show it again, and Reset it to how it started." },
       { kind: "p", text: "Frank Tour walks you through the basics, one thing at a time, with the rest of the page dimmed: Next and Back (or the arrow keys) to move, Skip Tour or Esc to stop. It starts by itself the first time you open Frank, on a computer, and you can replay it from your menu whenever you like. Owners and Admins see how to set up; the team, how to work on posts; clients, how to review them." },
-      { kind: "p", text: "Ask Frank, the ? at the top, holds these topics, a search, and a box at its foot: Ask Frank anything. Type a question about using Frank and Frank answers from these topics, with links to the pages and topics it means, and Show Me where there's a walkthrough. Anyone in the workspace can ask, and questions don't count towards your AI limit. The conversation lasts while you're in Frank; reloading the page starts it afresh. Frank can get things wrong, so check anything important." },
+      { kind: "p", text: "Ask Frank, the ? at the top, holds these topics, a search, and a box at its foot: Ask Frank anything. Type a question about using Frank and Frank answers from these topics, with links to the pages and topics it means, and Show Me where there's a walkthrough. Anyone in the workspace can ask, and questions don't count towards your [AI limit](/settings/ai/credit-usage). The conversation lasts while you're in Frank; reloading the page starts it afresh. Frank can get things wrong, so check anything important." },
       { kind: "p", text: "Most topics in Ask Frank have a Show Me button under their text, and each category one under its name: a short walkthrough of just that, in Frank Tour's look, on your sample client. A category's runs its topics one after another. Each starts from Clients or your menu and shows every click on the way. Ask Frank steps out of sight while it runs and comes back where you were. Stop, or Esc, ends it. Show Me is for your team, on a computer." },
       { kind: "p", text: "If you belong to more than one workspace, it lists them too: pick one to switch, still signed in." },
     ],
@@ -158,8 +158,8 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         kind: "list",
         items: [
-          "Type a page's name to open it: Clients, a Settings page such as Users or Reference Material, or a client's Client Settings pages such as Discovery.",
-          "Type planner to list every Content Planner.",
+          "Type a page's name to open it: [Clients](/dashboard), a Settings page such as [Users](/settings/team/users) or [Reference Material](/settings/knowledge/reference-material), or a client's [Client Settings](client:/settings/details) pages such as [Discovery](client:/settings/knowledge).",
+          "Type planner to list every [Content Planner](project:).",
           "Press ⌘K (Ctrl K on Windows) to jump into search from anywhere.",
           "Use the arrow keys to move through the results and Enter to open one, or click it.",
           "Projects show their client and type, so similar names are easy to tell apart.",
@@ -208,17 +208,17 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         kind: "steps",
         items: [
-          "Go to Clients and choose New Client.",
+          "Go to [Clients](/dashboard) and choose New Client.",
           "Give it a name, and if you like an industry, a description and a square logo.",
           "Under Team, pick the Users on your team who'll work on it, if any. Owners and Admins see every client already.",
-          "Choose Create Client. It appears in your clients list.",
+          "Choose Create Client. It appears in [your clients list](/dashboard).",
         ],
       },
       { kind: "h", text: "Add its first project" },
       {
         kind: "steps",
         items: [
-          "Open the client from your clients list.",
+          "Open [the client](client:) from [your clients list](/dashboard).",
           "Choose New Project and give it a name.",
           "Pick Project for one-off pieces such as ads or listings (it's selected to start), or Content Planner for scheduled posts.",
         ],
@@ -237,7 +237,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     blocks: [
       {
         kind: "p",
-        text: "Open a client's Settings from the settings icon (the cog) at the top right of the client's page, as a project's are. A project's own settings (its name, details, people, folder, archiving) open from the settings icon (the cog) at the top of the project's page.",
+        text: "Open [a client's Settings](client:/settings/details) from the settings icon (the cog) at the top right of [the client's page](client:), as a project's are. A project's own settings (its name, details, people, folder, archiving) open from the settings icon (the cog) at the top of [the project's page](project:).",
       },
       {
         kind: "list",
@@ -246,7 +246,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "[Profile → People](client:/settings/people): who's on this client and which of its projects each person works on, and inviting someone new.",
           "[Profile → Preferences](client:/settings/preferences): how long Approved artwork is kept (7, 14, 21 or 28 days) and what happens to Approved posts with no live date; whether the client can approve and whether a review link's Feed shows the project's other posts; and what a new review link starts with. Owners and Admins change them; each saves as it's picked.\n\nNotifications: whether the team hears in Frank's bell and by email when the client comments or approves, and who hears: the post's lead (everyone on the client when a post has no lead), everyone on the client, or Owners and Admins.",
           "[Knowledge → Discovery](client:/settings/knowledge): what Frank knows about the client, used when copy is drafted and checked.",
-          "[Knowledge → Strategy](client:/settings/strategy): what's been decided for each month (objective, key messages, themes and campaigns, offers, key dates, notes).\n\nAdd a month with Add Month; archive one to tidy the list. Draft with Frank follows the month a post goes live in, archived or not; empty fields are left out.",
+          "[Knowledge → Strategy](client:/settings/strategy): what's been decided for each month (objective, key messages, themes and campaigns, offers, key dates, notes).\n\nAdd a month with Add Month; archive one to tidy the list. [Draft with Frank](help:write-with-claude) follows the month a post goes live in, archived or not; empty fields are left out.",
           "[Connections → Instagram](client:/settings/instagram): the client's account, so a post's Feed shows its real posts.",
         ],
       },
@@ -262,7 +262,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       },
       {
         kind: "note",
-        text: "Owners and Admins change details and people. Users see them read only. A client's own people see their Knowledge only.",
+        text: "Owners and Admins change details and people. Users see them read only. A client's own people see their [Knowledge](client:/settings/knowledge) only.",
       },
     ],
   },
@@ -272,15 +272,15 @@ export const HELP_ARTICLES: HelpArticle[] = [
     category: "clients",
     summary: "Tone of voice, audience, research and more, for better copy and checks.",
     blocks: [
-      { kind: "p", text: "A client's Knowledge is in its Client Settings, under [Knowledge → Discovery](client:/settings/knowledge). It has nine areas, from About (who the client is) to Moodboard and References." },
-      { kind: "p", text: "The more of them are filled in, the more Draft with Frank and the checks can draw on. An area with nothing in it yet says Content pending." },
+      { kind: "p", text: "A client's Knowledge is in its [Client Settings](client:/settings/details), under [Knowledge → Discovery](client:/settings/knowledge). It has nine areas, from About (who the client is) to Moodboard and References." },
+      { kind: "p", text: "The more of them are filled in, the more [Draft with Frank](help:write-with-claude) and [the checks](help:plan-posts) can draw on. An area with nothing in it yet says Content pending." },
       {
         kind: "p",
-        text: "Its Tone of Voice, Target Audience and Prioritised Features also show on the client's page, under Strategy Overview, with this month's strategy beside them, so the brand is in front of you before you start. See All opens that area here.",
+        text: "Its Tone of Voice, Target Audience and Prioritised Features also show on [the client's page](client:), under Strategy Overview, with [this month's strategy](client:/settings/strategy) beside them, so the brand is in front of you before you start. See All opens that area here.",
       },
       { kind: "p", text: "Each of those boxes is a short overview Frank writes from everything in it, in a few paragraphs, as a snapshot. A longer one fades at the foot of its box; hover over it to read it in full." },
       { kind: "p", text: "When something in it changes, Frank rewrites that box the next time someone on the team opens the client; until then the last one stays up." },
-      { kind: "p", text: "Each rewrite counts toward your workspace's monthly AI limit, and if the limit is reached a box shows its first entry instead." },
+      { kind: "p", text: "Each rewrite counts toward your workspace's [monthly AI limit](/settings/ai/credit-usage), and if the limit is reached a box shows its first entry instead." },
       { kind: "p", text: "Frank reads notes in full, and links and files by their names only." },
       { kind: "h", text: "Add to an area" },
       {
@@ -305,7 +305,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     blocks: [
       {
         kind: "p",
-        text: "With a client's Instagram connected, a post's Feed shows the real profile and posts, so the client sees how planned posts will sit in their grid. Only Business and Creator accounts can be connected.",
+        text: "With [a client's Instagram](client:/settings/instagram) connected, a post's Feed shows the real profile and posts, so the client sees how planned posts will sit in their grid. Only Business and Creator accounts can be connected.",
       },
       { kind: "h", text: "Two ways to connect" },
       {
@@ -318,14 +318,14 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         kind: "steps",
         items: [
-          "Open the client's Client Settings and choose Instagram.",
+          "Open the client's [Client Settings](client:/settings/details) and choose [Instagram](client:/settings/instagram).",
           "Choose Connect or Send Link.",
           "Once connected, check the username shown is the right account.",
         ],
       },
       {
         kind: "note",
-        text: "If a connection stops working, it's marked Needs reconnecting. Choose Reconnect to sign in again. Owners and Admins connect accounts.",
+        text: "If a connection stops working, it's marked Needs reconnecting. Choose Reconnect to sign in again. Owners and Admins connect accounts, and see every client's in [Workspace Settings → Connections → Instagram](/settings/connections/instagram).",
       },
     ],
   },
@@ -335,18 +335,18 @@ export const HELP_ARTICLES: HelpArticle[] = [
     category: "posts",
     summary: "Brief a post, then add its artwork, Text on Image and copy.",
     blocks: [
-      { kind: "p", text: "In a Content Planner project, choose + New. Use Window for the full form, or Row to add a post straight into the table: its Slides, VO, Text on Image, Caption, Alt Text and Notes for Designer can all be typed in the row, and its Status shows the pill it will get as you type." },
+      { kind: "p", text: "In a [Content Planner project](project:), choose + New. Use Window for the full form, or Row to add a post straight into [the table](project:): its Slides, VO, Text on Image, Caption, Alt Text and Notes for Designer can all be typed in the row, and its Status shows the pill it will get as you type." },
       { kind: "p", text: "On a post's own page, + New beside Edit takes you to its project's table with the window open for another post." },
-      { kind: "p", text: "Speak It, at the top of the Brief, fills the window in from what you say: what the post is, its format, when it goes out and who's on it. On a post that's already made, say what to change; it keeps the post's name unless you rename it and adds to the Concept rather than replacing it. Check each field, then Create Post or Update. Each use is one of your monthly AI requests." },
+      { kind: "p", text: "Speak It, at the top of the Brief, fills the window in from what you say: what the post is, its format, when it goes out and who's on it. On a post that's already made, say what to change; it keeps the post's name unless you rename it and adds to the Concept rather than replacing it. Check each field, then Create Post or Update. Each use is one of your [monthly AI requests](/settings/ai/credit-usage)." },
       { kind: "h", text: "The brief" },
       { kind: "p", text: "The Brief has four parts: Details, Concept, Design and Other Fields." },
       {
         kind: "list",
         items: [
-          "Details: Post Name, and every Format it goes out as. A format is optional at first, so an idea or concept can be noted down before it's decided; the table shows Add Format until one's chosen, and the Content tab asks for one first. A carousel asks how many slides it has.",
-          "Publish Date and Time, and its Team: as many people from your team as are working on it, picked one at a time with + Add someone and taken off with the × on their name.\n\nThe table lists them all in its Team column, one a line, each with their role on the project in brackets if one's set in the project's Settings (Lead, Content, Designer…).\n\nIf the client has chosen that the post's Team hears about their comments and approvals, everyone on it does.",
-          "Concept: what's being made and why, and any References, each of which opens when clicked in the table. Paste an image into the box under References (click it, then ⌘V or Ctrl+V), or drop one in, for up to 8 reference images; only your team sees them.",
-          "Design: Notes for Designer, for your team only: one overall note, and one for each slide on a carousel. Design with Frank, at the foot of the window, can write them with you. A line that starts with a label and a colon (Layout:, Style:, Guardrails:) shows the label as a heading, and lines starting with - as a list; click the notes to type in them.",
+          "Details: Post Name, and every Format it goes out as. A format is optional at first, so an idea or concept can be noted down before it's decided; [the table](project:) shows Add Format until one's chosen, and the Content tab asks for one first. A carousel asks how many slides it has.",
+          "Publish Date and Time, and its Team: as many people from your team as are working on it, picked one at a time with + Add someone and taken off with the × on their name.\n\n[The table](project:) lists them all in its Team column, one a line, each with their role on the project in brackets if one's set in the project's Settings, the cog on [its page](project:) (Lead, Content, Designer…).\n\nIf the client has chosen that the post's Team hears about their comments and approvals, everyone on it does.",
+          "Concept: what's being made and why, and any References, each of which opens when clicked in [the table](project:). Paste an image into the box under References (click it, then ⌘V or Ctrl+V), or drop one in, for up to 8 reference images; only your team sees them.",
+          "Design: Notes for Designer, for your team only: one overall note, and one for each slide on a carousel. [Design with Frank](help:design-with-frank), at the foot of the window, can write them with you. A line that starts with a label and a colon (Layout:, Style:, Guardrails:) shows the label as a heading, and lines starting with - as a list; click the notes to type in them.",
           "Notes for Designer are saved as versions, like the copy: Save Notes V1 the first time, then Save to V1 to change it or Save as V2 to start a new one. Earlier versions stay in their tabs, read only. Update asks for the notes to be saved first; on a new post, Create Post saves them as V1.",
           "Save Concept saves the Concept without the rest of the window; the References, under Notes for Designer, have their own Save References. On a new post they wait for Create Post.",
           "Other Fields: any columns the project adds of its own, saved with Update.",
@@ -359,10 +359,10 @@ export const HELP_ARTICLES: HelpArticle[] = [
         items: [
           "Thumbnail Text on Image, for a video post: the words on its cover.",
           "VO, for a video post (a Reel, Story, YouTube or other video format): the voiceover script. Only your team sees it.",
-          "Text on Image: the words on each slide. In the table, a carousel's shows each slide's words under its own Slide heading.",
-          "Each is saved as versions of its own, like the copy: Save VO V1 (or Save Text on Image V1) the first time, then Save to V1 to change it or Save as V2 to start a new one. Earlier versions stay in their tabs, read only, and the table shows the latest VO and Text on Image with their V and the earlier ones on hover.",
+          "Text on Image: the words on each slide. In [the table](project:), a carousel's shows each slide's words under its own Slide heading.",
+          "Each is saved as versions of its own, like the copy: Save VO V1 (or Save Text on Image V1) the first time, then Save to V1 to change it or Save as V2 to start a new one. Earlier versions stay in their tabs, read only, and [the table](project:) shows the latest VO and Text on Image with their V and the earlier ones on hover.",
           "Notes for Designer, as last saved on the Brief, read only: they're written and changed on the Brief.",
-          "Draft with Frank, at the foot of the tab, drafts the VO, Text on Image and a video's Thumbnail Text on Image, with conversations of their own.",
+          "[Draft with Frank](help:write-with-claude), at the foot of the tab, drafts the VO, Text on Image and a video's Thumbnail Text on Image, with conversations of their own.",
         ],
       },
       { kind: "h", text: "The content" },
@@ -370,18 +370,18 @@ export const HELP_ARTICLES: HelpArticle[] = [
         kind: "list",
         items: [
           "Creative: one slot per slide, or one for a single image or video, up to 300MB a file. A file dropped in isn't added until you press Save Creative V1 (then V2 and so on); closing first asks if you're sure.",
-          "Final Asset, straight after the Creative: a link to where the finished creative is, such as its Google Drive folder. Save Link keeps it, and the saved link under the field opens it. With the field emptied, Remove Link takes it away. Once it's in, the table's Creative column and the post (under its versions) show a green Final Asset button that opens it. Your team only; clients never see it.",
+          "Final Asset, straight after the Creative: a link to where the finished creative is, such as its Google Drive folder. Save Link keeps it, and the saved link under the field opens it. With the field emptied, Remove Link takes it away. Once it's in, [the table's](project:) Creative column and the post (under its versions) show a green Final Asset button that opens it. Your team only; clients never see it.",
           "Thumbnail, for a video post: the cover the platform shows before the video plays, after the Final Asset. Drop or choose a JPG, PNG or WebP and press Save Thumbnail V1, then V2 and so on; earlier ones stay in their tabs. Saving one doesn't move the post's stage. Its words are on the Production tab. On the post's page the thumbnail is the video's cover in the phone until it plays, its version picked between Creative and Copy; your client sees it there too, and as the same cover on review links.",
           "Copy: the caption and anything else the formats need. Save Copy V1 for the first version. After that, Save to the current version (Save to V1, say) puts your changes into it, offered only while nobody has commented on it, and Save as the next (Save as V2) makes a new one. Each is greyed until there's a change to save.\n\nCopy Caption, under the caption, copies it with its line breaks and paragraphs, ready to paste into Instagram or another platform.",
-          "WIIFM Direction: each time copy is saved, Frank lists what's working in it, in 3 to 5 short points, each naming the psychology principle or bias the copy uses (curiosity gap, loss aversion and so on) and the words that use it. It never lists what isn't working.\n\nOn the table, Copy Caption and Copy WIIFM copy either one, ready to paste.",
-          "Check Creative, on the Checks tab: Frank reads each slide of the latest artwork and compares it with that slide's Text on Image, saying slide by slide whether it matches or what's different (missing or changed words, misspellings, wrong numbers). It needs the artwork uploaded and the Text on Image saved, uses one AI request from your monthly allowance, and needs a Claude model ([Settings → AI Governance → Drafting Model](/settings/ai/drafting-model)). It reads what's uploaded to Frank, not the Final Asset link. Acknowledge each thing that needs fixing or Ignore it, then Add To Comments posts the acknowledged ones as one team-only comment from you on the post.",
-          "Check Design, on the Checks tab: Frank compares the latest artwork with this client's last 10 Approved or Live posts, saying whether the logo is about the usual size and in the usual place, whether the fonts match (the brand's own fonts when they're written in the client's Knowledge, otherwise the earlier posts), and whether the visual hierarchy works: alignment, size, proximity and spacing. Sizes are judged by eye, roughly, not measured. It uses one AI request, needs a Claude model, and has the same Acknowledge, Ignore and Add To Comments.",
+          "WIIFM Direction: each time copy is saved, Frank lists what's working in it, in 3 to 5 short points, each naming the psychology principle or bias the copy uses (curiosity gap, loss aversion and so on) and the words that use it. It never lists what isn't working.\n\nOn [the table](project:), Copy Caption and Copy WIIFM copy either one, ready to paste.",
+          "Check Creative, on the Checks tab: Frank reads each slide of the latest artwork and compares it with that slide's Text on Image, saying slide by slide whether it matches or what's different (missing or changed words, misspellings, wrong numbers). It needs the artwork uploaded and the Text on Image saved, uses one AI request from your [monthly allowance](/settings/ai/credit-usage), and needs a Claude model ([Settings → AI Governance → Drafting Model](/settings/ai/drafting-model)). It reads what's uploaded to Frank, not the Final Asset link. Acknowledge each thing that needs fixing or Ignore it, then Add To Comments posts the acknowledged ones as one team-only comment from you on the post.",
+          "Check Design, on the Checks tab: Frank compares the latest artwork with this client's last 10 Approved or Live posts, saying whether the logo is about the usual size and in the usual place, whether the fonts match (the brand's own fonts when they're written in [the client's Knowledge](client:/settings/knowledge), otherwise the earlier posts), and whether the visual hierarchy works: alignment, size, proximity and spacing. Sizes are judged by eye, roughly, not measured. It uses one [AI request](/settings/ai/credit-usage), needs a [Claude model](/settings/ai/drafting-model), and has the same Acknowledge, Ignore and Add To Comments.",
         ],
       },
       { kind: "h", text: "Proofreading" },
-      { kind: "p", text: "Each time copy, a VO, Text on Image or Thumbnail Text on Image is saved, Frank proofreads what was saved, by your workspace's proofreading rules and following the client's Tone of Voice. Its suggestions are listed under the field, each with Fix, which puts it into the editor for you to save, and Ignore, which hides it for good on that version; Fix All does them all. Nothing changes until you choose, as some things are meant to be the way they are." },
+      { kind: "p", text: "Each time copy, a VO, Text on Image or Thumbnail Text on Image is saved, Frank proofreads what was saved, by your workspace's [proofreading rules](/settings/knowledge/proofreading) and following the client's [Tone of Voice](client:/settings/knowledge). Its suggestions are listed under the field, each with Fix, which puts it into the editor for you to save, and Ignore, which hides it for good on that version; Fix All does them all. Nothing changes until you choose, as some things are meant to be the way they are." },
       { kind: "p", text: "The rules are in [Workspace Settings → Knowledge → Proofreading](/settings/knowledge/proofreading), each with a switch: spelling, grammar, punctuation, British or American spelling, names as the brand writes them, capital letters, paragraph spacing, spaces, repeated words, hashtags, no em dashes, no colons and no AI-sounding phrases. Owners and Admins can add rules in their own words, and Preferred Words that are always written one way." },
-      { kind: "p", text: "Each proofread is one of your workspace's monthly AI requests, your own rules included. Capitals, spaces, repeated words, repeated hashtags, paragraph spacing and Preferred Words are checked without AI, and checked again as you fix things, so with every AI rule off a save uses none." },
+      { kind: "p", text: "Each proofread is one of your workspace's [monthly AI requests](/settings/ai/credit-usage), your own rules included. Capitals, spaces, repeated words, repeated hashtags, paragraph spacing and Preferred Words are checked without AI, and checked again as you fix things, so with every AI rule off a save uses none." },
       { kind: "p", text: "Saving shows each step: compressing a video, uploading, then saving the version. Keep the window open until it says the version is saved." },
       { kind: "p", text: "A file goes up in pieces, so if the connection drops, Frank carries on from where it was once it's back; if it still can't, the reason shows under Save." },
       {
@@ -392,6 +392,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         kind: "list",
         items: [
+          "Columns, above [the table](project:), chooses its columns: tick one to show or hide it, and drag it to move it. Owners and Admins can also rename a column (for the whole project) and add the project's own with + Add Column: Single Line Text, Large Text, Number, Date, Dropdown or Checkbox. A post's own columns are filled in on its Brief, under Other Fields. Which columns show, and their order, belong to the view you're on: the tabs above the table, with + to add another.",
           "Nothing is typed straight into a cell. Each cell has its own Edit button, or Add when it's empty (Add Date, Add Team, Add Notes…), with an arrow, which opens the post's window at that field.",
           "The Creative column shows the latest artwork in a small phone with its file name under it (a video's thumbnail if it has one); hover it to see it larger, a video's thumbnail in place of the video.",
           "Internal Feedback shows your team's latest open comment, private or public, with who said it and when above it; only your team sees the column. Client Feedback, after it, shows the client's latest open comment the same way. Show All under either lists every comment from that side, newest first, on hover.",
@@ -401,7 +402,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         kind: "list",
         items: [
-          "The project's name with a back arrow, above the section icons on the left, takes you back to the table on that post's month, its row brought into view and lit for a moment, so you don't have to scroll to find it. On a phone the name at the top of the post does the same with its card.",
+          "The project's name with a back arrow, above the section icons on the left, takes you back to [the table](project:) on that post's month, its row brought into view and lit for a moment, so you don't have to scroll to find it. On a phone the name at the top of the post does the same with its card.",
           "Fullscreen, on the right under Copy, shows the phone over the whole window, as large as it fits, for a video or artwork that's too small on a laptop. The post plays and steps through its slides as usual. Esc, the close button at the top right, or a click outside it closes it.",
         ],
       },
@@ -424,7 +425,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         ],
       },
       { kind: "h", text: "Posts with no live date" },
-      { kind: "p", text: "An Approved post with no live date, in a Project say, isn't removed on its own unless the client's Preferences say to remove it. Otherwise, the same number of days after its due date, Owners and Admins get a notification under the bell in the header." },
+      { kind: "p", text: "An Approved post with no live date, in a [Project](assets:) say, isn't removed on its own unless [the client's Preferences](client:/settings/preferences) say to remove it. Otherwise, the same number of days after its due date, Owners and Admins get a notification under the bell in the header." },
       { kind: "p", text: "Opening it shows the post with Keep Artwork or Remove Artwork. Keep is for good: you won't be asked about that post again." },
     ],
   },
@@ -436,12 +437,12 @@ export const HELP_ARTICLES: HelpArticle[] = [
     blocks: [
       {
         kind: "p",
-        text: "Projects suit one-off pieces: ads, listings and other deliverables that go live somewhere rather than on a posting schedule. Each piece is an asset, named in the table's Asset Name column, and New Asset adds one.",
+        text: "Projects suit one-off pieces: ads, listings and other deliverables that go live somewhere rather than on a posting schedule. Each piece is an asset, named in [the table's](assets:) Asset Name column, and New Asset adds one.",
       },
       {
         kind: "list",
         items: [
-          "Each asset has a Due Date, when the work is due, which sorts the table into weeks and places it on the calendar; an asset without one is an Idea.",
+          "Each asset has a Due Date, when the work is due, which sorts [the table](assets:) into weeks and places it on the calendar; an asset without one is an Idea.",
           "Its Publish Date is when it goes live. Live, late and when Approved artwork is removed all count from it.",
           "Notes for Designer are set in the asset's window, and an asset with several images has one for each. They're your team's only.",
           "The table also shows Principles. As in every table, each cell's Edit or Add button opens the asset at that field.",
@@ -474,11 +475,11 @@ export const HELP_ARTICLES: HelpArticle[] = [
       { kind: "h", text: "What your client sees" },
       { kind: "p", text: "It's one link for every device." },
       { kind: "p", text: "On a phone it fills the screen like a post, scrolling down to the comments. On a computer the post sits in a phone, sized to the window, with the caption scrolling inside it." },
-      { kind: "p", text: "With the client's Instagram connected there's a Feed view of their real grid too." },
+      { kind: "p", text: "With [the client's Instagram](client:/settings/instagram) connected there's a Feed view of their real grid too." },
       { kind: "p", text: "An approval counts once, however many times it's pressed." },
       {
         kind: "p",
-        text: "People you've invited as Clients of that client are listed under Who are you?, so they can comment under their own name straight away. Anyone else can choose Someone else and give a name and email.",
+        text: "[People](client:/settings/people) you've invited as Clients of that client are listed under Who are you?, so they can comment under their own name straight away. Anyone else can choose Someone else and give a name and email.",
       },
     ],
   },
@@ -500,8 +501,8 @@ export const HELP_ARTICLES: HelpArticle[] = [
         ],
       },
       { kind: "h", text: "Approve the Concept" },
-      { kind: "p", text: "While a post is in Concept with its Concept written, Approve Concept sits beside Post. Anyone on the post can press it, the client included, or use the green Approve Concept button in the table's Concept column." },
-      { kind: "p", text: "Approving moves the post to In Production and adds a comment in the approver's name: Approved Concept from your team, Client Approved Concept from the client. The client's shows in the table's Client Feedback column." },
+      { kind: "p", text: "While a post is in Concept with its Concept written, Approve Concept sits beside Post. Anyone on the post can press it, the client included, or use the green Approve Concept button in [the table's](project:) Concept column." },
+      { kind: "p", text: "Approving moves the post to In Production and adds a comment in the approver's name: Approved Concept from your team, Client Approved Concept from the client. The client's shows in [the table's](project:) Client Feedback column." },
       { kind: "note", text: "Clients see and add comments while a post is in Concept or Client Review, and never see private ones." },
     ],
   },
@@ -512,10 +513,10 @@ export const HELP_ARTICLES: HelpArticle[] = [
     summary: "Draft from the concept, or have your own draft reviewed.",
     blocks: [
       { kind: "p", text: "There's a Draft with Frank at the foot of two tabs, each with its own conversations. On Content it drafts the copy: the caption and the other copy fields, so the post needs a format first. On Production it drafts the words for making the creative: the Text on Image, and a video's VO and Thumbnail Text on Image." },
-      { kind: "p", text: "Frank reads the brief, the Notes for Designer (so the copy fits the visual), the WIIFM, each format's direction, and your workspace's and the client's Knowledge, files included." },
+      { kind: "p", text: "Frank reads the brief, the Notes for Designer (so the copy fits the visual), the WIIFM, [each format's direction](/settings/knowledge/format-directions), and [your workspace's](/settings/knowledge/reference-material) and [the client's Knowledge](client:/settings/knowledge), files included." },
       { kind: "p", text: "Its drafts follow your workspace's proofreading rules ([Workspace Settings → Knowledge → Proofreading](/settings/knowledge/proofreading)): British or American spelling, no em dashes or colons, no AI-sounding phrases, your own rules and Preferred Words, whichever are switched on. Reviewing your draft, it points out where the copy breaks one." },
-      { kind: "p", text: "It also reads up to 8 of the client's Approved posts, to keep to their voice without repeating them, and up to 20 of the client's own comments, which it follows (not praise or approvals); if those clash with the Knowledge, Frank says so." },
-      { kind: "p", text: "How far back each reaches, or whether Frank reads it at all, is set in the client's Preferences (by default, Approved posts from the last 12 months and comments from the last 90 days). The window lists what Frank reads for that client." },
+      { kind: "p", text: "It also reads up to 8 of the client's Approved posts, to keep to their voice without repeating them, and up to 20 of the client's own comments, which it follows (not praise or approvals); if those clash with [the Knowledge](client:/settings/knowledge), Frank says so." },
+      { kind: "p", text: "How far back each reaches, or whether Frank reads it at all, is set in [the client's Preferences](client:/settings/preferences) (by default, Approved posts from the last 12 months and comments from the last 90 days). The window lists what Frank reads for that client." },
       {
         kind: "list",
         items: [
@@ -528,7 +529,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       },
       {
         kind: "note",
-        text: "Each message uses one of your workspace's monthly AI requests. Conversations stay with the post for your team.",
+        text: "Each message uses one of your workspace's [monthly AI requests](/settings/ai/credit-usage). Conversations stay with the post for your team.",
       },
     ],
   },
@@ -548,11 +549,11 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "Use This puts a direction into the Notes for Designer, with its headings, and the button says Added. Nothing is saved until you save the notes, to the current version or as a new one.",
         ],
       },
-      { kind: "p", text: "Frank reads the post's Concept, format and WIIFM; its Text on Image, copy and VO where they're written; up to 8 reference links' pages and preview images, and the images pasted into References; each format's direction and the client's strategy for the month; and your workspace's and the client's Knowledge." },
+      { kind: "p", text: "Frank reads the post's Concept, format and WIIFM; its Text on Image, copy and VO where they're written; up to 8 reference links' pages and preview images, and the images pasted into References; [each format's direction](/settings/knowledge/format-directions) and [the client's strategy for the month](client:/settings/strategy); and [your workspace's](/settings/knowledge/reference-material) and [the client's Knowledge](client:/settings/knowledge)." },
       { kind: "p", text: "A public Instagram reference's likes and comments show which did best." },
       {
         kind: "note",
-        text: "Each direction, and each message after it, uses one of your workspace's monthly AI requests. Conversations stay with the post for your team.",
+        text: "Each direction, and each message after it, uses one of your workspace's [monthly AI requests](/settings/ai/credit-usage). Conversations stay with the post for your team.",
       },
     ],
   },
@@ -564,12 +565,12 @@ export const HELP_ARTICLES: HelpArticle[] = [
     blocks: [
       {
         kind: "p",
-        text: "At the top of a project's page, three icons after the Active and Archived pills open its Discussion, its Activity Log and its Settings. Only your team sees them, never the client.",
+        text: "At the top of [a project's page](project:), three icons after the Active and Archived pills open its Discussion, its Activity Log and its Settings. Only your team sees them, never the client.",
       },
-      { kind: "p", text: "Settings lists everyone on the project under People: Owners and Admins first (they're on every project), then the Users and Clients given it." },
+      { kind: "p", text: "Settings (the cog on [the project's page](project:)) lists everyone on the project under People: Owners and Admins first (they're on every project), then the Users and Clients given it." },
       { kind: "p", text: "Tick New posts beside anyone on the team there to put them on every new post's Team. A new post starts with them, and its Team can still be changed. Owners and Admins choose." },
       { kind: "p", text: "Statuses lists the steps a post moves through within In Production and Internal Review. Owners and Admins add, rename, move and remove them; they save as they're made." },
-      { kind: "p", text: "It also has Roles: what each person on the team does on this project. Owners and Admins fill them in; each shows after the person's name in the table's Team column, and a blank one shows nothing." },
+      { kind: "p", text: "It also has Roles: what each person on the team does on this project. Owners and Admins fill them in; each shows after the person's name in [the table's](project:) Team column, and a blank one shows nothing." },
       { kind: "p", text: "The Activity Log lists what happened, newest first, with who did it and when: posts added, edited, moved between stages, approved, archived or deleted; artwork and copy versions; comments; review links shared; and changes to the project and who's on it." },
       { kind: "p", text: "Click a post's name to open it." },
       { kind: "p", text: "Discussion is for the team to talk about the project. Start a thread, or reply under one." },
@@ -583,7 +584,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     category: "team",
     summary: "Who else is here, who's editing, and what happens if two of you save.",
     blocks: [
-      { kind: "p", text: "On a project's table and on a post, the pictures at the top are the others on your team who have it open right now." },
+      { kind: "p", text: "On [a project's table](project:) and on a post, the pictures at the top are the others on your team who have it open right now." },
       { kind: "p", text: "Hover one to see where they are. A green dot means they have the post's Edit window open." },
       {
         kind: "p",
@@ -620,7 +621,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         items: [
           "Everything an Admin can do.",
           "Invites anyone (Owners, Admins, Users and Clients) and chooses or changes their roles.",
-          "Changes the account's web address, and reads Frank support's activity in the account.",
+          "Changes the account's [web address](/settings/general/account-url), and reads [Frank support's activity](/settings/general/support-activity) in the account.",
           "Deletes archived clients and projects for good.",
         ],
       },
@@ -629,9 +630,9 @@ export const HELP_ARTICLES: HelpArticle[] = [
         kind: "list",
         items: [
           "Sees and works on every client and project.",
-          "Manages the workspace's settings: logo and colours, Instagram connections, knowledge, the drafting model, the plan and billing.",
-          "Edits each client's details, people and Preferences, and archives clients and projects.",
-          "Sees Analytics, and decides on Approved artwork with no live date.",
+          "Manages the workspace's settings: [logo](/settings/customisation/logo) and [colours](/settings/customisation/brand-colours), [Instagram connections](/settings/connections/instagram), [knowledge](/settings/knowledge/reference-material), [the drafting model](/settings/ai/drafting-model), [the plan](/settings/billing/plans) and [billing](/settings/billing/overview).",
+          "Edits each client's [details](client:/settings/details), [people](client:/settings/people) and [Preferences](client:/settings/preferences), and archives clients and projects.",
+          "Sees [Analytics](/settings/analytics), and decides on Approved artwork with no live date.",
           "Invites Admins, Users and Clients when an Owner allows them to.",
         ],
       },
@@ -649,9 +650,9 @@ export const HELP_ARTICLES: HelpArticle[] = [
         kind: "list",
         items: [
           "Someone at one of your clients, signed in to Frank. Can be at more than one of your clients.",
-          "Sees that client's projects (or the ones they're on), the posts (not Ideas) and the client's Knowledge.",
+          "Sees that client's projects (or the ones they're on), the posts (not Ideas) and [the client's Knowledge](client:/settings/knowledge).",
           "Sees and adds public comments while a post is in Concept or Client Review, and approves a post's Concept.",
-          "Approves on review links unless the client's Preferences say the agency approves.",
+          "Approves on review links unless [the client's Preferences](client:/settings/preferences) say the agency approves.",
           "Never sees private comments, other clients, or your settings.",
         ],
       },
@@ -677,11 +678,11 @@ export const HELP_ARTICLES: HelpArticle[] = [
         items: [
           "Primary Owner and Owners run the account. Admins manage clients, projects and people.",
           "Users work on the clients and projects they're given.",
-          "Clients are the brand's own people. They see their own projects, review posts and read their Knowledge.",
+          "Clients are the brand's own people. They see their own projects, review posts and read their [Knowledge](client:/settings/knowledge).",
         ],
       },
       { kind: "p", text: "Invite people from [Workspace Settings, under Team](/settings/team/users): it's the only place invites are sent from." },
-      { kind: "p", text: "A client's People page, and the New Client window, add Users already on your team." },
+      { kind: "p", text: "[A client's People page](client:/settings/people), and the New Client window on [Clients](/dashboard), add Users already on your team." },
       { kind: "p", text: "Each person can change the type of, resend invites to, and remove only the people below them." },
       {
         kind: "note",
@@ -722,18 +723,18 @@ export const HELP_ARTICLES: HelpArticle[] = [
     blocks: [
       {
         kind: "p",
-        text: "Open Workspace Settings from your picture at the top right of the header. Owners and Admins can change most of it.",
+        text: "Open [Workspace Settings](/settings/general/account-name) from your picture at the top right of the header. Owners and Admins can change most of it.",
       },
       {
         kind: "list",
         items: [
-          "General: your Workspace Name and Workspace URL, Preferences (how long the bell keeps a notification once it's been read: 30, 60 or 90 days, unread ones always staying; and how far back a review link lists Approved posts: 7, 14, 21 or 28 days, or Always, 14 by default), anything Frank's support has done in your account, and Updates: every version of Frank and what changed.\n\nA new version also shows in the bell, and an open tab offers to reload when one goes live.\n\nThe bell shows All, Unread and Read with how many of each; the funnel icon narrows it to certain people or clients; on the Read tab, read ones can be ticked, or all ticked at once with All, and deleted.",
-          "Customisation: your logo and brand colours, on plans that include branding. Your logo shows in the header, after Frank's; until there is one, Owners and Admins can choose Add Logo there.",
-          "Users: everyone in the workspace in one list, your team and each client's people, with when each was added, sorted by name or date; and inviting people.",
-          "Knowledge: the Proofreading rules Frank checks saved copy by, Format Directions for each format, and Reference Material shared across every client.",
-          "AI Governance: how much of the month's AI allowance has been used, by day, feature and person (Owners and Admins), and the AI model Draft with Frank uses.",
-          "Connections: every client's Instagram in one list.",
-          "Billing: your plan and the plans you can move to, the card you pay with, your invoices to download, and the details printed on them.",
+          "General: your [Workspace Name](/settings/general/account-name) and [Workspace URL](/settings/general/account-url), [Preferences](/settings/general/preferences) (how long the bell keeps a notification once it's been read: 30, 60 or 90 days, unread ones always staying; and how far back a review link lists Approved posts: 7, 14, 21 or 28 days, or Always, 14 by default), [anything Frank's support has done](/settings/general/support-activity) in your account, and [Updates](/settings/general/updates): every version of Frank and what changed.\n\nA new version also shows in the bell, and an open tab offers to reload when one goes live.\n\nThe bell shows All, Unread and Read with how many of each; the funnel icon narrows it to certain people or clients; on the Read tab, read ones can be ticked, or all ticked at once with All, and deleted.",
+          "Customisation: your [logo](/settings/customisation/logo) and [brand colours](/settings/customisation/brand-colours), on plans that include branding. Your logo shows in the header, after Frank's; until there is one, Owners and Admins can choose Add Logo there.",
+          "[Users](/settings/team/users): everyone in the workspace in one list, your team and each client's people, with when each was added, sorted by name or date; and inviting people.",
+          "Knowledge: the [Proofreading](/settings/knowledge/proofreading) rules Frank checks saved copy by, [Format Directions](/settings/knowledge/format-directions) for each format, and [Reference Material](/settings/knowledge/reference-material) shared across every client.",
+          "AI Governance: [how much of the month's AI allowance has been used](/settings/ai/credit-usage), by day, feature and person (Owners and Admins), and [the AI model](/settings/ai/drafting-model) [Draft with Frank](help:write-with-claude) uses.",
+          "Connections: [every client's Instagram](/settings/connections/instagram) in one list.",
+          "Billing: [your plan](/settings/billing/overview) and [the plans you can move to](/settings/billing/plans), [the card you pay with](/settings/billing/payment-methods), [your invoices](/settings/billing/invoices) to download, and [the details printed on them](/settings/billing/invoice-settings).",
         ],
       },
     ],
@@ -745,9 +746,12 @@ export const helpArticle = (id: string) => BY_ID.get(id) ?? null;
 
 // Articles whose title, summary or text has every word typed, best first
 // (title matches ahead of body matches).
-// Help text's links (phase147, direct instruction): "[words](target)", a
-// workspace page ("/settings/…") or a client's ("client:/settings/…", the
-// client you're in, else the sample). As plain words, for search.
+// Help text's links (phase147, direct instruction): "[words](target)": a
+// workspace page ("/settings/…", "/dashboard"), a client's
+// ("client:/settings/…", the client you're in, else the sample), a project's
+// ("project:" a Content Planner, "assets:" a Project: the one you're in,
+// else the sample's), or another topic ("help:<id>"). As plain words, for
+// search.
 export const HELP_LINK = /\[([^\]]+)\]\(([^)]+)\)/g;
 
 export function helpPlain(text: string): string {
