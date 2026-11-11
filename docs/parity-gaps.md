@@ -5179,6 +5179,108 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Ask Frank (1.79.0, phase147, 2026-11-11)
+
+Direct instruction: Help is renamed **Ask Frank**, with an AI chat at its foot, "Ask Frank anything", answering questions about using Frank as well as it can, with links. Decided directly:
+- **Cost:** questions don't count towards the workspace's AI limit, but are logged, on a smaller model.
+- **Who:** anyone in the workspace asks, client reviewers too, with answers suited to their role.
+- **History:** a conversation lasts for the visit only, with nothing stored.
+
+**The rename:**
+- the header's ? button (named Ask Frank)
+- the panel's title and its close button
+- the home's "Explore Topics" and "Categories"
+- the search, now "Search topics"
+- Frank Tour's last card ("Ask Frank, the ? at the top, has the rest, and answers your questions")
+- the sample's banner and Preferences, which now say just "Show Me"
+
+The help text calls the panel Ask Frank. Show Me's release note (1.78.0) keeps "Help", as it was then.
+
+**The chat** (`components/app-shell/HelpPanel.tsx`):
+- **The box** sits along the panel's foot on every view. Enter or Ask sends; Shift and Enter is a new line.
+- **The conversation** opens as its own view, the answer appearing as it's written. A note says Frank answers from the Help topics and can get things wrong.
+- **Answers** render paragraphs, numbered steps and bullets, with the same link form as the help text. `help:<id>` opens that topic in the panel, and Back returns to the conversation. `showme:<id>` starts its walkthrough, for the team on a computer only; for a client reviewer it's plain words.
+- **Coming back:** the home view offers "Your conversation with Frank" while there is one.
+
+**The route** (`app/api/ai/ask-frank/route.ts`, `lib/ai/ask-frank.ts`):
+- **Who:** anyone with an accepted membership in the workspace.
+- **Through runAiTask, as every AI call is.** Its usage is written with the service role, since a client's people can't write it.
+- **Model:** a new `model` argument puts it on Claude Haiku 5.5.
+- **Not counted:** `ask_frank` is an uncounted task. runAiTask neither holds it to the limit nor counts it, and Credit Usage leaves it out. Frank Admin's usage labels it "Ask Frank (not counted)". phase147 allows the task.
+- **A guard on a free feature:** 100 questions a person a day.
+- **The prompt:** Help's 22 articles with their ids and links, the pages it may link to (from the settings menus), which topics have a Show Me, the rules (answer only from the articles, never invent, only about Frank, short, plain, no exclamation marks or em dashes), who's asking, the page they're on (ids removed), and the last six turns. The articles part is the same every time, so the provider can keep it between questions.
+- **A move made for it:** lib/tour.ts is plain data again; `useTouring` moved to `lib/use-touring.ts`, because the route reads the walkthroughs, and a hook in that file broke the server.
+
+Not done: conversations aren't saved, by decision. Answers aren't checked against the app beyond the articles, so a wrong answer is possible; the note says so.
+
+**Verified**: phase147 applied to staging after a rolled-back rehearsal, and run on live by the user. Real questions in the real app (dev server, staging), answers checked:
+- connecting Instagram: right steps, a Clients link, Show Me
+- sending for approval: five numbered steps, the topic linked, Show Me, in about 4 seconds
+- the weather: a polite no, in about 2 seconds
+
+A screenshot of an answer in the panel was checked. A throwaway check: a client reviewer's question was answered with the workspace's AI limit set to 0, and logged as ask_frank on claude-haiku-5-5. ask-frank.spec, with the answer stubbed, checks:
+- **The answer:** it shows with its steps.
+- **Links:** a topic link opens the topic, and Back returns to the conversation. A page link goes to Team with the conversation still open.
+- **Coming back:** home offers the conversation back.
+- **Show Me** starts its walkthrough. A client reviewer's answer has no Show Me button.
+- **The route** refuses an empty question (400) and someone outside the workspace (403).
+
+header.spec and frank-tour.spec use the new names.
+
+The full suite on the local database (with Show Me's changes too) then passed 356 of 357. dashboard.png differed only by the date rolling over, and was regenerated after looking at its diff.
+
+## Show Me in Help (1.78.0, 2026-11-10)
+
+Direct instruction: a Show Me button on Help's topics and categories, doing what Frank Tour does. It sits under a topic's text, and under a category's name.
+- **Each topic's walkthrough** (`GUIDES` in `lib/tour.ts`) is 1 to 4 steps, on the sample client, in the tour's look.
+- **A category's** runs its topics' walkthroughs back to back, as one run with one count. That was decided directly, over a shorter highlights version.
+- **The topics with none,** agreed with the user, have nothing on screen to point at: The Frank Mark, Sign In and Sign Up, Frank on Your Phone, and Working on the Same Post. Analytics' step is a card in the middle of its page.
+- **Who gets it:** the team only, on a computer. A client reviewer's Help has no Show Me.
+- **Help** closes when one starts, and reopens where it was left.
+
+What the tour learned for it (`components/app-shell/FrankTour.tsx`):
+- **More places:** the client's Settings, Knowledge, Instagram and Preferences pages, the sample's Project, Analytics, and Workspace Settings.
+- **Opening a window before pointing into it.** A step's `open` clicks, in turn, the button that opens it: Share, New Project, Edit, the Brief tab. The tour only ever opens, never saves or changes anything. It closes the window, as Escape would, when the next step doesn't need it, or when the walkthrough ends. The tour's own Escape handling now ignores these synthetic key presses.
+- **Text selectors:** `text=<css>|<words>` finds a button by its words (Columns, All Statuses, Resolve, Draft with Frank, Design with Frank). The tour's own card is never matched.
+- **A fix:** a step on a client's page no longer counts a Settings page under it as already there. Only Team and Workspace Settings match pages under them.
+
+The sample client gained a Project, **Launch Assets**, with a website banner (In Production) and an A+ module (Concept), each with a due date and a publish date, for Track a Project. Getting the tour ready now requires it, so an existing sample without one is reset once, by itself, the first time a tour or Show Me needs it.
+
+**Verified**: In the real app (dev server, staging), as an Owner, a throwaway spec ran all 18 walkthroughs (35 steps) from start to finish. Every step but Analytics' lit its target, and no window was left open after any of them. Screenshots checked:
+- the Share window
+- the caption's highlighted line
+- Design with Frank on the Brief tab
+- the New Project window's kinds
+
+Two fixes came out of that run: the Knowledge step stayed on the settings page, and Design with Frank didn't open the Brief tab.
+
+frank-tour.spec checks:
+- **A topic:** Show Me under Send Posts to Your Client for Review closes Help, goes to the sample, opens the Share window on step 2, and closes it at Done.
+- **A category:** Reviews and Approvals' Show Me runs 6 steps.
+- **A client reviewer's Help** has no Show Me.
+
+sample-client.spec's project lookups now name the Content Planner.
+
+Then, by direct instruction (same release):
+- **Show every click from the start.** Each walkthrough starts where a first-timer would, from Clients or the account menu, and lights each click on the way: the client's row, the project's row, the post's row, the cog, the section in the settings list, then Workspace Settings in the menu. Only then does it show the topic. The paths are shared pieces (`TO_CLIENT`, `TO_PLANNER`, `TO_ASSETS`, `toPost`, `toClientSettings`, `TO_WORKSPACE_SETTINGS`, `toWorkspacePage`). A spot can name the sample's own ids ({client}, {project}, {assets}, {post:…}), so the right row is lit. In a category, a step the same as the one before it shows once.
+- **The hidden sample during a walkthrough.** It's listed in Clients while one runs, marked Active, so the first click has a row to point at. Getting the tour ready now refreshes the client and project lists, as the sample may have just been made. A hidden sample's own About page no longer shows the archive panel, with its Unarchive and Delete Permanently.
+- **Help stays open.** It steps out of sight (`.stepaside`) while a walkthrough runs, and comes back on the same topic. It ignores the tour's own Escapes.
+- **Links in Help's text.** `[words](target)` in help-content: a workspace page, or `client:/settings/…` for the client you're in (its page, or one of its projects), else the sample. 17 so far, wherever a section is named by its path: Knowledge → Discovery, Profile → Preferences, Workspace Settings → General → Preferences and so on. A link goes there with Help left open. Search reads them as plain words (`helpPlain`). Client reviewers see client links as plain words.
+
+**Verified (these changes)**: a throwaway spec as an Owner ran all 18 walkthroughs again (77 steps). Every step but Analytics' lit its target, and no window or menu was left open. Screenshots checked:
+- Lumen Skin's row lit in Clients, while hidden
+- Connections lit in the client's settings list
+- Workspace Settings lit in the open menu
+- the carousel's row lit in the table
+
+Two fixes came from them: the sample's row wasn't listed when it had just been made, and it showed as Archived. frank-tour.spec checks:
+- **The path:** Show Me under Send Posts walks Open a client → Open a project → Open a post → Share → the Share window.
+- **Help comes back** on the same topic after Done, and after Esc on a category's run.
+- **A link:** Knowledge → Discovery, from a client's page, goes to that client's Discovery with Help still open on the topic.
+
+Help's scroll position itself wasn't measured: it stays put because Help is never unmounted.
+
+
 ## The sample client is never deleted, and Frank Tour always uses it (1.77.0, phase146, 2026-11-10)
 
 Decided directly:

@@ -137,6 +137,24 @@ const POSTS: SamplePost[] = [
   },
 ];
 
+// The Project's assets: due dates, no copy or artwork yet.
+const ASSETS: { name: string; format: string; stage: number; dueIn: number; concept: string }[] = [
+  {
+    name: "Website Banner: Serum Launch",
+    format: "web_hero",
+    stage: 2,
+    dueIn: 5,
+    concept: "The homepage banner for launch week: the serum bottle on the warm background, one line and Shop Now.",
+  },
+  {
+    name: "Amazon A+ Module: Daily Glow",
+    format: "apl_module",
+    stage: 1,
+    dueIn: 10,
+    concept: "An A+ module under the listing: the three benefits of niacinamide, each with a small illustration.",
+  },
+];
+
 // Makes the sample client in a new workspace. Never throws: a sample that
 // can't be made is skipped, never a failed sign-up.
 export async function seedSampleClient(
@@ -213,6 +231,31 @@ async function seed(
   today.setUTCHours(10, 0, 0, 0);
   for (const [i, p] of POSTS.entries()) {
     await seedPost(admin, agencyId, ownerId, project.id as string, p, i, today.getTime());
+  }
+
+  // A Project too (phase146): one-off pieces by due date, for Help's Show
+  // Me on Track a Project.
+  const { data: assets, error: assetsError } = await admin
+    .from("projects")
+    .insert({ client_id: clientId, name: "Launch Assets", delivery: "continuous", type: "Web" })
+    .select("id")
+    .single();
+  if (assetsError) throw assetsError;
+  const day = (n: number) => new Date(today.getTime() + n * DAY).toISOString().slice(0, 10);
+  for (const [i, a] of ASSETS.entries()) {
+    const { error: assetError } = await admin.from("creatives").insert({
+      project_id: assets.id,
+      name: a.name,
+      format: a.format,
+      formats: [a.format],
+      stage: a.stage,
+      position: i,
+      concept: a.concept,
+      due_on: day(a.dueIn),
+      publish_on: day(a.dueIn + 3),
+      created_by: ownerId,
+    });
+    if (assetError) throw assetError;
   }
   return clientId;
 }

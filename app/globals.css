@@ -15093,3 +15093,115 @@ tr.rowflash > td + td {
   font-size: 13.2px;
   font-weight: 600;
 }
+
+/* Help's Show Me (phase147): under a topic's text, and under a category's
+   name. */
+.help-showme {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0 6px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-size: 12.7px;
+  color: var(--muted);
+}
+.help-title + .help-showme {
+  margin: 0 0 14px;
+  padding-top: 0;
+  border-top: 0;
+}
+/* Help out of sight while a walkthrough runs (phase147), kept as it was. */
+.helppanel.stepaside {
+  visibility: hidden;
+}
+/* Help text's links to the pages it talks about (phase147). */
+.help-link {
+  color: var(--action);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--action) 35%, transparent);
+  text-underline-offset: 2px;
+}
+.help-link:hover {
+  text-decoration-color: currentColor;
+}
+
+/* Ask Frank (phase147, direct instruction): the box along the panel's foot,
+   always there, and the conversation it opens. */
+.ask-f {
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 12px 16px 14px;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+.ask-f textarea {
+  flex: 1;
+  min-height: 36px;
+  max-height: 120px;
+  padding: 8px 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13.5px;
+  resize: none;
+  field-sizing: content;
+}
+.ask-f textarea:focus {
+  outline: none;
+  border-color: var(--action);
+  box-shadow: 0 0 0 3px var(--action-soft);
+}
+.ask-note {
+  margin: 0 0 14px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.ask-q {
+  margin: 14px 0 8px auto;
+  max-width: 85%;
+  width: fit-content;
+  padding: 8px 12px;
+  border-radius: 12px 12px 4px 12px;
+  background: var(--action-soft);
+  font-size: 13.5px;
+  white-space: pre-wrap;
+}
+.ask-a {
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+.ask-a p {
+  margin: 0 0 8px;
+}
+.ask-a ol,
+.ask-a ul {
+  margin: 0 0 8px;
+  padding-left: 20px;
+}
+.ask-a li {
+  margin-bottom: 4px;
+}
+.ask-a.err p {
+  color: var(--muted);
+}
+.ask-wait {
+  color: var(--muted);
+}
+/* A link in an answer that's a button: a Help topic, or Show Me. */
+button.help-link {
+  padding: 0;
+  font: inherit;
+  background: none;
+  cursor: pointer;
+}
+.help-showlink {
+  font-weight: 600;
+}
+.ask-back {
+  margin-bottom: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}

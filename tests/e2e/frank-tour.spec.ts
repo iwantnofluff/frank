@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { test, expect } from "./fixtures";
+import { test, expect, APP_URL } from "./fixtures";
 
 // Frank Tour (phase144, direct instruction): a guided look at the basics,
 // shown once on someone's first visit and replayable from the menu. The
@@ -87,4 +87,70 @@ test("on a phone there's no Frank Tour", async ({ page, frank }) => {
   await page.getByRole("button", { name: "Your account" }).click();
   await expect(page.getByRole("menuitem", { name: "My Profile" })).toBeVisible();
   await expect(page.getByRole("menuitem", { name: "Frank Tour" })).toHaveCount(0);
+});
+
+// Help's Show Me (phase147, direct instruction): under a topic's text and
+// on a category, the team's walkthrough of it on the sample client, Help
+// out of the way while it runs, any window it opened closed after.
+test("Show Me under a Help topic walks from Clients to it on the sample client, and Help comes back where it was", async ({ page, frank }) => {
+  test.setTimeout(180_000);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await frank.loginAsStaff(page);
+  await page.getByRole("button", { name: "Ask Frank", exact: true }).click();
+  const help = page.locator(".helppanel");
+  await help.getByPlaceholder("Search topics").fill("send posts");
+  await help.getByRole("button", { name: /Send Posts to Your Client for Review/ }).click();
+  await help.getByRole("button", { name: "Show me Send Posts to Your Client for Review" }).click();
+  // Out of sight while it runs, not closed.
+  await expect(help).toBeHidden();
+  const card = page.locator(".tour-card");
+  // From Clients, every click on the way (direct instruction).
+  const titles = ["Open a client", "Open a project", "Open a post", "Share for review", "What the link shows"];
+  for (let i = 0; i < titles.length; i++) {
+    await expect(card.locator(".tour-n")).toHaveText(`${i + 1} of ${titles.length}`, { timeout: 60_000 });
+    await expect(card.locator("h2")).toHaveText(titles[i]);
+    if (i === 0) await expect(page.locator(".tour-hole")).toBeVisible();
+    if (i === 4) await expect(page.locator(".modal")).toBeVisible();
+    await card.getByRole("button", { name: i === titles.length - 1 ? "Done" : "Next" }).click();
+  }
+  await expect(page.locator(".tour")).toHaveCount(0);
+  await expect(page.locator(".modal")).toHaveCount(0);
+  // Back on the same topic.
+  await expect(help).toBeVisible();
+  await expect(help.locator(".help-title")).toHaveText("Send Posts to Your Client for Review");
+
+  // A category: its topics' walkthroughs, one count across them.
+  await page.reload();
+  await page.getByRole("button", { name: "Ask Frank", exact: true }).click();
+  await help.getByRole("button", { name: /^Reviews and Approvals/ }).click();
+  await help.getByRole("button", { name: "Show me Reviews and Approvals" }).click();
+  await expect(card.locator(".tour-n")).toHaveText(/^1 of \d+$/, { timeout: 60_000 });
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".tour")).toHaveCount(0);
+  await expect(help.locator(".help-title")).toHaveText("Reviews and Approvals");
+});
+
+test("a link in Help goes to that page, Help staying open where it was", async ({ page, frank }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await frank.loginAsStaff(page);
+  // In a client: its own page.
+  await page.goto(`${APP_URL}/clients/${frank.clientId}`);
+  await page.getByRole("button", { name: "Ask Frank", exact: true }).click();
+  const help = page.locator(".helppanel");
+  await help.getByPlaceholder("Search topics").fill("client settings");
+  await help.getByRole("button", { name: /^Client Settings/ }).click();
+  await help.getByRole("link", { name: "Knowledge → Discovery" }).first().click();
+  await page.waitForURL(`**/clients/${frank.clientId}/settings/knowledge`);
+  await expect(help).toBeVisible();
+  await expect(help.locator(".help-title")).toHaveText("Client Settings");
+});
+
+test("a client reviewer's Help has no Show Me", async ({ page, frank }) => {
+  await frank.loginAsClient(page);
+  await page.getByRole("button", { name: "Ask Frank", exact: true }).click();
+  const help = page.getByRole("complementary", { name: "Ask Frank" });
+  await help.getByRole("button", { name: /^Reviews and Approvals/ }).click();
+  await expect(help.getByRole("heading", { name: "Reviews and Approvals" })).toBeVisible();
+  await expect(help.getByRole("button", { name: /^Show me/ })).toHaveCount(0);
 });

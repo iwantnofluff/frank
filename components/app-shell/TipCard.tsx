@@ -8,7 +8,7 @@ import { usePresence } from "@/hooks/use-presence";
 import { nextTip, tipDue, type Tip } from "@/lib/tips";
 import { openHelpArticle } from "./HelpPanel";
 import { TIP_SPOT_EVENT } from "./TipSpotlight";
-import { useTouring } from "@/lib/tour";
+import { useTouring } from "@/lib/use-touring";
 
 const SHOW_MS = 5000;
 

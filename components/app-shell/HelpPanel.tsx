@@ -5,6 +5,7 @@ import { usePresence } from "@/hooks/use-presence";
 import { CalendarIcon, ClientsIcon } from "./icons";
 import {
   HELP_ARTICLES,
+  HELP_LINK,
   HELP_CATEGORIES,
   HELP_TOPICS,
   helpArticle,
@@ -13,8 +14,16 @@ import {
   type HelpBlock,
 } from "@/lib/help-content";
 import { BRAND } from "@/lib/brand";
+import { GUIDES, startTour } from "@/lib/tour";
+import { useTouring } from "@/lib/use-touring";
+import { usePathname, useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import { useClients } from "@/hooks/use-clients";
+import { useMyAgency } from "@/hooks/use-my-agency";
+import { useIsStaff } from "@/hooks/use-is-staff";
+import { usePhoneScreen } from "@/hooks/use-phone-screen";
 
-type View = { kind: "home" } | { kind: "category"; id: string } | { kind: "article"; id: string };
+type View = { kind: "home" } | { kind: "category"; id: string } | { kind: "article"; id: string } | { kind: "ask" };
 
 function Chevron({ d }: { d: string }) {
   return (
@@ -53,21 +62,139 @@ const TOPIC_ICONS: Record<string, ReactNode> = {
 
 // A list item in short paragraphs (direct instruction: no chunky blocks);
 // a blank line in its text starts the next.
+// Where a help link's client page is (phase147, direct instruction): the
+// client you're in (its page, or one of its projects), else the sample
+// client. None for a client's own people, who don't have those pages.
+function useLinkClient(): string | null {
+  const pathname = usePathname();
+  const queryClient = useQueryClient();
+  const { data: clients } = useClients();
+  const { isStaff } = useIsStaff();
+  if (!isStaff) return null;
+  const inClient = pathname.match(/^\/clients\/([^/]+)/)?.[1];
+  if (inClient) return inClient;
+  const inProject = pathname.match(/^\/projects\/([^/]+)/)?.[1];
+  const project = inProject ? queryClient.getQueryData<{ client_id: string }>(["project", inProject]) : undefined;
+  if (project?.client_id) return project.client_id;
+  return clients?.find((c) => c.is_sample)?.id ?? null;
+}
+
+// Help text with its links: a link goes to that page, Help staying open
+// where it is (direct instruction).
+function Rich({ text, onHelp, onShow }: { text: string; onHelp?: (id: string) => void; onShow?: (id: string) => void }) {
+  const router = useRouter();
+  const client = useLinkClient();
+  const out: ReactNode[] = [];
+  let at = 0;
+  for (const m of text.matchAll(HELP_LINK)) {
+    out.push(text.slice(at, m.index));
+    const [, words, target] = m;
+    // A Help topic (help:<id>) opens in the panel; a Show Me (showme:<id>)
+    // starts its walkthrough (Ask Frank's answers, phase147).
+    if (target.startsWith("help:") || target.startsWith("showme:")) {
+      const id = target.slice(target.indexOf(":") + 1);
+      const act = target.startsWith("help:") ? (helpArticle(id) ? onHelp : undefined) : GUIDES[id] ? onShow : undefined;
+      out.push(
+        act ? (
+          <button key={m.index} type="button" className={target.startsWith("showme:") ? "help-link help-showlink" : "help-link"} onClick={() => act(id)}>
+            {words}
+          </button>
+        ) : (
+          words
+        ),
+      );
+      at = m.index + m[0].length;
+      continue;
+    }
+    const href = target.startsWith("client:") ? (client ? `/clients/${client}${target.slice(7)}` : null) : target.startsWith("/") ? target : null;
+    out.push(
+      href ? (
+        <a
+          key={m.index}
+          className="help-link"
+          href={href}
+          onClick={(e) => {
+            e.preventDefault();
+            router.push(href);
+          }}
+        >
+          {words}
+        </a>
+      ) : (
+        words
+      ),
+    );
+    at = m.index + m[0].length;
+  }
+  out.push(text.slice(at));
+  return <>{out}</>;
+}
+
 function Item({ text }: { text: string }) {
   const parts = text.split("\n\n");
   return (
     <>
-      {parts[0]}
+      <Rich text={parts[0]} />
       {parts.slice(1).map((p) => (
         <span className="li-p" key={p}>
-          {p}
+          <Rich text={p} />
         </span>
       ))}
     </>
   );
 }
 
-function Blocks({ blocks }: { blocks: HelpBlock[] }) {
+// Ask Frank's answer as written: paragraphs, numbered steps and bullets,
+// with its links.
+function Answer({ text, onHelp, onShow }: { text: string; onHelp: (id: string) => void; onShow?: (id: string) => void }) {
+  const groups: { kind: "p" | "ol" | "ul"; lines: string[] }[] = [];
+  for (const raw of text.split("\n")) {
+    const line = raw.trim();
+    if (!line) {
+      groups.push({ kind: "p", lines: [] });
+      continue;
+    }
+    const kind = /^\d+[.)]\s/.test(line) ? "ol" : /^[-•*]\s/.test(line) ? "ul" : "p";
+    const body = kind === "ol" ? line.replace(/^\d+[.)]\s/, "") : kind === "ul" ? line.replace(/^[-•*]\s/, "") : line;
+    const last = groups[groups.length - 1];
+    if (last && last.kind === kind && (kind !== "p" || last.lines.length)) last.lines.push(body);
+    else groups.push({ kind, lines: [body] });
+  }
+  return (
+    <>
+      {groups
+        .filter((g) => g.lines.length)
+        .map((g, i) =>
+          g.kind === "p" ? (
+            <p key={i}>
+              <Rich text={g.lines.join(" ")} onHelp={onHelp} onShow={onShow} />
+            </p>
+          ) : (
+            (() => {
+              const List = g.kind;
+              return (
+                <List key={i}>
+                  {g.lines.map((l, j) => (
+                    <li key={j}>
+                      <Rich text={l} onHelp={onHelp} onShow={onShow} />
+                    </li>
+                  ))}
+                </List>
+              );
+            })()
+          ),
+        )}
+    </>
+  );
+}
+
+interface AskTurn {
+  role: "user" | "frank";
+  text: string;
+  error?: boolean;
+}
+
+function Blocks({ blocks, onHelp }: { blocks: HelpBlock[]; onHelp?: (id: string) => void }) {
   return (
     <>
       {blocks.map((b, i) => {
@@ -75,7 +202,11 @@ function Blocks({ blocks }: { blocks: HelpBlock[] }) {
           case "h":
             return <h3 key={i}>{b.text}</h3>;
           case "p":
-            return <p key={i}>{b.text}</p>;
+            return (
+              <p key={i}>
+                <Rich text={b.text} onHelp={onHelp} />
+              </p>
+            );
           case "list":
             return (
               <ul key={i}>
@@ -173,6 +304,9 @@ export function HelpPanel({
   useEffect(() => {
     if (!open) return;
     function onKey(e: KeyboardEvent) {
+      // Not while a walkthrough runs, whose Escape ends it (or closes what
+      // it opened), Help staying where it is.
+      if (!e.isTrusted || document.querySelector(".tour")) return;
       if (e.key === "Escape" && !document.querySelector(".scrim:not(.closing)")) onClose();
     }
     window.addEventListener("keydown", onKey);
@@ -184,6 +318,71 @@ export function HelpPanel({
     body.current?.scrollTo({ top: 0 });
   }, [history.length]);
 
+  // Show Me (phase147): the team's, on a computer, where there's something
+  // to show.
+  const { isStaff, isPending: staffPending } = useIsStaff();
+  const phone = usePhoneScreen();
+  const canShow = isStaff && !staffPending && !phone;
+  const touring = useTouring();
+
+  // Ask Frank (phase147, direct instruction): a conversation for this visit
+  // only, answered as it's written.
+  const { data: agency } = useMyAgency();
+  const pathname = usePathname();
+  const [turns, setTurns] = useState<AskTurn[]>([]);
+  const [draft, setDraft] = useState("");
+  const [asking, setAsking] = useState(false);
+  useEffect(() => {
+    if (view.kind === "ask") body.current?.scrollTo({ top: body.current.scrollHeight });
+  }, [turns, view.kind]);
+  async function ask() {
+    const question = draft.trim();
+    if (!question || asking || !agency?.agencyId) return;
+    const before = turns.filter((t) => !t.error && t.text);
+    setTurns((t) => [...t, { role: "user", text: question }, { role: "frank", text: "" }]);
+    setDraft("");
+    setAsking(true);
+    if (view.kind !== "ask") setHistory((h) => [...h, { kind: "ask" }]);
+    const answer = (text: string, error = false) =>
+      setTurns((t) => [...t.slice(0, -1), { role: "frank", text, error }]);
+    try {
+      const res = await fetch("/api/ai/ask-frank", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agencyId: agency.agencyId, question, history: before, path: pathname }),
+      });
+      if (!res.ok || !res.body) {
+        const data = await res.json().catch(() => ({}));
+        answer(data.error ?? "Frank couldn't answer just now. Try again in a moment.", true);
+        return;
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let text = "";
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          const event = JSON.parse(line) as { type: string; text?: string; error?: string };
+          if (event.type === "text") {
+            text += event.text ?? "";
+            answer(text);
+          } else if (event.type === "done") answer(event.text ?? text);
+          else if (event.type === "error") answer(event.error ?? "Frank couldn't answer just now.", true);
+        }
+      }
+    } catch {
+      answer("Frank couldn't answer just now. Try again in a moment.", true);
+    } finally {
+      setAsking(false);
+    }
+  }
+
   if (!pop.shown) return null;
 
   const push = (v: View) => setHistory((h) => [...h, v]);
@@ -193,7 +392,13 @@ export function HelpPanel({
   const category = view.kind === "category" ? HELP_CATEGORIES.find((c) => c.id === view.id) : null;
 
   return (
-    <aside className={`helppanel${pop.isOpen ? " is-open" : ""}`} aria-label="Help">
+    <aside
+      // Out of sight while Frank Tour or a Show Me runs, not closed: it comes
+      // back on the same topic, scrolled where it was (direct instruction).
+      className={`helppanel${pop.isOpen ? " is-open" : ""}${touring ? " stepaside" : ""}`}
+      aria-label="Ask Frank"
+      aria-hidden={touring || undefined}
+    >
       <div className="help-h">
         {view.kind !== "home" && (
           <button type="button" className="help-ib" aria-label="Back" onClick={back}>
@@ -203,8 +408,8 @@ export function HelpPanel({
         {/* The windows' logomark, before the title (direct instruction). */}
         {/* eslint-disable-next-line @next/next/no-img-element -- a static SVG */}
         <img className="help-mark" src={BRAND.logomark} alt="" aria-hidden="true" />
-        <b>Help</b>
-        <button type="button" className="help-ib" aria-label="Close help" onClick={onClose}>
+        <b>Ask Frank</b>
+        <button type="button" className="help-ib" aria-label="Close Ask Frank" onClick={onClose}>
           <Chevron d="M18 6L6 18M6 6l12 12" />
         </button>
       </div>
@@ -212,6 +417,12 @@ export function HelpPanel({
       <div className="help-b" ref={body}>
         {view.kind === "home" && (
           <>
+            {turns.length > 0 && (
+              <button type="button" className="help-row ask-back" onClick={() => push({ kind: "ask" })}>
+                <b>Your conversation with Frank</b>
+                <span>{turns.filter((t) => t.role === "user").length} question{turns.filter((t) => t.role === "user").length === 1 ? "" : "s"} so far</span>
+              </button>
+            )}
             <p className="help-k">Find Answers Quickly</p>
             <label className="help-search">
               <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -220,8 +431,8 @@ export function HelpPanel({
               </svg>
               <input
                 type="search"
-                placeholder="How can we help?"
-                aria-label="Search help"
+                placeholder="Search topics"
+                aria-label="Search topics"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
@@ -237,7 +448,7 @@ export function HelpPanel({
               </div>
             ) : (
               <>
-                <p className="help-k">Explore Help Topics</p>
+                <p className="help-k">Explore Topics</p>
                 <div className="help-topics">
                   {HELP_TOPICS.map((id) => {
                     const a = helpArticle(id);
@@ -252,7 +463,7 @@ export function HelpPanel({
                   })}
                 </div>
 
-                <p className="help-k">Help Categories</p>
+                <p className="help-k">Categories</p>
                 <div className="help-cats">
                   {HELP_CATEGORIES.map((c) => (
                     <button type="button" className="help-cat" key={c.id} onClick={() => push({ kind: "category", id: c.id })}>
@@ -269,6 +480,9 @@ export function HelpPanel({
         {category && (
           <>
             <h2 className="help-title">{category.label}</h2>
+            {canShow && HELP_ARTICLES.some((a) => a.category === category.id && GUIDES[a.id]) && (
+              <ShowMe label={`Show me ${category.label}`} onClick={() => startTour({ category: category.id })} />
+            )}
             <div className="help-list">
               {HELP_ARTICLES.filter((a) => a.category === category.id).map((a) => (
                 <ArticleRow key={a.id} a={a} onOpen={() => push({ kind: "article", id: a.id })} />
@@ -280,10 +494,84 @@ export function HelpPanel({
         {article && (
           <article className="help-article">
             <h2 className="help-title">{article.title}</h2>
-            <Blocks blocks={article.blocks} />
+            <Blocks blocks={article.blocks} onHelp={(id) => push({ kind: "article", id })} />
+            {/* Under the topic's text (direct instruction). */}
+            {canShow && GUIDES[article.id] && (
+              <ShowMe label={`Show me ${article.title}`} onClick={() => startTour({ guide: article.id })} />
+            )}
           </article>
         )}
+
+        {view.kind === "ask" && (
+          <div className="ask-convo" aria-live="polite">
+            <h2 className="help-title">Ask Frank</h2>
+            <p className="ask-note">Frank answers from these Help topics. It can get things wrong, so check anything important.</p>
+            {turns.map((t, i) =>
+              t.role === "user" ? (
+                <p className="ask-q" key={i}>
+                  {t.text}
+                </p>
+              ) : (
+                <div className={`ask-a${t.error ? " err" : ""}`} key={i}>
+                  {t.text ? (
+                    t.error ? (
+                      <p>{t.text}</p>
+                    ) : (
+                      <Answer
+                        text={t.text}
+                        onHelp={(id) => push({ kind: "article", id })}
+                        onShow={canShow ? (id) => startTour({ guide: id }) : undefined}
+                      />
+                    )
+                  ) : (
+                    <p className="ask-wait">Frank is thinking…</p>
+                  )}
+                </div>
+              ),
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Ask Frank anything (direct instruction), under everything else. */}
+      <form
+        className="ask-f"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void ask();
+        }}
+      >
+        <textarea
+          rows={1}
+          placeholder="Ask Frank anything"
+          aria-label="Ask Frank anything"
+          value={draft}
+          maxLength={1000}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              void ask();
+            }
+          }}
+        />
+        <button type="submit" className="btn sm primary" disabled={!draft.trim() || asking || !agency}>
+          {asking ? "…" : "Ask"}
+        </button>
+      </form>
     </aside>
+  );
+}
+
+// Help's Show Me (phase147, direct instruction): the topic's or category's
+// walkthrough, in Frank Tour's look, on the sample client.
+function ShowMe({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <div className="help-showme">
+      <button type="button" className="btn sm primary" aria-label={label} onClick={onClick}>
+        Show Me
+      </button>
+      <span>A short walkthrough, on your sample client.</span>
+    </div>
   );
 }

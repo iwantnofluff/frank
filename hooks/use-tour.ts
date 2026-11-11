@@ -32,14 +32,17 @@ export interface TourTargets {
   clientId: string | null;
   projectId: string | null;
   postId: string | null;
-  // The sample's posts by what each shows best (the team's tours).
+  // The sample's posts by what each shows best (the team's tours), and
+  // its Project (one-off pieces).
   posts?: { stages: string; comments: string; concept: string };
+  assetProjectId?: string;
 }
 
 // The team's tours always use the workspace's sample client (phase146,
 // decided directly): got ready first, made (hidden) or reset if it needs to
 // be, so a tour never falls back on anything else. Once per tour run.
 export function useSampleTargets(agencyId: string | undefined, run: number, enabled: boolean) {
+  const queryClient = useQueryClient();
   return useQuery({
     queryKey: ["tour-sample", agencyId, run],
     enabled: enabled && !!agencyId,
@@ -54,7 +57,14 @@ export function useSampleTargets(agencyId: string | undefined, run: number, enab
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Couldn't get the tour ready");
-      return { clientId: data.clientId, projectId: data.projectId, postId: data.posts.stages, posts: data.posts };
+      // It may have just been made or reset: the lists the tour points into
+      // are read again.
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["clients"] }),
+        queryClient.invalidateQueries({ queryKey: ["client"] }),
+        queryClient.invalidateQueries({ queryKey: ["projects"] }),
+      ]);
+      return { clientId: data.clientId, projectId: data.projectId, postId: data.posts.stages, posts: data.posts, assetProjectId: data.assetProjectId };
     },
   });
 }

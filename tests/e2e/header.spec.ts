@@ -72,18 +72,18 @@ test("a client's own people find no Settings pages, but their Knowledge", async 
   await expect(results.getByRole("option", { name: /Settings · Knowledge/ })).toHaveCount(0);
 });
 
-test("Help opens from the header: topics, categories, articles and search", async ({ page, frank }) => {
+test("Ask Frank opens from the header: topics, categories, articles and search", async ({ page, frank }) => {
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/dashboard`);
-  await page.getByRole("button", { name: "Help", exact: true }).click();
-  const help = page.getByRole("complementary", { name: "Help" });
-  await expect(help).toContainText("Explore Help Topics");
+  await page.getByRole("button", { name: "Ask Frank", exact: true }).click();
+  const help = page.getByRole("complementary", { name: "Ask Frank" });
+  await expect(help).toContainText("Explore Topics");
 
   // A topic opens its article; Back returns.
   await help.getByRole("button", { name: "Draft Copy with Frank" }).click();
   await expect(help.getByRole("heading", { name: "Draft Copy with Frank" })).toBeVisible();
   await help.getByRole("button", { name: "Back" }).click();
-  await expect(help).toContainText("Help Categories");
+  await expect(help).toContainText("Categories");
 
   // A category lists its articles, each of which opens.
   await help.getByRole("button", { name: "Clients and Client Settings" }).click();
@@ -93,9 +93,9 @@ test("Help opens from the header: topics, categories, articles and search", asyn
   await help.getByRole("button", { name: "Back" }).click();
 
   // Search finds articles by what's in them.
-  await help.getByRole("searchbox", { name: "Search help" }).fill("passcode");
+  await help.getByRole("searchbox", { name: "Search topics" }).fill("passcode");
   await expect(help.getByRole("button", { name: /Send Posts to Your Client for Review/ })).toBeVisible();
 
-  await help.getByRole("button", { name: "Close help" }).click();
+  await help.getByRole("button", { name: "Close Ask Frank" }).click();
   await expect(help).toHaveCount(0);
 });

@@ -12,6 +12,8 @@ import { removeSampleFiles, type SampleRemoval } from "./remove";
 export interface SampleTargets {
   clientId: string;
   projectId: string;
+  // Its Project (one-off pieces), for Track a Project.
+  assetProjectId: string;
   // The posts each step shows best.
   posts: { stages: string; comments: string; concept: string };
 }
@@ -52,13 +54,15 @@ export async function ensureSample(admin: SupabaseClient, agencyId: string, acto
   return targets;
 }
 
-// What the tour needs: its project; a post in Internal Review with artwork
+// What the tour needs: its Content Planner and its Project; a post in Internal Review with artwork
 // (the stages); one in Client Review with a comment (the comments); one
 // dated in Concept with its concept written (approving it). Null if any is
 // missing.
 async function find(admin: SupabaseClient, clientId: string): Promise<SampleTargets | null> {
-  const { data: project } = await admin.from("projects").select("id").eq("client_id", clientId).is("archived_at", null).limit(1).maybeSingle();
-  if (!project) return null;
+  const { data: projects } = await admin.from("projects").select("id, delivery").eq("client_id", clientId).is("archived_at", null);
+  const project = projects?.find((p) => p.delivery === "scheduled");
+  const assetProject = projects?.find((p) => p.delivery === "continuous");
+  if (!project || !assetProject) return null;
   const { data: posts } = await admin
     .from("creatives")
     .select("id, stage, concept, scheduled_at, versions:creative_versions(id), comments(id, deleted_at)")
@@ -77,5 +81,5 @@ async function find(admin: SupabaseClient, clientId: string): Promise<SampleTarg
   const comments = list.find((p) => p.stage === 4 && p.comments.some((c) => !c.deleted_at));
   const concept = list.find((p) => p.stage === 1 && !!p.scheduled_at && !!p.concept?.trim());
   if (!stages || !comments || !concept) return null;
-  return { clientId, projectId: project.id as string, posts: { stages: stages.id, comments: comments.id, concept: concept.id } };
+  return { clientId, projectId: project.id as string, assetProjectId: assetProject.id as string, posts: { stages: stages.id, comments: comments.id, concept: concept.id } };
 }

@@ -10,7 +10,18 @@ import { usePhoneScreen } from "@/hooks/use-phone-screen";
 import { useMarkTourSeen, useSampleTargets, useTourTargets, type TourTargets } from "@/hooks/use-tour";
 import { isOwnerOrAbove } from "@/lib/roles";
 import { errorMessage } from "@/lib/errors";
-import { TOURS, TOUR_AUTO_OFF_KEY, TOUR_START_EVENT, setTouring, tourKind, type TourPlace, type TourStep } from "@/lib/tour";
+import {
+  GUIDES,
+  TOURS,
+  TOUR_AUTO_OFF_KEY,
+  TOUR_START_EVENT,
+  setTouring,
+  tourKind,
+  type TourPlace,
+  type TourStart,
+  type TourStep,
+} from "@/lib/tour";
+import { HELP_ARTICLES } from "@/lib/help-content";
 
 // How long to look for a step's place (a page loading, a table filling)
 // before showing its card in the middle instead.
@@ -26,8 +37,22 @@ function pathFor(place: TourPlace, t: TourTargets, post: TourStep["post"] = "sta
       return "/dashboard";
     case "client":
       return t.clientId ? `/clients/${t.clientId}` : null;
+    case "client-settings":
+      return t.clientId ? `/clients/${t.clientId}/settings/details` : null;
+    case "client-knowledge":
+      return t.clientId ? `/clients/${t.clientId}/settings/knowledge` : null;
+    case "client-instagram":
+      return t.clientId ? `/clients/${t.clientId}/settings/instagram` : null;
+    case "client-preferences":
+      return t.clientId ? `/clients/${t.clientId}/settings/preferences` : null;
     case "project":
       return t.projectId ? `/projects/${t.projectId}` : null;
+    case "assets":
+      return t.assetProjectId ? `/projects/${t.assetProjectId}` : null;
+    case "analytics":
+      return "/settings/analytics";
+    case "settings":
+      return "/settings/general";
     case "post":
       return t.posts ? `/creatives/${t.posts[post]}` : t.postId ? `/creatives/${t.postId}` : null;
     case "team":
@@ -44,8 +69,52 @@ function available(step: TourStep, t: TourTargets, canInvite: boolean) {
   return step.place === "here" || pathFor(step.place, t, step.post) !== null;
 }
 
-function onPage(pathname: string, path: string | null) {
-  return !path || pathname === path || pathname.startsWith(`${path}/`);
+// A step's spot or open: a selector, or "text=<css>|<words>" for the first
+// <css> whose text starts with <words>. Only what's on screen counts.
+function findEl(sel: string, t?: TourTargets | null): HTMLElement | null {
+  // The sample's own ids, in place of {client}, {project}, {assets} and
+  // {post:<which>}.
+  if (t) {
+    sel = sel
+      .replaceAll("{client}", t.clientId ?? "")
+      .replaceAll("{project}", t.projectId ?? "")
+      .replaceAll("{assets}", t.assetProjectId ?? "")
+      .replace(/\{post:(\w+)\}/g, (_, k: "stages" | "comments" | "concept") => t.posts?.[k] ?? t.postId ?? "");
+  }
+  let list: HTMLElement[];
+  if (sel.startsWith("text=")) {
+    const [css, words] = sel.slice(5).split("|");
+    list = [...document.querySelectorAll<HTMLElement>(css)].filter((e) => (e.textContent ?? "").trim().startsWith(words));
+  } else {
+    list = [...document.querySelectorAll<HTMLElement>(sel)];
+  }
+  // Never the tour's own card.
+  return list.find((e) => e.getClientRects().length && !e.closest(".tour")) ?? null;
+}
+
+// Closes a window the tour opened, as Escape would (the tour's own Escape
+// handler only takes real key presses).
+function closeWindow() {
+  window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+}
+
+// Help's Show Me (phase147): a topic's walkthrough, or a category's topics'
+// back to back.
+function guideSteps(start: TourStart): TourStep[] {
+  if (start.guide) return GUIDES[start.guide] ?? [];
+  if (start.category) {
+    const all = HELP_ARTICLES.filter((a) => a.category === start.category).flatMap((a) => GUIDES[a.id] ?? []);
+    // A step the same as the one before it, once.
+    return all.filter((st, i) => i === 0 || all[i - 1].id !== st.id);
+  }
+  return [];
+}
+
+// On the step's page: that page exactly, or for Settings and Team, any page
+// under it (they open on their first section).
+function onPage(pathname: string, path: string | null, place: TourPlace) {
+  if (!path || pathname === path) return true;
+  return (place === "team" || place === "settings") && pathname.startsWith(`${path}/`);
 }
 
 interface Box {
@@ -70,6 +139,8 @@ export function FrankTour() {
   const mark = useMarkTourSeen();
 
   const [running, setRunning] = useState(false);
+  // Frank Tour itself, or a Show Me's topic or category.
+  const [show, setShow] = useState<TourStart | null>(null);
   const [index, setIndex] = useState(0);
   // Each move to a step, so going Back looks for its place afresh.
   const [visit, setVisit] = useState(0);
@@ -82,7 +153,9 @@ export function FrankTour() {
 
   // From the menu, any time.
   useEffect(() => {
-    function onStart() {
+    function onStart(e: Event) {
+      const detail = (e as CustomEvent<TourStart | undefined>).detail;
+      setShow(detail?.guide || detail?.category ? detail : null);
       setIndex(0);
       setRun((r) => r + 1);
       setRunning(true);
@@ -121,12 +194,15 @@ export function FrankTour() {
   useEffect(() => () => setTouring(false), []);
 
   const steps = useMemo(
-    () => (kind && targets ? TOURS[kind].filter((s) => available(s, targets, canInvite)) : []),
-    [kind, targets, canInvite],
+    () =>
+      kind && targets
+        ? (show && kind !== "client" ? guideSteps(show) : TOURS[kind]).filter((s) => available(s, targets, canInvite))
+        : [],
+    [kind, targets, canInvite, show],
   );
   const step = running ? (steps[index] ?? null) : null;
   const path = step && targets ? pathFor(step.place, targets, step.post) : null;
-  const here = step ? onPage(pathname, path) : false;
+  const here = step ? onPage(pathname, path, step.place) : false;
 
   // To the step's page.
   useEffect(() => {
@@ -138,16 +214,40 @@ export function FrankTour() {
   const stepId = step?.id ?? null;
   const lookKey = step && here ? `${visit}|${step.id}|${pathname}` : null;
   const [found, setFound] = useState<{ key: string; el: HTMLElement | null } | null>(null);
-  const spotless = !!step && here && !step.spot?.length;
+  const spotless = !!step && here && !step.spot?.length && !step.open?.length;
   const ready = spotless || (!!lookKey && found?.key === lookKey);
   const target = !spotless && lookKey && found?.key === lookKey ? found.el : null;
+  // A window a step opened (Show Me), by the page and what was clicked, so
+  // the next step needing the same one finds it still open.
+  const opened = useRef<string | null>(null);
   useEffect(() => {
-    if (!step || !lookKey || !step.spot?.length) return;
-    const spot = step.spot;
+    if (!step || !lookKey) return;
+    const want = step.open?.length ? `${pathname}|${step.open.join("|")}` : null;
+    if (opened.current && opened.current !== want) {
+      if (opened.current.startsWith(`${pathname}|`)) closeWindow();
+      opened.current = null;
+    }
+    const toOpen = want && opened.current !== want ? [...step.open!] : [];
+    if (want) opened.current = want;
+    const spot = step.spot ?? [];
     const started = Date.now();
     const look = setInterval(() => {
-      const el = spot.map((s) => document.querySelector<HTMLElement>(s)).find((e) => e && e.getClientRects().length) ?? null;
-      if (!el && Date.now() - started < WAIT_MS) return;
+      // Open what the step needs first, one click at a time as each appears.
+      if (toOpen.length) {
+        const el = findEl(toOpen[0], targets);
+        if (el) {
+          el.click();
+          toOpen.shift();
+        } else if (Date.now() - started > WAIT_MS) toOpen.length = 0;
+        return;
+      }
+      if (!spot.length) {
+        clearInterval(look);
+        setFound({ key: lookKey, el: null });
+        return;
+      }
+      const el = spot.map((sel) => findEl(sel, targets)).find(Boolean) ?? null;
+      if (!el && Date.now() - started < WAIT_MS + 2000) return;
       clearInterval(look);
       el?.scrollIntoView({ block: "center", inline: "nearest" });
       setFound({ key: lookKey, el });
@@ -213,18 +313,33 @@ export function FrankTour() {
   }, [ready, stepId]);
 
   const last = index >= steps.length - 1;
+  // Moving on: a window opened for this step is closed now, unless the
+  // next step needs the same one on the same page.
+  function leaveFor(to: number) {
+    const nxt = steps[to];
+    const nxtPath = nxt && targets ? pathFor(nxt.place, targets, nxt.post) : null;
+    const stays = !!nxt && (!nxtPath || nxtPath === path) && nxt.open?.join("|") === step?.open?.join("|");
+    if (opened.current && !stays) {
+      closeWindow();
+      opened.current = null;
+    }
+  }
   function end() {
+    if (opened.current) closeWindow();
+    opened.current = null;
     setRunning(false);
     setIndex(0);
   }
   function forward() {
     if (last) end();
     else {
+      leaveFor(index + 1);
       setIndex((i) => i + 1);
       setVisit((v) => v + 1);
     }
   }
   function back() {
+    leaveFor(Math.max(0, index - 1));
     setIndex((i) => Math.max(0, i - 1));
     setVisit((v) => v + 1);
   }
@@ -232,6 +347,8 @@ export function FrankTour() {
   useEffect(() => {
     if (!running) return;
     function onKey(e: KeyboardEvent) {
+      // The tour's own closing of a window (closeWindow), not a key press.
+      if (!e.isTrusted) return;
       if (e.key === "Escape") {
         e.preventDefault();
         e.stopPropagation();
@@ -260,7 +377,9 @@ export function FrankTour() {
           else. */}
       {kind !== "client" && !targets && (
         <div className="tour-card" role="dialog" aria-modal="true" aria-labelledby="tourWait" style={{ top: "40%", left: "50%", transform: "translate(-50%, -50%)" }}>
-          <h2 id="tourWait">{sample.error ? "Frank Tour couldn’t start" : "Getting Frank Tour ready…"}</h2>
+          <h2 id="tourWait">
+            {sample.error ? `${show ? "Show Me" : "Frank Tour"} couldn’t start` : `Getting ${show ? "it" : "Frank Tour"} ready…`}
+          </h2>
           <p>
             {sample.error
               ? errorMessage(sample.error, "Couldn't get the sample client ready")
@@ -292,7 +411,7 @@ export function FrankTour() {
           <div className="tour-f">
             {!last && (
               <button type="button" className="tour-skip" onClick={end}>
-                Skip Tour
+                {show ? "Stop" : "Skip Tour"}
               </button>
             )}
             <span className="grow" />

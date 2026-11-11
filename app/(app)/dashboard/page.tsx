@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTouring } from "@/lib/use-touring";
 import Link from "next/link";
 import { useClients } from "@/hooks/use-clients";
 import { useMyAgency } from "@/hooks/use-my-agency";
@@ -59,21 +60,24 @@ export default function DashboardPage() {
   // still resolving, not shown by default.
   const confirmedStaff = isStaff && !isStaffPending;
 
+  const touring = useTouring();
   const filtered = useMemo(() => {
     if (!clients) return [];
     const q = query.trim().toLowerCase();
     return clients.filter((c) => {
       // A hidden sample client is archived, but isn't one of the agency's
       // archived clients (phase146): never listed there.
+      // While a walkthrough runs, a hidden sample is listed too, so it can
+      // show where a client is opened from (phase147).
       const matchesFilter =
-        filter === "active" ? !c.archived_at : !!c.archived_at && !c.is_sample;
+        filter === "active" ? !c.archived_at || (touring && c.is_sample) : !!c.archived_at && !c.is_sample;
       const matchesQuery =
         !q ||
         c.name.toLowerCase().includes(q) ||
         (c.industry ?? "").toLowerCase().includes(q);
       return matchesFilter && matchesQuery;
     });
-  }, [clients, query, filter]);
+  }, [clients, query, filter, touring]);
 
   const activeCount = clients?.filter((c) => !c.archived_at).length ?? 0;
   const { data: currentUser } = useCurrentUser();
@@ -225,9 +229,11 @@ export default function DashboardPage() {
                 {clientStatsPending ? "…" : (clientListStats?.[c.id]?.activeProjectCount ?? 0)}
               </div>
               <div className="ago">
-                <span className={`tag ${c.archived_at ? "grey" : "blue"}`}>
+                {/* A hidden sample, listed during a walkthrough, isn't one of
+                    the archived clients. */}
+                <span className={`tag ${c.archived_at && !c.is_sample ? "grey" : "blue"}`}>
                   <span className="dot" />
-                  {c.archived_at ? "Archived" : "Active"}
+                  {c.archived_at && !c.is_sample ? "Archived" : "Active"}
                 </span>
               </div>
               <div className="ago">

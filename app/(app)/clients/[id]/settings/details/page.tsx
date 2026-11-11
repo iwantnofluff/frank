@@ -73,7 +73,9 @@ export default function ClientDetailsPage({ params }: { params: Promise<{ id: st
           </div>
         </section>
       )}
-      {client && isAdmin && (
+      {/* Not for the sample client (phase146): it's hidden or shown from its
+          banner and Preferences, and never deleted. */}
+      {client && isAdmin && !client.is_sample && (
         <section className="panel">
           <div className="panel-h">
             <b>{client.archived_at ? "Archived" : "Archive"}</b>

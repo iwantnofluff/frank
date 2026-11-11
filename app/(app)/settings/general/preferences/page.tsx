@@ -114,7 +114,7 @@ export default function PreferencesSettingsPage() {
               <b>
                 <Link href={`/clients/${sample.id}`}>{sample.name}</Link>
               </b>
-              <span>Hidden from your lists. Frank Tour and Help&rsquo;s Show Me still use it.</span>
+              <span>Hidden from your lists. Frank Tour and Show Me still use it.</span>
             </span>
             {canEdit && (
               <button
@@ -134,7 +134,7 @@ export default function PreferencesSettingsPage() {
                 <b>
                   <Link href={`/clients/${sample.id}`}>{sample.name}</Link>
                 </b>
-                <span>In your lists for now. It&rsquo;s never deleted: hidden, Frank Tour and Help&rsquo;s Show Me still use it.</span>
+                <span>In your lists for now. It&rsquo;s never deleted: hidden, Frank Tour and Show Me still use it.</span>
               </span>
               <select
                 aria-label="Sample client"

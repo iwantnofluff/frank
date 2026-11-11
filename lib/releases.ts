@@ -13,6 +13,28 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.79.0",
+    date: "2026-11-11",
+    title: "Ask Frank",
+    changes: [
+      "Help is now Ask Frank: the same topics and categories, and a box at the foot of the panel, Ask Frank anything. Frank answers from its own help, with links to the pages and topics it means, and Show Me where there's a walkthrough.",
+      "Anyone in the workspace can ask, your clients' people too, and answers fit who's asking. Questions don't count towards your workspace's AI limit.",
+      "The conversation stays while you're in Frank; it starts afresh when the page is reloaded.",
+    ],
+  },
+  {
+    version: "1.78.0",
+    date: "2026-11-10",
+    title: "Show Me in Help",
+    changes: [
+      "Most Help topics now have a Show Me button under their text: a short walkthrough of just that topic, in Frank Tour's look, on your sample client. It starts from Clients or your menu and shows every click on the way, then the thing itself. It opens what it needs to show, like the Share window, and closes it again after.",
+      "Help stays open: it steps out of sight while a walkthrough runs and comes back on the same topic, where you were.",
+      "Help's text now links to the pages it talks about, like Knowledge → Discovery or Workspace Settings → General → Preferences. A client's page opens for the client you're in, or else your sample client, and Help stays open.",
+      "Each Help category has one too, running its topics' walkthroughs one after another.",
+      "The sample client has a Project as well now, Launch Assets, for Track a Project.",
+    ],
+  },
+  {
     version: "1.77.0",
     date: "2026-11-10",
     title: "Frank Tour shows the sample client",

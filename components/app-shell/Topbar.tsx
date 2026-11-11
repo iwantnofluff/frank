@@ -325,8 +325,8 @@ export function Topbar({
       <button
         className="bell helpbtn"
         type="button"
-        title="Help"
-        aria-label="Help"
+        title="Ask Frank"
+        aria-label="Ask Frank"
         aria-expanded={helpOpen}
         onClick={() => {
           setHelpOpen((o) => !o);

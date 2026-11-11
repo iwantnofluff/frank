@@ -27,6 +27,8 @@ export function useAiUsage(enabled: boolean) {
           .from("ai_usage_events")
           .select("created_at, user_id, task")
           .gte("created_at", monthStart(now).toISOString())
+          // Ask Frank's questions don't count towards the limit (phase147).
+          .or("task.is.null,task.neq.ask_frank")
           .order("created_at")
           .range(from, from + PAGE - 1);
         if (error) throw error;

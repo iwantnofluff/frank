@@ -36,7 +36,7 @@ export function SampleBanner({ clientId }: { clientId: string | null | undefined
       <span className="tag amber">Sample</span>
       <span className="samplebar-t">
         {hidden ? (
-          <>{client.name} is hidden from your lists. It&rsquo;s shown here for Frank Tour and Help&rsquo;s Show Me.</>
+          <>{client.name} is hidden from your lists. It&rsquo;s shown here for Frank Tour and Show Me.</>
         ) : (
           <>
             {client.name} is a made-up client to explore Frank with.{" "}

@@ -57,7 +57,7 @@ test("its 7 days start on the first visit, its pages say so, and Hide Now hides 
   const banner = page.locator(".samplebar");
   await expect(banner).toContainText("Lumen Skin is a made-up client to explore Frank with. It’s hidden from your lists in 7 days");
   await expect(page.locator(".h1 .sample-tag")).toHaveText("Sample");
-  const projectId = (await admin.from("projects").select("id").eq("client_id", clientId).single()).data!.id;
+  const projectId = (await admin.from("projects").select("id").eq("client_id", clientId).eq("delivery", "scheduled").single()).data!.id;
   await page.goto(`${APP_URL}/projects/${projectId}`);
   await expect(banner).toBeVisible();
 
@@ -146,7 +146,7 @@ test("Reset puts the sample back as it was, and getting the tour ready resets it
   const clientId = await seed(frank.agencyId, frank.staffEmail);
   // Hidden, and its comments gone: the tour's comment step has nothing.
   await admin.from("clients").update({ archived_at: new Date().toISOString(), sample_expires_at: "infinity" }).eq("id", clientId);
-  const projectId = (await admin.from("projects").select("id").eq("client_id", clientId).single()).data!.id;
+  const projectId = (await admin.from("projects").select("id").eq("client_id", clientId).eq("delivery", "scheduled").single()).data!.id;
   const { data: posts } = await admin.from("creatives").select("id").eq("project_id", projectId);
   await admin.from("comments").delete().in("creative_id", posts!.map((p) => p.id));
 
@@ -163,7 +163,7 @@ test("Reset puts the sample back as it was, and getting the tour ready resets it
 
   // Reset from Preferences: shown or hidden as it was.
   await page.goto(`${APP_URL}/settings/general/preferences`);
-  await expect(page.getByText("Hidden from your lists. Frank Tour and Help’s Show Me still use it.")).toBeVisible();
+  await expect(page.getByText("Hidden from your lists. Frank Tour and Show Me still use it.")).toBeVisible();
   await page.getByRole("button", { name: "Reset", exact: true }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Reset", exact: true }).click();
   await expect(page.getByText("Reset.")).toBeVisible({ timeout: 60_000 });

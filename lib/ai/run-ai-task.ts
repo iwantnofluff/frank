@@ -35,7 +35,13 @@ export type AiTask =
   | "wiifm_note"
   | "voice_post"
   | "strategy_overview"
-  | "classify_comment";
+  | "classify_comment"
+  // Ask Frank (phase147): logged, never counted towards the limit.
+  | "ask_frank";
+
+// Requests logged but left out of the monthly limit (decided directly:
+// Ask Frank is help, free to the workspace).
+const UNCOUNTED_TASKS: AiTask[] = ["ask_frank"];
 
 export async function runAiTask(
   supabase: SupabaseClient,
@@ -48,6 +54,9 @@ export async function runAiTask(
   attachments: Attachment[] = [],
   // The answer as it's written (Design with Frank), where the model can.
   onText?: (text: string) => void,
+  // A model of the feature's own rather than the workspace's (Ask Frank's
+  // smaller one).
+  model?: string,
 ): Promise<AiTaskResult> {
   const { data: agency, error: agencyError } = await supabase
     .from("agencies")
@@ -66,15 +75,18 @@ export async function runAiTask(
     };
   }
 
+  // What counts: every request but the uncounted kind (Ask Frank), which
+  // isn't held to the limit either.
   const { count, error: countError } = await supabase
     .from("ai_usage_events")
     .select("id", { count: "exact", head: true })
     .eq("agency_id", agencyId)
-    .gte("created_at", monthStartIso());
+    .gte("created_at", monthStartIso())
+    .or(`task.is.null,task.not.in.(${UNCOUNTED_TASKS.join(",")})`);
   if (countError) {
     return { ok: false, status: 500, error: "Couldn't check this workspace's usage" };
   }
-  if ((count ?? 0) >= agency.ai_monthly_request_cap) {
+  if (!UNCOUNTED_TASKS.includes(task) && (count ?? 0) >= agency.ai_monthly_request_cap) {
     return {
       ok: false,
       status: 429,
@@ -85,7 +97,7 @@ export async function runAiTask(
   let text: string;
   let usage: AiUsage | undefined;
   try {
-    ({ text, usage } = await generateDraft(agency.ai_default_model, prompt, attachments, onText));
+    ({ text, usage } = await generateDraft(model ?? agency.ai_default_model, prompt, attachments, onText));
   } catch (err) {
     return {
       ok: false,
@@ -99,7 +111,7 @@ export async function runAiTask(
     .insert({
       agency_id: agencyId,
       user_id: userId,
-      model: agency.ai_default_model,
+      model: model ?? agency.ai_default_model,
       task,
       input_tokens: usage?.input ?? null,
       cache_read_tokens: usage?.cacheRead ?? null,

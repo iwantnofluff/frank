@@ -138,8 +138,10 @@ export const HELP_ARTICLES: HelpArticle[] = [
       { kind: "h", text: "Getting around" },
       { kind: "p", text: "The left rail follows where you are, and names the client: anywhere inside a client you'll see Clients and the client's projects (Casa Carigar Projects, with a buildings icon, opening its page); in a project and on its posts, the client's planner (Casa Carigar Planner) or project (Casa Carigar Project) as well. The client's Settings are on its page, the settings icon (the cog) at the top right." },
       { kind: "p", text: "Frank's logo in the top left corner takes you back to Clients. Your picture at the top right holds My Profile, Settings for your whole workspace, Frank Tour and Sign out." },
-      { kind: "p", text: "Every workspace has a sample client, Lumen Skin: a made-up skincare brand with a Content Planner and posts at every stage, some with artwork, copy and client comments, to explore Frank with. It's marked Sample, doesn't count towards your plan's clients or storage, and nobody can be invited to it. Everyone on your team can see it. It's never deleted, because Frank Tour uses it: 7 days after your first visit it's hidden from your lists. In Workspace Settings → General → Preferences, under Sample Client, Owners and Admins can keep it in the lists, hide it or show it again, and Reset it to how it started." },
+      { kind: "p", text: "Every workspace has a sample client, Lumen Skin: a made-up skincare brand with a Content Planner of posts at every stage and a Project of launch assets, some with artwork, copy and client comments, to explore Frank with. It's marked Sample, doesn't count towards your plan's clients or storage, and nobody can be invited to it. Everyone on your team can see it. It's never deleted, because Frank Tour uses it: 7 days after your first visit it's hidden from your lists. In [Workspace Settings → General → Preferences](/settings/general/preferences), under Sample Client, Owners and Admins can keep it in the lists, hide it or show it again, and Reset it to how it started." },
       { kind: "p", text: "Frank Tour walks you through the basics, one thing at a time, with the rest of the page dimmed: Next and Back (or the arrow keys) to move, Skip Tour or Esc to stop. It starts by itself the first time you open Frank, on a computer, and you can replay it from your menu whenever you like. Owners and Admins see how to set up; the team, how to work on posts; clients, how to review them." },
+      { kind: "p", text: "Ask Frank, the ? at the top, holds these topics, a search, and a box at its foot: Ask Frank anything. Type a question about using Frank and Frank answers from these topics, with links to the pages and topics it means, and Show Me where there's a walkthrough. Anyone in the workspace can ask, and questions don't count towards your AI limit. The conversation lasts while you're in Frank; reloading the page starts it afresh. Frank can get things wrong, so check anything important." },
+      { kind: "p", text: "Most topics in Ask Frank have a Show Me button under their text, and each category one under its name: a short walkthrough of just that, in Frank Tour's look, on your sample client. A category's runs its topics one after another. Each starts from Clients or your menu and shows every click on the way. Ask Frank steps out of sight while it runs and comes back where you were. Stop, or Esc, ends it. Show Me is for your team, on a computer." },
       { kind: "p", text: "If you belong to more than one workspace, it lists them too: pick one to switch, still signed in." },
     ],
   },
@@ -240,12 +242,12 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         kind: "list",
         items: [
-          "Profile → About: the name, logo, industry and description, and archiving.\n\nOnce a client is archived, the Primary Owner and Owners can delete it for good, with everything in it, by typing its name; an archived project can be deleted the same way from its Settings, the cog at the top of its page.",
-          "Profile → People: who's on this client and which of its projects each person works on, and inviting someone new.",
-          "Profile → Preferences: how long Approved artwork is kept (7, 14, 21 or 28 days) and what happens to Approved posts with no live date; whether the client can approve and whether a review link's Feed shows the project's other posts; and what a new review link starts with. Owners and Admins change them; each saves as it's picked.\n\nNotifications: whether the team hears in Frank's bell and by email when the client comments or approves, and who hears: the post's lead (everyone on the client when a post has no lead), everyone on the client, or Owners and Admins.",
-          "Knowledge → Discovery: what Frank knows about the client, used when copy is drafted and checked.",
-          "Knowledge → Strategy: what's been decided for each month (objective, key messages, themes and campaigns, offers, key dates, notes).\n\nAdd a month with Add Month; archive one to tidy the list. Draft with Frank follows the month a post goes live in, archived or not; empty fields are left out.",
-          "Connections → Instagram: the client's account, so a post's Feed shows its real posts.",
+          "[Profile → About](client:/settings/details): the name, logo, industry and description, and archiving.\n\nOnce a client is archived, the Primary Owner and Owners can delete it for good, with everything in it, by typing its name; an archived project can be deleted the same way from its Settings, the cog at the top of its page.",
+          "[Profile → People](client:/settings/people): who's on this client and which of its projects each person works on, and inviting someone new.",
+          "[Profile → Preferences](client:/settings/preferences): how long Approved artwork is kept (7, 14, 21 or 28 days) and what happens to Approved posts with no live date; whether the client can approve and whether a review link's Feed shows the project's other posts; and what a new review link starts with. Owners and Admins change them; each saves as it's picked.\n\nNotifications: whether the team hears in Frank's bell and by email when the client comments or approves, and who hears: the post's lead (everyone on the client when a post has no lead), everyone on the client, or Owners and Admins.",
+          "[Knowledge → Discovery](client:/settings/knowledge): what Frank knows about the client, used when copy is drafted and checked.",
+          "[Knowledge → Strategy](client:/settings/strategy): what's been decided for each month (objective, key messages, themes and campaigns, offers, key dates, notes).\n\nAdd a month with Add Month; archive one to tidy the list. Draft with Frank follows the month a post goes live in, archived or not; empty fields are left out.",
+          "[Connections → Instagram](client:/settings/instagram): the client's account, so a post's Feed shows its real posts.",
         ],
       },
       { kind: "h", text: "People" },
@@ -255,7 +257,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "Each person's projects are listed by name under them. Click one to open that project.",
           "Edit Projects opens a window to choose their projects. Save greys out with Saved once it's done.",
           "The User or Client tag is a dropdown: pick the other to switch them, straight away. A pending invite can be resent or removed from the same dropdown.",
-          "+ Add People gives a User already on your team this client, from A User on Your Team. Each one added brings you back to the window for the next. Someone new, or one of the client's own people, is invited from Workspace Settings, under Team.",
+          "+ Add People gives a User already on your team this client, from A User on Your Team. Each one added brings you back to the window for the next. Someone new, or one of the client's own people, is invited from [Workspace Settings, under Team](/settings/team/users).",
         ],
       },
       {
@@ -270,7 +272,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     category: "clients",
     summary: "Tone of voice, audience, research and more, for better copy and checks.",
     blocks: [
-      { kind: "p", text: "A client's Knowledge is in its Client Settings, under Knowledge → Discovery. It has nine areas, from About (who the client is) to Moodboard and References." },
+      { kind: "p", text: "A client's Knowledge is in its Client Settings, under [Knowledge → Discovery](client:/settings/knowledge). It has nine areas, from About (who the client is) to Moodboard and References." },
       { kind: "p", text: "The more of them are filled in, the more Draft with Frank and the checks can draw on. An area with nothing in it yet says Content pending." },
       {
         kind: "p",
@@ -291,7 +293,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       },
       {
         kind: "note",
-        text: "Knowledge that applies to every client, such as your agency's own playbooks, belongs in Workspace Settings, under Reference Material.",
+        text: "Knowledge that applies to every client, such as your agency's own playbooks, belongs in [Workspace Settings, under Reference Material](/settings/knowledge/reference-material).",
       },
     ],
   },
@@ -372,13 +374,13 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "Thumbnail, for a video post: the cover the platform shows before the video plays, after the Final Asset. Drop or choose a JPG, PNG or WebP and press Save Thumbnail V1, then V2 and so on; earlier ones stay in their tabs. Saving one doesn't move the post's stage. Its words are on the Production tab. On the post's page the thumbnail is the video's cover in the phone until it plays, its version picked between Creative and Copy; your client sees it there too, and as the same cover on review links.",
           "Copy: the caption and anything else the formats need. Save Copy V1 for the first version. After that, Save to the current version (Save to V1, say) puts your changes into it, offered only while nobody has commented on it, and Save as the next (Save as V2) makes a new one. Each is greyed until there's a change to save.\n\nCopy Caption, under the caption, copies it with its line breaks and paragraphs, ready to paste into Instagram or another platform.",
           "WIIFM Direction: each time copy is saved, Frank lists what's working in it, in 3 to 5 short points, each naming the psychology principle or bias the copy uses (curiosity gap, loss aversion and so on) and the words that use it. It never lists what isn't working.\n\nOn the table, Copy Caption and Copy WIIFM copy either one, ready to paste.",
-          "Check Creative, on the Checks tab: Frank reads each slide of the latest artwork and compares it with that slide's Text on Image, saying slide by slide whether it matches or what's different (missing or changed words, misspellings, wrong numbers). It needs the artwork uploaded and the Text on Image saved, uses one AI request from your monthly allowance, and needs a Claude model (Settings → AI Governance → Drafting Model). It reads what's uploaded to Frank, not the Final Asset link. Acknowledge each thing that needs fixing or Ignore it, then Add To Comments posts the acknowledged ones as one team-only comment from you on the post.",
+          "Check Creative, on the Checks tab: Frank reads each slide of the latest artwork and compares it with that slide's Text on Image, saying slide by slide whether it matches or what's different (missing or changed words, misspellings, wrong numbers). It needs the artwork uploaded and the Text on Image saved, uses one AI request from your monthly allowance, and needs a Claude model ([Settings → AI Governance → Drafting Model](/settings/ai/drafting-model)). It reads what's uploaded to Frank, not the Final Asset link. Acknowledge each thing that needs fixing or Ignore it, then Add To Comments posts the acknowledged ones as one team-only comment from you on the post.",
           "Check Design, on the Checks tab: Frank compares the latest artwork with this client's last 10 Approved or Live posts, saying whether the logo is about the usual size and in the usual place, whether the fonts match (the brand's own fonts when they're written in the client's Knowledge, otherwise the earlier posts), and whether the visual hierarchy works: alignment, size, proximity and spacing. Sizes are judged by eye, roughly, not measured. It uses one AI request, needs a Claude model, and has the same Acknowledge, Ignore and Add To Comments.",
         ],
       },
       { kind: "h", text: "Proofreading" },
       { kind: "p", text: "Each time copy, a VO, Text on Image or Thumbnail Text on Image is saved, Frank proofreads what was saved, by your workspace's proofreading rules and following the client's Tone of Voice. Its suggestions are listed under the field, each with Fix, which puts it into the editor for you to save, and Ignore, which hides it for good on that version; Fix All does them all. Nothing changes until you choose, as some things are meant to be the way they are." },
-      { kind: "p", text: "The rules are in Workspace Settings → Knowledge → Proofreading, each with a switch: spelling, grammar, punctuation, British or American spelling, names as the brand writes them, capital letters, paragraph spacing, spaces, repeated words, hashtags, no em dashes, no colons and no AI-sounding phrases. Owners and Admins can add rules in their own words, and Preferred Words that are always written one way." },
+      { kind: "p", text: "The rules are in [Workspace Settings → Knowledge → Proofreading](/settings/knowledge/proofreading), each with a switch: spelling, grammar, punctuation, British or American spelling, names as the brand writes them, capital letters, paragraph spacing, spaces, repeated words, hashtags, no em dashes, no colons and no AI-sounding phrases. Owners and Admins can add rules in their own words, and Preferred Words that are always written one way." },
       { kind: "p", text: "Each proofread is one of your workspace's monthly AI requests, your own rules included. Capitals, spaces, repeated words, repeated hashtags, paragraph spacing and Preferred Words are checked without AI, and checked again as you fix things, so with every AI rule off a save uses none." },
       { kind: "p", text: "Saving shows each step: compressing a video, uploading, then saving the version. Keep the window open until it says the version is saved." },
       { kind: "p", text: "A file goes up in pieces, so if the connection drops, Frank carries on from where it was once it's back; if it still can't, the reason shows under Save." },
@@ -411,7 +413,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     category: "posts",
     summary: "Approved posts' artwork is removed 7 to 28 days after going live, as each client is set; copy and comments stay.",
     blocks: [
-      { kind: "p", text: "To keep your storage free for work in progress, an Approved post's artwork is removed some days after its live date: every version's files. It's 7 days unless the client's Preferences (Client Settings → Profile → Preferences) say 14, 21 or 28." },
+      { kind: "p", text: "To keep your storage free for work in progress, an Approved post's artwork is removed some days after its live date: every version's files. It's 7 days unless the client's Preferences ([Client Settings → Profile → Preferences](client:/settings/preferences)) say 14, 21 or 28." },
       { kind: "p", text: "The post, its copy and all its comments stay, and the post says when its artwork was removed." },
       {
         kind: "list",
@@ -468,7 +470,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         text: "Only posts in Client Review can be shared. Posts still in Concept or Internal Review are greyed out when choosing several.",
       },
       { kind: "p", text: "A link opens on the post or posts you sent it for, under Sent for review, even once the client has commented. Every link also lists the project's other posts in Client Review, after them, under Also waiting for your review." },
-      { kind: "p", text: "Approved posts come last, from recent days only (14 by default; set in Workspace Settings → General → Preferences), though a link always keeps the posts it was sent for. Each post shows its date above its name." },
+      { kind: "p", text: "Approved posts come last, from recent days only (14 by default; set in [Workspace Settings → General → Preferences](/settings/general/preferences)), though a link always keeps the posts it was sent for. Each post shows its date above its name." },
       { kind: "h", text: "What your client sees" },
       { kind: "p", text: "It's one link for every device." },
       { kind: "p", text: "On a phone it fills the screen like a post, scrolling down to the comments. On a computer the post sits in a phone, sized to the window, with the caption scrolling inside it." },
@@ -511,7 +513,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     blocks: [
       { kind: "p", text: "There's a Draft with Frank at the foot of two tabs, each with its own conversations. On Content it drafts the copy: the caption and the other copy fields, so the post needs a format first. On Production it drafts the words for making the creative: the Text on Image, and a video's VO and Thumbnail Text on Image." },
       { kind: "p", text: "Frank reads the brief, the Notes for Designer (so the copy fits the visual), the WIIFM, each format's direction, and your workspace's and the client's Knowledge, files included." },
-      { kind: "p", text: "Its drafts follow your workspace's proofreading rules (Workspace Settings → Knowledge → Proofreading): British or American spelling, no em dashes or colons, no AI-sounding phrases, your own rules and Preferred Words, whichever are switched on. Reviewing your draft, it points out where the copy breaks one." },
+      { kind: "p", text: "Its drafts follow your workspace's proofreading rules ([Workspace Settings → Knowledge → Proofreading](/settings/knowledge/proofreading)): British or American spelling, no em dashes or colons, no AI-sounding phrases, your own rules and Preferred Words, whichever are switched on. Reviewing your draft, it points out where the copy breaks one." },
       { kind: "p", text: "It also reads up to 8 of the client's Approved posts, to keep to their voice without repeating them, and up to 20 of the client's own comments, which it follows (not praise or approvals); if those clash with the Knowledge, Frank says so." },
       { kind: "p", text: "How far back each reaches, or whether Frank reads it at all, is set in the client's Preferences (by default, Approved posts from the last 12 months and comments from the last 90 days). The window lists what Frank reads for that client." },
       {
@@ -678,7 +680,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "Clients are the brand's own people. They see their own projects, review posts and read their Knowledge.",
         ],
       },
-      { kind: "p", text: "Invite people from Workspace Settings, under Team: it's the only place invites are sent from." },
+      { kind: "p", text: "Invite people from [Workspace Settings, under Team](/settings/team/users): it's the only place invites are sent from." },
       { kind: "p", text: "A client's People page, and the New Client window, add Users already on your team." },
       { kind: "p", text: "Each person can change the type of, resend invites to, and remove only the people below them." },
       {
@@ -695,7 +697,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     blocks: [
       {
         kind: "p",
-        text: "Workspace Settings → Analytics shows how your work moves from concept to approval. Filter it by client, project, person, format and period.",
+        text: "[Workspace Settings → Analytics](/settings/analytics) shows how your work moves from concept to approval. Filter it by client, project, person, format and period.",
       },
       {
         kind: "list",
@@ -743,11 +745,20 @@ export const helpArticle = (id: string) => BY_ID.get(id) ?? null;
 
 // Articles whose title, summary or text has every word typed, best first
 // (title matches ahead of body matches).
+// Help text's links (phase147, direct instruction): "[words](target)", a
+// workspace page ("/settings/…") or a client's ("client:/settings/…", the
+// client you're in, else the sample). As plain words, for search.
+export const HELP_LINK = /\[([^\]]+)\]\(([^)]+)\)/g;
+
+export function helpPlain(text: string): string {
+  return text.replace(HELP_LINK, "$1");
+}
+
 export function searchHelp(query: string): HelpArticle[] {
   const words = query.toLowerCase().split(/\s+/).filter(Boolean);
   if (!words.length) return [];
   const text = (a: HelpArticle) =>
-    [a.summary, ...a.blocks.flatMap((b) => ("items" in b ? b.items : [b.text]))].join(" ").toLowerCase();
+    helpPlain([a.summary, ...a.blocks.flatMap((b) => ("items" in b ? b.items : [b.text]))].join(" ")).toLowerCase();
   return HELP_ARTICLES.map((a) => {
     const title = a.title.toLowerCase();
     const body = text(a);
