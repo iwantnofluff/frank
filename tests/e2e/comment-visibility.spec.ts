@@ -28,11 +28,18 @@ test("composer toggle — internal (checked) and public (unchecked)", async ({
 }) => {
   await frank.loginAsStaff(page);
   await page.goto(`/creatives/${frank.creativeId}`);
-  await page.waitForSelector(".intog");
+  // The Private switch, not On behalf of the client beside it (phase149).
+  const toggle = page.locator("aside.cmts > .composer .cf:not(.forcl) .intog");
+  await toggle.waitFor();
 
   // Default is checked (internal) — see CommentsPanel.tsx's useState(true).
-  await expect(page.locator(".intog")).toHaveScreenshot("intog-checked-internal.png");
+  // Always "Private", always bordered (direct instruction): the tick says
+  // which.
+  await expect(toggle).toHaveText("Private");
+  await expect(toggle).toHaveScreenshot("intog-checked-internal.png");
 
-  await page.click(".intog input");
-  await expect(page.locator(".intog")).toHaveScreenshot("intog-unchecked-public.png");
+  await toggle.locator("input").click();
+  await expect(toggle).toHaveText("Private");
+  await expect(toggle.locator("input")).not.toBeChecked();
+  await expect(toggle).toHaveScreenshot("intog-unchecked-public.png");
 });

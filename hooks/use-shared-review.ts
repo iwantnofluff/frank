@@ -53,6 +53,8 @@ export interface SharedCreative {
   comments: {
     id: string;
     author_name: string;
+    // Logged by the team for the client (phase149): "via Raj Rana (WhatsApp)".
+    via?: string;
     // Written by someone on the client's side (a guest, or a client's
     // person); the list groups what the client has commented on.
     from_client?: boolean;

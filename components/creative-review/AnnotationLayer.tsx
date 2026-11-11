@@ -2,7 +2,6 @@
 
 import { useRef, useState } from "react";
 import type { PinAnchor, RegionAnchor } from "@/lib/annotations";
-import { CommentDraftForm } from "./CommentDraftForm";
 
 export type ToolMode = "pin" | "region" | null;
 
@@ -17,8 +16,8 @@ interface RegionMarker extends RegionAnchor {
 // each event, and everything is rendered back out as a percentage of the
 // same container — never a cached pixel value — so a window resize between
 // dropping a pin and viewing it later can't put it in the wrong place.
-// The comment box's width (as .annot-composer).
-const COMPOSER_W = 240;
+// A pin dropped or an area drawn goes to the comments' own box (direct
+// instruction): shown here as placed until its comment is posted.
 
 export function AnnotationLayer({
   mode,
@@ -26,18 +25,19 @@ export function AnnotationLayer({
   regions,
   nextNumber,
   highlightedCommentId,
-  showVisibilityToggle,
+  draft,
   onSelect,
-  onCreate,
+  onPlace,
 }: {
   mode: ToolMode;
   pins: PinMarker[];
   regions: RegionMarker[];
   nextNumber: number;
   highlightedCommentId: string | null;
-  showVisibilityToggle: boolean;
+  // The pin or area placed and not yet posted, when it's on this artwork.
+  draft: PinAnchor | RegionAnchor | null;
   onSelect: (commentId: string) => void;
-  onCreate: (anchor: PinAnchor | RegionAnchor, body: string, visibility: "private" | "public") => void;
+  onPlace: (anchor: PinAnchor | RegionAnchor) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const dragStart = useRef<{ x: number; y: number } | null>(null);
@@ -47,7 +47,6 @@ export function AnnotationLayer({
     w: number;
     h: number;
   } | null>(null);
-  const [draft, setDraft] = useState<PinAnchor | RegionAnchor | null>(null);
 
   function normalise(clientX: number, clientY: number) {
     const rect = containerRef.current!.getBoundingClientRect();
@@ -58,13 +57,13 @@ export function AnnotationLayer({
   }
 
   function handleClick(e: React.MouseEvent) {
-    if (mode !== "pin" || draft) return;
+    if (mode !== "pin") return;
     const { x, y } = normalise(e.clientX, e.clientY);
-    setDraft({ type: "pin", x, y, n: nextNumber });
+    onPlace({ type: "pin", x, y, n: nextNumber });
   }
 
   function handleMouseDown(e: React.MouseEvent) {
-    if (mode !== "region" || draft) return;
+    if (mode !== "region") return;
     dragStart.current = normalise(e.clientX, e.clientY);
   }
 
@@ -81,7 +80,7 @@ export function AnnotationLayer({
 
   function handleMouseUp() {
     if (dragStart.current && dragRect && dragRect.w > 0.02 && dragRect.h > 0.02) {
-      setDraft({ type: "region", ...dragRect, n: nextNumber });
+      onPlace({ type: "region", ...dragRect, n: nextNumber });
     }
     dragStart.current = null;
     setDragRect(null);
@@ -143,32 +142,23 @@ export function AnnotationLayer({
         />
       )}
 
-      {draft && (
-        <div
-          className="annot-composer"
+      {draft?.type === "pin" && (
+        <span className="annot-pin act" style={{ left: `${draft.x * 100}%`, top: `${draft.y * 100}%` }}>
+          {draft.n}
+        </span>
+      )}
+      {draft?.type === "region" && (
+        <span
+          className="annot-region act drawing"
           style={{
-            // Centred under the pin, or under the middle of the area, then
-            // kept inside the artwork's own edges (direct instruction: near
-            // the right edge it poked out past the phone's screen, and its
-            // focus scrolled the whole post sideways). Measured, so it
-            // holds at any size the artwork is drawn; 8px clear of each edge.
-            left: `clamp(8px, calc(${(draft.type === "pin" ? draft.x : draft.x + draft.w / 2) * 100}% - ${COMPOSER_W / 2}px), calc(100% - ${COMPOSER_W + 8}px))`,
-            top: `${(draft.type === "pin" ? draft.y : draft.y + (draft.y > 0.75 ? 0 : draft.h)) * 100}%`,
-            width: COMPOSER_W,
-            maxWidth: "calc(100% - 16px)",
-            transform: `translateY(${draft.y > 0.75 ? "calc(-100% - 12px)" : "12px"})`,
+            left: `${draft.x * 100}%`,
+            top: `${draft.y * 100}%`,
+            width: `${draft.w * 100}%`,
+            height: `${draft.h * 100}%`,
           }}
-          onClick={(e) => e.stopPropagation()}
         >
-          <CommentDraftForm
-            showVisibilityToggle={showVisibilityToggle}
-            onCancel={() => setDraft(null)}
-            onSubmit={(body, visibility) => {
-              onCreate(draft, body, visibility);
-              setDraft(null);
-            }}
-          />
-        </div>
+          <span className="annot-n">{draft.n}</span>
+        </span>
       )}
     </div>
   );

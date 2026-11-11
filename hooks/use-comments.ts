@@ -20,6 +20,10 @@ export interface CommentRow {
   edited_at: string | null;
   // The team it @mentions (phase138).
   mentions: string[];
+  // Logged by the team for the client (phase149), and where the client
+  // said it: the client's comment, via its author.
+  for_client: boolean;
+  client_source: string | null;
   author: { name: string; avatar_asset_id: string | null } | null;
   // Whose side it came from (direct instruction: shown after the name):
   // the agency's team, or the client — its people, or a guest on a review
@@ -44,7 +48,7 @@ export function useComments(creativeId: string) {
       const { data: rows, error } = await supabase
         .from("comments")
         .select(
-          "id, agency_id, parent_id, author_id, guest_name, body, visibility, anchor, creative_version_id, copy_version_id, resolved_at, created_at, edited_at, mentions",
+          "id, agency_id, parent_id, author_id, guest_name, body, visibility, anchor, creative_version_id, copy_version_id, resolved_at, created_at, edited_at, mentions, for_client, client_source",
         )
         .eq("creative_id", creativeId)
         .is("deleted_at", null)
@@ -77,7 +81,7 @@ export function useComments(creativeId: string) {
 
       return rows.map((r) => ({
         ...r,
-        from: r.author_id && team.has(r.author_id) ? "agency" : "client",
+        from: r.author_id && team.has(r.author_id) && !r.for_client ? "agency" : "client",
         author: r.author_id
           ? (authorsById.get(r.author_id) ?? { name: "", avatar_asset_id: null })
           : null,
@@ -113,6 +117,8 @@ export function applyLiveComment(
     created_at: row.created_at as string,
     edited_at: (row.edited_at as string | null) ?? null,
     mentions: (row.mentions as string[] | null) ?? [],
+    for_client: !!row.for_client,
+    client_source: (row.client_source as string | null) ?? null,
   };
   const existing = list.find((c) => c.id === id);
   if (existing) return list.map((c) => (c.id === id ? { ...c, ...fields } : c));
@@ -128,13 +134,15 @@ export function applyLiveComment(
   );
   if (placeholder) return list.map((c) => (c === placeholder ? { ...c, id, ...fields } : c));
   const same = fields.author_id ? list.find((c) => c.author_id === fields.author_id) : undefined;
+  // Their side from one of their own comments, not one logged for the client.
+  const side = fields.author_id ? list.find((c) => c.author_id === fields.author_id && !c.for_client) : undefined;
   return [
     ...list,
     {
       id,
       ...fields,
       author: fields.author_id ? (same?.author ?? { name: "", avatar_asset_id: null }) : null,
-      from: same?.from ?? (fields.author_id ? "agency" : "client"),
+      from: fields.for_client ? "client" : (side?.from ?? (fields.author_id ? "agency" : "client")),
     },
   ];
 }

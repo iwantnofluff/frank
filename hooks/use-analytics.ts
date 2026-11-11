@@ -58,7 +58,7 @@ export function useAnalytics(enabled: boolean) {
         all((a, b) =>
           s
             .from("comments")
-            .select("creative_id, author_id, parent_id, issue_category, sentiment, created_at, resolved_at")
+            .select("creative_id, author_id, parent_id, issue_category, sentiment, created_at, resolved_at, for_client")
             .is("deleted_at", null)
             .range(a, b),
         ),
@@ -72,8 +72,9 @@ export function useAnalytics(enabled: boolean) {
       const ownProjects = projects.filter((p) => realClients.has(p.client_id as string));
       const clientOfProject = new Map(ownProjects.map((p) => [p.id, p.client_id as string]));
       const ownPosts = new Set(creatives.filter((c) => clientOfProject.has(c.project_id as string)).map((c) => c.id as string));
-      // Who's on the client's side: a guest (no author), or anyone whose
-      // place in this agency is at a client (phase63: never both).
+      // Who's on the client's side: a guest (no author), anyone whose
+      // place in this agency is at a client (phase63: never both), or the
+      // team logging what the client said (phase149).
       const clientPeople = new Set(members.filter((m) => m.client_id).map((m) => m.user_id as string));
       const teamNames = new Map<string, string>();
       for (const m of members) {
@@ -118,7 +119,7 @@ export function useAnalytics(enabled: boolean) {
         ],
         comments: comments.filter((c) => ownPosts.has(c.creative_id as string)).map((c) => ({
           creativeId: c.creative_id as string,
-          clientSide: !c.author_id || clientPeople.has(c.author_id as string),
+          clientSide: !!c.for_client || !c.author_id || clientPeople.has(c.author_id as string),
           category: c.issue_category as string | null,
           sentiment: c.sentiment as AComment["sentiment"],
           createdAt: c.created_at as string,

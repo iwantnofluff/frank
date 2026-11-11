@@ -1,36 +1,35 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import type { HighlightAnchor } from "@/lib/annotations";
-import { CommentDraftForm } from "./CommentDraftForm";
 
 interface ExistingHighlight extends HighlightAnchor {
   commentId: string;
 }
+
+// Words picked go to the comments' own box (direct instruction: no small
+// box of their own), marked here until the comment is posted.
+const DRAFT = "draft";
 
 export function CaptionHighlighter({
   text,
   field,
   highlights,
   highlightedCommentId,
-  showVisibilityToggle,
+  draft,
   onSelect,
-  onCreate,
+  onPlace,
 }: {
   text: string;
   field: string;
   highlights: ExistingHighlight[];
   highlightedCommentId: string | null;
-  showVisibilityToggle: boolean;
+  // The words picked and not yet commented on, when they're in this text.
+  draft: HighlightAnchor | null;
   onSelect: (commentId: string) => void;
-  onCreate: (anchor: HighlightAnchor, body: string, visibility: "private" | "public") => void;
+  onPlace: (anchor: HighlightAnchor) => void;
 }) {
   const spanRef = useRef<HTMLSpanElement>(null);
-  const [pending, setPending] = useState<{
-    start: number;
-    end: number;
-    quote: string;
-  } | null>(null);
 
   function handleMouseUp() {
     const sel = window.getSelection();
@@ -54,7 +53,7 @@ export function CaptionHighlighter({
     const quote = range.toString();
     if (!quote.trim()) return;
 
-    setPending({ start, end: start + quote.length, quote });
+    onPlace({ type: "highlight", field, start, end: start + quote.length, quote });
     sel.removeAllRanges();
   }
 
@@ -64,54 +63,30 @@ export function CaptionHighlighter({
     document.addEventListener("mouseup", () => setTimeout(handleMouseUp), { once: true });
   }
 
-  const segments = buildSegments(text, highlights);
+  const segments = buildSegments(
+    text,
+    draft && draft.field === field ? [...highlights.filter((h) => h.end <= draft.start || h.start >= draft.end), { ...draft, commentId: DRAFT }] : highlights,
+  );
 
   return (
-    <span>
-      <span ref={spanRef} className="hl-target" onMouseDown={handleMouseDown} onMouseUp={handleMouseUp}>
-        {segments.map((seg, i) =>
-          seg.highlight ? (
-            <mark
-              key={i}
-              className={`hl-mark${
-                highlightedCommentId === seg.highlight.commentId ? " act" : ""
-              }`}
-              onClick={(e) => {
-                e.stopPropagation();
-                onSelect(seg.highlight!.commentId);
-              }}
-            >
-              {seg.text}
-            </mark>
-          ) : (
-            <span key={i}>{seg.text}</span>
-          ),
-        )}
-      </span>
-
-      {pending && (
-        <div className="hl-composer enter" onClick={(e) => e.stopPropagation()}>
-          <div className="quoted">&ldquo;{pending.quote}&rdquo;</div>
-          <CommentDraftForm
-            showVisibilityToggle={showVisibilityToggle}
-            placeholder="Comment on this text…"
-            onCancel={() => setPending(null)}
-            onSubmit={(body, visibility) => {
-              onCreate(
-                {
-                  type: "highlight",
-                  field,
-                  start: pending.start,
-                  end: pending.end,
-                  quote: pending.quote,
-                },
-                body,
-                visibility,
-              );
-              setPending(null);
+    <span ref={spanRef} className="hl-target" onMouseDown={handleMouseDown} onMouseUp={handleMouseUp}>
+      {segments.map((seg, i) =>
+        seg.highlight ? (
+          <mark
+            key={i}
+            className={`hl-mark${
+              highlightedCommentId === seg.highlight.commentId || seg.highlight.commentId === DRAFT ? " act" : ""
+            }`}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (seg.highlight!.commentId !== DRAFT) onSelect(seg.highlight!.commentId);
             }}
-          />
-        </div>
+          >
+            {seg.text}
+          </mark>
+        ) : (
+          <span key={i}>{seg.text}</span>
+        ),
       )}
     </span>
   );

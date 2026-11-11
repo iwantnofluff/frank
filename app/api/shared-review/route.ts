@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createAnonServerClient } from "@/lib/supabase/anon-server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { viaText } from "@/lib/comment-for-client";
 import { brandingAllowed } from "@/lib/plans";
 import { previewKey, thumbKey } from "@/lib/artwork-preview";
 
@@ -139,7 +140,7 @@ export async function POST(request: Request) {
         // so a comment made at a moment in a video can show, and jump to,
         // it; and whether it was edited (phase75).
         commentIds.length
-          ? serviceRole.from("comments").select("id, anchor, author_id, edited_at").in("id", commentIds).then((r) => r.data ?? [])
+          ? serviceRole.from("comments").select("id, anchor, author_id, edited_at, for_client, client_source").in("id", commentIds).then((r) => r.data ?? [])
           : [],
         // Each creative's latest version, for its carousel slides (phase31).
         ids.length
@@ -226,7 +227,11 @@ export async function POST(request: Request) {
       .in("user_id", authorIds);
     for (const m of members ?? []) if (m.client_id) clientAuthors.add(m.user_id);
   }
-  const fromClientById = new Map(anchorRows.map((r) => [r.id, !r.author_id || clientAuthors.has(r.author_id)]));
+  const fromClientById = new Map(anchorRows.map((r) => [r.id, !!r.for_client || !r.author_id || clientAuthors.has(r.author_id)]));
+  // Logged by the team for the client (phase149): shown as the client's,
+  // via whoever logged it.
+  const clientName = link?.projects?.clients?.name ?? "The client";
+  const viaById = new Map(anchorRows.filter((r) => r.for_client).map((r) => [r.id, r.client_source as string | null]));
 
   // The latest version's slides — the same version get_shared_review's
   // `asset` comes from.
@@ -333,6 +338,7 @@ export async function POST(request: Request) {
       thumbnail_text: thumbTextById.get(raw.id) ?? null,
       comments: raw.comments.map((m) => ({
         ...m,
+        ...(viaById.has(m.id) ? { author_name: clientName, via: viaText(m.author_name, viaById.get(m.id)) } : {}),
         anchor: anchorById.get(m.id) ?? null,
         from_client: fromClientById.get(m.id) ?? false,
         edited_at: editedById.get(m.id) ?? null,

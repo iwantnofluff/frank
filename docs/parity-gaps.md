@@ -5179,6 +5179,51 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Comments on the client's behalf, and pins straight to the comment box (1.80.0, phase149, 2026-11-11)
+
+Direct instruction: clients often give feedback on the phone or by WhatsApp, and that feedback should be tracked on the post, for analytics and so the team can see it. Anyone on the team can now log a comment on the client's behalf. The user chose:
+- Public by default
+- an optional source
+- the client as a whole, not a named person
+- picked words handled the same as pins and areas
+
+**Logging for the client:**
+- **The control:** under the comment box (and a reply's), the team sees "On behalf of <Client>" with a Source dropdown (Phone, WhatsApp, Email, Meeting). Ticking it switches the comment to Public, and it can still be made Private. After posting, the box goes back to Private.
+- **How it shows:** as the client's, with the logger after it: "Lumen Skin via Raj Rana (WhatsApp)". The team and the client see that on the post. Review links show it too, as do the Client Feedback column ("The client, via …"), the bell and client-activity emails.
+- **Analytics and notifications:** it counts as client-side feedback in Analytics. The rest of the team gets a client comment notice, but the person who logged it doesn't.
+- **Database:** phase149 adds `comments.for_client` and `client_source`. A trigger refuses `for_client` unless the author is on the team: a client's own people or a guest are refused, checked against the author and the post's agency, not the caller. A check constraint only allows a source on a logged comment. `comments_notify_client_activity` treats a logged comment as the client's.
+
+**Pins, areas and picked words:** the small floating comment box is gone (`CommentDraftForm` deleted). Dropping a pin, drawing an area or selecting caption or Text on Image words now goes straight to the main comment box:
+- The cursor is placed in the box.
+- The pin or area shows on the artwork, and the words are marked.
+- A chip above the box ("Pin 3", "Region 1", the quoted words) has a × to take it off.
+- Posting attaches the anchor and the version it was placed on. On a video, the pin's own moment is used instead of the "At 0:12" chip.
+
+**Private box and the comment's tag (direct instruction, same release):**
+- The composer's toggle always reads "Private" and always has a border. The tick says which it is: unticked means Public.
+- "On behalf of" shares the same style, so it's bordered too.
+- On a comment, the Public/Private pill moved from the header to the footer's left, and Reply moved to the right as the first link, before Edit.
+- In the footer the pill keeps its own size and colours rather than taking the links'.
+- Replies keep their pill beside the name, since they have no footer of their own.
+
+**Not done:** none of this is on the project-level discussion, where pins don't exist and the request didn't reach.
+
+**Verified**:
+- **comment-for-client.spec (new, 3 tests):**
+  - The UI flow: Public on ticking, Private again after posting, the "via" name for the team, the client and the review link, and a client getting no control.
+  - The database row, and the notice going only to the other team member.
+  - The database refusing a client author, a guest and a source on its own.
+  - A pin to the box, focused, then taken off. An area posted with its version.
+- **The first run caught a real bug:** the team check ran before the comment's agency was filled in and refused everyone. It now reads the agency from the post. The fix was reapplied to staging and the local database.
+- **Updated specs:** text-on-image-comments.spec and video-review.spec now cover the main box, the chip, focus and the pin's moment.
+- **Screenshots** (1440 and 390 wide) of the toggle and source, a placed pin with its chip, and the client's view. A throwaway check found the Client Feedback cell reading "The client, via E2E Staff (Phone)".
+- **The hydration error** on the post page also happens without these changes. It's the existing open item.
+- **The full suite** on the local database: 358 passed, 3 failed. comment-cards.png, creative-review.png and upload-artwork-modal.png differed only in the comment box's new row. They were regenerated after looking at each diff, and those tests then passed (3).
+- **After the Private box and tag change,** the full suite had 358 passed, 3 failed:
+  - comment-cards.png showed the pill bottom-left with Reply first on the right. intog-unchecked-public.png showed an unticked, bordered "Private". Both intended; regenerated after looking at each diff.
+  - admin-overview passed on rerun.
+- comment-for-client.spec now also checks the pill's place and Reply's, and comment-visibility.spec checks the label stays "Private" both ways. Both passed.
+
 ## Links all through Ask Frank (1.79.1, phase148, 2026-11-11)
 
 Direct instruction: text in Help that names a place in Frank should link to it, through every topic (Connect a Client's Instagram given as an example). All 22 topics were read through, and 143 links now sit wherever a page, a section, a project's table or another topic is named:

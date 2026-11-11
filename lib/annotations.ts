@@ -43,6 +43,15 @@ export interface HighlightAnchor {
 
 export type Anchor = PinAnchor | RegionAnchor | HighlightAnchor | TimeAnchor;
 
+// A pin, area or highlight placed and waiting for its words in the comment
+// box (direct instruction: no small box of its own), with the version it was
+// placed on.
+export interface CommentDraft {
+  anchor: Anchor;
+  creativeVersionId?: string | null;
+  copyVersionId?: string | null;
+}
+
 export function isTimeAnchor(a: unknown): a is TimeAnchor {
   return !!a && typeof a === "object" && (a as Anchor).type === "time";
 }

@@ -105,8 +105,14 @@ test("on the post page, comments made at a moment sit on the timeline and jump b
   await page.locator(".ig-media .annot-layer").scrollIntoViewIfNeeded();
   const frame = (await page.locator(".ig-media .annot-layer").boundingBox())!;
   await page.mouse.click(frame.x + frame.width * 0.3, frame.y + frame.height * 0.4);
-  await page.locator(".annot-composer textarea").fill("Pin here");
-  await page.locator(".annot-composer").getByRole("button", { name: "Post" }).click();
+  // Straight to the comments' own box (direct instruction), the moment's
+  // chip giving way to the pin's.
+  const mainBox = page.locator("aside.cmts > .composer");
+  await expect(mainBox.locator(".cdraft")).toHaveText("Pin 1 · 0:01");
+  await expect(mainBox.locator(".atchip")).toHaveCount(0);
+  await expect(mainBox.locator("textarea")).toBeFocused();
+  await page.keyboard.type("Pin here");
+  await mainBox.getByRole("button", { name: "Post", exact: true }).click();
   await expect(page.locator(".cmt", { hasText: "Pin here" })).toContainText("Pin 1 · 0:01");
   // Comments show the moment they're posted; wait for both saves.
   await expect(page.locator(".cmt.pending")).toHaveCount(0);

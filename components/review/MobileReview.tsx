@@ -205,7 +205,10 @@ export function MobileReview({
                   <span className="av" style={{ background: "var(--action)" }}>
                     {c.author_name.slice(0, 1).toUpperCase()}
                   </span>
-                  <b>{c.author_name}</b>
+                  <b>
+                    {c.author_name}
+                    {c.via && <span className="cmt-from"> {c.via}</span>}
+                  </b>
                   <CommentWhen iso={c.created_at} date={new Date(c.created_at).toLocaleDateString("en-GB")} />
                 </div>
                 <MomentBadge comment={c} controller={controller} />

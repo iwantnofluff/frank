@@ -2,12 +2,16 @@ import { createClient } from "@supabase/supabase-js";
 import type { Page } from "@playwright/test";
 import { test, expect, APP_URL } from "./fixtures";
 
+// The comments' own box (direct instruction: picked words go there, with
+// no small box of their own).
+const mainBox = (page: Page) => page.locator("aside.cmts > .composer");
+
 const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
 // Selects `words` in the Text on Image shown where the artwork goes, as a
-// person dragging over them would, and opens its comment box.
+// person dragging over them would, which takes them to the comment box.
 async function selectWords(page: Page, words: string) {
   await page.locator(".noart-toi .hl-target").evaluate((el, w) => {
     const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
@@ -41,28 +45,33 @@ test("Text on Image shows where the artwork goes, and its words take comments", 
   await expect(page.locator(".ig-noart").getByRole("button", { name: "Upload Artwork" })).toBeVisible();
 
   // A person's drag selects its words, though the artwork area around them
-  // can't be selected (.ig-media), and opens the comment box, even let go
-  // past the last word.
+  // can't be selected (.ig-media), and takes them to the comment box, even
+  // let go past the last word.
   await expect(async () => {
     const b = (await box.boundingBox())!;
     await page.mouse.move(b.x + 1, b.y + b.height / 2);
     await page.mouse.down();
     await page.mouse.move(b.x + b.width + 6, b.y + b.height / 2, { steps: 8 });
     await page.mouse.up();
-    await expect(page.locator(".hl-composer")).toBeVisible({ timeout: 1_000 });
+    await expect(mainBox(page).locator(".cdraft")).toBeVisible({ timeout: 1_000 });
   }).toPass({ timeout: 15_000 });
-  await page.locator(".hl-composer").getByRole("button", { name: "Cancel" }).click();
+  await mainBox(page).getByRole("button", { name: "Remove it" }).click();
+  await expect(mainBox(page).locator(".cdraft")).toHaveCount(0);
 
-  // Again until its comment box opens: a selection made before the page
-  // is ready to take it does nothing.
+  // Again until it's in the comment box: a selection made before the page
+  // is ready to take it does nothing. The box is ready to type in, the
+  // words marked meanwhile.
   await expect(async () => {
     await selectWords(page, "50% off");
-    await expect(page.locator(".hl-composer")).toBeVisible({ timeout: 2000 });
+    await expect(mainBox(page).locator(".cdraft")).toBeVisible({ timeout: 2000 });
   }).toPass({ timeout: 30_000 });
-  const composer = page.locator(".hl-composer");
-  await expect(composer.locator(".quoted")).toHaveText("“50% off”");
-  await composer.getByPlaceholder("Comment on this text…").fill("Make it 40%");
+  const composer = mainBox(page);
+  await expect(composer.locator(".cdraft .hl-a")).toHaveText("Text on Image: “50% off”");
+  await expect(composer.locator("textarea")).toBeFocused();
+  await expect(box.locator(".hl-mark.act")).toHaveText("50% off");
+  await page.keyboard.type("Make it 40%");
   await composer.getByRole("button", { name: "Post" }).click();
+  await expect(composer.locator(".cdraft")).toHaveCount(0);
   const card = page.locator(".cmt", { hasText: "Make it 40%" });
   await expect(card).toBeVisible();
   await expect(card.locator(".hl-a")).toHaveText("Text on Image: “50% off”");
@@ -76,14 +85,14 @@ test("Text on Image shows where the artwork goes, and its words take comments", 
   await frank.loginAsClient(clientPage);
   await clientPage.goto(`${APP_URL}/creatives/${frank.creativeId}`);
   await expect(clientPage.locator(".noart-toi")).toContainText("Big sale", { timeout: 20_000 });
-  // Again until its comment box opens: a selection made before the page
+  // Again until it's in the comment box: a selection made before the page
   // is ready to take it does nothing.
   await expect(async () => {
     await selectWords(clientPage, "this weekend");
-    await expect(clientPage.locator(".hl-composer")).toBeVisible({ timeout: 2000 });
+    await expect(mainBox(clientPage).locator(".cdraft")).toBeVisible({ timeout: 2000 });
   }).toPass({ timeout: 30_000 });
-  await clientPage.locator(".hl-composer").getByPlaceholder("Comment on this text…").fill("Which weekend?");
-  await clientPage.locator(".hl-composer").getByRole("button", { name: "Post" }).click();
+  await mainBox(clientPage).locator("textarea").fill("Which weekend?");
+  await mainBox(clientPage).getByRole("button", { name: "Post" }).click();
   await expect(clientPage.locator(".cmt", { hasText: "Which weekend?" }).locator(".hl-a")).toHaveText("Text on Image: “this weekend”");
 
   // The review link: the words, read only.
@@ -113,10 +122,10 @@ test("picking a Text on Image comment moves to its slide", async ({ page, frank 
   await expect(box).toContainText("Third slide nuance here");
   await expect(async () => {
     await selectWords(page, "nuance");
-    await expect(page.locator(".hl-composer")).toBeVisible({ timeout: 2000 });
+    await expect(mainBox(page).locator(".cdraft")).toBeVisible({ timeout: 2000 });
   }).toPass({ timeout: 30_000 });
-  await page.locator(".hl-composer").getByPlaceholder("Comment on this text…").fill("Hello");
-  await page.locator(".hl-composer").getByRole("button", { name: "Post" }).click();
+  await mainBox(page).locator("textarea").fill("Hello");
+  await mainBox(page).getByRole("button", { name: "Post" }).click();
   const card = page.locator(".cmt", { hasText: "Hello" });
   await expect(card.locator(".hl-a")).toHaveText("Text on Image, Slide 3: “nuance”");
 

@@ -5,6 +5,7 @@ import { errorMessage } from "@/lib/errors";
 import { CommentWhen } from "./CommentWhen";
 import { CommentBody, EditCommentButton } from "./CommentBody";
 import { useEffect, useMemo, useState } from "react";
+import { CLIENT_SOURCES, viaText } from "@/lib/comment-for-client";
 import { useProjectTeam, type TeamMember } from "@/hooks/use-project-discussion";
 import { MentionPicker, useMentions } from "@/components/ui/mentions";
 import { avatarColour } from "@/lib/avatar-colour";
@@ -28,6 +29,7 @@ import {
   isPinAnchor,
   isRegionAnchor,
   isTimeAnchor,
+  type CommentDraft,
 } from "@/lib/annotations";
 import type { ToolMode } from "@/components/creative-review/AnnotationLayer";
 
@@ -127,7 +129,17 @@ function Composer({
   moment = null,
   beside,
   team = [],
+  draft = null,
+  onClearDraft,
+  clientName = null,
 }: {
+  // A pin, area or words placed (direct instruction: they come here to be
+  // commented on), shown above the box with a way to take it off.
+  draft?: CommentDraft | null;
+  onClearDraft?: () => void;
+  // For the team: the client's name, to log what the client said outside
+  // Frank on their behalf (phase149). None for a client.
+  clientName?: string | null;
   // The project's team, offered on @ (phase138); none for a client.
   team?: TeamMember[];
   // Another action beside Post (Approve Concept, phase115).
@@ -140,6 +152,8 @@ function Composer({
     visibility: "private" | "public",
     at: number | null,
     mentions: string[],
+    // Logged for the client, and where they said it (phase149).
+    client: { source: string | null } | null,
   ) => Promise<unknown>;
   showInternalToggle: boolean;
   lockedPrivate?: boolean;
@@ -152,6 +166,13 @@ function Composer({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [atMoment, setAtMoment] = useState(true);
+  const [forClient, setForClient] = useState(false);
+  const [source, setSource] = useState("");
+
+  // Placed: straight into the box to say what it's about.
+  useEffect(() => {
+    if (draft) box.current?.focus();
+  }, [draft, box]);
 
   // Without the Private switch (a client), a comment is public, as the
   // database makes it; its placeholder shouldn't say Private meanwhile.
@@ -166,8 +187,18 @@ function Composer({
     setSubmitting(true);
     setError(null);
     try {
-      await onSubmit(body.trim(), visibility, moment !== null && atMoment ? moment : null, mentionsIn(body.trim()));
+      await onSubmit(
+        body.trim(),
+        visibility,
+        moment !== null && atMoment && !draft ? moment : null,
+        mentionsIn(body.trim()),
+        clientName && forClient ? { source: source || null } : null,
+      );
       reset();
+      // Back to the team's own comment: Private again, as it starts.
+      if (forClient) setInternal(true);
+      setForClient(false);
+      setSource("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't post that comment");
     } finally {
@@ -177,11 +208,21 @@ function Composer({
 
   return (
     <div className="composer">
+      {draft && (
+        <div className="cdraft">
+          <AnchorBadge anchor={draft.anchor} />
+          <button type="button" className="cdraft-x" aria-label="Remove it" title="Remove it" onClick={onClearDraft}>
+            <svg viewBox="0 0 24 24">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+        </div>
+      )}
       <textarea
         ref={box}
         className="bin"
         rows={2}
-        placeholder={placeholder}
+        placeholder={draft ? "Say what this is about…" : placeholder}
         value={body}
         onChange={(e) => onChange(e.target.value, e.target.selectionStart)}
         onKeyDown={(e) => {
@@ -190,7 +231,7 @@ function Composer({
         autoFocus={autoFocus}
       />
       <MentionPicker matches={matches} onPick={pick} />
-      {moment !== null && (
+      {moment !== null && !draft && (
         <button
           type="button"
           className="atchip"
@@ -204,6 +245,34 @@ function Composer({
           </svg>
           {atMoment ? `At ${formatVideoTime(moment)}` : `Not at ${formatVideoTime(moment)}`}
         </button>
+      )}
+      {clientName && (
+        <div className="cf forcl">
+          <label className="intog">
+            <input
+              type="checkbox"
+              checked={forClient}
+              onChange={(e) => {
+                setForClient(e.target.checked);
+                // The client's words: public, so they see it was heard.
+                if (e.target.checked) setInternal(false);
+              }}
+            />
+            On behalf of {clientName}
+          </label>
+          {forClient && (
+            <span className="vsel">
+              <select aria-label="Where the client said it" value={source} onChange={(e) => setSource(e.target.value)}>
+                <option value="">Source</option>
+                {CLIENT_SOURCES.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+            </span>
+          )}
+        </div>
       )}
       <div className="cf">
         {showInternalToggle && !lockedPrivate ? (
@@ -219,7 +288,7 @@ function Composer({
                 <path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>
             </span>
-            {internal ? "Private" : "Public"}
+            Private
           </label>
         ) : lockedPrivate ? (
           <span className="intog">Private (replying to a private comment)</span>
@@ -279,6 +348,15 @@ function FromName({ name }: { name: string | null }) {
   return name ? <span className="cmt-from"> ({name})</span> : null;
 }
 
+// Who a comment shows as: its author, or for one logged for the client
+// (phase149) the client, "via" its author.
+function shownAs(c: CommentRow, fromName: (c: CommentRow) => string | null) {
+  const author = c.author?.name ?? c.guest_name ?? "Someone";
+  return c.for_client
+    ? { name: fromName(c) ?? "The client", after: <span className="cmt-from"> {viaText(author, c.client_source)}</span>, photo: false }
+    : { name: author, after: <FromName name={fromName(c)} />, photo: !!c.author?.avatar_asset_id };
+}
+
 function CommentCard({
   thread,
   replies,
@@ -293,6 +371,7 @@ function CommentCard({
   onDelete,
   photos,
   fromName,
+  clientName,
   team,
 }: {
   // The project's team, for @mentions; empty for a client.
@@ -303,7 +382,12 @@ function CommentCard({
   currentUserId: string | undefined;
   isHighlighted: boolean;
   onSelect: () => void;
-  onReply: (body: string, visibility: "private" | "public", mentions: string[]) => Promise<unknown>;
+  onReply: (
+    body: string,
+    visibility: "private" | "public",
+    mentions: string[],
+    client: { source: string | null } | null,
+  ) => Promise<unknown>;
   onToggleResolved: (resolve: boolean) => void;
   onToggleVisibility: (commentId: string, next: "private" | "public") => void;
   // Your own comment's new words (phase75).
@@ -314,11 +398,14 @@ function CommentCard({
   photos: Record<string, string> | undefined;
   // The agency's or the client's name, for after a comment's author.
   fromName: (c: CommentRow) => string | null;
+  // For the team, to log a reply the client gave outside Frank.
+  clientName: string | null;
 }) {
   const [replying, setReplying] = useState(false);
   // Which of the thread's comments (it, or a reply) is being edited.
   const [editingId, setEditingId] = useState<string | null>(null);
-  const authorName = thread.author?.name ?? thread.guest_name ?? "Someone";
+  const who = shownAs(thread, fromName);
+  const authorName = who.name;
   // comments_update_own (supabase/seed.sql) allows author_id = auth.uid()
   // or is_agency_staff — authorship, not role. A client resolving/
   // reopening a thread they started themselves succeeds at the database
@@ -342,20 +429,13 @@ function CommentCard({
           className="who"
           style={{ background: avatarColour(authorName) }}
           initials={initialsOf(authorName)}
-          photoUrl={thread.author?.avatar_asset_id ? photos?.[thread.author.avatar_asset_id] : null}
-                    hasPhoto={!!thread.author?.avatar_asset_id}
+          photoUrl={who.photo && thread.author?.avatar_asset_id ? photos?.[thread.author.avatar_asset_id] : null}
+          hasPhoto={who.photo}
         />
         <b>
           {authorName}
-          <FromName name={fromName(thread)} />
+          {who.after}
         </b>
-        <VisibilityTag
-          visibility={thread.visibility}
-          isStaff={isStaff}
-          onToggle={() =>
-            onToggleVisibility(thread.id, thread.visibility === "private" ? "public" : "private")
-          }
-        />
         <CommentWhen iso={thread.created_at} date={formatWhen(thread.created_at)} />
       </div>
       {thread.anchor && <AnchorBadge anchor={thread.anchor} />}
@@ -369,11 +449,20 @@ function CommentCard({
         team={team}
       />
 
-      {!pending && <div className="cmt-f">
-        <button type="button" onClick={() => setReplying(!replying)}>
-          Reply
-        </button>
-        <div className="acts">
+      {/* Public or Private at the left, Reply first of the actions on the
+          right (direct instruction). */}
+      <div className="cmt-f">
+        <VisibilityTag
+          visibility={thread.visibility}
+          isStaff={isStaff}
+          onToggle={() =>
+            onToggleVisibility(thread.id, thread.visibility === "private" ? "public" : "private")
+          }
+        />
+        {!pending && <div className="acts">
+          <button type="button" onClick={() => setReplying(!replying)}>
+            Reply
+          </button>
           {thread.author_id === currentUserId && editingId !== thread.id && (
             <EditCommentButton onClick={() => setEditingId(thread.id)} />
           )}
@@ -397,26 +486,27 @@ function CommentCard({
               Delete
             </button>
           )}
-        </div>
-      </div>}
+        </div>}
+      </div>
 
       {replies.length > 0 && (
         <div className="replies">
           {replies.map((r) => {
-            const replyAuthor = r.author?.name ?? r.guest_name ?? "Someone";
+            const replyWho = shownAs(r, fromName);
+            const replyAuthor = replyWho.name;
             return (
               <div className="reply" key={r.id}>
                 <PersonAvatar
                   className="who"
                   style={{ background: avatarColour(replyAuthor) }}
                   initials={initialsOf(replyAuthor)}
-                  photoUrl={r.author?.avatar_asset_id ? photos?.[r.author.avatar_asset_id] : null}
-                    hasPhoto={!!r.author?.avatar_asset_id}
+                  photoUrl={replyWho.photo && r.author?.avatar_asset_id ? photos?.[r.author.avatar_asset_id] : null}
+                  hasPhoto={replyWho.photo}
                 />
                 <div className="rb">
                   <b>
                     {replyAuthor}
-                    <FromName name={fromName(r)} />
+                    {replyWho.after}
                   </b>
                   <VisibilityTag
                     visibility={r.visibility}
@@ -466,8 +556,9 @@ function CommentCard({
             submitLabel="Reply"
             autoFocus
             team={team}
-            onSubmit={async (body, visibility, _at, mentions) => {
-              await onReply(body, visibility, mentions);
+            clientName={isStaff ? clientName : null}
+            onSubmit={async (body, visibility, _at, mentions, client) => {
+              await onReply(body, visibility, mentions, client);
               setReplying(false);
             }}
           />
@@ -487,8 +578,13 @@ export function CommentsPanel({
   videoMoment = null,
   videoSlide = null,
   creativeVersionId = null,
+  draft = null,
+  onClearDraft,
 }: {
   creativeId: string;
+  // A pin, area or words placed on the post, to be commented on here.
+  draft?: CommentDraft | null;
+  onClearDraft?: () => void;
   // A video paused at this moment (phase34); new comments attach to it, and
   // to the version being watched.
   videoMoment?: number | null;
@@ -622,14 +718,17 @@ export function CommentsPanel({
             isHighlighted={highlightedCommentId === thread.id}
             photos={photos}
             fromName={fromName}
+            clientName={clientName}
             team={team}
             onSelect={() => onHighlight?.(thread.id)}
-            onReply={(body, visibility, mentions) =>
+            onReply={(body, visibility, mentions, client) =>
               createComment.mutateAsync({
                 body,
                 parentId: thread.id,
                 visibility,
                 mentions,
+                forClient: !!client,
+                clientSource: client?.source ?? null,
               })
             }
             onToggleResolved={(resolve) =>
@@ -678,6 +777,9 @@ export function CommentsPanel({
         showInternalToggle={isStaff}
         moment={videoMoment}
         team={team}
+        draft={draft}
+        onClearDraft={onClearDraft}
+        clientName={isStaff ? clientName : null}
         beside={
           // Approve Concept (phase115, direct instruction): while the post
           // is in Concept with one written, for the client or the team.
@@ -692,12 +794,19 @@ export function CommentsPanel({
             </button>
           ) : null
         }
-        onSubmit={(body, visibility, at, mentions) =>
-          createComment.mutateAsync({
+        onSubmit={async (body, visibility, at, mentions, client) => {
+          const forClient = { forClient: !!client, clientSource: client?.source ?? null };
+          if (draft) {
+            await createComment.mutateAsync({ body, parentId: null, visibility, mentions, ...forClient, ...draft });
+            onClearDraft?.();
+            return;
+          }
+          await createComment.mutateAsync({
             body,
             parentId: null,
             visibility,
             mentions,
+            ...forClient,
             ...(at != null
               ? {
                   creativeVersionId,
@@ -708,8 +817,8 @@ export function CommentsPanel({
                   },
                 }
               : {}),
-          })
-        }
+          });
+        }}
       />
 
       {deleting && (

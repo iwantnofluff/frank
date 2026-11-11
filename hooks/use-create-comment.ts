@@ -17,6 +17,8 @@ type NewComment = {
   copyVersionId?: string | null;
   anchor?: Anchor | null;
   mentions?: string[];
+  forClient?: boolean;
+  clientSource?: string | null;
 };
 
 export function useCreateComment(creativeId: string) {
@@ -31,6 +33,8 @@ export function useCreateComment(creativeId: string) {
       copyVersionId = null,
       anchor = null,
       mentions = [],
+      forClient = false,
+      clientSource = null,
     }: {
       body: string;
       parentId: string | null;
@@ -43,6 +47,9 @@ export function useCreateComment(creativeId: string) {
       anchor?: Anchor | null;
       // The team it @mentions (phase138): each gets a notice in the bell.
       mentions?: string[];
+      // Logged for the client (phase149): the team only.
+      forClient?: boolean;
+      clientSource?: string | null;
     }) => {
       const supabase = createClient();
       // The session already on this device, not a round trip to ask.
@@ -67,6 +74,8 @@ export function useCreateComment(creativeId: string) {
           copy_version_id: copyVersionId,
           anchor,
           mentions,
+          for_client: forClient,
+          client_source: forClient ? clientSource : null,
         })
         .select("id")
         .single();
@@ -110,8 +119,10 @@ export function useCreateComment(creativeId: string) {
         created_at: new Date().toISOString(),
         edited_at: null,
         mentions: input.mentions ?? [],
+        for_client: !!input.forClient,
+        client_source: input.forClient ? (input.clientSource ?? null) : null,
         author: { name: profile?.name ?? user?.email ?? "You", avatar_asset_id: profile?.avatar_asset_id ?? null },
-        from: isClient ? "client" : "agency",
+        from: isClient || input.forClient ? "client" : "agency",
       };
       queryClient.setQueryData<CommentRow[]>(key, [...(previous ?? []), shown]);
       return { previous, pendingId: shown.id };

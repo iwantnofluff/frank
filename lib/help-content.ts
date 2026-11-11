@@ -494,8 +494,9 @@ export const HELP_ARTICLES: HelpArticle[] = [
         items: [
           "Comments are Public, seen by the client, or Private, for your team only.",
           "Each name says whose side it's from: Rajesh Rana (No Fluff) for your workspace, Parth Dogra (Casa Carigar) for the client, review link guests included.",
-          "Drop a pin or mark an area on the artwork. On a video, a comment remembers the moment it was made.",
-          "Select words in the caption to comment on just those.",
+          "Drop a pin or mark an area on the artwork, then type what it's about in the comment box. On a video, a comment remembers the moment it was made.",
+          "Select words in the caption to comment on just those. They go to the comment box too, and × takes them off.",
+          "Feedback the client gave on the phone, by WhatsApp, by email or in a meeting: tick On behalf of the client, pick where they said it, and post. It shows as the client's, via you, counts as client feedback in [Analytics](/settings/analytics), and tells the rest of the team.",
           "Resolve a comment once it's dealt with. Filter by All, Unresolved, Resolved, Mine or Private.",
           "The Primary Owner and Owners can delete any comment; deleting one takes its replies with it.",
         ],

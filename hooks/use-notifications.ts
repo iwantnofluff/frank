@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { viaText } from "@/lib/comment-for-client";
 
 // One of the signed-in person's notifications: an Approved post with no
 // live date whose artwork is waiting on an Owner's or Admin's decision
@@ -60,7 +61,7 @@ export function useNotifications(enabled = true) {
       const comments = new Map<string, { id: string; body: string; who: string }>();
       const readComments = async () => {
         if (!commentIds.length) return;
-        const { data: rows } = await supabase.from("comments").select("id, body, guest_name, author_id").in("id", commentIds);
+        const { data: rows } = await supabase.from("comments").select("id, body, guest_name, author_id, for_client, client_source").in("id", commentIds);
         const authorIds = [...new Set((rows ?? []).map((r) => r.author_id as string | null).filter((id): id is string => !!id))];
         const names = new Map<string, string>();
         if (authorIds.length) {
@@ -71,7 +72,10 @@ export function useNotifications(enabled = true) {
           comments.set(r.id as string, {
             id: r.id as string,
             body: r.body as string,
-            who: (r.guest_name as string | null) ?? names.get(r.author_id as string) ?? "The client",
+            // Logged for the client (phase149): the client's, via its author.
+            who: r.for_client
+              ? `The client, ${viaText(names.get(r.author_id as string) ?? "the team", r.client_source as string | null)}`
+              : ((r.guest_name as string | null) ?? names.get(r.author_id as string) ?? "The client"),
           });
         }
       };

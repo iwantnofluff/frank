@@ -17,7 +17,6 @@ import { useCopyVersions } from "@/hooks/use-copy-versions";
 import { useArtworkUrl, usePreloadAssets } from "@/hooks/use-asset-signed-url";
 import { useQueryClient } from "@tanstack/react-query";
 import { applyLiveComment, useComments, type CommentRow } from "@/hooks/use-comments";
-import { useCreateComment } from "@/hooks/use-create-comment";
 import { useMyMembership } from "@/hooks/use-my-membership";
 import { useTeamMembers } from "@/hooks/use-team-members";
 import { slideFrames } from "@/lib/slide-frames";
@@ -27,6 +26,7 @@ import {
   isTimeAnchor,
   isPinAnchor,
   isRegionAnchor,
+  type CommentDraft,
   type HighlightAnchor,
   type PinAnchor,
   type RegionAnchor,
@@ -187,6 +187,16 @@ export function CreativeReviewPage({ id }: { id: string }) {
   const hereToo = present.filter((p) => p.viewing === id);
   const editingNow = hereToo.filter((p) => p.editing).map((p) => p.name);
   const [toolMode, setToolMode] = useState<ToolMode>(null);
+  // A pin, area or words placed on this post, waiting in the comment box
+  // for what it's about (direct instruction: no small box of its own).
+  const [placed, setPlaced] = useState<{ postId: string; draft: CommentDraft } | null>(null);
+  const draft = placed?.postId === id ? placed.draft : null;
+  const place = (d: CommentDraft) => {
+    // Nowhere to say it while a client's comments are hidden.
+    if (!showComments) return;
+    setPlaced({ postId: id, draft: d });
+    setToolMode(null);
+  };
   // Which of Brief/Content/Checks/Feed Preview the canvas shows — replaced
   // the three independent accordions (Brief/Content/Checks could each be
   // open at once) with a single selection, per direct instruction.
@@ -235,7 +245,6 @@ export function CreativeReviewPage({ id }: { id: string }) {
   // And the post itself, changed by someone else (phase82): its brief, stage
   // and Text on Image show at once.
   useLiveUpdates(`creative:${id}`, [{ table: "creatives", filter: `id=eq.${id}` }], [["creative", id]]);
-  const createComment = useCreateComment(id);
 
   const activeCreativeVersion =
     creativeVersions?.find((v) => v.id === creativeVersionId) ??
@@ -326,7 +335,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
     window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
   }, [commentAsked]);
 
-  const { pins, regions, nextAnnotationNumber, captionHighlights } = (() => {
+  const { pins, regions, nextAnnotationNumber, captionHighlights, draftMark, draftWords } = (() => {
     // Only the pins and boxes on the slide being shown.
     const onVersion = (allComments ?? []).filter(
       (c) => activeCreativeVersion && c.creative_version_id === activeCreativeVersion.id,
@@ -354,7 +363,20 @@ export function CreativeReviewPage({ id }: { id: string }) {
       )
       .map((c) => ({ ...(c.anchor as HighlightAnchor), commentId: c.id }));
 
-    return { pins, regions, nextAnnotationNumber, captionHighlights };
+    // The pin or area placed, when it's on the slide being shown.
+    const draftMark =
+      draft && (isPinAnchor(draft.anchor) || isRegionAnchor(draft.anchor)) && (draft.anchor.slide ?? 1) === slidePosition
+        ? draft.anchor
+        : null;
+    // The words picked: the caption's, or the slide being shown's.
+    const draftWords =
+      draft &&
+      isHighlightAnchor(draft.anchor) &&
+      (draft.anchor.field !== "slide_text" || ((draft.anchor as { slide?: number }).slide ?? 1) === slidePosition)
+        ? draft.anchor
+        : null;
+
+    return { pins, regions, nextAnnotationNumber, captionHighlights, draftMark, draftWords };
   })();
 
   // Text on Image, shown where the artwork goes until there is some (direct
@@ -455,16 +477,9 @@ export function CreativeReviewPage({ id }: { id: string }) {
                   field="slide_text"
                   highlights={slideTextHighlights}
                   highlightedCommentId={highlightedCommentId}
-                  showVisibilityToggle={isStaff}
+                  draft={draftWords}
                   onSelect={setHighlightedCommentId}
-                  onCreate={(anchor, body, visibility) => {
-                    createComment.mutate({
-                      body,
-                      parentId: null,
-                      visibility,
-                      anchor: { ...anchor, ...(frames.length > 1 ? { slide: slidePosition } : {}) },
-                    });
-                  }}
+                  onPlace={(anchor) => place({ anchor: { ...anchor, ...(frames.length > 1 ? { slide: slidePosition } : {}) } })}
                 />
               </div>
             ) : undefined
@@ -531,22 +546,18 @@ export function CreativeReviewPage({ id }: { id: string }) {
               regions={paused ? regions.filter((r) => Math.abs((r.t ?? 0) - t) < VIDEO_FRAME_TOLERANCE) : []}
               nextNumber={nextAnnotationNumber}
               highlightedCommentId={highlightedCommentId}
-              showVisibilityToggle={isStaff}
+              draft={paused && draftMark && Math.abs((draftMark.t ?? 0) - t) < VIDEO_FRAME_TOLERANCE ? draftMark : null}
               onSelect={setHighlightedCommentId}
-              onCreate={(anchor, body, visibility) => {
-                createComment.mutate({
-                  body,
-                  parentId: null,
-                  visibility,
+              onPlace={(anchor) =>
+                place({
                   creativeVersionId: activeCreativeVersion!.id,
                   anchor: {
                     ...anchor,
                     t: Math.round(t * 100) / 100,
                     ...(frames.length > 1 ? { slide: slidePosition } : {}),
                   },
-                });
-                setToolMode(null);
-              }}
+                })
+              }
             />
           )}
         />
@@ -572,19 +583,15 @@ export function CreativeReviewPage({ id }: { id: string }) {
             regions={regions}
             nextNumber={nextAnnotationNumber}
             highlightedCommentId={highlightedCommentId}
-            showVisibilityToggle={isStaff}
+            draft={draftMark}
             onSelect={setHighlightedCommentId}
-            onCreate={(anchor, body, visibility) => {
-              createComment.mutate({
-                body,
-                parentId: null,
-                visibility,
+            onPlace={(anchor) =>
+              place({
                 // A slide is showing, so its version exists.
                 creativeVersionId: activeCreativeVersion!.id,
                 anchor: frames.length > 1 ? { ...anchor, slide: slidePosition } : anchor,
-              });
-              setToolMode(null);
-            }}
+              })
+            }
           />
         </div>
       )}
@@ -610,6 +617,8 @@ export function CreativeReviewPage({ id }: { id: string }) {
       videoMoment={isVideo ? videoMoment : null}
       videoSlide={isVideo && frames.length > 1 ? slidePosition : null}
       creativeVersionId={activeCreativeVersion?.id ?? null}
+      draft={draft}
+      onClearDraft={() => setPlaced(null)}
     />
   ) : null;
 
@@ -1017,17 +1026,9 @@ export function CreativeReviewPage({ id }: { id: string }) {
                       field="caption"
                       highlights={captionHighlights}
                       highlightedCommentId={highlightedCommentId}
-                      showVisibilityToggle={isStaff}
+                      draft={draftWords}
                       onSelect={setHighlightedCommentId}
-                      onCreate={(anchor, body, visibility) => {
-                        createComment.mutate({
-                          body,
-                          parentId: null,
-                          visibility,
-                          copyVersionId: activeCopyVersion?.id ?? null,
-                          anchor,
-                        });
-                      }}
+                      onPlace={(anchor) => place({ copyVersionId: activeCopyVersion?.id ?? null, anchor })}
                     />
                   ) : undefined
                 }

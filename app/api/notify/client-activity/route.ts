@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { viaText } from "@/lib/comment-for-client";
 import { agencyOrigin } from "@/lib/admin/agency-origin";
 import { sendEmail } from "@/lib/email/send-email";
 import { clientActivityEmail } from "@/lib/email/client-activity-email";
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
   const commentIds = [...new Set(owed.map((n) => n.comment_id as string | null).filter((id): id is string => !!id))];
   const [{ data: users }, { data: comments }] = await Promise.all([
     admin.from("users").select("id, email").in("id", userIds),
-    commentIds.length ? admin.from("comments").select("id, body, guest_name, author_id").in("id", commentIds) : Promise.resolve({ data: [] }),
+    commentIds.length ? admin.from("comments").select("id, body, guest_name, author_id, for_client, client_source").in("id", commentIds) : Promise.resolve({ data: [] }),
   ]);
   const authorIds = (comments ?? []).map((c) => c.author_id as string | null).filter((id): id is string => !!id);
   const { data: authors } = authorIds.length ? await admin.from("users").select("id, name").in("id", authorIds) : { data: [] };
@@ -54,7 +55,9 @@ export async function POST(request: Request) {
     if (!to) continue;
     const c = n.comment_id ? commentOf.get(n.comment_id as string) : null;
     const who = c
-      ? ((c.guest_name as string | null) ?? nameOf.get(c.author_id as string) ?? "The client")
+      ? c.for_client
+        ? `The client, ${viaText(nameOf.get(c.author_id as string) ?? "the team", c.client_source as string | null)}`
+        : ((c.guest_name as string | null) ?? nameOf.get(c.author_id as string) ?? "The client")
       : ((post?.approved_by_name as string | null) ?? "The client");
     try {
       await sendEmail({

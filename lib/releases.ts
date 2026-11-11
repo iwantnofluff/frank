@@ -13,6 +13,19 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.80.0",
+    date: "2026-11-11",
+    title: "Comments on the client's behalf",
+    changes: [
+      "Feedback the client gave on the phone, by WhatsApp, by email or in a meeting can now go on the post: tick On behalf of the client under the comment box, and pick where they said it if you like.",
+      "It shows as the client's, via you: Lumen Skin via Raj Rana (WhatsApp). It's Public, so the client sees it was heard, unless you make it Private.",
+      "It counts as client feedback in Analytics and the Client Feedback column, and the rest of the team hears about it as a client comment.",
+      "Dropping a pin, drawing an area or selecting words now goes straight to the comment box, ready to type. The small box over the artwork is gone.",
+      "The Private box under the comment box always says Private, with a border: ticked is Private, unticked is Public.",
+      "A comment's Public or Private tag now sits at the bottom left, with Reply first of the links on the right.",
+    ],
+  },
+  {
     version: "1.79.1",
     date: "2026-11-11",
     title: "Links all through Ask Frank",

@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { viaText } from "@/lib/comment-for-client";
 
 export interface LatestFeedback {
   body: string;
@@ -40,7 +41,7 @@ export function useLatestFeedbackByCreative(creativeIds: string[], from: "client
       const supabase = createClient();
       let q = supabase
         .from("comments")
-        .select("creative_id, agency_id, author_id, guest_name, body, created_at, resolved_at")
+        .select("creative_id, agency_id, author_id, guest_name, body, created_at, resolved_at, for_client, client_source")
         .in("creative_id", creativeIds);
       if (from === "client") q = q.eq("visibility", "public");
       const { data, error } = await q
@@ -73,7 +74,8 @@ export function useLatestFeedbackByCreative(creativeIds: string[], from: "client
 
       const result: Record<string, PostFeedback> = {};
       for (const row of data) {
-        const isTeam = !!row.author_id && team.has(row.author_id);
+        // Logged for the client (phase149): the client's, via its author.
+        const isTeam = !!row.author_id && team.has(row.author_id) && !row.for_client;
         if (from === "client" ? isTeam : !isTeam) continue;
         const one: LatestFeedback = {
           // The client's name is over it, so a client's approval reads as
@@ -81,7 +83,9 @@ export function useLatestFeedbackByCreative(creativeIds: string[], from: "client
           // page keeps the comment's own words.
           body: row.body === "Client Approved Concept" ? "Approved Concept" : row.body,
           createdAt: row.created_at,
-          name: (row.author_id ? names.get(row.author_id) : row.guest_name) ?? "",
+          name: row.for_client
+            ? `The client, ${viaText(names.get(row.author_id as string) ?? "the team", row.client_source)}`
+            : ((row.author_id ? names.get(row.author_id) : row.guest_name) ?? ""),
           resolved: !!row.resolved_at,
         };
         const post = (result[row.creative_id] ??= { latest: null, all: [] });

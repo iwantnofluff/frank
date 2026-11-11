@@ -4660,11 +4660,6 @@ select.sort:hover {
   /* Clear of a carousel's 1 / 4 in the corner (direct instruction). */
   padding: calc(40px / var(--pf-zoom, 1)) 20px calc(18px / var(--pf-zoom, 1));
 }
-/* Commenting on its words: the top grows to show the comment box. */
-.noart-top:has(.hl-composer) {
-  flex-basis: auto;
-  overflow: visible;
-}
 /* Upload Artwork on the left, just under the words (direct instruction). */
 .noart-act {
   margin-top: calc(14px / var(--pf-zoom, 1));
@@ -5359,6 +5354,17 @@ select.sort:hover {
   display: flex;
   gap: 8px;
 }
+/* The Public/Private pill, now in the footer: its own size and colours,
+   not the footer links'. */
+.cmt-f .vis-tag {
+  font-size: 10.7px;
+}
+.cmt-f .vis-tag.vis-public {
+  color: var(--blue);
+}
+.cmt-f .vis-tag.vis-private {
+  color: var(--rose);
+}
 .replies {
   margin-top: 7px;
   padding-top: 7px;
@@ -5433,7 +5439,8 @@ select.sort:hover {
   cursor: pointer;
   padding: 4px 8px;
   border-radius: var(--r);
-  border: 1px solid transparent;
+  /* Always bordered (direct instruction): the tick says whether it's on. */
+  border: 1px solid var(--line-2);
   user-select: none;
 }
 .intog input {
@@ -5460,6 +5467,46 @@ select.sort:hover {
 .intog:has(input:checked) .lockic {
   display: grid;
   place-items: center;
+}
+/* A pin, area or words placed on the post, above the comment box (direct
+   instruction: no small box of its own), with × to take it off. */
+.composer .cdraft {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 7px;
+  min-width: 0;
+}
+.composer .cdraft .anchor {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cdraft-x {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--muted);
+}
+.cdraft-x svg {
+  width: 11px;
+  height: 11px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+.cdraft-x:hover {
+  background: var(--canvas);
+  color: var(--ink);
+}
+/* On behalf of the client, and where they said it (phase149). */
+.composer .cf.forcl {
+  flex-wrap: wrap;
 }
 
 /* Custom columns — the "+ Add column" form and inline cell editors */
@@ -7500,28 +7547,6 @@ textarea.cxin {
   place-items: center;
   border: 2px solid #fff;
 }
-.annot-composer {
-  /* transform is computed inline (AnnotationLayer.tsx) — flips toward
-     whichever side/edge has room, so a pin near the artwork's edge never
-     pushes the composer half off it. z-index is deliberately far above
-     everything else in the stage (the artwork, its own on-image text,
-     the comments rail) — this popup must never render underneath any of
-     it. */
-  position: absolute;
-  width: 240px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 8px;
-  box-shadow: 0 10px 30px rgba(20, 22, 26, 0.25);
-  z-index: 60;
-}
-.annot-composer .cf {
-  display: flex;
-  justify-content: flex-end;
-  gap: 6px;
-  margin-top: 6px;
-}
 
 /* Text highlighting on the caption */
 
@@ -7537,28 +7562,6 @@ textarea.cxin {
 .hl-mark.act {
   background: var(--amber);
   color: #fff;
-}
-.hl-composer {
-  display: block;
-  margin-top: 8px;
-  padding: 9px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--canvas);
-}
-.hl-composer .cf {
-  display: flex;
-  justify-content: flex-end;
-  gap: 6px;
-  margin-top: 6px;
-}
-.quoted {
-  border-left: 2px solid var(--hl-line);
-  padding-left: 7px;
-  margin: 5px 0;
-  font-size: 13.2px;
-  color: var(--muted);
-  font-style: italic;
 }
 
 /* Anchor badges on annotated comments */
