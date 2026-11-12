@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.82.1",
+    date: "2026-11-12",
+    title: "Close Settings with the X",
+    changes: [
+      "Workspace Settings and Client Settings have an X at the top right. It takes you back to the page you opened them from, however many settings pages you went through.",
+    ],
+  },
+  {
     version: "1.82.0",
     date: "2026-11-12",
     title: "Statuses for every stage, set once",

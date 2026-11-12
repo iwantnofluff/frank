@@ -5179,6 +5179,26 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## An X to close Workspace and Client Settings (1.82.1, 2026-11-12)
+
+Direct instruction: an X at the top right of Workspace and Client Settings to close them. It goes back to the page Settings was opened from, not the settings page before, so moving through several settings pages doesn't matter.
+- **Remembering the page:** `SettingsReturn`, in the app shell, notes each page opened outside Settings in the tab's session storage (`lib/settings-return.ts`).
+- **Opened straight from a link:** with nothing noted, the X goes to the clients list (Workspace Settings) or the client's page (Client Settings).
+- **No storage** (some private windows): the same fallbacks.
+- **Placement:** the X sits outside the scrolling page, so it stays put as the page scrolls. It reuses the side panels' close button (`.help-ib`). On a phone or narrow screen, Settings shows "Open this on a computer", so there's no X there.
+
+**Verified**: settings-close.spec (new) passed twice:
+- Opened from a project, through two Workspace Settings pages, the X went back to the project, and the same for Client Settings.
+- Opened in a fresh tab, the X went to the client's page and to the clients list.
+
+Screenshots at 1440 wide checked the X's place, top right, clear of the page's heading and panels. Types and lint clean.
+
+**Full suite** on the local database: 359 passed, 5 failed.
+- settings-knowledge.png and settings-team.png differed by 20 pixels each, only the X. They were regenerated after looking at both diffs.
+- admin-overview: the known flaky test.
+- frank-tour's Show Me test: the walkthrough's first card didn't appear. It's flaky (it failed this way in 1.81.0's suite too). Alone it passed one run in two, and it also caught ask-frank in 1.82.0's suite. **Open:** worth finding why the card sometimes never appears.
+- stage-statuses (1.82.0's spec): clicked the table's Status pill before the table had settled, the known scroll-closes-the-menu case. It now waits for the page to settle first, and passed 3 times in a row.
+
 ## Statuses for the agency and its clients, in every stage (1.82.0, phase151, 2026-11-12)
 
 Direct instruction: the statuses within a stage should be set in the agency's and the client's Settings, not each project's; the agency's list is shared, a client can have its own, and every stage can have them. Decided directly:

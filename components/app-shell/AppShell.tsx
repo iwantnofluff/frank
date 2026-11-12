@@ -10,6 +10,7 @@ import { TipCard } from "./TipCard";
 import { TipSpotlight } from "./TipSpotlight";
 import { FrankTour } from "./FrankTour";
 import { SampleClock } from "./SampleClock";
+import { SettingsReturn } from "./SettingsReturn";
 import { BRAND } from "@/lib/brand";
 import type { RailSeed } from "@/lib/rail-seed";
 
@@ -52,6 +53,10 @@ export function AppShell({
         </Suspense>
         <FrankTour />
         <SampleClock />
+        {/* Where Settings' X goes back to. */}
+        <Suspense fallback={null}>
+          <SettingsReturn />
+        </Suspense>
       </div>
     </div>
   );

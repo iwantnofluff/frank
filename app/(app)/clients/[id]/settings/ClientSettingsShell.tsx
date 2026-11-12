@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { SettingsNav } from "@/components/settings/SettingsNav";
 import { clientOnlyPage, clientSettingsSections } from "@/lib/client-settings-nav";
 import { SettingsMain } from "@/components/settings/SettingsMain";
+import { SettingsClose } from "@/components/settings/SettingsClose";
 
 // Client Settings' frame. Whether this is the team is decided on the server
 // (layout.tsx); moving between its pages here keeps a client's own people
@@ -33,6 +34,7 @@ export function ClientSettingsShell({
       <SettingsNav pathname={pathname} sections={clientSettingsSections(id, isStaff)} label="Client Settings sections" />
       <div className="review-sep" aria-hidden="true" />
       <SettingsMain>{children}</SettingsMain>
+      <SettingsClose fallback={`/clients/${id}`} label="Close Client Settings" />
     </div>
   );
 }

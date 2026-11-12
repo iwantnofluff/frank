@@ -175,6 +175,8 @@ test("a post takes its stage's first status, the team picks another from its pil
   await page.goto(`${APP_URL}/projects/${frank.projectId}`);
   const tablePill = page.getByRole("button", { name: "Status of E2E Test Creative" });
   await expect(tablePill).toHaveText("3c. Hold", { timeout: 20_000 });
+  // Settled first: a click mid-load scrolls the table, closing the menu.
+  await page.waitForLoadState("networkidle");
   const pick = async (text: string) => {
     await tablePill.click();
     await page.getByRole("listbox", { name: "Status of E2E Test Creative" }).getByRole("option", { name: text, exact: true }).click();

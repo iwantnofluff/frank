@@ -9104,6 +9104,20 @@ button.avatar {
   padding: 16px 0 0 16px;
   background: var(--canvas);
 }
+/* Settings' X, top right (direct instruction), over the page as it
+   scrolls. */
+.setwrap {
+  position: relative;
+}
+.set-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 2;
+}
+.set-close:hover {
+  background: var(--surface);
+}
 .setwrap:has(.setnav.collapsed) {
   grid-template-columns: 42px 1px minmax(0, 1fr);
 }
