@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import type { ReviewController } from "@/hooks/use-review-controller";
 import { formatVideoTime } from "@/lib/annotations";
+import { STAGE } from "@/lib/stage-labels";
 
 // Shared by both the phone and desktop layouts — same state, same
 // handlers, only the wrapping markup differs (developer handover, "one
@@ -96,6 +97,32 @@ export function GuestComposer({
 
   const barClass = variant === "mobile" ? "m-bar" : "dk-foot";
   const inputClass = variant === "mobile" ? "m-in" : "bin";
+
+  // The client has their say only in Client Review (phase150, direct
+  // instruction): a post shared before or after it is theirs to read.
+  if (active && active.stage !== STAGE.review) {
+    return (
+      <div className={barClass}>
+        <p className="m-noone">
+          {active.stage < STAGE.review
+            ? "This post isn't ready for your review yet. You can read it, and comment once it is."
+            : alreadyApproved
+              ? "This post is approved."
+              : "This post has moved on from review."}
+        </p>
+        <div className="m-decide">
+          <button type="button" className="m-close" onClick={() => window.close()}>
+            Close
+          </button>
+          {canApprove && alreadyApproved && (
+            <button type="button" className="m-ok" disabled>
+              Approved
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={barClass}>
@@ -252,6 +279,8 @@ function describeStatus(status: string) {
       return "This piece isn't part of the shared link.";
     case "passcode_required":
       return "This link needs a passcode.";
+    case "not_at_review":
+      return "This post isn't in review any more, so it can't take comments.";
     case "not_on_client":
       return "Only the client's own people can comment here. Choose your name from the list.";
     default:

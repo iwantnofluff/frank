@@ -5,10 +5,12 @@ import { useEffect, useRef, useState } from "react";
 import type { ReviewController } from "@/hooks/use-review-controller";
 import { SharedFeedGrid } from "./SharedFeedGrid";
 import { CommentCount } from "./CommentCount";
-import { CommentWhen } from "@/components/creative-review/CommentWhen";
+import { LinkCommentHead } from "./LinkCommentHead";
+import { TeamComments, useTeamOnPost } from "./TeamComments";
 import { ReviewBrandHeader } from "./ReviewBrandHeader";
 import { CommentJump } from "./mobile-gestures";
 import { reviewGroup } from "./review-group";
+import { STAGE } from "@/lib/stage-labels";
 import { ReviewNav, type ReviewSection } from "@/components/creative-review/ReviewNav";
 import { copySummaryParts, formatsLabel, postFormats, postSize } from "@/lib/formats";
 import { FormatSwitch } from "@/components/creative-review/FormatSwitch";
@@ -47,6 +49,8 @@ export function DesktopReview({
   shown: boolean; // the layout on screen (phone or desktop)
 }) {
   const { creatives, active, activeIndex, goTo } = controller;
+  // Signed in and on the team, able to see this post: its own comments.
+  const team = useTeamOnPost(active?.id);
   // Signed in, and on the workspace's team: the post's name links into Frank.
   // The project's kind, for each post's date after its name.
   const projectDelivery = controller.data?.status === "ok" ? controller.data.project.delivery : null;
@@ -120,7 +124,7 @@ export function DesktopReview({
                           <b>{c.name}</b>
                           <span className="fmt">{formatsLabel(postFormats(c))}</span>
                         </div>
-                        {reviewGroup(c) === "commented" && <span className="dk-tag">Commented</span>}
+                        {c.stage === STAGE.review && reviewGroup(c) === "commented" && <span className="dk-tag">Commented</span>}
                         <CommentCount n={c.comments.length} />
                       </button>
                     );
@@ -196,35 +200,32 @@ export function DesktopReview({
         </div>
 
         <div className="dk-side">
-          <div className="dk-sh">
-            <b>Comments</b>
-            <span className="n">{active?.comments.length ?? 0}</span>
-          </div>
-          <div className="dk-cmts">
-            {active?.comments.length === 0 && (
-              <p className="sub">No comments yet.</p>
-            )}
-            {active?.comments.map((c) => (
-              <div className={`cmt${controller.highlightedCommentId === c.id ? " act" : ""}${c.id.startsWith("pending-") ? " pending" : ""}`} key={c.id}>
-                <div className="cmt-h">
-                  <span
-                    className="who"
-                    style={{ background: "var(--action)" }}
-                  >
-                    {c.author_name.slice(0, 1).toUpperCase()}
-                  </span>
-                  <b>
-                    {c.author_name}
-                    {c.via && <span className="cmt-from"> {c.via}</span>}
-                  </b>
-                  <CommentWhen iso={c.created_at} date={new Date(c.created_at).toLocaleDateString("en-GB")} />
-                </div>
-                <MomentBadge comment={c} controller={controller} />
-                <SharedCommentText comment={c} controller={controller} />
+          {/* The team, signed in: the post's own comments (phase150). */}
+          {active && team ? (
+            <TeamComments creativeId={active.id} />
+          ) : (
+            <>
+              <div className="dk-sh">
+                <b>Comments</b>
+                <span className="n">{active?.comments.length ?? 0}</span>
               </div>
-            ))}
-          </div>
-          {active && <GuestComposer controller={controller} variant="desktop" />}
+              <div className="dk-cmts">
+                {active?.comments.length === 0 && (
+                  <p className="sub">No comments yet.</p>
+                )}
+                {active?.comments.map((c) => (
+                  <div className={`cmt${controller.highlightedCommentId === c.id ? " act" : ""}${c.id.startsWith("pending-") ? " pending" : ""}`} key={c.id}>
+                    <div className="cmt-h">
+                      <LinkCommentHead comment={c} avatarClass="who" clientName={clientName} agencyName={agencyName} />
+                    </div>
+                    <MomentBadge comment={c} controller={controller} />
+                    <SharedCommentText comment={c} controller={controller} />
+                  </div>
+                ))}
+              </div>
+              {active && <GuestComposer controller={controller} variant="desktop" />}
+            </>
+          )}
         </div>
       </div>
     </div>

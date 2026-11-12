@@ -5179,6 +5179,52 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Share at any status, and the team on review links (1.81.0, phase150, 2026-11-12)
+
+Direct instruction: the Share button should be available at any status, with the account manager deciding whether to send the link. The client only comments while a post is at Client. The reason given was so the team can comment on a post without fully logging in. The user chose:
+- the team is recognised by being signed in on that device, not picked from a name list
+- the client sees a read-only post with a note when it isn't in Client Review
+- "All posts" covers every status
+- no Approve for the team on a link
+- compare the two phone views before deciding anything about them
+
+**Sharing:**
+- **Share button:** shows at every status.
+- **Share window:** no longer greys out posts below Client Review. Its note now says which posts the client can only read. `resolveShareEligibility` returns `readOnlyCount` in place of eligible and excluded counts.
+
+**Database (phase150):**
+- `shared_link_allowed_creative_ids` drops the "Client Review or later" rule: a link shows what it was made for at any status, plus every Client Review post as before, and never an Idea.
+- `submit_shared_comment`, `submit_shared_request_changes` and `edit_shared_comment` return `not_at_review` unless the post is in Client Review, through the new `shared_link_post_at_review`.
+- `submit_shared_approval` returns `not_at_review` before Client Review and "already approved" after it.
+- This also closes something that was open before: a client could still comment on an Approved post through a link.
+
+**What the client sees on the link:**
+- Away from Client Review the comment box is replaced by a note. Before it: "This post isn't ready for your review yet. You can read it, and comment once it is." After it: "This post is approved."
+- Edit on their own words is hidden too.
+- The computer view's list has a new group, Not ready for review yet, between the waiting posts and Approved.
+- **A change from what I proposed:** I'd suggested a status pill on the link. Clients don't see a post's internal statuses (the project-statuses decision, "a client sees none"), so the link uses the note instead.
+
+**The team on the link:**
+- **Who counts:** a signed-in team member who can see the post (`useTeamOnPost`).
+- **What they get:** the post's own comments panel from Frank (`TeamComments`, which is `CommentsPanel`) in place of the link's list and its "Who are you?". That gives them Private comments, the Private box, On behalf of the client and @mentions. Their comments are real team comments (author set, no guest name).
+- **No Approve** for the team on a link. On a phone, the comment count jumps to their box.
+
+**Phone views compared** (same post, 390 wide): the layouts stay separate, since they do different jobs (a link steps through several posts with Approve). The comments are what differed. Link comment cards now use the same initials, colours, side label and "just now" as Frank, through the shared `lib/comment-display.ts` and `LinkCommentHead`. Photos aren't on the link; it doesn't have them.
+
+**Verified**:
+- **share-eligibility.spec, rewritten (3 tests):**
+  - Share is on a Concept post, its note shows, nothing is locked, a mixed pick is noted, and the link is made.
+  - Through the database: a client is refused a comment, a change request and an approval at Concept, accepted at Client Review, and refused an edit after the post moves on. The phone link shows the note with no box and no Approve, and the comment card reads "Priya Client (E2E Test Client)" with "PC".
+  - Signed-in staff on the link see a Private comment, get no Approve and no "Who are you?", see "Not ready for review yet", and post a comment saved under their own name as Private.
+- **stage-transition.spec:** the test expecting no Share before Client Review was removed.
+- **A throwaway check:** screenshots of the Share window at Concept, the guest at Concept and at Client Review on a phone, staff on the link on a phone, and staff posting on the link on a computer.
+- **The full suite** on the local database: 356 passed, 5 failed.
+  - **shared-review-public:** "All posts" now covers every status, so its link had no unshared posts for the feed. It now uses a one-post link.
+  - **video-review:** its guest step ran in a browser signed in as staff, so it correctly got the team's view. The guest step now runs signed out.
+  - **dashboard.png:** differed only in Last Activity (the date rolling over), checked and regenerated.
+  - **frank-tour and admin-overview:** passed on rerun.
+  - Those five files then passed: 32 of 32.
+
 ## Comments on the client's behalf, and pins straight to the comment box (1.80.0, phase149, 2026-11-11)
 
 Direct instruction: clients often give feedback on the phone or by WhatsApp, and that feedback should be tracked on the post, for analytics and so the team can see it. Anyone on the team can now log a comment on the client's behalf. The user chose:

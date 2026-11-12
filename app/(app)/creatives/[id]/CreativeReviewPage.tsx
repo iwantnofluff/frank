@@ -798,17 +798,16 @@ export function CreativeReviewPage({ id }: { id: string }) {
               <>
                 <span className="toolsep" />
                 {/* Share for review, a button beside + Post (direct
-                    instruction), only while the post is in Client Review. */}
-                {creative.stage === STAGE.review && (
-                  <button
-                    type="button"
-                    className="btn primary"
-                    aria-label="Share for review"
-                    onClick={() => setShareOpen(true)}
-                  >
-                    Share
-                  </button>
-                )}
+                    instruction), at any status (phase150): the account
+                    manager decides whether to send it. */}
+                <button
+                  type="button"
+                  className="btn primary"
+                  aria-label="Share for review"
+                  onClick={() => setShareOpen(true)}
+                >
+                  Share
+                </button>
                 {creative.projects && (
                   <button
                     type="button"

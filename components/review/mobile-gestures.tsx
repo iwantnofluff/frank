@@ -35,8 +35,11 @@ export function CommentJump({ variant }: { variant: "mobile" | "desktop" }) {
       className="ig-act-btn"
       aria-label="Go to comments"
       onClick={() => {
-        const box = document.querySelector<HTMLTextAreaElement>(variant === "mobile" ? ".m-bar textarea" : ".dk-foot textarea");
-        const first = variant === "mobile" ? document.querySelector(".m-cmt") : null;
+        // The team's own comments (phase150) have the box Frank's posts do.
+        const box = document.querySelector<HTMLTextAreaElement>(
+          variant === "mobile" ? ".m-bar textarea, .rv-team .composer textarea" : ".dk-foot textarea, .rv-team .composer textarea",
+        );
+        const first = variant === "mobile" ? document.querySelector(".m-cmt, .rv-team .cmt") : null;
         (first ?? box)?.scrollIntoView({ behavior: "smooth", block: "start" });
         box?.focus({ preventScroll: true });
       }}
@@ -61,9 +64,9 @@ export function CommentCountJump({ count, scope }: { count: number; scope: "app"
       aria-label={`${count} ${count === 1 ? "comment" : "comments"}: go to the comment box`}
       onClick={() => {
         const box = document.querySelector<HTMLTextAreaElement>(
-          scope === "app" ? '.mpost textarea[placeholder="Add a comment…"]' : ".m-bar textarea",
+          scope === "app" ? '.mpost textarea[placeholder="Add a comment…"]' : ".m-bar textarea, .rv-team aside > .composer textarea",
         );
-        const near = box ?? document.querySelector(scope === "app" ? ".mpost .cmt" : ".m-cmt, .m-bar");
+        const near = box ?? document.querySelector(scope === "app" ? ".mpost .cmt" : ".m-cmt, .m-bar, .rv-team .cmt");
         near?.scrollIntoView({ behavior: "smooth", block: "center" });
         box?.focus({ preventScroll: true });
       }}

@@ -6,6 +6,7 @@ import { CommentWhen } from "./CommentWhen";
 import { CommentBody, EditCommentButton } from "./CommentBody";
 import { useEffect, useMemo, useState } from "react";
 import { CLIENT_SOURCES, viaText } from "@/lib/comment-for-client";
+import { formatWhen, initialsOf } from "@/lib/comment-display";
 import { useProjectTeam, type TeamMember } from "@/hooks/use-project-discussion";
 import { MentionPicker, useMentions } from "@/components/ui/mentions";
 import { avatarColour } from "@/lib/avatar-colour";
@@ -96,28 +97,6 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: "internal", label: "Private" },
 ];
 
-function initialsOf(name: string) {
-  return (
-    name
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((w) => w[0])
-      .join("")
-      .toUpperCase() || "?"
-  );
-}
-
-function formatWhen(value: string) {
-  const date = new Date(value);
-  const diffMs = Date.now() - date.getTime();
-  const diffMin = Math.round(diffMs / 60000);
-  if (diffMin < 1) return "just now";
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHr = Math.round(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
 
 function Composer({
   onSubmit,

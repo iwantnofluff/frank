@@ -454,22 +454,23 @@ export const HELP_ARTICLES: HelpArticle[] = [
     id: "send-for-review",
     title: "Send Posts to Your Client for Review",
     category: "reviews",
-    summary: "Move posts to Client Review and share a review link.",
+    summary: "Share a review link at any status, for your client or your team.",
     blocks: [
       {
         kind: "steps",
         items: [
-          "Move a post to Client Review from its page.",
-          "Choose the share icon, then Create link, for this post or several.",
+          "Choose Share on a post's page, at any status, then Create link, for this post or several.",
           "Add a passcode if you'd like the link protected.",
           "Choose Copy. It greys out with Link copied once it's on your clipboard.",
-          "Send the link to your client. They can comment, and approve if you allow it, without an account.",
+          "Send the link to your client, or keep it for your team. It's up to you.",
         ],
       },
       {
         kind: "note",
-        text: "Only posts in Client Review can be shared. Posts still in Concept or Internal Review are greyed out when choosing several.",
+        text: "Your client comments, asks for changes and approves (if you allow it) only while a post is in Client Review. Before that they can read it, under Not ready for review yet, and after it the link is theirs to read.",
       },
+      { kind: "h", text: "Your team on the link" },
+      { kind: "p", text: "Anyone on your team who's signed in to Frank on that phone or computer sees the post's own comments on the link, Private ones too, and comments as themselves, with Private, On behalf of the client and @mentions, as on the post's page. There's no Approve for the team on a link; approve from the post's page." },
       { kind: "p", text: "A link opens on the post or posts you sent it for, under Sent for review, even once the client has commented. Every link also lists the project's other posts in Client Review, after them, under Also waiting for your review." },
       { kind: "p", text: "Approved posts come last, from recent days only (14 by default; set in [Workspace Settings → General → Preferences](/settings/general/preferences)), though a link always keeps the posts it was sent for. Each post shows its date above its name." },
       { kind: "h", text: "What your client sees" },
@@ -479,7 +480,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       { kind: "p", text: "An approval counts once, however many times it's pressed." },
       {
         kind: "p",
-        text: "[People](client:/settings/people) you've invited as Clients of that client are listed under Who are you?, so they can comment under their own name straight away. Anyone else can choose Someone else and give a name and email.",
+        text: "[People](client:/settings/people) you've invited as Clients of that client are listed under Who are you?, so they can comment under their own name straight away. Only they can comment on a link.",
       },
     ],
   },

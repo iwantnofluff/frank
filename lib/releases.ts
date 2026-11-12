@@ -13,6 +13,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.81.0",
+    date: "2026-11-12",
+    title: "Share at any status",
+    changes: [
+      "Share is on every post now, whatever its status. Whether to send the link to the client is up to you.",
+      "Your client comments, asks for changes and approves only while a post is in Client Review. Before that they can read it, under Not ready for review yet.",
+      "Signed in to Frank, your team sees the post's own comments on a review link, Private ones too, and comments as themselves, with Private, On behalf of the client and @mentions. No Approve for the team there.",
+      "Comments on a review link now look as they do in Frank: initials in each person's colour, which side they're on, and just now.",
+    ],
+  },
+  {
     version: "1.80.0",
     date: "2026-11-11",
     title: "Comments on the client's behalf",

@@ -71,26 +71,7 @@ test("a real client-role session has no entry point and cannot advance a creativ
   await clientSession.auth.signOut();
 });
 
-test("Share for review appears once a creative moves to Client Review", async ({ page, frank }) => {
-  const creativeId = await frank.createCreativeAtStage(1);
-  await frank.loginAsStaff(page);
-  await page.goto(`/creatives/${creativeId}`);
-  await page.waitForSelector(".stage-h");
-
-  await expect(page.getByRole("button", { name: "Share for review" })).toHaveCount(0);
-
-  // By its full name: the pill itself reads "4. Client" (1.33.0).
-  await page.locator(".stagesw").getByRole("button", { name: "Client Review", exact: true }).click();
-  await expect(page.locator('.stagesw button[aria-pressed="true"]')).toHaveAttribute("aria-label", "Client Review");
-
-  // Reactive, not just correct after a reload — advancing the stage
-  // pill alone brings the button, still on the same page.
-  const shareButton = page.getByRole("button", { name: "Share for review" });
-  await expect(shareButton).toBeVisible();
-  await shareButton.click();
-  await page.click('button[role="radio"]:has-text("Current Post")');
-  await expect(page.locator(".note.warn")).toHaveCount(0);
-});
+// Share for review shows at any status now (phase150): share-eligibility.spec.
 
 test("staff can approve a creative directly, and revoke that approval", async ({ page, frank }) => {
   const creativeId = await frank.createCreativeAtStage(4, "Staff Approve Test");

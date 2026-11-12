@@ -19,7 +19,7 @@ export function reviewGroup(c: SharedCreative): ReviewGroup {
 export const DEFAULT_APPROVED_DAYS = 14;
 
 export interface ReviewSection {
-  id: "sent" | "also" | "waiting" | "approved";
+  id: "sent" | "also" | "waiting" | "early" | "approved";
   label: string;
   items: SharedCreative[];
 }
@@ -28,9 +28,11 @@ export interface ReviewSection {
 // made for particular posts has Sent for review, then Also waiting for your
 // review (the project's other posts in Client Review, phase69); a link to
 // the whole project has Waiting for your review. Each lists what's still to
-// review before what the client has commented on. Approved comes last,
-// newest first, only the last approvedDays (all of them when null). Empty sections are left
-// out. The page steps through posts in this order.
+// review before what the client has commented on. Posts shared before
+// Client Review (phase150: any status can be shared) come next, as Not
+// ready for review yet: theirs to read, not comment on. Approved comes
+// last, newest first, only the last approvedDays (all of them when null).
+// Empty sections are left out. The page steps through posts in this order.
 export function reviewSections(
   all: SharedCreative[],
   sentIds: Set<string>,
@@ -41,7 +43,8 @@ export function reviewSections(
     ...list.filter((c) => reviewGroup(c) === "to_review"),
     ...list.filter((c) => reviewGroup(c) === "commented"),
   ];
-  const inReview = all.filter((c) => c.stage < STAGE.approved);
+  const inReview = all.filter((c) => c.stage === STAGE.review);
+  const early = all.filter((c) => c.stage < STAGE.review);
   const cutoff = approvedDays === null ? -Infinity : now - approvedDays * 86_400_000;
   const approved = all
     .filter((c) => c.stage >= STAGE.approved && (sentIds.has(c.id) || c.approved_at === null || Date.parse(c.approved_at) >= cutoff))
@@ -52,6 +55,7 @@ export function reviewSections(
         { id: "also", label: "Also waiting for your review", items: toReviewFirst(inReview.filter((c) => !sentIds.has(c.id))) },
       ]
     : [{ id: "waiting", label: "Waiting for your review", items: toReviewFirst(inReview) }];
+  sections.push({ id: "early", label: "Not ready for review yet", items: early });
   sections.push({ id: "approved", label: "Approved", items: approved });
   return sections.filter((s) => s.items.length);
 }

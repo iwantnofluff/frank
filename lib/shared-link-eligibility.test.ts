@@ -11,62 +11,47 @@ const creatives: EligibilityCreative[] = [
   { id: "d", stage: 5 }, // approved
 ];
 
-test("all — every creative below Client Review is excluded, the rest eligible", () => {
+test("all — every creative shows; those not in Client Review are read only", () => {
   const r = resolveShareEligibility(creatives, "all");
   assert.equal(r.candidateCount, 4);
-  assert.equal(r.eligibleCount, 2); // c, d
-  assert.equal(r.excludedCount, 2); // a, b
+  assert.equal(r.readOnlyCount, 3); // a, b, d
 });
 
-test("all — zero eligible when every creative is still internal", () => {
-  const internalOnly: EligibilityCreative[] = [{ id: "a", stage: 1 }, { id: "b", stage: 3 }];
-  const r = resolveShareEligibility(internalOnly, "all");
-  assert.equal(r.candidateCount, 2);
-  assert.equal(r.eligibleCount, 0);
-  assert.equal(r.excludedCount, 2);
-});
-
-test("pending — only Client Review candidates, which are always already eligible (can't itself exclude)", () => {
+test("pending — only Client Review, none read only", () => {
   const r = resolveShareEligibility(creatives, "pending");
   assert.equal(r.candidateCount, 1); // c
-  assert.equal(r.eligibleCount, 1);
-  assert.equal(r.excludedCount, 0);
+  assert.equal(r.readOnlyCount, 0);
 });
 
-test("pending — comes back with zero candidates, not an exclusion, when nothing is in Client Review", () => {
+test("pending — zero when nothing is in Client Review", () => {
   const noneInReview: EligibilityCreative[] = [{ id: "a", stage: 1 }, { id: "b", stage: 5 }];
   const r = resolveShareEligibility(noneInReview, "pending");
   assert.equal(r.candidateCount, 0);
-  assert.equal(r.eligibleCount, 0);
-  assert.equal(r.excludedCount, 0);
+  assert.equal(r.readOnlyCount, 0);
 });
 
-test("one — the single targeted creative, eligible", () => {
-  const r = resolveShareEligibility(creatives, "one", { currentCreativeId: "d" });
-  assert.equal(r.candidateCount, 1);
-  assert.equal(r.eligibleCount, 1);
-  assert.equal(r.excludedCount, 0);
-});
-
-test("one — the single targeted creative, excluded (still internal)", () => {
+test("one — a post in Concept shows, read only", () => {
   const r = resolveShareEligibility(creatives, "one", { currentCreativeId: "a" });
   assert.equal(r.candidateCount, 1);
-  assert.equal(r.eligibleCount, 0);
-  assert.equal(r.excludedCount, 1);
+  assert.equal(r.readOnlyCount, 1);
 });
 
-test("pick — mixed picks, some eligible some not", () => {
+test("one — a post in Client Review takes comments", () => {
+  const r = resolveShareEligibility(creatives, "one", { currentCreativeId: "c" });
+  assert.equal(r.candidateCount, 1);
+  assert.equal(r.readOnlyCount, 0);
+});
+
+test("pick — mixed picks all show, some read only", () => {
   const r = resolveShareEligibility(creatives, "pick", { pickedIds: ["a", "c", "d"] });
   assert.equal(r.candidateCount, 3);
-  assert.equal(r.eligibleCount, 2); // c, d
-  assert.equal(r.excludedCount, 1); // a
+  assert.equal(r.readOnlyCount, 2); // a, d
 });
 
 test("pick — nothing picked yet, zero candidates", () => {
   const r = resolveShareEligibility(creatives, "pick", { pickedIds: [] });
   assert.equal(r.candidateCount, 0);
-  assert.equal(r.eligibleCount, 0);
-  assert.equal(r.excludedCount, 0);
+  assert.equal(r.readOnlyCount, 0);
 });
 
 test("every scope also shows the project's other Client Review posts (phase69)", () => {

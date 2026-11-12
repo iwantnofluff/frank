@@ -248,10 +248,11 @@ test("a carousel's video slide has its own timeline, and its comments stay on th
   await expect.poll(async () => Math.abs((await videoTime(page, ".ig-media")) - 1.5)).toBeLessThan(0.4);
 
   // A guest on the review link: same slide, own timeline. Only the
-  // client's own people comment on a link (phase77).
+  // client's own people comment on a link (phase77). Signed out: signed in
+  // as the team, the link shows the post's own comments (phase150).
   await frank.createClientContact("Guest Viewer", "guest@example.invalid");
   const token = await frank.createSharedLink();
-  await page.setViewportSize(PHONE_VIEWPORT);
+  page = await (await page.context().browser()!.newContext({ viewport: PHONE_VIEWPORT })).newPage();
   await page.goto(`${APP_URL}/review/${token}`);
   const scope = ".phone .ig-media";
   await expect(page.locator(`${scope} .car-count`)).toHaveText("1 / 2", { timeout: 15_000 });

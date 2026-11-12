@@ -1,12 +1,9 @@
 import { STAGE } from "./stage-labels.ts";
-// Mirrors shared_link_allowed_creative_ids() (phase13, then phase69: every
-// link also shows every post in Client Review) exactly,
-// client-side, so ShareModal can tell staff what a link will actually show
-// before they create it — that function's stage >= Client Review rule is unconditional
-// on every scope, and nothing in the app surfaced that until now (see
-// docs/parity-gaps.md, "Upload/Edit modal" / stage-transition gap: a
-// creative made through New Brief sits at stage 1 forever, so any link
-// covering it silently shows nothing).
+// Mirrors shared_link_allowed_creative_ids() (phase69: every link also
+// shows every post in Client Review; phase150: the posts chosen show at any
+// status) client-side, so ShareModal can tell staff what a link will show
+// before they create it, and which of it the client can only read: they
+// comment, approve or ask for changes only in Client Review.
 export type ShareScope = "pending" | "all" | "one" | "pick";
 
 export interface EligibilityCreative {
@@ -15,14 +12,12 @@ export interface EligibilityCreative {
 }
 
 export interface ShareEligibility {
-  /** How many creatives this scope selects, before the stage rule. */
+  /** How many creatives this scope selects. Every one shows on the link,
+   * at any status (phase150). */
   candidateCount: number;
-  /** How many of those are actually Client Review or later, so a client would see them. */
-  eligibleCount: number;
-  /** candidateCount - eligibleCount — always because a creative is still
-   * below Client Review (Concept or Internal Review), the only reason
-   * shared_link_allowed_creative_ids ever excludes one. */
-  excludedCount: number;
+  /** How many of those aren't in Client Review: the client can read them
+   * but not comment, approve or ask for changes until they are. */
+  readOnlyCount: number;
   /** Posts in Client Review the scope didn't choose, which every link
    * shows anyway (phase69). */
   alsoInClientReview: number;
@@ -39,8 +34,6 @@ export function resolveShareEligibility(
       candidates = creatives;
       break;
     case "pending":
-      // Client Review is already a subset of Client Review and later — this scope can
-      // never itself cause an exclusion, only ever come back empty.
       candidates = creatives.filter((c) => c.stage === STAGE.review);
       break;
     case "one":
@@ -51,12 +44,10 @@ export function resolveShareEligibility(
       break;
   }
 
-  const eligibleCount = candidates.filter((c) => c.stage >= STAGE.review).length;
   const chosen = new Set(candidates.map((c) => c.id));
   return {
     candidateCount: candidates.length,
-    eligibleCount,
-    excludedCount: candidates.length - eligibleCount,
+    readOnlyCount: candidates.filter((c) => c.stage !== STAGE.review).length,
     alsoInClientReview: creatives.filter((c) => c.stage === STAGE.review && !chosen.has(c.id)).length,
   };
 }

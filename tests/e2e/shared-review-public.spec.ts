@@ -1,6 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 import { test, expect, PHONE_VIEWPORT } from "./fixtures";
 
+const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
+
 // No session at all — a real share-link visitor. The visitor's own screen
 // picks the layout (direct instruction): a phone gets the phone layout, a
 // wider screen the desktop one, each filling the window with no frame and
@@ -197,6 +201,9 @@ test("shared review — the feed shows other posts by stage, and opens this link
   await frank.createCreativeAtStage(3, "Unshared internal post");
   await frank.insertCommentAsStaff("A public note", "public");
   const token = await frank.createSharedLink();
+  // A link for this one post: "All posts" now covers every status
+  // (phase150), so the others would be in it.
+  await admin.from("shared_links").update({ scope: "one", creative_id: frank.creativeId }).eq("token", token);
 
   // What the page is sent about the unshared posts: stage and name only.
   const res = await page.request.post("/api/shared-review", { data: { token } });

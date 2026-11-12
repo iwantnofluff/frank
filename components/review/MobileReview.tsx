@@ -6,7 +6,8 @@ import { SharedFeedGrid } from "./SharedFeedGrid";
 import { ICONS } from "@/components/creative-review/ReviewNav";
 import { ReviewBrandHeader } from "./ReviewBrandHeader";
 import { useReviewViewer } from "@/hooks/use-review-viewer";
-import { CommentWhen } from "@/components/creative-review/CommentWhen";
+import { LinkCommentHead } from "./LinkCommentHead";
+import { TeamComments, useTeamOnPost } from "./TeamComments";
 import { CommentCountJump, CommentJump, useSwipe } from "./mobile-gestures";
 import { copySummaryParts, postFormats } from "@/lib/formats";
 import { FormatSwitch } from "@/components/creative-review/FormatSwitch";
@@ -35,6 +36,7 @@ export function MobileReview({
   const { creatives, active, activeIndex, goTo } = controller;
   // Signed in, and on the workspace's team: the post's name links into Frank.
   const { data: viewer } = useReviewViewer();
+  const team = useTeamOnPost(active?.id);
   const clientLogoUrl = controller.data?.status === "ok" ? controller.data.client_logo_url : null;
   // Swiping sideways moves between posts (direct instruction), as on
   // Instagram; not when it starts on a carousel's slides or a video, where a
@@ -168,7 +170,7 @@ export function MobileReview({
               <>
               {/* Not what this link was sent for, but waiting for review
                   too (direct instruction); it comes after the link's own. */}
-              {controller.hasSent && !controller.isSent(active) && active.stage < STAGE.approved && (
+              {controller.hasSent && !controller.isSent(active) && active.stage === STAGE.review && (
                 <div className="m-meta">
                   <div className="m-also">Also waiting for your review</div>
                 </div>
@@ -196,20 +198,15 @@ export function MobileReview({
               </>
             )}
 
-            {active?.comments.map((c) => (
+            {/* The team, signed in: the post's own comments (phase150). */}
+            {active && team && <TeamComments creativeId={active.id} />}
+            {!team && active?.comments.map((c) => (
               <div
                 className={`m-cmt${controller.highlightedCommentId === c.id ? " act" : ""}${c.id.startsWith("pending-") ? " pending" : ""}`}
                 key={c.id}
               >
                 <div className="ch">
-                  <span className="av" style={{ background: "var(--action)" }}>
-                    {c.author_name.slice(0, 1).toUpperCase()}
-                  </span>
-                  <b>
-                    {c.author_name}
-                    {c.via && <span className="cmt-from"> {c.via}</span>}
-                  </b>
-                  <CommentWhen iso={c.created_at} date={new Date(c.created_at).toLocaleDateString("en-GB")} />
+                  <LinkCommentHead comment={c} avatarClass="av" clientName={clientName} agencyName={agencyName} />
                 </div>
                 <MomentBadge comment={c} controller={controller} />
                 <SharedCommentText comment={c} controller={controller} />
@@ -219,7 +216,7 @@ export function MobileReview({
           )}
         </div>
 
-        {active && controller.view === "post" && <GuestComposer controller={controller} variant="mobile" />}
+        {active && !team && controller.view === "post" && <GuestComposer controller={controller} variant="mobile" />}
       </div>
     </div>
   );

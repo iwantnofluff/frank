@@ -14,7 +14,7 @@ import { useClientPreferences } from "@/hooks/use-client-preferences";
 import { errorMessage } from "@/lib/errors";
 import { FeedTileArt, EmptyTileArt } from "@/components/creative-review/FeedTileArt";
 import { FeedCaptionPopover } from "@/components/creative-review/FeedCaptionPopover";
-import { STAGE, isIdea } from "@/lib/stage-labels";
+import { isIdea } from "@/lib/stage-labels";
 
 const GRID_SLOTS = 9;
 
@@ -48,7 +48,6 @@ function PieceTile({
   gridIds,
   selected,
   selectable,
-  ineligible,
   onToggle,
   onHoverEnter,
   onHoverLeave,
@@ -59,14 +58,8 @@ function PieceTile({
   selected: boolean;
   // False under scope "one" — the grid still shows every piece so the
   // current one's selection reads in context, but only "Multiple Posts"
-  // lets you click a different tile. Also false, even under "Multiple
-  // Posts", for a piece still below Client Review — see `ineligible`.
+  // lets you click a different tile. Any status can be picked (phase150).
   selectable: boolean;
-  // True only under scope "pick", for a piece below Client Review —
-  // greyed out rather than just non-interactive, since (unlike scope
-  // "one"'s every-tile lock) this is telling staff *why* it can't be
-  // picked, not just that picking isn't the current mode.
-  ineligible: boolean;
   onToggle: () => void;
   onHoverEnter: (creative: CreativeListRow, target: HTMLElement) => void;
   onHoverLeave: () => void;
@@ -80,10 +73,8 @@ function PieceTile({
   return (
     <button
       type="button"
-      className={`pktile${selected ? " selected" : ""}${!selectable ? " locked" : ""}${ineligible ? " ineligible" : ""}${creative.published_at ? "" : " not-live"}`}
+      className={`pktile${selected ? " selected" : ""}${!selectable ? " locked" : ""}${creative.published_at ? "" : " not-live"}`}
       aria-pressed={selected}
-      disabled={ineligible}
-      title={ineligible ? "Move this post to Client Review to share it" : undefined}
       onClick={selectable ? onToggle : undefined}
       onMouseEnter={(e) => onHoverEnter(creative, e.currentTarget)}
       onMouseLeave={onHoverLeave}
@@ -194,11 +185,10 @@ export function ShareModal({
     });
   }
 
-  // Client-side preview of shared_link_allowed_creative_ids' Client Review and later
-  // rule — not enforcement (the RPC is still the real gate), just telling
-  // staff what this link will actually show before they hand it out.
-  // Doesn't block creation: there are legitimate reasons to make a link
-  // ahead of the work being ready.
+  // Client-side preview of shared_link_allowed_creative_ids — not
+  // enforcement (the database is the real gate), just telling staff what
+  // the link will show and what the client can only read (phase150: any
+  // status shows; the client has their say in Client Review).
   const eligibility = useMemo(
     () =>
       resolveShareEligibility(creatives, scope, {
@@ -208,7 +198,7 @@ export function ShareModal({
     [creatives, scope, currentCreativeId, picked],
   );
   const eligibilityNote = useMemo(() => {
-    const { candidateCount, eligibleCount, excludedCount, alsoInClientReview } = eligibility;
+    const { candidateCount, readOnlyCount, alsoInClientReview } = eligibility;
     // Every link also carries the project's Client Review posts (phase69).
     const also =
       alsoInClientReview > 0
@@ -217,25 +207,19 @@ export function ShareModal({
     // "pick" with nothing checked yet already has its own cue (the "0
     // selected" hint and the disabled Create link button).
     if (scope === "pick" && candidateCount === 0) return null;
-    if (eligibleCount === 0 && alsoInClientReview > 0) {
+    if (scope === "pending" && candidateCount === 0) {
+      return { tone: "warn" as const, text: "Nothing is in Client Review yet, so this link will show nothing for now." };
+    }
+    if (readOnlyCount > 0) {
       return {
         tone: "info" as const,
-        text: `${candidateCount === 1 ? "The post you chose won't show yet" : "The posts you chose won't show yet"} — still in Concept or Internal Review.${also}`,
-      };
-    }
-    if (eligibleCount === 0) {
-      return {
-        tone: "warn" as const,
-        text:
+        text: `${
           candidateCount === 1
-            ? "This link will show nothing yet — that post is still in Concept or Internal Review. Move it to Client Review (on its own page) to make it visible here."
-            : `This link will show nothing yet — all ${candidateCount} posts it covers are still in Concept or Internal Review. Move them to Client Review (on their own page) to make them visible here.`,
-      };
-    }
-    if (excludedCount > 0) {
-      return {
-        tone: "info" as const,
-        text: `${excludedCount} of ${candidateCount} won't show on this link — still in Concept or Internal Review. Move them to Client Review to include them.${also}`,
+            ? "This post isn't in Client Review, so the client can read it but not comment until it is."
+            : readOnlyCount === candidateCount
+              ? "None of these posts is in Client Review, so the client can read them but not comment until they are."
+              : `${readOnlyCount} of ${candidateCount} aren't in Client Review, so the client can read them but not comment until they are.`
+        }${also}`,
       };
     }
     if (also) return { tone: "info" as const, text: also.trim() };
@@ -404,8 +388,7 @@ export function ShareModal({
                   creative={c}
                   gridIds={creativeIds}
                   selected={selectedIds.has(c.id)}
-                  selectable={scope === "pick" && c.stage >= STAGE.review}
-                  ineligible={scope === "pick" && c.stage < STAGE.review}
+                  selectable={scope === "pick"}
                   onToggle={() => togglePiece(c.id)}
                   onHoverEnter={handleHoverEnter}
                   onHoverLeave={scheduleHoverHide}

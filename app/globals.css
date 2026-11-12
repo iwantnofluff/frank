@@ -6809,13 +6809,6 @@ textarea.cxin {
 .pktile.locked {
   cursor: default;
 }
-/* A piece below Client Review, under scope "pick" — greyed out and
-   unclickable rather than just non-interactive, since this is telling
-   staff why it can't be picked (matches .tool:disabled's own opacity). */
-.pktile.ineligible {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
 .pktile-check {
   position: absolute;
   top: 6px;
@@ -14531,19 +14524,33 @@ a.asset-saved {
 .mpost .m-card .ig-h {
   top: -12px;
 }
-.mpost .cmts {
+/* And the team's comments on a review link on a phone (phase150). */
+.mpost .cmts,
+.m-body .rv-team .cmts {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 12px;
 }
-.mpost .cmts-b {
+.mpost .cmts-b,
+.m-body .rv-team .cmts-b {
   overflow: visible;
 }
-.mpost .cmt-tools {
+.mpost .cmt-tools,
+.rv-team .cmt-tools {
   display: none;
 }
-.mpost .composer {
+.mpost .composer,
+.m-body .rv-team .composer {
   border-top: 1px solid var(--line);
+}
+/* On a computer, the link's comment column (phase150). */
+.dk-side > .rv-team {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.dk-side > .rv-team .cmts {
+  flex: 1;
 }
 
 /* A project on a phone (MobileProject, direct instruction): the posts as
