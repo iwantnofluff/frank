@@ -5179,6 +5179,26 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Closing the post window with unsaved work asks first (1.81.1, 2026-11-12)
+
+Direct instruction: clicking out of a new post with content in it should warn, either with another popup or a message in the window. I went with a popup, using the window's existing check, which until now only covered artwork not yet saved. Clicking outside, Escape, the corner X and Cancel all go through it.
+
+**What asks:**
+- **A new post with anything entered, not yet created:** a name, formats, any date, the destination, the Concept, References, Notes for Designer, voiceover or copy. It asks "Discard This Post?" with Keep Editing or Discard.
+- **A made post with a section changed and not saved:** copy, Text on Image, Notes for Designer, References, voiceover or the Concept. It asks "Close Without Saving?", naming them ("the copy and the Concept aren't saved yet").
+- `ConfirmDialog` takes a `cancelLabel`, so the safe choice reads Keep Editing rather than Cancel.
+
+**Not covered:** Brief edits to an existing post's name, dates, formats or team before Update. The window doesn't track those as unsaved, and tracking them is a larger change than this one.
+
+**Verified**: post-window-close.spec (new):
+- A new post closes straight away untouched.
+- With a name: clicking outside asks, Keep Editing keeps the name, Escape asks again, and Discard closes.
+- An existing post closes without asking on Brief, Production and Content when nothing has changed.
+- Typed copy is named in the question, and Close Without Saving closes.
+- Screenshots of both questions were checked.
+
+**Full suite** on the local database: 345 passed, 17 failed. The failures were bell counts, and screenshots differing only by a badge on the bell. The test copy of the app had been started before this release's note was added, so it put a new version in the bell. After restarting it, all 17 passed.
+
 ## Share at any status, and the team on review links (1.81.0, phase150, 2026-11-12)
 
 Direct instruction: the Share button should be available at any status, with the account manager deciding whether to send the link. The client only comments while a post is at Client. The reason given was so the team can comment on a post without fully logging in. The user chose:

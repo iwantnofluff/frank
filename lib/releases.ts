@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.81.1",
+    date: "2026-11-12",
+    title: "No more losing a half-made post",
+    changes: [
+      "Clicking out of a new post you've started, or pressing Escape or Cancel, now asks first: Keep Editing or Discard.",
+      "On a post that's already made, closing with copy, Text on Image, Notes for Designer, References, voiceover or the Concept not saved yet asks too, and says which.",
+    ],
+  },
+  {
     version: "1.81.0",
     date: "2026-11-12",
     title: "Share at any status",

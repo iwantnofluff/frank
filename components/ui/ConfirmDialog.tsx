@@ -15,6 +15,7 @@ export function ConfirmDialog({
   message,
   details,
   confirmLabel,
+  cancelLabel,
   pendingLabel,
   isPending = false,
   error,
@@ -29,6 +30,9 @@ export function ConfirmDialog({
   // Supporting points, listed under the message (e.g. why a change needs it).
   details?: string[];
   confirmLabel?: string;
+  // In place of Cancel, where Cancel would read as the action itself
+  // (Keep Editing, beside Discard).
+  cancelLabel?: string;
   pendingLabel?: string;
   isPending?: boolean;
   error?: unknown;
@@ -55,7 +59,7 @@ export function ConfirmDialog({
       {!!error && <p className="autherr">{errorMessage(error, errorFallback)}</p>}
       <div className="confirm-acts">
         <button type="button" className="btn" onClick={onClose}>
-          {onConfirm ? "Cancel" : "Close"}
+          {onConfirm ? (cancelLabel ?? "Cancel") : "Close"}
         </button>
         {onConfirm && (
           <button type="button" className={`btn ${tone}`} disabled={isPending} onClick={onConfirm}>

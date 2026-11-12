@@ -1591,6 +1591,34 @@ export function CreativeModal(props: CreativeModalProps) {
   const pendingVoChange = isVideo && voiceover.trim() !== savedVoiceover;
   const pendingCreativeChange = carouselPending;
 
+  // A new post with something in it, not created yet (direct instruction:
+  // clicking out of the window lost it without a word).
+  const newPostStarted =
+    isCreate &&
+    !creativeId &&
+    (!!name.trim() ||
+      formats.length > 0 ||
+      !!date ||
+      !!dueOn ||
+      !!publishOn ||
+      !!destination.trim() ||
+      !!concept.trim() ||
+      tidyReferences(referenceUrls).length > 0 ||
+      !!designerNotes.trim() ||
+      !!voiceover.trim() ||
+      hasAnyCopyContent);
+  // Once it's there, the sections with changes not saved yet, in words.
+  const unsavedParts = creativeId
+    ? [
+        pendingCopyChange && "the copy",
+        pendingSlideChange && "the Text on Image",
+        pendingNotesChange && "the Notes for Designer",
+        pendingRefsChange && "the References",
+        pendingVoChange && "the voiceover",
+        concept.trim() !== (savedConcept ?? "") && "the Concept",
+      ].filter((p): p is string => !!p)
+    : [];
+
   // What Check WIIFM/Check Brand actually check — the fields as they
   // stand right now in the editable draft, not the last saved version.
   const copyTextForCheck = copyFieldSpecs
@@ -1643,10 +1671,13 @@ export function CreativeModal(props: CreativeModalProps) {
   // Closing with artwork dropped in but not saved, or mid-save (reported
   // directly: people left thinking a dropped file was added). Unsaved: ask.
   // Mid-save: explain, as the save carries on behind a closed window.
-  const [closeAsk, setCloseAsk] = useState<"unsaved" | "saving" | null>(null);
+  // A new post started, or a section changed and not saved: ask too.
+  const [closeAsk, setCloseAsk] = useState<"unsaved" | "saving" | "draft" | "parts" | null>(null);
   function requestClose() {
     if (uploadCarousel.isPending) setCloseAsk("saving");
     else if (carouselPending) setCloseAsk("unsaved");
+    else if (newPostStarted) setCloseAsk("draft");
+    else if (unsavedParts.length) setCloseAsk("parts");
     else onClose();
   }
 
@@ -2910,6 +2941,32 @@ export function CreativeModal(props: CreativeModalProps) {
         onClose={() => setCloseAsk(null)}
       />
     )}
+    {closeAsk === "draft" && (
+      <ConfirmDialog
+        title={`Discard This ${word.one}?`}
+        message={`this ${word.one.toLowerCase()} isn't created yet. If you close now, what you've entered will be lost.`}
+        confirmLabel="Discard"
+        cancelLabel="Keep Editing"
+        onConfirm={() => {
+          setCloseAsk(null);
+          onClose();
+        }}
+        onClose={() => setCloseAsk(null)}
+      />
+    )}
+    {closeAsk === "parts" && (
+      <ConfirmDialog
+        title="Close Without Saving?"
+        message={`${listInWords(unsavedParts)} ${unsavedParts.length === 1 ? "isn't" : "aren't"} saved yet. If you close now, the changes will be lost.`}
+        confirmLabel="Close Without Saving"
+        cancelLabel="Keep Editing"
+        onConfirm={() => {
+          setCloseAsk(null);
+          onClose();
+        }}
+        onClose={() => setCloseAsk(null)}
+      />
+    )}
     {closeAsk === "saving" && (
       <ConfirmDialog
         title="Still Saving"
@@ -3075,4 +3132,11 @@ function VersionTab({
       )}
     </span>
   );
+}
+
+// "the copy", "the copy and the Concept", "the copy, the References and
+// the Concept".
+function listInWords(parts: string[]): string {
+  if (parts.length <= 1) return parts[0] ?? "";
+  return `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
 }
