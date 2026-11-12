@@ -50,7 +50,7 @@ import { ConceptText } from "@/components/creative-review/ConceptText";
 import { EarlierVersions } from "@/components/project/EarlierVersions";
 import { FeedbackCell } from "@/components/project/FeedbackCell";
 import { useProjectProductionVersions } from "@/hooks/use-production-versions";
-import { useHiddenStatusIds, useProjectStatuses } from "@/hooks/use-project-statuses";
+import { useHiddenStatusIds, useProjectStatuses } from "@/hooks/use-stage-statuses";
 import { useAssetLinksByCreative } from "@/hooks/use-asset-links";
 import { OpenAsset } from "@/components/project/OpenAsset";
 import { StagePillMenu } from "@/components/project/StagePillMenu";
@@ -595,7 +595,7 @@ export function ProjectCalendarTable({
   const { data: thumbnailsByCreative } = useThumbnailsByCreative(creativeIds);
   // The VO's and Text on Image's versions (phase120), the team's.
   const { data: productionVersions } = useProjectProductionVersions(projectId, creativeIds, isStaff);
-  // Each post's status within In Production or Internal Review (phase123):
+  // Each post's status within its stage (phase123, phase151):
   // for the team, its Status pill opens every stage and status (phase125).
   const { data: projectStatuses } = useProjectStatuses(projectId, isStaff);
   const { data: assetLinks } = useAssetLinksByCreative(creativeIds, isStaff);

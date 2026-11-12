@@ -51,7 +51,7 @@ import { useProjectPresence } from "@/hooks/use-project-presence";
 import { PresenceAvatars } from "@/components/app-shell/PresenceAvatars";
 import { STAGE, exceptionLabel, stageColor, stageLabel } from "@/lib/stage-labels";
 import { errorMessage } from "@/lib/errors";
-import { useProjectStatuses, useSetCreativeStatus } from "@/hooks/use-project-statuses";
+import { useProjectStatuses, useSetCreativeStatus } from "@/hooks/use-stage-statuses";
 import { statusOptions } from "@/lib/project-statuses";
 import { PillMenu } from "@/components/project/PillMenu";
 import { useAssetLink } from "@/hooks/use-asset-links";
@@ -99,8 +99,8 @@ export function CreativeReviewPage({ id }: { id: string }) {
   const { data: teamMembers } = useTeamMembers(creative?.agency_id);
   const isStaff = membership ? membership.client_id === null : false;
   const advanceStage = useAdvanceCreativeStage(id);
-  // Its status within In Production or Internal Review (phase123), the
-  // team's only.
+  // Its status within its stage (phase123, every stage since phase151),
+  // the team's only.
   const { data: projectStatuses } = useProjectStatuses(creative?.project_id, isStaff);
   const setStatus = useSetCreativeStatus();
   const { data: assetLink } = useAssetLink(id, isStaff);
@@ -117,8 +117,8 @@ export function CreativeReviewPage({ id }: { id: string }) {
     document.addEventListener("keydown", escape);
     return () => document.removeEventListener("keydown", escape);
   }, [expanded]);
-  // The active Production or Internal pill is its status's dropdown (3a,
-  // 3b…), for the team.
+  // The active stage's pill is its status's dropdown (3a, 3b…), for the
+  // team, where the stage has statuses.
   const pillOptions = isStaff && creative && !creative.exception ? statusOptions(projectStatuses, creative.stage) : [];
   const statusPill = (pillClass: string, stageText: string) => {
     const items = [{ key: "", text: stageText }, ...pillOptions.map((o) => ({ key: o.id, text: o.text, indent: true }))];
@@ -685,6 +685,9 @@ export function CreativeReviewPage({ id }: { id: string }) {
                       post moves to In Production by itself once its
                       Concept is written, and on to Internal Review when
                       its first artwork or copy is saved (phase102). */}
+                  {creative.stage === STAGE.concept && pillOptions.length ? (
+                    statusPill("sw-p-concept", "1. Concept")
+                  ) : (
                   <button
                     data-label="Concept"
                     aria-label="Concept"
@@ -697,6 +700,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
                     <span className="no">1.</span>
                     Concept
                   </button>
+                  )}
                   {creative.stage === STAGE.production && pillOptions.length ? (
                     statusPill("sw-production", "2. Production")
                   ) : (
@@ -731,6 +735,9 @@ export function CreativeReviewPage({ id }: { id: string }) {
                     Internal
                   </button>
                   )}
+                  {creative.stage === STAGE.review && pillOptions.length ? (
+                    statusPill("sw-p-client", "4. Client")
+                  ) : (
                   <button
                     data-label="Client Review"
                     aria-label="Client Review"
@@ -746,6 +753,10 @@ export function CreativeReviewPage({ id }: { id: string }) {
                     <span className="no">4.</span>
                     Client
                   </button>
+                  )}
+                  {creative.stage === STAGE.approved && pillOptions.length ? (
+                    statusPill("sw-p-approved", "5. Approved")
+                  ) : (
                   <button
                     data-label="Approved"
                     aria-label="Approved"
@@ -761,8 +772,12 @@ export function CreativeReviewPage({ id }: { id: string }) {
                     <span className="no">5.</span>
                     Approved
                   </button>
+                  )}
                   {/* Live (phase99): Frank sets it when it finds the post on
                       Instagram; set by hand, now is its live date. */}
+                  {creative.stage === STAGE.live && pillOptions.length ? (
+                    statusPill("sw-p-live", "6. Live")
+                  ) : (
                   <button
                     data-label="Live"
                     aria-label="Live"
@@ -778,6 +793,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
                     <span className="no">6.</span>
                     Live
                   </button>
+                  )}
                 </div>
                 {setStatus.error && (
                   <span className="autherr stage-status-err">{errorMessage(setStatus.error, "Couldn't change the status")}</span>

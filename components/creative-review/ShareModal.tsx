@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { useCreatives, type CreativeListRow } from "@/hooks/use-creatives";
-import { isHiddenPost, useHiddenStatusIds } from "@/hooks/use-project-statuses";
+import { isHiddenPost, useHiddenStatusIds } from "@/hooks/use-stage-statuses";
 import {
   useCreateSharedLink,
   type SharedLinkScope,

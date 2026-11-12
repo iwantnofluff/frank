@@ -3,7 +3,7 @@
 import { isIdea } from "@/lib/stage-labels";
 import Link from "next/link";
 import { useCreatives, type CreativeListRow } from "@/hooks/use-creatives";
-import { isHiddenPost, useHiddenStatusIds } from "@/hooks/use-project-statuses";
+import { isHiddenPost, useHiddenStatusIds } from "@/hooks/use-stage-statuses";
 import { formatsLabel, postFormats } from "@/lib/formats";
 import { FormatSwitch } from "./FormatSwitch";
 import { publishDate } from "@/lib/publish-date";

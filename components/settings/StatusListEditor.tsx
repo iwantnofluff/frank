@@ -2,25 +2,26 @@
 
 import { useRef, useState } from "react";
 import {
-  useAddProjectStatus,
-  useDeleteProjectStatus,
-  useProjectStatuses,
-  useRenameProjectStatus,
+  useAddStatus,
+  useDeleteStatus,
+  useRenameStatus,
+  useSetStatusHides,
+  useStatusList,
   useStatusPostCount,
-  useSwapProjectStatuses,
-  type ProjectStatus, useSetStatusHides } from "@/hooks/use-project-statuses";
+  useSwapStatuses,
+  type StageStatus,
+  type StatusList,
+} from "@/hooks/use-stage-statuses";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { errorMessage } from "@/lib/errors";
-import { STAGE } from "@/lib/stage-labels";
+import { STAGE, STAGE_COUNT, stageLabel } from "@/lib/stage-labels";
 
-const STAGES: { stage: 2 | 3; label: string }[] = [
-  { stage: STAGE.production, label: "In Production" },
-  { stage: STAGE.internal, label: "Internal Review" },
-];
+// Every stage (phase151), in order.
+const STAGES = Array.from({ length: STAGE_COUNT }, (_, i) => ({ stage: i + 1, label: stageLabel(i + 1, "scheduled") }));
 
 // A status's name, editable in place: saved when left or on Enter, put
 // back on Escape (which mustn't then save on the blur that follows).
-function StatusName({ status, onRename }: { status: ProjectStatus; onRename: (label: string) => void }) {
+function StatusName({ status, onRename }: { status: StageStatus; onRename: (label: string) => void }) {
   const [draft, setDraft] = useState(status.label);
   const [was, setWas] = useState(status.label);
   const cancelled = useRef(false);
@@ -58,32 +59,27 @@ function StatusName({ status, onRename }: { status: ProjectStatus; onRename: (la
   );
 }
 
-// Project Settings → Statuses (phase123, direct instruction): the steps a
-// post moves through within In Production and Internal Review. Owners and
-// Admins add, rename, reorder and remove them; the team sees them.
-export function ProjectStatuses({ projectId, canManage }: { projectId: string; canManage: boolean }) {
-  const { data: statuses, isLoading, isError } = useProjectStatuses(projectId);
-  const add = useAddProjectStatus(projectId);
-  const rename = useRenameProjectStatus(projectId);
-  const swap = useSwapProjectStatuses(projectId);
-  const remove = useDeleteProjectStatus(projectId);
-  const hides = useSetStatusHides(projectId);
-  const [adding, setAdding] = useState<2 | 3 | null>(null);
+// A list of statuses, the agency's or a client's own (phase151, was each
+// project's, phase123): the steps a post moves through within each stage.
+// Owners and Admins add, rename, reorder and remove them; the team sees
+// them. Only Concept, In Production and Internal Review can hide their
+// posts, as a client never sees a post in those.
+export function StatusListEditor({ list, canManage }: { list: StatusList | undefined; canManage: boolean }) {
+  const { data: statuses, isLoading, isError } = useStatusList(list);
+  const add = useAddStatus(list);
+  const rename = useRenameStatus();
+  const swap = useSwapStatuses();
+  const remove = useDeleteStatus();
+  const hides = useSetStatusHides();
+  const [adding, setAdding] = useState<number | null>(null);
   const [draft, setDraft] = useState("");
-  const [removing, setRemoving] = useState<ProjectStatus | null>(null);
+  const [removing, setRemoving] = useState<StageStatus | null>(null);
   const { data: onIt } = useStatusPostCount(removing?.id ?? null);
   const busy = add.isPending || rename.isPending || swap.isPending || remove.isPending || hides.isPending;
   const error = add.error ?? rename.error ?? swap.error ?? hides.error;
 
   return (
     <>
-      <div className="msection-h">Statuses</div>
-      <p className="msection-d">
-        The steps a post moves through within In Production and Internal Review, for your team only. A post takes the first
-        when it gets to that stage. A post on a status that hides its posts, such as Cancel, is left out of the
-        tables, the feed and the counts; Show Hidden in a table&rsquo;s status filter brings it back.
-        {canManage ? " Changes save as they're made." : " Owners and Admins change them."}
-      </p>
       {isError && <p className="autherr">Couldn&rsquo;t load the statuses</p>}
       {error && <p className="autherr">{errorMessage(error, "Couldn't save that")}</p>}
       {!isLoading &&
@@ -91,8 +87,13 @@ export function ProjectStatuses({ projectId, canManage }: { projectId: string; c
         STAGES.map(({ stage, label }) => {
           const list = statuses.filter((s) => s.stage === stage);
           return (
-            <div className="ps-stage" key={stage} role="group" aria-label={label}>
-              <div className="ps-stage-h">{label}</div>
+            <section className="panel" key={stage} role="group" aria-label={label}>
+              <div className="panel-h">
+                <b>
+                  {stage}. {label}
+                </b>
+              </div>
+              <div className="ps-body">
               {list.map((s, i) => (
                 <div className="ps-row" key={s.id}>
                   {canManage ? (
@@ -107,15 +108,17 @@ export function ProjectStatuses({ projectId, canManage }: { projectId: string; c
                     <span className="ps-acts">
                       {/* Its posts hidden from the lists and counts (phase143,
                           direct instruction: a Cancelled post shouldn't show). */}
-                      <label className="ps-hide">
-                        <input
-                          type="checkbox"
-                          checked={s.hides_post}
-                          disabled={busy}
-                          onChange={(e) => hides.mutate({ id: s.id, hides: e.target.checked })}
-                        />
-                        Hides its posts
-                      </label>
+                      {stage <= STAGE.internal && (
+                        <label className="ps-hide">
+                          <input
+                            type="checkbox"
+                            checked={s.hides_post}
+                            disabled={busy}
+                            onChange={(e) => hides.mutate({ id: s.id, hides: e.target.checked })}
+                          />
+                          Hides its posts
+                        </label>
+                      )}
                       <button
                         type="button"
                         className="ps-btn"
@@ -207,7 +210,8 @@ export function ProjectStatuses({ projectId, canManage }: { projectId: string; c
                     Add Status
                   </button>
                 ))}
-            </div>
+              </div>
+            </section>
           );
         })}
 
@@ -219,9 +223,10 @@ export function ProjectStatuses({ projectId, canManage }: { projectId: string; c
               ? "checking which posts are on it…"
               : onIt === 0
                 ? "no post is on it, so nothing else changes."
-                : `${onIt} post${onIt === 1 ? " is" : "s are"} on it, and will move to the first status left in ${
-                    removing.stage === STAGE.production ? "In Production" : "Internal Review"
-                  }.`
+                : `${onIt} post${onIt === 1 ? " is" : "s are"} on it, and will move to the first status left in ${stageLabel(
+                    removing.stage,
+                    "scheduled",
+                  )}.`
           }
           confirmLabel="Remove"
           pendingLabel="Removing…"

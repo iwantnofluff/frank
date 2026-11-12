@@ -4,7 +4,7 @@ import { isIdea } from "@/lib/stage-labels";
 import { goLiveDay, isLive, isOverdue } from "@/lib/post-live";
 import { useMemo, useRef, useState } from "react";
 import { useCreatives, type CreativeListRow } from "@/hooks/use-creatives";
-import { isHiddenPost, useHiddenStatusIds } from "@/hooks/use-project-statuses";
+import { isHiddenPost, useHiddenStatusIds } from "@/hooks/use-stage-statuses";
 import { FeedTileArt, EmptyTileArt } from "@/components/creative-review/FeedTileArt";
 import { StagePill } from "@/components/creative-review/StagePill";
 import { FeedCaptionPopover } from "@/components/creative-review/FeedCaptionPopover";

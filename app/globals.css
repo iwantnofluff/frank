@@ -5881,6 +5881,14 @@ textarea.cxin {
 .ps-add {
   margin-top: 6px;
 }
+/* A stage's statuses inside its Settings panel (phase151), in line with
+   the panel's heading. */
+.ps-body {
+  padding: 8px 15px 12px;
+}
+.ps-body > .ps-none {
+  margin-top: 0;
+}
 /* A stage pill that opens its stages and statuses (phase123, phase125):
    the pill's own look and size, a small white arrow after its words.
    Table (.stg-pick) and post (.sw-pick). */
@@ -5930,6 +5938,17 @@ textarea.cxin {
 }
 .stagesw button.sw-pick.sw-internal {
   background-color: var(--stage-review);
+}
+/* Every stage can have statuses (phase151), each in its own colour. */
+.stagesw button.sw-pick.sw-p-concept {
+  background-color: var(--stage-concept);
+}
+.stagesw button.sw-pick.sw-p-client {
+  background-color: var(--stage-review);
+}
+.stagesw button.sw-pick.sw-p-approved,
+.stagesw button.sw-pick.sw-p-live {
+  background-color: var(--stage-approved);
 }
 .stg-pick:focus-visible,
 .sw-pick:focus-visible {
@@ -6635,7 +6654,8 @@ textarea.cxin {
 /* A link inside a note or a page's short description (e.g. "See the
    plans"), so it reads as one. */
 .note a,
-.sub a {
+.sub a,
+a.inlink {
   color: var(--action);
 }
 .note.warn {

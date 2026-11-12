@@ -8,7 +8,7 @@ import { useLiveUpdates } from "@/hooks/use-live-updates";
 import { useProjectPresence } from "@/hooks/use-project-presence";
 import { PresenceAvatars } from "@/components/app-shell/PresenceAvatars";
 import { useCreatives } from "@/hooks/use-creatives";
-import { useHiddenStatusIds } from "@/hooks/use-project-statuses";
+import { useHiddenStatusIds } from "@/hooks/use-stage-statuses";
 import { useCustomColumns } from "@/hooks/use-custom-columns";
 import { useIsStaff } from "@/hooks/use-is-staff";
 import { useMyAgency } from "@/hooks/use-my-agency";

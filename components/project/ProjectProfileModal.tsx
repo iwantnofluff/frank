@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
@@ -18,7 +19,6 @@ import { errorMessage } from "@/lib/errors";
 import { DeletePermanentlyDialog } from "@/components/ui/DeletePermanentlyDialog";
 import { useMyMembership } from "@/hooks/use-my-membership";
 import { useProjectRoles, useSetProjectRole } from "@/hooks/use-project-roles";
-import { ProjectStatuses } from "@/components/project/ProjectStatuses";
 import { useTeamMembers } from "@/hooks/use-team-members";
 import { ROLE_LABELS, seesAllClients } from "@/lib/roles";
 
@@ -219,9 +219,14 @@ export function ProjectProfileModal({
           </p>
         </div>
 
-        {/* The steps within In Production and Internal Review (phase123). */}
+        {/* The steps within each stage: the client's, since phase151 (was
+            each project's own, phase123). */}
         <div>
-          <ProjectStatuses projectId={project.id} canManage={isAdmin} />
+          <div className="msection-h">Statuses</div>
+          <p className="msection-d">
+            This project uses {clientName}&rsquo;s statuses, set in its{" "}
+            <Link className="inlink" href={`/clients/${clientId}/settings/statuses`}>Client Settings</Link>.
+          </p>
         </div>
 
         {/* Its own part, so its line above is spaced as Progress's is

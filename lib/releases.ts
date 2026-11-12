@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.82.0",
+    date: "2026-11-12",
+    title: "Statuses for every stage, set once",
+    changes: [
+      "Statuses have moved out of each project's Settings into Settings → General → Statuses, one list your whole workspace uses. Every post kept its status.",
+      "Every stage can have statuses now, Concept, Client Review, Approved and Live too. Client Review's are for your team only: the client still sees Client Review.",
+      "A client can have its own statuses instead: in its Client Settings → Statuses, Use Its Own starts them as a copy of the workspace's, to change for that client alone. Use the Agency's goes back.",
+    ],
+  },
+  {
     version: "1.81.1",
     date: "2026-11-12",
     title: "No more losing a half-made post",

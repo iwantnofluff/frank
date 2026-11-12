@@ -5,7 +5,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { CreativeListRow } from "@/hooks/use-creatives";
 import { useCopyVersionsByCreative } from "@/hooks/use-copy-versions-by-creative";
 import { useAssetLinksByCreative } from "@/hooks/use-asset-links";
-import { useHiddenStatusIds, useProjectStatuses, type ProjectStatus } from "@/hooks/use-project-statuses";
+import { useHiddenStatusIds, useProjectStatuses, type StageStatus } from "@/hooks/use-stage-statuses";
 import { canApproveConcept } from "@/hooks/use-approve-concept";
 import { statusOptions } from "@/lib/project-statuses";
 import { exceptionLabel, isIdea, stageColor, stageLabel } from "@/lib/stage-labels";
@@ -188,7 +188,7 @@ function PostCard({
   post: CreativeListRow;
   delivery: "scheduled" | "continuous";
   // The project's statuses, for the team's pill; null for a client's.
-  statuses: ProjectStatus[] | undefined | null;
+  statuses: StageStatus[] | undefined | null;
   caption: string | null;
   stageText: string;
   assetLink: string | null;

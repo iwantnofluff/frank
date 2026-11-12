@@ -27,6 +27,9 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
       // How long read notifications are kept (phase90) and how far back
       // review links list Approved posts (phase92).
       { href: "/settings/general/preferences", label: "Preferences" },
+      // The statuses within each stage (phase151), every client's unless
+      // it has its own.
+      { href: "/settings/general/statuses", label: "Statuses" },
       // What Frank's support has done in the account (phase51), for Owners.
       { href: "/settings/general/support-activity", label: "Support Activity" },
       // Every version of Frank and what changed (direct instruction).

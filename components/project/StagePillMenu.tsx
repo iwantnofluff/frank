@@ -4,7 +4,7 @@ import { useState } from "react";
 import { PillMenu, type PillMenuItem } from "@/components/project/PillMenu";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useApproveConcept } from "@/hooks/use-approve-concept";
-import { useSetCreativeStage, type ProjectStatus } from "@/hooks/use-project-statuses";
+import { useSetCreativeStage, type StageStatus } from "@/hooks/use-stage-statuses";
 import { statusOptions } from "@/lib/project-statuses";
 import { STAGE_COUNT, exceptionLabel, stageLabel, type Exception } from "@/lib/stage-labels";
 
@@ -20,7 +20,7 @@ export function StagePillMenu({
   color,
 }: {
   post: { id: string; name: string; stage: number; status_id: string | null; exception: Exception | null };
-  statuses: ProjectStatus[] | undefined;
+  statuses: StageStatus[] | undefined;
   delivery: "scheduled" | "continuous";
   color: string;
 }) {

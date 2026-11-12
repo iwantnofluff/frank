@@ -112,6 +112,8 @@ async function sweepStepByStep(agencyId: string): Promise<void> {
     // phase126: a post's final asset link (goes with it anyway).
     ["creative_asset_links", () => admin.from("creative_asset_links").delete().eq("agency_id", agencyId)],
     ["creatives", () => admin.from("creatives").delete().eq("agency_id", agencyId)],
+    // The agency's and its clients' statuses (phase151), once no post is on one.
+    ["stage_statuses", () => admin.from("stage_statuses").delete().eq("agency_id", agencyId)],
     ["custom_columns", () => admin.from("custom_columns").delete().eq("agency_id", agencyId)],
     // References projects and memberships (phase46). Both cascade to it,
     // but swept by name so a failure here says so.

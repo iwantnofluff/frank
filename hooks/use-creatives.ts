@@ -10,7 +10,7 @@ export interface CreativeListRow {
   format: string | null;
   stage: number;
   exception: "changes_requested" | "rejected" | null;
-  // Its status within In Production or Internal Review (phase123).
+  // Its status within its stage (phase123, phase151).
   status_id: string | null;
   // The first of team_user_ids, kept by the database (phase87).
   lead_user_id: string | null;

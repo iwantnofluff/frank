@@ -30,6 +30,8 @@ export function clientSettingsSections(clientId: string, staff: boolean): Settin
         { href: `${base}/people`, label: "People" },
         // How Frank works for this client (phase70).
         { href: `${base}/preferences`, label: "Preferences" },
+        // The agency's statuses, or its own (phase151).
+        { href: `${base}/statuses`, label: "Statuses" },
       ],
     },
     knowledge,

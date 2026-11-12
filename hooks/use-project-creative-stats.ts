@@ -74,7 +74,7 @@ export function useProjectCreativeStats(clientId: string) {
           .is("archived_at", null),
         // Posts on a status that hides them (phase143) aren't counted. A
         // client reads no statuses, and sees no post in their stages.
-        supabase.from("project_statuses").select("id").in("project_id", projectIds).eq("hides_post", true),
+        supabase.from("stage_statuses").select("id").eq("hides_post", true),
       ]);
       if (creativesError) throw creativesError;
       if (hidingError) throw hidingError;

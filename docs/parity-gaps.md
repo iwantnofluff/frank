@@ -5179,6 +5179,54 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Statuses for the agency and its clients, in every stage (1.82.0, phase151, 2026-11-12)
+
+Direct instruction: the statuses within a stage should be set in the agency's and the client's Settings, not each project's; the agency's list is shared, a client can have its own, and every stage can have them. Decided directly:
+- **One list for the workspace:** Settings → General → Statuses. Every client uses it.
+- **A client can replace it:** Client Settings → Statuses, Use Its Own, starts a copy of the agency's for that client alone. The agency's later changes don't reach it. Use the Agency's goes back.
+- **Every stage:** Concept, Client Review, Approved and Live gained statuses. They start empty; In Production and Internal Review keep phase143's six.
+- **Existing lists:** every project on live still had the default list (confirmed directly), so posts kept their status by stage and name.
+
+**How it works** (phase151):
+- `stage_statuses` replaces `project_statuses`. `client_id` is null for the agency's list, and `clients.own_statuses` says which list a client uses.
+- A post's status is kept in step with its stage as before (phase124's rules), now for all six stages: the stage's first on entering it, or the stage alone if picked.
+- `set_client_own_statuses` copies the list, or goes back. It moves the client's posts by name, or to the stage's first, then removes its own list. A project moved to another client is re-pointed the same way.
+- These moves leave Last Activity alone, through `frank.quiet_status` in `creatives_stamp_update`.
+- Owners and Admins change the lists, as before. The team reads them, and a client reads none.
+- Project Settings now says whose statuses the project uses, linking to the client's.
+
+**Hiding posts:** only Concept, In Production and Internal Review statuses can hide their posts (a check constraint, and no switch for the others). A client can't read statuses, so a hidden post in Client Review, Approved or Live would still show to them while hidden from the team.
+
+**Client Review statuses are the team's only:** the client still sees Client Review, on the post, in the table and on a review link.
+
+**Not done:** a client's list doesn't follow later changes to the agency's. That's by design ("replace"), but there's no "copy the agency's changes across" button.
+
+**Verified**: phase151 was first run on staging inside a transaction and rolled back. All 28 posts with a status kept the same stage and name, with Last Activity unchanged. It was then applied to staging and checked through the service-role client:
+- 24 agency statuses (6 for each of the 4 workspaces).
+- `project_statuses` gone.
+- Every post's status on the new lists.
+
+The local test database was rebuilt from staging's structure. stage-statuses.spec (rewritten from project-statuses.spec, 3 tests) covers:
+- An agency's starting list, and the four empty stages.
+- Adding a status in Approved, with no hide switch there, and the database refusing to hide one.
+- Rename and Escape, moving a status, and a post entering Approved taking its first.
+- Removing a status with a post on it.
+- Project Settings' pointer.
+- A User reading the list but unable to change it, through the screen, the table and the switch function.
+- A client switching to its own list: a copy, the post on the copy, Last Activity unchanged, a rename for that client alone, and the post's pill showing it.
+- Switching back: the post moves to the stage's first, since "Paused" has no match.
+- Pills in every stage, including Client Review's status on the post and in the table.
+- A client seeing no statuses, even on a Client Review post that has one.
+
+hidden-statuses.spec now turns Cancel's switch off in Settings → Statuses. Both passed (4). Screenshots of the agency's page, a client's page before and after Use Its Own, the Client Review pill open on a post, and Project Settings were checked. Those screenshots led to padding inside each stage's panel and a link colour (`a.inlink`).
+
+**Full suite** on the local database: 361 passed, 2 failed.
+- admin-overview passed on rerun.
+- ask-frank's Show Me step failed in the suite and again on the rerun straight after, waiting for the walkthrough's first card. With logging added, the same steps passed, with the sample client ready (`/api/sample/ensure` 200) and no errors. The spec then passed 3 times in a row.
+- Nothing on its path reads statuses, so it's recorded as a flaky test, not a regression. Worth watching if it comes back.
+
+Unit tests (282), types, lint and the production build were clean.
+
 ## Closing the post window with unsaved work asks first (1.81.1, 2026-11-12)
 
 Direct instruction: clicking out of a new post with content in it should warn, either with another popup or a message in the window. I went with a popup, using the window's existing check, which until now only covered artwork not yet saved. Clicking outside, Escape, the corner X and Cancel all go through it.
