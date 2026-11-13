@@ -23,7 +23,10 @@ export async function POST(request: Request) {
   // email is: a team comment owes no email but may owe Slack. Its own step,
   // so a Slack failure never holds up the mail.
   try {
-    await deliverSlack(admin, { creativeId, originFor: (subdomain) => agencyOrigin(request, subdomain) });
+    await deliverSlack(admin, {
+      creativeId,
+      originFor: (subdomain) => (subdomain ? agencyOrigin(request, subdomain) : new URL(request.url).origin),
+    });
   } catch (e) {
     console.error("Slack delivery failed", e);
   }

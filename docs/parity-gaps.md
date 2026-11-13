@@ -5179,6 +5179,54 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Slack: mentions tagged in the channel, and a List per project (1.85.0, phase155, 2026-11-13)
+
+Direct instruction, two follow-ups to 1.84.0:
+- **Mentions:** someone mentioned in a comment should get notified in Slack. Decided directly: tagged in the project's channel post.
+- **Lists:** "a ticket in List". Decided directly: connect a Slack List to each project, taking the same things as its channel, with its own switches.
+
+**Mentions:**
+- When a comment going to the channel mentions people, the post gains "Mentions: @Raj Rana, …", and the plain text Slack notifies from starts with the tags.
+- Each person is found with `users.lookupByEmail`, once per send; someone Slack doesn't know by that email shows by name.
+- A comment that doesn't go to the channel (no channel, or a Private one switched off) tags nobody, as decided.
+
+**Lists:**
+- **Connecting:** Slack's Lists API (public since September 2025) has no way to list a workspace's Lists, so a List is connected by pasting its link (`…/lists/T…/F…`). `/api/connections/slack/list` (Owners and Admins) reads its title and columns with `slackLists.items.list` (include_list), falling back to `slackLists.items.info` on its first item, where Slack documents the shape.
+- **Columns:** Frank keeps the ones it fills (`matchListColumns`): the first column for the headline, and text or link columns named Post, Client, Comment, Link or From.
+- **Storage:** `project_slack_list` holds it, with the three switches.
+- **What's owed:** `slack_outbox` gained a `target`, and `slack_queue` owes the channel and the List each by their own switches.
+- **Adding items:** `deliverSlack` adds items with `slackLists.items.create`, filling rich-text and link cells. A refusal shows on the List's part of Project Settings: can't reach it ("Share it with Frank in Slack"), gone, or a permission missing.
+
+**Permissions:** the app now asks for `users:read`, `users:read.email`, `lists:read` and `lists:write`. Frank's Slack app has to list them (updated manifest), and each workspace reconnects once.
+
+**Unverified until tried on a real workspace:**
+- Whether `include_list` returns the List's columns in the shape documented for items.info.
+- Whether a List has to be shared with Frank first.
+- Both have their own error message.
+- Lists need a paid Slack plan.
+
+**Verified:** phase155 was rehearsed on staging, then applied there and to the local database, with the sweep updated.
+
+`lib/slack/message.test.ts` gained 2 tests (6 in all):
+- Tags for those Slack knows and names for the rest, the tags leading.
+- A List's columns found by name, with select and user columns left alone, and cells in rich text or as a link. An approval leaves the Comment cell empty.
+
+`slack.spec.ts` gained 2 tests (5 in all, against the stand-in Slack, which now answers lookups and Lists):
+- **Mentions:** a comment from the post's page mentioning two new Admins posts "Mentions: <@U_RAJ>, Mira Untagged", the notification text starting with the tag.
+- **A project's List:**
+  - A link that isn't a List's, and one Frank can't open, each say so.
+  - A real one connects as "Adding items to Client Feedback / Fills its first column, Client, Comment, Link".
+  - A client's change request on a review link adds one item with the workspace's key: headline, client, words, a link to the comment, and the Status column untouched.
+  - With Client activity off for the List, nothing more is added.
+
+The scopes asserted in the Add to Slack test were updated. The channel's switches are now in a labelled group, to tell them from the List's. Screenshots of Project Settings, with a List being connected and connected, were checked.
+
+**Full suite** on the local database: 370 passed, 1 failed. The new mention test got "Mentions: Mira Untagged, <@U_RAJ>", because the database keeps who's mentioned in its own order. They're now listed in the order the comment names them.
+
+The same message showed a second problem: the test workspace has no address of its own, so Open in Frank's link had no site address, which Slack refuses. A link now always falls back to Frank's own address (the request's, or the root in the daily run). The tests check for a whole address.
+
+The stand-in Slack now waits for its port when the file runs twice at once (`--repeat-each`). The Slack tests then passed twice over (10).
+
 ## Slack: each project's activity in a channel (1.84.0, phase154, 2026-11-13)
 
 Direct instruction: send notifications to a specific Slack channel for each project. Decided directly:

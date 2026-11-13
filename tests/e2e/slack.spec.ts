@@ -24,6 +24,8 @@ interface Posted {
   auth: string | undefined;
 }
 const posted: Posted[] = [];
+// List items added, as Slack received them.
+const listed: { list_id: string; initial_fields: { column_id: string; rich_text?: unknown; link?: unknown }[]; auth: string | undefined }[] = [];
 let slack: http.Server;
 
 test.beforeAll(async () => {
@@ -44,6 +46,38 @@ test.beforeAll(async () => {
             ],
           }),
         );
+      } else if (path === "/api/users.lookupByEmail") {
+        // Known to Slack: anyone whose address says so.
+        const email = new URL(req.url!, "http://slack").searchParams.get("email") ?? "";
+        res.end(JSON.stringify(email.includes("in-slack") ? { ok: true, user: { id: "U_RAJ" } } : { ok: false, error: "users_not_found" }));
+      } else if (path === "/api/slackLists.items.list") {
+        const { list_id } = JSON.parse(body);
+        if (String(list_id).startsWith("FDENIED")) {
+          res.end(JSON.stringify({ ok: false, error: "access_denied" }));
+          return;
+        }
+        res.end(
+          JSON.stringify({
+            ok: true,
+            items: [],
+            list: {
+              title: "Client Feedback",
+              list_metadata: {
+                schema: [
+                  { id: "Col_T", name: "Task", key: "task", type: "text", is_primary_column: true },
+                  { id: "Col_C", name: "Client", key: "client", type: "text" },
+                  { id: "Col_L", name: "Link", key: "link", type: "link" },
+                  { id: "Col_W", name: "Comment", key: "comment", type: "rich_text" },
+                  { id: "Col_S", name: "Status", key: "status", type: "select" },
+                ],
+              },
+            },
+          }),
+        );
+      } else if (path === "/api/slackLists.items.create") {
+        const item = JSON.parse(body);
+        listed.push({ ...item, auth: req.headers.authorization });
+        res.end(JSON.stringify({ ok: true, item: { id: "Rec1" } }));
       } else if (path === "/api/chat.postMessage") {
         const msg = JSON.parse(body);
         if (String(msg.channel).startsWith("C_NOTIN")) {
@@ -58,7 +92,17 @@ test.beforeAll(async () => {
       }
     });
   });
-  await new Promise<void>((resolve) => slack.listen(3199, resolve));
+  // One stand-in at a time on the port the test app calls: a second run of
+  // this file (--repeat-each) waits for the first to close it.
+  for (let i = 0; ; i++) {
+    const err = await new Promise<NodeJS.ErrnoException | null>((resolve) => {
+      slack.once("error", resolve);
+      slack.listen(3199, () => resolve(null));
+    });
+    if (!err) break;
+    if (err.code !== "EADDRINUSE" || i > 120) throw err;
+    await new Promise((r) => setTimeout(r, 500));
+  }
 });
 test.afterAll(async () => {
   await new Promise((resolve) => slack.close(resolve));
@@ -103,7 +147,9 @@ test("an Owner or Admin connects Slack, and chooses a project's channel and what
   const to = new URL(start.headers().location);
   expect(to.origin + to.pathname).toBe("http://localhost:3199/oauth/v2/authorize");
   expect(to.searchParams.get("client_id")).toBe("e2e-client");
-  expect(to.searchParams.get("scope")).toBe("chat:write,chat:write.public,channels:read,groups:read");
+  expect(to.searchParams.get("scope")).toBe(
+    "chat:write,chat:write.public,channels:read,groups:read,users:read,users:read.email,lists:read,lists:write",
+  );
   expect(to.searchParams.get("redirect_uri")).toMatch(/\/api\/connections\/slack\/callback$/);
   expect(to.searchParams.get("state")).toBeTruthy();
 
@@ -129,10 +175,11 @@ test("an Owner or Admin connects Slack, and chooses a project's channel and what
     include_private: true,
   });
   // Private comments off; Team comments off greys it out.
-  await page.getByRole("checkbox", { name: /Include Private comments/ }).click();
+  const toChannel = page.getByRole("group", { name: "What goes to the channel" });
+  await toChannel.getByRole("checkbox", { name: /Include Private comments/ }).click();
   await expect.poll(async () => (await admin.from("project_slack").select("include_private").eq("project_id", frank.projectId).single()).data!.include_private).toBe(false);
-  await page.getByRole("checkbox", { name: /Team comments/ }).click();
-  await expect(page.getByRole("checkbox", { name: /Include Private comments/ })).toBeDisabled();
+  await toChannel.getByRole("checkbox", { name: /Team comments/ }).click();
+  await expect(toChannel.getByRole("checkbox", { name: /Include Private comments/ })).toBeDisabled();
 
   // A User sees the channel and can't change it, here or in the database.
   const staffId = (await admin.from("users").select("id").eq("email", frank.staffEmail).single()).data!.id;
@@ -174,7 +221,8 @@ test("the client's activity and the team's comments post to the project's channe
   expect(first.blocks[1].text!.text).toBe(">Colours look off on mobile");
   expect(first.auth).toBe("Bearer xoxb-e2e-2");
   const button = first.blocks.at(-1)!.elements![0];
-  expect(button.url).toMatch(new RegExp(`/creatives/${frank.creativeId}\\?comment=`));
+  // A whole address: Slack refuses a button without one.
+  expect(button.url).toMatch(new RegExp(`^https?://[^/]+/creatives/${frank.creativeId}\\?comment=`));
   await post("Between us: the client will push back", true);
   await expect.poll(() => onChannel(channel).length, { timeout: 15_000 }).toBe(2);
   expect(JSON.stringify(onChannel(channel)[1].blocks)).toContain("Private comment, for the team");
@@ -228,3 +276,105 @@ test("a channel Frank isn't in says so in Project Settings", async ({ page, fran
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   await expect(page.getByText("Frank isn't in the channel. Invite it with /invite @Frank there.")).toBeVisible({ timeout: 20_000 });
 });
+
+// Whoever's mentioned is tagged in the channel's post (phase155, direct
+// instruction), found in Slack by their email; their name where Slack
+// doesn't know it.
+test("a mention in a comment tags the person in the channel's post", async ({ page, frank }) => {
+  test.setTimeout(120_000);
+  const channel = `C_TAG_${Date.now()}`;
+  await connect(frank.agencyId, "xoxb-e2e-4");
+  await admin.from("project_slack").insert({ project_id: frank.projectId, channel_id: channel, channel_name: "q4-social" });
+  // Two more Admins (on every project's team): one Slack knows, one not.
+  const made: string[] = [];
+  const teammate = async (name: string, email: string) => {
+    const { data: u } = await admin.auth.admin.createUser({ email, password: "E2e-Slack-Tag-1234!", email_confirm: true });
+    made.push(u.user!.id);
+    await admin.from("users").insert({ id: u.user!.id, email, name });
+    await admin.from("memberships").insert({ agency_id: frank.agencyId, user_id: u.user!.id, role: "admin", accepted_at: new Date().toISOString() });
+    return u.user!.id;
+  };
+  const stamp = Date.now();
+  try {
+    await teammate("Raj Tagged", `e2e-in-slack-${stamp}@example.invalid`);
+    await teammate("Mira Untagged", `e2e-elsewhere-${stamp}@example.invalid`);
+    await frank.loginAsStaff(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
+    const box = page.locator("aside.cmts > .composer textarea");
+    await expect(box).toBeVisible({ timeout: 20_000 });
+    await box.pressSequentially("Can you check this @Raj");
+    await page.getByRole("option", { name: "@Raj Tagged" }).click();
+    await box.pressSequentially("and @Mira");
+    await page.getByRole("option", { name: "@Mira Untagged" }).click();
+    const priv = page.locator("aside.cmts > .composer").getByRole("checkbox", { name: "Private" });
+    if (await priv.isChecked()) await priv.click();
+    await page.locator("aside.cmts > .composer").getByRole("button", { name: "Post", exact: true }).click();
+    await expect.poll(() => onChannel(channel).length, { timeout: 15_000 }).toBe(1);
+    const msg = onChannel(channel)[0];
+    expect(JSON.stringify(msg.blocks)).toContain("Mentions: <@U_RAJ>, Mira Untagged");
+    expect(msg.text.startsWith("<@U_RAJ> E2E Staff")).toBe(true);
+  } finally {
+    for (const id of made) {
+      await admin.from("notifications").delete().eq("user_id", id);
+      await admin.from("memberships").delete().eq("user_id", id);
+      await admin.from("users").delete().eq("id", id);
+      await admin.auth.admin.deleteUser(id);
+    }
+  }
+});
+
+// A List for the project (phase155, direct instruction): connected by its
+// link, its columns found by name, and each thing switched on added as an
+// item; a List Frank can't reach says so.
+test("a project's List takes an item for each thing switched on", async ({ page, frank }) => {
+  test.setTimeout(120_000);
+  await connect(frank.agencyId, "xoxb-e2e-5");
+  await frank.loginAsStaff(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(`${APP_URL}/projects/${frank.projectId}`);
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  const linkBox = page.getByLabel("Slack List link");
+  await expect(linkBox).toBeVisible({ timeout: 20_000 });
+  // Not a List's link, then one Frank can't open.
+  await linkBox.fill("https://example.com/not-a-list");
+  await page.getByRole("button", { name: "Connect List" }).click();
+  await expect(page.getByText("That isn't a List's link.", { exact: false })).toBeVisible();
+  await linkBox.fill("https://e2e.slack.com/lists/T0E2E/FDENIED123");
+  await page.getByRole("button", { name: "Connect List" }).click();
+  await expect(page.getByText("Frank can't open that List. Share it with Frank in Slack, then try again.")).toBeVisible();
+
+  const listId = `FLIST${Date.now().toString().slice(-8)}`;
+  await linkBox.fill(`https://e2e.slack.com/lists/T0E2E/${listId}`);
+  await page.getByRole("button", { name: "Connect List" }).click();
+  await expect(page.getByText("Adding items to Client Feedback")).toBeVisible();
+  await expect(page.getByText("Fills its first column, Client, Comment, Link")).toBeVisible();
+  const toList = page.getByRole("group", { name: "What goes to the List" });
+  await expect(toList.getByRole("checkbox", { name: /Client activity/ })).toBeChecked();
+
+  // The client's change request on a review link: an item, each cell filled.
+  await frank.createClientContact("Priya Client", "priya@example.invalid");
+  const token = await frank.createSharedLink({});
+  const who = { p_token: token, p_passcode: null, p_creative_id: frank.creativeId, p_guest_name: "Priya Client", p_guest_email: "priya@example.invalid" };
+  expect((await anon().rpc("submit_shared_request_changes", { ...who, p_body: "Swap the photo" })).data).toMatchObject({ status: "ok" });
+  await sendNow(frank.creativeId);
+  const mine = () => listed.filter((i) => i.list_id === listId);
+  await expect.poll(() => mine().length, { timeout: 15_000 }).toBe(1);
+  const item = mine()[0];
+  expect(item.auth).toBe("Bearer xoxb-e2e-5");
+  const cell = (id: string) => JSON.stringify(item.initial_fields.find((f) => f.column_id === id) ?? null);
+  expect(cell("Col_T")).toContain("Priya Client (E2E Test Client) asked for changes on E2E Test Creative");
+  expect(cell("Col_C")).toContain("E2E Test Client");
+  expect(cell("Col_W")).toContain("Swap the photo");
+  expect(cell("Col_L")).toMatch(new RegExp(`"original_url":"https?://[^"]+/creatives/${frank.creativeId}\\?comment=`));
+  expect(cell("Col_S")).toBe("null");
+
+  // Client activity off for the List: nothing more is added.
+  await toList.getByRole("checkbox", { name: /Client activity/ }).click();
+  await expect.poll(async () => (await admin.from("project_slack_list").select("client_activity").eq("project_id", frank.projectId).single()).data!.client_activity).toBe(false);
+  expect((await anon().rpc("submit_shared_comment", { ...who, p_body: "One more thing" })).data).toMatchObject({ status: "ok" });
+  await sendNow(frank.creativeId);
+  await page.waitForTimeout(2000);
+  expect(mine()).toHaveLength(1);
+});
+

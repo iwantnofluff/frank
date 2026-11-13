@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.85.0",
+    date: "2026-11-13",
+    title: "Slack mentions and Lists",
+    changes: [
+      "Anyone @mentioned in a comment posted to a project's Slack channel is now tagged there, so Slack lets them know.",
+      "A project can add its client activity and team comments to a Slack List as items: paste the List's link in the project's Settings, under Slack.",
+      "To turn these on, an Owner or Admin reconnects Slack once in Settings → Connections → Slack.",
+    ],
+  },
+  {
     version: "1.84.0",
     date: "2026-11-13",
     title: "Projects post to Slack",

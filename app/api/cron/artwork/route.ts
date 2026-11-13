@@ -31,7 +31,7 @@ export async function GET(request: Request) {
   // Anything a Slack channel is still owed (phase154): a post whose page
   // closed before it sent, or Slack briefly away. Its own step too.
   try {
-    await deliverSlack(admin, { originFor: (subdomain) => `https://${subdomain}.${ROOT_DOMAIN}` });
+    await deliverSlack(admin, { originFor: (subdomain) => `https://${subdomain ? `${subdomain}.` : ""}${ROOT_DOMAIN}` });
   } catch (e) {
     console.error("Slack catch-up failed", e);
   }
