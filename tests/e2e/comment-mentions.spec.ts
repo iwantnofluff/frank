@@ -178,3 +178,33 @@ test("a mention pops up for whoever's mentioned, live and on their next visit", 
     await raj.remove();
   }
 });
+
+// Several waiting (direct instruction): a stack behind the card, "1 of 3",
+// arrows to the others, Dismiss for the one showing and Dismiss All.
+test("several mentions show as a stack, one at a time, with how many", async ({ page, frank }) => {
+  test.setTimeout(90_000);
+  const staffId = (await admin.from("users").select("id").eq("email", frank.staffEmail).single()).data!.id;
+  for (const words of ["Oldest mention", "Middle mention", "Newest mention"]) {
+    const commentId = await frank.insertCommentAsStaff(words, "public");
+    await admin.from("notifications").insert({ agency_id: frank.agencyId, user_id: staffId, kind: "comment_mention", creative_id: frank.creativeId, comment_id: commentId });
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  await frank.loginAsStaff(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const pop = page.locator(".mentionpop");
+  await expect(pop.locator(".mp-count")).toHaveText("1 of 3", { timeout: 20_000 });
+  await expect(pop).toHaveClass(/stacked-2/);
+  await expect(pop.locator(".mp-quote")).toHaveText("Newest mention");
+  await expect(pop.getByRole("button", { name: "Newer mention" })).toBeDisabled();
+  await pop.getByRole("button", { name: "Older mention" }).click();
+  await expect(pop.locator(".mp-count")).toHaveText("2 of 3");
+  await expect(pop.locator(".mp-quote")).toHaveText("Middle mention");
+  // Dismiss the one showing: two left, the next in its place.
+  await pop.getByRole("button", { name: "Dismiss", exact: true }).click();
+  await expect(pop.locator(".mp-count")).toHaveText("2 of 2");
+  await expect(pop.locator(".mp-quote")).toHaveText("Oldest mention");
+  await expect(pop).not.toHaveClass(/stacked-2/);
+  await expect(pop).toHaveClass(/stacked/);
+  await pop.getByRole("button", { name: "Dismiss All" }).click();
+  await expect(pop).toHaveCount(0);
+});

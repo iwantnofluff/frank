@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useLiveUpdates } from "@/hooks/use-live-updates";
@@ -58,24 +58,59 @@ export function MentionPop() {
   const stored = useSyncExternalStore(subscribe, readStore, () => null);
   const gone = stored === null ? null : (JSON.parse(stored) as string[]);
 
+  // Which of several is showing (direct instruction: a stack, "1 of 4"),
+  // newest first; it stays in range as they're put away.
+  const [at, setAt] = useState(0);
+
   const waiting = gone === null ? [] : (data ?? []).filter((n) => !n.read_at && !gone.includes(n.id) && hrefOf(n) !== null);
-  const n = waiting[0];
+  const index = Math.min(at, Math.max(waiting.length - 1, 0));
+  const n = waiting[index];
   if (!n) return null;
+  const many = waiting.length > 1;
   const href = hrefOf(n)!;
   const who = n.kind === "comment_mention" ? n.comment!.who : n.mention!.who;
   const where = n.kind === "comment_mention" ? n.creative!.name : `${n.mention!.project.name}'s Discussion`;
   const body = n.kind === "comment_mention" ? n.comment!.body : n.mention!.body;
 
   const dismiss = () => writeStore([...gone!, n.id].slice(-200));
+  const dismissAll = () => writeStore([...gone!, ...waiting.map((w) => w.id)].slice(-200));
 
   return (
-    <div className="mentionpop" role="status" aria-label="You were mentioned">
+    <div
+      className={`mentionpop${many ? " stacked" : ""}${waiting.length > 2 ? " stacked-2" : ""}`}
+      role="status"
+      aria-label={many ? `You were mentioned, ${index + 1} of ${waiting.length}` : "You were mentioned"}
+    >
+      {/* Several: which this is, and the way to the others. */}
+      {many && (
+        <div className="mp-nav">
+          <span className="mp-count">
+            {index + 1} of {waiting.length}
+          </span>
+          <span className="mp-arrows">
+            <button type="button" aria-label="Newer mention" disabled={index === 0} onClick={() => setAt(index - 1)}>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+            <button type="button" aria-label="Older mention" disabled={index === waiting.length - 1} onClick={() => setAt(index + 1)}>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </button>
+          </span>
+        </div>
+      )}
       <div className="mp-text">
         <b>{who}</b> mentioned you on <b>{where}</b>
         <span className="mp-quote">{body}</span>
-        {waiting.length > 1 && <span className="mp-more">and {waiting.length - 1} more in your bell</span>}
       </div>
       <div className="mp-acts">
+        {many && (
+          <button type="button" className="pr-link mp-all" onClick={dismissAll}>
+            Dismiss All
+          </button>
+        )}
         <button type="button" className="btn sm" onClick={dismiss}>
           Dismiss
         </button>

@@ -5179,6 +5179,23 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Mention pop-ups stack up (1.87.1, 2026-11-13)
+
+Direct instruction: with more than one mention waiting, the bottom-right pop-up shows a stack and how many.
+- **The stack:** MentionPop now shows a stack: one card edge behind it for two, two for three or more (`::before`/`::after`). Each is only as tall as the strip that shows, since the pop-up is its own layer and anything overlapping would draw over the card.
+- **Lifted:** the pop-up sits higher while stacked, so the edges have room.
+- **Count and arrows:** "1 of 3" at the top, with arrows to the newer and older ones (disabled at each end).
+- **Dismiss and Dismiss All:** Dismiss puts away the one showing, and the next takes its place. Dismiss All puts them all away. The bell keeps every one either way.
+- **Removed:** "and N more in your bell".
+
+**Verified:** comment-mentions.spec gained a test with three mentions waiting:
+- "1 of 3", the deeper stack and the newest showing, with Newer disabled.
+- Older goes to "2 of 3".
+- Dismiss leaves "2 of 2", showing the oldest, with the shallower stack.
+- Dismiss All clears it.
+
+The file passed (4). Screenshots with three and two waiting were checked; the first had the edges too faint, so they were made a shade greyer, more outlined and taller.
+
 ## Earlier versions, clearly marked (1.87.0, 2026-11-13)
 
 Direct instruction, three parts:

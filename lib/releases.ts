@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.87.1",
+    date: "2026-11-13",
+    title: "Mentions stack up",
+    changes: [
+      "With more than one mention waiting, the pop-up shows as a stack with \"1 of 3\" at the top and arrows to go through them. Dismiss puts away the one showing; Dismiss All puts them all away.",
+    ],
+  },
+  {
     version: "1.87.0",
     date: "2026-11-13",
     title: "Earlier versions, clearly marked",
