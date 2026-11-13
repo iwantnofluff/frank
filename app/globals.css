@@ -3663,6 +3663,61 @@ select.sort:hover {
   font-size: 12px;
   color: var(--muted);
 }
+/* The format, then Old Version in red after a thin separator while an
+   earlier artwork or copy version is showing (direct instruction). */
+.pnav-fmtline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+}
+.pnav-sep {
+  width: 1px;
+  height: 11px;
+  background: var(--line-2);
+}
+.pnav-old {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--rose);
+}
+/* A picker whose version a comment just brought up, lit for a moment. */
+.vsel.vflash select {
+  animation: vflash 2.2s var(--ease-out);
+}
+@keyframes vflash {
+  0%,
+  60% {
+    box-shadow: 0 0 0 3px var(--action);
+    border-color: var(--action);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vsel.vflash select {
+    animation: none;
+    box-shadow: 0 0 0 3px var(--action);
+  }
+}
+/* A comment made on an earlier version, after its Public or Private pill
+   (direct instruction). */
+.cmt-f .vtag-old {
+  font-size: 11.2px;
+  font-weight: 600;
+  color: var(--rose);
+  white-space: nowrap;
+}
+/* An earlier version in the Creative and Copy pickers: red, the picker too
+   while one is chosen; the newest keeps the usual colour in the list. */
+.vsel select.vold,
+.vsel option.vold {
+  color: var(--rose);
+}
+.vsel option.vnow {
+  color: var(--ink);
+}
 /* A post's formats as buttons (FormatSwitch): the one it's shown as is
    marked. */
 .fmtswitch button {

@@ -146,6 +146,13 @@ export function CreativeReviewPage({ id }: { id: string }) {
     null,
   );
   const [copyVersionId, setCopyVersionId] = useState<string | null>(null);
+  // The picker(s) a comment's version was just shown in, lit for a moment.
+  const [flash, setFlash] = useState<{ which: ("creative" | "copy")[]; at: number } | null>(null);
+  useEffect(() => {
+    if (!flash) return;
+    const t = setTimeout(() => setFlash(null), 2200);
+    return () => clearTimeout(t);
+  }, [flash]);
   const [shareOpen, setShareOpen] = useState(false);
   // A new post in the same project, from here (direct instruction): the
   // window only, not the table's Row option.
@@ -250,6 +257,10 @@ export function CreativeReviewPage({ id }: { id: string }) {
     copyVersions?.find((v) => v.id === copyVersionId) ??
     copyVersions?.[0] ??
     null;
+  // An earlier version showing (newest first in each list): Old Version in
+  // red above the phone, and in its picker (direct instruction).
+  const oldCreative = !!activeCreativeVersion && !!creativeVersions?.length && activeCreativeVersion.id !== creativeVersions[0].id;
+  const oldCopy = !!activeCopyVersion && !!copyVersions?.length && activeCopyVersion.id !== copyVersions[0].id;
 
   // A carousel's slides (a single upload is one slide). The arrows move
   // between them, one place per slide even if one is still empty; a new
@@ -296,7 +307,20 @@ export function CreativeReviewPage({ id }: { id: string }) {
   // at a moment in a video goes to that moment.
   function highlightComment(commentId: string | null) {
     setHighlightedCommentId(commentId);
-    const anchor = (allComments ?? []).find((c) => c.id === commentId)?.anchor;
+    const picked = (allComments ?? []).find((c) => c.id === commentId);
+    // Made on another version: that version shows, its picker lit up for a
+    // moment (direct instruction).
+    const lit: ("creative" | "copy")[] = [];
+    if (picked?.creative_version_id && picked.creative_version_id !== activeCreativeVersion?.id && creativeVersions?.some((v) => v.id === picked.creative_version_id)) {
+      setCreativeVersionId(picked.creative_version_id);
+      lit.push("creative");
+    }
+    if (picked?.copy_version_id && picked.copy_version_id !== activeCopyVersion?.id && copyVersions?.some((v) => v.id === picked.copy_version_id)) {
+      setCopyVersionId(picked.copy_version_id);
+      lit.push("copy");
+    }
+    if (lit.length) setFlash({ which: lit, at: Date.now() });
+    const anchor = picked?.anchor;
     const at = commentTime(anchor);
     if (at !== null) setVideoSeek({ t: at, nonce: Date.now() });
     // Any anchor can sit on a slide: a pin, a box, a moment in a video, or
@@ -645,6 +669,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
       videoMoment={isVideo ? videoMoment : null}
       videoSlide={isVideo && frames.length > 1 ? slidePosition : null}
       creativeVersionId={activeCreativeVersion?.id ?? null}
+      copyVersionId={activeCopyVersion?.id ?? null}
       draft={draft}
       onClearDraft={() => setPlaced(null)}
     />
@@ -895,17 +920,18 @@ export function CreativeReviewPage({ id }: { id: string }) {
             corner, opposite the sections (direct instruction: to give the
             pills and buttons room). */}
         <div className="vselbar">
-              <div className="vsel">
+              <div className={`vsel${flash?.which.includes("creative") ? " vflash" : ""}`} key={`c${flash?.at ?? 0}`}>
                 <label htmlFor="vCreative">Creative</label>
                 <select
                   id="vCreative"
                   value={activeCreativeVersion?.id ?? ""}
                   onChange={(e) => setCreativeVersionId(e.target.value)}
                   disabled={!creativeVersions?.length}
+                  className={oldCreative ? "vold" : undefined}
                 >
                   {creativeVersions?.length ? (
-                    creativeVersions.map((v) => (
-                      <option key={v.id} value={v.id}>
+                    creativeVersions.map((v, i) => (
+                      <option key={v.id} value={v.id} className={i > 0 ? "vold" : "vnow"}>
                         V{v.version_no}
                       </option>
                     ))
@@ -929,17 +955,18 @@ export function CreativeReviewPage({ id }: { id: string }) {
                   </select>
                 </div>
               )}
-              <div className="vsel">
+              <div className={`vsel${flash?.which.includes("copy") ? " vflash" : ""}`} key={`p${flash?.at ?? 0}`}>
                 <label htmlFor="vCopy">Copy</label>
                 <select
                   id="vCopy"
                   value={activeCopyVersion?.id ?? ""}
                   onChange={(e) => setCopyVersionId(e.target.value)}
                   disabled={!copyVersions?.length}
+                  className={oldCopy ? "vold" : undefined}
                 >
                   {copyVersions?.length ? (
-                    copyVersions.map((v) => (
-                      <option key={v.id} value={v.id}>
+                    copyVersions.map((v, i) => (
+                      <option key={v.id} value={v.id} className={i > 0 ? "vold" : "vnow"}>
                         V{v.version_no}
                       </option>
                     ))
@@ -1003,6 +1030,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
                 shownFormat={shownFormat}
                 onShowFormat={setViewFormat}
                 wide={tablet}
+                oldVersion={oldCreative || oldCopy}
               >
               {/* 15% smaller, with the post's date and title above it
                   (direct instruction), to make room beside it. */}

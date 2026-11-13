@@ -49,6 +49,7 @@ export function PostNeighbours({
   shownFormat,
   onShowFormat,
   wide = false,
+  oldVersion = false,
   children,
 }: {
   creativeId: string;
@@ -67,6 +68,8 @@ export function PostNeighbours({
   onShowFormat?: (format: string) => void;
   // An iPad between them: the posts either side shrink to their arrows.
   wide?: boolean;
+  // An earlier artwork or copy version is showing.
+  oldVersion?: boolean;
   children: React.ReactNode;
 }) {
   const { data: rows } = useCreatives(projectId);
@@ -136,8 +139,18 @@ export function PostNeighbours({
             )}
           </span>
           <b>{name}</b>
-          {/* Its type and format too (direct instruction). */}
-          <FormatSwitch className="pnav-fmt" formats={formats} shown={shownFormat ?? formats[0] ?? null} onShow={onShowFormat} />
+          {/* Its type and format too (direct instruction), and Old Version in
+              red after a separator while an earlier artwork or copy version
+              is showing (direct instruction). */}
+          <span className="pnav-fmtline">
+            <FormatSwitch className="pnav-fmt" formats={formats} shown={shownFormat ?? formats[0] ?? null} onShow={onShowFormat} />
+            {oldVersion && (
+              <>
+                <span className="pnav-sep" aria-hidden="true" />
+                <span className="pnav-old">Old Version</span>
+              </>
+            )}
+          </span>
         </div>
         {children}
       </div>

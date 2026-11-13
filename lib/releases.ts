@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.87.0",
+    date: "2026-11-13",
+    title: "Earlier versions, clearly marked",
+    changes: [
+      "A comment made on an earlier version of the artwork or copy now says which, such as Creative V1, after its Public or Private label.",
+      "Clicking a comment made on another version brings that version up, and its Creative or Copy picker lights up for a moment.",
+      "While an earlier version is showing, Old Version appears in red above the phone, after the format, and the picker shows it in red.",
+    ],
+  },
+  {
     version: "1.86.2",
     date: "2026-11-13",
     title: "Slack updates as their own messages again",

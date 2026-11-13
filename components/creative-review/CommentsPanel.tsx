@@ -1,6 +1,8 @@
 "use client";
 
 import { canApproveConcept, useApproveConcept } from "@/hooks/use-approve-concept";
+import { useCreativeVersions } from "@/hooks/use-creative-versions";
+import { useCopyVersions } from "@/hooks/use-copy-versions";
 import { errorMessage } from "@/lib/errors";
 import { CommentWhen } from "./CommentWhen";
 import { CommentBody, EditCommentButton } from "./CommentBody";
@@ -354,6 +356,7 @@ function CommentCard({
   currentUserId,
   isHighlighted,
   onSelect,
+  selectable = false,
   onReply,
   onToggleResolved,
   onToggleVisibility,
@@ -361,6 +364,7 @@ function CommentCard({
   onDelete,
   photos,
   fromName,
+  versionTag = null,
   clientName,
   team,
 }: {
@@ -372,6 +376,8 @@ function CommentCard({
   currentUserId: string | undefined;
   isHighlighted: boolean;
   onSelect: () => void;
+  // Picked by a click: pinned, on words, or made on another version.
+  selectable?: boolean;
   onReply: (
     body: string,
     visibility: "private" | "public",
@@ -388,6 +394,8 @@ function CommentCard({
   photos: Record<string, string> | undefined;
   // The agency's or the client's name, for after a comment's author.
   fromName: (c: CommentRow) => string | null;
+  // Made on an earlier version: which (direct instruction), after the pill.
+  versionTag?: string | null;
   // For the team, to log a reply the client gave outside Frank.
   clientName: string | null;
 }) {
@@ -413,8 +421,8 @@ function CommentCard({
     <div
       id={`cmt-${thread.id}`}
       className={`cmt${thread.resolved_at ? " resolved" : ""}${isHighlighted ? " act" : ""}${thread.visibility === "private" ? " internal" : ""}${pending ? " pending" : ""}`}
-      onClick={thread.anchor ? onSelect : undefined}
-      style={thread.anchor ? { cursor: "pointer" } : undefined}
+      onClick={thread.anchor || selectable ? onSelect : undefined}
+      style={thread.anchor || selectable ? { cursor: "pointer" } : undefined}
     >
       <div className="cmt-h">
         <PersonAvatar
@@ -452,6 +460,7 @@ function CommentCard({
             onToggleVisibility(thread.id, thread.visibility === "private" ? "public" : "private")
           }
         />
+        {versionTag && <span className="vtag-old" title="Made on an earlier version">{versionTag}</span>}
         {!pending && <div className="acts">
           <button type="button" onClick={() => setReplying(!replying)}>
             Reply
@@ -572,6 +581,7 @@ export function CommentsPanel({
   videoMoment = null,
   videoSlide = null,
   creativeVersionId = null,
+  copyVersionId = null,
   draft = null,
   onClearDraft,
 }: {
@@ -585,6 +595,8 @@ export function CommentsPanel({
   // The carousel slide that video is, so the comment stays on it.
   videoSlide?: number | null;
   creativeVersionId?: string | null;
+  // The copy version showing, to tell a comment made on another one.
+  copyVersionId?: string | null;
   highlightedCommentId?: string | null;
   onHighlight?: (commentId: string | null) => void;
   // Pin/Region live here (above the composer) rather than the page's own
@@ -601,6 +613,23 @@ export function CommentsPanel({
   const approve = useApproveConcept();
   const clientName = creative?.projects?.clients?.name ?? null;
   const fromName = (c: CommentRow) => (c.from === "agency" ? (agency?.name ?? null) : clientName);
+  // The versions a comment was made on, named where either is earlier than
+  // the newest (direct instruction): "Creative V1", "Copy V2", or both.
+  const { data: creativeVersions } = useCreativeVersions(creativeId);
+  const { data: copyVersions } = useCopyVersions(creativeId);
+  const versionTagOf = (c: CommentRow): string | null => {
+    const parts: string[] = [];
+    const art = c.creative_version_id ? creativeVersions?.find((v) => v.id === c.creative_version_id) : undefined;
+    if (art && creativeVersions && art.id !== creativeVersions[0].id) parts.push(`Creative V${art.version_no}`);
+    const copy = c.copy_version_id ? copyVersions?.find((v) => v.id === c.copy_version_id) : undefined;
+    if (copy && copyVersions && copy.id !== copyVersions[0].id) parts.push(`Copy V${copy.version_no}`);
+    return parts.length ? parts.join(" · ") : null;
+  };
+  // Made on a version other than the one showing, newest included: picking
+  // it brings that version up.
+  const elsewhere = (c: CommentRow) =>
+    (!!c.creative_version_id && !!creativeVersionId && c.creative_version_id !== creativeVersionId) ||
+    (!!c.copy_version_id && !!copyVersionId && c.copy_version_id !== copyVersionId);
   const { data: currentUser } = useCurrentUser();
   const { data: membership } = useMyMembership(creative?.agency_id);
   const { data: comments, isLoading, isError } = useComments(creativeId);
@@ -712,6 +741,8 @@ export function CommentsPanel({
             isHighlighted={highlightedCommentId === thread.id}
             photos={photos}
             fromName={fromName}
+            versionTag={versionTagOf(thread)}
+            selectable={!!versionTagOf(thread) || elsewhere(thread)}
             clientName={clientName}
             team={team}
             onSelect={() => onHighlight?.(thread.id)}

@@ -5179,6 +5179,29 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Earlier versions, clearly marked (1.87.0, 2026-11-13)
+
+Direct instruction, three parts:
+- **Comments on an old version say which:** after the Public or Private pill, "Creative V1", "Copy V2" or both, in red.
+  - A comment records both the artwork and copy versions showing when it was made (`creative_version_id`, `copy_version_id`), and is named for any that's earlier than the newest.
+  - CommentsPanel reads both version lists itself (the page's cache), so a team member's comments on a review link show it too.
+- **Picking such a comment brings its version up and lights it:**
+  - A card made on another version than the one showing (or earlier than the newest) is now clickable, as pinned ones were.
+  - Picking it sets the Creative and Copy pickers to its versions, and each picker that changed glows in the action colour for about 2 seconds (steady with reduced motion).
+- **Old Version above the phone:**
+  - While an earlier artwork or copy version is showing, the line under the post's name reads "<format> | Old Version", the separator a thin rule and Old Version in red (`--rose`).
+  - A picker showing an earlier version is red, and its earlier options are red. On macOS, Chrome and Safari draw a select's open list natively and ignore option colours, so there it's the closed picker that shows red.
+
+**Verified:**
+- **old-versions.spec** (new) uses two artwork and two copy versions, with a comment on each:
+  - The V1 comment reads "Creative V1 · Copy V1", the V2 one nothing, and with the newest showing there's no Old Version.
+  - Picking the V1 comment sets both pickers to V1, both lit (then unlit within 5 seconds), and Old Version shows after a separator, the picker red and its V1 option marked.
+  - Back to the newest, Old Version goes; with only the copy older, it's back, with just the Copy picker red.
+- **A screenshot** after picking the old comment was checked.
+- **The post page and comment specs** passed (31): creative-review, text-on-image-comments, comment-visibility, carousel, video-review, post-neighbours, comment-mentions.
+
+**Full suite** on the local database: 371 passed, 1 failed. admin-overview, the known flaky test, passed on rerun.
+
 ## Slack threads taken back (1.86.2, 2026-11-13)
 
 Direct instruction: "remove the threads and keep to what we had originally". Each update is its own message in the project's channel again, as in 1.84.0, with mentions still tagged (1.85.0).
