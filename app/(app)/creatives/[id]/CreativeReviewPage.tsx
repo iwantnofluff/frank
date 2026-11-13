@@ -15,8 +15,7 @@ import { aspectRatioCss, copyFieldsFor, copySummaryParts, formatRatio, hasVideoF
 import { CopyFieldsPreview } from "@/components/creative-review/CopyFieldsPreview";
 import { useCopyVersions } from "@/hooks/use-copy-versions";
 import { useArtworkUrl, usePreloadAssets } from "@/hooks/use-asset-signed-url";
-import { useQueryClient } from "@tanstack/react-query";
-import { applyLiveComment, useComments, type CommentRow } from "@/hooks/use-comments";
+import { useComments, useLiveComments } from "@/hooks/use-comments";
 import { useMyMembership } from "@/hooks/use-my-membership";
 import { useTeamMembers } from "@/hooks/use-team-members";
 import { slideFrames } from "@/lib/slide-frames";
@@ -224,7 +223,6 @@ export function CreativeReviewPage({ id }: { id: string }) {
   // Shared with CommentsPanel via the same query cache (identical key), so
   // clicking a marker here and clicking a comment there both read and write
   // the same "which thread is highlighted" state.
-  const queryClient = useQueryClient();
   const { data: fetchedComments } = useComments(id);
   // A client sees the comments only while the post is in Concept (to
   // comment on and approve it, phase115, direct instruction) or Client
@@ -239,9 +237,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
   // A comment made anywhere, on any device, shows here at once (direct
   // instruction): the panel, the pins and the counts all read this.
   // Shown the moment it arrives, then reloaded (direct instruction).
-  useLiveUpdates(`comments:${id}`, [{ table: "comments", filter: `creative_id=eq.${id}` }], [["comments", id]], true, (change) =>
-    queryClient.setQueryData<CommentRow[]>(["comments", id], (list) => applyLiveComment(list, change.eventType, change.row)),
-  );
+  useLiveComments(id);
   // And the post itself, changed by someone else (phase82): its brief, stage
   // and Text on Image show at once.
   useLiveUpdates(`creative:${id}`, [{ table: "creatives", filter: `id=eq.${id}` }], [["creative", id]]);

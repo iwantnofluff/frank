@@ -13,6 +13,25 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.83.0",
+    date: "2026-11-13",
+    title: "Mentions pop up, and links you can sign in from",
+    changes: [
+      "When someone mentions you in a comment, a pop-up says so, with Open Post: at once if Frank is open, or the next time you open it. Dismiss puts it away; your bell keeps it.",
+      "Every review link now has Log in, whatever the post's status, and brings you back to the link once you're signed in. Your team then comments there as themselves.",
+      "Resolving a comment, or adding or editing one, now shows straight away for your team on a review link and in a project's Client Feedback column.",
+      "Your bell updates the moment something arrives, rather than within the minute.",
+    ],
+  },
+  {
+    version: "1.82.3",
+    date: "2026-11-13",
+    title: "Long words keep the post's shape",
+    changes: [
+      "Where the artwork goes, a long Text on Image or VO now scrolls inside the space, so the post keeps its own shape (a square stays square) instead of stretching.",
+    ],
+  },
+  {
     version: "1.82.2",
     date: "2026-11-13",
     title: "The VO where the artwork goes, and comments on it",

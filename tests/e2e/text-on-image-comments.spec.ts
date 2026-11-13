@@ -233,12 +233,27 @@ test("the VO shows under the Text on Image for the team, never for a client", as
   await expect(top.locator(".noart-lbl")).toHaveText(["VO"], { timeout: 20_000 });
   await admin.from("creatives").update({ slide_text: ["Phones down, glasses up"] }).eq("id", frank.creativeId);
 
+  // Too long for the space: the post keeps its shape (a Reel's 9:16), and
+  // the words scroll inside it (direct instruction).
+  const long = Array.from({ length: 30 }, (_, i) => `Line ${i + 1} of the voiceover.`).join("\n");
+  await admin.from("creatives").update({ voiceover: long }).eq("id", frank.creativeId);
+  await page.reload();
+  await expect(top.locator(".noart-vo")).toContainText("Line 30", { timeout: 20_000 });
+  const size = await page.locator(".ig-noart.has-top").evaluate((el) => {
+    const inner = el.querySelector(".noart-top")!;
+    return { w: el.clientWidth, h: el.clientHeight, inner: inner.clientHeight, content: inner.scrollHeight };
+  });
+  expect(Math.abs(size.h - (size.w * 16) / 9)).toBeLessThan(2);
+  expect(size.content).toBeGreaterThan(size.inner);
+  await top.evaluate((el) => (el.scrollTop = el.scrollHeight));
+  await expect(top.getByText("Line 30 of the voiceover.")).toBeInViewport();
+
   const c = await (await browser.newContext()).newPage();
   await frank.loginAsClient(c);
   await c.goto(`${APP_URL}/creatives/${frank.creativeId}`);
   await expect(c.locator(".noart-toi")).toContainText("Phones down, glasses up", { timeout: 20_000 });
   await expect(c.locator(".noart-vo, .noart-lbl")).toHaveCount(0);
-  await expect(c.getByText("Some nights deserve your full attention.")).toHaveCount(0);
+  await expect(c.getByText(/of the voiceover/)).toHaveCount(0);
   // Nor its comment.
   await expect(c.getByText("Slow this line down")).toHaveCount(0);
 });

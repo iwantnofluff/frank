@@ -61,7 +61,8 @@ test("shared review — a plain login link is present but never required", async
   await page.waitForSelector(".m-top");
 
   const loginLink = page.locator('a:has-text("Log in")').first();
-  await expect(loginLink).toHaveAttribute("href", "/login");
+  // Back to this link once signed in (direct instruction, 1.83.0).
+  await expect(loginLink).toHaveAttribute("href", `/login?redirect_to=${encodeURIComponent(`/review/${token}`)}`);
 
   // Commenting without ever touching that link still works.
   await page.locator("select").first().selectOption({ label: "Guest Reviewer" });

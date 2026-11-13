@@ -122,3 +122,59 @@ test("a client gets no @ list, and a mention they send is dropped", async ({ pag
     (await admin.from("notifications").select("id").eq("comment_id", data!.id).eq("kind", "comment_mention")).data,
   ).toEqual([]);
 });
+
+// Someone mentioned gets a pop-up (phase153, direct instruction: as Updates
+// does): the moment it happens if Frank is open, and any not yet read on
+// their next visit. Open Post goes to the post at that comment and marks it
+// read; Dismiss puts it away, the bell keeping it.
+test("a mention pops up for whoever's mentioned, live and on their next visit", async ({ page, browser, frank }) => {
+  test.setTimeout(150_000);
+  const raj = await teammate(browser, frank.agencyId, "Raj Second");
+  try {
+    await raj.signIn();
+    const r = raj.page;
+    await expect(r.locator(".mentionpop")).toHaveCount(0);
+
+    await frank.loginAsStaff(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
+    const box = page.getByPlaceholder("Add a comment…");
+    await expect(box).toBeVisible({ timeout: 20_000 });
+    const mention = async (words: string) => {
+      await box.pressSequentially(`${words} @Raj`);
+      await page.getByRole("option", { name: "@Raj Second" }).click();
+      await page.locator("aside .composer").last().getByRole("button", { name: "Post" }).click();
+      await expect(page.locator(".cmt:not(.pending)", { hasText: words })).toBeVisible({ timeout: 15_000 });
+    };
+
+    // Live, on whatever page Raj is on.
+    const sent = Date.now();
+    await mention("First look at the logo");
+    const pop = r.locator(".mentionpop");
+    await expect(pop).toContainText("E2E Staff mentioned you on E2E Test Creative", { timeout: 10_000 });
+    console.log(`mention popped up after ${Date.now() - sent}ms`);
+    await expect(pop.locator(".mp-quote")).toContainText("First look at the logo");
+    await pop.getByRole("button", { name: "Dismiss" }).click();
+    await expect(pop).toHaveCount(0);
+    // Still in the bell, unread.
+    await r.getByRole("button", { name: /Notifications/ }).click();
+    await expect(r.locator(".nrow.unread, .nrow", { hasText: "mentioned you on" })).toHaveCount(1);
+    await r.keyboard.press("Escape");
+
+    // Made while Raj is away: on the next visit.
+    await r.goto(`${APP_URL}/settings/general/preferences`);
+    await expect(r.getByRole("heading", { name: "Preferences" })).toBeVisible({ timeout: 20_000 });
+    await mention("Second thought on the copy");
+    await r.reload();
+    await expect(pop).toContainText("E2E Staff mentioned you on E2E Test Creative", { timeout: 20_000 });
+    await expect(pop.locator(".mp-quote")).toContainText("Second thought on the copy");
+    await pop.getByRole("button", { name: "Open Post" }).click();
+    await r.waitForURL(`**/creatives/${frank.creativeId}?comment=*`);
+    await expect(r.locator(".cmt.act", { hasText: "Second thought on the copy" })).toBeVisible({ timeout: 20_000 });
+    await expect(pop).toHaveCount(0);
+    const { data: notes } = await admin.from("notifications").select("read_at, comment_id").eq("user_id", raj.id).eq("kind", "comment_mention");
+    expect(notes!.filter((n) => n.read_at).length).toBe(1);
+  } finally {
+    await raj.remove();
+  }
+});

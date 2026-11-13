@@ -4652,6 +4652,11 @@ select.sort:hover {
   justify-content: flex-start;
   gap: 0;
   padding: 0;
+  /* The post's own shape whatever the words' length (direct instruction):
+     without these, aspect-ratio gives way to its content and the box
+     grows; the words scroll inside it instead (.noart-top). */
+  min-height: 0;
+  overflow: hidden;
 }
 .noart-top {
   flex: 1 1 auto;
@@ -12895,6 +12900,49 @@ button.hbrand-add:hover {
   width: 60%;
   height: 60%;
   object-fit: contain;
+}
+/* A review link's Log in, in every state (GuestComposer). */
+.rv-signin {
+  font-size: 12.7px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+/* Someone mentioned you (MentionPop): a card at the bottom right, in the
+   look of UpdateReady's bar. */
+.mentionpop {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 61;
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  padding: 14px 16px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(20, 22, 26, 0.16);
+  font-size: 13.7px;
+}
+.mp-quote {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-top: 6px;
+  color: var(--muted);
+  white-space: pre-wrap;
+}
+.mp-more {
+  display: block;
+  margin-top: 6px;
+  font-size: 12.2px;
+  color: var(--muted);
+}
+.mp-acts {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
 }
 /* A newer version has gone live (UpdateReady): a bar at the bottom. */
 .updready {

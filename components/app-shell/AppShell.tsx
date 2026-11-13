@@ -6,6 +6,7 @@ import { AgencyTheme } from "./AgencyTheme";
 import { ReadOnlyBanner } from "./ReadOnlyBanner";
 import { ViewTransition } from "./ViewTransition";
 import { UpdateReady } from "./UpdateReady";
+import { MentionPop } from "./MentionPop";
 import { TipCard } from "./TipCard";
 import { TipSpotlight } from "./TipSpotlight";
 import { FrankTour } from "./FrankTour";
@@ -47,6 +48,8 @@ export function AppShell({
         <ReadOnlyBanner />
         <ViewTransition>{children}</ViewTransition>
         <UpdateReady />
+        {/* Someone mentioned you (phase153). */}
+        <MentionPop />
         <TipCard />
         <Suspense fallback={null}>
           <TipSpotlight />

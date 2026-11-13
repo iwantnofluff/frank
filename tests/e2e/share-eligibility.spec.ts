@@ -93,3 +93,40 @@ test("the team signed in on a review link comments as themselves", async ({ page
   const { data: row } = await admin.from("comments").select("author_id, guest_name, visibility").eq("body", "From the link").single();
   expect(row).toEqual({ author_id: staff!.id, guest_name: null, visibility: "private" });
 });
+
+// Log in on every link (direct instruction: a teammate sent a link to a
+// post not yet in Client Review had no way in): back to the link once
+// signed in, commenting as themselves; and the team's comments there are
+// live, a resolve elsewhere showing at once.
+test("a teammate signs in from a link, comes back to it, and sees a resolve at once", async ({ browser, frank }) => {
+  test.setTimeout(120_000);
+  await admin.from("creatives").update({ stage: 1 }).eq("id", frank.creativeId);
+  const commentId = await frank.insertCommentAsStaff("Tighten the headline", "public");
+  const token = await frank.createSharedLink({});
+  const p = await (await browser.newContext({ viewport: { width: 1440, height: 900 } })).newPage();
+  await p.goto(`${APP_URL}/review/${token}`);
+  await expect(p.getByText("This post isn't ready for your review yet.", { exact: false })).toBeVisible({ timeout: 20_000 });
+  const logIn = p.getByRole("link", { name: "Log in" });
+  await expect(logIn).toHaveAttribute("href", `/login?redirect_to=${encodeURIComponent(`/review/${token}`)}`);
+  await logIn.click();
+  // Settled first: a form sent before its script is running goes as a plain
+  // page load, dropping where to come back to.
+  await p.waitForURL("**/login?redirect_to=*");
+  await p.waitForLoadState("networkidle");
+  await p.fill('input[type="email"]', frank.staffEmail);
+  await p.fill('input[type="password"]', frank.staffPassword);
+  await p.click('button[type="submit"]');
+  await p.waitForURL(`**/review/${token}`);
+  const card = p.locator(".rv-team .cmt", { hasText: "Tighten the headline" });
+  await expect(card).toBeVisible({ timeout: 20_000 });
+  await expect(card).not.toHaveClass(/resolved/);
+
+  // Resolved from another signed-in session: here without a reload.
+  const s = anon();
+  await s.auth.signInWithPassword({ email: frank.staffEmail, password: frank.staffPassword });
+  await p.waitForTimeout(1500);
+  const sent = Date.now();
+  expect((await s.from("comments").update({ resolved_at: new Date().toISOString() }).eq("id", commentId).select("id")).data).toHaveLength(1);
+  await expect(card).toHaveClass(/resolved/, { timeout: 5_000 });
+  console.log(`resolve showed on the link after ${Date.now() - sent}ms`);
+});

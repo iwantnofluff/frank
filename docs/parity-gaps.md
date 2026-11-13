@@ -5179,6 +5179,57 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Mention pop-ups, Log in on every link, and live comments on links (1.83.0, phase153, 2026-11-13)
+
+Three direct instructions, each looked into before changing anything.
+
+**1. Log in on every review link.** A teammate sent a link to a post not yet in Client Review couldn't comment and had no way to sign in.
+- **What was wrong:** in that state, the link showed only a note and Close. Elsewhere, its Log in went to the plain sign-in page and didn't come back to the link.
+- **Now:** "Have an account? Log in" shows in every state, and signing in returns to the link (`/login?redirect_to=/review/…`, which LoginForm already honoured). Once back, the team gets the post's own comment box (TeamComments, phase150).
+- **A client signed in** on a post outside Client Review still can't comment, as asked.
+
+**2. Resolved comments slow to show elsewhere.** Measured before changing anything, resolving from another session:
+- **The post's page:** updated in 346ms.
+- **The team's comments on a review link:** still hadn't updated after 60 seconds. TeamComments had no live connection, and the link's 8-second check reloads only the link's own data.
+- **A visitor on the link:** never sees resolved state at all, so there's nothing to wait for.
+
+**Now:**
+- `useLiveComments` (hooks/use-comments.ts) keeps the post's page and TeamComments live alike. On the link, a resolve now shows in about 200ms.
+- A project's page also reloads its Client Feedback column when any comment in the workspace changes.
+
+**3. A mention that never reached the bell.** I couldn't read live to see the comment.
+- **What was checked:** on staging, a mention picked from the @ list made its notice, and no teammate is missing from the @ list for an unaccepted membership.
+- **Kept as is:** a name typed without picking it from the list isn't a mention (decided directly).
+- **Open:** why that one mention didn't arrive. It's worth checking that comment's `mentions` and `notifications` on live.
+
+**The pop-up** (decided directly): it shows live and on the next visit.
+- **MentionPop**, in the app shell, shows the newest unread mention, in a comment or a project's Discussion. It says who, where and the words, with Dismiss and Open Post (or Open Discussion).
+- **Open Post** goes to the post at that comment and marks the notice read.
+- **Dismiss** puts it away in this browser (local storage, read through `useSyncExternalStore` so the server's first drawing matches). The bell keeps it.
+- **More than one:** it says "and N more in your bell".
+- **phase153** adds `notifications` to Realtime, so a mention arrives at once and the bell updates live too. Delivery is limited to your own notices by `notifications_select`.
+
+**Verified**: phase153 was rehearsed on staging, then applied there and to the local database (`notifications` confirmed in `supabase_realtime`).
+- **share-eligibility.spec** has a new test: a signed-out visitor on a Concept post sees Log in with the link's return address, signs in, lands back on the link with the team's comments, and sees a resolve from another session in 198ms.
+- **comment-mentions.spec** has a new test: a mention pops up live (594ms) on another teammate's open Frank. Dismiss hides it while the bell keeps it. A mention made while they're away pops up on reload, and Open Post goes to the post at that comment and marks only that notice read.
+- **A hydration error** showed while writing that test: the pop-up first read storage during its first render. Fixed with `useSyncExternalStore`, and the test passed with no hydration error.
+- **Screenshots** of the pop-up and of the link's Log in were checked.
+
+**Full suite** on the local database: 366 passed, 2 failed.
+- **shared-review-public** expected the link's Log in to go to plain `/login`. It now carries the link to come back to, as intended, and the test was updated.
+- **The new share-eligibility test** failed when other link specs ran alongside it. Logging every page it reached showed why: under load it pressed Sign in before the sign-in page's script had loaded. The browser then sent the form as a plain page load, to `/login` without the return address. The test now waits for the page to settle, and the three link specs then passed 3 times over (60).
+- **Open:** someone very quick on a slow connection could hit the same thing. The sign-in form always worked this way, so it's left for now.
+
+## Long Text on Image or VO scrolls inside the post's shape (1.82.3, 2026-11-13)
+
+Direct instruction, settling 1.82.2's open question: the placeholder keeps the post's shape, and words too long for it scroll inside it.
+- **The cause:** `aspect-ratio` on the placeholder gave way to its content, so a long text made the box grow.
+- **The fix:** `.ig-noart.has-top` now has `min-height: 0` and `overflow: hidden`. `.noart-top`, already `overflow-y: auto`, does the scrolling.
+- **Upload Artwork** stays under the words and scrolls with them.
+- **Where it applies:** the review link uses the same placeholder, so it applies there too.
+
+**Verified**: the VO test in text-on-image-comments.spec now sets a 30-line VO on a Reel. It checks that the placeholder stays 9:16 (height within 2px of width × 16/9), that its words overflow it, and that the last line is reachable by scrolling. It passed with the rest of that file (4). Screenshots of a square post with 24 lines, on the post's page and on the review link, showed it square with the words cut at its edge. carousel, copy-only-post, format-sizes, creative-review, shared-review-public and mobile-post passed (35).
+
 ## The VO in the artwork's place, and comments on it (1.82.2, phase152, 2026-11-13)
 
 Direct instruction: as Text on Image shows in the artwork's place until there is artwork, show the VO too, if one has been added.
@@ -5194,7 +5245,7 @@ Direct instruction: as Text on Image shows in the artwork's place until there is
 - The VO isn't shown on the review link: that's the client's view.
 - It isn't shown on the post's phone page either, which has no artwork placeholder of its own.
 
-**Too long for the space** (asked directly; this is what happens now, not a change): the placeholder grows taller than the format's shape to fit all the words, and the phone scrolls to show them ("Scroll inside the phone…"). Measured with a 14-line VO on a Reel: the placeholder grew to 1002px tall, where the Reel's own shape is shorter. The CSS (`.noart-top`, `overflow-y: auto`) looks as if it meant the words to scroll inside a box that keeps its shape. It doesn't, because the placeholder's height comes from `aspect-ratio`, which gives way to its content. **Open:** whether it should keep the format's shape and scroll inside instead.
+**Too long for the space** (asked directly; this is what happens now, not a change): the placeholder grows taller than the format's shape to fit all the words, and the phone scrolls to show them ("Scroll inside the phone…"). Measured with a 14-line VO on a Reel: the placeholder grew to 1002px tall, where the Reel's own shape is shorter. The CSS (`.noart-top`, `overflow-y: auto`) looks as if it meant the words to scroll inside a box that keeps its shape. It doesn't, because the placeholder's height comes from `aspect-ratio`, which gives way to its content. Settled in 1.82.3: it now keeps the shape and scrolls inside.
 
 **Verified**: phase152 was rehearsed on staging and rolled back, then applied to staging and the local database. A new test in text-on-image-comments.spec covers:
 - Both shown and both named for the team.

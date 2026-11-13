@@ -1,8 +1,9 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import type { Anchor } from "@/lib/annotations";
+import { useLiveUpdates } from "@/hooks/use-live-updates";
 
 export interface CommentRow {
   id: string;
@@ -145,5 +146,17 @@ export function applyLiveComment(
       from: fields.for_client ? "client" : (side?.from ?? (fields.author_id ? "agency" : "client")),
     },
   ];
+}
+
+// A post's comments kept live (direct instruction: a comment, a resolve or
+// an edit on one screen shows on another at once): each change applied the
+// moment it arrives, then the list reloaded. On the post's page in Frank,
+// and the team's comments on a review link (TeamComments), which had no
+// live connection and waited for its next reload.
+export function useLiveComments(creativeId: string, enabled = true) {
+  const queryClient = useQueryClient();
+  useLiveUpdates(`comments:${creativeId}`, [{ table: "comments", filter: `creative_id=eq.${creativeId}` }], [["comments", creativeId]], enabled && !!creativeId, (change) =>
+    queryClient.setQueryData<CommentRow[]>(["comments", creativeId], (list) => applyLiveComment(list, change.eventType, change.row)),
+  );
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import type { ReviewController } from "@/hooks/use-review-controller";
 import { formatVideoTime } from "@/lib/annotations";
 import { STAGE } from "@/lib/stage-labels";
@@ -103,6 +104,7 @@ export function GuestComposer({
   if (active && active.stage !== STAGE.review) {
     return (
       <div className={barClass}>
+        <SignInLine />
         <p className="m-noone">
           {active.stage < STAGE.review
             ? "This post isn't ready for your review yet. You can read it, and comment once it is."
@@ -127,40 +129,35 @@ export function GuestComposer({
   return (
     <div className={barClass}>
       {knowsWho ? (
-        <div className="m-signedin">
-          <span className="av" style={{ background: "var(--action)" }}>
-            {name.slice(0, 1).toUpperCase()}
-          </span>
-          <span>
-            Commenting as <b>{identity.name}</b>
-          </span>
-          <button
-            type="button"
-            className="m-notyou"
-            onClick={() => {
-              identity.forget();
-              setName("");
-              setEmail("");
-              setPickerValue("");
-            }}
-          >
-            Not you?
-          </button>
-        </div>
+        <>
+          <SignInLine />
+          <div className="m-signedin">
+            <span className="av" style={{ background: "var(--action)" }}>
+              {name.slice(0, 1).toUpperCase()}
+            </span>
+            <span>
+              Commenting as <b>{identity.name}</b>
+            </span>
+            <button
+              type="button"
+              className="m-notyou"
+              onClick={() => {
+                identity.forget();
+                setName("");
+                setEmail("");
+                setPickerValue("");
+              }}
+            >
+              Not you?
+            </button>
+          </div>
+        </>
       ) : (
         <>
           {/* A plain link back to the real app — present, never required.
               This page stays fully anonymous either way: picking a name
               below is enough to comment or approve on its own. */}
-          <div
-            style={{ fontSize: 12.7, color: "var(--muted)", marginBottom: 8 }}
-          >
-            Have an account?{" "}
-            <a href="/login" style={{ color: "var(--action)" }}>
-              Log in
-            </a>
-            .
-          </div>
+          <SignInLine />
 
           {noOne ? (
             <p className="m-noone">
@@ -286,4 +283,21 @@ function describeStatus(status: string) {
     default:
       return "That didn't go through.";
   }
+}
+
+// Signing in, offered in every state of the link (direct instruction: a
+// teammate sent a link had no way in), and back to this link after: the
+// team comments here as themselves (TeamComments); a client signed in has
+// their say only in Client Review, as before.
+function SignInLine() {
+  const pathname = usePathname();
+  return (
+    <div className="rv-signin">
+      Have an account?{" "}
+      <a href={`/login?redirect_to=${encodeURIComponent(pathname)}`} style={{ color: "var(--action)" }}>
+        Log in
+      </a>
+      .
+    </div>
+  );
 }

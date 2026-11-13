@@ -55,6 +55,16 @@ export default function ProjectPage({
   // Owners and Admins add a project's columns (phase96).
   const { data: myAgency } = useMyAgency();
   const { data: me } = useMyMembership(myAgency?.agencyId);
+  // Its Client Feedback column too (direct instruction: a resolve took a
+  // while to show elsewhere): a comment made, resolved or edited anywhere
+  // in the workspace reloads it. Realtime sends only what this person can
+  // read.
+  useLiveUpdates(
+    `comments-feedback:${id}`,
+    [{ table: "comments", filter: `agency_id=eq.${myAgency?.agencyId}` }],
+    [["latest-feedback-by-creative"]],
+    !!myAgency?.agencyId,
+  );
   const isAdmin = !!me && !me.client_id && seesAllClients(me.role);
   const [newBriefOpen, setNewBriefOpen] = useState(false);
   // New Post → Row: a draft row at the top of the table instead of the window.
