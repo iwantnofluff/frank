@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.86.1",
+    date: "2026-11-13",
+    title: "A comment that won't post says why",
+    changes: ["When a comment can't be posted, the comment box now gives the reason instead of only \"Couldn't post that comment\"."],
+  },
+  {
     version: "1.86.0",
     date: "2026-11-13",
     title: "One Slack thread per project",

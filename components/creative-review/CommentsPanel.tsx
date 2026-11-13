@@ -183,7 +183,9 @@ function Composer({
       setForClient(false);
       setSource("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't post that comment");
+      // The database's own reason too (a Supabase error isn't an Error), not
+      // only the fallback, so a refusal says why.
+      setError(errorMessage(err, "Couldn't post that comment"));
     } finally {
       setSubmitting(false);
     }

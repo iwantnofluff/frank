@@ -5179,6 +5179,15 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## A comment that won't post says why (1.86.1, 2026-11-13)
+
+Direct report: on live, a comment logged on behalf of the client showed only "Couldn't post that comment".
+- **What was checked:** the same comment on staging (comment-for-client.spec, 3 passed), and locally in a project with a Slack channel (a throwaway test with the stand-in Slack; it saved). Both posted. Live's database couldn't be read from here.
+- **The fix:** the comment box showed a reason only for a JavaScript Error, but a refusal from the database (a Supabase error) is a plain object. It now uses `errorMessage`, as the rest of the app does, so the database's own reason shows.
+- **Open:** the cause on live, until that reason is seen.
+
+**Verified:** types and lint clean; build clean.
+
 ## Slack: one thread per project, and Lists set aside (1.86.0, phase156, 2026-11-13)
 
 Direct instruction, after trying Lists on the sonofluff workspace: "the comments should appear in the thread so we have them all", then, Lists not able to do that, "Let's try the thread. It should be in the project's own channel."
