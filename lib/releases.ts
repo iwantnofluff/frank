@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.86.0",
+    date: "2026-11-13",
+    title: "One Slack thread per project",
+    changes: [
+      "Each project's updates now go in one thread in its Slack channel, so every comment, change request and approval is together. The first update starts the thread.",
+      "Start a New Thread in a project's Settings, under Slack, begins a fresh one.",
+      "Slack Lists are no longer offered: Slack doesn't let Frank post into a List item's thread, or reach an existing List.",
+    ],
+  },
+  {
     version: "1.85.0",
     date: "2026-11-13",
     title: "Slack mentions and Lists",

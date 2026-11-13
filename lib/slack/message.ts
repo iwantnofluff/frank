@@ -64,57 +64,16 @@ export function slackMessage(e: SlackEvent): { text: string; blocks: unknown[] }
   return { text, blocks };
 }
 
-// A project's List (phase155): the columns Frank fills, found by name when
-// the List is connected. The first (title) column takes the headline.
-export type ListKey = "title" | "post" | "client" | "comment" | "link" | "from";
-export type ListColumns = Partial<Record<ListKey, { id: string; type: string }>>;
-
-const NAMED: Record<Exclude<ListKey, "title">, string[]> = {
-  post: ["post", "creative"],
-  client: ["client"],
-  comment: ["comment", "comments", "feedback", "words"],
-  link: ["link", "url", "open in frank"],
-  from: ["from", "who", "by"],
-};
-const WRITABLE = new Set(["text", "rich_text", "link"]);
-
-export function matchListColumns(columns: { id: string; name: string; type: string; is_primary_column?: boolean }[]): ListColumns {
-  const out: ListColumns = {};
-  const title = columns.find((c) => c.is_primary_column) ?? columns[0];
-  if (title && WRITABLE.has(title.type)) out.title = { id: title.id, type: title.type };
-  for (const [key, names] of Object.entries(NAMED) as [Exclude<ListKey, "title">, string[]][]) {
-    const c = columns.find((col) => col !== title && WRITABLE.has(col.type) && names.includes(col.name.trim().toLowerCase()));
-    if (c) out[key] = { id: c.id, type: c.type };
-  }
-  return out;
-}
-
-const richText = (text: string) => [
-  { type: "rich_text", elements: [{ type: "rich_text_section", elements: [{ type: "text", text }] }] },
-];
-
-// An item's cells: each column as its type takes words (rich text) or a link.
-export function listItemFields(columns: ListColumns, e: SlackEvent): Record<string, unknown>[] {
-  const headline = `${e.who} ${VERB[e.kind]} ${e.postName}`;
-  const values: Record<ListKey, string | null> = {
-    title: headline,
-    post: e.postName,
-    client: e.clientName,
-    comment: e.body?.trim() ? e.body.trim().slice(0, 3000) : null,
-    link: e.url,
-    from: e.who,
+// The message a project's thread starts with (phase156): every update for
+// the project then goes under it.
+export function slackThreadHeader(h: { projectName: string; clientName: string | null; url: string }): { text: string; blocks: unknown[] } {
+  const name = `${h.projectName}${h.clientName ? ` (${h.clientName})` : ""}`;
+  return {
+    text: `${name}: updates from Frank`,
+    blocks: [
+      { type: "section", text: { type: "mrkdwn", text: `*${escapeSlack(h.projectName)}*${h.clientName ? ` (${escapeSlack(h.clientName)})` : ""}: updates from Frank` } },
+      { type: "context", elements: [{ type: "mrkdwn", text: "Every comment, change request and approval for this project goes in this thread." }] },
+      { type: "actions", elements: [{ type: "button", text: { type: "plain_text", text: "Open project" }, url: h.url }] },
+    ],
   };
-  const fields: Record<string, unknown>[] = [];
-  for (const [key, col] of Object.entries(columns) as [ListKey, { id: string; type: string }][]) {
-    const value = values[key];
-    if (!value) continue;
-    if (col.type === "link") {
-      const url = key === "link" ? e.url : null;
-      if (url) fields.push({ column_id: col.id, link: [{ original_url: url, display_as_url: false, display_name: "Open in Frank" }] });
-    } else {
-      fields.push({ column_id: col.id, rich_text: richText(value) });
-    }
-  }
-  return fields;
 }
-

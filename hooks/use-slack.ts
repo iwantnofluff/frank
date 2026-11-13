@@ -79,6 +79,8 @@ export interface ProjectSlack {
   client_activity: boolean;
   team_comments: boolean;
   include_private: boolean;
+  // Its updates' thread in the channel (phase156); none until the first.
+  thread_ts: string | null;
   last_error: string | null;
   last_error_at: string | null;
 }
@@ -89,7 +91,7 @@ export function useProjectSlack(projectId: string | undefined) {
     queryFn: async (): Promise<ProjectSlack | null> => {
       const { data, error } = await createClient()
         .from("project_slack")
-        .select("channel_id, channel_name, client_activity, team_comments, include_private, last_error, last_error_at")
+        .select("channel_id, channel_name, client_activity, team_comments, include_private, thread_ts, last_error, last_error_at")
         .eq("project_id", projectId!)
         .maybeSingle();
       if (error) throw error;
@@ -106,7 +108,9 @@ const DENIED = "Only Owners and Admins can change a project's Slack channel.";
 export function useSaveProjectSlack(projectId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (patch: Partial<Pick<ProjectSlack, "channel_id" | "channel_name" | "client_activity" | "team_comments" | "include_private">>) => {
+    mutationFn: async (
+      patch: Partial<Pick<ProjectSlack, "channel_id" | "channel_name" | "client_activity" | "team_comments" | "include_private" | "thread_ts">>,
+    ) => {
       const supabase = createClient();
       const {
         data: { user },
@@ -135,99 +139,3 @@ export function useRemoveProjectSlack(projectId: string) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["project-slack", projectId], refetchType: "all" }),
   });
 }
-
-// A project's Slack List (phase155): checked through the server from its
-// link, then saved; the same three switches as its channel.
-export interface ProjectSlackList {
-  list_id: string;
-  list_title: string;
-  columns: Record<string, { id: string; type: string }>;
-  client_activity: boolean;
-  team_comments: boolean;
-  include_private: boolean;
-  last_error: string | null;
-  last_error_at: string | null;
-}
-
-export function useProjectSlackList(projectId: string | undefined) {
-  return useQuery({
-    queryKey: ["project-slack-list", projectId],
-    queryFn: async (): Promise<ProjectSlackList | null> => {
-      const { data, error } = await createClient()
-        .from("project_slack_list")
-        .select("list_id, list_title, columns, client_activity, team_comments, include_private, last_error, last_error_at")
-        .eq("project_id", projectId!)
-        .maybeSingle();
-      if (error) throw error;
-      return data as ProjectSlackList | null;
-    },
-    enabled: !!projectId,
-  });
-}
-
-export function useConnectSlackList(projectId: string, agencyId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (link: string) => {
-      const res = await fetch("/api/connections/slack/list", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ agencyId, link }),
-      });
-      const body = (await res.json()) as { listId?: string; title?: string; columns?: Record<string, unknown>; error?: string };
-      if (!res.ok || !body.listId) throw new Error(body.error ?? "Couldn't connect that List.");
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await signedInUser(supabase);
-      const { data, error } = await supabase
-        .from("project_slack_list")
-        .upsert(
-          {
-            project_id: projectId,
-            list_id: body.listId,
-            list_title: body.title,
-            columns: body.columns,
-            last_error: null,
-            last_error_at: null,
-            set_by: user?.id ?? null,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "project_id" },
-        )
-        .select("project_id");
-      if (error) throw error;
-      if (!data?.length) throw new Error(DENIED);
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["project-slack-list", projectId], refetchType: "all" }),
-  });
-}
-
-export function useSaveProjectSlackList(projectId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (patch: Partial<Pick<ProjectSlackList, "client_activity" | "team_comments" | "include_private">>) => {
-      const { data, error } = await createClient()
-        .from("project_slack_list")
-        .update({ ...patch, updated_at: new Date().toISOString() })
-        .eq("project_id", projectId)
-        .select("project_id");
-      if (error) throw error;
-      if (!data?.length) throw new Error(DENIED);
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["project-slack-list", projectId], refetchType: "all" }),
-  });
-}
-
-export function useRemoveProjectSlackList(projectId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async () => {
-      const { data, error } = await createClient().from("project_slack_list").delete().eq("project_id", projectId).select("project_id");
-      if (error) throw error;
-      if (!data?.length) throw new Error(DENIED);
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["project-slack-list", projectId], refetchType: "all" }),
-  });
-}
-

@@ -19,13 +19,13 @@ const anon = () =>
 
 interface Posted {
   channel: string;
+  ts: string;
+  thread_ts?: string;
   text: string;
   blocks: { text?: { text: string }; elements?: { text?: string; url?: string }[] }[];
   auth: string | undefined;
 }
 const posted: Posted[] = [];
-// List items added, as Slack received them.
-const listed: { list_id: string; initial_fields: { column_id: string; rich_text?: unknown; link?: unknown }[]; auth: string | undefined }[] = [];
 let slack: http.Server;
 
 test.beforeAll(async () => {
@@ -50,42 +50,20 @@ test.beforeAll(async () => {
         // Known to Slack: anyone whose address says so.
         const email = new URL(req.url!, "http://slack").searchParams.get("email") ?? "";
         res.end(JSON.stringify(email.includes("in-slack") ? { ok: true, user: { id: "U_RAJ" } } : { ok: false, error: "users_not_found" }));
-      } else if (path === "/api/slackLists.items.list") {
-        const { list_id } = JSON.parse(body);
-        if (String(list_id).startsWith("FDENIED")) {
-          res.end(JSON.stringify({ ok: false, error: "access_denied" }));
-          return;
-        }
-        res.end(
-          JSON.stringify({
-            ok: true,
-            items: [],
-            list: {
-              title: "Client Feedback",
-              list_metadata: {
-                schema: [
-                  { id: "Col_T", name: "Task", key: "task", type: "text", is_primary_column: true },
-                  { id: "Col_C", name: "Client", key: "client", type: "text" },
-                  { id: "Col_L", name: "Link", key: "link", type: "link" },
-                  { id: "Col_W", name: "Comment", key: "comment", type: "rich_text" },
-                  { id: "Col_S", name: "Status", key: "status", type: "select" },
-                ],
-              },
-            },
-          }),
-        );
-      } else if (path === "/api/slackLists.items.create") {
-        const item = JSON.parse(body);
-        listed.push({ ...item, auth: req.headers.authorization });
-        res.end(JSON.stringify({ ok: true, item: { id: "Rec1" } }));
       } else if (path === "/api/chat.postMessage") {
         const msg = JSON.parse(body);
         if (String(msg.channel).startsWith("C_NOTIN")) {
           res.end(JSON.stringify({ ok: false, error: "not_in_channel" }));
           return;
         }
-        posted.push({ ...msg, auth: req.headers.authorization });
-        res.end(JSON.stringify({ ok: true }));
+        // A thread whose header was deleted.
+        if (msg.thread_ts === "GONE") {
+          res.end(JSON.stringify({ ok: false, error: "thread_not_found" }));
+          return;
+        }
+        const ts = `17000.${String(posted.length).padStart(6, "0")}`;
+        posted.push({ ...msg, ts, auth: req.headers.authorization });
+        res.end(JSON.stringify({ ok: true, ts }));
       } else {
         res.statusCode = 404;
         res.end("{}");
@@ -123,7 +101,10 @@ async function connect(agencyId: string, token: string) {
 }
 
 const headline = (p: Posted) => p.blocks[0]?.text?.text ?? "";
-const onChannel = (channel: string) => posted.filter((p) => p.channel === channel);
+// The updates (replies in a project's thread, phase156), and the threads'
+// header messages.
+const onChannel = (channel: string) => posted.filter((p) => p.channel === channel && p.thread_ts);
+const headersOn = (channel: string) => posted.filter((p) => p.channel === channel && !p.thread_ts);
 // As the app does straight after something happens on a post.
 const sendNow = (creativeId: string) =>
   fetch(`${APP_URL}/api/notify/client-activity`, {
@@ -220,6 +201,13 @@ test("the client's activity and the team's comments post to the project's channe
   expect(headline(first)).toBe("*E2E Staff (E2E Test Agency)* commented on *E2E Test Creative*");
   expect(first.blocks[1].text!.text).toBe(">Colours look off on mobile");
   expect(first.auth).toBe("Bearer xoxb-e2e-2");
+  // The first update started the project's thread: its header, then the
+  // update under it.
+  expect(headersOn(channel)).toHaveLength(1);
+  const header = headersOn(channel)[0];
+  expect(header.text).toBe("E2E Test Project (E2E Test Client): updates from Frank");
+  expect(first.thread_ts).toBe(header.ts);
+  expect((await admin.from("project_slack").select("thread_ts").eq("project_id", frank.projectId).single()).data!.thread_ts).toBe(header.ts);
   const button = first.blocks.at(-1)!.elements![0];
   // A whole address: Slack refuses a button without one.
   expect(button.url).toMatch(new RegExp(`^https?://[^/]+/creatives/${frank.creativeId}\\?comment=`));
@@ -260,6 +248,9 @@ test("the client's activity and the team's comments post to the project's channe
   await sendNow(frank.creativeId);
   await page.waitForTimeout(1500);
   expect(onChannel(channel)).toHaveLength(5);
+  // All five in the one thread, under the one header.
+  expect(headersOn(channel)).toHaveLength(1);
+  expect(new Set(onChannel(channel).map((p) => p.thread_ts))).toEqual(new Set([header.ts]));
 });
 
 test("a channel Frank isn't in says so in Project Settings", async ({ page, frank }) => {
@@ -324,57 +315,47 @@ test("a mention in a comment tags the person in the channel's post", async ({ pa
   }
 });
 
-// A List for the project (phase155, direct instruction): connected by its
-// link, its columns found by name, and each thing switched on added as an
-// item; a List Frank can't reach says so.
-test("a project's List takes an item for each thing switched on", async ({ page, frank }) => {
+// A project's thread starts again (phase156): Start a New Thread in its
+// Settings, or its header deleted in Slack; a new channel likewise.
+test("Start a New Thread, a deleted header, and a new channel each start a new thread", async ({ page, frank }) => {
   test.setTimeout(120_000);
-  await connect(frank.agencyId, "xoxb-e2e-5");
+  const channel = `C_THREAD_${Date.now()}`;
+  await connect(frank.agencyId, "xoxb-e2e-6");
+  await admin.from("project_slack").insert({ project_id: frank.projectId, channel_id: channel, channel_name: "q4-social" });
+  const comment = async (words: string) => {
+    await frank.insertCommentAsStaff(words, "public");
+    await sendNow(frank.creativeId);
+  };
+  const threadTs = async () => (await admin.from("project_slack").select("thread_ts").eq("project_id", frank.projectId).single()).data!.thread_ts;
+
+  await comment("First in the thread");
+  await expect.poll(() => onChannel(channel).length, { timeout: 15_000 }).toBe(1);
+  const firstThread = await threadTs();
+  expect(firstThread).toBe(headersOn(channel)[0].ts);
+
+  // Start a New Thread: the next update has a header of its own.
   await frank.loginAsStaff(page);
-  await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`${APP_URL}/projects/${frank.projectId}`);
   await page.getByRole("button", { name: "Settings", exact: true }).click();
-  const linkBox = page.getByLabel("Slack List link");
-  await expect(linkBox).toBeVisible({ timeout: 20_000 });
-  // Not a List's link, then one Frank can't open.
-  await linkBox.fill("https://example.com/not-a-list");
-  await page.getByRole("button", { name: "Connect List" }).click();
-  await expect(page.getByText("That isn't a List's link.", { exact: false })).toBeVisible();
-  await linkBox.fill("https://e2e.slack.com/lists/T0E2E/FDENIED123");
-  await page.getByRole("button", { name: "Connect List" }).click();
-  await expect(page.getByText("Frank can't open that List. Share it with Frank in Slack, then try again.")).toBeVisible();
+  await expect(page.getByText("Every update goes in this project's thread there.")).toBeVisible({ timeout: 20_000 });
+  await page.getByRole("button", { name: "Start a New Thread" }).click();
+  await expect(page.getByText("The first update starts this project's thread there", { exact: false })).toBeVisible();
+  await comment("First in the second thread");
+  await expect.poll(() => onChannel(channel).length, { timeout: 15_000 }).toBe(2);
+  expect(headersOn(channel)).toHaveLength(2);
+  expect(onChannel(channel)[1].thread_ts).toBe(headersOn(channel)[1].ts);
 
-  const listId = `FLIST${Date.now().toString().slice(-8)}`;
-  await linkBox.fill(`https://e2e.slack.com/lists/T0E2E/${listId}`);
-  await page.getByRole("button", { name: "Connect List" }).click();
-  await expect(page.getByText("Adding items to Client Feedback")).toBeVisible();
-  await expect(page.getByText("Fills its first column, Client, Comment, Link")).toBeVisible();
-  const toList = page.getByRole("group", { name: "What goes to the List" });
-  await expect(toList.getByRole("checkbox", { name: /Client activity/ })).toBeChecked();
+  // Its header deleted in Slack: a new thread, without failing.
+  await admin.from("project_slack").update({ thread_ts: "GONE" }).eq("project_id", frank.projectId);
+  await comment("After the header went");
+  await expect.poll(() => onChannel(channel).length, { timeout: 15_000 }).toBe(3);
+  expect(headersOn(channel)).toHaveLength(3);
+  expect(onChannel(channel)[2].thread_ts).toBe(headersOn(channel)[2].ts);
+  expect(await threadTs()).toBe(headersOn(channel)[2].ts);
+  expect((await admin.from("project_slack").select("last_error").eq("project_id", frank.projectId).single()).data!.last_error).toBeNull();
 
-  // The client's change request on a review link: an item, each cell filled.
-  await frank.createClientContact("Priya Client", "priya@example.invalid");
-  const token = await frank.createSharedLink({});
-  const who = { p_token: token, p_passcode: null, p_creative_id: frank.creativeId, p_guest_name: "Priya Client", p_guest_email: "priya@example.invalid" };
-  expect((await anon().rpc("submit_shared_request_changes", { ...who, p_body: "Swap the photo" })).data).toMatchObject({ status: "ok" });
-  await sendNow(frank.creativeId);
-  const mine = () => listed.filter((i) => i.list_id === listId);
-  await expect.poll(() => mine().length, { timeout: 15_000 }).toBe(1);
-  const item = mine()[0];
-  expect(item.auth).toBe("Bearer xoxb-e2e-5");
-  const cell = (id: string) => JSON.stringify(item.initial_fields.find((f) => f.column_id === id) ?? null);
-  expect(cell("Col_T")).toContain("Priya Client (E2E Test Client) asked for changes on E2E Test Creative");
-  expect(cell("Col_C")).toContain("E2E Test Client");
-  expect(cell("Col_W")).toContain("Swap the photo");
-  expect(cell("Col_L")).toMatch(new RegExp(`"original_url":"https?://[^"]+/creatives/${frank.creativeId}\\?comment=`));
-  expect(cell("Col_S")).toBe("null");
-
-  // Client activity off for the List: nothing more is added.
-  await toList.getByRole("checkbox", { name: /Client activity/ }).click();
-  await expect.poll(async () => (await admin.from("project_slack_list").select("client_activity").eq("project_id", frank.projectId).single()).data!.client_activity).toBe(false);
-  expect((await anon().rpc("submit_shared_comment", { ...who, p_body: "One more thing" })).data).toMatchObject({ status: "ok" });
-  await sendNow(frank.creativeId);
-  await page.waitForTimeout(2000);
-  expect(mine()).toHaveLength(1);
+  // A new channel: the old thread is forgotten.
+  await admin.from("project_slack").update({ channel_id: `${channel}_B`, channel_name: "other" }).eq("project_id", frank.projectId);
+  expect(await threadTs()).toBeNull();
 });
 

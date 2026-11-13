@@ -5179,6 +5179,34 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Slack: one thread per project, and Lists set aside (1.86.0, phase156, 2026-11-13)
+
+Direct instruction, after trying Lists on the sonofluff workspace: "the comments should appear in the thread so we have them all", then, Lists not able to do that, "Let's try the thread. It should be in the project's own channel."
+
+**What was found with Lists** (on the real workspace, through staging's connection, with consent for each write):
+- **An existing List** ("No Fluff Tickets"): Slack answers `list_not_found` to Frank, and sharing it with the Frank app in Slack fails ("Unable to share list"), as does sharing it to a channel.
+- **A List Frank creates:** Frank can reach and share it (`slackLists.access.set`), and add and update rows in place (`slackLists.items.update`).
+- **An item's comments:** after a comment on one, Slack's API shows nothing of them: no thread reference, and posting to the List as a channel is `channel_not_found`. Apps can't reach an item's thread.
+- **Reading columns:** `include_list` on `slackLists.items.list` returns no List object. Reading columns needs an item's details instead (as phase155's fallback does).
+- **The test Lists:** two were made. Ownership of both was handed to the user to delete.
+
+**Now:**
+- **The thread:** each project's updates go in one thread in its channel. The first posts a header ("Diwali Campaign (Casa Carigar): updates from Frank", Open project), saved as `project_slack.thread_ts` (phase156). Each update, mentions tagged, then replies under it.
+- **Two sends at once:** should two start a thread together, the first saved is kept.
+- **Header deleted in Slack:** a reply answered thread_not_found, message_not_found or invalid_thread_ts starts a new thread, once, without an error.
+- **New thread:** a new channel clears the thread (a trigger), and Start a New Thread in Project Settings does too.
+- **Lists:** the List part of Project Settings, its route and its sending are removed. `project_slack_list`, the outbox's `target` and the List permissions stay, unused, so connected workspaces needn't reconnect again. **Open:** remove the table, the List side of `slack_queue` and the two List permissions in a later tidy-up.
+
+**Verified:** phase156 was rehearsed on staging, then applied there and to the local database.
+- **The unit test for the List cells** became one for the thread's header (6 in all).
+- **slack.spec:**
+  - The posting test now checks one header ("E2E Test Project (E2E Test Client): updates from Frank"), saved as the project's thread, and all five updates replying under it.
+  - The List test was replaced by one for a new thread: Start a New Thread in Settings, then the next update with its own header; a header gone in Slack (the stand-in answers thread_not_found) giving a new thread with no error shown; and a new channel clearing the thread.
+  - 5 passed.
+- **Screenshot:** Project Settings with a thread under way was checked.
+
+**Full suite** on the local database: 371 passed, 1 failed. admin-overview, the known flaky test, passed on rerun.
+
 ## Slack: mentions tagged in the channel, and a List per project (1.85.0, phase155, 2026-11-13)
 
 Direct instruction, two follow-ups to 1.84.0:
