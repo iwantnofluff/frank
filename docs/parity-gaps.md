@@ -5179,6 +5179,33 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## The VO in the artwork's place, and comments on it (1.82.2, phase152, 2026-11-13)
+
+Direct instruction: as Text on Image shows in the artwork's place until there is artwork, show the VO too, if one has been added.
+- **Where:** on the post's page in Frank, under the Text on Image.
+- **Labels:** with both, each is named (TEXT ON IMAGE, VO). With the VO alone, only VO is. With Text on Image alone, nothing changes.
+- **Who sees it:** the team only, as the VO is everywhere else. A client sees the Text on Image alone.
+- **Comments** (direct instruction, a follow-up the same day): the VO's words can be picked for a comment as Text on Image's can, and such a comment is always Private, since a public one would show the client the script quoted.
+  - **Comment box:** a VO selection shows "VO: “…”" above the box, the Private switch becomes "Private (the VO is for your team only)", and On behalf of the client isn't offered.
+  - **Posted comment:** its Private tag can't be switched, and nor can its replies'.
+  - **Database:** phase152's `comments_vo_private` check refuses a public comment anchored on the VO, posted or changed afterwards.
+
+**Not done:**
+- The VO isn't shown on the review link: that's the client's view.
+- It isn't shown on the post's phone page either, which has no artwork placeholder of its own.
+
+**Too long for the space** (asked directly; this is what happens now, not a change): the placeholder grows taller than the format's shape to fit all the words, and the phone scrolls to show them ("Scroll inside the phone…"). Measured with a 14-line VO on a Reel: the placeholder grew to 1002px tall, where the Reel's own shape is shorter. The CSS (`.noart-top`, `overflow-y: auto`) looks as if it meant the words to scroll inside a box that keeps its shape. It doesn't, because the placeholder's height comes from `aspect-ratio`, which gives way to its content. **Open:** whether it should keep the format's shape and scroll inside instead.
+
+**Verified**: phase152 was rehearsed on staging and rolled back, then applied to staging and the local database. A new test in text-on-image-comments.spec covers:
+- Both shown and both named for the team.
+- Picking VO words: the box shows "VO: “full attention”", Private is locked and On behalf isn't offered.
+- Posting: the comment is Private with no switch, its words are highlighted, and the row is private with a voiceover anchor.
+- The database refusing to make it public (`comments_vo_private`).
+- VO alone named VO.
+- A client seeing the Text on Image with no VO, no labels and not the comment.
+
+With the rest of that file, comment-visibility and comment-for-client, it passed (9). creative-review, mobile-post and video-review passed earlier (12). A screenshot of a VO selection in the comment box was checked. Full suite on the local database: 364 passed, 1 failed. dashboard.png differed only in Last Activity (the date rolling over) and was regenerated after looking at its diff. Screenshots for the team (both, with a long VO) and for a client were checked. Types and lint clean.
+
 ## An X to close Workspace and Client Settings (1.82.1, 2026-11-12)
 
 Direct instruction: an X at the top right of Workspace and Client Settings to close them. It goes back to the page Settings was opened from, not the settings page before, so moving through several settings pages doesn't matter.

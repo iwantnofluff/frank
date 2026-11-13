@@ -385,6 +385,13 @@ export function CreativeReviewPage({ id }: { id: string }) {
   // (the text is on the post, not in versions, so it can change).
   const slideTextRaw = creative?.slide_text?.[slidePosition - 1] ?? "";
   const slideTextNow = slideTextRaw.trim() ? slideTextRaw : "";
+  // Its VO script, under it until there's artwork (direct instruction): the
+  // team's only, as everywhere else.
+  const voNow = isStaff && creative?.voiceover?.trim() ? creative.voiceover : "";
+  // Its comments' highlights, while their words are still where they were.
+  const voHighlights = (allComments ?? [])
+    .filter((c) => isHighlightAnchor(c.anchor) && c.anchor.field === "voiceover" && voNow.slice(c.anchor.start, c.anchor.end) === c.anchor.quote)
+    .map((c) => ({ ...(c.anchor as HighlightAnchor), commentId: c.id }));
   const slideTextHighlights = (allComments ?? [])
     .filter(
       (c) =>
@@ -470,18 +477,43 @@ export function CreativeReviewPage({ id }: { id: string }) {
           // Its Text on Image from the top, selectable for a comment as a
           // caption is (direct instruction).
           top={
-            slideTextNow && !creative.artwork_removed_at ? (
-              <div className="noart-toi">
-                <CaptionHighlighter
-                  text={slideTextNow}
-                  field="slide_text"
-                  highlights={slideTextHighlights}
-                  highlightedCommentId={highlightedCommentId}
-                  draft={draftWords}
-                  onSelect={setHighlightedCommentId}
-                  onPlace={(anchor) => place({ anchor: { ...anchor, ...(frames.length > 1 ? { slide: slidePosition } : {}) } })}
-                />
-              </div>
+            (slideTextNow || voNow) && !creative.artwork_removed_at ? (
+              <>
+                {slideTextNow && (
+                  <div className="noart-toi">
+                    {/* Named once the VO is under it too. */}
+                    {voNow && <span className="noart-lbl">Text on Image</span>}
+                    <CaptionHighlighter
+                      text={slideTextNow}
+                      field="slide_text"
+                      highlights={slideTextHighlights}
+                      highlightedCommentId={highlightedCommentId}
+                      draft={draftWords}
+                      onSelect={setHighlightedCommentId}
+                      onPlace={(anchor) => place({ anchor: { ...anchor, ...(frames.length > 1 ? { slide: slidePosition } : {}) } })}
+                    />
+                  </div>
+                )}
+                {/* The VO script too, for the team (direct instruction):
+                    a client never sees it. */}
+                {voNow && (
+                  <div className="noart-toi noart-vo">
+                    <span className="noart-lbl">VO</span>
+                    {/* Its words take comments too, always Private
+                        (direct instruction, phase152): a quote of it
+                        mustn't reach the client. */}
+                    <CaptionHighlighter
+                      text={voNow}
+                      field="voiceover"
+                      highlights={voHighlights}
+                      highlightedCommentId={highlightedCommentId}
+                      draft={draftWords}
+                      onSelect={setHighlightedCommentId}
+                      onPlace={(anchor) => place({ anchor })}
+                    />
+                  </div>
+                )}
+              </>
             ) : undefined
           }
           title={creative.artwork_removed_at ? "Artwork removed" : undefined}

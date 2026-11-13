@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.82.2",
+    date: "2026-11-13",
+    title: "The VO where the artwork goes, and comments on it",
+    changes: [
+      "Until a video post has its artwork, its VO script shows in the artwork's place, under its Text on Image, each named once both are there. Only your team sees the VO; your client still sees the Text on Image alone.",
+      "Select words in the VO to comment on them, as with Text on Image. A comment on the VO is always Private, so your client never sees the script quoted.",
+    ],
+  },
+  {
     version: "1.82.1",
     date: "2026-11-12",
     title: "Close Settings with the X",

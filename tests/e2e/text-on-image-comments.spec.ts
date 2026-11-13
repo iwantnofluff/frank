@@ -12,8 +12,8 @@ const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SU
 
 // Selects `words` in the Text on Image shown where the artwork goes, as a
 // person dragging over them would, which takes them to the comment box.
-async function selectWords(page: Page, words: string) {
-  await page.locator(".noart-toi .hl-target").evaluate((el, w) => {
+async function selectWords(page: Page, words: string, where = ".noart-toi .hl-target") {
+  await page.locator(where).first().evaluate((el, w) => {
     const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
     let node: Node | null;
     while ((node = walker.nextNode())) {
@@ -189,4 +189,56 @@ test("References sit under Notes for Designer, and a client still reads them", a
   const cheaders = await clientPage.locator(".tbl thead th[data-col-key]").evaluateAll((ths) => ths.map((th) => th.getAttribute("data-col-key")));
   expect(cheaders).not.toContain("notes");
   await expect(crow.locator("td").nth(cheaders.indexOf("concept"))).toContainText("example.com");
+});
+
+// The VO script under it too (direct instruction), named once both are
+// there, its words taking comments that stay Private (phase152); the team's
+// only, so a client sees the Text on Image alone.
+test("the VO shows under the Text on Image for the team, never for a client", async ({ page, browser, frank }) => {
+  test.setTimeout(90_000);
+  await admin
+    .from("creatives")
+    .update({ formats: ["ig_reel"], format: "ig_reel", slide_text: ["Phones down, glasses up"], voiceover: "Some nights deserve your full attention." })
+    .eq("id", frank.creativeId);
+  await frank.loginAsStaff(page);
+  await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
+  const top = page.locator(".noart-top");
+  await expect(top.locator(".noart-vo")).toHaveText("VOSome nights deserve your full attention.", { timeout: 20_000 });
+  await expect(top.locator(".noart-lbl")).toHaveText(["Text on Image", "VO"]);
+
+  // Its words take a comment, Private and nothing else (phase152).
+  await selectWords(page, "full attention", ".noart-vo .hl-target");
+  const box = mainBox(page);
+  await expect(box.locator(".cdraft")).toContainText("VO: \u201cfull attention\u201d");
+  await expect(box.getByText("Private (the VO is for your team only)")).toBeVisible();
+  await expect(box.getByRole("checkbox", { name: "Private" })).toHaveCount(0);
+  await expect(box.getByText(/On behalf of/)).toHaveCount(0);
+  await box.locator("textarea").fill("Slow this line down");
+  await box.getByRole("button", { name: "Post", exact: true }).click();
+  const card = page.locator(".cmt:not(.pending)", { hasText: "Slow this line down" });
+  await expect(card).toBeVisible({ timeout: 15_000 });
+  await expect(card.locator(".vis-tag")).toHaveText("Private");
+  await expect(card.locator("button.vistoggle")).toHaveCount(0);
+  await expect(page.locator(".noart-vo mark")).toHaveText("full attention");
+  const { data: row } = await admin.from("comments").select("id, visibility, anchor").eq("body", "Slow this line down").single();
+  expect(row!.visibility).toBe("private");
+  expect((row!.anchor as { field: string }).field).toBe("voiceover");
+  // And the database keeps it so.
+  const made = await admin.from("comments").update({ visibility: "public" }).eq("id", row!.id).select("id");
+  expect(made.error?.message).toContain("comments_vo_private");
+
+  // The VO alone: no Text on Image, so only VO is named.
+  await admin.from("creatives").update({ slide_text: [] }).eq("id", frank.creativeId);
+  await page.reload();
+  await expect(top.locator(".noart-lbl")).toHaveText(["VO"], { timeout: 20_000 });
+  await admin.from("creatives").update({ slide_text: ["Phones down, glasses up"] }).eq("id", frank.creativeId);
+
+  const c = await (await browser.newContext()).newPage();
+  await frank.loginAsClient(c);
+  await c.goto(`${APP_URL}/creatives/${frank.creativeId}`);
+  await expect(c.locator(".noart-toi")).toContainText("Phones down, glasses up", { timeout: 20_000 });
+  await expect(c.locator(".noart-vo, .noart-lbl")).toHaveCount(0);
+  await expect(c.getByText("Some nights deserve your full attention.")).toHaveCount(0);
+  // Nor its comment.
+  await expect(c.getByText("Slow this line down")).toHaveCount(0);
 });

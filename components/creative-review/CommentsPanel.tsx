@@ -80,6 +80,7 @@ function AnchorBadge({ anchor }: { anchor: CommentRow["anchor"] }) {
     return (
       <span className="anchor hl-a">
         {anchor.field === "slide_text" && <>Text on Image{slide ? `, Slide ${slide}` : ""}: </>}
+        {anchor.field === "voiceover" && <>VO: </>}
         &ldquo;{anchor.quote}&rdquo;
       </span>
     );
@@ -155,7 +156,10 @@ function Composer({
 
   // Without the Private switch (a client), a comment is public, as the
   // database makes it; its placeholder shouldn't say Private meanwhile.
-  const visibility: "private" | "public" = lockedPrivate
+  // Words of the VO picked: Private, always (phase152), the VO being
+  // the team's only.
+  const onVo = !!draft && isHighlightAnchor(draft.anchor) && draft.anchor.field === "voiceover";
+  const visibility: "private" | "public" = lockedPrivate || onVo
     ? "private"
     : showInternalToggle && internal
       ? "private"
@@ -225,7 +229,7 @@ function Composer({
           {atMoment ? `At ${formatVideoTime(moment)}` : `Not at ${formatVideoTime(moment)}`}
         </button>
       )}
-      {clientName && (
+      {clientName && !onVo && (
         <div className="cf forcl">
           <label className="intog">
             <input
@@ -254,7 +258,9 @@ function Composer({
         </div>
       )}
       <div className="cf">
-        {showInternalToggle && !lockedPrivate ? (
+        {onVo && showInternalToggle ? (
+          <span className="intog">Private (the VO is for your team only)</span>
+        ) : showInternalToggle && !lockedPrivate ? (
           <label className="intog">
             <input
               type="checkbox"
@@ -298,13 +304,16 @@ function VisibilityTag({
   visibility,
   isStaff,
   onToggle,
+  fixed = false,
 }: {
   visibility: "private" | "public";
   isStaff: boolean;
   onToggle: () => void;
+  // On the VO's words: Private for good (phase152).
+  fixed?: boolean;
 }) {
   const visClass = `vis-tag ${visibility === "private" ? "vis-private" : "vis-public"}`;
-  if (!isStaff) {
+  if (!isStaff || fixed) {
     return visibility === "private" ? <span className={visClass}>Private</span> : null;
   }
   return (
@@ -395,6 +404,8 @@ function CommentCard({
   // Shown the moment it's posted, before the save is back (useCreateComment):
   // nothing to reply to or resolve yet.
   const pending = thread.id.startsWith("pending-");
+  // On the VO's words: it and its replies stay Private (phase152).
+  const onVoThread = isHighlightAnchor(thread.anchor) && thread.anchor.field === "voiceover";
 
   return (
     <div
@@ -434,6 +445,7 @@ function CommentCard({
         <VisibilityTag
           visibility={thread.visibility}
           isStaff={isStaff}
+          fixed={onVoThread}
           onToggle={() =>
             onToggleVisibility(thread.id, thread.visibility === "private" ? "public" : "private")
           }
@@ -489,6 +501,7 @@ function CommentCard({
                   </b>
                   <VisibilityTag
                     visibility={r.visibility}
+                    fixed={onVoThread}
                     isStaff={isStaff}
                     onToggle={() =>
                       onToggleVisibility(r.id, r.visibility === "private" ? "public" : "private")

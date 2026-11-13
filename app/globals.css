@@ -4692,6 +4692,20 @@ select.sort:hover {
   line-height: 1.45;
   color: var(--ink);
 }
+/* Text on Image and the VO named, once both are in the artwork's place
+   (direct instruction); the VO under it, apart. */
+.noart-lbl {
+  display: block;
+  margin-bottom: calc(4px / var(--pf-zoom, 1));
+  font-size: calc(10.7px / var(--pf-zoom, 1));
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.noart-toi + .noart-vo {
+  margin-top: calc(16px / var(--pf-zoom, 1));
+}
 /* In the phone or iPad, read at 13.7px whatever its scale (direct
    instruction: the caption at the same size). */
 .phoneframe .noart-toi,
