@@ -12903,12 +12903,6 @@ button.hbrand-add:hover {
 }
 /* Project Settings → Slack (phase154): the channel, its picker, and what
    goes to it. */
-.slk-fills {
-  display: block;
-  margin-top: 2px;
-  font-size: 12.2px;
-  color: var(--muted);
-}
 .slk-row {
   display: flex;
   align-items: center;

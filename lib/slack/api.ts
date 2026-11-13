@@ -101,17 +101,14 @@ export async function listChannels(token: string): Promise<SlackChannel[]> {
   return out.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-// Posts a message, into a thread if given its header's ts; returns the new
-// message's own ts (a thread's, for its header).
-export async function postMessage(token: string, channel: string, message: { text: string; blocks: unknown[]; thread_ts?: string }) {
-  const body = await call<SlackReply & { ts: string }>(
+export async function postMessage(token: string, channel: string, message: { text: string; blocks: unknown[] }) {
+  await call(
     await fetch(`${SLACK}/api/chat.postMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json; charset=utf-8", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ channel, ...message, unfurl_links: false, unfurl_media: false }),
     }),
   );
-  return body.ts;
 }
 
 // Someone's Slack member ID from their email, or null if Slack has no one

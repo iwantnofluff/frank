@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { viaText } from "@/lib/comment-for-client";
 import { lookupUserByEmail, postMessage, SlackError } from "@/lib/slack/api";
-import { slackMessage, slackThreadHeader, type SlackKind } from "@/lib/slack/message";
+import { slackMessage, type SlackKind } from "@/lib/slack/message";
 import { decryptSlackToken } from "@/lib/slack/secrets";
 
 // What Slack said, in words for the project's Settings.
@@ -25,15 +25,11 @@ interface Owed {
   target: "channel" | "list";
 }
 
-// A reply aimed at a thread whose header message has gone (deleted in
-// Slack): a new thread is started instead.
-const THREAD_GONE = new Set(["thread_not_found", "message_not_found", "invalid_thread_ts"]);
-
 // Posts what's waiting (phase154): one post's (straight after something
 // happens on it), or everything (the daily run). Each is claimed first
-// (claim_slack_outbox), so a second send skips it. Each goes into the
-// project's thread in its channel (phase156), started by the first. Returns
-// how many went.
+// (claim_slack_outbox), so a second send skips it. Each is its own message
+// in the project's channel (one thread per project, phase156, was taken
+// back by direct instruction). Returns how many went.
 export async function deliverSlack(
   admin: SupabaseClient,
   // A workspace's own address; for one without (none should be), Frank's.
@@ -50,7 +46,7 @@ export async function deliverSlack(
   const commentIds = [...new Set(rows.map((r) => r.comment_id).filter((id): id is string => !!id))];
   const [conns, channels, posts, comments, agencies] = await Promise.all([
     admin.from("slack_connections").select("agency_id, bot_token_enc").in("agency_id", agencyIds),
-    admin.from("project_slack").select("project_id, channel_id, thread_ts").in("project_id", projectIds),
+    admin.from("project_slack").select("project_id, channel_id").in("project_id", projectIds),
     admin
       .from("creatives")
       .select("id, name, approved_by_name, project:projects(name, client:clients(name))")
@@ -82,8 +78,6 @@ export async function deliverSlack(
   const agencyOf = new Map((agencies.data ?? []).map((a) => [a.id as string, a]));
   const nameOf = new Map((authors ?? []).map((u) => [u.id as string, u.name as string]));
   const emailOf = new Map((authors ?? []).map((u) => [u.id as string, u.email as string]));
-  // Each project's thread, once known or started in this send.
-  const threadOf = new Map((channels.data ?? []).map((c) => [c.project_id as string, (c.thread_ts as string | null) ?? null]));
   // Each workspace's key, decrypted once; each person's Slack ID, looked
   // up once (null when Slack has no one with their email).
   const tokens = new Map<string, string>();
@@ -159,44 +153,8 @@ export async function deliverSlack(
       url: `${base}/creatives/${row.creative_id}${row.comment_id ? `?comment=${row.comment_id}` : ""}`,
       mentions,
     };
-    // The project's thread: the one it has, or a new one, its header posted
-    // first. Should another send have started one meanwhile, that one's kept.
-    const token = tokenFor(row.agency_id);
-    const threadFor = async () => {
-      const known = threadOf.get(row.project_id);
-      if (known) return known;
-      const started = await postMessage(
-        token,
-        channel,
-        slackThreadHeader({ projectName: project?.name ?? "This project", clientName, url: `${base}/projects/${row.project_id}` }),
-      );
-      const { data: kept } = await admin
-        .from("project_slack")
-        .update({ thread_ts: started })
-        .eq("project_id", row.project_id)
-        .eq("channel_id", channel)
-        .is("thread_ts", null)
-        .select("thread_ts");
-      let ts = started;
-      if (!kept?.length) {
-        const { data: now } = await admin.from("project_slack").select("thread_ts").eq("project_id", row.project_id).maybeSingle();
-        ts = (now?.thread_ts as string | null) ?? started;
-      }
-      threadOf.set(row.project_id, ts);
-      return ts;
-    };
     try {
-      const message = slackMessage(event);
-      try {
-        await postMessage(token, channel, { ...message, thread_ts: await threadFor() });
-      } catch (e) {
-        if (!(e instanceof SlackError && THREAD_GONE.has(e.code))) throw e;
-        // Its header was deleted: forget it and start again, once.
-        const gone = threadOf.get(row.project_id);
-        threadOf.set(row.project_id, null);
-        await admin.from("project_slack").update({ thread_ts: null }).eq("project_id", row.project_id).eq("thread_ts", gone);
-        await postMessage(token, channel, { ...message, thread_ts: await threadFor() });
-      }
+      await postMessage(tokenFor(row.agency_id), channel, slackMessage(event));
       await done({ sent_at: new Date().toISOString(), error: null });
       await admin.from("project_slack").update({ last_error: null, last_error_at: null }).eq("project_id", row.project_id).not("last_error", "is", null);
       sent++;

@@ -79,8 +79,6 @@ export interface ProjectSlack {
   client_activity: boolean;
   team_comments: boolean;
   include_private: boolean;
-  // Its updates' thread in the channel (phase156); none until the first.
-  thread_ts: string | null;
   last_error: string | null;
   last_error_at: string | null;
 }
@@ -91,7 +89,7 @@ export function useProjectSlack(projectId: string | undefined) {
     queryFn: async (): Promise<ProjectSlack | null> => {
       const { data, error } = await createClient()
         .from("project_slack")
-        .select("channel_id, channel_name, client_activity, team_comments, include_private, thread_ts, last_error, last_error_at")
+        .select("channel_id, channel_name, client_activity, team_comments, include_private, last_error, last_error_at")
         .eq("project_id", projectId!)
         .maybeSingle();
       if (error) throw error;
@@ -109,7 +107,7 @@ export function useSaveProjectSlack(projectId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (
-      patch: Partial<Pick<ProjectSlack, "channel_id" | "channel_name" | "client_activity" | "team_comments" | "include_private" | "thread_ts">>,
+      patch: Partial<Pick<ProjectSlack, "channel_id" | "channel_name" | "client_activity" | "team_comments" | "include_private">>,
     ) => {
       const supabase = createClient();
       const {

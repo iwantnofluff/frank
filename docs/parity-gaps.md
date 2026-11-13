@@ -5179,12 +5179,25 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Slack threads taken back (1.86.2, 2026-11-13)
+
+Direct instruction: "remove the threads and keep to what we had originally". Each update is its own message in the project's channel again, as in 1.84.0, with mentions still tagged (1.85.0).
+- **Kept removed:** Lists, since Slack won't let Frank reach them (1.86.0).
+- **Removed:** the thread header, saving the thread, a new thread after a deleted header, Start a New Thread and its line in Project Settings.
+- **Left in the database, unused:** `project_slack.thread_ts` and its new-channel trigger (phase156), so no migration was needed. **Open:** remove them with the List leftovers in a later tidy-up.
+
+**Verified:**
+- **Unit tests:** the thread header's unit test was removed (5 in all).
+- **slack.spec:** the posting test now checks each update is its own message, not a reply, and the thread test is gone.
+
 ## A comment that won't post says why (1.86.1, 2026-11-13)
 
 Direct report: on live, a comment logged on behalf of the client showed only "Couldn't post that comment".
 - **What was checked:** the same comment on staging (comment-for-client.spec, 3 passed), and locally in a project with a Slack channel (a throwaway test with the stand-in Slack; it saved). Both posted. Live's database couldn't be read from here.
 - **The fix:** the comment box showed a reason only for a JavaScript Error, but a refusal from the database (a Supabase error) is a plain object. It now uses `errorMessage`, as the rest of the app does, so the database's own reason shows.
-- **Open:** the cause on live, until that reason is seen.
+- **The cause, once shown:** "Only the team can log a comment for the client", for a team member. That's phase149's check refusing everyone. Live has its first version, which looked the workspace up from the comment's agency_id before that's filled in, the bug fixed on staging and local while phase149 was built. phase157 replaces it with the corrected check (the same as phase149's file now), and is a no-op where it's already right.
+- **Verified:** phase157 rehearsed and applied on staging and local (no change there).
+- **Open:** confirming on live once it has run there.
 
 **Verified:** types and lint clean; build clean.
 

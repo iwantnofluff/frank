@@ -2,7 +2,7 @@
 // (or `npm run test:unit`).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { escapeSlack, slackMessage, slackThreadHeader, type SlackEvent } from "./message.ts";
+import { escapeSlack, slackMessage, type SlackEvent } from "./message.ts";
 
 const event = (over: Partial<SlackEvent> = {}): SlackEvent => ({
   kind: "client_comment",
@@ -55,12 +55,3 @@ test("whoever's mentioned is tagged where Slack knows them, named otherwise, and
   assert.ok(m.text.startsWith("<@U123> Priya Shah"));
   assert.doesNotMatch(texts(slackMessage(event()).blocks), /Mentions/);
 });
-
-test("a project's thread starts with its name, its client's, and a button to the project", () => {
-  const h = slackThreadHeader({ projectName: "Q4 & Social", clientName: "Casa Carigar", url: "https://x/projects/p1" });
-  assert.equal(h.text, "Q4 & Social (Casa Carigar): updates from Frank");
-  assert.equal((h.blocks[0] as { text: { text: string } }).text.text, "*Q4 &amp; Social* (Casa Carigar): updates from Frank");
-  assert.match(JSON.stringify(h.blocks), /"url":"https:\/\/x\/projects\/p1"/);
-  assert.equal(slackThreadHeader({ projectName: "Solo", clientName: null, url: "u" }).text, "Solo: updates from Frank");
-});
-

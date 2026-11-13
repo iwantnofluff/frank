@@ -56,11 +56,6 @@ test.beforeAll(async () => {
           res.end(JSON.stringify({ ok: false, error: "not_in_channel" }));
           return;
         }
-        // A thread whose header was deleted.
-        if (msg.thread_ts === "GONE") {
-          res.end(JSON.stringify({ ok: false, error: "thread_not_found" }));
-          return;
-        }
         const ts = `17000.${String(posted.length).padStart(6, "0")}`;
         posted.push({ ...msg, ts, auth: req.headers.authorization });
         res.end(JSON.stringify({ ok: true, ts }));
@@ -101,10 +96,7 @@ async function connect(agencyId: string, token: string) {
 }
 
 const headline = (p: Posted) => p.blocks[0]?.text?.text ?? "";
-// The updates (replies in a project's thread, phase156), and the threads'
-// header messages.
-const onChannel = (channel: string) => posted.filter((p) => p.channel === channel && p.thread_ts);
-const headersOn = (channel: string) => posted.filter((p) => p.channel === channel && !p.thread_ts);
+const onChannel = (channel: string) => posted.filter((p) => p.channel === channel);
 // As the app does straight after something happens on a post.
 const sendNow = (creativeId: string) =>
   fetch(`${APP_URL}/api/notify/client-activity`, {
@@ -201,13 +193,8 @@ test("the client's activity and the team's comments post to the project's channe
   expect(headline(first)).toBe("*E2E Staff (E2E Test Agency)* commented on *E2E Test Creative*");
   expect(first.blocks[1].text!.text).toBe(">Colours look off on mobile");
   expect(first.auth).toBe("Bearer xoxb-e2e-2");
-  // The first update started the project's thread: its header, then the
-  // update under it.
-  expect(headersOn(channel)).toHaveLength(1);
-  const header = headersOn(channel)[0];
-  expect(header.text).toBe("E2E Test Project (E2E Test Client): updates from Frank");
-  expect(first.thread_ts).toBe(header.ts);
-  expect((await admin.from("project_slack").select("thread_ts").eq("project_id", frank.projectId).single()).data!.thread_ts).toBe(header.ts);
+  // Each update its own message in the channel, not a thread's reply.
+  expect(first.thread_ts).toBeUndefined();
   const button = first.blocks.at(-1)!.elements![0];
   // A whole address: Slack refuses a button without one.
   expect(button.url).toMatch(new RegExp(`^https?://[^/]+/creatives/${frank.creativeId}\\?comment=`));
@@ -248,9 +235,6 @@ test("the client's activity and the team's comments post to the project's channe
   await sendNow(frank.creativeId);
   await page.waitForTimeout(1500);
   expect(onChannel(channel)).toHaveLength(5);
-  // All five in the one thread, under the one header.
-  expect(headersOn(channel)).toHaveLength(1);
-  expect(new Set(onChannel(channel).map((p) => p.thread_ts))).toEqual(new Set([header.ts]));
 });
 
 test("a channel Frank isn't in says so in Project Settings", async ({ page, frank }) => {
@@ -314,48 +298,3 @@ test("a mention in a comment tags the person in the channel's post", async ({ pa
     }
   }
 });
-
-// A project's thread starts again (phase156): Start a New Thread in its
-// Settings, or its header deleted in Slack; a new channel likewise.
-test("Start a New Thread, a deleted header, and a new channel each start a new thread", async ({ page, frank }) => {
-  test.setTimeout(120_000);
-  const channel = `C_THREAD_${Date.now()}`;
-  await connect(frank.agencyId, "xoxb-e2e-6");
-  await admin.from("project_slack").insert({ project_id: frank.projectId, channel_id: channel, channel_name: "q4-social" });
-  const comment = async (words: string) => {
-    await frank.insertCommentAsStaff(words, "public");
-    await sendNow(frank.creativeId);
-  };
-  const threadTs = async () => (await admin.from("project_slack").select("thread_ts").eq("project_id", frank.projectId).single()).data!.thread_ts;
-
-  await comment("First in the thread");
-  await expect.poll(() => onChannel(channel).length, { timeout: 15_000 }).toBe(1);
-  const firstThread = await threadTs();
-  expect(firstThread).toBe(headersOn(channel)[0].ts);
-
-  // Start a New Thread: the next update has a header of its own.
-  await frank.loginAsStaff(page);
-  await page.goto(`${APP_URL}/projects/${frank.projectId}`);
-  await page.getByRole("button", { name: "Settings", exact: true }).click();
-  await expect(page.getByText("Every update goes in this project's thread there.")).toBeVisible({ timeout: 20_000 });
-  await page.getByRole("button", { name: "Start a New Thread" }).click();
-  await expect(page.getByText("The first update starts this project's thread there", { exact: false })).toBeVisible();
-  await comment("First in the second thread");
-  await expect.poll(() => onChannel(channel).length, { timeout: 15_000 }).toBe(2);
-  expect(headersOn(channel)).toHaveLength(2);
-  expect(onChannel(channel)[1].thread_ts).toBe(headersOn(channel)[1].ts);
-
-  // Its header deleted in Slack: a new thread, without failing.
-  await admin.from("project_slack").update({ thread_ts: "GONE" }).eq("project_id", frank.projectId);
-  await comment("After the header went");
-  await expect.poll(() => onChannel(channel).length, { timeout: 15_000 }).toBe(3);
-  expect(headersOn(channel)).toHaveLength(3);
-  expect(onChannel(channel)[2].thread_ts).toBe(headersOn(channel)[2].ts);
-  expect(await threadTs()).toBe(headersOn(channel)[2].ts);
-  expect((await admin.from("project_slack").select("last_error").eq("project_id", frank.projectId).single()).data!.last_error).toBeNull();
-
-  // A new channel: the old thread is forgotten.
-  await admin.from("project_slack").update({ channel_id: `${channel}_B`, channel_name: "other" }).eq("project_id", frank.projectId);
-  expect(await threadTs()).toBeNull();
-});
-

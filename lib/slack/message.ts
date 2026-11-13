@@ -63,17 +63,3 @@ export function slackMessage(e: SlackEvent): { text: string; blocks: unknown[] }
   const text = `${tags ? `${tags} ` : ""}${e.who} ${VERB[e.kind]} ${e.postName}${e.body?.trim() ? `: ${e.body.trim().slice(0, 200)}` : ""}`;
   return { text, blocks };
 }
-
-// The message a project's thread starts with (phase156): every update for
-// the project then goes under it.
-export function slackThreadHeader(h: { projectName: string; clientName: string | null; url: string }): { text: string; blocks: unknown[] } {
-  const name = `${h.projectName}${h.clientName ? ` (${h.clientName})` : ""}`;
-  return {
-    text: `${name}: updates from Frank`,
-    blocks: [
-      { type: "section", text: { type: "mrkdwn", text: `*${escapeSlack(h.projectName)}*${h.clientName ? ` (${escapeSlack(h.clientName)})` : ""}: updates from Frank` } },
-      { type: "context", elements: [{ type: "mrkdwn", text: "Every comment, change request and approval for this project goes in this thread." }] },
-      { type: "actions", elements: [{ type: "button", text: { type: "plain_text", text: "Open project" }, url: h.url }] },
-    ],
-  };
-}

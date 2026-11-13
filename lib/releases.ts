@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.86.2",
+    date: "2026-11-13",
+    title: "Slack updates as their own messages again",
+    changes: [
+      "Each update for a project is its own message in its Slack channel again, as before, rather than a reply in one thread. Mentions are still tagged.",
+    ],
+  },
+  {
     version: "1.86.1",
     date: "2026-11-13",
     title: "A comment that won't post says why",
