@@ -5179,6 +5179,51 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Slack: each project's activity in a channel (1.84.0, phase154, 2026-11-13)
+
+Direct instruction: send notifications to a specific Slack channel for each project. Decided directly:
+- **Connecting:** Add to Slack, once per workspace.
+- **What's posted:** the client's activity and the team's comments.
+- **Who chooses:** Owners and Admins choose each project's channel.
+- **Private comments** (added to the plan and agreed): team comments include Private ones, with a per-project switch to leave them out, for channels shared with outsiders.
+
+**How it works:**
+- **Connecting:** Settings → Connections → Slack. `/api/connections/slack/start` (an Owner or Admin) sends people to Slack with a signed state (SLACK_TOKEN_KEY, 15 minutes). Slack returns to `/api/connections/slack/callback` at the environment's front door, as Instagram's does. It re-checks the person is still an Owner or Admin, exchanges the code, and saves the bot key encrypted (AES-256-GCM) in `slack_connections`. That table has no policies, so only the server reads it; the app sees what's connected through `slack_connection_status`. `disconnect_slack` removes it, and projects keep their channels.
+- **A project's channel:** `project_slack` holds the channel and three switches (Client activity, Team comments, Include Private comments), Owners and Admins writing. The picker lists public channels, and private ones Frank has been invited into, through `/api/connections/slack/channels`, so the key stays on the server.
+- **What's owed:** triggers on comments and on approvals fill `slack_outbox`, as the bell's notices are decided.
+  - A client's comment, on a review link, by their own people, or logged on their behalf.
+  - A change request: the client's comment written in the same moment the post became Changes Requested.
+  - A client's approval: the same rule as the bell's.
+  - A team comment, Private ones only if the project allows.
+- **Posting:** `deliverSlack` claims what's waiting (`claim_slack_outbox`, so two sends can't post one twice) and posts with `chat.postMessage`. It runs from the existing "straight after" route (`/api/notify/client-activity`, already called after every comment and every review-link action), ahead of the emails. The daily cron run picks up anything left: up to 5 tries, over 3 days.
+- **The message:** "*Priya Shah (Casa Carigar)* commented on *Diwali Teaser*", the words quoted, project and client, "Private comment, for the team" where it is, and Open in Frank to the post at that comment (`lib/slack/message.ts`).
+- **When Slack refuses:** the reason shows in the project's Settings, in words. For example: not in a private channel ("invite it with /invite @Frank"), the channel gone, or the connection revoked.
+
+**Not done:** direct messages to people, replying from Slack, and other events (sent for review, stage changes). Each could be added later.
+
+**Setup still needed (yours):**
+- Register Frank's Slack app at api.slack.com: bot scopes `chat:write`, `chat:write.public`, `channels:read`, `groups:read`, and the https callback addresses.
+- Set SLACK_CLIENT_ID, SLACK_CLIENT_SECRET and SLACK_TOKEN_KEY in Vercel for each environment. The keys were generated into `.env.local` (staging and local) and `.env.live-backup` (live).
+- Until then the Slack page says Slack isn't set up here.
+- Slack only takes https callbacks, so Add to Slack's full round trip can be tried on staging, not locally.
+
+**Verified**: phase154 was rehearsed on staging and rolled back, then applied to staging and the local database, with the e2e sweep updated for the three new tables. `lib/slack/message.test.ts` (4 unit tests) covers the wording per kind, Private, Slack's markup escaped, every line quoted and long words cut.
+
+`tests/e2e/slack.spec.ts` (3 tests) runs against a stand-in Slack on port 3199. The local run points the test app at it, with a test app ID and key; it's skipped against staging.
+- **Add to Slack:** goes to Slack's sign-in with Frank's app ID, the four scopes, the callback address and a state. A saved connection shows as connected.
+- **Project Settings:** the channel list shows public and private channels and can be searched, and a pick is saved with all three switches on. Turning Team comments off disables Include Private comments.
+- **A User:** sees the channel but can't change it, and the database refuses both their write and their reading of the key.
+- **Posting:**
+  - A Public then a Private team comment from the post's page each post, the Private one marked, with the workspace's key and a link to the comment.
+  - With Private turned off, a Private comment posts nothing.
+  - On a review link, a client's comment, change request and approval each post with their own wording.
+  - Asking again posts nothing twice.
+- **A channel Frank isn't in:** the reason shows in Project Settings.
+
+Screenshots of the Slack page (not connected, connected) and of Project Settings (picking, chosen) were checked. The page was then given the Settings pages' usual padding, since its panel ran to the edge.
+
+**Full suite** on the local database: 370 passed, none failed.
+
 ## Mention pop-ups, Log in on every link, and live comments on links (1.83.0, phase153, 2026-11-13)
 
 Three direct instructions, each looked into before changing anything.

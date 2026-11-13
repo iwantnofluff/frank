@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
+import { ProjectSlack } from "@/components/project/ProjectSlack";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import { usePersonActions } from "@/components/team/PersonActions";
 import { useUpdateProject } from "@/hooks/use-update-project";
@@ -227,6 +228,11 @@ export function ProjectProfileModal({
             This project uses {clientName}&rsquo;s statuses, set in its{" "}
             <Link className="inlink" href={`/clients/${clientId}/settings/statuses`}>Client Settings</Link>.
           </p>
+        </div>
+
+        {/* Its Slack channel (phase154). */}
+        <div>
+          <ProjectSlack projectId={project.id} agencyId={agencyId} canManage={isAdmin} />
         </div>
 
         {/* Its own part, so its line above is spaced as Progress's is

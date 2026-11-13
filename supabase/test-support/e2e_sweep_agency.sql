@@ -28,13 +28,13 @@ begin
     'copy_versions', 'creative_version_slides', 'creative_versions', 'thumbnail_versions',
     'designer_notes', 'proofreads', 'production_versions', 'designer_note_versions',
     'reference_images', 'design_directions', 'copy_chat_messages', 'copy_chats',
-    'creative_stage_events', 'post_live_dates', 'creatives', 'stage_statuses', 'custom_columns',
+    'creative_stage_events', 'post_live_dates', 'slack_outbox', 'creatives', 'stage_statuses', 'custom_columns', 'project_slack',
     'project_access', 'projects', 'format_directions', 'proofread_rules',
     'agency_knowledge_entries', 'knowledge_entries', 'client_monthly_strategies',
     'client_strategy_overviews', 'invites', 'staff_client_access', 'plan_requests',
     'agency_billing', 'memberships', 'calendar_views', 'client_contacts', 'project_folders',
     'instagram_connect_links', 'instagram_connections', 'client_preferences', 'clients',
-    'agency_settings'
+    'slack_connections', 'agency_settings'
   ] loop
     execute format('delete from %I where agency_id = $1', t) using p_agency_id;
   end loop;

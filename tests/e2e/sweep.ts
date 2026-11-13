@@ -111,7 +111,11 @@ async function sweepStepByStep(agencyId: string): Promise<void> {
     ["post_live_dates", () => admin.from("post_live_dates").delete().eq("agency_id", agencyId)],
     // phase126: a post's final asset link (goes with it anyway).
     ["creative_asset_links", () => admin.from("creative_asset_links").delete().eq("agency_id", agencyId)],
+    // What Slack was owed (phase154), before the posts it names.
+    ["slack_outbox", () => admin.from("slack_outbox").delete().eq("agency_id", agencyId)],
     ["creatives", () => admin.from("creatives").delete().eq("agency_id", agencyId)],
+    ["project_slack", () => admin.from("project_slack").delete().eq("agency_id", agencyId)],
+    ["slack_connections", () => admin.from("slack_connections").delete().eq("agency_id", agencyId)],
     // The agency's and its clients' statuses (phase151), once no post is on one.
     ["stage_statuses", () => admin.from("stage_statuses").delete().eq("agency_id", agencyId)],
     ["custom_columns", () => admin.from("custom_columns").delete().eq("agency_id", agencyId)],

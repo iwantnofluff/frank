@@ -4,8 +4,10 @@ import { viaText } from "@/lib/comment-for-client";
 import { agencyOrigin } from "@/lib/admin/agency-origin";
 import { sendEmail } from "@/lib/email/send-email";
 import { clientActivityEmail } from "@/lib/email/client-activity-email";
+import { deliverSlack } from "@/lib/slack/deliver";
 
-// Sends the emails a client's comment or approval is owed (phase80). The
+// Sends the emails a client's comment or approval is owed (phase80), and
+// what the project's Slack channel is owed (phase154). The
 // database decided who, by the client's Preferences, when it wrote the
 // notices (notify_client_activity); this only sends the ones marked for
 // email and not sent yet, from the last day, about the post named, then
@@ -17,6 +19,14 @@ export async function POST(request: Request) {
   if (!creativeId) return NextResponse.json({ error: "creativeId is required" }, { status: 400 });
 
   const admin = createServiceRoleClient();
+  // What the post's project's Slack channel is owed (phase154), whatever
+  // email is: a team comment owes no email but may owe Slack. Its own step,
+  // so a Slack failure never holds up the mail.
+  try {
+    await deliverSlack(admin, { creativeId, originFor: (subdomain) => agencyOrigin(request, subdomain) });
+  } catch (e) {
+    console.error("Slack delivery failed", e);
+  }
   // Claimed first, so two requests can't both send one.
   const { data: owed, error } = await admin
     .from("notifications")

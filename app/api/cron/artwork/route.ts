@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { isCopy, withPreviews } from "@/lib/artwork-preview";
 import { logLiveDates } from "@/lib/instagram/live-dates";
+import { deliverSlack } from "@/lib/slack/deliver";
+import { ROOT_DOMAIN } from "@/lib/tenant";
 
 // The daily artwork run (phase60), called by Vercel's cron (vercel.json)
 // with CRON_SECRET as its bearer token. Removes the artwork of Approved
@@ -25,6 +27,13 @@ export async function GET(request: Request) {
     live = await logLiveDates(admin);
   } catch (e) {
     console.error("Live dates failed", e);
+  }
+  // Anything a Slack channel is still owed (phase154): a post whose page
+  // closed before it sent, or Slack briefly away. Its own step too.
+  try {
+    await deliverSlack(admin, { originFor: (subdomain) => `https://${subdomain}.${ROOT_DOMAIN}` });
+  } catch (e) {
+    console.error("Slack catch-up failed", e);
   }
   const { data: keys, error } = await admin.rpc("run_artwork_housekeeping");
   if (error) {

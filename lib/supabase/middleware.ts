@@ -122,6 +122,8 @@ export async function updateSession(request: NextRequest) {
       // address. Checked by CRON_SECRET.
       path === "/api/cron/artwork" ||
       path === "/api/connections/instagram/callback" ||
+      // Slack's Add to Slack coming back (phase154), the same way.
+      path === "/api/connections/slack/callback" ||
       // Meta's deauthorize and data deletion callbacks, and the page it
       // shows someone after a deletion. Checked by signature.
       path === "/api/connections/instagram/deauthorize" ||

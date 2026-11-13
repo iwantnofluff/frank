@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.84.0",
+    date: "2026-11-13",
+    title: "Projects post to Slack",
+    changes: [
+      "Connect your Slack once in Settings → Connections → Slack, then choose each project's channel in its Settings.",
+      "The client's comments, change requests and approvals, and your team's comments, go to the channel with the words and Open in Frank. Each can be turned off per project, and Private comments too.",
+    ],
+  },
+  {
     version: "1.83.0",
     date: "2026-11-13",
     title: "Mentions pop up, and links you can sign in from",

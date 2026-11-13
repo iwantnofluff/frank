@@ -12901,6 +12901,66 @@ button.hbrand-add:hover {
   height: 60%;
   object-fit: contain;
 }
+/* Project Settings → Slack (phase154): the channel, its picker, and what
+   goes to it. */
+.slk-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13.7px;
+}
+.slk-pick {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+.slk-pick > input {
+  width: 100%;
+  max-width: 360px;
+}
+.slk-list {
+  width: 100%;
+  max-width: 360px;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.slk-list button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 12px;
+  text-align: left;
+  font-size: 13.7px;
+}
+.slk-list button:hover,
+.slk-list button[aria-selected="true"] {
+  background: var(--canvas);
+}
+.slk-priv {
+  font-size: 11.7px;
+  color: var(--muted);
+}
+.slk-togs {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.slk-tog {
+  align-items: flex-start;
+  font-size: 13.2px;
+  margin-right: 0;
+}
+.slk-tog b {
+  color: var(--ink);
+  font-weight: 600;
+}
 /* A review link's Log in, in every state (GuestComposer). */
 .rv-signin {
   font-size: 12.7px;

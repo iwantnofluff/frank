@@ -77,6 +77,12 @@ const dbEnv = {
   NEXT_PUBLIC_SUPABASE_URL: local.API_URL,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: local.ANON_KEY,
   SUPABASE_SERVICE_ROLE_KEY: local.SERVICE_ROLE_KEY,
+  // Slack (phase154): a stand-in Slack that tests/e2e/slack.spec.ts runs on
+  // port 3199, with a test app and key of its own, never Frank's real ones.
+  SLACK_API_BASE: "http://localhost:3199",
+  SLACK_CLIENT_ID: "e2e-client",
+  SLACK_CLIENT_SECRET: "e2e-secret",
+  SLACK_TOKEN_KEY: "ZTJlLXNsYWNrLXRva2VuLWtleS0zMi1ieXRlcy1vayE=",
 };
 
 // The test app on its own port and build folder.

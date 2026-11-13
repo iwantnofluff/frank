@@ -74,7 +74,11 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     key: "connections",
     label: "Connections",
     // A client's Instagram, for the live feed (phase54).
-    pages: [{ href: "/settings/connections/instagram", label: "Instagram" }],
+    // And the workspace's Slack, for each project's channel (phase154).
+    pages: [
+      { href: "/settings/connections/instagram", label: "Instagram" },
+      { href: "/settings/connections/slack", label: "Slack" },
+    ],
   },
   {
     // How the work moves from concept to approval (phase71), for Owners and
