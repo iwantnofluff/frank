@@ -132,3 +132,28 @@ export function useSaveProduction(creativeId: string, projectId: string) {
     },
   });
 }
+
+// A version deleted (phase158, the copy's × for these too): the latest
+// gone puts the one before it back on the post, which the database does.
+export function useDeleteProductionVersion(creativeId: string, projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (versionId: string) => {
+      const { error } = await createClient().rpc("delete_production_version", { p_version_id: versionId });
+      if (error) {
+        if (error.message.includes("not permitted")) throw new Error("You don't have permission to delete this version.");
+        throw error;
+      }
+    },
+    // Awaited, so the window's tabs have moved off it by the time the
+    // confirmation closes.
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["production-versions", creativeId] }),
+        queryClient.invalidateQueries({ queryKey: ["production-versions-project", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["creative", creativeId] }),
+        queryClient.invalidateQueries({ queryKey: ["creatives", projectId] }),
+      ]);
+    },
+  });
+}

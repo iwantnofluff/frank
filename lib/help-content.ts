@@ -361,7 +361,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "Thumbnail Text on Image, for a video post: the words on its cover.",
           "VO, for a video post (a Reel, Story, YouTube or other video format): the voiceover script. Only your team sees it.",
           "Text on Image: the words on each slide. In [the table](project:), a carousel's shows each slide's words under its own Slide heading.",
-          "Each is saved as versions of its own, like the copy: Save VO V1 (or Save Text on Image V1) the first time, then Save to V1 to change it or Save as V2 to start a new one. Earlier versions stay in their tabs, read only, and [the table](project:) shows the latest VO and Text on Image with their V and the earlier ones on hover.",
+          "Each is saved as versions of its own, like the copy: Save VO V1 (or Save Text on Image V1) the first time, then Save to V1 to change it or Save as V2 to start a new one. Earlier versions stay in their tabs, read only, and [the table](project:) shows the latest VO and Text on Image with their V and the earlier ones on hover. Point at a version's tab and click its × to delete it, as with the copy: deleting the latest puts the one before it back.",
           "Notes for Designer, as last saved on the Brief, read only: they're written and changed on the Brief.",
           "[Draft with Frank](help:write-with-claude), at the foot of the tab, drafts the VO, Text on Image and a video's Thumbnail Text on Image, with conversations of their own.",
         ],

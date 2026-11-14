@@ -77,6 +77,9 @@ export function InviteMemberModal({
   // instruction: invites happen in Workspace Settings → Team only); from a
   // project, it invites too (direct instruction, allowInvite).
   const addOnly = !!presetClientId && !allowInvite;
+  // From a project: its client only, and all its projects (direct
+  // instruction: no other clients or projects to choose from there).
+  const fixedClient = !!presetClientId && allowInvite;
 
   // Back to the empty window (opened from a client).
   function startAgain(note: string) {
@@ -270,13 +273,13 @@ export function InviteMemberModal({
               {INVITE_ROLE_HINTS[role]}
             </div>
           </div>
-          {role === "user" && (
+          {role === "user" && !fixedClient && (
             <div className="field">
               <label>Client Access</label>
               <ClientChecklist clients={activeClients} selected={clientIds} onChange={setClientIds} />
             </div>
           )}
-          {role === "client" && (
+          {role === "client" && !fixedClient && (
             <div className="field">
               <label htmlFor="ivClient">Their Client</label>
               <select id="ivClient" value={clientId} onChange={(e) => setClientId(e.target.value)}>
@@ -291,7 +294,13 @@ export function InviteMemberModal({
           )}
         </>
       )}
-      {(existing || (!addOnly && (role === "user" || role === "client"))) && projectGroups.length > 0 && (
+      {fixedClient && (existing || role === "user" || role === "client") && (
+        <div className="field">
+          <label>Access</label>
+          <p className="hint iv-fixed">{clientName}, and all its projects, this one included.</p>
+        </div>
+      )}
+      {!fixedClient && (existing || (!addOnly && (role === "user" || role === "client"))) && projectGroups.length > 0 && (
         <div className="field">
           <label htmlFor="ivProjects">Projects</label>
           <ProjectPicker id="ivProjects" groups={projectGroups} value={projectIds} onChange={setProjectIds} />

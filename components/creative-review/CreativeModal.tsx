@@ -62,7 +62,7 @@ import { ProofreadList } from "@/components/creative-review/ProofreadList";
 import { useCreateComment } from "@/hooks/use-create-comment";
 import { useRunProofread } from "@/hooks/use-proofread";
 import { ThumbnailSection } from "@/components/creative-review/ThumbnailSection";
-import { ProductionChangedError, useProductionVersions, useSaveProduction, type ProductionField } from "@/hooks/use-production-versions";
+import { ProductionChangedError, useProductionVersions, useSaveProduction, useDeleteProductionVersion, type ProductionField } from "@/hooks/use-production-versions";
 import { copyCaption } from "@/lib/copy-text";
 import { ListEditor } from "@/components/ui/ListEditor";
 import { linkHref, tidyReferences } from "@/lib/links";
@@ -1331,6 +1331,34 @@ export function CreativeModal(props: CreativeModalProps) {
   const [prodError, setProdError] = useState<Partial<Record<ProductionField, unknown>>>({});
   const [prodSaving, setProdSaving] = useState<ProductionField | null>(null);
   const latestProd = (f: ProductionField) => prodVersions?.[f][0] ?? null;
+  // Deleting one (phase158), asked first as the copy's are.
+  const deleteProd = useDeleteProductionVersion(creativeId ?? "", projectId);
+  const [prodDeleteTarget, setProdDeleteTarget] = useState<{ field: ProductionField; id: string; versionNo: number } | null>(null);
+  async function confirmDeleteProd() {
+    if (!prodDeleteTarget || !prodVersions) return;
+    const { field, id } = prodDeleteTarget;
+    const wasLatest = id === latestProd(field)?.id;
+    const next = prodVersions[field].find((v) => v.id !== id) ?? null;
+    await deleteProd.mutateAsync(id);
+    // The latest gone: the editor goes back to the one before it, as the
+    // post does, rather than carrying the deleted words as unsaved.
+    if (wasLatest) {
+      if (field === "voiceover") {
+        setVoiceover(next?.body ?? "");
+        setSavedVoiceover((next?.body ?? "").trim());
+      } else if (field === "thumbnail_text") {
+        setThumbText(next?.body ?? "");
+        setKnownThumbText(next?.body ?? "");
+      } else {
+        setSlideText(next?.slides ?? []);
+        setSavedSlideText(tidySlideText(next?.slides ?? []));
+      }
+      setKnownProd((k) => ({ ...(k ?? { voiceover: null, slide_text: null, thumbnail_text: null }), [field]: next?.id ?? null }));
+    }
+    setViewProd((v) => ({ ...v, [field]: undefined }));
+    setProdNote((n) => ({ ...n, [field]: undefined }));
+    setProdDeleteTarget(null);
+  }
   const viewedProd = (f: ProductionField) => {
     const no = viewProd[f];
     return no !== undefined && no !== latestProd(f)?.versionNo ? (prodVersions?.[f].find((v) => v.versionNo === no) ?? null) : null;
@@ -1417,10 +1445,12 @@ export function CreativeModal(props: CreativeModalProps) {
       </div>
     );
   };
+  // Its versions, oldest first, each with the copy's × (direct
+  // instruction: as Content's copy does, from V1).
   const prodTabs = (field: ProductionField) =>
-    (prodVersions?.[field].length ?? 0) > 1 ? (
-      <div className="viewbar" style={{ marginBottom: 10 }}>
-        {prodVersions![field].map((v) => (
+    (prodVersions?.[field].length ?? 0) > 0 ? (
+      <div className="viewbar" role="tablist" aria-label={`${PROD_NAMES[field]} versions`} style={{ marginBottom: 10 }}>
+        {[...prodVersions![field]].reverse().map((v) => (
           <VersionTab
             key={v.versionNo}
             versionNo={v.versionNo}
@@ -1428,6 +1458,7 @@ export function CreativeModal(props: CreativeModalProps) {
             onSelect={() =>
               setViewProd((x) => ({ ...x, [field]: v.versionNo === latestProd(field)?.versionNo ? undefined : v.versionNo }))
             }
+            onDelete={() => setProdDeleteTarget({ field, id: v.id, versionNo: v.versionNo })}
           />
         ))}
       </div>
@@ -2991,6 +3022,28 @@ export function CreativeModal(props: CreativeModalProps) {
         }}
       />
     )}
+    {prodDeleteTarget && (
+      <ConfirmDialog
+        title={`Delete ${PROD_NAMES[prodDeleteTarget.field]} Version ${prodDeleteTarget.versionNo}?`}
+        message={`Version ${prodDeleteTarget.versionNo} of the ${PROD_NAMES[prodDeleteTarget.field]} will be gone for good. The other versions keep their numbers.${
+          prodDeleteTarget.id === latestProd(prodDeleteTarget.field)?.id
+            ? (prodVersions?.[prodDeleteTarget.field].length ?? 0) > 1
+              ? " It's the latest, so the post goes back to the one before it."
+              : " It's the only one, so the post will have none."
+            : ""
+        } This can't be undone.`}
+        confirmLabel="Delete Version"
+        pendingLabel="Deleting…"
+        isPending={deleteProd.isPending}
+        error={deleteProd.error}
+        errorFallback="Couldn't delete this version"
+        onConfirm={() => confirmDeleteProd().catch(() => {})}
+        onClose={() => {
+          setProdDeleteTarget(null);
+          deleteProd.reset();
+        }}
+      />
+    )}
     {deleteTarget && (
       <ConfirmDialog
         title={`Delete ${deleteTarget.kind === "creative" ? "Creative" : "Copy"} Version ${deleteTarget.versionNo}?`}
@@ -3097,6 +3150,13 @@ export function CreativeModal(props: CreativeModalProps) {
     </>
   );
 }
+
+// The Production fields' names, for deleting a version (phase158).
+const PROD_NAMES: Record<ProductionField, string> = {
+  voiceover: "VO",
+  slide_text: "Text on Image",
+  thumbnail_text: "Thumbnail Text on Image",
+};
 
 // A version tab with a small X at its top right on hover (or keyboard
 // focus) — the X has its own hover — that asks to delete the version.

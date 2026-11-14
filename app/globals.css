@@ -12956,6 +12956,12 @@ button.hbrand-add:hover {
   height: 60%;
   object-fit: contain;
 }
+/* The invite window from a project: the one client it gives, as words. */
+.iv-fixed {
+  margin: 0;
+  font-size: 13.2px;
+  color: var(--ink);
+}
 /* Project Settings → People: Add or Invite People, under the Add list. */
 .pt-invite {
   margin: 10px 0 0;

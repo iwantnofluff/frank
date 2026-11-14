@@ -51,3 +51,71 @@ test("the VO saves into its current version or as a new one, the post keeping th
   await expect(cell.locator(".cc-v")).toHaveText("V2", { timeout: 15_000 });
   await expect(cell.getByText("+1 earlier")).toBeVisible();
 });
+
+// Each version has the copy's × (direct instruction), shown on its tab's
+// hover as the copy's is: asked first; an
+// earlier one simply goes; the latest gone puts the one before it back on
+// the post and in the editor; the only one gone leaves none.
+test("a VO or Text on Image version can be deleted from its tab, as the copy's can", async ({ page, frank }) => {
+  test.setTimeout(120_000);
+  await admin.from("creatives").update({ format: "ig_reel", formats: ["ig_reel"] }).eq("id", frank.creativeId);
+  const { data: c } = await admin.from("creatives").select("agency_id").eq("id", frank.creativeId).single();
+  await admin.from("production_versions").insert(
+    ["One", "Two", "Three"].map((body, i) => ({ creative_id: frank.creativeId, agency_id: c!.agency_id, field: "voiceover", version_no: i + 1, body })),
+  );
+  await admin.from("production_versions").insert([
+    { creative_id: frank.creativeId, agency_id: c!.agency_id, field: "slide_text", version_no: 1, slides: ["First words"] },
+    { creative_id: frank.creativeId, agency_id: c!.agency_id, field: "slide_text", version_no: 2, slides: ["Second words"] },
+  ]);
+  await admin.from("creatives").update({ voiceover: "Three", slide_text: ["Second words"] }).eq("id", frank.creativeId);
+  const post = async () => (await admin.from("creatives").select("voiceover, slide_text").eq("id", frank.creativeId).single()).data!;
+
+  await frank.loginAsStaff(page);
+  await page.goto(`/creatives/${frank.creativeId}`);
+  await page.getByRole("button", { name: "Edit", exact: true }).click();
+  const modal = page.locator(".scrim .modal").first();
+  await modal.getByRole("tab", { name: "Production" }).click();
+  const voTabs = modal.getByRole("tablist", { name: "VO versions" });
+  await expect(voTabs.getByRole("tab")).toHaveText(["V1", "V2", "V3"]);
+  const vo = modal.getByLabel("VO", { exact: true });
+  await expect(vo).toHaveValue("Three");
+  const confirm = page.getByRole("dialog", { name: /^Delete VO Version/ });
+
+  // An earlier one: just it.
+  await voTabs.getByRole("tab", { name: "V2" }).hover();
+  await voTabs.getByRole("button", { name: "Delete Version 2" }).click();
+  await expect(confirm).toContainText("Version 2 of the VO will be gone for good.");
+  await confirm.getByRole("button", { name: "Delete Version" }).click();
+  await expect(voTabs.getByRole("tab")).toHaveText(["V1", "V3"]);
+  expect((await post()).voiceover).toBe("Three");
+
+  // The latest: the post and the editor go back to the one before.
+  await voTabs.getByRole("tab", { name: "V3" }).hover();
+  await voTabs.getByRole("button", { name: "Delete Version 3" }).click();
+  await expect(confirm).toContainText("It's the latest, so the post goes back to the one before it.");
+  await confirm.getByRole("button", { name: "Delete Version" }).click();
+  await expect(voTabs.getByRole("tab")).toHaveText(["V1"]);
+  await expect(vo).toHaveValue("One");
+  await expect.poll(async () => (await post()).voiceover).toBe("One");
+
+  // The only one: none left.
+  await voTabs.getByRole("tab", { name: "V1" }).hover();
+  await voTabs.getByRole("button", { name: "Delete Version 1" }).click();
+  await expect(confirm).toContainText("It's the only one, so the post will have none.");
+  await confirm.getByRole("button", { name: "Delete Version" }).click();
+  await expect(voTabs).toHaveCount(0);
+  await expect(vo).toHaveValue("");
+  await expect.poll(async () => (await post()).voiceover).toBeNull();
+
+  // Text on Image the same: its latest gone, the one before is back.
+  const toiTabs = modal.getByRole("tablist", { name: "Text on Image versions" });
+  await expect(toiTabs.getByRole("tab")).toHaveText(["V1", "V2"]);
+  await toiTabs.getByRole("tab", { name: "V2" }).hover();
+  await toiTabs.getByRole("button", { name: "Delete Version 2" }).click();
+  await page.getByRole("dialog", { name: "Delete Text on Image Version 2?" }).getByRole("button", { name: "Delete Version" }).click();
+  await expect(toiTabs.getByRole("tab")).toHaveText(["V1"]);
+  await expect.poll(async () => (await post()).slide_text).toEqual(["First words"]);
+  expect((await admin.from("production_versions").select("field, version_no").eq("creative_id", frank.creativeId)).data).toEqual([
+    { field: "slide_text", version_no: 1 },
+  ]);
+});

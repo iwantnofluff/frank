@@ -36,7 +36,12 @@ test("Add or Invite People in Project Settings adds a teammate and invites someo
     // A teammate not on this client: added, and on the project at once.
     await page.getByRole("button", { name: "Add or Invite People" }).click();
     const win = page.getByRole("dialog", { name: "Add or Invite People" });
+    // This client only: no other clients or projects to pick from here.
+    await expect(win.getByText("Client Access")).toHaveCount(0);
+    await expect(win.getByLabel("Projects")).toHaveCount(0);
+    await expect(win.locator(".iv-fixed")).toHaveText("E2E Test Client, and all its projects, this one included.");
     await win.getByLabel("A User on Your Team").selectOption({ label: "Pia Teammate" });
+    await expect(win.getByLabel("Projects")).toHaveCount(0);
     await win.getByRole("button", { name: "Add to Client" }).click();
     await expect.poll(async () => (await admin.from("staff_client_access").select("client_id").eq("membership_id", m!.id)).data).toEqual([
       { client_id: frank.clientId },
@@ -56,7 +61,8 @@ test("Add or Invite People in Project Settings adds a teammate and invites someo
     // Only a User or a Client from here.
     await expect(win.getByLabel("Role").locator("option")).toHaveText(["User", "Client"]);
     await win.getByLabel("Role").selectOption("client");
-    await expect(win.getByLabel("Their Client")).toHaveValue(frank.clientId);
+    await expect(win.getByLabel("Their Client")).toHaveCount(0);
+    await expect(win.locator(".iv-fixed")).toHaveText("E2E Test Client, and all its projects, this one included.");
     await win.getByRole("button", { name: "Send Invite" }).click();
     await expect(page.getByRole("dialog", { name: "Invite Sent" })).toBeVisible({ timeout: 20_000 });
     // A Client of this client (a membership with the client on it), waiting

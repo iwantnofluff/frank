@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.88.1",
+    date: "2026-11-14",
+    title: "Delete VO and Text on Image versions, and a simpler Add or Invite",
+    changes: [
+      "VO, Text on Image and Thumbnail Text on Image versions now have the small × the copy's versions do: point at a tab to delete that version. Deleting the latest puts the one before it back on the post.",
+      "Add or Invite People in a project's Settings now shows only that project's client: whoever's added or invited gets it and all its projects, with no other clients or projects to choose.",
+    ],
+  },
+  {
     version: "1.88.0",
     date: "2026-11-14",
     title: "Add people from a project's Settings",

@@ -5179,6 +5179,34 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Add or Invite People from a project: its client only (1.88.1, 2026-11-14)
+
+Direct instruction, on 1.88.0: opened from one project's Settings, the window shouldn't offer other clients or projects.
+- **What changed:** with `allowInvite`, InviteMemberModal no longer shows Client Access (the client checklist), Their Client or the Projects picker. An **Access** line says what they get: "{client}, and all its projects, this one included".
+- **Unchanged:** what's sent. The invite still carries the project's client (a User's, or a Client's own), with all its projects. An added teammate gets the whole client, as decided for 1.88.0.
+- **Elsewhere:** Team → Users and Client Settings → People are as before.
+
+**Verified:** project-people-invite.spec now checks there's no Client Access, Their Client or Projects, and that the Access line names the client, both before and after picking a teammate and for a Client invite. It passed with add-to-client, team-invite, client-invites and project-access (19). A screenshot of the window was checked.
+
+## Deleting VO and Text on Image versions (1.88.1, phase158, 2026-11-14)
+
+Direct instruction: the VO and Text on Image versions had no small ×, and should work like the copy's in Content.
+- **The tabs:** the Production tab's version tabs (VO, Text on Image, Thumbnail Text on Image) now work as Copy's. They show from V1, oldest first, each with the × on hover, and the same confirmation.
+  - They used to show only from V2, newest first.
+  - Each row is labelled ("VO versions") for screen readers and tests.
+- **phase158:** `delete_production_version`, for the team only.
+  - These versions carry no comments (phase120), so any can go. The copy's comment rule doesn't apply.
+  - Deleting the latest puts the one before it back on the post (`creatives.voiceover`, `slide_text`, `thumbnail_text`), or empties it when it was the only one. The row goes first, so the trigger that keeps versions in step finds nothing to change.
+- **The window:** the editor goes back to the version before, as Copy's does, rather than keeping the deleted words as unsaved.
+
+**Verified:** phase158 was rehearsed on staging, then applied there and to the local database. production-versions.spec has a new test, with three VO versions and two Text on Image ones:
+- **VO V2:** the tabs read V1 V3, the post keeping Three.
+- **VO V3, the latest:** the confirmation says the post goes back. Then V1 alone, the editor and the post reading One.
+- **VO V1, the only one:** no tabs, the editor empty and the post's VO null.
+- **Text on Image V2:** the post's slides back to "First words".
+
+It passed with version-delete, voiceover, designer-note-versions, carousel and proofread (25 in all across the runs). A screenshot of the VO tabs with the × on hover was checked.
+
 ## Add or invite people from a project's Settings (1.88.0, 2026-11-14)
 
 Direct instruction: add users to a project from its Settings too.
