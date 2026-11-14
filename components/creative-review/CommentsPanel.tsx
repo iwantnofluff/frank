@@ -475,7 +475,16 @@ function CommentCard({
             {versionTag.label}
           </span>
         )}
-        {!pending && <div className="acts">
+        {/* Resolved: Reopen alone, in ink, not faded with the rest
+            (direct instruction). */}
+        {!pending && thread.resolved_at && canResolve && (
+          <div className="acts">
+            <button type="button" className="reopen" onClick={() => onToggleResolved(false)}>
+              Reopen
+            </button>
+          </div>
+        )}
+        {!pending && !thread.resolved_at && <div className="acts">
           <button type="button" onClick={() => setReplying(!replying)}>
             Reply
           </button>
@@ -483,11 +492,8 @@ function CommentCard({
             <EditCommentButton onClick={() => setEditingId(thread.id)} />
           )}
           {canResolve && (
-            <button
-              type="button"
-              onClick={() => onToggleResolved(!thread.resolved_at)}
-            >
-              {thread.resolved_at ? "Reopen" : "Resolve"}
+            <button type="button" onClick={() => onToggleResolved(true)}>
+              Resolve
             </button>
           )}
           {onDelete && (

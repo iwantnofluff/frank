@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.90.2",
+    date: "2026-11-14",
+    title: "A clear Reopen on resolved comments",
+    changes: [
+      "A resolved comment now shows only Reopen at the bottom right, with Reply, Edit and Delete hidden until it's reopened. Reopen is no longer faded with the comment: it's in black, and blue when you point at it.",
+    ],
+  },
+  {
     version: "1.90.1",
     date: "2026-11-14",
     title: "Every comment says its version",

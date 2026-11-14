@@ -5179,6 +5179,12 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## A clear Reopen on resolved comments (1.90.2, 2026-11-14)
+
+Direct instruction: on a resolved comment, Reopen is the only link at the bottom right (Reply and Delete hidden; Edit too, so it's the only one), and it isn't greyed: black, blue on hover, clearly visible. A resolved card was faded whole (`opacity: 0.55` on `.cmt.resolved`), which faded Reopen with it; now everything on the card is faded except the actions, so Reopen shows in ink (`.cmt-f button.reopen`) and takes the usual blue on hover. Someone who can't resolve a comment sees no links on it while it's resolved, since Reply is hidden too.
+
+**Verified**: comment-resolve.spec now checks that a resolved card's only action is Reopen, that Reopen is in the ink colour with nothing above it faded (multiplied opacity 1) while the words are faded, and that it changes colour on hover. The first version of that check found Reopen already blue: Resolve had been clicked where Reopen then sat, so it was hovered; the test moves the pointer away first. comment-resolve passed (2). Screenshots of a resolved Private comment beside an open one, at rest and hovered, were checked.
+
 ## Every comment says its version (1.90.1, 2026-11-14)
 
 Direct instruction: the version number beside the Private or Public pill on comments, "V1" and so on. Before, only a comment on an earlier version said so, in red, naming both ("Creative V1 · Copy V1"). Decided with the user (14 Nov 2026): every comment now shows one short "V" and number, of what it's about: the copy's version for words picked out of a copy field (Caption, Headline and the rest), otherwise the artwork's, or the copy's on a post with no artwork. Grey on the newest of that kind, red on an earlier one, with a tooltip saying which. Clicking a comment still brings up the versions it was made on whenever either differs from what's showing, so a comment on the newest artwork but older copy reads "V2" in grey yet still switches the copy. The review link's comments, which don't show versions, are unchanged.

@@ -5359,8 +5359,18 @@ select.sort:hover {
 .cmt:last-child {
   margin-bottom: 0;
 }
-.cmt.resolved {
+/* Resolved: faded, all but Reopen (direct instruction), which stays in
+   ink so it's clearly there. */
+.cmt.resolved > :not(.cmt-f),
+.cmt.resolved > .cmt-f > :not(.acts) {
   opacity: 0.55;
+}
+.cmt-f button.reopen {
+  color: var(--ink);
+  font-weight: 500;
+}
+.cmt-f button.reopen:hover {
+  color: var(--action);
 }
 .cmt-h {
   display: flex;

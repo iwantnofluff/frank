@@ -23,8 +23,32 @@ test("a client can resolve and reopen a thread they authored", async ({ page, fr
 
   await card.locator("button:has-text('Resolve')").click();
   await expect(card).toHaveClass(/resolved/);
+  // Resolved: Reopen alone (direct instruction), in ink and not faded,
+  // blue on hover; the words faded behind it.
+  await expect(card.locator(".cmt-f .acts button")).toHaveText(["Reopen"]);
+  const reopen = card.getByRole("button", { name: "Reopen" });
+  const look = () =>
+    reopen.evaluate((el) => {
+      let o = 1;
+      for (let n: Element | null = el; n; n = n.parentElement) o *= Number(getComputedStyle(n).opacity);
+      return { color: getComputedStyle(el).color, opacity: o };
+    });
+  const ink = await page.evaluate(() => {
+    const probe = document.body.appendChild(document.createElement("span"));
+    probe.style.color = "var(--ink)";
+    const c = getComputedStyle(probe).color;
+    probe.remove();
+    return c;
+  });
+  // Away from it: Resolve was clicked where Reopen now sits.
+  await page.mouse.move(0, 0);
+  const atRest = await look();
+  expect(atRest).toEqual({ color: ink, opacity: 1 });
+  expect(await card.locator(".cbody").evaluate((el) => Number(getComputedStyle(el).opacity))).toBeLessThan(1);
+  await reopen.hover();
+  await expect.poll(async () => (await look()).color).not.toBe(atRest.color);
 
-  await card.locator("button:has-text('Reopen')").click();
+  await reopen.click();
   await expect(card).not.toHaveClass(/resolved/);
 });
 
