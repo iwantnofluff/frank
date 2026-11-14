@@ -3,6 +3,7 @@
 import { canApproveConcept, useApproveConcept } from "@/hooks/use-approve-concept";
 import { useCreativeVersions } from "@/hooks/use-creative-versions";
 import { useCopyVersions } from "@/hooks/use-copy-versions";
+import { COPY_FIELD_LABELS } from "@/lib/formats";
 import { errorMessage } from "@/lib/errors";
 import { CommentWhen } from "./CommentWhen";
 import { CommentBody, EditCommentButton } from "./CommentBody";
@@ -88,6 +89,12 @@ function AnchorBadge({ anchor }: { anchor: CommentRow["anchor"] }) {
     );
   }
   return null;
+}
+
+// The version a comment was made on, and whether it's earlier than the newest.
+interface VersionTag {
+  label: string;
+  old: boolean;
 }
 
 type Filter = "all" | "unresolved" | "resolved" | "mine" | "internal";
@@ -395,7 +402,7 @@ function CommentCard({
   // The agency's or the client's name, for after a comment's author.
   fromName: (c: CommentRow) => string | null;
   // Made on an earlier version: which (direct instruction), after the pill.
-  versionTag?: string | null;
+  versionTag?: VersionTag | null;
   // For the team, to log a reply the client gave outside Frank.
   clientName: string | null;
 }) {
@@ -460,7 +467,14 @@ function CommentCard({
             onToggleVisibility(thread.id, thread.visibility === "private" ? "public" : "private")
           }
         />
-        {versionTag && <span className="vtag-old" title="Made on an earlier version">{versionTag}</span>}
+        {versionTag && (
+          <span
+            className={versionTag.old ? "vtag vtag-old" : "vtag"}
+            title={versionTag.old ? `Made on an earlier version, ${versionTag.label}` : `Made on the newest version, ${versionTag.label}`}
+          >
+            {versionTag.label}
+          </span>
+        )}
         {!pending && <div className="acts">
           <button type="button" onClick={() => setReplying(!replying)}>
             Reply
@@ -613,17 +627,20 @@ export function CommentsPanel({
   const approve = useApproveConcept();
   const clientName = creative?.projects?.clients?.name ?? null;
   const fromName = (c: CommentRow) => (c.from === "agency" ? (agency?.name ?? null) : clientName);
-  // The versions a comment was made on, named where either is earlier than
-  // the newest (direct instruction): "Creative V1", "Copy V2", or both.
+  // The version a comment was made on, after its Public or Private pill,
+  // always (direct instruction): "V2", of what it's about: the copy's for
+  // words picked out of the copy, otherwise the artwork's, else the copy's.
+  // Red when earlier than the newest.
   const { data: creativeVersions } = useCreativeVersions(creativeId);
   const { data: copyVersions } = useCopyVersions(creativeId);
-  const versionTagOf = (c: CommentRow): string | null => {
-    const parts: string[] = [];
+  const versionTagOf = (c: CommentRow): VersionTag | null => {
     const art = c.creative_version_id ? creativeVersions?.find((v) => v.id === c.creative_version_id) : undefined;
-    if (art && creativeVersions && art.id !== creativeVersions[0].id) parts.push(`Creative V${art.version_no}`);
     const copy = c.copy_version_id ? copyVersions?.find((v) => v.id === c.copy_version_id) : undefined;
-    if (copy && copyVersions && copy.id !== copyVersions[0].id) parts.push(`Copy V${copy.version_no}`);
-    return parts.length ? parts.join(" · ") : null;
+    const onCopy = isHighlightAnchor(c.anchor) && c.anchor.field in COPY_FIELD_LABELS;
+    const pick =
+      onCopy && copy ? { v: copy, all: copyVersions } : art ? { v: art, all: creativeVersions } : copy ? { v: copy, all: copyVersions } : null;
+    if (!pick || !pick.all?.length) return null;
+    return { label: `V${pick.v.version_no}`, old: pick.v.id !== pick.all[0].id };
   };
   // Made on a version other than the one showing, newest included: picking
   // it brings that version up.
@@ -742,7 +759,7 @@ export function CommentsPanel({
             photos={photos}
             fromName={fromName}
             versionTag={versionTagOf(thread)}
-            selectable={!!versionTagOf(thread) || elsewhere(thread)}
+            selectable={!!versionTagOf(thread)?.old || elsewhere(thread)}
             clientName={clientName}
             team={team}
             onSelect={() => onHighlight?.(thread.id)}

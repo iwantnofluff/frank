@@ -5179,6 +5179,12 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Every comment says its version (1.90.1, 2026-11-14)
+
+Direct instruction: the version number beside the Private or Public pill on comments, "V1" and so on. Before, only a comment on an earlier version said so, in red, naming both ("Creative V1 · Copy V1"). Decided with the user (14 Nov 2026): every comment now shows one short "V" and number, of what it's about: the copy's version for words picked out of a copy field (Caption, Headline and the rest), otherwise the artwork's, or the copy's on a post with no artwork. Grey on the newest of that kind, red on an earlier one, with a tooltip saying which. Clicking a comment still brings up the versions it was made on whenever either differs from what's showing, so a comment on the newest artwork but older copy reads "V2" in grey yet still switches the copy. The review link's comments, which don't show versions, are unchanged.
+
+**Verified**: old-versions.spec now checks an earlier comment's red "V1", the newest's grey "V2" (no red), and a comment on the caption's words showing the copy's earlier "V1" although its artwork is the newest. It, comment-cards, creative-review, video-review and text-on-image-comments passed on the local database (13). A screenshot of the comments panel with a Private comment on V1 and a Public one on V2 was checked.
+
 ## Draft With Frank from Check Brand and Check WIIFM (1.90.0, 2026-11-14)
 
 Direct instruction: Check Brand and Check WIIFM give pointers, and should lead to a better version. Decided with the user (14 Nov 2026): a Draft With Frank button beside Add To Comments opens the existing Draft with Frank (Content's, for the copy) with the pointers in its message box, to edit before sending, rather than a separate rewrite. Only the findings marked to fix go in, not the ones found fine, under "Write a better version of my copy using these pointers from Check …, keeping what already works:". It shows only when there's something to fix and a drafting model is set. Draft with Frank opens over the Edit window, so Use puts a draft straight into the copy there.

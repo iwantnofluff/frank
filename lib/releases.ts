@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.90.1",
+    date: "2026-11-14",
+    title: "Every comment says its version",
+    changes: [
+      "Each comment on a post's page now shows the version it was made on, such as V2, beside its Private or Public pill: the copy's version for words picked out of the copy, otherwise the artwork's. It's grey on the newest version and red on an earlier one, which a click still brings up.",
+    ],
+  },
+  {
     version: "1.90.0",
     date: "2026-11-14",
     title: "Draft With Frank from a check",

@@ -26,13 +26,28 @@ test("a comment on an earlier version says which, and picking it shows that vers
   await admin.from("comments").update({ creative_version_id: art[1], copy_version_id: copy[1] }).eq("id", oldId);
   const newId = await frank.insertCommentAsStaff("Newest looks right", "public");
   await admin.from("comments").update({ creative_version_id: art[2], copy_version_id: copy[2] }).eq("id", newId);
+  // Words picked out of the caption: the copy's version, here the earlier.
+  const capId = await frank.insertCommentAsStaff("Shorter please", "public");
+  await admin
+    .from("comments")
+    .update({
+      creative_version_id: art[2],
+      copy_version_id: copy[1],
+      anchor: { type: "highlight", field: "caption", start: 0, end: 5, quote: "First" },
+    })
+    .eq("id", capId);
 
   await frank.loginAsStaff(page);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
   const oldCard = page.locator(".cmt", { hasText: "Was the logo bigger here?" });
-  await expect(oldCard.locator(".cmt-f .vtag-old")).toHaveText("Creative V1 · Copy V1", { timeout: 20_000 });
-  await expect(page.locator(".cmt", { hasText: "Newest looks right" }).locator(".vtag-old")).toHaveCount(0);
+  // Every comment's version after its pill (direct instruction): the
+  // artwork's here, red when earlier, grey on the newest.
+  await expect(oldCard.locator(".cmt-f .vtag-old")).toHaveText("V1", { timeout: 20_000 });
+  const newCard = page.locator(".cmt", { hasText: "Newest looks right" });
+  await expect(newCard.locator(".cmt-f .vtag")).toHaveText("V2");
+  await expect(newCard.locator(".vtag-old")).toHaveCount(0);
+  await expect(page.locator(".cmt", { hasText: "Shorter please" }).locator(".cmt-f .vtag-old")).toHaveText("V1");
   // The newest showing: no Old Version.
   await expect(page.locator(".pnav-old")).toHaveCount(0);
   await expect(page.locator("#vCreative")).toHaveValue(art[2]);

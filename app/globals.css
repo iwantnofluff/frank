@@ -3701,13 +3701,16 @@ select.sort:hover {
     box-shadow: 0 0 0 3px var(--action);
   }
 }
-/* A comment made on an earlier version, after its Public or Private pill
-   (direct instruction). */
-.cmt-f .vtag-old {
+/* The version a comment was made on, after its Public or Private pill
+   (direct instruction): grey on the newest, red on an earlier one. */
+.cmt-f .vtag {
   font-size: 11.2px;
   font-weight: 600;
-  color: var(--rose);
+  color: var(--muted);
   white-space: nowrap;
+}
+.cmt-f .vtag-old {
+  color: var(--rose);
 }
 /* An earlier version in the Creative and Copy pickers: red, the picker too
    while one is chosen; the newest keeps the usual colour in the list. */
