@@ -120,7 +120,7 @@ test("continuous calendar — Format, Text on Image and Copy come from the post 
   await expect(format).toHaveText("Instagram Post");
   // The text, then its Edit (direct instruction).
   await expect(textOnImage.locator(".cc-t")).toHaveText("On the artwork");
-  await expect(textOnImage.locator(".tedit-btn")).toHaveText("Edit");
+  await expect(textOnImage.locator(".tedit-btn")).toHaveText("Update Text on Image");
   await expect(copy).toContainText("Second caption");
   await expect(copy).toContainText("+1 earlier");
   await copy.locator(".cc-n").hover();

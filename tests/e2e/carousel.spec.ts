@@ -190,7 +190,7 @@ test("carousel artwork is saved as a set, and replacing one slide keeps the rest
   await admin.from("creatives").update({ formats: ["ig_carousel"], slide_count: 3 }).eq("id", frank.creativeId);
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
-  await page.getByRole("button", { name: "Upload Artwork" }).click();
+  await page.getByRole("button", { name: /^Upload (Video|Creative|Creatives)$/ }).click();
 
   await expect(page.locator(".cslot")).toHaveCount(3);
   await page
@@ -371,7 +371,7 @@ test("extra images fill earlier empty slides, and any that don't fit are named",
   await admin.from("creatives").update({ formats: ["ig_carousel"], slide_count: 2 }).eq("id", frank.creativeId);
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
-  await page.getByRole("button", { name: "Upload Artwork" }).click();
+  await page.getByRole("button", { name: /^Upload (Video|Creative|Creatives)$/ }).click();
 
   // Two images picked from slide 2: one there, the other back into slide 1.
   let chooser = page.waitForEvent("filechooser");

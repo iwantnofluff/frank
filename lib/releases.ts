@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.88.3",
+    date: "2026-11-14",
+    title: "Buttons that say what they do",
+    changes: [
+      "Upload Artwork now says Upload Video, Upload Creative or Upload Creatives, by the post's format. The table's Add buttons do the same.",
+      "The table's Edit buttons now say what they change: Update Video, Update Caption, Update Text on Image, Update VO and so on.",
+    ],
+  },
+  {
     version: "1.88.2",
     date: "2026-11-14",
     title: "Roomier VO, Text on Image and Caption boxes",

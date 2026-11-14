@@ -5179,6 +5179,32 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Buttons named for what they do (1.88.3, 2026-11-14)
+
+Direct instruction: Upload Artwork should say Upload Video, Creative or Creatives by the format type, the table likewise, and Edit should become Update Video, Creative, Caption and so on.
+- **The naming:** `artworkNoun` (lib/formats.ts) gives:
+  - **Creatives** for a carousel or several stories.
+  - **Video** for a video format, a single story included (stories count as video, having a VO).
+  - **Creative** otherwise.
+  - `copyNoun` gives Caption where any of the post's formats has one, Copy otherwise.
+- **Where it shows:**
+  - The post page's placeholder button: Upload {noun}.
+  - Both tables' Add buttons for the artwork and the copy: Add Video, Add Caption.
+  - Every filled cell's former Edit chip, now "Update {its column}": Update Video, Update Caption, Update VO, Update Text on Image, Update Post Name, Update Notes for Designer, a custom column's name. Its title is "Update the …".
+- **Unchanged:** the post page's own Edit button (the window), and the Add labels of other columns.
+
+**Also, the local test runs:** a client sign-in in continuous-calendar stalled on "Signing in…" for the main test pool's reused account, though a fresh pool signed in in 1.4 seconds. The local database held 182 old sessions for the test accounts. Clearing them fixed it at once (that file 9 passed), and they're likely behind some earlier "flaky" sign-in timeouts. `scripts/e2e-local.mjs` now clears the test accounts' sessions before each local run (the local database only).
+
+**Verified:**
+- **Unit test (new):** the names for a Reel, a LinkedIn Video with a feed post, a carousel, three and one stories, a feed post, and the copy for a feed post and a Meta carousel ad. 17 in formats.test.
+- **artwork-names.spec (new):** the post page's Upload Creative, Upload Video and Upload Creatives as the formats change, and in the table a Reel's Add Video and Update Text on Image.
+- **Updated specs:** those using the old words, the upload button now matched as Upload Video, Creative or Creatives:
+  - video-review, carousel, text-on-image-comments, creative-review, copy-only-post, version-delete and voiceover.
+  - project-calendar's "Update the …" titles, with Caption for its feed post.
+  - continuous-calendar and voiceover's Update chips.
+- **Results:** all passed (63 with the baseline below), continuous-calendar after the session clean-up.
+- **creative-review.png:** differed only in the button now reading Upload Creative, and was regenerated after looking at its diff.
+
 ## One taller height for the VO, Text on Image and Caption boxes (1.88.2, 2026-11-14)
 
 Direct instruction: the Text on Image, VO and Caption boxes should be one consistent height however long their text, by default 50% bigger than the VO's.

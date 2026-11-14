@@ -563,9 +563,9 @@ test("project calendar — a filled cell's Edit opens the post at that field", a
   await expect(row.locator(".tedit-btn")).toHaveCount(5);
   await expect(row.locator(".copychip:not(.tedit-btn)")).toHaveText(["Copy"]);
   for (const [title, field] of [
-    ["Edit the Post Name", "#nbName"],
-    ["Edit the VO", "#nbVo"],
-    ["Edit the Caption/Copy", '[data-focus="copy"] textarea'],
+    ["Update the Post Name", "#nbName"],
+    ["Update the VO", "#nbVo"],
+    ["Update the Caption", '[data-focus="copy"] textarea'],
   ]) {
     await row.locator(`.tedit-btn[title="${title}"]`).click();
     await expect(page.locator(field).first()).toBeFocused();

@@ -231,6 +231,22 @@ export function frameLimits(ids: string[]): { min: number; max: number; noun: "S
   return limits.length ? { min: STORY_MIN_FRAMES, max: Math.min(...limits), noun: "Story" } : null;
 }
 
+// What a post's artwork is called on its buttons (direct instruction):
+// Upload Video, Add Creative, Update Creatives. Creatives for a carousel,
+// or several stories; a Video for a video format (a single story too); a
+// Creative otherwise.
+export function artworkNoun(ids: string[], slideCount?: number | null): "Video" | "Creative" | "Creatives" {
+  if (carouselMaxSlides(ids) || (slideCount ?? 0) > 1) return "Creatives";
+  if (hasVideoFormat(ids)) return "Video";
+  return "Creative";
+}
+
+// And its words: the Caption where any of its formats has one, its Copy
+// otherwise (a LinkedIn ad's, an email's).
+export function copyNoun(ids: string[]): "Caption" | "Copy" {
+  return ids.some((id) => formatById(id)?.copyFields.includes("caption")) ? "Caption" : "Copy";
+}
+
 // A size, in pixels (phase139).
 export interface FormatSize {
   w: number;

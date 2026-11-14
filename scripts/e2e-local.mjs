@@ -115,6 +115,14 @@ if (!(await up())) {
   }
 }
 
+// The test accounts' old sign-ins, cleared (local only): they pile up run
+// after run, and with a few hundred a sign-in stalled on "Signing in…".
+sh("docker", [
+  "exec", "supabase_db_frank", "psql", "-U", "postgres", "-d", "postgres", "-qc",
+  "delete from auth.refresh_tokens where user_id in (select id::text from auth.users where email like 'e2e-pool-%'); " +
+    "delete from auth.sessions where user_id in (select id from auth.users where email like 'e2e-pool-%');",
+]);
+
 say(`Running the tests against the local database (app on ${PORT})`);
 const run = spawn("npx", ["playwright", "test", ...args], {
   cwd: ROOT,

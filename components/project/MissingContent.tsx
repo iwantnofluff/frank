@@ -35,22 +35,23 @@ export function MissingContent({
   );
 }
 
-// A filled cell's Edit (direct instruction): beside its Copy, the same
-// small grey chip, with the Add buttons' arrow, opening the post's Edit
-// window at that field. The team only: nothing for anyone else.
+// A filled cell's Update (direct instruction; it said Edit): "Update
+// Video", "Update Caption", beside its words, the same small grey chip, with
+// the Add buttons' arrow, opening the post's Edit window at that field. The
+// team only: nothing for anyone else.
 export function EditContent({ onFill, label }: { onFill?: () => void; label?: string }) {
   if (!onFill) return null;
   return (
     <button
       type="button"
       className="copychip tedit-btn"
-      title={label ? `Edit the ${label}` : "Edit it"}
+      title={label ? `Update the ${label}` : "Update it"}
       onClick={(e) => {
         e.stopPropagation();
         onFill();
       }}
     >
-      Edit
+      {label ? `Update ${label}` : "Update"}
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M7 17L17 7M9 7h8v8" />
       </svg>

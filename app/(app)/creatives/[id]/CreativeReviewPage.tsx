@@ -11,7 +11,7 @@ import { dayMonth, ARTWORK_KEEP_DAYS } from "@/lib/artwork-removal";
 import { useClientPreferences } from "@/hooks/use-client-preferences";
 import { useLiveUpdates } from "@/hooks/use-live-updates";
 import { useClientLogoUrl } from "@/hooks/use-client-logo-url";
-import { aspectRatioCss, copyFieldsFor, copySummaryParts, formatRatio, hasVideoFormat, isReelFormat, isStoryFormat, postFormats, postSize } from "@/lib/formats";
+import { aspectRatioCss, copyFieldsFor, copySummaryParts, formatRatio, hasVideoFormat, isReelFormat, isStoryFormat, postFormats, postSize, artworkNoun } from "@/lib/formats";
 import { CopyFieldsPreview } from "@/components/creative-review/CopyFieldsPreview";
 import { useCopyVersions } from "@/hooks/use-copy-versions";
 import { useArtworkUrl, usePreloadAssets } from "@/hooks/use-asset-signed-url";
@@ -559,7 +559,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
               className="btn primary sm noart-up"
               onClick={() => setCreativeModalTab("upload")}
             >
-              Upload Artwork
+              Upload {artworkNoun(postFormats(creative), creative.slide_count)}
               {/* It opens the post window: the table's diagonal arrow
                   (direct instruction). */}
               <svg viewBox="0 0 24 24" aria-hidden="true">

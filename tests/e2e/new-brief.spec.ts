@@ -83,7 +83,7 @@ test("a post saved with no publish date is made as an Idea", async ({ page, fran
   const pop = page.getByRole("dialog", { name: "Formats" });
   await pop.getByRole("checkbox", { name: "Instagram Post" }).click();
   await pop.getByRole("button", { name: "Done" }).click();
-  await page.getByRole("button", { name: "Update" }).click();
+  await page.getByRole("button", { name: "Update", exact: true }).click();
   await expect(page.getByText("Post updated.")).toBeVisible({ timeout: 15_000 });
   await page.keyboard.press("Escape");
   await expect(row.getByRole("button", { name: "Add Format" })).toHaveCount(0);

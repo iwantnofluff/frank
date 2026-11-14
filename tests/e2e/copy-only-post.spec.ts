@@ -17,7 +17,7 @@ test("a copy-only post shows as a post for staff, clients and a review link", as
   await page.reload();
   const art = page.locator(".phoneframe .ig-noart");
   await expect(art).toContainText("No artwork yet");
-  await expect(art.getByRole("button", { name: "Upload Artwork" })).toBeVisible();
+  await expect(art.getByRole("button", { name: /^Upload (Video|Creative|Creatives)$/ })).toBeVisible();
   await expect(page.locator(".ig-cap")).toContainText("Copy only, no artwork yet.");
   await expect(page.locator(".ig-time")).toContainText("Copy saved");
   await page.getByPlaceholder("Add a comment…").fill("Staff note on a copy-only post");

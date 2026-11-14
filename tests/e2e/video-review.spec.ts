@@ -320,7 +320,7 @@ test("a video is compressed to a 720p review copy before it's uploaded", async (
   await admin.from("creatives").update({ formats: ["ig_reel"], slide_count: null }).eq("id", frank.creativeId);
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
-  await page.getByRole("button", { name: "Upload Artwork" }).click();
+  await page.getByRole("button", { name: /^Upload (Video|Creative|Creatives)$/ }).click();
   await page.locator('.mtabbody input[type="file"]').first().setInputFiles({ name: "phone-export.mp4", mimeType: "video/mp4", buffer: heavy });
   const save = page.getByRole("button", { name: "Save Creative V1" });
   // Each piece of the upload held a moment, so the Uploading step stays on

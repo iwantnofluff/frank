@@ -31,7 +31,7 @@ import { SaveViewModal } from "@/components/project/SaveViewModal";
 import { PermanentDeleteConfirm } from "@/components/project/PermanentDeleteConfirm";
 import { bandOf, stageLabel, stageColor, exceptionLabel, STAGE_COUNT, IDEA, isIdea } from "@/lib/stage-labels";
 import { errorMessage } from "@/lib/errors";
-import { copySummary, expectedContent, formatsLabel, postFormats, hasVideoFormat } from "@/lib/formats";
+import { artworkNoun, copyNoun, copySummary, expectedContent, formatsLabel, postFormats, hasVideoFormat } from "@/lib/formats";
 import { EditContent, MissingContent } from "@/components/project/MissingContent";
 import { isOverdue } from "@/lib/post-live";
 import { EditPostWindow } from "@/components/project/EditPostWindow";
@@ -615,8 +615,9 @@ export function ProjectCalendarTable({
   const [editPost, setEditPost] = useState<{ id: string; focus: FocusTarget } | null>(null);
   const fill = (c: CreativeListRow, focus: FocusTarget) => ({
     onFill: isStaff ? () => setEditPost({ id: c.id, focus }) : undefined,
-    // What the button says it adds (direct instruction): "Add Creative".
-    addLabel: ADD_LABELS[focus],
+    // What the button says it adds (direct instruction): "Add Creative",
+    // the artwork and words named for the post's formats ("Add Video").
+    addLabel: focus === "artwork" ? artworkNoun(postFormats(c), c.slide_count) : focus === "copy" ? copyNoun(postFormats(c)) : ADD_LABELS[focus],
   });
   // Notes for Designer (direct instruction: on both tables, and opened in
   // the window, never edited in the cell): the overall note, then each
@@ -1462,7 +1463,7 @@ export function ProjectCalendarTable({
                               const after =
                                 isStaff || asset ? (
                                   <span className="cc-after">
-                                    {isStaff && <EditContent onFill={fill(c, "artwork").onFill} label="Creative" />}
+                                    {isStaff && <EditContent onFill={fill(c, "artwork").onFill} label={artworkNoun(postFormats(c), c.slide_count)} />}
                                     {addThumb}
                                     {asset}
                                   </span>
@@ -1566,7 +1567,7 @@ export function ProjectCalendarTable({
                                         after={
                                           <>
                                             <CopyCaptionChip caption={latest.text} title="Copy it, paragraphs and all" />
-                                            <EditContent onFill={fill(c, "copy").onFill} label="Caption/Copy" />
+                                            <EditContent onFill={fill(c, "copy").onFill} label={copyNoun(postFormats(c))} />
                                           </>
                                         }
                                       >

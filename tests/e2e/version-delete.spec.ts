@@ -97,7 +97,7 @@ test("an artwork version can be deleted from its card", async ({ page, frank }) 
   test.setTimeout(90_000);
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
-  await page.getByRole("button", { name: "Upload Artwork" }).click();
+  await page.getByRole("button", { name: /^Upload (Video|Creative|Creatives)$/ }).click();
   for (const n of [1, 2]) {
     await page.locator('.mtabbody input[type="file"]').setInputFiles(await picture(page));
     // The creative's own Save (the copy section has one with the same name).

@@ -45,7 +45,7 @@ import { OpenAsset } from "@/components/project/OpenAsset";
 import { StagePillMenu } from "@/components/project/StagePillMenu";
 import { useCopyVersionsByCreative } from "@/hooks/use-copy-versions-by-creative";
 import { VersionedTextCell } from "@/components/project/VersionedTextCell";
-import { copySummary, expectedContent, formatsLabel, postFormats, hasVideoFormat } from "@/lib/formats";
+import { artworkNoun, copyNoun, copySummary, expectedContent, formatsLabel, postFormats, hasVideoFormat } from "@/lib/formats";
 import { EditContent, MissingContent } from "@/components/project/MissingContent";
 import { isOverdue, isPastDue } from "@/lib/post-live";
 import { EditPostWindow } from "@/components/project/EditPostWindow";
@@ -603,8 +603,9 @@ export function ContinuousCalendarTable({
   const [editPost, setEditPost] = useState<{ id: string; focus: FocusTarget } | null>(null);
   const fill = (c: CreativeListRow, focus: FocusTarget) => ({
     onFill: isStaff ? () => setEditPost({ id: c.id, focus }) : undefined,
-    // What the button says it adds (direct instruction): "Add Creative".
-    addLabel: ADD_LABELS[focus],
+    // What the button says it adds (direct instruction): "Add Creative",
+    // the artwork and words named for the post's formats ("Add Video").
+    addLabel: focus === "artwork" ? artworkNoun(postFormats(c), c.slide_count) : focus === "copy" ? copyNoun(postFormats(c)) : ADD_LABELS[focus],
   });
   // Notes for Designer (direct instruction: on both tables, and opened in
   // the window, never edited in the cell): the overall note, then each
@@ -1380,7 +1381,7 @@ export function ContinuousCalendarTable({
                               const after =
                                 isStaff || asset ? (
                                   <span className="cc-after">
-                                    {isStaff && <EditContent onFill={fill(c, "artwork").onFill} label="Creative" />}
+                                    {isStaff && <EditContent onFill={fill(c, "artwork").onFill} label={artworkNoun(postFormats(c), c.slide_count)} />}
                                     {addThumb}
                                     {asset}
                                   </span>
@@ -1480,7 +1481,7 @@ export function ContinuousCalendarTable({
                               return (
                                 <td key={key} className="cellw">
                                   <VersionedTextCell
-                                    label="Caption/Copy"
+                                    label={copyNoun(postFormats(c))}
                                     rows={rows}
                                     expected={exp.copy}
                                     {...fill(c, "copy")}

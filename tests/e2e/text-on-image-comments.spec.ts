@@ -42,7 +42,7 @@ test("Text on Image shows where the artwork goes, and its words take comments", 
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
   const box = page.locator(".noart-toi");
   await expect(box).toContainText("Big sale, 50% off this weekend", { timeout: 20_000 });
-  await expect(page.locator(".ig-noart").getByRole("button", { name: "Upload Artwork" })).toBeVisible();
+  await expect(page.locator(".ig-noart").getByRole("button", { name: /^Upload (Video|Creative|Creatives)$/ })).toBeVisible();
 
   // A person's drag selects its words, though the artwork area around them
   // can't be selected (.ig-media), and takes them to the comment box, even

@@ -22,7 +22,7 @@ test("a video post has a VO on Production, saved on the post and shown on the ta
   await makeVideo(frank);
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
-  await page.getByRole("button", { name: "Upload Artwork" }).click();
+  await page.getByRole("button", { name: /^Upload (Video|Creative|Creatives)$/ }).click();
   const modal = page.locator(".scrim .modal").first();
 
   // On Production (direct instruction): Thumbnail Text on Image, then VO,
@@ -60,14 +60,14 @@ test("a video post has a VO on Production, saved on the post and shown on the ta
   expect(voCol).toBeGreaterThan(0);
   // The script, then its Edit (direct instruction).
   await expect(row.locator("td").nth(voCol).locator(".cc-t")).toHaveText("Nobody misses on purpose.");
-  await expect(row.locator("td").nth(voCol).locator(".tedit-btn")).toHaveText("Edit");
+  await expect(row.locator("td").nth(voCol).locator(".tedit-btn")).toHaveText("Update VO");
 });
 
 test("a post with no video format has no VO, and a client's table has no VO column", async ({ page, frank }) => {
   await admin.from("creatives").update({ scheduled_at: new Date().toISOString() }).eq("id", frank.creativeId);
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
-  await page.getByRole("button", { name: "Upload Artwork" }).click();
+  await page.getByRole("button", { name: /^Upload (Video|Creative|Creatives)$/ }).click();
   const modal = page.locator(".scrim .modal").first();
   await modal.getByRole("tab", { name: "Production" }).click();
   await expect(modal.locator(".msection-h", { hasText: /^Text on Image$/ })).toBeVisible();
@@ -104,7 +104,7 @@ test("Production's Draft with Frank offers a VO with its own Use This", async ({
   ]);
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
-  await page.getByRole("button", { name: "Upload Artwork" }).click();
+  await page.getByRole("button", { name: /^Upload (Video|Creative|Creatives)$/ }).click();
   const modal = page.locator(".scrim .modal").first();
   // The VO is on Production, with its own Draft with Frank (phase119).
   await modal.getByRole("tab", { name: "Production" }).click();

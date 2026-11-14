@@ -2,7 +2,7 @@
 // (or `npm run test:unit`).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { FORMATS, FORMAT_CATEGORIES, formatById, formatsByCategory, postFormats, formatsLabel, copyFieldsFor, copySummary, copySummaryParts, VIDEO_FORMAT_IDS, hasVideoFormat, frameLimits, expectedContent, categoriesFor, formatsFor, formatsOffLimits, defaultSize, postSize, sizePresets, sizeLabel, hasSize, aspectRatioCss, formatRatio } from "./formats.ts";
+import { FORMATS, FORMAT_CATEGORIES, formatById, formatsByCategory, postFormats, formatsLabel, copyFieldsFor, copySummary, copySummaryParts, VIDEO_FORMAT_IDS, hasVideoFormat, frameLimits, expectedContent, categoriesFor, formatsFor, formatsOffLimits, defaultSize, postSize, sizePresets, sizeLabel, hasSize, aspectRatioCss, formatRatio, artworkNoun, copyNoun } from "./formats.ts";
 
 test("FORMATS has the prototype's 41 entries, plus Listing Image Set", () => {
   assert.equal(FORMATS.length, 42);
@@ -150,4 +150,15 @@ test("sizeLabel names the shape", () => {
   assert.equal(sizeLabel({ w: 1000, h: 2100 }), "1000 × 2100 · 10:21");
   assert.equal(sizeLabel({ w: 160, h: 600 }), "160 × 600 · 4:15");
   assert.equal(sizeLabel({ w: 1080, h: 566 }), "1080 × 566 · 1.91:1");
+});
+
+test("a post's artwork and words are named by its formats on buttons", () => {
+  assert.equal(artworkNoun(["ig_reel"]), "Video");
+  assert.equal(artworkNoun(["li_video", "ig_feed"]), "Video");
+  assert.equal(artworkNoun(["ig_carousel"]), "Creatives");
+  assert.equal(artworkNoun(["ig_story"], 3), "Creatives");
+  assert.equal(artworkNoun(["ig_story"], 1), "Video");
+  assert.equal(artworkNoun(["ig_feed"]), "Creative");
+  assert.equal(copyNoun(["ig_feed"]), "Caption");
+  assert.equal(copyNoun(["meta_carousel"]), "Copy");
 });

@@ -20,7 +20,7 @@ test("upload artwork modal", async ({ page, frank }) => {
 
   // Fresh fixture creative has no creative_versions yet, so this is the
   // empty artwork's trigger, not the topbar's "Upload or Edit".
-  await page.click('button:has-text("Upload Artwork")');
+  await page.getByRole("button", { name: /^Upload (Video|Creative|Creatives)$/ }).click();
   await page.waitForSelector(".scrim .modal");
   // The AI button (Draft with Frank) is greyed until the agency's model
   // setting loads — wait for it to be ready, or the
