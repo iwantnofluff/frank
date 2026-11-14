@@ -6,6 +6,7 @@ import {
   chatFields,
   buildCopyChatPromptParts,
   openingMessage,
+  pointersOpening,
   parseCopyChatReply,
   slideTextFields,
   VO_FIELD,
@@ -111,7 +112,12 @@ export async function POST(request: Request) {
   } else {
     if (body.mode !== "draft" && body.mode !== "review" && body.mode !== "clean") return fail("Choose to draft, review or clean", 400);
     mode = body.mode;
-    message = openingMessage(body.mode, currentFields, fields, scope);
+    // Opened from a check's pointers (direct instruction): the person's
+    // own words, then the draft, in a review.
+    const own = body.message?.trim() ?? "";
+    if (own && mode !== "review") return fail("Only a review starts from your own message", 400);
+    if (own.length > 4000) return fail("Keep a message under 4,000 characters", 400);
+    message = own ? pointersOpening(own, currentFields, fields) : openingMessage(body.mode, currentFields, fields, scope);
   }
   // Reviewing a draft covers only what's been written (direct
   // instruction): Frank reads, reviews and suggests the filled fields, not

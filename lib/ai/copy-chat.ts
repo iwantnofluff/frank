@@ -174,12 +174,33 @@ export function openingMessage(
     }
     return "Draft some copy for this post from the concept.";
   }
-  const draft = fields
+  const draft = draftListing(currentFields, fields);
+  if (mode === "clean") return `Clean up my draft: keep what I've written, just tidy and refine it.\n\n${draft}`;
+  return `Here's my first draft. What works, what doesn't, and how would you improve it?\n\n${draft}`;
+}
+
+// The copy as written, field by field.
+function draftListing(currentFields: Record<string, string>, fields: CopyChatField[]): string {
+  return fields
     .filter((f) => currentFields[f.key]?.trim())
     .map((f) => `${f.label}:\n${currentFields[f.key].trim()}`)
     .join("\n\n");
-  if (mode === "clean") return `Clean up my draft: keep what I've written, just tidy and refine it.\n\n${draft}`;
-  return `Here's my first draft. What works, what doesn't, and how would you improve it?\n\n${draft}`;
+}
+
+// Draft With Frank from a check (direct instruction): the person's own
+// opening, the check's pointers as they left them, then the copy as
+// written, which a review conversation works on.
+export function pointersOpening(message: string, currentFields: Record<string, string>, fields: CopyChatField[]): string {
+  const draft = draftListing(currentFields, fields);
+  return draft ? `${message.trim()}\n\nMy draft:\n\n${draft}` : message.trim();
+}
+
+// What a check's pointers open Draft with Frank with: the ones to act on.
+export function checkPointersMessage(check: string, pointers: { title: string; body: string }[]): string {
+  return [
+    `Write a better version of my copy using these pointers from ${check}, keeping what already works:`,
+    ...pointers.map((p) => `- ${p.title}: ${p.body.trim()}`),
+  ].join("\n");
 }
 
 const notes = (heading: string, list: { title: string; body: string }[]) =>

@@ -70,6 +70,7 @@ import { FormatPicker } from "./FormatPicker";
 import { FormatSizeFields } from "./FormatSizeFields";
 import {
   applySlideDraft,
+  checkPointersMessage,
   slideTextAsFields,
   slideTextFields,
   VO_FIELD,
@@ -197,11 +198,12 @@ type CreativeModalProps =
 
 type CheckKind = "brand" | "wiifm" | "creative" | "design";
 
+// In this order on the Checks tab: Brand first (direct instruction).
 const CHECK_LABELS: Record<CheckKind, string> = {
+  brand: "Check Brand",
   wiifm: "Check WIIFM",
   creative: "Check Creative",
   design: "Check Design",
-  brand: "Check Brand",
 };
 
 // Each check is now its own section on the Checks tab (same footing as
@@ -267,6 +269,7 @@ function CheckComment({
   disabled = false,
   hint,
   onPosted,
+  beside,
 }: {
   creativeId: string;
   // The artwork version a comment from an artwork check is about.
@@ -276,6 +279,8 @@ function CheckComment({
   disabled?: boolean;
   hint?: string;
   onPosted?: () => void;
+  // Another action beside Add To Comments (Draft With Frank).
+  beside?: React.ReactNode;
 }) {
   const comment = useCreateComment(creativeId);
   const [draft, setDraft] = useState<string | null>(null);
@@ -307,6 +312,7 @@ function CheckComment({
         >
           Add To Comments
         </button>
+        {beside}
         {(posted || hint) && (
           <span className="tdim">
             {posted === "private" ? "Added to the comments, for your team only." : posted === "public" ? "Added to the comments." : hint}
@@ -584,6 +590,7 @@ interface CheckAttachmentRef {
 function LiveCheck({
   kind,
   creativeId,
+  onDraft,
   agencyId,
   concept,
   copyText,
@@ -593,6 +600,9 @@ function LiveCheck({
 }: {
   kind: "brand" | "wiifm";
   creativeId: string;
+  // Draft with Frank opened with these pointers (direct instruction);
+  // none where it can't open.
+  onDraft?: (message: string) => void;
   agencyId: string | undefined;
   concept: string | null;
   copyText: string;
@@ -670,7 +680,27 @@ function LiveCheck({
         <div>
           <FindingsList findings={findings} />
           <p className="checksource">Checked against {CHECK_AGAINST_LABELS[kind]}.</p>
-          <CheckComment creativeId={creativeId} text={checkCommentText(CHECK_LABELS[kind], findings)} />
+          <CheckComment
+            creativeId={creativeId}
+            text={checkCommentText(CHECK_LABELS[kind], findings)}
+            beside={
+              // The pointers to act on, not the ones it found fine.
+              onDraft && findings.some((f) => f.tone === "warn") ? (
+                <button
+                  type="button"
+                  className="btn sm btn-frank"
+                  onClick={() =>
+                    onDraft(checkPointersMessage(CHECK_LABELS[kind], findings.filter((f) => f.tone === "warn")))
+                  }
+                >
+                  <svg className="aicon" viewBox="0 0 24 24">
+                    <path d="M12 3l1.8 6.2L20 11l-6.2 1.8L12 19l-1.8-6.2L4 11l6.2-1.8L12 3z" />
+                  </svg>
+                  Draft With Frank
+                </button>
+              ) : null
+            }
+          />
         </div>
       )}
       {!running && findings && findings.length === 0 && <p className="sub">No findings came back — try again.</p>}
@@ -813,6 +843,7 @@ function VoCheckWindow({
 function CheckSection({
   kind,
   creativeId,
+  onDraft,
   versionId,
   hasArtwork,
   hasText,
@@ -825,6 +856,7 @@ function CheckSection({
 }: {
   kind: CheckKind;
   creativeId: string;
+  onDraft?: (message: string) => void;
   versionId: string | null;
   hasArtwork: boolean;
   hasText: boolean;
@@ -841,6 +873,7 @@ function CheckSection({
     <LiveCheck
       kind={kind}
       creativeId={creativeId}
+      onDraft={onDraft}
       agencyId={agencyId}
       concept={concept}
       copyText={copyText}
@@ -1415,6 +1448,8 @@ export function CreativeModal(props: CreativeModalProps) {
 
   // "Write with Claude" (phase52), over this window.
   const [chatScope, setChatScope] = useState<CopyChatScope | null>(null);
+  // What Draft with Frank opens with, from a check's Draft With Frank.
+  const [chatStart, setChatStart] = useState<string | null>(null);
   // Design with Frank (phase110), and what Notes for Designer held before
   // a direction went in, so pressing Added puts it back.
   const [designOpen, setDesignOpen] = useState(false);
@@ -3149,6 +3184,14 @@ export function CreativeModal(props: CreativeModalProps) {
               <CheckSection
                 kind={kind}
                 creativeId={creativeId}
+                onDraft={
+                  modelLabel
+                    ? (message) => {
+                        setChatStart(message);
+                        setChatScope("copy");
+                      }
+                    : undefined
+                }
                 versionId={creativeVersions[0]?.id ?? null}
                 hasArtwork={creativeVersions.length > 0}
                 hasText={!isCreate && !!props.creative.slide_text?.some((t) => t.trim())}
@@ -3396,6 +3439,7 @@ export function CreativeModal(props: CreativeModalProps) {
     {chatScope && creativeId && (
       <CopyChat
         scope={chatScope}
+        startWith={chatScope === "copy" ? (chatStart ?? undefined) : undefined}
         creativeId={creativeId}
         designerNotes={draftNotes}
         postName={name || (isCreate ? `New ${word.lower}` : props.creative.name)}
@@ -3432,7 +3476,10 @@ export function CreativeModal(props: CreativeModalProps) {
         }}
         before={chatBefore}
         onBeforeChange={setChatBefore}
-        onClose={() => setChatScope(null)}
+        onClose={() => {
+          setChatScope(null);
+          setChatStart(null);
+        }}
       />
     )}
     </>

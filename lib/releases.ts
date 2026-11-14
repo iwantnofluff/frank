@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.90.0",
+    date: "2026-11-14",
+    title: "Draft With Frank from a check",
+    changes: [
+      "Check Brand and Check WIIFM now have Draft With Frank beside Add To Comments. It opens Draft with Frank with the check's pointers already written in, to edit and Send, and Frank writes better versions of your copy with them.",
+      "Check Brand is now the first of the checks.",
+      "A little more room between a check's \"Checked against\" line and its buttons.",
+    ],
+  },
+  {
     version: "1.89.0",
     date: "2026-11-14",
     title: "Check VO and Text on Image, and checks to comments",

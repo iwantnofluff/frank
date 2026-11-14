@@ -15615,3 +15615,9 @@ button.help-link {
   height: 14px;
   padding: 0;
 }
+/* Room between "Checked against…" and Add To Comments under it (direct
+   instruction). */
+.checksource + .creative-proof-add,
+.checksource + .checkcmt {
+  margin-top: 12px;
+}

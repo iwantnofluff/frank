@@ -56,6 +56,7 @@ export function CopyChat({
   onBeforeChange,
   onClose,
   scope = "copy",
+  startWith,
 }: {
   creativeId: string;
   // In the header, under "Draft with Frank" (direct instruction).
@@ -78,6 +79,9 @@ export function CopyChat({
   // Production's the VO and the words on the artwork, each with its own
   // conversations.
   scope?: CopyChatScope;
+  // Opened from a check's pointers (direct instruction): the message box
+  // filled with them, to edit, and Send starts a review of the copy.
+  startWith?: string;
 }) {
   const { data: chats, isLoading } = useCopyChats(creativeId, scope);
   // A conversation going on in another window or device updates here too
@@ -101,7 +105,7 @@ export function CopyChat({
   const ours = agency?.name ? `${agency.name}\u2019s` : "Your workspace\u2019s";
   const theirs = client?.name ? `${client.name}\u2019s` : "the client\u2019s";
   const [chatId, setChatId] = useState<string | null>(null);
-  const [draft, setDraft] = useState("");
+  const [draft, setDraft] = useState(startWith ?? "");
   const [skipped, setSkipped] = useState<string[]>([]);
   const endRef = useRef<HTMLDivElement>(null);
   const chat: Chat | undefined = chats?.find((c) => c.id === chatId);
@@ -111,13 +115,16 @@ export function CopyChat({
     endRef.current?.scrollIntoView({ block: "end" });
   }, [chat?.messages.length, send.isPending]);
 
-  function start(mode: CopyChatMode) {
+  function start(mode: CopyChatMode, message?: string) {
     send.mutate(
-      { mode, scope, currentFields, designerNotes },
+      { mode, scope, message, currentFields, designerNotes },
       {
         onSuccess: (r) => {
           setChatId(r.chatId);
           setSkipped(r.skippedFiles);
+        },
+        onError: () => {
+          if (message) setDraft(message);
         },
       },
     );
@@ -125,7 +132,15 @@ export function CopyChat({
 
   function reply() {
     const message = draft.trim();
-    if (!message || !chatId) return;
+    if (!message) return;
+    // From a check's pointers, with no conversation yet: a review of the
+    // copy, opened with these words.
+    if (!chatId) {
+      if (!startWith) return;
+      setDraft("");
+      start("review", message);
+      return;
+    }
     // Out of the box and into the conversation at once; back in the box if
     // Frank doesn't answer.
     setDraft("");
@@ -150,11 +165,12 @@ export function CopyChat({
       size="lg"
       onClose={onClose}
       footer={
-        chat ? (
+        chat || (startWith && !chatId) ? (
           <>
             <textarea
               className="cchat-input"
-              rows={2}
+              // Taller holding a check's pointers, so they can be read.
+              rows={startWith && !chatId ? 7 : 2}
               value={draft}
               placeholder="Ask for changes: shorter, warmer, a different hook…"
               aria-label="Message to Frank"
@@ -258,7 +274,11 @@ export function CopyChat({
         <div className="cchat-main" aria-live="polite">
           {!chat && !send.isPending && (
             <div className="cchat-empty">
-              {isLoading ? "Frank is working…" : "Start by drafting from the concept, or ask for a review of the copy you've written."}
+              {isLoading
+                ? "Frank is working…"
+                : startWith
+                  ? "The check's pointers are in the box below. Edit them if you like, then Send for Frank's better versions of your copy."
+                  : "Start by drafting from the concept, or ask for a review of the copy you've written."}
             </div>
           )}
           {chat?.messages.map((m) => (

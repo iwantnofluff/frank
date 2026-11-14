@@ -2,7 +2,7 @@
 // (or `npm run test:unit`).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { applySlideDraft, buildCopyChatPrompt, chatFields, cleanReplyBody, openingMessage, parseCopyChatReply, slideTextAsFields, slideTextFields, VO_FIELD, type CopyChatContext, THUMB_TEXT_FIELD, buildCopyChatPromptParts } from "./copy-chat.ts";
+import { applySlideDraft, checkPointersMessage, pointersOpening, buildCopyChatPrompt, chatFields, cleanReplyBody, openingMessage, parseCopyChatReply, slideTextAsFields, slideTextFields, VO_FIELD, type CopyChatContext, THUMB_TEXT_FIELD, buildCopyChatPromptParts } from "./copy-chat.ts";
 
 const fields = [
   { key: "caption", label: "Caption" },
@@ -181,4 +181,15 @@ test("Clean My Draft: only the written fields, the draft quoted, and one tidied 
   assert.doesNotMatch(draft, /clean up their draft|exactly one|Start with a verdict/);
   assert.match(draft, /Keep it to a few sentences/);
   assert.match(draft, /Offer up to three drafts, each different\./);
+});
+
+test("a check's pointers open Draft with Frank, and the draft follows the person's own words", () => {
+  const msg = checkPointersMessage("Check Brand", [{ title: "Vague close", body: "Name a brand. " }]);
+  assert.equal(msg, "Write a better version of my copy using these pointers from Check Brand, keeping what already works:\n- Vague close: Name a brand.");
+  const two = [
+    { key: "caption", label: "Caption" },
+    { key: "headline", label: "Headline" },
+  ];
+  assert.equal(pointersOpening(" Fix this. ", { caption: " Hi ", headline: "" }, two), "Fix this.\n\nMy draft:\n\nCaption:\nHi");
+  assert.equal(pointersOpening("Fix this.", {}, two), "Fix this.");
 });
