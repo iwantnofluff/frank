@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.88.2",
+    date: "2026-11-14",
+    title: "Roomier VO, Text on Image and Caption boxes",
+    changes: [
+      "In the post window, the VO, Text on Image and Caption boxes are now all the same height, half again taller than the VO's was. Longer words scroll inside, and each can still be dragged taller.",
+    ],
+  },
+  {
     version: "1.88.1",
     date: "2026-11-14",
     title: "Delete VO and Text on Image versions, and a simpler Add or Invite",

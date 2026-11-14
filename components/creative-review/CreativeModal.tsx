@@ -2491,7 +2491,7 @@ export function CreativeModal(props: CreativeModalProps) {
                 <label htmlFor="nbVo">Script</label>
                 <textarea
                   id="nbVo"
-                  className="bin"
+                  className="bin tallbox"
                   rows={5}
                   aria-label="VO"
                   maxLength={5000}
@@ -2544,6 +2544,7 @@ export function CreativeModal(props: CreativeModalProps) {
             }}
             fixed
             bare
+            tall
           />
           </div>
           {prodSaveRow("slide_text", "Text on Image", pendingSlideChange)}
@@ -2730,7 +2731,7 @@ export function CreativeModal(props: CreativeModalProps) {
                   <label>{spec.label}</label>
                   {LONG_COPY_FIELDS.has(spec.key) ? (
                     <textarea
-                      className="bin"
+                      className={spec.key === "caption" ? "bin tallbox" : "bin"}
                       rows={spec.key === "caption" ? 6 : 3}
                       value={draftFields[spec.key] ?? ""}
                       onChange={(e) => {

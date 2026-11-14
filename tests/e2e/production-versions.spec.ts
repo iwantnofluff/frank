@@ -119,3 +119,24 @@ test("a VO or Text on Image version can be deleted from its tab, as the copy's c
     { field: "slide_text", version_no: 1 },
   ]);
 });
+
+// The VO, Text on Image and Caption boxes (direct instruction): one height
+// for all three, half again the VO's old 123px, whatever their length.
+test("the VO, Text on Image and Caption boxes share one taller height", async ({ page, frank }) => {
+  test.setTimeout(90_000);
+  const long = Array.from({ length: 20 }, (_, i) => `Line ${i + 1} of a long script.`).join("\n");
+  await admin.from("creatives").update({ format: "ig_reel", formats: ["ig_reel"], voiceover: long, slide_text: ["Short words"] }).eq("id", frank.creativeId);
+  await frank.loginAsStaff(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(`/creatives/${frank.creativeId}`);
+  await page.getByRole("button", { name: "Edit", exact: true }).click();
+  const modal = page.locator(".scrim .modal").first();
+  await modal.getByRole("tab", { name: "Production" }).click();
+  const height = (l: ReturnType<typeof modal.locator>) => l.evaluate((el) => (el as HTMLElement).offsetHeight);
+  expect(await height(modal.locator("#nbVo"))).toBe(185);
+  expect(await height(modal.locator('[data-focus="imageOnText"] textarea').first())).toBe(185);
+  await modal.getByRole("tab", { name: "Content" }).click();
+  const caption = modal.locator(".field", { has: page.locator("label", { hasText: /^Caption$/ }) }).locator("textarea");
+  await expect(caption).toBeVisible();
+  expect(await height(caption)).toBe(185);
+});

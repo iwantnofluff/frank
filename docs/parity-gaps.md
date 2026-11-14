@@ -5179,6 +5179,16 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## One taller height for the VO, Text on Image and Caption boxes (1.88.2, 2026-11-14)
+
+Direct instruction: the Text on Image, VO and Caption boxes should be one consistent height however long their text, by default 50% bigger than the VO's.
+- **Before:** measured in the window, VO was 123px (5 rows), each Text on Image box 61px (2 rows) and Caption 6 rows.
+- **Now:** all three are `textarea.bin.tallbox`, 185px (123 × 1.5), however much is in them. Longer text scrolls inside, and each can still be dragged taller.
+  - Text on Image goes through ListEditor's new `tall`, one box per slide.
+  - Thumbnail Text on Image and the other copy fields are unchanged (not asked).
+
+**Verified:** production-versions.spec has a new test measuring all three at 185px, the VO with 20 lines in it and Text on Image with three words. It passed with the rest of that file (3). creative-review, new-brief, voiceover and carousel passed (25). A screenshot of the Production tab was checked.
+
 ## Add or Invite People from a project: its client only (1.88.1, 2026-11-14)
 
 Direct instruction, on 1.88.0: opened from one project's Settings, the window shouldn't offer other clients or projects.

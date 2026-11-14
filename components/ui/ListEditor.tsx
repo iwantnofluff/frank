@@ -19,6 +19,7 @@ export function ListEditor({
   readOnly = false,
   bare = false,
   fixed = false,
+  tall = false,
 }: {
   // Optional — when the caller already has its own heading for this list
   // (CreativeModal's Brief tab renders a real .msection-h/.msection-d pair
@@ -39,6 +40,8 @@ export function ListEditor({
   // The number of items is set elsewhere (a carousel's slide count), so
   // there's no add or remove here — only the text.
   fixed?: boolean;
+  // Each box the long-text height (.bin.tallbox), as the VO and Caption are.
+  tall?: boolean;
 }) {
   const items = (
     <>
@@ -58,7 +61,7 @@ export function ListEditor({
             )}
           </div>
           <textarea
-            className="bin"
+            className={tall ? "bin tallbox" : "bin"}
             rows={2}
             value={value}
             disabled={readOnly}
