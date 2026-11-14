@@ -95,6 +95,8 @@ function AnchorBadge({ anchor }: { anchor: CommentRow["anchor"] }) {
 interface VersionTag {
   label: string;
   old: boolean;
+  // Every version it was made on, for its tooltip: "Creative V2 and Copy V1".
+  named: string;
 }
 
 type Filter = "all" | "unresolved" | "resolved" | "mine" | "internal";
@@ -470,7 +472,7 @@ function CommentCard({
         {versionTag && (
           <span
             className={versionTag.old ? "vtag vtag-old" : "vtag"}
-            title={versionTag.old ? `Made on an earlier version, ${versionTag.label}` : `Made on the newest version, ${versionTag.label}`}
+            title={`Made on ${versionTag.named}${versionTag.old ? ", an earlier version" : ""}`}
           >
             {versionTag.label}
           </span>
@@ -646,7 +648,10 @@ export function CommentsPanel({
     const pick =
       onCopy && copy ? { v: copy, all: copyVersions } : art ? { v: art, all: creativeVersions } : copy ? { v: copy, all: copyVersions } : null;
     if (!pick || !pick.all?.length) return null;
-    return { label: `V${pick.v.version_no}`, old: pick.v.id !== pick.all[0].id };
+    // Both named in its tooltip, where both were recorded (direct
+    // instruction: both, without taking more room).
+    const named = [art && `Creative V${art.version_no}`, copy && `Copy V${copy.version_no}`].filter(Boolean).join(" and ");
+    return { label: `V${pick.v.version_no}`, old: pick.v.id !== pick.all[0].id, named };
   };
   // Made on a version other than the one showing, newest included: picking
   // it brings that version up.
@@ -855,9 +860,12 @@ export function CommentsPanel({
             visibility,
             mentions,
             ...forClient,
+            // The artwork and copy versions showing (direct instruction),
+            // so a plain comment says what it was made on too.
+            creativeVersionId,
+            copyVersionId,
             ...(at != null
               ? {
-                  creativeVersionId,
                   anchor: {
                     type: "time" as const,
                     t: Math.round(at * 100) / 100,

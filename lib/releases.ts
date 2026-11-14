@@ -13,6 +13,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.90.3",
+    date: "2026-11-14",
+    title: "A version on every comment, old ones too",
+    changes: [
+      "A comment typed straight into the box now records the artwork and copy versions showing when it's posted, so it gets its V too. Before, only pins, areas, picked-out words and video moments did, so most comments showed none.",
+      "Comments made before now have been given the versions that were newest when they were posted.",
+      "Point at a comment's V to see both versions it was made on, such as Creative V2 and Copy V1.",
+      "A comment's date and time now sit on one line, such as 13 Nov · 11:52, on the post's page and the review link.",
+    ],
+  },
+  {
     version: "1.90.2",
     date: "2026-11-14",
     title: "A clear Reopen on resolved comments",

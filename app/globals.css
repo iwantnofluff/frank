@@ -5377,7 +5377,6 @@ select.sort:hover {
   align-items: center;
   gap: 6px;
   margin-bottom: 9px;
-  padding-right: 68px;
 }
 .who {
   width: 18px;
@@ -5394,24 +5393,25 @@ select.sort:hover {
   font-size: 12.2px;
   font-weight: 600;
 }
+/* The date and time on one line (direct instruction), at the header's
+   right; a long name wraps before it rather than running under it. */
 .cmt-h time {
   font-size: 10.7px;
   color: var(--muted);
-  position: absolute;
-  top: var(--d-cmt);
-  right: var(--d-cmt);
-  margin: 0;
+  margin: 0 0 0 auto;
+  align-self: flex-start;
+  flex-shrink: 0;
   line-height: 18px;
 }
-/* A comment's date with its 24-hour time under it (direct instruction). */
+/* A comment's date, then its 24-hour time (direct instruction). */
 .cwhen {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  text-align: right;
+  gap: 4px;
+  white-space: nowrap;
 }
-.cmt-h time.cwhen {
-  line-height: 14px;
+.cwhen span + span::before {
+  content: "·";
+  margin-right: 4px;
 }
 .cmt p {
   font-size: 13.7px;

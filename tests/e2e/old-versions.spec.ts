@@ -75,3 +75,22 @@ test("a comment on an earlier version says which, and picking it shows that vers
   await expect(page.locator("#vCopy")).toHaveClass(/vold/);
   await expect(page.locator("#vCreative")).not.toHaveClass(/vold/);
 });
+
+test("a plain comment records the artwork and copy versions showing, and its tag names both", async ({ page, frank }) => {
+  await frank.createArtworkVersion(frank.creativeId, 1, "first.png");
+  await frank.createArtworkVersion(frank.creativeId, 2, "second.png");
+  await frank.createCopyVersion(frank.creativeId, 1, { caption: "First caption" });
+  const { data: art } = await admin.from("creative_versions").select("id").eq("creative_id", frank.creativeId).eq("version_no", 2).single();
+  const { data: copy } = await admin.from("copy_versions").select("id").eq("creative_id", frank.creativeId).single();
+
+  await frank.loginAsStaff(page);
+  await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
+  await expect(page.locator("#vCreative")).toHaveValue(art!.id);
+  await page.getByPlaceholder("Add a comment…").fill("Plain one");
+  await page.locator(".composer").getByRole("button", { name: "Post" }).click();
+  const tag = page.locator(".cmt", { hasText: "Plain one" }).locator(".cmt-f .vtag");
+  await expect(tag).toHaveText("V2");
+  await expect(tag).toHaveAttribute("title", "Made on Creative V2 and Copy V1");
+  const { data: row } = await admin.from("comments").select("creative_version_id, copy_version_id").eq("creative_id", frank.creativeId).eq("body", "Plain one").maybeSingle();
+  expect(row).toEqual({ creative_version_id: art!.id, copy_version_id: copy!.id });
+});
