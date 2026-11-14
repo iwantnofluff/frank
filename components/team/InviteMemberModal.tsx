@@ -20,8 +20,9 @@ import { INVITE_ROLE_HINTS, INVITE_ROLE_LABELS, type InviteRole } from "@/lib/ro
 // each add or invite comes back to the empty window, for the next person.
 export function InviteMemberModal({
   agencyId,
-  roles,
+  roles: allRoles,
   presetClientId,
+  allowInvite = false,
   onClose,
   onSent,
 }: {
@@ -29,9 +30,15 @@ export function InviteMemberModal({
   roles: InviteRole[];
   // Opened from a Client Profile (phase46): that client, chosen already.
   presetClientId?: string;
+  // Opened from a project's Settings (direct instruction): a teammate, or
+  // someone new invited by email as a User or Client of that client.
+  allowInvite?: boolean;
   onClose: () => void;
   onSent: (email: string) => void;
 }) {
+  // From a project, only its client's own kind of people: a User or a Client.
+  const offered = presetClientId && allowInvite ? allRoles.filter((r) => r === "user" || r === "client") : allRoles;
+  const roles = offered.length ? offered : allRoles;
   const invite = useInviteMember();
   const { data: clients } = useClients();
   const activeClients = (clients ?? []).filter((c) => !c.archived_at);
@@ -67,8 +74,9 @@ export function InviteMemberModal({
   const [done, setDone] = useState<string | null>(null);
   const clientName = activeClients.find((c) => c.id === presetClientId)?.name ?? "this client";
   // Opened from a client, it only adds Users already on the team (direct
-  // instruction: invites happen in Workspace Settings → Team only).
-  const addOnly = !!presetClientId;
+  // instruction: invites happen in Workspace Settings → Team only); from a
+  // project, it invites too (direct instruction, allowInvite).
+  const addOnly = !!presetClientId && !allowInvite;
 
   // Back to the empty window (opened from a client).
   function startAgain(note: string) {
@@ -146,7 +154,7 @@ export function InviteMemberModal({
   return (
     <Modal
       hideCloseButton
-      title={addOnly ? "Add People" : "Invite Team Member"}
+      title={addOnly ? "Add People" : presetClientId ? "Add or Invite People" : "Invite Team Member"}
       size="sm"
       onClose={onClose}
       footer={
@@ -217,7 +225,9 @@ export function InviteMemberModal({
           )}
           {!existing && (
             <div className="hint" style={{ marginTop: 5 }}>
-              Someone new, or one of this client&apos;s own people, is invited from Workspace Settings &rarr; Team.
+              {addOnly
+                ? "Someone new, or one of this client's own people, is invited from Workspace Settings → Team."
+                : "Or invite someone new by email below, as a User or one of this client's own people."}
             </div>
           )}
         </div>

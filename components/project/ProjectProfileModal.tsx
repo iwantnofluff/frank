@@ -21,7 +21,8 @@ import { DeletePermanentlyDialog } from "@/components/ui/DeletePermanentlyDialog
 import { useMyMembership } from "@/hooks/use-my-membership";
 import { useProjectRoles, useSetProjectRole } from "@/hooks/use-project-roles";
 import { useTeamMembers } from "@/hooks/use-team-members";
-import { ROLE_LABELS, seesAllClients } from "@/lib/roles";
+import { ROLE_LABELS, rolesICanInvite, seesAllClients } from "@/lib/roles";
+import { InviteMemberModal } from "@/components/team/InviteMemberModal";
 
 const STAGES = ["Concept", "In Production", "Internal Review", "Client Review", "Approved", "Live"];
 
@@ -275,6 +276,12 @@ function ProjectPeople({
   canManage: boolean;
 }) {
   const { data: people, isPending, error } = useClientPeople(clientId, canManage);
+  // Adding a teammate who isn't on this client yet, or inviting someone new
+  // by email (direct instruction), with the same window as Client Settings
+  // → People: a teammate gets the whole client, as there (decided directly).
+  const { data: me } = useMyMembership(agencyId || undefined);
+  const inviteRoles = rolesICanInvite(me);
+  const [inviting, setInviting] = useState(false);
   // Owners and Admins are on every project without being added, so they're
   // listed too (direct instruction), first, and can't be taken off.
   const { data: team } = useTeamMembers(agencyId || undefined);
@@ -354,7 +361,7 @@ function ProjectPeople({
       <div className="msection-h">People</div>
       <p className="msection-d">
         {canManage
-          ? "Everyone on this project. Owners and Admins are on every project; add Users and Clients here. A Project Role shows after the person's name in the table's Team column. Tick Post Default for whoever should be on every new post's Team. Changes apply straight away."
+          ? "Everyone on this project. Owners and Admins are on every project; add Users and Clients here, or Add or Invite People for a teammate not on this client yet, or someone new. A Project Role shows after the person's name in the table's Team column. Tick Post Default for whoever should be on every new post's Team. Changes apply straight away."
           : "Everyone on this project. Owners and Admins choose who's on it."}
       </p>
       {/* A table (direct instruction): its name, role (a dropdown for a User
@@ -451,8 +458,15 @@ function ProjectPeople({
               </select>
             ) : (
               (people ?? []).length === 0 && (
-                <p className="msection-d">Invite Users or Clients to {clientName} from Edit Client to add them here.</p>
+                <p className="msection-d">
+                  No one on {clientName} yet.{inviteRoles.length > 0 ? " Add or Invite People to add someone." : ""}
+                </p>
               )
+            )}
+            {inviteRoles.length > 0 && (
+              <button type="button" className="btn sm pt-invite" onClick={() => setInviting(true)}>
+                Add or Invite People
+              </button>
             )}
             {actions.outcome}
             {setRole.isSuccess && !setRole.isPending && (
@@ -466,6 +480,16 @@ function ProjectPeople({
             )}
           </>
         ))}
+      {inviting && (
+        <InviteMemberModal
+          agencyId={agencyId}
+          roles={inviteRoles}
+          presetClientId={clientId}
+          allowInvite
+          onClose={() => setInviting(false)}
+          onSent={() => {}}
+        />
+      )}
     </>
   );
 }

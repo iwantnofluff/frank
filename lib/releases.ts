@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.88.0",
+    date: "2026-11-14",
+    title: "Add people from a project's Settings",
+    changes: [
+      "Project Settings → People has Add or Invite People: add a teammate who isn't on the project's client yet (they get the whole client, as in Team), or invite someone new by email as a User or a Client.",
+    ],
+  },
+  {
     version: "1.87.1",
     date: "2026-11-13",
     title: "Mentions stack up",

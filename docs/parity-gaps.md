@@ -5179,6 +5179,30 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Add or invite people from a project's Settings (1.88.0, 2026-11-14)
+
+Direct instruction: add users to a project from its Settings too.
+- **What was there:** an "+ Add someone from {client}" list, of the client's own people not yet on the project. A teammate without the client never appeared, and the list vanished once everyone on the client was on the project.
+- **Decided directly:**
+  - A teammate added from here gets the whole client, as Team → Users does (add_person_to_client, all its projects).
+  - Someone new can be invited by email from here, as a User or a Client.
+- **Now:** Project Settings → People has **Add or Invite People** for those who can invite (`rolesICanInvite`: Owners, and Admins with Can invite), under the existing list.
+  - It opens InviteMemberModal with the project's client preset and a new `allowInvite`.
+  - The teammate picker (useAddablePeople) and the invite form show together, the form offering only User and Client, with this client chosen.
+  - Client Settings → People doesn't pass `allowInvite`, so it stays add-only, as decided there before ("inviting is Workspace Settings → Team's alone").
+- **Wording:** the empty state now says "No one on {client} yet", rather than pointing to Edit Client, which no longer exists.
+
+**Verified:**
+- **project-people-invite.spec** (new), as an Owner:
+  - A team User without the client is added from the window: given the client and on the project, and shown in the project's People list after Cancel.
+  - Someone new is invited as a Client: Role offers only User and Client, Their Client is preset, and Invite Sent shows. Their membership has the client and isn't yet accepted, with one invite attached.
+- **Related specs:** add-to-client, client-invites, project-access and team-invite passed with it (19).
+- **Screenshot:** the window over Project Settings was checked.
+
+**Full suite** on the local database: 368 passed, 6 failed, in a slow run (11.9 minutes, load average about 9 from the Mac's other work).
+- **dashboard.png:** differed only in Last Activity (the date rolling over) and was regenerated after looking at its diff.
+- **admin-overview** (two test workspaces' downgrades at once), **admin**, **billing**, **team-invite** and **team-manage** were waits that ran out, none near this change. Rerun, they passed: the dashboard and billing files one at a time, 9 passed.
+
 ## Mention pop-ups stack up (1.87.1, 2026-11-13)
 
 Direct instruction: with more than one mention waiting, the bottom-right pop-up shows a stack and how many.
