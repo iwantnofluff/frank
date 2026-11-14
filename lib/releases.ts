@@ -13,6 +13,18 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.89.0",
+    date: "2026-11-14",
+    title: "Check VO and Text on Image, and checks to comments",
+    changes: [
+      "A video post's Checks tab has a new Check VO and Text on Image, under Check WIIFM. It opens the VO and the Text on Image side by side, and Frank says whether they communicate the same thing, with a note on each mismatch: Wording for facts that differ (numbers, names, prices, places) and Meaning for a point one makes that the other misses or changes.",
+      "It checks what's written in the window, saved or not. Each check, and each Check Again, uses one AI request from the monthly allowance.",
+      "Every check now says Frank is checking while it runs.",
+      "Every check's result can go into the comments: Add To Comments opens a comment box under it, already filled in, to edit and then post, Private unless you switch it off. Check Creative and Check Design used to post straight away; they now fill the box too, with what you acknowledged.",
+      "A long comment is cut to its first few lines, with Read More to open it and Read Less to close it again.",
+    ],
+  },
+  {
     version: "1.88.3",
     date: "2026-11-14",
     title: "Buttons that say what they do",

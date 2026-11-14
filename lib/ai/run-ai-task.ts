@@ -36,6 +36,8 @@ export type AiTask =
   | "voice_post"
   | "strategy_overview"
   | "classify_comment"
+  // Check VO and Text on Image (phase159).
+  | "check_vo"
   // Ask Frank (phase147): logged, never counted towards the limit.
   | "ask_frank";
 

@@ -68,7 +68,7 @@ test("artwork Frank can't read is said for its slide, with no AI call; a client 
   await ctx.close();
 });
 
-test("findings are acknowledged or ignored, and Add To Comments posts the acknowledged as one team-only comment", async ({ page, browser, frank }) => {
+test("findings are acknowledged or ignored, and Add To Comments fills a box with the acknowledged, to edit and post", async ({ page, browser, frank }) => {
   test.setTimeout(120_000);
   await admin.from("creatives").update({ slide_text: ["We spot the problem", "Book a free call now", "Hi"] }).eq("id", frank.creativeId);
   await frank.createArtworkVersion(frank.creativeId, 1, "art.png");
@@ -103,7 +103,15 @@ test("findings are acknowledged or ignored, and Add To Comments posts the acknow
   await expect(box.getByRole("button", { name: "Acknowledge: Image 2" })).toHaveAttribute("aria-pressed", "true");
   await box.getByRole("button", { name: "Ignore: Image 3" }).click();
   await expect(box).not.toContainText("HELLO");
+  // Filled in a box under the result, to edit before posting (direct
+  // instruction); Private unless switched.
   await add.click();
+  const draft = page.getByRole("textbox", { name: "Comment to add" });
+  await expect(draft).toHaveValue(
+    "Check Creative: 1 thing to fix on the artwork.\n\nImage 2: The artwork says BOOK A CALL TODAY; it should say Book a free call now.",
+  );
+  await draft.pressSequentially(" Please fix.");
+  await page.locator(".checkcmt").getByRole("button", { name: "Post" }).click();
   await expect(page.getByText("Added to the comments, for your team only.")).toBeVisible();
   await expect(box.getByText("In comments")).toBeVisible();
 
@@ -116,7 +124,7 @@ test("findings are acknowledged or ignored, and Add To Comments posts the acknow
   expect(rows![0].creative_version_id).toBe(version!.id);
   expect(rows![0].parent_id).toBeNull();
   expect(rows![0].body).toBe(
-    "Check Creative: 1 thing to fix on the artwork. Image 2: The artwork says BOOK A CALL TODAY; it should say Book a free call now.",
+    "Check Creative: 1 thing to fix on the artwork.\n\nImage 2: The artwork says BOOK A CALL TODAY; it should say Book a free call now. Please fix.",
   );
 
   // On the post's comments for the team, and not for the client.

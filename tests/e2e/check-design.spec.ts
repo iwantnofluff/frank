@@ -57,7 +57,7 @@ test("artwork Frank can't read is said, with no AI call", async ({ page, frank }
   expect(await usage(frank.agencyId)).toBe(0);
 });
 
-test("the design findings are acknowledged, and Add To Comments posts them as one team-only comment", async ({ page, frank }) => {
+test("the design findings are acknowledged, and Add To Comments fills a box with them to post", async ({ page, frank }) => {
   test.setTimeout(90_000);
   await frank.createArtworkVersion(frank.creativeId, 1, "art.png");
   // The AI's answer seeded, never asked for here.
@@ -83,10 +83,11 @@ test("the design findings are acknowledged, and Add To Comments posts them as on
   await box.getByRole("button", { name: "Acknowledge: Fonts" }).click();
   await box.getByRole("button", { name: "Ignore: Logo Size" }).click();
   await page.getByRole("button", { name: "Add To Comments" }).click();
+  await page.locator(".checkcmt").getByRole("button", { name: "Post" }).click();
   await expect(box.getByText("In comments")).toBeVisible();
 
   const { data: rows } = await admin.from("comments").select("body, visibility").eq("creative_id", frank.creativeId);
   expect(rows).toEqual([
-    { body: "Check Design: 1 thing to fix in the design. Fonts: The headline is a serif; the brand uses Helvetica.", visibility: "private" },
+    { body: "Check Design: 1 thing to fix in the design.\n\nFonts: The headline is a serif; the brand uses Helvetica.", visibility: "private" },
   ]);
 });

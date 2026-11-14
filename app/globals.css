@@ -15513,3 +15513,105 @@ button.help-link {
   border: 1px solid var(--line);
   border-radius: 8px;
 }
+/* Check VO and Text on Image (direct instruction): the two side by side,
+   Frank's note below. Each column scrolls on its own past a long script. */
+.vocheck-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.vocheck-col {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  max-height: 280px;
+  overflow-y: auto;
+  min-width: 0;
+}
+.vocheck-col-h {
+  font-size: 12.2px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+.vocheck-slide + .vocheck-slide {
+  margin-top: 8px;
+}
+.vocheck-slide .tdim {
+  font-size: 12.2px;
+}
+.vocheck-result {
+  margin-top: 14px;
+}
+.vocheck-result .checkfind .tag {
+  margin-right: 4px;
+  vertical-align: 1px;
+}
+@media (max-width: 640px) {
+  .vocheck-cols {
+    grid-template-columns: 1fr;
+  }
+}
+/* A check's wait (direct instruction): proofreading's note, without the
+   pull up under a field. */
+.proof-note.check-wait {
+  margin: 4px 0 10px;
+}
+/* Add To Comments' box under a check's result (direct instruction). */
+.checkcmt {
+  margin: 10px 0;
+}
+.checkcmt textarea.bin {
+  width: 100%;
+  resize: vertical;
+}
+.checkcmt-f {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.checkcmt-f .grow {
+  flex: 1;
+}
+.checkcmt .berr {
+  margin-top: 6px;
+}
+.vocheck-add {
+  margin-top: 12px;
+}
+/* A long comment, cut to its first six lines until Read More (direct
+   instruction). */
+.cbody.clamp {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
+  line-clamp: 6;
+  overflow: hidden;
+}
+.cmore {
+  margin-top: 4px;
+}
+.cmore button {
+  font-size: 12.2px;
+  font-weight: 500;
+  color: var(--blue);
+  padding: 0;
+}
+.cmore button:hover {
+  text-decoration: underline;
+}
+/* Inside a check's .field, the Private switch keeps its own shape rather
+   than the field's block label and full-width input. */
+.checkcmt .intog {
+  display: flex;
+  margin: 0;
+  font-size: 12.7px;
+}
+.modal-b .field .checkcmt .intog input {
+  width: 14px;
+  height: 14px;
+  padding: 0;
+}

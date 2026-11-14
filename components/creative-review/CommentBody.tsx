@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import type { TeamMember } from "@/hooks/use-project-discussion";
 import { MentionPicker, MentionText, useMentions } from "@/components/ui/mentions";
 
@@ -27,18 +27,7 @@ export function CommentBody({
   mentions?: string[];
   team?: TeamMember[];
 }) {
-  if (!editing) {
-    return (
-      <p className="cbody">
-        <MentionText text={body} mentions={mentions} team={team} />
-        {editedAt && (
-          <span className="cedited" title={`Edited ${new Date(editedAt).toLocaleString("en-GB")}`}>
-            Edited
-          </span>
-        )}
-      </p>
-    );
-  }
+  if (!editing) return <CommentWords body={body} editedAt={editedAt} mentions={mentions} team={team} />;
   return <CommentEditor body={body} mentions={mentions} team={team} onEditingChange={onEditingChange} onSave={onSave} />;
 }
 
@@ -130,5 +119,64 @@ export function EditCommentButton({ onClick, className }: { onClick: () => void;
     >
       Edit
     </button>
+  );
+}
+
+// A long comment is cut to its first lines with Read More, and Read Less
+// once open (direct instruction: a check added as a comment made the box
+// too long). Measured as it's shown, so only one that's actually cut off
+// gets the button.
+function CommentWords({
+  body,
+  editedAt,
+  mentions,
+  team,
+}: {
+  body: string;
+  editedAt: string | null | undefined;
+  mentions: string[];
+  team: TeamMember[];
+}) {
+  const ref = useRef<HTMLParagraphElement>(null);
+  const [long, setLong] = useState(false);
+  const [open, setOpen] = useState(false);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || open) return;
+    const measure = () => setLong(el.scrollHeight > el.clientHeight + 1);
+    measure();
+    const watch = new ResizeObserver(measure);
+    watch.observe(el);
+    return () => watch.disconnect();
+  }, [body, open]);
+  const edited = editedAt && (
+    <span className="cedited" title={`Edited ${new Date(editedAt).toLocaleString("en-GB")}`}>
+      Edited
+    </span>
+  );
+  const cut = long && !open;
+  return (
+    <>
+      <p ref={ref} className={open ? "cbody" : "cbody clamp"}>
+        <MentionText text={body} mentions={mentions} team={team} />
+        {!cut && edited}
+      </p>
+      {long && (
+        <p className="cmore">
+          <button
+            type="button"
+            aria-expanded={open}
+            onClick={(e) => {
+              // Not the card's own click, which picks the comment.
+              e.stopPropagation();
+              setOpen((o) => !o);
+            }}
+          >
+            {open ? "Read Less" : "Read More"}
+          </button>
+          {cut && edited}
+        </p>
+      )}
+    </>
   );
 }

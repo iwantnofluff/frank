@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { CxCell } from "@/components/project/CxCell";
@@ -78,6 +78,7 @@ import {
   type CopyChatField as CopyFieldSpec,
 } from "@/lib/ai/copy-chat";
 import { buildCheckPrompt, parseCheckFindings, type CheckFinding } from "@/lib/ai/build-check-prompt";
+import type { VoCheckResult } from "@/lib/ai/build-vo-check-prompt";
 import { KNOWLEDGE_SECTIONS } from "@/lib/knowledge-sections";
 import { modelById } from "@/lib/ai/models";
 import { errorMessage } from "@/lib/errors";
@@ -236,6 +237,132 @@ const ARTWORK_CHECKS = {
   },
 } as const;
 
+// While a check runs (direct instruction): as proofreading's wait, with
+// Draft with Frank's dots.
+function CheckWait() {
+  return (
+    <p className="proof-note check-wait" role="status">
+      Frank is checking
+      <span className="cchat-dots" aria-hidden="true">
+        <i />
+        <i />
+        <i />
+      </span>
+    </p>
+  );
+}
+
+// A check's findings as a comment's words: the check, then each finding.
+function checkCommentText(label: string, findings: { title: string; body: string }[], lead?: string): string {
+  return [`${label}${lead ? `: ${lead.trim()}` : ""}`, ...findings.map((f) => `${f.title}: ${f.body.trim()}`)].join("\n\n");
+}
+
+// Add To Comments on every check (direct instruction): a box under the
+// result, filled with it, to edit and then post, Private unless switched
+// off. The post's own comment box is behind this window, so it's here.
+function CheckComment({
+  creativeId,
+  versionId = null,
+  text,
+  disabled = false,
+  hint,
+  onPosted,
+}: {
+  creativeId: string;
+  // The artwork version a comment from an artwork check is about.
+  versionId?: string | null;
+  // What the box is filled with as it opens.
+  text: string;
+  disabled?: boolean;
+  hint?: string;
+  onPosted?: () => void;
+}) {
+  const comment = useCreateComment(creativeId);
+  const [draft, setDraft] = useState<string | null>(null);
+  const [internal, setInternal] = useState(true);
+  const [posted, setPosted] = useState<"private" | "public" | null>(null);
+  // Opened with the caret after the words, ready to add to them.
+  const box = useRef<HTMLTextAreaElement>(null);
+  const opened = draft !== null;
+  useEffect(() => {
+    const el = box.current;
+    if (!opened || !el) return;
+    el.focus();
+    el.setSelectionRange(el.value.length, el.value.length);
+  }, [opened]);
+
+  if (draft === null)
+    return (
+      <div className="creative-proof-add">
+        <button
+          type="button"
+          className="btn sm"
+          disabled={disabled}
+          onClick={() => {
+            comment.reset();
+            setPosted(null);
+            setInternal(true);
+            setDraft(text);
+          }}
+        >
+          Add To Comments
+        </button>
+        {(posted || hint) && (
+          <span className="tdim">
+            {posted === "private" ? "Added to the comments, for your team only." : posted === "public" ? "Added to the comments." : hint}
+          </span>
+        )}
+      </div>
+    );
+
+  const post = () => {
+    if (!draft.trim() || comment.isPending) return;
+    const visibility = internal ? "private" : "public";
+    comment.mutate(
+      { body: draft.trim(), parentId: null, visibility, creativeVersionId: versionId },
+      {
+        onSuccess: () => {
+          setDraft(null);
+          setPosted(visibility);
+          onPosted?.();
+        },
+      },
+    );
+  };
+  return (
+    <div className="checkcmt">
+      <textarea
+        className="bin"
+        aria-label="Comment to add"
+        ref={box}
+        rows={6}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+      />
+      <div className="checkcmt-f">
+        <label className="intog">
+          <input type="checkbox" checked={internal} onChange={(e) => setInternal(e.target.checked)} />
+          <span className="lockic">
+            <svg viewBox="0 0 24 24">
+              <rect x="3" y="11" width="18" height="11" rx="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          </span>
+          Private
+        </label>
+        <div className="grow" />
+        <button type="button" className="btn sm" disabled={comment.isPending} onClick={() => setDraft(null)}>
+          Cancel
+        </button>
+        <button type="button" className="btn primary sm" disabled={!draft.trim() || comment.isPending} onClick={post}>
+          {comment.isPending ? "Posting…" : "Post"}
+        </button>
+      </div>
+      {comment.error && <p className="berr">{errorMessage(comment.error, "Couldn't add the comment")}</p>}
+    </div>
+  );
+}
+
 function FindingsList({ findings }: { findings: { tone: "ok" | "warn"; title: string; body: string }[] }) {
   return (
     <>
@@ -278,8 +405,6 @@ function ArtworkCheck({
   const [running, setRunning] = useState(false);
   // By finding, while the window's open: acknowledged, ignored, or posted.
   const [marks, setMarks] = useState<Record<number, "ack" | "ignored" | "posted">>({});
-  const [posted, setPosted] = useState(false);
-  const comment = useCreateComment(creativeId);
   const canRun = hasArtwork && (hasText || !check.needsText);
 
   async function run() {
@@ -287,8 +412,6 @@ function ArtworkCheck({
     setRunning(true);
     setError(null);
     setMarks({});
-    setPosted(false);
-    comment.reset();
     try {
       const res = await fetch(check.endpoint, {
         method: "POST",
@@ -326,29 +449,18 @@ function ArtworkCheck({
       return next;
     });
 
-  // One team-only comment from the person, listing what they acknowledged
-  // (direct instruction), on the latest artwork's version.
-  const addToComments = () => {
-    if (!acked.length || comment.isPending) return;
-    setPosted(false);
-    const body = [
-      `${CHECK_LABELS[kind]}: ${acked.length} thing${acked.length === 1 ? "" : "s"} to fix ${check.what}.`,
-      ...acked.map(({ f }) => `${f.title}: ${f.body.trim()}`),
-    ].join(" ");
-    comment.mutate(
-      { body, parentId: null, visibility: "private", creativeVersionId: versionId },
-      {
-        onSuccess: () => {
-          setMarks((all) => {
-            const next = { ...all };
-            for (const { i } of acked) next[i] = "posted";
-            return next;
-          });
-          setPosted(true);
-        },
-      },
-    );
-  };
+  // The acknowledged, as a comment to edit and post (direct instruction).
+  const commentText = checkCommentText(
+    CHECK_LABELS[kind],
+    acked.map(({ f }) => f),
+    `${acked.length} thing${acked.length === 1 ? "" : "s"} to fix ${check.what}.`,
+  );
+  const markPosted = () =>
+    setMarks((all) => {
+      const next = { ...all };
+      for (const { i } of acked) next[i] = "posted";
+      return next;
+    });
 
   return (
     <div className="field">
@@ -359,7 +471,8 @@ function ArtworkCheck({
         {error && <span className="berr">{error}</span>}
       </div>
       {!running && disabledReason && <p className="msection-empty" style={{ marginBottom: 6 }}>{disabledReason}</p>}
-      {findings && findings.length > 0 && (
+      {running && <CheckWait />}
+      {!running && findings && findings.length > 0 && (
         <>
           {/* As the Content tab's proofread (direct instruction): what to
               look at, each to Acknowledge or Ignore. */}
@@ -415,19 +528,14 @@ function ArtworkCheck({
             )}
           </div>
           {warns.length > 0 && (
-            <div className="creative-proof-add">
-              <button type="button" className="btn sm" disabled={!acked.length || comment.isPending} onClick={addToComments}>
-                {comment.isPending ? "Adding…" : "Add To Comments"}
-              </button>
-              <span className="tdim">
-                {posted
-                  ? "Added to the comments, for your team only."
-                  : acked.length
-                    ? `Adds the ${acked.length} acknowledged as one comment from you, for your team only.`
-                    : "Acknowledge what needs fixing, then add it to the comments."}
-              </span>
-              {comment.error && <span className="berr">{errorMessage(comment.error, "Couldn't add the comment")}</span>}
-            </div>
+            <CheckComment
+              creativeId={creativeId}
+              versionId={versionId}
+              text={commentText}
+              disabled={!acked.length}
+              hint={acked.length ? undefined : "Acknowledge what needs fixing, then add it to the comments."}
+              onPosted={markPosted}
+            />
           )}
           <p className="checksource">{check.source(compared)}</p>
         </>
@@ -475,6 +583,7 @@ interface CheckAttachmentRef {
 
 function LiveCheck({
   kind,
+  creativeId,
   agencyId,
   concept,
   copyText,
@@ -483,6 +592,7 @@ function LiveCheck({
   knowledgeLoading,
 }: {
   kind: "brand" | "wiifm";
+  creativeId: string;
   agencyId: string | undefined;
   concept: string | null;
   copyText: string;
@@ -555,14 +665,148 @@ function LiveCheck({
         {error && <span className="berr">{error}</span>}
       </div>
       {!running && disabledReason && <p className="msection-empty" style={{ marginBottom: 6 }}>{disabledReason}</p>}
-      {findings && findings.length > 0 && (
+      {running && <CheckWait />}
+      {!running && findings && findings.length > 0 && (
         <div>
           <FindingsList findings={findings} />
           <p className="checksource">Checked against {CHECK_AGAINST_LABELS[kind]}.</p>
+          <CheckComment creativeId={creativeId} text={checkCommentText(CHECK_LABELS[kind], findings)} />
         </div>
       )}
-      {findings && findings.length === 0 && <p className="sub">No findings came back — try again.</p>}
+      {!running && findings && findings.length === 0 && <p className="sub">No findings came back — try again.</p>}
     </div>
+  );
+}
+
+// "Check VO and Text on Image" (direct instruction): a video post's VO and
+// its Text on Image side by side, with Frank's note on where they differ in
+// wording or in meaning (app/api/ai/check-vo). Checks what the window
+// holds, saved or not; runs as it opens, and again on Check Again.
+function VoCheckWindow({
+  creativeId,
+  vo,
+  texts,
+  noun,
+  onClose,
+}: {
+  creativeId: string;
+  vo: string;
+  // One per slide for a carousel, else the one Text on Image.
+  texts: string[];
+  noun: string;
+  onClose: () => void;
+}) {
+  const [result, setResult] = useState<VoCheckResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [running, setRunning] = useState(false);
+
+  const run = useCallback(async () => {
+    setRunning(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/ai/check-vo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ creativeId, vo, texts, noun }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Couldn't run this check");
+      setResult(data as VoCheckResult);
+    } catch (err) {
+      setError(errorMessage(err, "Couldn't run this check"));
+    } finally {
+      setRunning(false);
+    }
+  }, [creativeId, vo, texts, noun]);
+
+  // Once, as the window opens.
+  const ran = useRef(false);
+  useEffect(() => {
+    if (ran.current) return;
+    ran.current = true;
+    void run();
+  }, [run]);
+
+  return (
+    <Modal
+      hideCloseButton
+      size="lg"
+      title="Check VO and Text on Image"
+      onClose={onClose}
+      footer={
+        <>
+          <button type="button" className="btn" onClick={onClose}>
+            Done
+          </button>
+          <button type="button" className="btn primary" disabled={running} onClick={() => void run()}>
+            {running ? "Checking…" : "Check Again"}
+          </button>
+        </>
+      }
+    >
+      <div className="vocheck-cols">
+        <section className="vocheck-col" aria-label="VO">
+          <div className="vocheck-col-h">VO</div>
+          <p className="fd-d">{vo.trim()}</p>
+        </section>
+        <section className="vocheck-col" aria-label="Text on Image">
+          <div className="vocheck-col-h">Text on Image</div>
+          {texts.length > 1 ? (
+            texts.map((t, i) => (
+              <div className="vocheck-slide" key={i}>
+                <span className="tdim">
+                  {noun} {i + 1}
+                </span>
+                <p className="fd-d">{t.trim() || "—"}</p>
+              </div>
+            ))
+          ) : (
+            <p className="fd-d">{(texts[0] ?? "").trim()}</p>
+          )}
+        </section>
+      </div>
+      <div className="vocheck-result" role="region" aria-label="Frank's check" aria-busy={running}>
+        {running ? (
+          <CheckWait />
+        ) : error ? (
+          <p className="autherr">{error}</p>
+        ) : result ? (
+          <>
+            <div className={`checkfind ${result.same ? "ok" : "warn"}`}>
+              <span className="dot" />
+              <div>
+                <b>{result.same ? "Same message" : "They differ"}</b>
+                <p>{result.summary}</p>
+              </div>
+            </div>
+            {result.mismatches.map((m, i) => (
+              <div className="checkfind warn" key={i}>
+                <span className="dot" />
+                <div>
+                  <b>
+                    <span className={`tag ${m.kind === "meaning" ? "blue" : "amber"}`}>
+                      {m.kind === "meaning" ? "Meaning" : "Wording"}
+                    </span>{" "}
+                    {m.title}
+                  </b>
+                  <p>{m.body}</p>
+                </div>
+              </div>
+            ))}
+            <div className="vocheck-add">
+              <CheckComment
+                creativeId={creativeId}
+                text={checkCommentText(
+                  "Check VO and Text on Image",
+                  result.mismatches.map((m) => ({ title: `${m.kind === "meaning" ? "Meaning" : "Wording"}, ${m.title}`, body: m.body })),
+                  result.summary,
+                )}
+              />
+            </div>
+          </>
+        ) : null}
+      </div>
+    </Modal>
   );
 }
 
@@ -596,6 +840,7 @@ function CheckSection({
   return (
     <LiveCheck
       kind={kind}
+      creativeId={creativeId}
       agencyId={agencyId}
       concept={concept}
       copyText={copyText}
@@ -822,6 +1067,8 @@ export function CreativeModal(props: CreativeModalProps) {
   const [briefBase, setBriefBase] = useState<string | null>(isCreate ? null : (props.creative.updated_at ?? null));
   // Someone else's change found on saving: who, when, and their brief.
   const [conflict, setConflict] = useState<PostChangedError | null>(null);
+  // Check VO and Text on Image's window (direct instruction).
+  const [voCheckOpen, setVoCheckOpen] = useState(false);
   // The brief as this window last knew it on record: as opened, then as
   // saved or taken from someone else. Not the live post (the page refreshes
   // that as others save), or someone's change would look like nothing
@@ -1619,6 +1866,9 @@ export function CreativeModal(props: CreativeModalProps) {
   const pendingNotesChange = !sameNotes(draftNotes, knownNotesNow);
   const pendingRefsChange = JSON.stringify(tidyReferences(referenceUrls)) !== JSON.stringify(savedRefs);
   const isVideo = hasVideoFormat(formats);
+  // What Check VO and Text on Image compares: each slide for a carousel,
+  // else what's written, unsaved included.
+  const voCheckTexts = slideCount ? slideFields(slideText, slideCount) : draftSlideText;
   const pendingVoChange = isVideo && voiceover.trim() !== savedVoiceover;
   const pendingCreativeChange = carouselPending;
 
@@ -2909,12 +3159,49 @@ export function CreativeModal(props: CreativeModalProps) {
                 attachments={kind === "wiifm" ? agencyPdfAttachments : kind === "brand" ? clientPdfAttachments : []}
                 knowledgeLoading={kind === "wiifm" ? agencyKnowledgeLoading : clientKnowledgeLoading}
               />
+              {kind === "wiifm" && isVideo && (
+                <>
+                  <div className="msection-h">Check VO and Text on Image</div>
+                  <p className="msection-d">
+                    Whether the VO and the Text on Image communicate the same thing, side by side, with a note on
+                    any mismatch in wording or in meaning. Checks what&rsquo;s written here now, saved or not.
+                  </p>
+                  <div className="field">
+                    <button
+                      type="button"
+                      className="btn sm primary"
+                      disabled={!voiceover.trim() || !voCheckTexts.some((t) => t.trim())}
+                      onClick={() => setVoCheckOpen(true)}
+                    >
+                      Check VO and Text on Image
+                    </button>
+                    {(!voiceover.trim() || !voCheckTexts.some((t) => t.trim())) && (
+                      <p className="msection-empty" style={{ marginTop: 6 }}>
+                        {!voiceover.trim() && !voCheckTexts.some((t) => t.trim())
+                          ? "Write the VO and the Text on Image on the Production tab first, then check them."
+                          : !voiceover.trim()
+                            ? "Write the VO on the Production tab first, then check it against the Text on Image."
+                            : "Write the Text on Image on the Production tab first, then check it against the VO."}
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
             </Fragment>
           ))}
         </div>
       )}
 
     </Modal>
+    {voCheckOpen && creativeId && (
+      <VoCheckWindow
+        creativeId={creativeId}
+        vo={voiceover}
+        texts={voCheckTexts}
+        noun={frameNoun}
+        onClose={() => setVoCheckOpen(false)}
+      />
+    )}
     {/* Someone else saved this post while it was open (phase82). */}
     {conflict && !isCreate && (
       <Modal
