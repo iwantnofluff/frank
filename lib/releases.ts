@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.91.3",
+    date: "2026-11-16",
+    title: "Comment versions say what they're of",
+    changes: [
+      "A comment's version now says what it's the version of: Creative V2, Copy V1, Text on Image V1 or VO V2, rather than just V2.",
+    ],
+  },
+  {
     version: "1.91.2",
     date: "2026-11-16",
     title: "No list for a stage without statuses",

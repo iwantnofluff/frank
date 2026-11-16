@@ -658,21 +658,22 @@ export function CommentsPanel({
     const toi = c.slide_text_version_id ? prodVersions?.slide_text.find((v) => v.id === c.slide_text_version_id) : undefined;
     const field = isHighlightAnchor(c.anchor) ? c.anchor.field : null;
     const onCopy = !!field && field in COPY_FIELD_LABELS;
-    const ofProd = (v: ProductionVersion, all: ProductionVersion[]) => ({ no: v.versionNo, old: v.id !== all[0]?.id });
-    const ofRow = (v: { id: string; version_no: number }, all: { id: string }[]) => ({ no: v.version_no, old: v.id !== all[0]?.id });
+    // Named for what it is (direct instruction): "Creative V2", "VO V1".
+    const ofProd = (name: string, v: ProductionVersion, all: ProductionVersion[]) => ({ name, no: v.versionNo, old: v.id !== all[0]?.id });
+    const ofRow = (name: string, v: { id: string; version_no: number }, all: { id: string }[]) => ({ name, no: v.version_no, old: v.id !== all[0]?.id });
     // Of what it's about: the words picked out (copy, VO, Text on Image),
     // otherwise the artwork, else the copy.
     const pick =
       field === "voiceover" && vo && prodVersions
-        ? ofProd(vo, prodVersions.voiceover)
+        ? ofProd("VO", vo, prodVersions.voiceover)
         : field === "slide_text" && toi && prodVersions
-          ? ofProd(toi, prodVersions.slide_text)
+          ? ofProd("Text on Image", toi, prodVersions.slide_text)
           : onCopy && copy && copyVersions
-            ? ofRow(copy, copyVersions)
+            ? ofRow("Copy", copy, copyVersions)
             : art && creativeVersions
-              ? ofRow(art, creativeVersions)
+              ? ofRow("Creative", art, creativeVersions)
               : copy && copyVersions
-                ? ofRow(copy, copyVersions)
+                ? ofRow("Copy", copy, copyVersions)
                 : null;
     if (!pick) return null;
     // Every version it was made on, in its tooltip (direct instruction:
@@ -686,7 +687,7 @@ export function CommentsPanel({
       .filter(Boolean)
       .join(", ")
       .replace(/, ([^,]*)$/, " and $1");
-    return { label: `V${pick.no}`, old: pick.old, named };
+    return { label: `${pick.name} V${pick.no}`, old: pick.old, named };
   };
   // Made on a version other than the one showing, newest included: picking
   // it brings that version up.

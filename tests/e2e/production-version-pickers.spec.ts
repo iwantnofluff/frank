@@ -64,7 +64,7 @@ test("the team picks Text on Image and VO versions on the placeholder, and comme
   // The comment says its Text on Image version, red; picking it brings V1
   // up, its picker lit, the earlier words shown and marked.
   const oldCard = page.locator(".cmt", { hasText: "Was 10% right?" });
-  await expect(oldCard.locator(".cmt-f .vtag-old")).toHaveText("V1");
+  await expect(oldCard.locator(".cmt-f .vtag-old")).toHaveText("Text on Image V1");
   await expect(oldCard.locator(".cmt-f .vtag")).toHaveAttribute("title", /Text on Image V1/);
   await oldCard.locator(".cbody").click();
   await expect(toi).toHaveValue(v.toi1);

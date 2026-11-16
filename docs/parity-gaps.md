@@ -5179,6 +5179,10 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Comment versions say what they're of (1.91.3, 2026-11-16)
+
+Direct instruction: before the V after a comment's pill, what it's the version of: "Creative V2", "Copy V1", "Text on Image V1", "VO V2". The choice of which (1.90.1's and 1.91.0's rule) is unchanged; only the label gains its name, and the tooltip still lists every version recorded. old-versions and production-version-pickers check the named labels (Creative V1 and V2, Copy V1 on a caption comment, Text on Image V1) and passed with comment-visibility (6); a screenshot of a Private comment on Creative V1 (red) and a Public one on Creative V2 (grey) checked.
+
 ## Every status from a post's stages (1.91.1, 2026-11-16)
 
 Follow-up (1.91.2, direct instruction): no list for a stage with no statuses of its own. Such a stage is the plain pill it was before 1.91.1 (no list attached, a click moving the post there; Concept and In Production not clickable), so a list only opens where there's a status to pick. stage-transition.spec checks Approved, which has none in the test workspace, has no list attached and opens none when pointed at; it and stage-statuses passed.
