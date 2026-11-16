@@ -22,6 +22,8 @@ type NewComment = {
   mentions?: string[];
   forClient?: boolean;
   clientSource?: string | null;
+  // Kept out of Slack when false (phase162).
+  sendToSlack?: boolean;
 };
 
 export function useCreateComment(creativeId: string) {
@@ -40,6 +42,7 @@ export function useCreateComment(creativeId: string) {
       mentions = [],
       forClient = false,
       clientSource = null,
+      sendToSlack = true,
     }: {
       body: string;
       parentId: string | null;
@@ -58,6 +61,8 @@ export function useCreateComment(creativeId: string) {
       // Logged for the client (phase149): the team only.
       forClient?: boolean;
       clientSource?: string | null;
+      // Kept out of Slack when false (phase162).
+      sendToSlack?: boolean;
     }) => {
       const supabase = createClient();
       // The session already on this device, not a round trip to ask.
@@ -86,6 +91,8 @@ export function useCreateComment(creativeId: string) {
           mentions,
           for_client: forClient,
           client_source: forClient ? clientSource : null,
+          // Only when kept out: the column's default sends it (phase162).
+          ...(sendToSlack ? {} : { send_to_slack: false }),
         })
         .select("id")
         .single();

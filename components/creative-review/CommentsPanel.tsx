@@ -4,6 +4,7 @@ import { canApproveConcept, useApproveConcept } from "@/hooks/use-approve-concep
 import { useCreativeVersions } from "@/hooks/use-creative-versions";
 import { useCopyVersions } from "@/hooks/use-copy-versions";
 import { useProductionVersions, type ProductionVersion } from "@/hooks/use-production-versions";
+import { useProjectSlack, useSlackConnection } from "@/hooks/use-slack";
 import { COPY_FIELD_LABELS } from "@/lib/formats";
 import { errorMessage } from "@/lib/errors";
 import { CommentWhen } from "./CommentWhen";
@@ -111,6 +112,13 @@ const FILTERS: { key: Filter; label: string }[] = [
 ];
 
 
+interface ComposerSlack {
+  channel: string;
+  teamComments: boolean;
+  includePrivate: boolean;
+  clientActivity: boolean;
+}
+
 function Composer({
   onSubmit,
   showInternalToggle,
@@ -124,7 +132,11 @@ function Composer({
   draft = null,
   onClearDraft,
   clientName = null,
+  slack = null,
 }: {
+  // The project's Slack channel and what it's sent, for the team's tick
+  // (phase162); none without one, or for a client.
+  slack?: ComposerSlack | null;
   // A pin, area or words placed (direct instruction: they come here to be
   // commented on), shown above the box with a way to take it off.
   draft?: CommentDraft | null;
@@ -146,6 +158,8 @@ function Composer({
     mentions: string[],
     // Logged for the client, and where they said it (phase149).
     client: { source: string | null } | null,
+    // Sent to Slack (phase162).
+    sendToSlack: boolean,
   ) => Promise<unknown>;
   showInternalToggle: boolean;
   lockedPrivate?: boolean;
@@ -160,6 +174,8 @@ function Composer({
   const [atMoment, setAtMoment] = useState(true);
   const [forClient, setForClient] = useState(false);
   const [source, setSource] = useState("");
+  // Sent to Slack, ticked as it starts (phase162).
+  const [slackOn, setSlackOn] = useState(true);
 
   // Placed: straight into the box to say what it's about.
   useEffect(() => {
@@ -177,6 +193,11 @@ function Composer({
       ? "private"
       : "public";
 
+  // Whether the project's Slack settings would send this one: only then is
+  // there a tick, which can keep it out (direct instruction, phase162).
+  const slackWould =
+    !!slack && (clientName && forClient ? slack.clientActivity : slack.teamComments && (visibility === "public" || slack.includePrivate));
+
   async function handleSubmit() {
     if (!body.trim() || submitting) return;
     setSubmitting(true);
@@ -188,8 +209,10 @@ function Composer({
         moment !== null && atMoment && !draft ? moment : null,
         mentionsIn(body.trim()),
         clientName && forClient ? { source: source || null } : null,
+        slackWould ? slackOn : true,
       );
       reset();
+      setSlackOn(true);
       // Back to the team's own comment: Private again, as it starts.
       if (forClient) setInternal(true);
       setForClient(false);
@@ -243,9 +266,38 @@ function Composer({
           {atMoment ? `At ${formatVideoTime(moment)}` : `Not at ${formatVideoTime(moment)}`}
         </button>
       )}
-      {clientName && !onVo && (
-        <div className="cf forcl">
+      {/* Every option in one row, Post at its end (direct instruction),
+          wrapping in a narrow panel. */}
+      <div className="cf opts">
+        {onVo && showInternalToggle ? (
+          <span className="intog">Private (the VO is for your team only)</span>
+        ) : showInternalToggle && !lockedPrivate ? (
           <label className="intog">
+            <input
+              type="checkbox"
+              checked={internal}
+              onChange={(e) => setInternal(e.target.checked)}
+            />
+            <span className="lockic">
+              <svg viewBox="0 0 24 24">
+                <rect x="3" y="11" width="18" height="11" rx="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            </span>
+            Private
+          </label>
+        ) : lockedPrivate ? (
+          <span className="intog">Private (replying to a private comment)</span>
+        ) : null}
+        {slackWould && (
+          <label className="intog" title={`Also post it to #${slack!.channel} in Slack`}>
+            <input type="checkbox" checked={slackOn} onChange={(e) => setSlackOn(e.target.checked)} />
+            Slack
+          </label>
+        )}
+        {clientName && !onVo && (
+          <>
+            <label className="intog">
             <input
               type="checkbox"
               checked={forClient}
@@ -269,29 +321,8 @@ function Composer({
               </select>
             </span>
           )}
-        </div>
-      )}
-      <div className="cf">
-        {onVo && showInternalToggle ? (
-          <span className="intog">Private (the VO is for your team only)</span>
-        ) : showInternalToggle && !lockedPrivate ? (
-          <label className="intog">
-            <input
-              type="checkbox"
-              checked={internal}
-              onChange={(e) => setInternal(e.target.checked)}
-            />
-            <span className="lockic">
-              <svg viewBox="0 0 24 24">
-                <rect x="3" y="11" width="18" height="11" rx="2" />
-                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-              </svg>
-            </span>
-            Private
-          </label>
-        ) : lockedPrivate ? (
-          <span className="intog">Private (replying to a private comment)</span>
-        ) : null}
+          </>
+        )}
         <div className="grow" />
         {beside}
         <button
@@ -323,7 +354,8 @@ function VisibilityTag({
   visibility: "private" | "public";
   isStaff: boolean;
   onToggle: () => void;
-  // On the VO's words: Private for good (phase152).
+  // On the VO's words: Private for good (phase152); and while its thread is
+  // resolved, a label only (direct instruction: only Reopen is clickable).
   fixed?: boolean;
 }) {
   const visClass = `vis-tag ${visibility === "private" ? "vis-private" : "vis-public"}`;
@@ -377,9 +409,12 @@ function CommentCard({
   versionTag = null,
   clientName,
   team,
+  slack = null,
 }: {
   // The project's team, for @mentions; empty for a client.
   team: TeamMember[];
+  // The project's Slack, for a reply's tick (phase162).
+  slack?: ComposerSlack | null;
   thread: CommentRow;
   replies: CommentRow[];
   isStaff: boolean;
@@ -393,6 +428,7 @@ function CommentCard({
     visibility: "private" | "public",
     mentions: string[],
     client: { source: string | null } | null,
+    sendToSlack: boolean,
   ) => Promise<unknown>;
   onToggleResolved: (resolve: boolean) => void;
   onToggleVisibility: (commentId: string, next: "private" | "public") => void;
@@ -465,7 +501,7 @@ function CommentCard({
         <VisibilityTag
           visibility={thread.visibility}
           isStaff={isStaff}
-          fixed={onVoThread}
+          fixed={onVoThread || !!thread.resolved_at}
           onToggle={() =>
             onToggleVisibility(thread.id, thread.visibility === "private" ? "public" : "private")
           }
@@ -535,7 +571,7 @@ function CommentCard({
                   </b>
                   <VisibilityTag
                     visibility={r.visibility}
-                    fixed={onVoThread}
+                    fixed={onVoThread || !!thread.resolved_at}
                     isStaff={isStaff}
                     onToggle={() =>
                       onToggleVisibility(r.id, r.visibility === "private" ? "public" : "private")
@@ -550,21 +586,27 @@ function CommentCard({
                     mentions={r.mentions}
                     team={team}
                   />
-                  {r.author_id === currentUserId && !r.id.startsWith("pending-") && editingId !== r.id && (
-                    <EditCommentButton className="cedit-btn" onClick={() => setEditingId(r.id)} />
-                  )}
-                  {onDelete && !r.id.startsWith("pending-") && (
-                    <button
-                      type="button"
-                      className="cedit-btn"
-                      aria-label="Delete reply"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDelete(r, 0);
-                      }}
-                    >
-                      Delete
-                    </button>
+                  {/* At the right, spaced as the comment's own (direct
+                      instruction); none while the thread is resolved:
+                      Reopen brings them back. */}
+                  {!thread.resolved_at && !r.id.startsWith("pending-") && (r.author_id === currentUserId || onDelete) && (
+                    <div className="reply-acts">
+                      {r.author_id === currentUserId && editingId !== r.id && (
+                        <EditCommentButton onClick={() => setEditingId(r.id)} />
+                      )}
+                      {onDelete && (
+                        <button
+                          type="button"
+                          aria-label="Delete reply"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(r, 0);
+                          }}
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -583,8 +625,9 @@ function CommentCard({
             autoFocus
             team={team}
             clientName={isStaff ? clientName : null}
-            onSubmit={async (body, visibility, _at, mentions, client) => {
-              await onReply(body, visibility, mentions, client);
+            slack={slack}
+            onSubmit={async (body, visibility, _at, mentions, client, sendToSlack) => {
+              await onReply(body, visibility, mentions, client, sendToSlack);
               setReplying(false);
             }}
           />
@@ -658,7 +701,8 @@ export function CommentsPanel({
     const toi = c.slide_text_version_id ? prodVersions?.slide_text.find((v) => v.id === c.slide_text_version_id) : undefined;
     const field = isHighlightAnchor(c.anchor) ? c.anchor.field : null;
     const onCopy = !!field && field in COPY_FIELD_LABELS;
-    // Named for what it is (direct instruction): "Creative V2", "VO V1".
+    // Named for what it is, short (direct instruction): CR (Creative), CO
+    // (Copy), TOI (Text on Image), VO; the tooltip names them in full.
     const ofProd = (name: string, v: ProductionVersion, all: ProductionVersion[]) => ({ name, no: v.versionNo, old: v.id !== all[0]?.id });
     const ofRow = (name: string, v: { id: string; version_no: number }, all: { id: string }[]) => ({ name, no: v.version_no, old: v.id !== all[0]?.id });
     // Of what it's about: the words picked out (copy, VO, Text on Image),
@@ -667,13 +711,13 @@ export function CommentsPanel({
       field === "voiceover" && vo && prodVersions
         ? ofProd("VO", vo, prodVersions.voiceover)
         : field === "slide_text" && toi && prodVersions
-          ? ofProd("Text on Image", toi, prodVersions.slide_text)
+          ? ofProd("TOI", toi, prodVersions.slide_text)
           : onCopy && copy && copyVersions
-            ? ofRow("Copy", copy, copyVersions)
+            ? ofRow("CO", copy, copyVersions)
             : art && creativeVersions
-              ? ofRow("Creative", art, creativeVersions)
+              ? ofRow("CR", art, creativeVersions)
               : copy && copyVersions
-                ? ofRow("Copy", copy, copyVersions)
+                ? ofRow("CO", copy, copyVersions)
                 : null;
     if (!pick) return null;
     // Every version it was made on, in its tooltip (direct instruction:
@@ -718,6 +762,19 @@ export function CommentsPanel({
   }, [highlightedCommentId]);
 
   const isStaff = membership ? membership.client_id === null : false;
+  // The project's Slack channel, for the team's tick (phase162): only while
+  // the workspace is connected and the project has a channel.
+  const { data: slackConnection } = useSlackConnection(isStaff ? creative?.agency_id : undefined);
+  const { data: projectSlack } = useProjectSlack(isStaff && slackConnection ? creative?.project_id : undefined);
+  const slack: ComposerSlack | null =
+    isStaff && slackConnection && projectSlack
+      ? {
+          channel: projectSlack.channel_name,
+          teamComments: projectSlack.team_comments,
+          includePrivate: projectSlack.include_private,
+          clientActivity: projectSlack.client_activity,
+        }
+      : null;
   // Who can be @mentioned (phase138): the project's team, offered to the
   // team only, not including yourself (the database drops that anyway).
   const { data: teamData } = useProjectTeam(creative?.project_id ?? "", isStaff);
@@ -812,7 +869,8 @@ export function CommentsPanel({
             clientName={clientName}
             team={team}
             onSelect={() => onHighlight?.(thread.id)}
-            onReply={(body, visibility, mentions, client) =>
+            slack={slack}
+            onReply={(body, visibility, mentions, client, sendToSlack) =>
               createComment.mutateAsync({
                 body,
                 parentId: thread.id,
@@ -820,6 +878,7 @@ export function CommentsPanel({
                 mentions,
                 forClient: !!client,
                 clientSource: client?.source ?? null,
+                sendToSlack,
               })
             }
             onToggleResolved={(resolve) =>
@@ -871,6 +930,7 @@ export function CommentsPanel({
         draft={draft}
         onClearDraft={onClearDraft}
         clientName={isStaff ? clientName : null}
+        slack={slack}
         beside={
           // Approve Concept (phase115, direct instruction): while the post
           // is in Concept with one written, for the client or the team.
@@ -885,8 +945,8 @@ export function CommentsPanel({
             </button>
           ) : null
         }
-        onSubmit={async (body, visibility, at, mentions, client) => {
-          const forClient = { forClient: !!client, clientSource: client?.source ?? null };
+        onSubmit={async (body, visibility, at, mentions, client, sendToSlack) => {
+          const forClient = { forClient: !!client, clientSource: client?.source ?? null, sendToSlack };
           if (draft) {
             await createComment.mutateAsync({
               body,

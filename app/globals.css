@@ -5469,6 +5469,8 @@ select.sort:hover {
 }
 .reply .rb {
   min-width: 0;
+  /* The reply's full width, so its Edit and Delete reach the right. */
+  flex: 1;
 }
 .reply .rb b {
   font-size: 11.7px;
@@ -15635,4 +15637,34 @@ button.help-link {
 .checksource + .creative-proof-add,
 .checksource + .checkcmt {
   margin-top: 12px;
+}
+/* The comment box's options in one row (direct instruction): Private,
+   Slack, On behalf and its Source, then Post at the end; wrapping in a
+   narrow panel. */
+.composer .cf.opts {
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+.composer .cf.opts .vsel select {
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+/* Post at the row's right end, on whichever line it wraps to. */
+.composer .cf.opts > .btn.primary {
+  margin-left: auto;
+}
+/* A reply's Edit and Delete at its right, spaced as a comment's own
+   (direct instruction). */
+.reply-acts {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+.reply-acts button {
+  font-size: 11.2px;
+  color: var(--muted);
+}
+.reply-acts button:hover {
+  color: var(--action);
 }

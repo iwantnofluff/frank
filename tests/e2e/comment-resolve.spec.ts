@@ -42,8 +42,9 @@ test("a client can resolve and reopen a thread they authored", async ({ page, fr
   });
   // Away from it: Resolve was clicked where Reopen now sits.
   await page.mouse.move(0, 0);
+  // Once the card has finished arriving (it fades in).
+  await expect.poll(look).toEqual({ color: ink, opacity: 1 });
   const atRest = await look();
-  expect(atRest).toEqual({ color: ink, opacity: 1 });
   expect(await card.locator(".cbody").evaluate((el) => Number(getComputedStyle(el).opacity))).toBeLessThan(1);
   await reopen.hover();
   await expect.poll(async () => (await look()).color).not.toBe(atRest.color);
@@ -62,4 +63,31 @@ test("a client cannot resolve a thread someone else authored", async ({ page, fr
   await expect(card).toBeVisible();
   await expect(card.locator("button:has-text('Resolve')")).toHaveCount(0);
   await expect(card.locator("button:has-text('Reopen')")).toHaveCount(0);
+});
+
+test("a reply's Edit and Delete sit at its right, and go while its thread is resolved", async ({ page, frank }) => {
+  await frank.loginAsStaff(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(`/creatives/${frank.creativeId}`);
+  await page.fill(".composer textarea", "A thread with a reply");
+  await page.locator("aside.cmts > .composer").getByRole("button", { name: "Post" }).click();
+  const card = page.locator(".cmt", { hasText: "A thread with a reply" });
+  await expect(card).not.toHaveClass(/pending/);
+  await card.getByRole("button", { name: "Reply" }).click();
+  await card.locator(".replybox textarea").fill("The reply");
+  await card.locator(".replybox").getByRole("button", { name: "Reply" }).click();
+  const reply = card.locator(".reply", { hasText: "The reply" });
+  const acts = reply.locator(".reply-acts");
+  // Edit (Delete is an Admin's, and this is a team User), at the reply's right.
+  await expect(acts.getByRole("button")).toHaveText(["Edit"]);
+  const r = (await reply.boundingBox())!;
+  const edit = (await acts.getByRole("button", { name: "Edit comment" }).boundingBox())!;
+  expect(r.x + r.width - (edit.x + edit.width)).toBeLessThan(4);
+
+  // Resolved: none on its replies; Reopen brings them back.
+  await card.getByRole("button", { name: "Resolve" }).click();
+  await expect(card).toHaveClass(/resolved/);
+  await expect(reply.getByRole("button")).toHaveCount(0);
+  await card.getByRole("button", { name: "Reopen" }).click();
+  await expect(acts.getByRole("button")).toHaveText(["Edit"]);
 });

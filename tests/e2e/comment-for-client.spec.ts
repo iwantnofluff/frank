@@ -45,7 +45,7 @@ test("the team logs a comment on the client's behalf", async ({ page, browser, f
     const box = page.locator("aside.cmts > .composer");
     await expect(box.locator("textarea")).toBeVisible({ timeout: 20_000 });
     await box.locator("textarea").fill("Make the logo bigger, said on WhatsApp");
-    const priv = box.locator(".cf:not(.forcl) .intog input");
+    const priv = box.getByRole("checkbox", { name: "Private" });
     await expect(priv).toBeChecked();
     await box.getByLabel("On behalf of E2E Test Client").check();
     // The client's words: Public.

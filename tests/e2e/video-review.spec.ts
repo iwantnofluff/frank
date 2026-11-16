@@ -231,7 +231,7 @@ test("a carousel's video slide has its own timeline, and its comments stay on th
   await clickTimelineAt(page, ".ig-media", 0.5);
   await page.getByPlaceholder("Add a comment…").last().fill("On the video slide");
   // Public, so the client sees it (and its marker) on the review link.
-  await page.locator("aside .composer .intog input").last().uncheck();
+  await page.locator("aside.cmts > .composer").getByRole("checkbox", { name: "Private" }).uncheck();
   await page.getByRole("button", { name: "Post", exact: true }).last().click();
   await expect(page.locator(".cmt", { hasText: "On the video slide" })).toContainText("0:01");
   await expect(page.locator(".cmt.pending")).toHaveCount(0);

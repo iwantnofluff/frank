@@ -31,8 +31,8 @@ test("composer toggle — internal (checked) and public (unchecked)", async ({
 }) => {
   await frank.loginAsStaff(page);
   await page.goto(`/creatives/${frank.creativeId}`);
-  // The Private switch, not On behalf of the client beside it (phase149).
-  const toggle = page.locator("aside.cmts > .composer .cf:not(.forcl) .intog");
+  // The Private switch, not Slack or On behalf of the client in its row.
+  const toggle = page.locator("aside.cmts > .composer .cf.opts .intog", { hasText: /^Private$/ });
   await toggle.waitFor();
 
   // Default is checked (internal) — see CommentsPanel.tsx's useState(true).

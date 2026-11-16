@@ -43,11 +43,11 @@ test("a comment on an earlier version says which, and picking it shows that vers
   const oldCard = page.locator(".cmt", { hasText: "Was the logo bigger here?" });
   // Every comment's version after its pill (direct instruction): the
   // artwork's here, red when earlier, grey on the newest.
-  await expect(oldCard.locator(".cmt-f .vtag-old")).toHaveText("Creative V1", { timeout: 20_000 });
+  await expect(oldCard.locator(".cmt-f .vtag-old")).toHaveText("CR V1", { timeout: 20_000 });
   const newCard = page.locator(".cmt", { hasText: "Newest looks right" });
-  await expect(newCard.locator(".cmt-f .vtag")).toHaveText("Creative V2");
+  await expect(newCard.locator(".cmt-f .vtag")).toHaveText("CR V2");
   await expect(newCard.locator(".vtag-old")).toHaveCount(0);
-  await expect(page.locator(".cmt", { hasText: "Shorter please" }).locator(".cmt-f .vtag-old")).toHaveText("Copy V1");
+  await expect(page.locator(".cmt", { hasText: "Shorter please" }).locator(".cmt-f .vtag-old")).toHaveText("CO V1");
   // The newest showing: no Old Version.
   await expect(page.locator(".pnav-old")).toHaveCount(0);
   await expect(page.locator("#vCreative")).toHaveValue(art[2]);
@@ -89,7 +89,7 @@ test("a plain comment records the artwork and copy versions showing, and its tag
   await page.getByPlaceholder("Add a comment…").fill("Plain one");
   await page.locator(".composer").getByRole("button", { name: "Post" }).click();
   const tag = page.locator(".cmt", { hasText: "Plain one" }).locator(".cmt-f .vtag");
-  await expect(tag).toHaveText("Creative V2");
+  await expect(tag).toHaveText("CR V2");
   await expect(tag).toHaveAttribute("title", "Made on Creative V2 and Copy V1");
   // Shown at once, saved a moment later: waited for.
   await expect

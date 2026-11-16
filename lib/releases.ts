@@ -13,6 +13,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.92.0",
+    date: "2026-11-16",
+    title: "Keep a comment out of Slack",
+    changes: [
+      "When a project posts to a Slack channel, the comment box and reply boxes have a Slack tick, ticked whenever that comment would go to Slack. Untick it to keep that comment out of Slack.",
+      "The comment box's options now sit in one row as matching pills (Private, Slack, On behalf of the client and its Source), with Post at the end.",
+      "A comment's version is now shortened to CR (Creative), CO (Copy), TOI (Text on Image) or VO, such as CR V2; pointing at it still names them in full.",
+      "A reply's Edit and Delete now sit at its right with room between them, as a comment's own do. While a thread is resolved, its replies have none and the Private or Public labels can't be clicked: only Reopen can.",
+    ],
+  },
+  {
     version: "1.91.3",
     date: "2026-11-16",
     title: "Comment versions say what they're of",
