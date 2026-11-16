@@ -15,6 +15,10 @@ export interface CommentRow {
   anchor: Anchor | null;
   creative_version_id: string | null;
   copy_version_id: string | null;
+  // The VO and Text on Image versions showing when it was made (phase161),
+  // the team's only to see.
+  voiceover_version_id: string | null;
+  slide_text_version_id: string | null;
   resolved_at: string | null;
   created_at: string;
   // When its author last changed it (phase75).
@@ -49,7 +53,7 @@ export function useComments(creativeId: string) {
       const { data: rows, error } = await supabase
         .from("comments")
         .select(
-          "id, agency_id, parent_id, author_id, guest_name, body, visibility, anchor, creative_version_id, copy_version_id, resolved_at, created_at, edited_at, mentions, for_client, client_source",
+          "id, agency_id, parent_id, author_id, guest_name, body, visibility, anchor, creative_version_id, copy_version_id, voiceover_version_id, slide_text_version_id, resolved_at, created_at, edited_at, mentions, for_client, client_source",
         )
         .eq("creative_id", creativeId)
         .is("deleted_at", null)
@@ -114,6 +118,8 @@ export function applyLiveComment(
     anchor: (row.anchor as CommentRow["anchor"]) ?? null,
     creative_version_id: (row.creative_version_id as string | null) ?? null,
     copy_version_id: (row.copy_version_id as string | null) ?? null,
+    voiceover_version_id: (row.voiceover_version_id as string | null) ?? null,
+    slide_text_version_id: (row.slide_text_version_id as string | null) ?? null,
     resolved_at: (row.resolved_at as string | null) ?? null,
     created_at: row.created_at as string,
     edited_at: (row.edited_at as string | null) ?? null,

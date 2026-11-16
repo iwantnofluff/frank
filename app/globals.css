@@ -5408,6 +5408,8 @@ select.sort:hover {
   display: flex;
   gap: 4px;
   white-space: nowrap;
+  /* Every time the same width, so the line doesn't shift with its digits. */
+  font-variant-numeric: tabular-nums;
 }
 .cwhen span + span::before {
   content: "·";

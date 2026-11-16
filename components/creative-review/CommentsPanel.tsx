@@ -3,6 +3,7 @@
 import { canApproveConcept, useApproveConcept } from "@/hooks/use-approve-concept";
 import { useCreativeVersions } from "@/hooks/use-creative-versions";
 import { useCopyVersions } from "@/hooks/use-copy-versions";
+import { useProductionVersions, type ProductionVersion } from "@/hooks/use-production-versions";
 import { COPY_FIELD_LABELS } from "@/lib/formats";
 import { errorMessage } from "@/lib/errors";
 import { CommentWhen } from "./CommentWhen";
@@ -604,6 +605,8 @@ export function CommentsPanel({
   videoSlide = null,
   creativeVersionId = null,
   copyVersionId = null,
+  voiceoverVersionId = null,
+  slideTextVersionId = null,
   draft = null,
   onClearDraft,
 }: {
@@ -619,6 +622,10 @@ export function CommentsPanel({
   creativeVersionId?: string | null;
   // The copy version showing, to tell a comment made on another one.
   copyVersionId?: string | null;
+  // The VO and Text on Image versions showing on the placeholder (phase161),
+  // the team's only; none while they aren't shown.
+  voiceoverVersionId?: string | null;
+  slideTextVersionId?: string | null;
   highlightedCommentId?: string | null;
   onHighlight?: (commentId: string | null) => void;
   // Pin/Region live here (above the composer) rather than the page's own
@@ -641,23 +648,53 @@ export function CommentsPanel({
   // Red when earlier than the newest.
   const { data: creativeVersions } = useCreativeVersions(creativeId);
   const { data: copyVersions } = useCopyVersions(creativeId);
+  // The VO's and Text on Image's (phase161): the team's only, as their
+  // versions are, so none for a client.
+  const { data: prodVersions } = useProductionVersions(creativeId);
   const versionTagOf = (c: CommentRow): VersionTag | null => {
     const art = c.creative_version_id ? creativeVersions?.find((v) => v.id === c.creative_version_id) : undefined;
     const copy = c.copy_version_id ? copyVersions?.find((v) => v.id === c.copy_version_id) : undefined;
-    const onCopy = isHighlightAnchor(c.anchor) && c.anchor.field in COPY_FIELD_LABELS;
+    const vo = c.voiceover_version_id ? prodVersions?.voiceover.find((v) => v.id === c.voiceover_version_id) : undefined;
+    const toi = c.slide_text_version_id ? prodVersions?.slide_text.find((v) => v.id === c.slide_text_version_id) : undefined;
+    const field = isHighlightAnchor(c.anchor) ? c.anchor.field : null;
+    const onCopy = !!field && field in COPY_FIELD_LABELS;
+    const ofProd = (v: ProductionVersion, all: ProductionVersion[]) => ({ no: v.versionNo, old: v.id !== all[0]?.id });
+    const ofRow = (v: { id: string; version_no: number }, all: { id: string }[]) => ({ no: v.version_no, old: v.id !== all[0]?.id });
+    // Of what it's about: the words picked out (copy, VO, Text on Image),
+    // otherwise the artwork, else the copy.
     const pick =
-      onCopy && copy ? { v: copy, all: copyVersions } : art ? { v: art, all: creativeVersions } : copy ? { v: copy, all: copyVersions } : null;
-    if (!pick || !pick.all?.length) return null;
-    // Both named in its tooltip, where both were recorded (direct
-    // instruction: both, without taking more room).
-    const named = [art && `Creative V${art.version_no}`, copy && `Copy V${copy.version_no}`].filter(Boolean).join(" and ");
-    return { label: `V${pick.v.version_no}`, old: pick.v.id !== pick.all[0].id, named };
+      field === "voiceover" && vo && prodVersions
+        ? ofProd(vo, prodVersions.voiceover)
+        : field === "slide_text" && toi && prodVersions
+          ? ofProd(toi, prodVersions.slide_text)
+          : onCopy && copy && copyVersions
+            ? ofRow(copy, copyVersions)
+            : art && creativeVersions
+              ? ofRow(art, creativeVersions)
+              : copy && copyVersions
+                ? ofRow(copy, copyVersions)
+                : null;
+    if (!pick) return null;
+    // Every version it was made on, in its tooltip (direct instruction:
+    // all of them, without taking more room).
+    const named = [
+      art && `Creative V${art.version_no}`,
+      copy && `Copy V${copy.version_no}`,
+      toi && `Text on Image V${toi.versionNo}`,
+      vo && `VO V${vo.versionNo}`,
+    ]
+      .filter(Boolean)
+      .join(", ")
+      .replace(/, ([^,]*)$/, " and $1");
+    return { label: `V${pick.no}`, old: pick.old, named };
   };
   // Made on a version other than the one showing, newest included: picking
   // it brings that version up.
   const elsewhere = (c: CommentRow) =>
     (!!c.creative_version_id && !!creativeVersionId && c.creative_version_id !== creativeVersionId) ||
-    (!!c.copy_version_id && !!copyVersionId && c.copy_version_id !== copyVersionId);
+    (!!c.copy_version_id && !!copyVersionId && c.copy_version_id !== copyVersionId) ||
+    (!!c.voiceover_version_id && !!voiceoverVersionId && c.voiceover_version_id !== voiceoverVersionId) ||
+    (!!c.slide_text_version_id && !!slideTextVersionId && c.slide_text_version_id !== slideTextVersionId);
   const { data: currentUser } = useCurrentUser();
   const { data: membership } = useMyMembership(creative?.agency_id);
   const { data: comments, isLoading, isError } = useComments(creativeId);
@@ -850,7 +887,16 @@ export function CommentsPanel({
         onSubmit={async (body, visibility, at, mentions, client) => {
           const forClient = { forClient: !!client, clientSource: client?.source ?? null };
           if (draft) {
-            await createComment.mutateAsync({ body, parentId: null, visibility, mentions, ...forClient, ...draft });
+            await createComment.mutateAsync({
+              body,
+              parentId: null,
+              visibility,
+              mentions,
+              ...forClient,
+              voiceoverVersionId,
+              slideTextVersionId,
+              ...draft,
+            });
             onClearDraft?.();
             return;
           }
@@ -864,6 +910,8 @@ export function CommentsPanel({
             // so a plain comment says what it was made on too.
             creativeVersionId,
             copyVersionId,
+            voiceoverVersionId,
+            slideTextVersionId,
             ...(at != null
               ? {
                   anchor: {

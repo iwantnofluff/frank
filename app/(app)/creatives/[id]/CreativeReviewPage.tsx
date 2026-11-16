@@ -37,6 +37,7 @@ import { SectionRail } from "@/components/creative-review/SectionRail";
 import { FeedPreviewGrid } from "@/components/creative-review/FeedPreviewGrid";
 import { PhoneFrame } from "@/components/creative-review/PhoneFrame";
 import { useThumbnailVersions } from "@/hooks/use-thumbnails";
+import { useProductionVersions } from "@/hooks/use-production-versions";
 import { ScrollHint, hasScrollHint } from "@/components/creative-review/ScrollHint";
 import { PNAV_CURRENT_H, PostNeighbours } from "@/components/creative-review/PostNeighbours";
 import { useClientInstagramFeed } from "@/hooks/use-instagram";
@@ -147,7 +148,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
   );
   const [copyVersionId, setCopyVersionId] = useState<string | null>(null);
   // The picker(s) a comment's version was just shown in, lit for a moment.
-  const [flash, setFlash] = useState<{ which: ("creative" | "copy")[]; at: number } | null>(null);
+  const [flash, setFlash] = useState<{ which: ("creative" | "copy" | "toi" | "vo")[]; at: number } | null>(null);
   useEffect(() => {
     if (!flash) return;
     const t = setTimeout(() => setFlash(null), 2200);
@@ -167,6 +168,16 @@ export function CreativeReviewPage({ id }: { id: string }) {
   const activeThumbnail =
     thumbnailVersions?.find((v) => v.id === thumbnailId) ?? thumbnailVersions?.find((v) => v.asset) ?? null;
   const { data: thumbnailUrl } = useArtworkUrl(activeThumbnail?.asset?.storage_key);
+  // The Text on Image's and VO's versions (phase161, direct instruction):
+  // the team's only, as their versions are, picked beside Creative and Copy
+  // while the placeholder shows their words. Else the latest.
+  const { data: prodVersions } = useProductionVersions(isStaff ? id : null);
+  const [toiVersionId, setToiVersionId] = useState<string | null>(null);
+  const [voVersionId, setVoVersionId] = useState<string | null>(null);
+  const toiVersions = prodVersions?.slide_text ?? [];
+  const voVersions = prodVersions?.voiceover ?? [];
+  const activeToi = toiVersions.find((v) => v.id === toiVersionId) ?? toiVersions[0] ?? null;
+  const activeVo = voVersions.find((v) => v.id === voVersionId) ?? voVersions[0] ?? null;
   // A tip's See it in Action (lib/tips.ts): ?edit=upload opens the Edit
   // window at Content, for the team, once.
   const askedEdit = useSearchParams().get("edit");
@@ -310,7 +321,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
     const picked = (allComments ?? []).find((c) => c.id === commentId);
     // Made on another version: that version shows, its picker lit up for a
     // moment (direct instruction).
-    const lit: ("creative" | "copy")[] = [];
+    const lit: ("creative" | "copy" | "toi" | "vo")[] = [];
     if (picked?.creative_version_id && picked.creative_version_id !== activeCreativeVersion?.id && creativeVersions?.some((v) => v.id === picked.creative_version_id)) {
       setCreativeVersionId(picked.creative_version_id);
       lit.push("creative");
@@ -318,6 +329,14 @@ export function CreativeReviewPage({ id }: { id: string }) {
     if (picked?.copy_version_id && picked.copy_version_id !== activeCopyVersion?.id && copyVersions?.some((v) => v.id === picked.copy_version_id)) {
       setCopyVersionId(picked.copy_version_id);
       lit.push("copy");
+    }
+    if (picked?.slide_text_version_id && picked.slide_text_version_id !== activeToi?.id && toiVersions.some((v) => v.id === picked.slide_text_version_id)) {
+      setToiVersionId(picked.slide_text_version_id);
+      lit.push("toi");
+    }
+    if (picked?.voiceover_version_id && picked.voiceover_version_id !== activeVo?.id && voVersions.some((v) => v.id === picked.voiceover_version_id)) {
+      setVoVersionId(picked.voiceover_version_id);
+      lit.push("vo");
     }
     if (lit.length) setFlash({ which: lit, at: Date.now() });
     const anchor = picked?.anchor;
@@ -403,20 +422,45 @@ export function CreativeReviewPage({ id }: { id: string }) {
   // instruction), and commented on as a caption is: the slide's own words,
   // its comments' highlights while their words are still where they were
   // (the text is on the post, not in versions, so it can change).
-  const slideTextRaw = creative?.slide_text?.[slidePosition - 1] ?? "";
+  // An earlier version picked (phase161) shows its words; the latest, the
+  // post's own.
+  const oldToiPicked = !!activeToi && activeToi.id !== toiVersions[0]?.id;
+  const oldVoPicked = !!activeVo && activeVo.id !== voVersions[0]?.id;
+  const slideTextRaw = (oldToiPicked ? activeToi.slides : creative?.slide_text)?.[slidePosition - 1] ?? "";
   const slideTextNow = slideTextRaw.trim() ? slideTextRaw : "";
   // Its VO script, under it until there's artwork (direct instruction): the
   // team's only, as everywhere else.
-  const voNow = isStaff && creative?.voiceover?.trim() ? creative.voiceover : "";
+  const voRaw = oldVoPicked ? activeVo.body : (creative?.voiceover ?? "");
+  const voNow = isStaff && voRaw.trim() ? voRaw : "";
+  // Where those words show (the placeholder, before artwork), their
+  // versions are picked, and a comment made there records them (phase161).
+  const prodShown = isStaff && creativeVersions !== undefined && !currentSlide && !creative?.artwork_removed_at;
+  const showToiPicker = prodShown && toiVersions.length > 0;
+  const showVoPicker = prodShown && voVersions.length > 0 && hasVideoFormat(postFormats(creative ?? { format: null, formats: null }));
+  const oldToi = showToiPicker && oldToiPicked;
+  const oldVo = showVoPicker && oldVoPicked;
+  // Comments made on another version of these words aren't marked on these.
+  const onShownProd = (c: { voiceover_version_id: string | null; slide_text_version_id: string | null }, field: "voiceover" | "slide_text") => {
+    const made = field === "voiceover" ? c.voiceover_version_id : c.slide_text_version_id;
+    const shown = field === "voiceover" ? activeVo?.id : activeToi?.id;
+    return !made || !shown || made === shown;
+  };
   // Its comments' highlights, while their words are still where they were.
   const voHighlights = (allComments ?? [])
-    .filter((c) => isHighlightAnchor(c.anchor) && c.anchor.field === "voiceover" && voNow.slice(c.anchor.start, c.anchor.end) === c.anchor.quote)
+    .filter(
+      (c) =>
+        isHighlightAnchor(c.anchor) &&
+        c.anchor.field === "voiceover" &&
+        onShownProd(c, "voiceover") &&
+        voNow.slice(c.anchor.start, c.anchor.end) === c.anchor.quote,
+    )
     .map((c) => ({ ...(c.anchor as HighlightAnchor), commentId: c.id }));
   const slideTextHighlights = (allComments ?? [])
     .filter(
       (c) =>
         isHighlightAnchor(c.anchor) &&
         c.anchor.field === "slide_text" &&
+        onShownProd(c, "slide_text") &&
         ((c.anchor as { slide?: number }).slide ?? 1) === slidePosition &&
         slideTextNow.slice(c.anchor.start, c.anchor.end) === c.anchor.quote,
     )
@@ -670,6 +714,8 @@ export function CreativeReviewPage({ id }: { id: string }) {
       videoSlide={isVideo && frames.length > 1 ? slidePosition : null}
       creativeVersionId={activeCreativeVersion?.id ?? null}
       copyVersionId={activeCopyVersion?.id ?? null}
+      slideTextVersionId={showToiPicker ? (activeToi?.id ?? null) : null}
+      voiceoverVersionId={showVoPicker ? (activeVo?.id ?? null) : null}
       draft={draft}
       onClearDraft={() => setPlaced(null)}
     />
@@ -975,6 +1021,33 @@ export function CreativeReviewPage({ id }: { id: string }) {
                   )}
                 </select>
               </div>
+              {/* Text on Image's and the VO's versions (phase161, direct
+                  instruction): the team's, while the placeholder shows
+                  their words; the VO's on a video post only. */}
+              {showToiPicker && (
+                <div className={`vsel${flash?.which.includes("toi") ? " vflash" : ""}`} key={`t${flash?.at ?? 0}`}>
+                  <label htmlFor="vToi">Text on Image</label>
+                  <select id="vToi" value={activeToi?.id ?? ""} onChange={(e) => setToiVersionId(e.target.value)} className={oldToi ? "vold" : undefined}>
+                    {toiVersions.map((v, i) => (
+                      <option key={v.id} value={v.id} className={i > 0 ? "vold" : "vnow"}>
+                        V{v.versionNo}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {showVoPicker && (
+                <div className={`vsel${flash?.which.includes("vo") ? " vflash" : ""}`} key={`v${flash?.at ?? 0}`}>
+                  <label htmlFor="vVo">VO</label>
+                  <select id="vVo" value={activeVo?.id ?? ""} onChange={(e) => setVoVersionId(e.target.value)} className={oldVo ? "vold" : undefined}>
+                    {voVersions.map((v, i) => (
+                      <option key={v.id} value={v.id} className={i > 0 ? "vold" : "vnow"}>
+                        V{v.versionNo}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               {/* The phone full size (direct instruction): under Copy,
                   "Fullscreen" then its button, square, as tall as the pickers. */}
               {activeSection === "content" && (
@@ -1030,7 +1103,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
                 shownFormat={shownFormat}
                 onShowFormat={setViewFormat}
                 wide={tablet}
-                oldVersion={oldCreative || oldCopy}
+                oldVersion={oldCreative || oldCopy || oldToi || oldVo}
               >
               {/* 15% smaller, with the post's date and title above it
                   (direct instruction), to make room beside it. */}

@@ -15,6 +15,9 @@ type NewComment = {
   visibility: "private" | "public";
   creativeVersionId?: string | null;
   copyVersionId?: string | null;
+  // The VO and Text on Image versions showing (phase161).
+  voiceoverVersionId?: string | null;
+  slideTextVersionId?: string | null;
   anchor?: Anchor | null;
   mentions?: string[];
   forClient?: boolean;
@@ -31,6 +34,8 @@ export function useCreateComment(creativeId: string) {
       visibility,
       creativeVersionId = null,
       copyVersionId = null,
+      voiceoverVersionId = null,
+      slideTextVersionId = null,
       anchor = null,
       mentions = [],
       forClient = false,
@@ -44,6 +49,9 @@ export function useCreateComment(creativeId: string) {
       // looking at any more. Null for a general, un-anchored comment.
       creativeVersionId?: string | null;
       copyVersionId?: string | null;
+      // The VO and Text on Image versions showing (phase161).
+      voiceoverVersionId?: string | null;
+      slideTextVersionId?: string | null;
       anchor?: Anchor | null;
       // The team it @mentions (phase138): each gets a notice in the bell.
       mentions?: string[];
@@ -72,6 +80,8 @@ export function useCreateComment(creativeId: string) {
           visibility,
           creative_version_id: creativeVersionId,
           copy_version_id: copyVersionId,
+          voiceover_version_id: voiceoverVersionId,
+          slide_text_version_id: slideTextVersionId,
           anchor,
           mentions,
           for_client: forClient,
@@ -115,6 +125,8 @@ export function useCreateComment(creativeId: string) {
         anchor: input.anchor ?? null,
         creative_version_id: input.creativeVersionId ?? null,
         copy_version_id: input.copyVersionId ?? null,
+        voiceover_version_id: input.voiceoverVersionId ?? null,
+        slide_text_version_id: input.slideTextVersionId ?? null,
         resolved_at: null,
         created_at: new Date().toISOString(),
         edited_at: null,

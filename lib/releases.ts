@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.91.0",
+    date: "2026-11-16",
+    title: "Text on Image and VO versions on a post's page",
+    changes: [
+      "Before a post has artwork, the team now has Text on Image and VO pickers under Creative and Copy (VO on a video post), to show an earlier version's words where the artwork will go. An earlier one is marked in red, with Old Version above the phone.",
+      "A comment records the Text on Image and VO versions showing when it's made. A comment on their words shows that version's V, and a click brings it back up. Comments already made on their words have been given the version newest when they were posted.",
+    ],
+  },
+  {
     version: "1.90.3",
     date: "2026-11-14",
     title: "A version on every comment, old ones too",
