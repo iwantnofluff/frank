@@ -171,6 +171,24 @@ test("a post takes its stage's first status, the team picks another from its pil
   await menu.getByRole("option", { name: "3c. Hold" }).click();
   await expect.poll(async () => (await now()).status_id).toBe(id("Hold"));
 
+  // Pointing at another stage opens its statuses (direct instruction);
+  // picking one moves the post there with it.
+  await page.mouse.move(0, 0);
+  await page.locator(".stagesw").getByRole("button", { name: "Client Review", exact: true }).hover();
+  const clientMenu = page.getByRole("listbox", { name: "Client Review" });
+  await expect(clientMenu.getByRole("option").first()).toHaveText("4. Client");
+  const clientStatuses = await clientMenu.getByRole("option").allTextContents();
+  if (clientStatuses.length > 1) {
+    await clientMenu.getByRole("option").nth(1).click();
+    await expect.poll(async () => (await now()).stage).toBe(4);
+    await expect(page.locator(".stagesw").getByRole("button", { name: "Status within the stage" })).toHaveText(clientStatuses[1]);
+  } else {
+    await clientMenu.getByRole("option").first().click();
+    await expect.poll(async () => (await now()).stage).toBe(4);
+  }
+  // Back for the table's checks below.
+  await admin.from("creatives").update({ stage: 3, status_id: id("Hold") }).eq("id", frank.creativeId);
+
   // In the table: every stage and status, and a post moves to any.
   await page.goto(`${APP_URL}/projects/${frank.projectId}`);
   const tablePill = page.getByRole("button", { name: "Status of E2E Test Creative" });

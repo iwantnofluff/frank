@@ -18,8 +18,11 @@ test("comment cards — internal vs public", async ({ page, frank }) => {
   await page.goto(`/creatives/${frank.creativeId}`);
   await page.waitForSelector(".cmts-b .cmt");
 
-  // Each comment's time (CommentWhen) is the time the test ran: hidden.
-  await expect(page.locator(".cmts")).toHaveScreenshot("comment-cards.png", { mask: [page.locator(".cwhen")] });
+  // Each comment's time (CommentWhen) is the time the test ran: hidden,
+  // not masked, since its one line's width changes with the words ("just
+  // now", "1 min ago") and a mask's edge would move with it.
+  await page.addStyleTag({ content: ".cwhen { visibility: hidden !important; }" });
+  await expect(page.locator(".cmts")).toHaveScreenshot("comment-cards.png");
 });
 
 test("composer toggle — internal (checked) and public (unchecked)", async ({

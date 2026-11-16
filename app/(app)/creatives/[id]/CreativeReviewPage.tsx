@@ -51,7 +51,8 @@ import { useProjectPresence } from "@/hooks/use-project-presence";
 import { PresenceAvatars } from "@/components/app-shell/PresenceAvatars";
 import { STAGE, exceptionLabel, stageColor, stageLabel } from "@/lib/stage-labels";
 import { errorMessage } from "@/lib/errors";
-import { useProjectStatuses, useSetCreativeStatus } from "@/hooks/use-stage-statuses";
+import { useProjectStatuses } from "@/hooks/use-stage-statuses";
+import { useStagePick } from "@/components/project/StagePillMenu";
 import { statusOptions } from "@/lib/project-statuses";
 import { PillMenu } from "@/components/project/PillMenu";
 import { useAssetLink } from "@/hooks/use-asset-links";
@@ -77,6 +78,19 @@ const VIDEO_FRAME_TOLERANCE = 0.25;
 
 // The post page itself; page.tsx reads its post, versions and artwork
 // links on the server first, so the artwork shows with the page.
+// The six stages on the post page's switch: short words so six fit, the
+// full name for its label, its colour class, its picked-status class, and
+// the move a click makes (none for Concept and In Production, which a post
+// reaches by itself, phase102).
+const STAGE_PILLS = [
+  { n: 1, short: "Concept", full: "Concept", cls: "sw-concept", pick: "sw-p-concept", dir: null },
+  { n: 2, short: "Production", full: "In Production", cls: "sw-concept", pick: "sw-production", dir: null },
+  { n: 3, short: "Internal", full: "Internal Review", cls: "", pick: "sw-internal", dir: "to_internal" },
+  { n: 4, short: "Client", full: "Client Review", cls: "sw-client", pick: "sw-p-client", dir: "to_review" },
+  { n: 5, short: "Approved", full: "Approved", cls: "sw-approved", pick: "sw-p-approved", dir: "to_approved" },
+  { n: 6, short: "Live", full: "Live", cls: "sw-live", pick: "sw-p-live", dir: "to_live" },
+] as const;
+
 export function CreativeReviewPage({ id }: { id: string }) {
   useWarmUp(WINDOWS);
   const router = useRouter();
@@ -102,7 +116,6 @@ export function CreativeReviewPage({ id }: { id: string }) {
   // Its status within its stage (phase123, every stage since phase151),
   // the team's only.
   const { data: projectStatuses } = useProjectStatuses(creative?.project_id, isStaff);
-  const setStatus = useSetCreativeStatus();
   const { data: assetLink } = useAssetLink(id, isStaff);
   const phone = usePhoneScreen();
   // The phone full size over the page (direct instruction); Esc closes it.
@@ -120,19 +133,42 @@ export function CreativeReviewPage({ id }: { id: string }) {
   // The active stage's pill is its status's dropdown (3a, 3b…), for the
   // team, where the stage has statuses.
   const pillOptions = isStaff && creative && !creative.exception ? statusOptions(projectStatuses, creative.stage) : [];
-  const statusPill = (pillClass: string, stageText: string) => {
-    const items = [{ key: "", text: stageText }, ...pillOptions.map((o) => ({ key: o.id, text: o.text, indent: true }))];
-    const value = creative?.status_id ?? "";
+  // Each stage's statuses on pointing at it (direct instruction), the
+  // team's: any status in any stage can be picked, as on the table's
+  // Status pill. A click on another stage still moves the post there.
+  const pickStage = useStagePick(creative);
+  const stagePill = (st: (typeof STAGE_PILLS)[number]) => {
+    if (!creative) return null;
+    const here = creative.stage === st.n;
+    const items = [
+      { key: `${st.n}`, text: `${st.n}. ${st.short}` },
+      ...statusOptions(projectStatuses, st.n).map((o) => ({ key: `${st.n}:${o.id}`, text: o.text, indent: true })),
+    ];
+    const value = here ? (creative.status_id ? `${st.n}:${creative.status_id}` : `${st.n}`) : "";
+    // The current stage, with statuses to pick: solid, naming the one picked.
+    const picked = here && pillOptions.length > 0;
+    const canMove = st.dir && (st.n === STAGE.internal ? creative.stage >= STAGE.review : !here);
     return (
       <PillMenu
-        label="Status within the stage"
-        className={`sw-pick ${pillClass}`}
+        key={st.n}
+        hover
+        label={picked ? "Status within the stage" : st.full}
+        className={picked ? `sw-pick ${st.pick}` : st.cls}
+        pressed={picked ? undefined : here}
         items={items}
         value={value}
-        disabled={setStatus.isPending}
-        onPick={(key) => setStatus.mutate({ creativeId: id, statusId: key || null })}
+        disabled={advanceStage.isPending || pickStage.pending}
+        onPress={canMove ? () => advanceStage.mutate(st.dir!) : undefined}
+        onPick={(key) => pickStage.go(key, items.find((it) => it.key === key)?.text ?? "")}
       >
-        {items.find((it) => it.key === value)?.text ?? stageText}
+        {picked ? (
+          (items.find((it) => it.key === value)?.text ?? `${st.n}. ${st.short}`)
+        ) : (
+          <>
+            <span className="no">{st.n}.</span>
+            {st.short}
+          </>
+        )}
       </PillMenu>
     );
   };
@@ -778,15 +814,14 @@ export function CreativeReviewPage({ id }: { id: string }) {
                   className={`stagesw${isStaff ? "" : " ro"}`}
                   title="Whether this post is visible through a share link, and whether it's been approved"
                 >
+                  {isStaff ? STAGE_PILLS.map(stagePill) : (
+                  <>
                   {/* Short words (direct instruction), so six fit beside
                       the tools; each one's full name is its label.
                       Concept and In Production are shown, not picked: a
                       post moves to In Production by itself once its
                       Concept is written, and on to Internal Review when
                       its first artwork or copy is saved (phase102). */}
-                  {creative.stage === STAGE.concept && pillOptions.length ? (
-                    statusPill("sw-p-concept", "1. Concept")
-                  ) : (
                   <button
                     data-label="Concept"
                     aria-label="Concept"
@@ -799,10 +834,6 @@ export function CreativeReviewPage({ id }: { id: string }) {
                     <span className="no">1.</span>
                     Concept
                   </button>
-                  )}
-                  {creative.stage === STAGE.production && pillOptions.length ? (
-                    statusPill("sw-production", "2. Production")
-                  ) : (
                   <button
                     data-label="In Production"
                     aria-label="In Production"
@@ -815,10 +846,6 @@ export function CreativeReviewPage({ id }: { id: string }) {
                     <span className="no">2.</span>
                     Production
                   </button>
-                  )}
-                  {creative.stage === STAGE.internal && pillOptions.length ? (
-                    statusPill("sw-internal", "3. Internal")
-                  ) : (
                   <button
                     data-label="Internal Review"
                     aria-label="Internal Review"
@@ -833,10 +860,6 @@ export function CreativeReviewPage({ id }: { id: string }) {
                     <span className="no">3.</span>
                     Internal
                   </button>
-                  )}
-                  {creative.stage === STAGE.review && pillOptions.length ? (
-                    statusPill("sw-p-client", "4. Client")
-                  ) : (
                   <button
                     data-label="Client Review"
                     aria-label="Client Review"
@@ -852,10 +875,6 @@ export function CreativeReviewPage({ id }: { id: string }) {
                     <span className="no">4.</span>
                     Client
                   </button>
-                  )}
-                  {creative.stage === STAGE.approved && pillOptions.length ? (
-                    statusPill("sw-p-approved", "5. Approved")
-                  ) : (
                   <button
                     data-label="Approved"
                     aria-label="Approved"
@@ -871,12 +890,8 @@ export function CreativeReviewPage({ id }: { id: string }) {
                     <span className="no">5.</span>
                     Approved
                   </button>
-                  )}
                   {/* Live (phase99): Frank sets it when it finds the post on
                       Instagram; set by hand, now is its live date. */}
-                  {creative.stage === STAGE.live && pillOptions.length ? (
-                    statusPill("sw-p-live", "6. Live")
-                  ) : (
                   <button
                     data-label="Live"
                     aria-label="Live"
@@ -892,11 +907,13 @@ export function CreativeReviewPage({ id }: { id: string }) {
                     <span className="no">6.</span>
                     Live
                   </button>
+                  </>
                   )}
                 </div>
-                {setStatus.error && (
-                  <span className="autherr stage-status-err">{errorMessage(setStatus.error, "Couldn't change the status")}</span>
+                {pickStage.error && (
+                  <span className="autherr stage-status-err">{errorMessage(pickStage.error, "Couldn't change the status")}</span>
                 )}
+                {pickStage.dialog}
               </>
             )}
           <div className="tools">

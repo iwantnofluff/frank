@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.91.1",
+    date: "2026-11-16",
+    title: "Every status from a post's stages",
+    changes: [
+      "On a post's page, pointing at any of the six stages now opens its statuses, so the team can see and pick any status in any stage there, as the project table's Status pill allows. Clicking another stage still moves the post straight to it.",
+    ],
+  },
+  {
     version: "1.91.0",
     date: "2026-11-16",
     title: "Text on Image and VO versions on a post's page",

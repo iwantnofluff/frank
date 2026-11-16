@@ -17,10 +17,14 @@ test("staff advances a creative to Client Review, making it visible through a sh
   await page.goto(`/creatives/${creativeId}`);
   await page.waitForSelector(".stage-h");
 
-  // A post with nothing on it shows Concept, which can't be picked.
+  // A post with nothing on it shows Concept; for the team each stage's
+  // statuses open on pointing at it (direct instruction).
   const pressed = page.locator('.stagesw button[aria-pressed="true"]');
   await expect(pressed).toHaveText("1.Concept");
-  await expect(page.locator(".stagesw").getByRole("button", { name: "Concept", exact: true })).toHaveAttribute("aria-disabled", "true");
+  await page.locator(".stagesw").getByRole("button", { name: "Approved", exact: true }).hover();
+  await expect(page.getByRole("listbox", { name: "Approved" }).getByRole("option").first()).toHaveText("5. Approved");
+  await page.mouse.move(0, 0);
+  await expect(page.getByRole("listbox", { name: "Approved" })).toHaveCount(0);
 
   // By its full name: the pill itself reads "4. Client" (1.33.0).
   await page.locator(".stagesw").getByRole("button", { name: "Client Review", exact: true }).click();

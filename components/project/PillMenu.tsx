@@ -23,6 +23,9 @@ export function PillMenu({
   disabled,
   className,
   style,
+  hover = false,
+  pressed,
+  onPress,
 }: {
   label: string;
   children: ReactNode;
@@ -32,13 +35,49 @@ export function PillMenu({
   disabled?: boolean;
   className: string;
   style?: CSSProperties;
+  // Opened by pointing at it as well as by a click (direct instruction:
+  // the post page's stages), and closed shortly after the pointer leaves
+  // both the pill and its list.
+  hover?: boolean;
+  // Shown as the current one (the post page's stage switch styles on it).
+  pressed?: boolean;
+  // A click does this instead of opening the list (the post page's other
+  // stages move the post there, as before); pointing still opens it.
+  onPress?: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const id = useId();
+  // Opened by pointing: the list doesn't take the keys from the page.
+  const byHover = useRef(false);
+  const leaving = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stay = () => {
+    if (leaving.current) clearTimeout(leaving.current);
+    leaving.current = null;
+  };
+  const leave = () => {
+    stay();
+    leaving.current = setTimeout(() => {
+      if (byHover.current) setOpen(false);
+    }, 180);
+  };
+  useEffect(() => stay, []);
+  // One pointed-open list at a time: moving along to the next pill closes
+  // this one at once, not after the pause.
+  useEffect(() => {
+    if (!hover) return;
+    const other = (e: Event) => {
+      if ((e as CustomEvent<string>).detail !== id && byHover.current) {
+        stay();
+        setOpen(false);
+      }
+    };
+    window.addEventListener("pillmenu-hover", other);
+    return () => window.removeEventListener("pillmenu-hover", other);
+  }, [hover, id]);
   const [active, setActive] = useState(0);
   const [place, setPlace] = useState<{ left: number; top: number; minWidth: number; maxHeight: number } | null>(null);
   const button = useRef<HTMLButtonElement>(null);
   const list = useRef<HTMLUListElement>(null);
-  const id = useId();
 
   const close = (focusBack = true) => {
     setOpen(false);
@@ -74,10 +113,12 @@ export function PillMenu({
     }
   }, [place]);
 
-  // The list takes the keys once it's drawn.
+  // The list takes the keys once it's drawn, unless pointed open; then
+  // once clicked.
+  const [takeKeys, setTakeKeys] = useState(0);
   useEffect(() => {
-    if (open && place) list.current?.focus();
-  }, [open, place]);
+    if (open && place && !byHover.current) list.current?.focus();
+  }, [open, place, takeKeys]);
 
   // Closed by a click elsewhere, or the page scrolling under it.
   useEffect(() => {
@@ -124,15 +165,45 @@ export function PillMenu({
         className={className}
         style={style}
         aria-label={label}
+        aria-pressed={pressed}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={open ? id : undefined}
         disabled={disabled}
         onClick={(e) => {
           e.stopPropagation();
+          if (onPress) {
+            stay();
+            setOpen(false);
+            onPress();
+            return;
+          }
           setActive(Math.max(0, items.findIndex((it) => it.key === value)));
+          // Already pointed open (or opening): a click keeps it, and gives
+          // it the keys.
+          if (hover && byHover.current) {
+            byHover.current = false;
+            stay();
+            setOpen(true);
+            setTakeKeys((n) => n + 1);
+            return;
+          }
+          byHover.current = false;
           setOpen((o) => !o);
         }}
+        onMouseEnter={
+          hover && !disabled
+            ? () => {
+                stay();
+                if (open) return;
+                byHover.current = true;
+                window.dispatchEvent(new CustomEvent("pillmenu-hover", { detail: id }));
+                setActive(Math.max(0, items.findIndex((it) => it.key === value)));
+                setOpen(true);
+              }
+            : undefined
+        }
+        onMouseLeave={hover ? leave : undefined}
         onKeyDown={(e) => {
           if (e.key === "ArrowDown" || e.key === "ArrowUp") {
             e.preventDefault();
@@ -156,6 +227,8 @@ export function PillMenu({
             className="pillmenu"
             style={{ left: place.left, top: place.top, minWidth: place.minWidth, maxHeight: place.maxHeight }}
             onClick={(e) => e.stopPropagation()}
+            onMouseEnter={hover ? stay : undefined}
+            onMouseLeave={hover ? leave : undefined}
             onKeyDown={(e) => {
               if (e.key === "ArrowDown") {
                 e.preventDefault();
