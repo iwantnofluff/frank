@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.91.2",
+    date: "2026-11-16",
+    title: "No list for a stage without statuses",
+    changes: [
+      "On a post's page, a stage with no statuses of its own no longer opens a list when you point at it: it's a plain pill again, and clicking it moves the post there.",
+    ],
+  },
+  {
     version: "1.91.1",
     date: "2026-11-16",
     title: "Every status from a post's stages",

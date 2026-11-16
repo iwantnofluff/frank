@@ -148,6 +148,27 @@ export function CreativeReviewPage({ id }: { id: string }) {
     // The current stage, with statuses to pick: solid, naming the one picked.
     const picked = here && pillOptions.length > 0;
     const canMove = st.dir && (st.n === STAGE.internal ? creative.stage >= STAGE.review : !here);
+    // No statuses in this stage: no list (direct instruction), just the
+    // stage, which a click moves the post to, as before.
+    if (items.length === 1)
+      return (
+        <button
+          key={st.n}
+          type="button"
+          data-label={st.full}
+          aria-label={st.full}
+          className={st.cls || undefined}
+          aria-pressed={here}
+          aria-disabled={st.dir ? undefined : true}
+          disabled={advanceStage.isPending || pickStage.pending}
+          onClick={() => {
+            if (canMove) advanceStage.mutate(st.dir!);
+          }}
+        >
+          <span className="no">{st.n}.</span>
+          {st.short}
+        </button>
+      );
     return (
       <PillMenu
         key={st.n}
