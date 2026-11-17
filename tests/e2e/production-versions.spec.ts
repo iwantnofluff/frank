@@ -120,9 +120,10 @@ test("a VO or Text on Image version can be deleted from its tab, as the copy's c
   ]);
 });
 
-// The VO, Text on Image and Caption boxes (direct instruction): one height
-// for all three, half again the VO's old 123px, whatever their length.
-test("the VO, Text on Image and Caption boxes share one taller height", async ({ page, frank }) => {
+// The VO, Text on Image and Caption boxes (direct instruction): as tall as
+// their words, from three lines, up to 185px for long words, which then
+// scroll inside.
+test("the VO, Text on Image and Caption boxes fit their words, up to 185px", async ({ page, frank }) => {
   test.setTimeout(90_000);
   const long = Array.from({ length: 20 }, (_, i) => `Line ${i + 1} of a long script.`).join("\n");
   await admin.from("creatives").update({ format: "ig_reel", formats: ["ig_reel"], voiceover: long, slide_text: ["Short words"] }).eq("id", frank.creativeId);
@@ -133,10 +134,19 @@ test("the VO, Text on Image and Caption boxes share one taller height", async ({
   const modal = page.locator(".scrim .modal").first();
   await modal.getByRole("tab", { name: "Production" }).click();
   const height = (l: ReturnType<typeof modal.locator>) => l.evaluate((el) => (el as HTMLElement).offsetHeight);
-  expect(await height(modal.locator("#nbVo"))).toBe(185);
-  expect(await height(modal.locator('[data-focus="imageOnText"] textarea').first())).toBe(185);
+  // Long: the long-text height, scrolling inside.
+  const vo = modal.locator("#nbVo");
+  expect(await height(vo)).toBe(185);
+  expect(await vo.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+  // Short: small, and it grows as lines are added.
+  const toi = modal.locator('[data-focus="imageOnText"] textarea').first();
+  const short = await height(toi);
+  expect(short).toBeLessThan(100);
+  await toi.fill("One\nTwo\nThree\nFour\nFive");
+  await expect.poll(() => height(toi)).toBeGreaterThan(short);
+  expect(await height(toi)).toBeLessThan(185);
   await modal.getByRole("tab", { name: "Content" }).click();
   const caption = modal.locator(".field", { has: page.locator("label", { hasText: /^Caption$/ }) }).locator("textarea");
   await expect(caption).toBeVisible();
-  expect(await height(caption)).toBe(185);
+  expect(await height(caption)).toBeLessThan(100);
 });

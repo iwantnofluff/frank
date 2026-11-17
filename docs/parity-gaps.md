@@ -5179,6 +5179,12 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Boxes that fit their words (1.92.1, 2026-11-17)
+
+Direct instruction: the VO, Text on Image and Caption boxes were one fixed 185px (1.88.2) whatever was in them, so a two-line slide sat in a big empty box; the 185px is for long text only. They're now `FitTextarea` (components/ui/FitTextarea.tsx): as tall as their words from three lines, growing as they're typed into, up to 185px, then scrolling inside. A box dragged by hand keeps its height (told from the height last set, so a drag isn't undone by the next keystroke). ListEditor uses it only for its long-text kind (Text on Image); its other lists keep their plain two-line boxes. Done in the browser, not CSS `field-sizing`, so it's the same in Safari and keeps dragging taller possible.
+
+**Verified**: production-versions.spec's height test rewritten: a 20-line VO is 185px and scrolls; a short Text on Image is under 100px and grows when five lines are typed, staying under 185px; an empty Caption is under 100px. It, voiceover and carousel passed (19). A screenshot of the Production tab with three short carousel slides (the user's own words) showed all three on one screen, each as tall as its words.
+
 ## Keep a comment out of Slack (1.92.0, phase162, 2026-11-16)
 
 Also by direct instruction (same release): the version after a comment's pill shortened to CR (Creative), CO (Copy), TOI (Text on Image) and VO, as "CR V2"; the tooltip still names every version in full. old-versions and production-version-pickers check the short labels and passed (4).

@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.92.1",
+    date: "2026-11-17",
+    title: "Boxes that fit their words",
+    changes: [
+      "In the post window, the VO, Text on Image and Caption boxes are now as tall as their words, from three lines, growing as you type up to the long-text height, past which longer words scroll inside. Short words no longer sit in a big empty box. Each can still be dragged taller.",
+    ],
+  },
+  {
     version: "1.92.0",
     date: "2026-11-16",
     title: "Keep a comment out of Slack",

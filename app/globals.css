@@ -12974,12 +12974,11 @@ button.hbrand-add:hover {
   object-fit: contain;
 }
 /* The post window's long words, the VO, Text on Image (each slide's) and
-   the Caption (direct instruction): one height for all three, half again
-   the VO's old 123px, however much is in them; longer scrolls inside, and
-   each can still be dragged taller. */
+   the Caption (direct instruction): as tall as their words, from three
+   lines up to 185px (FitTextarea), then scrolling inside; each can still
+   be dragged taller. */
 textarea.bin.tallbox {
-  height: 185px;
-  min-height: 185px;
+  resize: vertical;
 }
 /* The invite window from a project: the one client it gives, as words. */
 .iv-fixed {

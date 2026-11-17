@@ -1,5 +1,7 @@
 "use client";
 
+import { FitTextarea } from "@/components/ui/FitTextarea";
+
 function RemoveIcon() {
   return (
     <svg viewBox="0 0 24 24">
@@ -60,17 +62,30 @@ export function ListEditor({
               </button>
             )}
           </div>
-          <textarea
-            className={tall ? "bin tallbox" : "bin"}
-            rows={2}
-            value={value}
-            disabled={readOnly}
-            onChange={(e) => {
-              const next = [...values];
-              next[i] = e.target.value;
-              onChange(next);
-            }}
-          />
+          {tall ? (
+            <FitTextarea
+              className="bin tallbox"
+              value={value}
+              disabled={readOnly}
+              onChange={(e) => {
+                const next = [...values];
+                next[i] = e.target.value;
+                onChange(next);
+              }}
+            />
+          ) : (
+            <textarea
+              className="bin"
+              rows={2}
+              value={value}
+              disabled={readOnly}
+              onChange={(e) => {
+                const next = [...values];
+                next[i] = e.target.value;
+                onChange(next);
+              }}
+            />
+          )}
         </div>
       ))}
       {!readOnly && !fixed && (

@@ -2,6 +2,7 @@
 
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
+import { FitTextarea } from "@/components/ui/FitTextarea";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { CxCell } from "@/components/project/CxCell";
 import type { CreativeRow } from "@/hooks/use-creative";
@@ -2774,10 +2775,9 @@ export function CreativeModal(props: CreativeModalProps) {
               <>
               <div className="field">
                 <label htmlFor="nbVo">Script</label>
-                <textarea
+                <FitTextarea
                   id="nbVo"
                   className="bin tallbox"
-                  rows={5}
                   aria-label="VO"
                   maxLength={5000}
                   placeholder="Write the voiceover script…"
@@ -3015,9 +3015,9 @@ export function CreativeModal(props: CreativeModalProps) {
                 <div className="field" data-focus={spec.key === "alt" ? "alt" : i === 0 ? "copy" : undefined}>
                   <label>{spec.label}</label>
                   {LONG_COPY_FIELDS.has(spec.key) ? (
-                    <textarea
+                    <FitTextarea
                       className={spec.key === "caption" ? "bin tallbox" : "bin"}
-                      rows={spec.key === "caption" ? 6 : 3}
+                      rows={3}
                       value={draftFields[spec.key] ?? ""}
                       onChange={(e) => {
                         setDraftFields((prev) => ({ ...prev, [spec.key]: e.target.value }));
