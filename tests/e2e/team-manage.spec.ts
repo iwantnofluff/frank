@@ -242,9 +242,9 @@ test("everyone gets a menu only on the people below them (phase49)", async ({
   await expect(page.getByRole("button", { name: /^Fellow Owner: .+\. Change$/ })).toHaveCount(0);
   await openMenu(page, "Some User");
   // The Role dropdown (direct instruction): the one role an Admin gives,
-  // ticked, and nothing else (no Edit).
+  // ticked, and (phase163) Deactivate and Remove, as an Owner has.
   await expect(page.getByRole("menuitemradio")).toHaveText(["User"]);
-  await expect(page.getByRole("menuitem")).toHaveCount(0);
+  await expect(page.getByRole("menuitem")).toHaveText(["Deactivate", "Remove from Team"]);
 });
 
 test("inviting someone who was deactivated points to Reactivate instead", async ({ page, frank }) => {
@@ -348,7 +348,8 @@ test("an Admin sees who has which clients, and changes a User's", async ({ page,
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/settings/team`);
   await expect(page.locator(".crow", { hasText: member.email })).toContainText("E2E Test Client");
-  await expect(page.getByRole("button", { name: "Invite Member" })).toHaveCount(0);
+  // Every Admin invites (phase163).
+  await expect(page.getByRole("button", { name: "Invite Member" })).toBeVisible();
   await page.getByRole("button", { name: "Add clients for Read Only" }).click();
   const pick = page.getByRole("dialog", { name: "Read Only's clients" });
   await pick.getByRole("checkbox", { name: "E2E Test Client" }).click();
@@ -453,4 +454,40 @@ test("Users lists each client's people, invited ones with Resend and Revoke", as
   } finally {
     await deleteAccount(u.user!.id);
   }
+});
+
+// Every Admin adds, edits and removes Users and Clients (phase163, direct
+// instruction), not other Admins or Owners.
+test("an Admin deactivates, reactivates, changes and removes a User, and can't touch an Admin or an Owner", async ({ page, frank }) => {
+  test.setTimeout(90_000);
+  await setStaffRole(frank, "admin");
+  const user = await seedMember(frank, { role: "user", name: "Uma User" });
+  await seedMember(frank, { role: "admin", name: "Ada Admin" });
+  await seedMember(frank, { role: "owner", name: "Otto Owner" });
+  await frank.loginAsStaff(page);
+  await page.goto(`${APP_URL}/settings/team`);
+  const row = page.locator(".crow", { hasText: user.email });
+  await expect(row).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Ada Admin: .+\. Change$/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /^Otto Owner: .+\. Change$/ })).toHaveCount(0);
+
+  await openMenu(page, "Uma User");
+  await page.getByRole("menuitem", { name: "Deactivate" }).click();
+  await expect(row).toContainText("Deactivated");
+  await expect.poll(async () => (await admin.from("memberships").select("removed_at").eq("id", user.membershipId).single()).data!.removed_at).not.toBeNull();
+  await openMenu(page, "Uma User");
+  await page.getByRole("menuitem", { name: "Reactivate" }).click();
+  await expect.poll(async () => (await admin.from("memberships").select("removed_at").eq("id", user.membershipId).single()).data!.removed_at).toBeNull();
+
+  // Made a Client of the client, then removed.
+  await openMenu(page, "Uma User");
+  const types = await page.getByRole("menuitem").allTextContents();
+  expect(types.join("|")).not.toMatch(/Owner|Admin/);
+  await page.keyboard.press("Escape");
+  await openMenu(page, "Uma User");
+  await page.getByRole("menuitem", { name: "Remove from Team" }).click();
+  await page.getByRole("button", { name: /^Remove/ }).last().click();
+  await expect
+    .poll(async () => (await admin.from("memberships").select("removed_permanently_at").eq("id", user.membershipId).single()).data!.removed_permanently_at)
+    .not.toBeNull();
 });

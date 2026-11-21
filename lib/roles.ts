@@ -12,8 +12,8 @@ export const INVITABLE_ROLES = ["owner", "admin", "user"] as const;
 export type InvitableRole = (typeof INVITABLE_ROLES)[number];
 
 export const ROLE_HINTS: Record<InvitableRole, string> = {
-  owner: "Everything an Admin can do, plus inviting people and choosing their roles.",
-  admin: "Sees every client and manages workspace settings.",
+  owner: "Everything an Admin can do, plus adding and managing Admins and Owners.",
+  admin: "Sees every client, manages workspace settings, and adds, edits and removes Users and Clients.",
   user: "Sees only the clients you pick below.",
 };
 
@@ -51,20 +51,21 @@ export const INVITE_ROLE_LABELS: Record<InviteRole, string> = {
 };
 
 export const INVITE_ROLE_HINTS: Record<InviteRole, string> = {
-  owner: "Everything an Admin can do, plus inviting people and choosing their roles.",
-  admin: "Sees every client and manages workspace settings.",
+  owner: "Everything an Admin can do, plus adding and managing Admins and Owners.",
+  admin: "Sees every client, manages workspace settings, and adds, edits and removes Users and Clients.",
   user: "Sees only the clients they're given.",
   client: "Someone at the client. Sees this client's work and public comments only, like a review link, and doesn't use a team place.",
 };
 
-// The roles this person may give (decided directly, 4 Oct 2026): an Owner
-// any but Primary Owner; an Admin whose Owner switched on "Can invite
-// people", anything below Owner; anyone else, none. can_invite_people()
-// and the memberships policies enforce the same.
-export function rolesICanInvite(me: { role: AgencyRole; client_id: string | null; can_invite?: boolean } | null | undefined): InviteRole[] {
+// The roles this person may give: an Owner any but Primary Owner; every
+// Admin, Users and Clients (phase163, decided directly 20 Nov 2026: no
+// longer only an Admin an Owner let invite, nor Admins); anyone else, none.
+// can_invite_people(), the invite route and the memberships policies
+// enforce the same.
+export function rolesICanInvite(me: { role: AgencyRole; client_id: string | null } | null | undefined): InviteRole[] {
   if (!me || me.client_id) return [];
   if (isOwnerOrAbove(me.role)) return ["owner", "admin", "user", "client"];
-  if (me.role === "admin" && me.can_invite) return ["admin", "user", "client"];
+  if (me.role === "admin") return ["user", "client"];
   return [];
 }
 

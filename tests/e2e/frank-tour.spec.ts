@@ -21,8 +21,8 @@ test("someone new gets the tour on their first visit, once", async ({ page, fran
   // and the tour goes through it, never the workspace's own posts.
   await expect(card.locator("h2")).toHaveText("Welcome to Frank", { timeout: 60_000 });
   const sampleId = (await admin.from("clients").select("id, archived_at").eq("agency_id", frank.agencyId).eq("is_sample", true).single()).data!.id;
-  // An Admin who can't invite: no invite step; the rest, each on its page.
-  const titles = ["Welcome to Frank", "Your workspace", "Add a client", "Create a project", "Add a post", "From concept to live", "You're all set"];
+  // An Admin, who invites (phase163): the invite step too; each on its page.
+  const titles = ["Welcome to Frank", "Your workspace", "Add a client", "Create a project", "Add a post", "From concept to live", "Invite your team", "You're all set"];
   for (let i = 0; i < titles.length; i++) {
     await expect(card.locator(".tour-n")).toHaveText(`${i + 1} of ${titles.length}`, { timeout: 15_000 });
     await expect(card.locator("h2")).toHaveText(titles[i]);
@@ -35,8 +35,9 @@ test("someone new gets the tour on their first visit, once", async ({ page, fran
   await expect(page.locator(".tour")).toHaveCount(0);
   // Saved as seen, so it doesn't come back.
   await expect.poll(async () => (await admin.from("users").select("tour_seen_at").eq("id", staffId).single()).data!.tour_seen_at).not.toBeNull();
+  // It ends where its last step was (the Team page, for an Admin).
   await page.reload();
-  await expect(page.locator(".stage")).toBeVisible({ timeout: 20_000 });
+  await page.waitForLoadState("networkidle");
   await page.waitForTimeout(2000);
   await expect(page.locator(".tour")).toHaveCount(0);
 });

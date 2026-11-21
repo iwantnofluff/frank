@@ -174,13 +174,10 @@ test("the database refuses anyone who can't invite, and anyone who isn't a team 
   const add = (c: Awaited<ReturnType<typeof session>>, userId: string) =>
     c.rpc("add_person_to_client", { p_user_id: userId, p_client_id: two.clientId });
 
-  // An Admin without "Can invite", and a Client, can't add anyone.
+  // A Client can't add anyone; every Admin can (phase163).
   const staff = await session(frank.staffEmail, frank.staffPassword);
-  expect((await add(staff, teamUser)).error?.message).toMatch(/can't add people/);
   const asClient = await session(frank.clientEmail, frank.clientPassword);
   expect((await add(asClient, teamUser)).error?.message).toMatch(/can't add people/);
-
-  await admin.from("memberships").update({ can_invite: true }).eq("agency_id", frank.agencyId).eq("user_id", await userIdOf(frank.staffEmail));
   // Another client's person: never from here.
   expect((await add(staff, clientUser)).error?.message).toMatch(/Only Users on your team/);
   expect((await add(staff, owner)).error?.message).toMatch(/Owners and Admins already see every client/);

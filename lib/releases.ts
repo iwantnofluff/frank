@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.93.0",
+    date: "2026-11-20",
+    title: "Admins manage Users and Clients",
+    changes: [
+      "Every Admin can now invite Users and Clients, with no need for an Owner to let them first, and deactivate, reactivate, change and remove them from Workspace Settings → Team, as an Owner can.",
+      "Inviting or managing an Admin or an Owner stays with Owners. The Let Them Invite People switch is gone.",
+    ],
+  },
+  {
     version: "1.92.1",
     date: "2026-11-17",
     title: "Boxes that fit their words",

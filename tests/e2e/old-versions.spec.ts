@@ -86,6 +86,8 @@ test("a plain comment records the artwork and copy versions showing, and its tag
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
   await expect(page.locator("#vCreative")).toHaveValue(art!.id);
+  // Both showing before posting: the copy's versions arrive on their own.
+  await expect(page.locator("#vCopy")).toHaveValue(copy!.id);
   await page.getByPlaceholder("Add a comment…").fill("Plain one");
   await page.locator(".composer").getByRole("button", { name: "Post" }).click();
   const tag = page.locator(".cmt", { hasText: "Plain one" }).locator(".cmt-f .vtag");

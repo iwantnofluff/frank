@@ -12,7 +12,7 @@ const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SU
 test("Add or Invite People in Project Settings adds a teammate and invites someone new", async ({ page, frank }) => {
   test.setTimeout(120_000);
   const staffId = (await admin.from("users").select("id").eq("email", frank.staffEmail).single()).data!.id;
-  // An Owner: Admins invite only with Can invite.
+  // An Owner, who can also invite an Admin (an Admin invites Users and Clients).
   await admin.from("memberships").update({ role: "owner" }).eq("user_id", staffId).eq("agency_id", frank.agencyId);
   const email = `e2e-project-add-${Date.now()}@example.invalid`;
   const { data: u } = await admin.auth.admin.createUser({ email, password: "E2e-Project-Add-1234!", email_confirm: true });

@@ -128,18 +128,20 @@ test("an Owner invites a User with access to one client, and re-sending replaces
   await expect(page.locator(".crow", { hasText: email })).toHaveCount(1);
 });
 
-test("an Admin can't invite unless an Owner lets them — no button, and the route refuses them", async ({ page, frank }) => {
+test("every Admin has Invite Member, and the route refuses them an Admin", async ({ page, frank }) => {
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/settings/team`);
   await expect(page.locator(".crow", { hasText: frank.staffEmail })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Invite Member" })).toHaveCount(0);
+  // No Owner's say-so needed (phase163).
+  await expect(page.getByRole("button", { name: "Invite Member" })).toBeVisible();
 
   const res = await page.request.post(`${APP_URL}/api/team/invite`, {
     data: {
       agencyId: frank.agencyId,
       email: `e2e-invitee-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`,
-      role: "user",
-      clientIds: [],
+      firstName: "A",
+      lastName: "Admin",
+      role: "admin",
     },
   });
   expect(res.status()).toBe(403);

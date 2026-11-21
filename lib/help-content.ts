@@ -578,7 +578,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         text: "At the top of [a project's page](project:), three icons after the Active and Archived pills open its Discussion, its Activity Log and its Settings. Only your team sees them, never the client.",
       },
       { kind: "p", text: "Settings (the cog on [the project's page](project:)) lists everyone on the project under People: Owners and Admins first (they're on every project), then the Users and Clients given it." },
-      { kind: "p", text: "Owners, and Admins who can invite, have Add or Invite People under the list: add a teammate who isn't on the project's client yet, which gives them the whole client as Team does, or invite someone new by email as a User or one of the client's own people." },
+      { kind: "p", text: "Owners and Admins have Add or Invite People under the list: add a teammate who isn't on the project's client yet, which gives them the whole client as Team does, or invite someone new by email as a User or one of the client's own people." },
       { kind: "p", text: "Tick New posts beside anyone on the team there to put them on every new post's Team. A new post starts with them, and its Team can still be changed. Owners and Admins choose." },
       { kind: "p", text: "Statuses says whose statuses the project's posts use: its client's, set in [Client Settings → Statuses](client:/settings/statuses)." },
       { kind: "p", text: "Slack says which channel the project's activity goes to. See [Post a Project's Activity to Slack](help:slack)." },
@@ -711,7 +711,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         kind: "list",
         items: [
-          "Primary Owner and Owners run the account. Admins manage clients, projects and people.",
+          "Primary Owner and Owners run the account, and add and manage Admins and Owners. Admins manage clients, projects and people: they add, edit, deactivate and remove Users and Clients.",
           "Users work on the clients and projects they're given.",
           "Clients are the brand's own people. They see their own projects, review posts and read their [Knowledge](client:/settings/knowledge).",
         ],

@@ -59,14 +59,15 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
   if (!caller) return fail("Not signed in", 401);
 
-  // An Owner, or an Admin an Owner has let invite (phase44) — who can't
-  // invite an Owner. The memberships policies hold the same line.
+  // An Owner, or any Admin (phase163) — who invites Users and Clients only.
+  // The memberships policies hold the same line.
   const [{ data: canInvite }, { data: isOwner }] = await Promise.all([
     supabase.rpc("can_invite_people", { check_agency_id: agencyId }),
     supabase.rpc("is_agency_owner_or_above", { check_agency_id: agencyId }),
   ]);
   if (!canInvite) return fail("You can't invite people to this workspace. Ask an Owner.", 403);
-  if (role === "owner" && !isOwner) return fail("Only an Owner can invite an Owner", 403);
+  // An Admin invites Users and Clients only (phase163).
+  if ((role === "owner" || role === "admin") && !isOwner) return fail(`Only an Owner can invite an ${role === "owner" ? "Owner" : "Admin"}`, 403);
 
   const [{ data: agency }, { data: inviter }, { data: client }] = await Promise.all([
     supabase.from("agencies").select("name, plan, trial_ends_at").eq("id", agencyId).single(),

@@ -111,7 +111,7 @@ test("an Owner invites a User and a Client from Team, and the Client joins throu
   }
 });
 
-test("an Owner lets an Admin invite: Admins, Users and Clients, never an Owner â€” the database agrees", async ({
+test("every Admin invites Users and Clients, never an Admin or an Owner â€” the database agrees", async ({
   page,
   browser,
   frank,
@@ -121,11 +121,11 @@ test("an Owner lets an Admin invite: Admins, Users and Clients, never an Owner â
   await setStaffRole(frank, "owner");
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/settings/team`);
+  // No switch to give an Admin (phase163): they all can.
   await page.getByRole("button", { name: /^Second Admin: .+\. Change$/ }).click();
-  await page.getByRole("menuitem", { name: "Let Them Invite People" }).click();
-  await expect(page.getByRole("status")).toHaveText("Second Admin can now invite Admins, Users and Clients");
-  await expect(page.locator(".crow", { hasText: second.email })).toContainText("Can invite");
-  expect((await admin.from("memberships").select("can_invite").eq("id", second.membershipId).single()).data!.can_invite).toBe(true);
+  await expect(page.getByRole("menuitem", { name: /Invite People/ })).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  expect((await admin.from("memberships").select("can_invite").eq("id", second.membershipId).single()).data!.can_invite).toBe(false);
 
   const ctx = await browser.newContext();
   try {
@@ -138,7 +138,7 @@ test("an Owner lets an Admin invite: Admins, Users and Clients, never an Owner â
     await ap.goto(`${APP_URL}/settings/team`);
     await ap.getByRole("button", { name: "Invite Member" }).click();
     const modal = ap.getByRole("dialog", { name: "Invite Team Member" });
-    await expect(modal.getByLabel("Role").locator("option")).toHaveText(["Admin", "User", "Client"]);
+    await expect(modal.getByLabel("Role").locator("option")).toHaveText(["User", "Client"]);
     const invitee = `e2e-by-admin-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
     await modal.getByLabel("First Name").fill("By");
     await modal.getByLabel("Last Name").fill("Admin");
@@ -148,16 +148,18 @@ test("an Owner lets an Admin invite: Admins, Users and Clients, never an Owner â
     await modal.getByRole("button", { name: "Send Invite" }).click();
     await expect(ap.getByRole("dialog", { name: "Invite Sent" })).toBeVisible();
 
-    // Not an Owner, through the routeâ€¦
-    const owner = await ap.request.post(`${APP_URL}/api/team/invite`, {
-      data: { agencyId: frank.agencyId, email: `e2e-no-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`, firstName: "N", lastName: "O", role: "owner" },
-    });
-    expect(owner.status()).toBe(403);
+    // Not an Owner or an Admin, through the routeâ€¦
+    for (const role of ["owner", "admin"]) {
+      const res = await ap.request.post(`${APP_URL}/api/team/invite`, {
+        data: { agencyId: frank.agencyId, email: `e2e-no-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`, firstName: "N", lastName: "O", role },
+      });
+      expect(res.status()).toBe(403);
+    }
   } finally {
     await ctx.close();
   }
 
-  // â€¦nor straight at the database, nor switching anyone's invites on.
+  // â€¦nor an Owner straight at the database.
   const c = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     auth: { persistSession: false },
   });
@@ -174,14 +176,6 @@ test("an Owner lets an Admin invite: Admins, Users and Clients, never an Owner â
   // Not in the agency, so the fixture's sweep wouldn't find them.
   await admin.from("users").delete().eq("id", outsider.user!.id);
   await admin.auth.admin.deleteUser(outsider.user!.id);
-  const self = await c.from("memberships").update({ can_invite: true }).eq("id", second.membershipId).select("id");
-  expect(self.data ?? []).toHaveLength(0);
-
-  // Switched off again: no button.
-  await page.getByRole("button", { name: /^Second Admin: .+\. Change$/ }).click();
-  await page.getByRole("menuitem", { name: "Stop Them Inviting People" }).click();
-  await expect(page.getByRole("status")).toHaveText("Second Admin can no longer invite people");
-  expect((await admin.from("memberships").select("can_invite").eq("id", second.membershipId).single()).data!.can_invite).toBe(false);
 });
 
 // The Client Team list went from the client form (phase45): the people

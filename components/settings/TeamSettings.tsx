@@ -13,7 +13,7 @@ import { useAvatarUrls } from "@/hooks/use-avatar-urls";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import { initials } from "@/lib/initials";
 import { avatarColour } from "@/lib/avatar-colour";
-import { useRemoveMember, useRevokeInvite, useSetCanInvite, useSetMemberActive } from "@/hooks/use-manage-member";
+import { useRemoveMember, useRevokeInvite, useSetMemberActive } from "@/hooks/use-manage-member";
 import { InviteMemberModal } from "@/components/team/InviteMemberModal";
 import { InviteSentModal } from "@/components/team/InviteSentModal";
 import { useResendInvite, type SentInvite } from "@/hooks/use-invite-member";
@@ -25,7 +25,6 @@ import { errorMessage } from "@/lib/errors";
 import {
   ROLE_LABELS,
   canManageMember,
-  isOwnerOrAbove,
   rolesBelow,
   rolesICanInvite,
   seesAllClients,
@@ -99,7 +98,6 @@ export function TeamSettings({ view }: { view: View }) {
   const isStaff = myMembership?.client_id === null;
   // Everyone acts on the people below them (phase49). Deactivating,
   // removing and the "Can invite" switch stay an Owner's.
-  const isOwner = isStaff && isOwnerOrAbove(myMembership?.role);
   // Who may invite, and as what (phase44): Owners, and Admins they've let.
   const inviteRoles = rolesICanInvite(myMembership);
   // Client grants are only readable by Admin and above (RLS), so the Clients
@@ -118,7 +116,6 @@ export function TeamSettings({ view }: { view: View }) {
   const revoke = useRevokeInvite(agencyId ?? "");
   const resend = useResendInvite();
   const [resent, setResent] = useState<SentInvite | null>(null);
-  const setCanInvite = useSetCanInvite(agencyId ?? "");
 
   const [inviting, setInviting] = useState(false);
   const [peopleFilter, setPeopleFilter] = useState<"all" | "team" | "client">("all");
@@ -164,7 +161,8 @@ export function TeamSettings({ view }: { view: View }) {
         },
       ];
     }
-    if (!isOwner) return [];
+    // Whoever manages them (canManageMember, above): an Owner, or an Admin
+    // for Users and Clients (phase163, direct instruction).
     if (m.removed_at) {
       return [
         {
@@ -178,29 +176,7 @@ export function TeamSettings({ view }: { view: View }) {
         { label: "Remove from Team", tone: "danger" as const, onClick: () => setRemoveTarget(m) },
       ];
     }
-    // An Owner lets an active Admin invite people, or stops them.
-    const inviteSwitch =
-      m.role === "admin"
-        ? [
-            {
-              label: m.can_invite ? "Stop Them Inviting People" : "Let Them Invite People",
-              onClick: () =>
-                setCanInvite.mutate(
-                  { membershipId: m.id, canInvite: !m.can_invite },
-                  {
-                    onSuccess: () =>
-                      setNotice(
-                        m.can_invite
-                          ? `${displayName(m)} can no longer invite people`
-                          : `${displayName(m)} can now invite Admins, Users and Clients`,
-                      ),
-                  },
-                ),
-            },
-          ]
-        : [];
     return [
-      ...inviteSwitch,
       {
         label: "Deactivate",
         onClick: () =>
@@ -270,7 +246,6 @@ export function TeamSettings({ view }: { view: View }) {
     setActive.error ??
     revoke.error ??
     resend.error ??
-    setCanInvite.error ??
     updateMember.error ??
     (removeTarget ? null : remove.error);
   const peopleColumns = canSeeAccess ? PEOPLE_COLUMNS_WITH_CLIENTS : PEOPLE_COLUMNS;
@@ -479,11 +454,6 @@ export function TeamSettings({ view }: { view: View }) {
                     />
                   ) : (
                     <span className="tag blue">{ROLE_LABELS[m.role] ?? m.role}</span>
-                  )}
-                  {m.role === "admin" && m.can_invite && (
-                    <span className="tag" style={{ marginLeft: 6 }}>
-                      Can invite
-                    </span>
                   )}
                 </div>
                 <div>

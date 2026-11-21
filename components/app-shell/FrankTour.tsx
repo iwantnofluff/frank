@@ -134,7 +134,8 @@ export function FrankTour() {
   const { data: agency } = useMyAgency();
   const { data: membership } = useMyMembership(agency?.agencyId);
   const kind = tourKind(membership?.role, membership?.client_id);
-  const canInvite = isOwnerOrAbove(membership?.role) || !!membership?.can_invite;
+  // Owners and every Admin (phase163).
+  const canInvite = isOwnerOrAbove(membership?.role) || membership?.role === "admin";
   const { data: profile } = useMyProfile();
   const mark = useMarkTourSeen();
 
