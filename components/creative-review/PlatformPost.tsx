@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { DEFAULT_CTA, postTemplate } from "@/lib/post-templates";
 import { copyFieldsFor } from "@/lib/formats";
 import { StoryReplyBar } from "./StoryReplyBar";
-import { SafeZoneOverlay } from "./SafeZoneOverlay";
+import { SafeZoneContext, SafeZoneOverlay } from "./SafeZoneOverlay";
 import { safeZoneKind } from "@/lib/safe-zones";
 
 // A post as its platform shows it (decided directly), for the post page and
@@ -129,12 +129,14 @@ export function PlatformPost({
     </svg>
   );
 
-  // The artwork, with the zones over it when they're on.
+  // The artwork, with the zones over it when they're on; a video draws
+  // them in its own frame (VideoSafeZones), so they follow it when it's
+  // expanded, and this one stands aside (CSS).
   const shownMedia = (
-    <>
+    <SafeZoneContext.Provider value={zoneKind}>
       {media}
       {zoneKind && <SafeZoneOverlay kind={zoneKind} />}
-    </>
+    </SafeZoneContext.Provider>
   );
 
   // YouTube's Shorts: full screen, the title over the foot.

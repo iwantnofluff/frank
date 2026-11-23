@@ -98,7 +98,8 @@ test("Safe Zones is in Fullscreen only, over a Reel's playing video, with the Re
   await expect(post.locator(".safezones")).toHaveCount(0);
   await toggle.click();
   await expect(toggle).toHaveAttribute("aria-pressed", "true");
-  const zones = post.locator(".safezones");
+  // The video draws its own, in its frame.
+  const zones = post.locator(".vframe .safezones");
   await expect(zones.locator(".safezone-covered")).toHaveText(["Back and create", "Buttons", "Name and caption"]);
   // Exactly over the video's picture, and the video plays under it.
   const frame = (await post.locator(".vframe").boundingBox())!;
@@ -106,6 +107,17 @@ test("Safe Zones is in Fullscreen only, over a Reel's playing video, with the Re
   for (const k of ["x", "y", "width", "height"] as const) expect(Math.abs(over[k] - frame[k])).toBeLessThan(3);
   await post.getByRole("button", { name: "Play" }).click();
   await expect.poll(() => post.locator("video").evaluate((v) => (v as HTMLVideoElement).currentTime), { timeout: 10_000 }).toBeGreaterThan(0.3);
+  // The video expanded to fill the phone (reported directly: the zones
+  // stayed behind): they go with it, exactly over its frame.
+  await post.getByRole("button", { name: "Expand video" }).click();
+  const fullFrame = post.locator(".vplayer.full .vframe");
+  await expect(fullFrame.locator(".safezone-covered")).toHaveText(["Back and create", "Buttons", "Name and caption"]);
+  const big = (await fullFrame.boundingBox())!;
+  const bigOver = (await fullFrame.locator(".safezones").boundingBox())!;
+  for (const k of ["x", "y", "width", "height"] as const) expect(Math.abs(bigOver[k] - big[k])).toBeLessThan(3);
+  await expect(fullFrame.locator(".safezones")).toBeVisible();
+  await post.getByRole("button", { name: "Collapse video" }).click();
+  await expect(post.locator(".vplayer.full")).toHaveCount(0);
   // Out of Fullscreen: gone; back in, as it was left.
   await page.keyboard.press("Escape");
   await expect(zones).toHaveCount(0);

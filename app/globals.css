@@ -4001,6 +4001,16 @@ select.sort:hover {
   z-index: 5;
   pointer-events: none;
 }
+/* A video draws its own, exactly over its frame, expanded or not; the
+   post's one stands aside. */
+.ig-media:has(.vframe) > .safezones {
+  display: none;
+}
+.vframe > .safezones {
+  inset: 0;
+  width: auto;
+  aspect-ratio: auto;
+}
 .safezone-covered {
   position: absolute;
   display: flex;

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { formatVideoTime } from "@/lib/annotations";
 import { avatarColour } from "@/lib/avatar-colour";
+import { VideoSafeZones } from "./SafeZoneOverlay";
 
 export interface TimelineMarker {
   commentId: string;
@@ -184,6 +185,8 @@ export function VideoPlayer({
           <img className="vcover" src={cover} alt="" aria-hidden="true" />
         )}
         {overlay?.(time, paused)}
+        {/* Safe Zones, when the post page's Fullscreen has them on. */}
+        <VideoSafeZones />
       </div>
       <div className="vbar">
         <button type="button" className="vplay" aria-label="Back 10 seconds" title="Back 10 seconds" onClick={back10}>

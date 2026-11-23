@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.97.2",
+    date: "2026-11-23",
+    title: "Safe Zones on an expanded video",
+    changes: [
+      "In Fullscreen, Safe Zones now stays on when the video is expanded to fill the phone, laid exactly over it.",
+    ],
+  },
+  {
     version: "1.97.1",
     date: "2026-11-23",
     title: "Safe Zones in Fullscreen",

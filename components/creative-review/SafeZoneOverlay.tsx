@@ -1,6 +1,19 @@
 "use client";
 
+import { createContext, useContext } from "react";
 import { safeZones, type SafeZoneKind } from "@/lib/safe-zones";
+
+// Which zones are on, for a video player inside the post (VideoPlayer): it
+// draws them in its own frame, so they go wherever the video goes, the
+// expanded player included (reported directly: expanded, they were left
+// behind). null: off.
+export const SafeZoneContext = createContext<SafeZoneKind | null>(null);
+
+// The zones inside a video's frame, when they're on.
+export function VideoSafeZones() {
+  const kind = useContext(SafeZoneContext);
+  return kind ? <SafeZoneOverlay kind={kind} /> : null;
+}
 
 // Safe Zones over a vertical video or story (direct instruction): the
 // areas the platform covers with its own buttons and words, shaded and

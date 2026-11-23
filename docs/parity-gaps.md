@@ -5179,6 +5179,14 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Safe Zones on an expanded video (1.97.2, 2026-11-23)
+
+Reported directly, with screenshots: in Fullscreen with Safe Zones on, expanding the video (its own expand button) left the zones behind, under the expanded player. The overlay sat in the post's media, beside the player; the expanded player is positioned over the phone's screen. Now a video draws the zones in its own frame: PlatformPost provides which zones are on (`SafeZoneContext`), VideoPlayer renders `VideoSafeZones` inside `.vframe`, and the post's own overlay stands aside when the media has a video (`.ig-media:has(.vframe) > .safezones`). Images (a Story's picture) keep the post's overlay.
+
+- **Found, not fixed**: the post page intermittently logs "Hydration failed because the server rendered HTML didn't match the client" in development. Seen with and without this change (on the code before it, and in two of four runs after), so not this; React rebuilds the tree and nothing visible breaks. Its cause isn't traced yet.
+
+**Verified**: safe-zones.spec.ts: in Fullscreen with the zones on, Expand video: the three named areas inside the expanded player's frame, within 3px of it on every edge; Collapse puts it back. The test reads the video's own overlay. safe-zones, video-review and stories specs pass (10). A screenshot of the expanded Reel in Fullscreen showed the zones over it, the timeline under them.
+
 ## Safe Zones in Fullscreen (1.97.1, 2026-11-23)
 
 Reported directly, with screenshots of a Reel on an iPhone: the foot zone was far too big, and full-screen Reels hid the caption, which on the phone opens from "…" as a sheet. Decided directly: Reels back as they were, and Safe Zones offered once the post is full size.
