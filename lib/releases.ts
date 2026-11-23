@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.96.1",
+    date: "2026-11-23",
+    title: "A clearer PDF upload",
+    changes: [
+      "A carousel's slides take images as before. Uploading a PDF is now its own option under them, Or upload a PDF, with an Upload PDF button and how many pages the carousel takes.",
+    ],
+  },
+  {
     version: "1.96.0",
     date: "2026-11-23",
     title: "Carousels from a PDF",

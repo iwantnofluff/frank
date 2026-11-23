@@ -8886,6 +8886,24 @@ button.avatar {
 .note.warn.cslots-unsaved {
   margin: 10px 0 0;
 }
+/* A carousel's PDF, under its slides (CarouselSlots): the second way in,
+   set apart by a rule, its button at the end. */
+.cslots-pdf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+}
+.cslots-pdf .sub {
+  margin: 2px 0 0;
+}
+.cslots-pdf .btn {
+  flex-shrink: 0;
+}
 /* A quiet link under an auth card's main button ("Forgot password?"). */
 .authlink {
   display: block;

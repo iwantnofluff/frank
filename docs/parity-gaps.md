@@ -5179,6 +5179,12 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## A clearer PDF upload (1.96.1, 2026-11-23)
+
+Reported directly: the PDF option, folded into the slides' instructions ("Or drop a PDF…"), wasn't clear; images first, as before, then the PDF as its own option below. The slides' text and picker are back to images only; under the slots, `.cslots-pdf`: "Or upload a PDF", what happens (each page a slide, in order, the count following) and the most pages, with its own Upload PDF button and picker. A PDF dropped on the slots still works the same way. Carousels only: a story post has no PDF option.
+
+**Verified**: carousel-pdf.spec.ts now uploads through Upload PDF, checks the images text is as before and the PDF box's words and button, and that a story post has none; it passes (3 tests). A screenshot of a LinkedIn Carousel's Content tab showed the two slots, then the PDF box with its button at the end, then Save Creative.
+
 ## Carousels from a PDF (1.96.0, 2026-11-23)
 
 Asked directly: upload a PDF for a LinkedIn carousel, its pages becoming the slides. Decided: add PDF.js (`pdfjs-dist` 6.5.438, a new dependency, approved directly), for every carousel, and refuse a PDF with more pages than the post takes.

@@ -75,6 +75,8 @@ export function CarouselSlots({
   const baseline = useMemo(() => slotsFrom(latest, slideCount), [latest, slideCount]);
   const [slots, setSlots] = useState<Slot[]>(baseline);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Its own picker, for Upload PDF under the slides.
+  const pdfRef = useRef<HTMLInputElement>(null);
   const fillFrom = useRef(0);
   const dragFrom = useRef<number | null>(null);
 
@@ -212,7 +214,7 @@ export function CarouselSlots({
         ref={inputRef}
         type="file"
         multiple
-        accept={takesPdf ? `${ACCEPTED_FILE_EXTENSIONS},.pdf,application/pdf` : ACCEPTED_FILE_EXTENSIONS}
+        accept={ACCEPTED_FILE_EXTENSIONS}
         aria-label="Slide files"
         style={{ display: "none" }}
         onChange={(e) => {
@@ -224,13 +226,8 @@ export function CarouselSlots({
       <p className="sub" style={{ marginBottom: 8 }}>
         {single
           ? `Drop an image or video on the slot, or click it to browse. JPG, PNG, WebP, GIF up to ${MAX_UPLOAD_MB}MB; MP4 and MOV are compressed to 720p. Then press Save to add it as a new version.`
-          : `Drop several images to fill the ${many} in order, or add them one at a time.${takesPdf ? " Or drop a PDF: each page becomes a slide." : ""} Drag a ${one} onto another to swap them.`}
+          : `Drop several images to fill the ${many} in order, or add them one at a time. Drag a ${one} onto another to swap them.`}
       </p>
-      {readingPdf && (
-        <p className="note" role="status">
-          Turning the PDF&rsquo;s pages into slides…
-        </p>
-      )}
       <div
         className="cslots"
         aria-label="Slides"
@@ -309,6 +306,35 @@ export function CarouselSlots({
           </div>
         ))}
       </div>
+      {/* The other way in (direct instruction: images first, then this
+          under them): a PDF, a page a slide. */}
+      {takesPdf && (
+        <div className="cslots-pdf">
+          <input
+            ref={pdfRef}
+            type="file"
+            accept=".pdf,application/pdf"
+            aria-label="Slides PDF"
+            style={{ display: "none" }}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void placePdf(f);
+              e.target.value = "";
+            }}
+          />
+          <div>
+            <b>Or upload a PDF</b>
+            <p className="sub">
+              {readingPdf
+                ? "Turning its pages into slides…"
+                : `Each page becomes a slide, in order, and the number of slides changes to match. Up to ${maxSlides} pages.`}
+            </p>
+          </div>
+          <button type="button" className="btn sm" disabled={readingPdf || saving} onClick={() => pdfRef.current?.click()}>
+            Upload PDF
+          </button>
+        </div>
+      )}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 18 }}>
         <button
           type="button"

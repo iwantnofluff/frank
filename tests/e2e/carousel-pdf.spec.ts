@@ -45,9 +45,13 @@ test("a PDF's pages become a LinkedIn carousel's slides, the count following the
   await admin.from("creatives").update({ format: "li_doc", formats: ["li_doc"], slide_count: 2 }).eq("id", frank.creativeId);
   await frank.loginAsStaff(page);
   await openContent(page, frank.creativeId);
-  await expect(page.getByText("Or drop a PDF: each page becomes a slide.", { exact: false })).toBeVisible();
+  // Images first, as ever; the PDF its own option under the slides.
+  await expect(page.getByText("Drop several images to fill the slides in order", { exact: false })).toBeVisible();
+  await expect(page.locator(".cslots-pdf")).toContainText("Or upload a PDF");
+  await expect(page.locator(".cslots-pdf")).toContainText("Up to 20 pages.");
+  await expect(page.getByRole("button", { name: "Upload PDF" })).toBeVisible();
 
-  await page.locator('input[aria-label="Slide files"]').setInputFiles(pdf(3));
+  await page.locator('input[aria-label="Slides PDF"]').setInputFiles(pdf(3));
   await expect(page.locator('.cslots[aria-label="Slides"] .cslot.filled')).toHaveCount(3, { timeout: 30_000 });
   await page.getByRole("button", { name: "Save Creative V1" }).click();
   await expect(page.getByText("Saved as version 1.")).toBeVisible({ timeout: 30_000 });
@@ -60,12 +64,20 @@ test("a PDF's pages become a LinkedIn carousel's slides, the count following the
   expect(slides.every((s) => (s.asset as unknown as { mime_type: string }).mime_type === "image/jpeg")).toBe(true);
 });
 
+test("a story post has no PDF option", async ({ page, frank }) => {
+  await admin.from("creatives").update({ format: "ig_story", formats: ["ig_story"], slide_count: 3 }).eq("id", frank.creativeId);
+  await frank.loginAsStaff(page);
+  await openContent(page, frank.creativeId);
+  await expect(page.locator('.cslots[aria-label="Slides"] .cslot')).toHaveCount(3);
+  await expect(page.locator(".cslots-pdf")).toHaveCount(0);
+});
+
 test("a PDF with more pages than the carousel takes is refused, saying why", async ({ page, frank }) => {
   test.setTimeout(90_000);
   await admin.from("creatives").update({ format: "meta_carousel", formats: ["meta_carousel"], slide_count: 3 }).eq("id", frank.creativeId);
   await frank.loginAsStaff(page);
   await openContent(page, frank.creativeId);
-  await page.locator('input[aria-label="Slide files"]').setInputFiles(pdf(11));
+  await page.locator('input[aria-label="Slides PDF"]').setInputFiles(pdf(11));
   await expect(page.getByText("This PDF has 11 pages, and this carousel takes up to 10 slides. Nothing was added.")).toBeVisible({ timeout: 30_000 });
   await expect(page.locator('.cslots[aria-label="Slides"] .cslot.filled')).toHaveCount(0);
   expect((await admin.from("creatives").select("slide_count").eq("id", frank.creativeId).single()).data?.slide_count).toBe(3);
