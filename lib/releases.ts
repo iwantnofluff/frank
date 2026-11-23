@@ -13,6 +13,18 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.97.0",
+    date: "2026-11-23",
+    title: "Safe Zones for Reels, Stories and Shorts",
+    changes: [
+      "On a Reel, Story or Short's page, Safe Zones (under Fullscreen, for the team) shades the areas Instagram or YouTube cover with their own buttons and words, and outlines where text is safe. It stays over the video while it plays, so text can be checked all the way through.",
+      "Instagram Reels now show full screen, as the app does: the buttons down the right and the caption over the foot of the video.",
+      "Play and the timeline on a full-screen video (a Story, a Short, now a Reel) take clicks again; a drawing layer was covering them.",
+      "An expanded video Story or Reel now fills the whole phone screen, not the area under its top bar.",
+      "If Frank finishes proofreading while the Still Proofreading message is open, it now offers Close Post, rather than needing Save and Close again.",
+    ],
+  },
+  {
     version: "1.96.2",
     date: "2026-11-23",
     title: "Frank at work, in red",

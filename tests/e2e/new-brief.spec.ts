@@ -147,6 +147,8 @@ test("a post can have several formats, with all their copy fields, and closes wi
   await page.locator(".mtabbody .field > textarea.bin").first().fill("Copy with no creative yet.");
   await page.getByRole("button", { name: "Save Copy V1" }).click();
   await expect(page.getByText("Saved as version 1.")).toBeVisible();
+  // Not while Frank proofreads it (1.96.2): once that's done.
+  await expect(page.getByText("Frank is proofreading what you saved")).toHaveCount(0, { timeout: 60_000 });
   await page.getByRole("button", { name: "Save and Close" }).click();
   await expect(page.locator(".scrim")).toHaveCount(0);
 

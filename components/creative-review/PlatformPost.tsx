@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 import { DEFAULT_CTA, postTemplate } from "@/lib/post-templates";
 import { copyFieldsFor } from "@/lib/formats";
 import { StoryReplyBar } from "./StoryReplyBar";
+import { SafeZoneOverlay } from "./SafeZoneOverlay";
+import { safeZoneKind } from "@/lib/safe-zones";
 
 // A post as its platform shows it (decided directly), for the post page and
 // the review link, on a computer (in the phone) and on a phone (in its
@@ -23,6 +25,7 @@ export function PlatformPost({
   fallback,
   commentButton,
   footer,
+  safeZones = false,
 }: {
   format: string | null | undefined;
   // In the phone on a computer, or the phone's own card (where a Story is
@@ -42,9 +45,14 @@ export function PlatformPost({
   commentButton?: ReactNode;
   // Under the post: when it was uploaded.
   footer?: ReactNode;
+  // The platform's covered areas over a vertical post (SafeZoneOverlay),
+  // the team's switch on the post page.
+  safeZones?: boolean;
 }) {
   const t = postTemplate(format);
   const story = t.story && frame === "phone";
+  const reel = story && t.reel;
+  const zoneKind = story && safeZones ? safeZoneKind(format) : null;
   const raw = fields?.[t.textField]?.trim() ?? "";
   const text = raw ? (t.textField === "caption" && captionNode ? captionNode : <span>{raw}</span>) : null;
   // An ad's headline: the first, where the copy lists several, one a line
@@ -122,6 +130,36 @@ export function PlatformPost({
     </svg>
   );
 
+  // The artwork; a Reel's buttons and caption over it, as the app lays
+  // them (inside the video's frame, so they sit on it whatever the
+  // screen's height); and the zones over all of it when they're on.
+  const shownMedia = (
+    <>
+      {media}
+      {reel && (
+        <>
+          <div className="reel-acts" aria-hidden="true">
+            {heart}
+            {comment}
+            <svg viewBox="0 0 24 24">
+              <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+              <path d="M3 3v5h5" />
+            </svg>
+            {send}
+            <span className="dots">•••</span>
+          </div>
+          {(text || fallback) && (
+            <div className="ig-cap">
+              <b>{accountName}</b>
+              {text ?? fallback}
+            </div>
+          )}
+        </>
+      )}
+      {zoneKind && <SafeZoneOverlay kind={zoneKind} />}
+    </>
+  );
+
   // YouTube's Shorts: full screen, the title over the foot.
   if (t.platform === "youtube" && story) {
     return (
@@ -133,7 +171,7 @@ export function PlatformPost({
           </div>
           <span className="yt-sub">Subscribe</span>
         </div>
-        <div className="ig-media">{media}</div>
+        <div className="ig-media">{shownMedia}</div>
         <div className="yt-shorttitle">{text ?? fallback}</div>
       </div>
     );
@@ -617,7 +655,7 @@ export function PlatformPost({
   }
 
   return (
-    <div className={`ig${story ? " story" : ""}`} data-platform="instagram">
+    <div className={`ig${story ? " story" : ""}${reel ? " reel" : ""}`} data-platform="instagram">
       <div className="ig-h">
         {avatar}
         <div>
@@ -626,7 +664,7 @@ export function PlatformPost({
         </div>
         <div className="dots">•••</div>
       </div>
-      <div className="ig-media">{media}</div>
+      <div className="ig-media">{shownMedia}</div>
       {ctaBar}
       <div className="ig-acts">
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -638,8 +676,8 @@ export function PlatformPost({
           <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
         </svg>
       </div>
-      {story && !t.ad && <StoryReplyBar />}
-      {(text || fallback) && (
+      {story && !t.ad && !reel && <StoryReplyBar />}
+      {!reel && (text || fallback) && (
         <div className="ig-cap">
           <b>{accountName}</b>
           {text ?? fallback}

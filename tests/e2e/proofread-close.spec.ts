@@ -38,10 +38,12 @@ test("the post window stays open while Frank proofreads, saying why, and the wai
   await ask.getByRole("button", { name: "Close" }).click();
   await expect(page.getByRole("tab", { name: "Content" })).toBeVisible();
 
-  // Done: it closes as usual.
+  // Done while the window says so: Close Post closes the post.
+  await page.keyboard.press("Escape");
+  await expect(ask).toBeVisible();
   release();
-  await expect(wait).toHaveCount(0, { timeout: 15_000 });
-  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "Proofreading Done" })).toBeVisible({ timeout: 15_000 });
+  await page.getByRole("button", { name: "Close Post" }).click();
   await expect(page.locator(".modal")).toHaveCount(0);
 });
 

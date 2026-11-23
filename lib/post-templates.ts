@@ -25,6 +25,10 @@ export interface PostTemplate {
   platform: PostPlatform;
   // Full screen, one frame at a time (a Story, a Short).
   story: boolean;
+  // An Instagram Reel (direct instruction: full screen, as the app shows
+  // it): a Story's screen with Reels' buttons down the side and the
+  // caption over the foot, no reply bar.
+  reel: boolean;
   // A paid placement: Sponsored or Promoted, with a call to action.
   ad: boolean;
   // The copy field that is the post's main text.
@@ -40,7 +44,7 @@ type Def = Partial<Omit<PostTemplate, "platform">> & { platform: PostPlatform };
 const TEMPLATES: Record<string, Def> = {
   ig_feed: { platform: "instagram" },
   ig_carousel: { platform: "instagram" },
-  ig_reel: { platform: "instagram" },
+  ig_reel: { platform: "instagram", story: true, reel: true },
   ig_story: { platform: "instagram", story: true },
   meta_feed: { platform: "instagram", ad: true, textField: "primary" },
   meta_carousel: { platform: "instagram", ad: true, textField: "primary" },
@@ -85,7 +89,7 @@ const TEMPLATES: Record<string, Def> = {
 
 export function postTemplate(format: string | null | undefined): PostTemplate {
   const d: Def = (format && TEMPLATES[format]) || { platform: "instagram" };
-  return { story: false, ad: false, textField: "caption", textOnly: false, device: "phone", ...d };
+  return { story: false, reel: false, ad: false, textField: "caption", textOnly: false, device: "phone", ...d };
 }
 
 // Words only: the post page shows no artwork for these.

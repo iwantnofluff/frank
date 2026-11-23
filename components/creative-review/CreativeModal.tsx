@@ -3375,7 +3375,19 @@ export function CreativeModal(props: CreativeModalProps) {
         message={
           runProofread.isPending
             ? "Frank is still proofreading. Keep this window open until the suggestions are in, then close."
-            : "Frank has finished proofreading. Look over the suggestions, then close."
+            : "Frank has finished proofreading. Close now, or stay to look over the suggestions."
+        }
+        // Done while this was open: closing the post is one click away.
+        cancelLabel="Stay"
+        confirmLabel="Close Post"
+        tone="primary"
+        onConfirm={
+          runProofread.isPending
+            ? undefined
+            : () => {
+                setCloseAsk(null);
+                onClose();
+              }
         }
         onClose={() => setCloseAsk(null)}
       />

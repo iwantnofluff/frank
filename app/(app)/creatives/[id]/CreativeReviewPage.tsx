@@ -65,6 +65,7 @@ import { publishDate } from "@/lib/publish-date";
 import { OpenAsset } from "@/components/project/OpenAsset";
 import { lazyWindow } from "@/components/ui/lazyWindow";
 import { useWarmUp } from "@/components/ui/useWarmUp";
+import { safeZoneKind } from "@/lib/safe-zones";
 
 // Edit and Share open on a click: loaded then, not with the page (and
 // warmed once the page settles, so they still open at once).
@@ -120,6 +121,9 @@ export function CreativeReviewPage({ id }: { id: string }) {
   const phone = usePhoneScreen();
   // The phone full size over the page (direct instruction); Esc closes it.
   const [expanded, setExpanded] = useState(false);
+  // Safe Zones over a vertical post (direct instruction): the team's
+  // switch, off until turned on, kept while the post is open.
+  const [safeZonesOn, setSafeZonesOn] = useState(false);
   // Another of the post's formats picked to show it as (FormatSwitch).
   const [viewFormat, setViewFormat] = useState<string | null>(null);
   useEffect(() => {
@@ -1105,6 +1109,18 @@ export function CreativeReviewPage({ id }: { id: string }) {
                   </button>
                 </div>
               )}
+              {/* Safe Zones (direct instruction): for a Reel, Story or
+                  Short, what the app covers, over the playing video. The
+                  team's only. */}
+              {activeSection === "content" && isStaff && safeZoneKind(shownFormat) && (
+                <div className="vsel">
+                  <label htmlFor="vSafe">Safe Zones</label>
+                  <select id="vSafe" value={safeZonesOn ? "on" : "off"} onChange={(e) => setSafeZonesOn(e.target.value === "on")}>
+                    <option value="off">Off</option>
+                    <option value="on">On</option>
+                  </select>
+                </div>
+              )}
               {/* The final asset's link, once added (phase126, direct
                   instruction): under the pickers, the button alone, the
                   team's only. */}
@@ -1195,6 +1211,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
               <PlatformPost
                 format={shownFormat}
                 frame="phone"
+                safeZones={isStaff && safeZonesOn}
                 accountName={accountName}
                 // The connected Instagram's own picture, else the client's
                 // logo (direct instruction), else the ring.
