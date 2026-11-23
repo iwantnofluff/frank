@@ -28,6 +28,12 @@ test("Share for review shows at any status, and every post can be picked", async
   await expect(page.getByText("1 of 2 aren't in Client Review", { exact: false })).toBeVisible();
   await page.click('button:has-text("Create link")');
   await expect(page.locator(".linkrow code")).toBeVisible();
+  // Named for whose and what it is (direct instruction): the client, then
+  // the project for several posts, then the code; and it opens.
+  const link = (await page.locator(".linkrow code").textContent())!.trim();
+  expect(link).toMatch(/\/review\/[a-z0-9-]+\/[a-z0-9-]+\/[0-9a-f]{32}$/);
+  await page.goto(link);
+  await expect(page.locator(".dk-item, .rv-post").first()).toBeVisible({ timeout: 20_000 });
 });
 
 // The client reads a post shared before Client Review, and has their say

@@ -13,6 +13,24 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.94.0",
+    date: "2026-11-23",
+    title: "Clearer review links",
+    changes: [
+      "A review link's Also waiting for your review now leaves out posts the client has already given feedback on, until your team adds a new version. Then they're back, to review again.",
+      "A post the client commented on that has a new version since is no longer marked Commented. It's theirs to review again.",
+      "New review links are named for the client and the post, or the project when they're for several, such as /review/hapi-dental/sweet-tooth/…. Links already sent keep working.",
+    ],
+  },
+  {
+    version: "1.93.1",
+    date: "2026-11-23",
+    title: "Final Asset in line",
+    changes: [
+      "In the table's Creative column, the green Final Asset button now lines up with the buttons above it instead of sitting slightly in.",
+    ],
+  },
+  {
     version: "1.93.0",
     date: "2026-11-20",
     title: "Admins manage Users and Clients",

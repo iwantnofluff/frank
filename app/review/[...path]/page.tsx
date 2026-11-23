@@ -62,9 +62,13 @@ function UnavailableNotice() {
 export default function SharedReviewPage({
   params,
 }: {
-  params: Promise<{ token: string }>;
+  params: Promise<{ path: string[] }>;
 }) {
-  const { token } = use(params);
+  // The code is the link's last part; anything before it is the client's
+  // and post's names, for reading only (lib/review-link.ts). Links made
+  // before the names were added are the code alone.
+  const { path } = use(params);
+  const token = path[path.length - 1];
   const controller = useReviewController(token);
   const { data, isLoading, isError, setPasscode } = controller;
   const phone = usePhoneScreen();

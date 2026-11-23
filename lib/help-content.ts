@@ -475,7 +475,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       },
       { kind: "h", text: "Your team on the link" },
       { kind: "p", text: "Every link has Have an account? Log in. Signing in brings you back to the link. Anyone on your team who's signed in to Frank on that phone or computer sees the post's own comments on the link, Private ones too, and comments as themselves, with Private, On behalf of the client and @mentions, as on the post's page. There's no Approve for the team on a link; approve from the post's page." },
-      { kind: "p", text: "A link opens on the post or posts you sent it for, under Sent for review, even once the client has commented. Every link also lists the project's other posts in Client Review, after them, under Also waiting for your review." },
+      { kind: "p", text: "A link opens on the post or posts you sent it for, under Sent for review, even once the client has commented. Every link also lists the project's other posts in Client Review, after them, under Also waiting for your review. A post the client has already given feedback on is left out of that list until your team adds a new version of it. Links are named for the client and the post, or the project when they're for several." },
       { kind: "p", text: "Approved posts come last, from recent days only (14 by default; set in [Workspace Settings → General → Preferences](/settings/general/preferences)), though a link always keeps the posts it was sent for. Each post shows its date above its name." },
       { kind: "h", text: "What your client sees" },
       { kind: "p", text: "It's one link for every device." },

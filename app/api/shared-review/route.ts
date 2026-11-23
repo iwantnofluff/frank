@@ -125,6 +125,24 @@ export async function POST(request: Request) {
     .rpc("get_shared_review_feed", { p_token: token, p_passcode: passcode ?? null })
     .then(({ data: f }) => (f?.status === "ok" ? (f.feed as { id: string | null; name?: string | null; stage: number; reel: boolean }[]) : null));
 
+  // When each post last had a new version of anything the client reviews
+  // (artwork, copy, VO, Text on Image, a thumbnail), to tell whether the
+  // client's latest feedback has been worked on since (direct instruction:
+  // a post the client has given feedback on waits for its rework before
+  // it's listed again). Started now so it runs alongside the rest.
+  const reworkedPromise: Promise<Map<string, string>> =
+    serviceRole && ids.length
+      ? Promise.all(
+          (["creative_versions", "copy_versions", "production_versions", "thumbnail_versions"] as const).map((table) =>
+            serviceRole!.from(table).select("creative_id, created_at").in("creative_id", ids).then((r) => (r.data ?? []) as { creative_id: string; created_at: string }[]),
+          ),
+        ).then((lists) => {
+          const latest = new Map<string, string>();
+          for (const r of lists.flat()) if (Date.parse(r.created_at) > Date.parse(latest.get(r.creative_id) ?? "0")) latest.set(r.creative_id, r.created_at);
+          return latest;
+        }, () => new Map())
+      : Promise.resolve(new Map());
+
   // Everything that only needs the validated token, at once.
   const [creativeRows, anchorRows, versionRows, settings, clientLogo, prefs, reviewPrefs] = serviceRole
     ? await Promise.all([
@@ -314,6 +332,7 @@ export async function POST(request: Request) {
   }
   for (const list of slidesById.values()) list.sort((a, b) => a.position - b.position);
 
+  const reworkedAt = await reworkedPromise;
   const signedCreatives = creatives.map((raw) => {
     const asset = emptied.has(raw.id) ? null : raw.asset;
     return {
@@ -336,6 +355,15 @@ export async function POST(request: Request) {
           : null;
       })(),
       thumbnail_text: thumbTextById.get(raw.id) ?? null,
+      // The client's latest comment is newer than the post's latest
+      // version: their feedback is still to be worked on.
+      awaiting_rework: (() => {
+        const last = raw.comments.filter((m) => fromClientById.get(m.id)).at(-1)?.created_at;
+        // Compared as times: the function's JSON and PostgREST can write
+        // the same moment differently.
+        const since = reworkedAt.get(raw.id);
+        return !!last && (!since || Date.parse(last) > Date.parse(since));
+      })(),
       comments: raw.comments.map((m) => ({
         ...m,
         ...(viaById.has(m.id) ? { author_name: clientName, via: viaText(m.author_name, viaById.get(m.id)) } : {}),

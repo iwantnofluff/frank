@@ -12,6 +12,7 @@ import { resolveShareEligibility } from "@/lib/shared-link-eligibility";
 import { useProject } from "@/hooks/use-project";
 import { useClientPreferences } from "@/hooks/use-client-preferences";
 import { errorMessage } from "@/lib/errors";
+import { reviewLinkPath } from "@/lib/review-link";
 import { FeedTileArt, EmptyTileArt } from "@/components/creative-review/FeedTileArt";
 import { FeedCaptionPopover } from "@/components/creative-review/FeedCaptionPopover";
 import { isIdea } from "@/lib/stage-labels";
@@ -236,7 +237,11 @@ export function ShareModal({
       passcode: passcodeOn ? passcode : null,
       canApprove: canApprove && !approveLocked,
     });
-    setLink(`${window.location.origin}/review/${token}`);
+    // Named for whose and what it is (lib/review-link.ts): the client, then
+    // the post, or the project when it's for several.
+    const onePick = scope === "pick" && picked.size === 1 ? allCreatives?.find((c) => picked.has(c.id))?.name : null;
+    const title = scope === "one" ? currentName : (onePick ?? project?.name);
+    setLink(`${window.location.origin}${reviewLinkPath(token, brandName, title)}`);
   }
 
   return (

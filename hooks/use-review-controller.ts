@@ -86,9 +86,20 @@ export function useReviewController(token: string) {
   const sentIds = useMemo(() => new Set(data?.status === "ok" ? (data.sent_ids ?? []) : []), [data]);
   const [now] = useState(() => Date.now());
   const approvedDays = data?.status === "ok" ? (data.approved_days === undefined ? DEFAULT_APPROVED_DAYS : data.approved_days) : DEFAULT_APPROVED_DAYS;
+  // The other posts with the client's feedback still to be worked on, read
+  // from the first answer and kept (review-group.ts), so a post commented
+  // on now doesn't vanish from under them.
+  const [heldSaved, setHeld] = useState<Set<string> | null>(null);
+  const held = useMemo(
+    () =>
+      heldSaved ??
+      new Set(data?.status === "ok" ? data.creatives.filter((c) => c.awaiting_rework && !sentIds.has(c.id)).map((c) => c.id) : []),
+    [heldSaved, data, sentIds],
+  );
+  if (!heldSaved && data?.status === "ok") setHeld(held);
   const sections = useMemo(
-    () => reviewSections(data?.status === "ok" ? data.creatives : [], sentIds, now, approvedDays),
-    [data, sentIds, now, approvedDays],
+    () => reviewSections(data?.status === "ok" ? data.creatives : [], sentIds, now, approvedDays, held),
+    [data, sentIds, now, approvedDays, held],
   );
   const creatives: SharedCreative[] = useMemo(() => sections.flatMap((s) => s.items), [sections]);
   const isSent = (c: SharedCreative) => sentIds.has(c.id);

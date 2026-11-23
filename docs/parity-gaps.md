@@ -5179,6 +5179,22 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Clearer review links (1.94.0, 2026-11-23)
+
+Asked directly whether a review link's other waiting posts only showed once earlier feedback had been worked on: they didn't. Every post in Client Review was listed (shared_link_allowed_creative_ids, phase69), commented on or not, until the team moved it out of Client Review; asking for changes sets the exception but leaves the stage. Decided: a post the client has given feedback on leaves Also waiting for your review until the team adds a new version, and links carry the client's and post's names.
+
+- **Held posts**: /api/shared-review marks each post `awaiting_rework` when the client's latest comment (a guest's, a client member's, or one logged for the client) is newer than its latest version of anything the client reviews: artwork, copy, VO or Text on Image (production_versions), thumbnail. Designer notes don't count. The list leaves those out of Also waiting for your review, read once when the page opens, so a post the client comments on stays put until a reload. The post the link was sent for is never left out. `reviewGroup` now reads Commented from the same mark, so a reworked post is To review again, untagged, and the link opens on it before one still waiting on the team.
+- **Not changed**: a link to the whole project still lists every post in Client Review, with the feedback ones after, tagged Commented, since all of them are the posts it was made for. The posts stay reachable for commenting (no database change): only the list leaves them out. The share window's "It also shows the project's N other posts in Client Review" still counts them all.
+- **Named links**: `/review/<client>/<post>/<code>` (lib/review-link.ts), the project's name in place of the post's for several posts (or one picked). Only the code opens it; the page moved to `app/review/[...path]` and reads the last part, so links already sent (`/review/<code>`) keep working, and a renamed client or post doesn't break one. The names show in link previews and browser history, passcode or not.
+
+**Verified**: new spec in shared-review-public.spec.ts: with a one-post link, an untouched post is listed under Also waiting, a post with a client comment newer than its copy version isn't; after a second copy version it's back, with no Commented tag. share-eligibility.spec.ts now reads the link the share window makes, checks it's `/review/<name>/<name>/<32-hex code>`, and opens it. Both spec files pass locally (18 tests); review-link unit tests; tsc, eslint and the build clean.
+
+## Final Asset in line (1.93.1, 2026-11-23)
+
+The green Final Asset pill in the Creative column sat 6px in from Update Creative and Add Thumbnail above it (direct instruction: align it with the others). The green pills carried a left margin from when Approve Concept sat beside Edit on one line; the cell's buttons are now a wrapping flex row with its own 4px gap, so the margin only indented the green one when it wrapped. Removed; Approve Concept beside Edit keeps the row's gap.
+
+**Verified**: a throwaway spec on the local test app with artwork and a final asset link seeded: Update Creative and Final Asset both start at x 1642, and the cell's screenshot shows them flush.
+
 ## Admins manage Users and Clients (1.93.0, phase163, 2026-11-20)
 
 Direct instruction: let Admins add, edit and delete users. Audit first: an Admin could already change the type of and act on people below them in the database (can_manage_member, the memberships update policy), but the Team page gave them no Deactivate, Reactivate or Remove (owner-only in the page), and they could invite only after an Owner switched on "Can invite people" (phase44), off by default. Decided with the user (20 Nov 2026): every Admin invites, without the switch; and an Admin adds, edits and removes Users and Clients only, not Admins (Owners keep those).

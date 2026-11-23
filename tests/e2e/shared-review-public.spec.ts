@@ -430,6 +430,45 @@ test("shared review — a link for one post opens on it, the project's other wai
   await expect(page.locator(".dk-sec-h")).toHaveText(["Waiting for your review 3"]);
 });
 
+test("shared review — another post with the client's feedback still to be worked on is left out until a new version is up", async ({ page, frank }) => {
+  // Direct instruction: the extra posts a link shows should be ones the
+  // client hasn't given feedback on, or whose feedback has been worked on.
+  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const sent = await frank.createCreativeAtStage(4, "Zzz Sent Post");
+  const fresh = await frank.createCreativeAtStage(4, "Aaa Untouched Post");
+  const given = await frank.createCreativeAtStage(4, "Bbb Feedback Post");
+  await frank.createCopyVersion(given, 1, { caption: "First go" });
+  const { error: commentError } = await admin
+    .from("comments")
+    .insert({ creative_id: given, body: "Make it shorter", visibility: "public", guest_name: "Client Person" });
+  if (commentError) throw commentError;
+  const staffId = (await admin.from("users").select("id").eq("email", frank.staffEmail).single()).data!.id;
+  const token = `e2e-rework-${Date.now()}`;
+  const { error } = await admin.from("shared_links").insert({
+    project_id: frank.projectId, token, scope: "one", creative_id: sent,
+    requires_passcode: false, passcode_hash: null, can_approve: false, created_by: staffId,
+  });
+  if (error) throw error;
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(`/review/${token}`);
+  const also = page.locator(".dk-sec").nth(1);
+  await expect(page.locator(".dk-sec-h").nth(1)).toHaveText(/^Also waiting for your review/);
+  await expect(also.locator(".dk-item", { hasText: "Aaa Untouched Post" })).toBeVisible();
+  await expect(also.getByText("Bbb Feedback Post")).toHaveCount(0);
+
+  // The team puts up a new version: it's back, to review again, not marked
+  // Commented.
+  await new Promise((r) => setTimeout(r, 50));
+  await frank.createCopyVersion(given, 2, { caption: "Shorter" });
+  await page.reload();
+  const back = also.locator(".dk-item", { hasText: "Bbb Feedback Post" });
+  await expect(back).toBeVisible();
+  await expect(back.locator(".dk-tag")).toHaveCount(0);
+});
+
 test("shared review — the list's Approved goes back the workspace's days (14 by default), keeping what the link was sent for", async ({ page, frank }) => {
   // Direct instruction: a project's approved posts would make the list too
   // long after a while.

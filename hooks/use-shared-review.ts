@@ -38,6 +38,9 @@ export interface SharedCreative {
   // small_url: its small copy (lib/artwork-preview.ts), for the feed grid.
   thumbnail?: { version_no: number; filename: string; signed_url: string | null; small_url?: string | null } | null;
   thumbnail_text?: string | null;
+  // The client's latest comment is newer than its latest version: their
+  // feedback is still to be worked on (absent from an older answer).
+  awaiting_rework?: boolean;
   asset: {
     version_no: number;
     mime_type: string;

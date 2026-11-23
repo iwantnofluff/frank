@@ -6,9 +6,12 @@ import { STAGE } from "@/lib/stage-labels";
 // what's approved.
 export type ReviewGroup = "to_review" | "commented" | "approved";
 
+// Commented while the client's feedback is still to be worked on; once a
+// new version is up, it's theirs to review again (direct instruction).
 export function reviewGroup(c: SharedCreative): ReviewGroup {
   if (c.stage >= STAGE.approved) return "approved";
-  return c.comments.some((m) => m.from_client) ? "commented" : "to_review";
+  const commented = c.awaiting_rework ?? c.comments.some((m) => m.from_client);
+  return commented ? "commented" : "to_review";
 }
 
 // How far back the list's Approved goes (direct instruction: a project's
@@ -33,11 +36,16 @@ export interface ReviewSection {
 // ready for review yet: theirs to read, not comment on. Approved comes
 // last, newest first, only the last approvedDays (all of them when null).
 // Empty sections are left out. The page steps through posts in this order.
+// held: the other posts whose feedback the client gave and the team
+// hasn't worked on yet, left out of Also waiting for your review until a
+// new version is up (direct instruction). Read when the page opens, so a
+// post the client comments on now stays in the list until it's reloaded.
 export function reviewSections(
   all: SharedCreative[],
   sentIds: Set<string>,
   now: number,
   approvedDays: number | null = DEFAULT_APPROVED_DAYS,
+  held: Set<string> = new Set(),
 ): ReviewSection[] {
   const toReviewFirst = (list: SharedCreative[]) => [
     ...list.filter((c) => reviewGroup(c) === "to_review"),
@@ -52,7 +60,7 @@ export function reviewSections(
   const sections: ReviewSection[] = sentIds.size
     ? [
         { id: "sent", label: "Sent for review", items: toReviewFirst(inReview.filter((c) => sentIds.has(c.id))) },
-        { id: "also", label: "Also waiting for your review", items: toReviewFirst(inReview.filter((c) => !sentIds.has(c.id))) },
+        { id: "also", label: "Also waiting for your review", items: toReviewFirst(inReview.filter((c) => !sentIds.has(c.id) && !held.has(c.id))) },
       ]
     : [{ id: "waiting", label: "Waiting for your review", items: toReviewFirst(inReview) }];
   sections.push({ id: "early", label: "Not ready for review yet", items: early });
