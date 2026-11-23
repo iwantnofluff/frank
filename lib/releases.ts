@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.97.1",
+    date: "2026-11-23",
+    title: "Safe Zones in Fullscreen",
+    changes: [
+      "Reels are back as they were, with the caption under the video to read and comment on.",
+      "Safe Zones now sits in Fullscreen, beside its close button: open a Reel, Story or Short full size, then turn it on.",
+      "A Reel's zones are re-measured from Instagram on a phone: the top bar, the buttons down the right from halfway, and the name and caption in the last fifth. A paid Stories / Reels ad keeps Meta's larger ad zones.",
+    ],
+  },
+  {
     version: "1.97.0",
     date: "2026-11-23",
     title: "Safe Zones for Reels, Stories and Shorts",

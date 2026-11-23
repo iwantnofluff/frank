@@ -5179,6 +5179,18 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Safe Zones in Fullscreen (1.97.1, 2026-11-23)
+
+Reported directly, with screenshots of a Reel on an iPhone: the foot zone was far too big, and full-screen Reels hid the caption, which on the phone opens from "…" as a sheet. Decided directly: Reels back as they were, and Safe Zones offered once the post is full size.
+
+- **Reels**: the 1.97.0 full-screen layout is gone (`reel` removed from lib/post-templates.ts, its buttons and caption overlay and styles). A Reel is drawn as before: the video, then the caption to read and comment on. video-review.spec.ts's Reel expand test is back as it was.
+- **The switch**: "Safe Zones Off / On" in Fullscreen (the post page's full-size phone), left of its close button, in its look, red when on; the team's only, for Reel, Story and Short formats. Off the page itself. Leaving Fullscreen hides the zones; back in, as left.
+- **The overlay**: over the 9:16 picture at the top of the media (aspect-ratio 9/16 from the top), so it fits a full-screen Story or Short and a feed-drawn Reel alike, its timeline and caption below left clear.
+- **A Reel's zones, measured** from the screenshots (the video area above Instagram's bottom bar): "Back and create" the top 12%; "Buttons" a 12% column on the right from 48% down; "Name and caption" the last 20%, left of the buttons; safe area 12–80% down, 4–88% across. Meta's ad figures (14% / 35% / 6%) were for ads, where the call to action takes the foot: kept for Meta Stories / Reels Ad only (`reelAd`). Stories and Shorts unchanged.
+- **Kept from 1.97.0**: Play and the timeline above the drawing layer on full-screen videos; an expanded full-screen video filling the phone's screen; Close Post once a proofread finishes.
+
+**Verified**: safe-zones.spec.ts rewritten: the Reel shows its caption under the video and isn't full screen; no switch on the page; in Fullscreen, "Safe Zones Off", on: "Back and create", "Buttons", "Name and caption", the overlay within 3px of the video's frame on every edge, the video playing under it; Escape hides it, back in it's on, off again. A Story and a Short show theirs in Fullscreen; a feed post and a client have no switch there. Unit tests for the new figures (the organic foot 20%, the safe area ending at 80%). With video-review and stories specs: 10 pass. Screenshots: the page as before; Fullscreen with the zones over the Reel, the switch beside the close button.
+
 ## Safe Zones for Reels, Stories and Shorts (1.97.0, 2026-11-23)
 
 Asked directly: a way to check text placement through a story or reel's video, as text was landing under Instagram's own "Following / For you" bar. Decided: guides the team toggles over the playing video; every vertical format; Reels drawn full screen as the app does.

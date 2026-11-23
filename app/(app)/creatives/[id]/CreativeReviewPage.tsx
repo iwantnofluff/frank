@@ -122,7 +122,9 @@ export function CreativeReviewPage({ id }: { id: string }) {
   // The phone full size over the page (direct instruction); Esc closes it.
   const [expanded, setExpanded] = useState(false);
   // Safe Zones over a vertical post (direct instruction): the team's
-  // switch, off until turned on, kept while the post is open.
+  // switch, in Fullscreen only (reported directly: the post as it was, the
+  // zones once it's full size); off until turned on, kept while the post
+  // is open.
   const [safeZonesOn, setSafeZonesOn] = useState(false);
   // Another of the post's formats picked to show it as (FormatSwitch).
   const [viewFormat, setViewFormat] = useState<string | null>(null);
@@ -1109,18 +1111,6 @@ export function CreativeReviewPage({ id }: { id: string }) {
                   </button>
                 </div>
               )}
-              {/* Safe Zones (direct instruction): for a Reel, Story or
-                  Short, what the app covers, over the playing video. The
-                  team's only. */}
-              {activeSection === "content" && isStaff && safeZoneKind(shownFormat) && (
-                <div className="vsel">
-                  <label htmlFor="vSafe">Safe Zones</label>
-                  <select id="vSafe" value={safeZonesOn ? "on" : "off"} onChange={(e) => setSafeZonesOn(e.target.value === "on")}>
-                    <option value="off">Off</option>
-                    <option value="on">On</option>
-                  </select>
-                </div>
-              )}
               {/* The final asset's link, once added (phase126, direct
                   instruction): under the pickers, the button alone, the
                   team's only. */}
@@ -1187,6 +1177,20 @@ export function CreativeReviewPage({ id }: { id: string }) {
                   </svg>
                 </button>
               )}
+              {/* Safe Zones, beside the close button: for a Reel, Story or
+                  Short, what the app covers, over the playing video. The
+                  team's only. */}
+              {expanded && isStaff && safeZoneKind(shownFormat) && (
+                <button
+                  type="button"
+                  className="pexpand-zones"
+                  aria-pressed={safeZonesOn}
+                  title="Where the app's own buttons and words sit over the post"
+                  onClick={() => setSafeZonesOn((on) => !on)}
+                >
+                  Safe Zones {safeZonesOn ? "On" : "Off"}
+                </button>
+              )}
               <PhoneFrame device={tablet ? "tablet" : "phone"} orientation={orientation} reserveX={tablet ? 320 : 0} scale={0.85} reserve={PNAV_CURRENT_H + (postFormats(creative).length > 3 ? 10 : 0) + (hasScrollHint(postFormats(creative)) ? 46 : 0)} fill={expanded}>
               {/* The phone's "Posts" bar, back to the feed; not on an iPad
                   (reported directly: it's Instagram's, not the iPad's). */}
@@ -1211,7 +1215,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
               <PlatformPost
                 format={shownFormat}
                 frame="phone"
-                safeZones={isStaff && safeZonesOn}
+                safeZones={isStaff && expanded && safeZonesOn}
                 accountName={accountName}
                 // The connected Instagram's own picture, else the client's
                 // logo (direct instruction), else the ring.

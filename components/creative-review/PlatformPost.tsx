@@ -45,14 +45,13 @@ export function PlatformPost({
   commentButton?: ReactNode;
   // Under the post: when it was uploaded.
   footer?: ReactNode;
-  // The platform's covered areas over a vertical post (SafeZoneOverlay),
-  // the team's switch on the post page.
+  // The platform's covered areas over a vertical post (SafeZoneOverlay):
+  // the team's switch in the post page's Fullscreen.
   safeZones?: boolean;
 }) {
   const t = postTemplate(format);
   const story = t.story && frame === "phone";
-  const reel = story && t.reel;
-  const zoneKind = story && safeZones ? safeZoneKind(format) : null;
+  const zoneKind = safeZones && frame === "phone" ? safeZoneKind(format) : null;
   const raw = fields?.[t.textField]?.trim() ?? "";
   const text = raw ? (t.textField === "caption" && captionNode ? captionNode : <span>{raw}</span>) : null;
   // An ad's headline: the first, where the copy lists several, one a line
@@ -130,32 +129,10 @@ export function PlatformPost({
     </svg>
   );
 
-  // The artwork; a Reel's buttons and caption over it, as the app lays
-  // them (inside the video's frame, so they sit on it whatever the
-  // screen's height); and the zones over all of it when they're on.
+  // The artwork, with the zones over it when they're on.
   const shownMedia = (
     <>
       {media}
-      {reel && (
-        <>
-          <div className="reel-acts" aria-hidden="true">
-            {heart}
-            {comment}
-            <svg viewBox="0 0 24 24">
-              <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
-              <path d="M3 3v5h5" />
-            </svg>
-            {send}
-            <span className="dots">•••</span>
-          </div>
-          {(text || fallback) && (
-            <div className="ig-cap">
-              <b>{accountName}</b>
-              {text ?? fallback}
-            </div>
-          )}
-        </>
-      )}
       {zoneKind && <SafeZoneOverlay kind={zoneKind} />}
     </>
   );
@@ -655,7 +632,7 @@ export function PlatformPost({
   }
 
   return (
-    <div className={`ig${story ? " story" : ""}${reel ? " reel" : ""}`} data-platform="instagram">
+    <div className={`ig${story ? " story" : ""}`} data-platform="instagram">
       <div className="ig-h">
         {avatar}
         <div>
@@ -676,8 +653,8 @@ export function PlatformPost({
           <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
         </svg>
       </div>
-      {story && !t.ad && !reel && <StoryReplyBar />}
-      {!reel && (text || fallback) && (
+      {story && !t.ad && <StoryReplyBar />}
+      {(text || fallback) && (
         <div className="ig-cap">
           <b>{accountName}</b>
           {text ?? fallback}

@@ -3,8 +3,8 @@ import type { Page } from "@playwright/test";
 import { test, expect, APP_URL, type Frank } from "./fixtures";
 
 // Safe Zones (direct instruction): for a Reel, Story or Short, the team
-// turns on what the app covers, over the playing video; a Reel is drawn
-// full screen, as Instagram shows it.
+// turns on what the app covers, over the playing video, in Fullscreen
+// (reported directly: the post as it was, the zones once it's full size).
 const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
@@ -73,35 +73,45 @@ async function seedReel(page: Page, frank: Frank) {
   return version!.id as string;
 }
 
-test("a Reel is full screen, and Safe Zones shows what Instagram covers over the playing video", async ({ page, frank }) => {
+async function fullscreen(page: Page) {
+  await page.getByRole("button", { name: "See the phone full size" }).click();
+  await expect(page.getByRole("dialog", { name: "The post full size" })).toBeVisible();
+}
+
+test("Safe Zones is in Fullscreen only, over a Reel's playing video, with the Reel as it was", async ({ page, frank }) => {
   test.setTimeout(120_000);
   await seedReel(page, frank);
   await frank.createCopyVersion(frank.creativeId, 1, { caption: "Bakers know that a lot goes into one cake." });
   await page.setViewportSize({ width: 1440, height: 900 });
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
-  const reel = page.locator(".ig.story.reel");
-  await expect(reel).toBeVisible({ timeout: 20_000 });
-  // Instagram's Reel: buttons down the side, the caption over the foot, no reply bar.
-  await expect(reel.locator(".reel-acts")).toBeVisible();
-  await expect(reel.locator(".ig-cap")).toContainText("Bakers know that a lot goes into one cake.");
-  await expect(reel.locator(".ig-reply")).toHaveCount(0);
+  // The Reel as before: the caption under the video, readable.
+  const post = page.locator('.ig[data-platform="instagram"]');
+  await expect(post.locator(".ig-cap")).toContainText("Bakers know that a lot goes into one cake.", { timeout: 20_000 });
+  await expect(post).not.toHaveClass(/story/);
+  // No switch on the page itself.
+  await expect(page.getByRole("button", { name: /^Safe Zones/ })).toHaveCount(0);
 
-  // Off to begin with; on, the three covered areas over the video.
-  const zones = reel.locator(".safezones");
-  await expect(zones).toHaveCount(0);
-  await page.getByLabel("Safe Zones").selectOption("on");
-  await expect(zones.locator(".safezone-covered")).toHaveText(["Account and menu", "Buttons", "Name, caption and audio"]);
-  await expect(zones.locator(".safezone-safe")).toHaveCount(1);
-  // Laid over the video's own frame, and the video still plays under it.
-  const media = (await reel.locator(".ig-media").boundingBox())!;
+  await fullscreen(page);
+  const toggle = page.getByRole("button", { name: /^Safe Zones/ });
+  await expect(toggle).toHaveText("Safe Zones Off");
+  await expect(post.locator(".safezones")).toHaveCount(0);
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-pressed", "true");
+  const zones = post.locator(".safezones");
+  await expect(zones.locator(".safezone-covered")).toHaveText(["Back and create", "Buttons", "Name and caption"]);
+  // Exactly over the video's picture, and the video plays under it.
+  const frame = (await post.locator(".vframe").boundingBox())!;
   const over = (await zones.boundingBox())!;
-  expect(Math.abs(over.width - media.width)).toBeLessThan(2);
-  expect(Math.abs(over.height - media.height)).toBeLessThan(2);
-  await reel.getByRole("button", { name: "Play" }).click();
-  await expect.poll(() => reel.locator("video").evaluate((v) => (v as HTMLVideoElement).currentTime), { timeout: 10_000 }).toBeGreaterThan(0.3);
-  // Off again.
-  await page.getByLabel("Safe Zones").selectOption("off");
+  for (const k of ["x", "y", "width", "height"] as const) expect(Math.abs(over[k] - frame[k])).toBeLessThan(3);
+  await post.getByRole("button", { name: "Play" }).click();
+  await expect.poll(() => post.locator("video").evaluate((v) => (v as HTMLVideoElement).currentTime), { timeout: 10_000 }).toBeGreaterThan(0.3);
+  // Out of Fullscreen: gone; back in, as it was left.
+  await page.keyboard.press("Escape");
+  await expect(zones).toHaveCount(0);
+  await fullscreen(page);
+  await expect(zones.locator(".safezone-covered")).toHaveCount(3);
+  await toggle.click();
   await expect(zones).toHaveCount(0);
 });
 
@@ -112,24 +122,27 @@ test("a Story and a Short have their own zones; a feed post and a client have no
   await page.setViewportSize({ width: 1440, height: 900 });
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
-  await page.getByLabel("Safe Zones").selectOption("on");
+  await fullscreen(page);
+  await page.getByRole("button", { name: /^Safe Zones/ }).click();
   await expect(page.locator(".ig.story .safezone-covered")).toHaveText(["Account and progress", "Reply bar or call to action"]);
 
   await admin.from("creatives").update({ format: "yt_short", formats: ["yt_short"] }).eq("id", frank.creativeId);
   await page.reload();
-  await page.getByLabel("Safe Zones").selectOption("on");
+  await fullscreen(page);
+  await page.getByRole("button", { name: /^Safe Zones/ }).click();
   await expect(page.locator(".yt-short .safezone-covered")).toHaveText(["Search and menu", "Buttons", "Channel, title and audio"]);
 
   await admin.from("creatives").update({ format: "ig_feed", formats: ["ig_feed"] }).eq("id", frank.creativeId);
   await page.reload();
-  await expect(page.locator(".ig")).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByLabel("Safe Zones")).toHaveCount(0);
+  await fullscreen(page);
+  await expect(page.getByRole("button", { name: /^Safe Zones/ })).toHaveCount(0);
 
-  // A client sees the post, never the switch.
+  // A client sees the post full size, never the switch.
   await admin.from("creatives").update({ format: "ig_story", formats: ["ig_story"], stage: 4 }).eq("id", frank.creativeId);
   const client = await (await browser.newContext({ viewport: { width: 1440, height: 900 } })).newPage();
   await frank.loginAsClient(client);
   await client.goto(`${APP_URL}/creatives/${frank.creativeId}`);
   await expect(client.locator(".ig.story")).toBeVisible({ timeout: 20_000 });
-  await expect(client.getByLabel("Safe Zones")).toHaveCount(0);
+  await fullscreen(client);
+  await expect(client.getByRole("button", { name: /^Safe Zones/ })).toHaveCount(0);
 });
