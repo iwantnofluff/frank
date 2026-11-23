@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.94.1",
+    date: "2026-11-23",
+    title: "A share count that matches the link",
+    changes: [
+      "The Share for Review window's \"It also shows the project's other posts\" now counts only the posts the client will see under Also waiting for your review, leaving out ones whose feedback your team hasn't worked on yet.",
+    ],
+  },
+  {
     version: "1.94.0",
     date: "2026-11-23",
     title: "Clearer review links",

@@ -19,14 +19,15 @@ export interface ShareEligibility {
    * but not comment, approve or ask for changes until they are. */
   readOnlyCount: number;
   /** Posts in Client Review the scope didn't choose, which every link
-   * shows anyway (phase69). */
+   * shows anyway (phase69), less those held back with the client's
+   * feedback still to be worked on (lib/awaiting-rework.ts). */
   alsoInClientReview: number;
 }
 
 export function resolveShareEligibility(
   creatives: EligibilityCreative[],
   scope: ShareScope,
-  options: { currentCreativeId?: string; pickedIds?: string[] } = {},
+  options: { currentCreativeId?: string; pickedIds?: string[]; heldIds?: Set<string> } = {},
 ): ShareEligibility {
   let candidates: EligibilityCreative[];
   switch (scope) {
@@ -48,6 +49,8 @@ export function resolveShareEligibility(
   return {
     candidateCount: candidates.length,
     readOnlyCount: candidates.filter((c) => c.stage !== STAGE.review).length,
-    alsoInClientReview: creatives.filter((c) => c.stage === STAGE.review && !chosen.has(c.id)).length,
+    // A link to the whole project lists its held posts too (they're what
+    // it was made for), but they're its candidates, never counted here.
+    alsoInClientReview: creatives.filter((c) => c.stage === STAGE.review && !chosen.has(c.id) && !options.heldIds?.has(c.id)).length,
   };
 }

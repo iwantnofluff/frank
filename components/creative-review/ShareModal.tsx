@@ -13,9 +13,12 @@ import { useProject } from "@/hooks/use-project";
 import { useClientPreferences } from "@/hooks/use-client-preferences";
 import { errorMessage } from "@/lib/errors";
 import { reviewLinkPath } from "@/lib/review-link";
+import { awaitingRework } from "@/lib/awaiting-rework";
+import { useLatestFeedbackByCreative } from "@/hooks/use-latest-feedback-by-creative";
+import { useLatestVersionAt } from "@/hooks/use-latest-version-at";
 import { FeedTileArt, EmptyTileArt } from "@/components/creative-review/FeedTileArt";
 import { FeedCaptionPopover } from "@/components/creative-review/FeedCaptionPopover";
-import { isIdea } from "@/lib/stage-labels";
+import { isIdea, STAGE } from "@/lib/stage-labels";
 
 const GRID_SLOTS = 9;
 
@@ -190,20 +193,33 @@ export function ShareModal({
   // enforcement (the database is the real gate), just telling staff what
   // the link will show and what the client can only read (phase150: any
   // status shows; the client has their say in Client Review).
+  // The Client Review posts a link would leave out of Also waiting for
+  // your review: the client's feedback still to be worked on, worked out
+  // as the link does (lib/awaiting-rework.ts), so the count below matches
+  // what the client sees.
+  const inReviewIds = useMemo(() => creatives.filter((c) => c.stage === STAGE.review).map((c) => c.id), [creatives]);
+  const { data: clientFeedback } = useLatestFeedbackByCreative(inReviewIds);
+  const { data: versionAt } = useLatestVersionAt(inReviewIds);
+  const heldIds = useMemo(
+    () => new Set(inReviewIds.filter((id) => awaitingRework(clientFeedback?.[id]?.all[0]?.createdAt, versionAt?.[id]))),
+    [inReviewIds, clientFeedback, versionAt],
+  );
   const eligibility = useMemo(
     () =>
       resolveShareEligibility(creatives, scope, {
         currentCreativeId,
         pickedIds: Array.from(picked),
+        heldIds,
       }),
-    [creatives, scope, currentCreativeId, picked],
+    [creatives, scope, currentCreativeId, picked, heldIds],
   );
   const eligibilityNote = useMemo(() => {
     const { candidateCount, readOnlyCount, alsoInClientReview } = eligibility;
-    // Every link also carries the project's Client Review posts (phase69).
+    // Every link also carries the project's Client Review posts (phase69),
+    // less those held back with feedback still to be worked on.
     const also =
       alsoInClientReview > 0
-        ? ` It also shows the project's ${alsoInClientReview === 1 ? "other post" : `${alsoInClientReview} other posts`} in Client Review, as every link does.`
+        ? ` It also shows the project's ${alsoInClientReview === 1 ? "other post" : `${alsoInClientReview} other posts`} waiting for the client's review, as every link does.`
         : "";
     // "pick" with nothing checked yet already has its own cue (the "0
     // selected" hint and the disabled Create link button).

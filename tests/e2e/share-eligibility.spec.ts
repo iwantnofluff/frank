@@ -136,3 +136,29 @@ test("a teammate signs in from a link, comes back to it, and sees a resolve at o
   await expect(card).toHaveClass(/resolved/, { timeout: 5_000 });
   console.log(`resolve showed on the link after ${Date.now() - sent}ms`);
 });
+
+// The note's count is what the link's Also waiting for your review will
+// list (direct instruction): a post with the client's feedback still to be
+// worked on isn't counted until it has a new version.
+test("the share window doesn't count a post held back with feedback still to be worked on", async ({ page, frank }) => {
+  test.setTimeout(90_000);
+  await admin.from("creatives").update({ stage: 4 }).eq("id", frank.creativeId);
+  await frank.createCreativeAtStage(4, "Aaa Untouched Post");
+  const held = await frank.createCreativeAtStage(4, "Bbb Feedback Post");
+  await frank.createCopyVersion(held, 1, { caption: "First go" });
+  const { error } = await admin.from("comments").insert({ creative_id: held, body: "Make it shorter", visibility: "public", guest_name: "Client Person" });
+  if (error) throw error;
+
+  await frank.loginAsStaff(page);
+  const share = async () => {
+    await page.goto(`/creatives/${frank.creativeId}`);
+    await page.waitForSelector(".stage-h");
+    await page.getByRole("button", { name: "Share for review" }).click();
+  };
+  await share();
+  await expect(page.getByText("It also shows the project's other post waiting for the client's review, as every link does.")).toBeVisible();
+
+  await frank.createCopyVersion(held, 2, { caption: "Shorter" });
+  await share();
+  await expect(page.getByText("It also shows the project's 2 other posts waiting for the client's review, as every link does.")).toBeVisible();
+});

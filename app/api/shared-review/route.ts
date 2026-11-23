@@ -5,6 +5,7 @@ import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { viaText } from "@/lib/comment-for-client";
 import { brandingAllowed } from "@/lib/plans";
 import { previewKey, thumbKey } from "@/lib/artwork-preview";
+import { awaitingRework, latestByCreative, REWORK_VERSION_TABLES } from "@/lib/awaiting-rework";
 
 interface RpcCreative {
   id: string;
@@ -133,14 +134,10 @@ export async function POST(request: Request) {
   const reworkedPromise: Promise<Map<string, string>> =
     serviceRole && ids.length
       ? Promise.all(
-          (["creative_versions", "copy_versions", "production_versions", "thumbnail_versions"] as const).map((table) =>
+          REWORK_VERSION_TABLES.map((table) =>
             serviceRole!.from(table).select("creative_id, created_at").in("creative_id", ids).then((r) => (r.data ?? []) as { creative_id: string; created_at: string }[]),
           ),
-        ).then((lists) => {
-          const latest = new Map<string, string>();
-          for (const r of lists.flat()) if (Date.parse(r.created_at) > Date.parse(latest.get(r.creative_id) ?? "0")) latest.set(r.creative_id, r.created_at);
-          return latest;
-        }, () => new Map())
+        ).then((lists) => latestByCreative(lists.flat()), () => new Map())
       : Promise.resolve(new Map());
 
   // Everything that only needs the validated token, at once.
@@ -357,13 +354,7 @@ export async function POST(request: Request) {
       thumbnail_text: thumbTextById.get(raw.id) ?? null,
       // The client's latest comment is newer than the post's latest
       // version: their feedback is still to be worked on.
-      awaiting_rework: (() => {
-        const last = raw.comments.filter((m) => fromClientById.get(m.id)).at(-1)?.created_at;
-        // Compared as times: the function's JSON and PostgREST can write
-        // the same moment differently.
-        const since = reworkedAt.get(raw.id);
-        return !!last && (!since || Date.parse(last) > Date.parse(since));
-      })(),
+      awaiting_rework: awaitingRework(raw.comments.filter((m) => fromClientById.get(m.id)).at(-1)?.created_at, reworkedAt.get(raw.id)),
       comments: raw.comments.map((m) => ({
         ...m,
         ...(viaById.has(m.id) ? { author_name: clientName, via: viaText(m.author_name, viaById.get(m.id)) } : {}),

@@ -61,3 +61,15 @@ test("every scope also shows the project's other Client Review posts (phase69)",
   assert.equal(resolveShareEligibility(more, "pending").alsoInClientReview, 0);
   assert.equal(resolveShareEligibility(more, "all").alsoInClientReview, 0);
 });
+
+test("posts held back with the client's feedback still to be worked on aren't counted as also shown", () => {
+  const creatives = [
+    { id: "sent", stage: 4 },
+    { id: "fresh", stage: 4 },
+    { id: "held", stage: 4 },
+  ];
+  const r = resolveShareEligibility(creatives, "one", { currentCreativeId: "sent", heldIds: new Set(["held"]) });
+  assert.equal(r.alsoInClientReview, 1);
+  // The post the link is for counts as chosen, held or not.
+  assert.equal(resolveShareEligibility(creatives, "one", { currentCreativeId: "held", heldIds: new Set(["held"]) }).alsoInClientReview, 2);
+});
