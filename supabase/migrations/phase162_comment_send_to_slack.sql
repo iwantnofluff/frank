@@ -9,7 +9,10 @@
 --
 -- comments_queue_slack is phase154's, with the one check added at its top.
 
-alter table comments add column send_to_slack boolean not null default true;
+-- "if not exists" (23 Nov 2026): live saved comments unticked from Slack
+-- with "Could not find the 'send_to_slack' column", so this is safe to run
+-- again wherever it may not have.
+alter table comments add column if not exists send_to_slack boolean not null default true;
 
 create or replace function comments_queue_slack()
 returns trigger
