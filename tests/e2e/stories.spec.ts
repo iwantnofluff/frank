@@ -74,3 +74,42 @@ test("a story post takes a number of stories, an upload and Text on Image for ea
   await page.getByRole("button", { name: "Next story" }).click();
   await expect(page.locator(".ig.story .story-bars i.on")).toHaveCount(2);
 });
+
+// Reported directly: a new post of a single story was refused ("violates
+// check constraint creatives_slide_count_check"), the count's 2–20 being a
+// carousel's. One story is saved with no count, as a single piece, and a
+// set going back down to one does the same.
+test("a post of one story is created, and a set brought down to one is saved", async ({ page, frank }) => {
+  test.setTimeout(90_000);
+  await frank.loginAsStaff(page);
+  await page.goto(`${APP_URL}/projects/${frank.projectId}`);
+  await page.waitForSelector(".tblwrap, .empty");
+  await page.getByRole("button", { name: "New Post", exact: true }).click();
+  await page.fill("#nbName", "One Story E2E");
+  await page.fill("#nbDate", "2027-03-12");
+  await page.click("#nbFmt");
+  await page.getByRole("dialog", { name: "Formats" }).getByRole("checkbox", { name: "Instagram Story" }).click();
+  await page.keyboard.press("Escape");
+  await expect(page.getByLabel(/^Stories/)).toHaveValue("1");
+  await page.click('button:has-text("Create Post")');
+  await expect(page.getByRole("tab", { name: "Content" })).toBeEnabled();
+  await expect(page.getByText(/violates check constraint/)).toHaveCount(0);
+  const made = (await admin.from("creatives").select("id, slide_count, formats").eq("project_id", frank.projectId).eq("name", "One Story E2E").single()).data!;
+  expect(made.slide_count).toBeNull();
+  expect(made.formats).toEqual(["ig_story"]);
+  // Read back as one story.
+  await page.getByRole("tab", { name: "Brief" }).click();
+  await expect(page.getByLabel(/^Stories/)).toHaveValue("1");
+  await page.keyboard.press("Escape");
+
+  // Three, then back to one.
+  await admin.from("creatives").update({ format: "ig_story", formats: ["ig_story"], slide_count: 3 }).eq("id", frank.creativeId);
+  await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
+  await page.locator(".btn.primary", { hasText: /^Edit$/ }).click();
+  await page.getByRole("tab", { name: "Brief" }).click();
+  await expect(page.getByLabel(/^Stories/)).toHaveValue("3");
+  await page.getByLabel(/^Stories/).selectOption("1");
+  await page.getByRole("button", { name: "Update" }).click();
+  await expect.poll(async () => (await admin.from("creatives").select("slide_count").eq("id", frank.creativeId).single()).data?.slide_count).toBeNull();
+  await expect(page.getByText(/violates check constraint/)).toHaveCount(0);
+});

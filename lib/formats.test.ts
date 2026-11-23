@@ -2,7 +2,7 @@
 // (or `npm run test:unit`).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { FORMATS, FORMAT_CATEGORIES, formatById, formatsByCategory, postFormats, formatsLabel, copyFieldsFor, copySummary, copySummaryParts, VIDEO_FORMAT_IDS, hasVideoFormat, frameLimits, expectedContent, categoriesFor, formatsFor, formatsOffLimits, defaultSize, postSize, sizePresets, sizeLabel, hasSize, aspectRatioCss, formatRatio, artworkNoun, copyNoun } from "./formats.ts";
+import { FORMATS, FORMAT_CATEGORIES, formatById, formatsByCategory, postFormats, formatsLabel, copyFieldsFor, copySummary, copySummaryParts, VIDEO_FORMAT_IDS, hasVideoFormat, frameLimits, expectedContent, categoriesFor, formatsFor, formatsOffLimits, defaultSize, postSize, sizePresets, sizeLabel, hasSize, aspectRatioCss, formatRatio, artworkNoun, copyNoun, storedSlideCount } from "./formats.ts";
 
 test("FORMATS has the prototype's 41 entries, plus Listing Image Set", () => {
   assert.equal(FORMATS.length, 42);
@@ -161,4 +161,12 @@ test("a post's artwork and words are named by its formats on buttons", () => {
   assert.equal(artworkNoun(["ig_feed"]), "Creative");
   assert.equal(copyNoun(["ig_feed"]), "Caption");
   assert.equal(copyNoun(["meta_carousel"]), "Copy");
+});
+
+test("a single story is saved with no count; a set keeps its number", () => {
+  assert.equal(storedSlideCount(1), null);
+  assert.equal(storedSlideCount(null), null);
+  assert.equal(storedSlideCount(undefined), null);
+  assert.equal(storedSlideCount(2), 2);
+  assert.equal(storedSlideCount(20), 20);
 });

@@ -231,6 +231,13 @@ export function frameLimits(ids: string[]): { min: number; max: number; noun: "S
   return limits.length ? { min: STORY_MIN_FRAMES, max: Math.min(...limits), noun: "Story" } : null;
 }
 
+// The count as saved: a post of one piece (a single story) keeps none, as
+// every other single-piece post does — the database takes 2 to 20, the
+// carousel's range — and is read back as one (frameLimits' min).
+export function storedSlideCount(n: number | null | undefined): number | null {
+  return n && n > 1 ? n : null;
+}
+
 // What a post's artwork is called on its buttons (direct instruction):
 // Upload Video, Add Creative, Update Creatives. Creatives for a carousel,
 // or several stories; a Video for a video format (a single story too); a

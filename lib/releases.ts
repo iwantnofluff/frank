@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.94.2",
+    date: "2026-11-23",
+    title: "Single stories save",
+    changes: [
+      "A new Instagram Story, Facebook Story or WhatsApp Status post of a single story now saves. It was refused with a \"slide count\" error, and so was bringing a set of stories down to one.",
+    ],
+  },
+  {
     version: "1.94.1",
     date: "2026-11-23",
     title: "A share count that matches the link",

@@ -5179,6 +5179,14 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Single stories save (1.94.2, 2026-11-23)
+
+Reported directly: creating a post of one story failed with "new row for relation creatives violates check constraint creatives_slide_count_check". Stories take 1 to 20 (frameLimits), but `creatives.slide_count` is checked 2 to 20 (phase31, the carousel's range), so a count of 1 was refused, on create and on bringing a set down to one. Fixed in the app, not the database: a single story is saved with no count (`storedSlideCount` in lib/formats.ts, used by use-create-creative, use-update-brief and the window's optimistic copy and its compare), as every single-piece post is stored, and a missing count already reads back as one story. No migration, so no change to what `slide_count = null` means anywhere else.
+
+Also: phase162's `add column` is now `add column if not exists`, after live refused comments unticked from Slack ("Could not find the 'send_to_slack' column"); the user reran it on live.
+
+**Verified**: new stories.spec.ts test: New Post with Instagram Story at 1 creates the post with `slide_count` null and no error, the Brief reads it back as 1; a post at 3 brought down to 1 and updated saves null. stories, carousel and new-brief specs pass locally (24 tests); unit test for `storedSlideCount`; tsc, eslint clean. The phase162 rerun rehearsed on the local database (skips the existing column, no error).
+
 ## A share count that matches the link (1.94.1, 2026-11-23)
 
 After 1.94.0 the Share for Review window still said "It also shows the project's N other posts in Client Review", counting the posts the link now holds back (direct instruction: make it the number the client sees). The rule moved into lib/awaiting-rework.ts, used by both /api/shared-review and the window: the window reads each Client Review post's latest client comment (useLatestFeedbackByCreative, public only, as the link) and latest version time (new useLatestVersionAt, the same four tables), and `resolveShareEligibility` leaves held posts out of the count. The note now reads "…other posts waiting for the client's review".

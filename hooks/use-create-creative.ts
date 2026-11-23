@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { signedInUser } from "@/lib/supabase/signed-in-user";
-import type { FormatSizes } from "@/lib/formats";
+import { storedSlideCount, type FormatSizes } from "@/lib/formats";
 
 export interface CreateCreativeInput {
   name: string;
@@ -74,7 +74,7 @@ export function useCreateCreative(projectId: string) {
           team_user_ids: input.teamUserIds,
           concept: input.concept.trim() || null,
           reference_urls: input.referenceUrls,
-          slide_count: input.slideCount,
+          slide_count: storedSlideCount(input.slideCount),
           sizes: input.sizes ?? {},
           // approach_notes is left null here — system-generated from copy
           // once it exists (app/api/ai/wiifm-note), not settable at

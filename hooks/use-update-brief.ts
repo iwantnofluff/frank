@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { signedInUser } from "@/lib/supabase/signed-in-user";
-import { postFormats, type FormatSizes } from "@/lib/formats";
+import { postFormats, storedSlideCount, type FormatSizes } from "@/lib/formats";
 
 export interface BriefFields {
   name: string;
@@ -72,7 +72,7 @@ export function useUpdateBrief(creativeId: string) {
           team_user_ids: fields.teamUserIds,
           concept: fields.concept.trim() || null,
           reference_urls: fields.referenceUrls,
-          slide_count: fields.slideCount,
+          slide_count: storedSlideCount(fields.slideCount),
           sizes: fields.sizes,
           scheduled_at: fields.scheduledAt,
           destination: fields.destination,

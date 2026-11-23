@@ -45,6 +45,7 @@ import {
   aspectRatioCss,
   COPY_FIELD_LABELS,
   hasVideoFormat,
+  storedSlideCount,
   type FormatSizes,
 } from "@/lib/formats";
 import { slideFields, tidySlideText } from "@/lib/slide-text";
@@ -920,7 +921,7 @@ function briefChanges(
   if (!same(opened.team_user_ids ?? [], theirs.teamUserIds)) out.push(`Team: ${whoAll(theirs.teamUserIds)}`);
   if ((opened.concept ?? "") !== theirs.concept) out.push("Concept");
   if (!same(opened.reference_urls ?? [], theirs.referenceUrls)) out.push("References");
-  if ((opened.slide_count ?? null) !== theirs.slideCount) out.push(`Slides: ${theirs.slideCount ?? "none"}`);
+  if ((opened.slide_count ?? null) !== storedSlideCount(theirs.slideCount)) out.push(`Slides: ${theirs.slideCount ?? "none"}`);
   if (!same(opened.sizes ?? {}, theirs.sizes)) out.push("Sizes");
   if ((opened.scheduled_at ?? null) !== theirs.scheduledAt) out.push(`Live date: ${day(theirs.scheduledAt)}`);
   if ((opened.destination ?? null) !== theirs.destination) out.push("Where it goes");
@@ -1120,7 +1121,7 @@ export function CreativeModal(props: CreativeModalProps) {
             lead_user_id: f.teamUserIds[0] ?? null,
             concept: f.concept || null,
             reference_urls: f.referenceUrls,
-            slide_count: f.slideCount,
+            slide_count: storedSlideCount(f.slideCount),
             sizes: f.sizes,
             scheduled_at: f.scheduledAt,
             destination: f.destination,
