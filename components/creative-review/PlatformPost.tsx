@@ -564,7 +564,8 @@ export function PlatformPost({
           <div className="dots">•••</div>
         </div>
         <div className="pp-text">{text ?? fallback}</div>
-        <div className="ig-media">{media}</div>
+        {/* A text post is its words alone. */}
+        {!t.textOnly && <div className="ig-media">{media}</div>}
         {ctaBar}
         <div className="pp-acts">
           <span>{thumb}Like</span>
@@ -595,7 +596,8 @@ export function PlatformPost({
           <div className="dots">•••</div>
         </div>
         <div className="pp-text">{text ?? fallback}</div>
-        <div className="ig-media">{media}</div>
+        {/* A text post is its words alone. */}
+        {!t.textOnly && <div className="ig-media">{media}</div>}
         {ctaBar}
         <div className="pp-acts">
           <span>{thumb}Like</span>

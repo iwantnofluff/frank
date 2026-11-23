@@ -80,6 +80,7 @@ import {
   useDeleteCalendarView,
   type CalendarViewRow,
 } from "@/hooks/use-calendar-views";
+import { useProjectViewStore } from "@/store/project-view-store";
 
 // What a Pending button says it adds (direct instruction): "Add Creative".
 const ADD_LABELS: Partial<Record<FocusTarget, string>> = {
@@ -362,6 +363,11 @@ export function ContinuousCalendarTable({
   const updateView = useUpdateCalendarView();
   const deleteView = useDeleteCalendarView();
   const [activeViewId, setActiveViewId] = useState<string | null>(null);
+  // The view this project's table was on, kept for the tab (direct
+  // instruction: back from a post, not Main Table again).
+  const rememberedViewId = useProjectViewStore((s) => s.byProject[projectId] ?? null);
+  const rememberView = useProjectViewStore((s) => s.remember);
+  const [viewRestored, setViewRestored] = useState(false);
   const [saveModal, setSaveModal] = useState<{ mode: "create" | "rename"; initialName: string } | null>(null);
   const [viewMenuAnchor, setViewMenuAnchor] = useState<DOMRect | null>(null);
   const [saveDropdownAnchor, setSaveDropdownAnchor] = useState<DOMRect | null>(null);
@@ -406,6 +412,19 @@ export function ContinuousCalendarTable({
     setColumnWidths(view ? view.column_widths : {});
     setViewMenuAnchor(null);
   }
+  // Back on it once the saved views are in; a view since deleted leaves
+  // Main Table. Set while rendering, React's way to adjust state from props.
+  if (!viewRestored && savedViews) {
+    setViewRestored(true);
+    const kept = rememberedViewId ? savedViews.find((v) => v.id === rememberedViewId) : null;
+    if (kept) loadView(kept);
+  }
+  // Writing to the tab's store, an outside system; only once restored, so
+  // the first render's Main Table doesn't overwrite what was kept.
+  // Only a change is written, so opening the table doesn't redraw it.
+  useEffect(() => {
+    if (viewRestored && activeViewId !== rememberedViewId) rememberView(projectId, activeViewId);
+  }, [viewRestored, activeViewId, rememberedViewId, projectId, rememberView]);
 
   function discardChanges() {
     loadView(activeView);
@@ -1397,7 +1416,7 @@ export function ContinuousCalendarTable({
                                     <ArtworkCell artwork={art} thumbnail={thumbnailsByCreative?.[c.id]} after={after} format={c.format} sizes={c.sizes} />
                                   ) : (
                                     <span className="artadds">
-                                      <MissingContent expected={!c.artwork_removed_at} {...fill(c, "artwork")} />
+                                      <MissingContent expected={exp.artwork && !c.artwork_removed_at} {...fill(c, "artwork")} />
                                       {addThumb}
                                       {asset}
                                     </span>
@@ -1438,7 +1457,7 @@ export function ContinuousCalendarTable({
                                       />
                                     </span>
                                   ) : (
-                                    <MissingContent expected={true} {...fill(c, "imageOnText")} />
+                                    <MissingContent expected={exp.imageText} {...fill(c, "imageOnText")} />
                                   )}
                                 </td>
                               );

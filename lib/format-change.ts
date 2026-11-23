@@ -1,4 +1,4 @@
-import { carouselMaxSlides, formatById, frameLimits } from "./formats.ts";
+import { carouselMaxSlides, formatById, frameLimits, TEXT_ONLY_FORMAT_IDS } from "./formats.ts";
 
 // Whether a format is made from images or video. The prototype's catalog
 // doesn't say, so this is a reading of its formats: "either" (stories,
@@ -6,7 +6,7 @@ import { carouselMaxSlides, formatById, frameLimits } from "./formats.ts";
 // formats with no artwork at all. docs/parity-gaps.md.
 const VIDEO = new Set(["ig_reel", "li_video", "yt_video", "yt_short", "yt_preroll"]);
 const EITHER = new Set(["ig_story", "fb_story", "wa_status", "meta_story", "g_pmax", "general"]);
-const TEXT = new Set(["g_rsa", "sms", "push"]);
+const TEXT = TEXT_ONLY_FORMAT_IDS;
 
 export type MediaKind = "image" | "video" | "either" | "text";
 

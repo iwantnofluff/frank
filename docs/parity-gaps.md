@@ -5179,6 +5179,38 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Carousels from a PDF (1.96.0, 2026-11-23)
+
+Asked directly: upload a PDF for a LinkedIn carousel, its pages becoming the slides. Decided: add PDF.js (`pdfjs-dist` 6.5.438, a new dependency, approved directly), for every carousel, and refuse a PDF with more pages than the post takes.
+
+- **How**: lib/pdf-pages.ts loads PDF.js only when a PDF is dropped (its worker is bundled as its own file), draws each page 2160px wide on white, as JPEG at 0.9, named `<file>-page-<n>.jpg`. They're then ordinary image slides: preview, review links, slide comments and the checks are unchanged. Each page is held to the same upload limits as a dropped image.
+- **The slots** (CarouselSlots): a carousel's slot grid takes a PDF (`.pdf` added to its file picker); dropped on its own, it fills every slide from the first. A PDF among other files is refused ("Drop the PDF on its own"); a one-page PDF too (a carousel is 2 or more); more pages than the formats allow (frameLimits' max: 20, Meta Carousel Ad 10, Listing Image Set 9) is refused with the page count, nothing drawn.
+- **The count**: pages different from the slide count set it in the window; Save Creative saves the brief first (`handleSaveBrief` now says whether it saved, `artworkCleared` so no removal warning, the earlier versions keep their slides), and the version only after. A brief that can't be saved (someone else changed it) stops the slides too, saying so.
+- **Not done**: stories don't take a PDF (only carousels were asked for). The PDF itself isn't kept, only its pages (the Final Asset link is where a finished file goes). Fonts a PDF doesn't embed fall back to a stand-in (PDF.js's standard font data isn't shipped); designers' exports embed theirs.
+
+**Verified**: new carousel-pdf.spec.ts, with a PDF made in the test: a 3-page PDF on a 2-slide LinkedIn Carousel fills three slots, Save Creative V1 saves the post's `slide_count` 3 and a version of three JPEG slides, `deck-page-1..3.jpg`, in order; an 11-page PDF on a Meta Carousel Ad is refused ("This PDF has 11 pages, and this carousel takes up to 10 slides. Nothing was added."), nothing filled, the count unchanged. A screenshot of the slots after a 4-page PDF showed each page its own colour, 2160×2160. carousel-pdf, carousel and stories specs pass locally (17 tests); tsc, eslint clean; the build bundles the PDF worker. No new npm audit warnings from the dependency. Full local suite with 1.94.3–1.96.0: 386 passed, 9 failed; rerun, 8 passed; stage-statuses' table pill test failed again, passed alone and against the old table file. The kept-view store was writing once on every table open, a redraw just as the test opened the menu; it now writes only when the view changes, and the stage-statuses, project-calendar and continuous-calendar specs pass together (35 tests).
+
+## LinkedIn Text Post (1.95.0, 2026-11-23)
+
+Asked directly: a LinkedIn format for a post that's text only. Not in the prototype's catalog, so a deliberate addition: `li_text`, "LinkedIn Text Post", Social — organic, Caption only, no aspect ratio. It's words only (`TEXT_ONLY_FORMAT_IDS`, now shared by lib/formats.ts and lib/format-change.ts, with SMS, Push Notification and Google Responsive Search Ad), and a new `wordsOnly(formats)`: true when every one of a post's formats is words only.
+
+- **The table**: `expectedContent` now says whether a post expects artwork and Text on Image; for a words-only post both cells read as a dash, not Add Creative / Add Text on Image. This also applies to SMS, Push and Google Search Ad posts, which asked for both before (the `textOnly` flag in lib/post-templates.ts existed but nothing read it).
+- **The post window**: no Creative section on Content, no Text on Image on Production, for a words-only post.
+- **The preview**: LinkedIn's post draws no media box for a text post (post page, review links, the table's preview), so no "No artwork yet" and no Upload button.
+- **Mixed**: a post with LinkedIn Text Post and a format with artwork (say LinkedIn Single Image) is treated as having artwork; changing a post between the two raises the usual "is an image / is text only" question about its uploads.
+- **Not changed**: the Checks tab still lists the artwork checks for a text post (each says to upload the artwork first); Notes for Designer stays on the Brief.
+
+**Verified**: new linkedin-text.spec.ts: the New Post window creates a post with formats `["li_text"]`; Content has Copy and no Creative, Production no Text on Image; the table's Creative and Text on Image cells read "—"; the post page's LinkedIn preview has the caption and no media box, and no Upload button; a review link shows the same. A screenshot of the post page's preview looked right (name, words, Like / Comment / Repost / Send, nothing between). Unit tests for the format, `wordsOnly` and `expectedContent` (301 pass); tsc, eslint, build clean. Full local suite: 378 passed, 15 failed; rerun, 13 passed and 2 more passed alone (timing), and settings-knowledge.png changed as intended (the list gains LinkedIn Text Post, 43 formats), its baseline updated after looking at the diff.
+
+## Tables stay on their view (1.94.3, 2026-11-23)
+
+Reported directly: with a saved view picked, opening a post and going back put the table on Main Table. The open view was only the table's own state, lost when it unmounted. Now a small tab-scoped store (store/project-view-store.ts, sessionStorage, like project-sort-store's shape) keeps each project's open view; both ProjectCalendarTable and ContinuousCalendarTable restore it once the saved views load (a view since deleted leaves Main Table) and write to it only after restoring, so the first render's Main Table can't overwrite it.
+
+- **Not kept**: unsaved column changes on top of a view (the dot on its tab) — back from a post, the view opens as saved. The month shown isn't part of this either.
+- **Per tab**: a new tab, or the project opened later in another session, starts on Main Table as before.
+
+**Verified**: new tests in project-calendar.spec.ts (save a view with Concept hidden, open a post, browser Back: the view is selected and Concept still hidden; back by a link: kept; Main Table picked then Back: Main Table) and continuous-calendar.spec.ts (the same for a content planner). The project-calendar one fails against the old table code and passes with the fix. Both spec files pass locally (32 tests); tsc, eslint clean.
+
 ## Single stories save (1.94.2, 2026-11-23)
 
 Reported directly: creating a post of one story failed with "new row for relation creatives violates check constraint creatives_slide_count_check". Stories take 1 to 20 (frameLimits), but `creatives.slide_count` is checked 2 to 20 (phase31, the carousel's range), so a count of 1 was refused, on create and on bringing a set down to one. Fixed in the app, not the database: a single story is saved with no count (`storedSlideCount` in lib/formats.ts, used by use-create-creative, use-update-brief and the window's optimistic copy and its compare), as every single-piece post is stored, and a missing count already reads back as one story. No migration, so no change to what `slide_count = null` means anywhere else.

@@ -6,6 +6,7 @@ import { versionSlides, type CreativeVersionRow, type VersionAsset } from "@/hoo
 import type { SlideSource } from "@/hooks/use-upload-creative-version";
 import { validateUploadFile, ACCEPTED_FILE_EXTENSIONS } from "@/lib/upload-validation";
 import { MAX_UPLOAD_MB } from "@/lib/upload-limits";
+import { isPdf, pdfPageImages } from "@/lib/pdf-pages";
 
 // A post's artwork in the Edit window: one slot per slide, and one slot
 // for a post that isn't a carousel (direct instruction: the same layout
@@ -45,8 +46,14 @@ export function CarouselSlots({
   onPendingChange,
   onError,
   noun = "Slide",
+  maxSlides,
+  onSlideCount,
 }: {
   slideCount: number;
+  // A carousel takes a PDF, a page a slide (direct instruction): the most
+  // pages it takes, and the slide count set to the pages when they differ.
+  maxSlides?: number;
+  onSlideCount?: (count: number) => void;
   // What each piece is called: a carousel's slides, or a story's stories.
   noun?: "Slide" | "Story";
   // The version new work builds on (null before any artwork).
@@ -92,7 +99,55 @@ export function CarouselSlots({
     return () => live.forEach((u) => URL.revokeObjectURL(u));
   }, []);
 
+  // A carousel's slides from a PDF: every page, in order, from the first
+  // slide, the slide count following the pages. More pages than the post
+  // takes, or a PDF among other files, is refused and said why.
+  const takesPdf = noun === "Slide" && !single && !!maxSlides && !!onSlideCount;
+  const [readingPdf, setReadingPdf] = useState(false);
+  async function placePdf(file: File) {
+    onError(null);
+    setReadingPdf(true);
+    try {
+      const result = await pdfPageImages(file, maxSlides!);
+      if (!result.ok) {
+        onError(`This PDF has ${result.pages} pages, and this carousel takes up to ${maxSlides} slides. Nothing was added.`);
+        return;
+      }
+      // Each page held to the same limits as any image dropped in.
+      for (const [n, f] of result.files.entries()) {
+        const v = validateUploadFile(f);
+        if (!v.ok) {
+          onError(`Page ${n + 1}: ${v.message} Nothing was added.`);
+          return;
+        }
+      }
+      if (result.files.length < 2) {
+        onError("This PDF has one page, and a carousel needs 2 slides or more. Nothing was added.");
+        return;
+      }
+      const next: Slot[] = result.files.map((f) => {
+        const url = URL.createObjectURL(f);
+        urls.current.add(url);
+        return { kind: "file", file: f, url };
+      });
+      if (result.files.length !== slideCount) onSlideCount!(result.files.length);
+      setSlots(next);
+    } catch {
+      onError("This PDF couldn't be read. Check it opens, then try again, or upload its pages as images.");
+    } finally {
+      setReadingPdf(false);
+    }
+  }
+
   function place(files: File[], start: number) {
+    if (takesPdf && files.some(isPdf)) {
+      if (files.length > 1) {
+        onError("Drop the PDF on its own. Each of its pages becomes a slide.");
+        return;
+      }
+      void placePdf(files[0]);
+      return;
+    }
     for (const file of files) {
       const v = validateUploadFile(file);
       if (!v.ok) {
@@ -157,7 +212,7 @@ export function CarouselSlots({
         ref={inputRef}
         type="file"
         multiple
-        accept={ACCEPTED_FILE_EXTENSIONS}
+        accept={takesPdf ? `${ACCEPTED_FILE_EXTENSIONS},.pdf,application/pdf` : ACCEPTED_FILE_EXTENSIONS}
         aria-label="Slide files"
         style={{ display: "none" }}
         onChange={(e) => {
@@ -169,8 +224,13 @@ export function CarouselSlots({
       <p className="sub" style={{ marginBottom: 8 }}>
         {single
           ? `Drop an image or video on the slot, or click it to browse. JPG, PNG, WebP, GIF up to ${MAX_UPLOAD_MB}MB; MP4 and MOV are compressed to 720p. Then press Save to add it as a new version.`
-          : `Drop several images to fill the ${many} in order, or add them one at a time. Drag a ${one} onto another to swap them.`}
+          : `Drop several images to fill the ${many} in order, or add them one at a time.${takesPdf ? " Or drop a PDF: each page becomes a slide." : ""} Drag a ${one} onto another to swap them.`}
       </p>
+      {readingPdf && (
+        <p className="note" role="status">
+          Turning the PDF&rsquo;s pages into slides…
+        </p>
+      )}
       <div
         className="cslots"
         aria-label="Slides"

@@ -51,6 +51,7 @@ const TEMPLATES: Record<string, Def> = {
   li_image: { platform: "linkedin" },
   li_doc: { platform: "linkedin" },
   li_video: { platform: "linkedin" },
+  li_text: { platform: "linkedin", textOnly: true },
   li_sponsored: { platform: "linkedin", ad: true, textField: "primary" },
   yt_video: { platform: "youtube", textField: "title" },
   yt_preroll: { platform: "youtube", ad: true, textField: "headline" },

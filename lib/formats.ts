@@ -61,6 +61,8 @@ export const FORMATS: FormatDefinition[] = [
   { id: "li_image", category: "Social — organic", label: "LinkedIn Single Image", aspectRatio: "1.91:1", copyFields: ["caption"] },
   { id: "li_doc", category: "Social — organic", label: "LinkedIn Carousel (Document)", aspectRatio: "1:1", copyFields: ["caption"] },
   { id: "li_video", category: "Social — organic", label: "LinkedIn Video", aspectRatio: "16:9", copyFields: ["caption"] },
+  // Words only (direct instruction): no image, video or document.
+  { id: "li_text", category: "Social — organic", label: "LinkedIn Text Post", aspectRatio: "—", copyFields: ["caption"] },
   { id: "yt_video", category: "Social — organic", label: "YouTube Video", aspectRatio: "16:9", copyFields: ["title", "description"] },
   { id: "yt_short", category: "Social — organic", label: "YouTube Short", aspectRatio: "9:16", copyFields: ["title"] },
   { id: "yt_thumb", category: "Social — organic", label: "YouTube Thumbnail", aspectRatio: "16:9", copyFields: ["title"] },
@@ -317,8 +319,15 @@ const SIZE_NAMES: Record<string, string> = {
   "4800x2400": "48 × 24 ft",
 };
 
-// Formats with no artwork at all: no size to choose.
-const TEXT_ONLY_FORMAT_IDS = new Set(["g_rsa", "sms", "push"]);
+// Formats with no artwork at all: no size to choose, and nothing to upload
+// or put on an image.
+export const TEXT_ONLY_FORMAT_IDS = new Set(["g_rsa", "sms", "push", "li_text"]);
+
+// A post every one of whose formats is words only: no Creative, no Text on
+// Image. One format with artwork among them, and it has artwork.
+export function wordsOnly(ids: string[]): boolean {
+  return ids.length > 0 && ids.every((id) => TEXT_ONLY_FORMAT_IDS.has(id));
+}
 
 export function hasSize(id: string): boolean {
   return !!formatById(id) && !TEXT_ONLY_FORMAT_IDS.has(id);
@@ -397,7 +406,9 @@ export function copySummary(fields: Record<string, string>, formatIds: string[])
 // formats don't take reads as a dash. Matches the New Post window: slides
 // for carousels and stories, VO for video, Copy and Alt Text where a
 // format has those fields.
-export function expectedContent(ids: string[]): { slides: boolean; voiceover: boolean; copy: boolean; alt: boolean } {
+// A words-only post (wordsOnly) expects no Creative and no Text on Image.
+export function expectedContent(ids: string[]): { slides: boolean; voiceover: boolean; copy: boolean; alt: boolean; artwork: boolean; imageText: boolean } {
   const fields = copyFieldsFor(ids);
-  return { slides: !!frameLimits(ids), voiceover: hasVideoFormat(ids), copy: fields.length > 0, alt: fields.includes("alt") };
+  const art = !wordsOnly(ids);
+  return { slides: !!frameLimits(ids), voiceover: hasVideoFormat(ids), copy: fields.length > 0, alt: fields.includes("alt"), artwork: art, imageText: art };
 }

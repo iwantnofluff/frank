@@ -46,6 +46,7 @@ import {
   COPY_FIELD_LABELS,
   hasVideoFormat,
   storedSlideCount,
+  wordsOnly,
   type FormatSizes,
 } from "@/lib/formats";
 import { slideFields, tidySlideText } from "@/lib/slide-text";
@@ -989,6 +990,9 @@ export function CreativeModal(props: CreativeModalProps) {
     isCreate ? null : (props.creative.slide_count ?? null),
   );
   const slideCount = frames ? Math.min(Math.max(slideCountChoice ?? frames.min, frames.min), frames.max) : null;
+  // Every format words only (LinkedIn Text Post, SMS…): no Creative, no
+  // Text on Image (direct instruction).
+  const textPost = wordsOnly(formats);
   const frameNoun = frames?.noun ?? "Slide";
   // Brief-time warning (docs/frank-data-intelligence.pdf, "Where it
   // surfaces — At the brief") — only meaningful while still choosing a
@@ -1163,20 +1167,21 @@ export function CreativeModal(props: CreativeModalProps) {
   async function handleSaveBrief({
     artworkCleared = false,
     overBase,
-  }: { artworkCleared?: boolean; overBase?: string } = {}) {
+  }: { artworkCleared?: boolean; overBase?: string } = {}): Promise<boolean> {
+    // Whether the brief was saved (a PDF's new slide count, handleSaveCarousel).
     // A format can wait (phase114, direct instruction): ideas and concepts
     // are made without one, and the table offers Add Format.
     setFormatError(null);
     if (!name.trim()) {
       setNameError("Give the brief a name.");
-      return;
+      return false;
     }
     // Notes for Designer save on their own, as versions (phase117, decided
     // directly): Update asks for them to be saved first.
     if (creativeId && pendingNotesChange) {
       setNotesAsk(true);
       document.querySelector("#nbNotes")?.scrollIntoView({ block: "center", behavior: "smooth" });
-      return;
+      return false;
     }
     setNameError(null);
     // No date is fine: the post is an Idea until it has one (direct
@@ -1237,7 +1242,7 @@ export function CreativeModal(props: CreativeModalProps) {
       props.onCreated?.(scheduledAt, delivery === "continuous" ? dueOn || null : null);
       // Straight on to the artwork and copy (direct instruction).
       setActiveTab("upload");
-      return;
+      return true;
     }
 
     // Per direct instruction, a format change the uploaded artwork no longer
@@ -1248,7 +1253,7 @@ export function CreativeModal(props: CreativeModalProps) {
       const reasons = artworkChangeReasons(savedBrief, { formats, slideCount }, uploadedSlides);
       if (reasons.length) {
         setFormatWarning(reasons);
-        return;
+        return false;
       }
     }
 
@@ -1283,7 +1288,7 @@ export function CreativeModal(props: CreativeModalProps) {
         }
         setConflict(e);
       }
-      return;
+      return false;
     }
     setBriefBase(savedAt);
     setSavedConcept(concept.trim());
@@ -1326,6 +1331,7 @@ export function CreativeModal(props: CreativeModalProps) {
     if (updatedNoteTimeout.current) clearTimeout(updatedNoteTimeout.current);
     setShowUpdatedNote(true);
     updatedNoteTimeout.current = setTimeout(() => setShowUpdatedNote(false), 3000);
+    return true;
   }
 
   async function confirmFormatChange() {
@@ -1561,6 +1567,15 @@ export function CreativeModal(props: CreativeModalProps) {
   async function handleSaveCarousel(slides: SlideSource[]) {
     const targetVersionNo = nextCreativeVersionNo;
     setCreativeSaveNote(null);
+    // A PDF set the slide count to its pages (CarouselSlots): the post's
+    // count is saved first, so the version and the post agree. Its other
+    // slides are kept in their versions, so nothing to warn about.
+    if (savedBrief && slideCount !== savedBrief.slideCount) {
+      if (!(await handleSaveBrief({ artworkCleared: true }))) {
+        setFileError("The new slide count couldn't be saved, so the slides weren't either. Check the Brief tab, then save again.");
+        return;
+      }
+    }
     try {
       const versionId = await uploadCarousel.mutateAsync(slides);
       if (!isCreate) props.onCreativeVersionCreated(versionId);
@@ -2795,6 +2810,9 @@ export function CreativeModal(props: CreativeModalProps) {
             </>
           )}
 
+          {/* Not for a words-only post (LinkedIn Text Post, SMS…). */}
+          {!textPost && (
+          <>
           {/* Text on Image (phase57), in versions (phase120). */}
           <div className="msection-h">Text on Image</div>
           <p className="msection-d">
@@ -2835,6 +2853,8 @@ export function CreativeModal(props: CreativeModalProps) {
           </div>
           {prodSaveRow("slide_text", "Text on Image", pendingSlideChange)}
           {prodProof("slide_text")}
+          </>
+          )}
           </>
           )}
 
@@ -2891,6 +2911,9 @@ export function CreativeModal(props: CreativeModalProps) {
       )}
       {activeTab === "upload" && creativeId && !!formats.length && (
         <div className="mtabbody">
+          {/* A words-only post has no artwork to upload. */}
+          {!textPost && (
+          <>
           <div className="msection-h">Creative</div>
           <p className="msection-d">The artwork or video for this {word.lower}.</p>
           <div className="field">
@@ -2911,6 +2934,8 @@ export function CreativeModal(props: CreativeModalProps) {
               onSave={handleSaveCarousel}
               onPendingChange={setCarouselPending}
               onError={setFileError}
+              maxSlides={frames?.noun === "Slide" ? frames.max : undefined}
+              onSlideCount={setSlideCountChoice}
             />
             </div>
 
@@ -2918,6 +2943,8 @@ export function CreativeModal(props: CreativeModalProps) {
             <UploadProgressBar progress={uploadProgress} versionNo={nextCreativeVersionNo} />
           )}
           {artworkError && !uploadCarousel.isPending && <p className="autherr">{artworkError}</p>}
+          </>
+          )}
 
           {/* Where the finished creative is (phase126, direct
               instruction), straight after the Creative. The team's only. */}

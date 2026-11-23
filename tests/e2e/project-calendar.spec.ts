@@ -574,3 +574,41 @@ test("project calendar — a filled cell's Edit opens the post at that field", a
     await expect(page.locator(".scrim")).toHaveCount(0);
   }
 });
+
+// Direct instruction: a view picked, a post opened, and back: the table is
+// still on that view, not Main Table.
+test("project calendar — back from a post, the table is on the view it was on", async ({ page, frank }) => {
+  test.setTimeout(90_000);
+  await frank.loginAsStaff(page);
+  await page.goto(`/projects/${frank.projectId}`);
+  await page.waitForSelector(".tblwrap, .empty");
+  await goToMonth(page, "March 2027");
+  await page.waitForSelector(".tbl");
+  await page.click('button:has-text("Columns")');
+  await page.waitForSelector(".colpop");
+  await page.getByRole("checkbox", { name: /^Show Concept/ }).click();
+  await page.keyboard.press("Escape");
+  await page.click('.split button:has-text("Save as New View")');
+  await page.fill("#viewName", "Kept View");
+  await page.click('.scrim button:has-text("Save")');
+  const kept = page.locator('.vtab[aria-selected="true"]', { hasText: "Kept View" });
+  await expect(kept).toBeVisible();
+
+  // To a post and back, by the browser's Back.
+  await page.goto(`/creatives/${frank.creativeId}`);
+  await page.waitForSelector(".stage-h");
+  await page.goBack();
+  await expect(kept).toBeVisible({ timeout: 15_000 });
+  await goToMonth(page, "March 2027");
+  await expect(page.locator("th", { hasText: /^Concept/ })).toHaveCount(0);
+
+  // Coming back by a link in the same tab keeps it too; Main Table picked
+  // is kept the same way.
+  await page.goto(`/projects/${frank.projectId}`);
+  await expect(kept).toBeVisible({ timeout: 15_000 });
+  await page.locator(".vtab", { hasText: "Main Table" }).click();
+  await page.goto(`/creatives/${frank.creativeId}`);
+  await page.waitForSelector(".stage-h");
+  await page.goBack();
+  await expect(page.locator('.vtab[aria-selected="true"]', { hasText: "Main Table" })).toBeVisible({ timeout: 15_000 });
+});

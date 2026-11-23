@@ -13,6 +13,32 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.96.0",
+    date: "2026-11-23",
+    title: "Carousels from a PDF",
+    changes: [
+      "Drop a PDF on a carousel's slides and each page becomes a slide, in order. The post's slide count changes to match the pages when you save. Works for LinkedIn Carousel, Instagram Carousel, Meta Carousel Ad and Listing Image Set.",
+      "A PDF with more pages than the carousel takes (20, or 10 for a Meta Carousel Ad) is refused, saying how many pages it has.",
+    ],
+  },
+  {
+    version: "1.95.0",
+    date: "2026-11-23",
+    title: "LinkedIn Text Post",
+    changes: [
+      "A new format, LinkedIn Text Post, for a post that's words only. It has a caption and nothing to upload: the post window has no Creative or Text on Image, and the table shows a dash for them rather than asking.",
+      "On the post page and review links it shows as LinkedIn shows a text post, just the words. SMS, Push Notification and Google Search Ad posts no longer ask for a Creative or Text on Image either.",
+    ],
+  },
+  {
+    version: "1.94.3",
+    date: "2026-11-23",
+    title: "Tables stay on their view",
+    changes: [
+      "Back in a project from a post, the table is on the saved view you had open, not Main Table. Each project remembers its own view while the browser tab is open.",
+    ],
+  },
+  {
     version: "1.94.2",
     date: "2026-11-23",
     title: "Single stories save",

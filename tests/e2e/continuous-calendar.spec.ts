@@ -254,3 +254,28 @@ test("a real client-role session sees the continuous table read-only", async ({ 
   // VO is the team's (phase88): no column for a client.
   await expect(page.locator("th", { hasText: /^VO/ })).toHaveCount(0);
 });
+
+// The same for a content planner's table (direct instruction).
+test("continuous calendar — back from a post, the table is on the view it was on", async ({ page, frank }) => {
+  test.setTimeout(90_000);
+  const projectId = await frank.createContinuousProject();
+  const creativeId = await frank.createContinuousCreative(projectId, { dueOn: "2027-03-15" });
+  await frank.loginAsStaff(page);
+  await page.goto(`/projects/${projectId}`);
+  await page.waitForSelector(".tblwrap, .empty");
+  await goToMonth(page, "March 2027");
+  await page.waitForSelector(".tbl");
+  await page.click('button:has-text("Columns")');
+  await page.waitForSelector(".colpop");
+  await page.getByRole("checkbox", { name: /^Show Principles/ }).click();
+  await page.keyboard.press("Escape");
+  await page.click('.split button:has-text("Save as New View")');
+  await page.fill("#viewName", "Planner Kept View");
+  await page.click('.scrim button:has-text("Save")');
+  const kept = page.locator('.vtab[aria-selected="true"]', { hasText: "Planner Kept View" });
+  await expect(kept).toBeVisible();
+  await page.goto(`/creatives/${creativeId}`);
+  await page.waitForSelector(".stage-h");
+  await page.goBack();
+  await expect(kept).toBeVisible({ timeout: 15_000 });
+});

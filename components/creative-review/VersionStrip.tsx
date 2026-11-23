@@ -35,7 +35,12 @@ export function VersionStrip({
   onSave,
   onPendingChange,
   onError,
+  maxSlides,
+  onSlideCount,
 }: {
+  // A carousel's PDF (CarouselSlots): the most pages, and the count to set.
+  maxSlides?: number;
+  onSlideCount?: (count: number) => void;
   // Newest first.
   versions: CreativeVersionRow[];
   slideCount: number;
@@ -251,6 +256,8 @@ export function VersionStrip({
             onSave={onSave}
             onPendingChange={onPendingChange}
             onError={onError}
+            maxSlides={maxSlides}
+            onSlideCount={onSlideCount}
           />
         </div>
       )}

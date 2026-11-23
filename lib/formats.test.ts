@@ -2,10 +2,10 @@
 // (or `npm run test:unit`).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { FORMATS, FORMAT_CATEGORIES, formatById, formatsByCategory, postFormats, formatsLabel, copyFieldsFor, copySummary, copySummaryParts, VIDEO_FORMAT_IDS, hasVideoFormat, frameLimits, expectedContent, categoriesFor, formatsFor, formatsOffLimits, defaultSize, postSize, sizePresets, sizeLabel, hasSize, aspectRatioCss, formatRatio, artworkNoun, copyNoun, storedSlideCount } from "./formats.ts";
+import { FORMATS, FORMAT_CATEGORIES, formatById, formatsByCategory, postFormats, formatsLabel, copyFieldsFor, copySummary, copySummaryParts, VIDEO_FORMAT_IDS, hasVideoFormat, frameLimits, expectedContent, categoriesFor, formatsFor, formatsOffLimits, defaultSize, postSize, sizePresets, sizeLabel, hasSize, aspectRatioCss, formatRatio, artworkNoun, copyNoun, storedSlideCount, wordsOnly } from "./formats.ts";
 
-test("FORMATS has the prototype's 41 entries, plus Listing Image Set", () => {
-  assert.equal(FORMATS.length, 42);
+test("FORMATS has the prototype's 41 entries, plus Listing Image Set and LinkedIn Text Post", () => {
+  assert.equal(FORMATS.length, 43);
 });
 
 test("Listing Image Set: up to 9 square images, as a carousel's slides, with the listing's copy", () => {
@@ -14,7 +14,7 @@ test("Listing Image Set: up to 9 square images, as a carousel's slides, with the
   assert.equal(set.aspectRatio, "1:1");
   assert.deepEqual(frameLimits(["amz_gallery"]), { min: 2, max: 9, noun: "Slide" });
   assert.deepEqual(copyFieldsFor(["amz_gallery"]), ["title", "bullets", "description"]);
-  assert.deepEqual(expectedContent(["amz_gallery"]), { slides: true, voiceover: false, copy: true, alt: false });
+  assert.deepEqual(expectedContent(["amz_gallery"]), { slides: true, voiceover: false, copy: true, alt: false, artwork: true, imageText: true });
 });
 
 test("every id is unique", () => {
@@ -93,12 +93,27 @@ test("frameLimits: a carousel's slides, a story's stories, or a single piece", (
 });
 
 test("expectedContent: what a post's formats call for, so the table can say Pending", () => {
-  assert.deepEqual(expectedContent(["ig_feed"]), { slides: false, voiceover: false, copy: true, alt: true });
+  assert.deepEqual(expectedContent(["ig_feed"]), { slides: false, voiceover: false, copy: true, alt: true, artwork: true, imageText: true });
   assert.deepEqual(expectedContent(["ig_carousel"]).slides, true);
   // A story counts as video, so it has a VO, as in the New Post window.
-  assert.deepEqual(expectedContent(["ig_story"]), { slides: true, voiceover: true, copy: false, alt: false });
+  assert.deepEqual(expectedContent(["ig_story"]), { slides: true, voiceover: true, copy: false, alt: false, artwork: true, imageText: true });
   assert.equal(expectedContent(["ig_reel"]).voiceover, true);
-  assert.deepEqual(expectedContent(["amz_main"]), { slides: false, voiceover: false, copy: false, alt: false });
+  assert.deepEqual(expectedContent(["amz_main"]), { slides: false, voiceover: false, copy: false, alt: false, artwork: true, imageText: true });
+});
+
+test("LinkedIn Text Post: words only, a caption and nothing to upload or size", () => {
+  const li = formatById("li_text")!;
+  assert.equal(li.label, "LinkedIn Text Post");
+  assert.equal(li.category, "Social — organic");
+  assert.deepEqual(copyFieldsFor(["li_text"]), ["caption"]);
+  assert.equal(hasSize("li_text"), false);
+  assert.equal(frameLimits(["li_text"]), null);
+  assert.deepEqual(expectedContent(["li_text"]), { slides: false, voiceover: false, copy: true, alt: false, artwork: false, imageText: false });
+  assert.equal(wordsOnly(["li_text"]), true);
+  // Beside a format with artwork, the post has artwork.
+  assert.equal(wordsOnly(["li_text", "li_image"]), false);
+  assert.equal(expectedContent(["li_text", "li_image"]).artwork, true);
+  assert.equal(wordsOnly([]), false);
 });
 
 test("a Content Planner offers social and performance formats, Other Content the rest, both Other Creative", () => {
