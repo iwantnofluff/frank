@@ -264,7 +264,7 @@ export function DesignDirection({
                     {lessons.length ? (
                       <List items={lessons} />
                     ) : (
-                      <p className="cchat-note">
+                      <p className={`cchat-note${opts.live ? " ai-working" : ""}`}>
                         {opts.live
                           ? "Reading…"
                           : ref.read
@@ -555,7 +555,7 @@ export function DesignDirection({
               {answer("live", live.body, live.refs, { first: !asking?.ask, live: true })}
               <div className="cchat-msg assistant pending" role="status">
                 <div className="cchat-who">Frank</div>
-                <div className="cchat-thinking">
+                <div className="cchat-thinking ai-working">
                   {progress.text ? "Frank is writing" : asking?.ask ? "Frank is thinking" : "Frank is reading the references"}
                   <span className="cchat-dots" aria-hidden="true">
                     <i />

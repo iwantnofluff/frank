@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.96.2",
+    date: "2026-11-23",
+    title: "Frank at work, in red",
+    changes: [
+      "While Frank proofreads, the post window can't be closed. Closing it, or Save and Close, says Frank is still proofreading, and it closes as usual once the suggestions are in.",
+      "Whenever Frank is working with AI, the words say so in red: proofreading, checking, thinking, writing, reading the references and writing a client's overview.",
+    ],
+  },
+  {
     version: "1.96.1",
     date: "2026-11-23",
     title: "A clearer PDF upload",

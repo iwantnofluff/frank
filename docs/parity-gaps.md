@@ -5179,6 +5179,15 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Frank at work, in red (1.96.2, 2026-11-23)
+
+Asked directly: the post window mustn't close while Frank proofreads, with an alert saying why; and Frank's "is proofreading / is drafting…" in red across the site whenever AI is working.
+
+- **Closing**: `requestClose` (Escape, the X, Cancel, the backdrop) and Save and Close check `runProofread.isPending` first and show "Still Proofreading" (a ConfirmDialog with only Close, as "Still Saving" does) instead of closing. If it finishes while that's open, the dialog reads "Proofreading Done". Save and Close can't save copy itself (it's disabled with unsaved copy), but if it ever does, the window stays open for that proofread too.
+- **Red**: `.ai-working` (var(--rose), the dots too), last in globals.css so it wins over each message's own grey. On: proofreading ("Frank is proofreading what you saved"), checks ("Frank is checking"), the copy chat's "Frank is thinking", Design with Frank's "is writing / thinking / reading the references" and its references' "Reading…", Ask Frank's "Frank is thinking…", the client's brand overview's "Frank is writing an overview…" and "Frank is updating this…". Not the plain "Frank is working…" loading line, used across the site for data loading, not AI. Buttons that read "Checking…" while a check runs stay as buttons.
+
+**Verified**: new proofread-close.spec.ts, the proofread request held by the test, then answered empty (no AI called): while it's held, the note's colour is rgb(255, 0, 0), its dots too; Escape and Cancel open "Still Proofreading" with its message and leave the window open; once answered it closes. Save and Close during the proofread does the same. A throwaway spec held Ask Frank's request: "Frank is thinking…" was rgb(255, 0, 0). The check wait wasn't run live (it needs brand knowledge); its rule has nothing more specific on colour. Post window, Ask Frank, check, design and copy chat specs pass locally (ask-frank once on a rerun, a timing failure seen before).
+
 ## A clearer PDF upload (1.96.1, 2026-11-23)
 
 Reported directly: the PDF option, folded into the slides' instructions ("Or drop a PDF…"), wasn't clear; images first, as before, then the PDF as its own option below. The slides' text and picker are back to images only; under the slots, `.cslots-pdf`: "Or upload a PDF", what happens (each page a slide, in order, the count following) and the most pages, with its own Upload PDF button and picker. A PDF dropped on the slots still works the same way. Carousels only: a story post has no PDF option.

@@ -246,7 +246,7 @@ const ARTWORK_CHECKS = {
 // Draft with Frank's dots.
 function CheckWait() {
   return (
-    <p className="proof-note check-wait" role="status">
+    <p className="proof-note check-wait ai-working" role="status">
       Frank is checking
       <span className="cchat-dots" aria-hidden="true">
         <i />
@@ -1996,8 +1996,18 @@ export function CreativeModal(props: CreativeModalProps) {
   // left for it to do but close. Artwork isn't required: a post can be
   // copy only, creative only, or both.
   async function handleSaveUpload() {
-    await saveCopyIfChanged();
+    if (runProofread.isPending) {
+      setCloseAsk("proofreading");
+      return;
+    }
+    const savedCopy = await saveCopyIfChanged();
     await saveAssetIfChanged();
+    // New copy is proofread straight away: the window stays open for it
+    // (direct instruction), saying why.
+    if (savedCopy) {
+      setCloseAsk("proofreading");
+      return;
+    }
     onClose();
   }
 
@@ -2005,9 +2015,11 @@ export function CreativeModal(props: CreativeModalProps) {
   // directly: people left thinking a dropped file was added). Unsaved: ask.
   // Mid-save: explain, as the save carries on behind a closed window.
   // A new post started, or a section changed and not saved: ask too.
-  const [closeAsk, setCloseAsk] = useState<"unsaved" | "saving" | "draft" | "parts" | null>(null);
+  // Proofreading (direct instruction): not closed while Frank reads it.
+  const [closeAsk, setCloseAsk] = useState<"unsaved" | "saving" | "draft" | "parts" | "proofreading" | null>(null);
   function requestClose() {
-    if (uploadCarousel.isPending) setCloseAsk("saving");
+    if (runProofread.isPending) setCloseAsk("proofreading");
+    else if (uploadCarousel.isPending) setCloseAsk("saving");
     else if (carouselPending) setCloseAsk("unsaved");
     else if (newPostStarted) setCloseAsk("draft");
     else if (unsavedParts.length) setCloseAsk("parts");
@@ -3354,6 +3366,17 @@ export function CreativeModal(props: CreativeModalProps) {
           setCloseAsk(null);
           onClose();
         }}
+        onClose={() => setCloseAsk(null)}
+      />
+    )}
+    {closeAsk === "proofreading" && (
+      <ConfirmDialog
+        title={runProofread.isPending ? "Still Proofreading" : "Proofreading Done"}
+        message={
+          runProofread.isPending
+            ? "Frank is still proofreading. Keep this window open until the suggestions are in, then close."
+            : "Frank has finished proofreading. Look over the suggestions, then close."
+        }
         onClose={() => setCloseAsk(null)}
       />
     )}

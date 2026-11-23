@@ -15682,3 +15682,13 @@ button.help-link {
 .reply-acts button:hover {
   color: var(--action);
 }
+
+/* Frank at work (direct instruction): whenever AI is running, its
+   "Frank is proofreading / checking / thinking / writing…" is red, the
+   dots with it (they take the text's colour). Not the plain loading
+   "Frank is working…", which isn't AI. Last in the file, so it wins over each
+   message's own colour (.proof-note, .cchat-thinking…). */
+.ai-working,
+.ai-working .cchat-dots i {
+  color: var(--rose);
+}

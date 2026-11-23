@@ -49,7 +49,7 @@ export function ProofreadList({
   const rules = useMemo(() => (ruleRows ? resolveRules(ruleRows) : null), [ruleRows]);
   if (running)
     return (
-      <p className="proof-note" role="status">
+      <p className="proof-note ai-working" role="status">
         Frank is proofreading what you saved
         {/* Draft with Frank's dots (direct instruction). */}
         <span className="cchat-dots" aria-hidden="true">

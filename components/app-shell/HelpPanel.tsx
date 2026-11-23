@@ -560,7 +560,7 @@ export function HelpPanel({
                       />
                     )
                   ) : (
-                    <p className="ask-wait">Frank is thinking…</p>
+                    <p className="ask-wait ai-working">Frank is thinking…</p>
                   )}
                 </div>
               ),

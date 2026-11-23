@@ -354,7 +354,7 @@ export function CopyChat({
           {send.isPending && (
             <div className="cchat-msg assistant pending" role="status">
               <div className="cchat-who">Frank</div>
-              <div className="cchat-thinking">
+              <div className="cchat-thinking ai-working">
                 Frank is thinking
                 <span className="cchat-dots" aria-hidden="true">
                   <i />

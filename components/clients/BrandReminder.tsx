@@ -160,7 +160,7 @@ function Overview({
           {paragraphs}
         </div>
         {stale && refresh.isPending && (
-          <p className="brandrem-also">Frank is updating this…</p>
+          <p className="brandrem-also ai-working">Frank is updating this…</p>
         )}
         <div className="brandrem-full" aria-hidden="true">
           {head}
@@ -170,7 +170,7 @@ function Overview({
     );
   }
   if (refresh.isPending)
-    return <p className="brandrem-empty">Frank is writing an overview…</p>;
+    return <p className="brandrem-empty ai-working">Frank is writing an overview…</p>;
   return <>{fallback}</>;
 }
 
