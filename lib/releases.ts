@@ -13,6 +13,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.101.1",
+    date: "2026-11-24",
+    title: "Review links: what to do first",
+    changes: [
+      "A review link now leads with what to do: Pick your name, then comment or approve. The account comes last, under Optional, after the comment box and Approve, and says the client doesn't need one to give feedback.",
+      "On a post that isn't ready for review yet, Create an account asks for the client's name itself, as there's no name list there.",
+      "Sharing a link now has three copy buttons: Link Only, Link + Instructions and Link + Request. Both messages now name the post in quotes, with the link on a line of its own.",
+      "Close is gone from review links. Browsers don't let a page close a tab it didn't open, so it did nothing when the link was opened from an email or a message.",
+    ],
+  },
+  {
     version: "1.101.0",
     date: "2026-11-24",
     title: "Review links copy with a message",

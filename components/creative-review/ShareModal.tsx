@@ -49,9 +49,15 @@ const SCOPE_OPTIONS: {
 // format — a deliberate loss of the per-format-accurate shape in exchange
 // for looking like the same grid.
 const COPY_OPTIONS: { kind: ReviewMessageKind; label: string }[] = [
+  { kind: "link", label: "Link Only" },
   { kind: "instructions", label: "Link + Instructions" },
   { kind: "request", label: "Link + Request" },
 ];
+const COPIED_NOTE: Record<ReviewMessageKind, string> = {
+  link: "Link",
+  instructions: "Link and instructions",
+  request: "Link and request",
+};
 
 function PieceTile({
   creative,
@@ -133,7 +139,7 @@ export function ShareModal({
   // A client that can't approve at all: no link lets them.
   const approveLocked = !!prefs && !prefs.client_can_approve;
   // The link made, with what its message names it and whether it lets them approve.
-  const [link, setLink] = useState<{ url: string; title: string; canApprove: boolean } | null>(null);
+  const [link, setLink] = useState<{ url: string; title: string; titleIs: "post" | "project"; canApprove: boolean } | null>(null);
   // Copied to the clipboard (direct instruction: say so, and grey the button).
   const [copied, setCopied] = useState<{ kind: ReviewMessageKind; ok: boolean } | null>(null);
 
@@ -267,6 +273,7 @@ export function ShareModal({
     setLink({
       url: `${window.location.origin}${reviewLinkPath(token, brandName, title)}`,
       title: title ?? currentName,
+      titleIs: scope === "one" || onePick ? "post" : "project",
       canApprove: canApprove && !approveLocked,
     });
   }
@@ -317,8 +324,8 @@ export function ShareModal({
               <code>{link.url}</code>
             </div>
           </div>
-          {/* Two messages, always both (direct instruction): the link with
-              step-by-step instructions, or with a short request. */}
+          {/* Three ways, always all (direct instruction): the link alone,
+              with step-by-step instructions, or with a short request. */}
           <div className="field">
             <label>Copy and send</label>
             <div className="sharecopy">
@@ -332,7 +339,7 @@ export function ShareModal({
                     disabled={done}
                     onClick={() =>
                       navigator.clipboard
-                        .writeText(reviewMessage({ kind: opt.kind, title: link.title, link: link.url, canApprove: link.canApprove }))
+                        .writeText(reviewMessage({ kind: opt.kind, title: link.title, titleIs: link.titleIs, link: link.url, canApprove: link.canApprove }))
                         .then(
                           () => setCopied({ kind: opt.kind, ok: true }),
                           () => setCopied({ kind: opt.kind, ok: false }),
@@ -346,7 +353,7 @@ export function ShareModal({
             </div>
             {copied?.ok && (
               <span className="bsaved" role="status">
-                {copied.kind === "instructions" ? "Link and instructions" : "Link and request"} copied. Paste it wherever you&apos;re sending it.
+                {COPIED_NOTE[copied.kind]} copied. Paste it wherever you&apos;re sending it.
               </span>
             )}
             {copied && !copied.ok && (

@@ -5179,6 +5179,22 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Link Only, and Link + Request restructured (1.101.1, 2026-11-24)
+
+Asked directly: a third button, Link Only, and Link + Request in the user's own structure (pasted): "The post "{name}" is ready for review:", the link on its own line, then the ask, then "Any questions? Just reply here." Straight quotes round the name, as pasted. For a link to several posts it reads "The project "{name}"…". Then Link + Instructions the same way (pasted): the same opening, "Create a login using the same link", "Any questions? Just reply here." Link Only comes first, copying the link alone ("Link copied.").
+
+**Verified**: unit tests: Request word for word with the user's example post, "The project" for several, Link Only is the link. share-copy.spec.ts: all three buttons, each read back from the clipboard.
+
+## Review links: what to do first (1.101.1, 2026-11-24)
+
+Reported directly, with a screenshot of a HAPI Dental link on a post not yet in review: Create an account said to choose a name first, with no name list to choose from; "An account is optional…" led, and should not; the account can come below everything, as it doesn't matter for this feedback; "Make it easy for the client to know what to do and what to skip"; and Close did nothing on a computer: remove it or make it work.
+
+- **Order** (GuestComposer): "Pick your name, then comment or approve." (`.rv-lead`; "comment." when the link can't approve), the name list, the comment box and Post, Approve, then the account, set apart with a line and headed Optional: "Want all of {client}'s posts in one place? Create an account or log in. You don't need one to comment or approve." Pressed with no name: "Pick your name above first."
+- **No name list** (a post before or after Client Review): Create an account shows its own Who are you? under it, then Email Me a Link. A link with nobody on its list keeps "Have an account? Log in." under the same line.
+- **Close removed**, phone and computer: `window.close()` only works on a tab a script opened, never on a link opened from an email or a message, which is how clients open them. Approve keeps its row; with no Approve (a link that can't approve) there's no row. `.m-close`'s styles went with it.
+
+**Verified**: shared-review-account.spec.ts: the lead's words, the account block's words, the order (lead, name list, comment, Approve, account) read from the page, no Close; on a post at Internal, no name list above, Create an account then its own list, Email Me a Link and the sent note. shared-review-public.spec.ts's Close test now checks there's none, with and without Approve. shared-review-phone.png differed only at the foot (the "only the client's people" note now above "Have an account? Log in.", looked at, refreshed). Screenshots: in review on a computer and a phone, and not in review with the account's own list, looked right. Full suite, against staging (the local test database had stopped: another project's local Supabase took its ports mid-run): 390 passed, 14 failed; rerun one at a time, 10 passed. shared-review-desktop.png differed only at the foot (the login line below the note, Close gone; looked at, refreshed). plan-enforcement (a staging sign-in refused), stage-statuses and video-review (the post page's Post button, not the link) failed the same way with these changes set aside: staging, not this.
+
 ## Review links copy with a message (1.101.0, 2026-11-24)
 
 Asked directly: the Copy link screen to offer the link with a message. First asked as Link and Link + Instructions, the instructions the default for a client's first 5 reviews; then, asked what counts as one of the 5, changed: no count, two buttons always, Link + Instructions and Link + Request, the user's own wording for both. Asked about step 3's "You can highlight copy or pause videos…": a review link can't highlight copy (only the post page can, for the team), so that part was dropped, as recommended.

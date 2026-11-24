@@ -465,7 +465,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         items: [
           "Choose Share on a post's page, at any status, then Create link, for this post or several.",
           "Add a passcode if you'd like the link protected.",
-          "Copy it with a message to send: Link + Instructions (no account needed, open it, pick your name, comment, Approve; an optional login) or Link + Request (a short ask to comment or approve). Approve is left out when the link can't approve. The one you chose greys out with Copied once it's on your clipboard.",
+          "Copy it as Link Only, or with a message to send: Link + Instructions (no account needed, open it, pick your name, comment, Approve; an optional login) or Link + Request (the post or project named in quotes, the link on its own line, and a short ask to comment or approve). Approve is left out when the link can't approve. The one you chose greys out with Copied once it's on your clipboard.",
           "Send the link to your client, or keep it for your team. It's up to you.",
         ],
       },
@@ -474,7 +474,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         text: "Your client comments, asks for changes and approves (if you allow it) only while a post is in Client Review. Before that they can read it, under Not ready for review yet, and after it the link is theirs to read.",
       },
       { kind: "h", text: "Your team on the link" },
-      { kind: "p", text: "Every link has Have an account? Log in. Signing in brings you back to the link. Anyone on your team who's signed in to Frank on that phone or computer sees the post's own comments on the link, Private ones too, and comments as themselves, with Private, On behalf of the client and @mentions, as on the post's page. There's no Approve for the team on a link; approve from the post's page." },
+      { kind: "p", text: "Every link has log in, at the foot, under Optional. Signing in brings you back to the link. Anyone on your team who's signed in to Frank on that phone or computer sees the post's own comments on the link, Private ones too, and comments as themselves, with Private, On behalf of the client and @mentions, as on the post's page. There's no Approve for the team on a link; approve from the post's page." },
       { kind: "p", text: "A link opens on the post or posts you sent it for, under Sent for review, even once the client has commented. Every link also lists the project's other posts in Client Review, after them, under Also waiting for your review. A post the client has already given feedback on is left out of that list until your team adds a new version of it. Links are named for the client and the post, or the project when they're for several." },
       { kind: "p", text: "Approved posts come last, from recent days only (14 by default; set in [Workspace Settings → General → Preferences](/settings/general/preferences)), though a link always keeps the posts it was sent for. Each post shows its date above its name." },
       { kind: "h", text: "What your client sees" },
@@ -486,7 +486,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         kind: "p",
         text: "[People](client:/settings/people) you've invited as Clients of that client are listed under Who are you?, so they can comment under their own name straight away, before they've accepted their invite and after it expires. Only they can comment on a link.",
       },
-      { kind: "p", text: "The link tells your client an account is optional and doesn't change how they give feedback. Create an account emails the name they chose a fresh invite to their own address (never to anyone else, and not twice within 10 minutes); with it they see all their posts in one place. Someone who has already joined is asked to log in instead." },
+      { kind: "p", text: "On the link your client is told what to do first: Pick your name, then comment or approve, above the name list, then the comment box and Approve. Last, under Optional: Want all of their posts in one place? Create an account or log in; they don't need one to comment or approve. There's no Close: a browser won't let a page close a tab it didn't open. Create an account emails the name they chose a fresh invite to their own address (never to anyone else, and not twice within 10 minutes); with it they see all their posts in one place. Someone who has already joined is asked to log in instead. On a post not in review yet, where there's no name list, it asks for their name itself." },
     ],
   },
   {
