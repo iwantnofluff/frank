@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.100.0",
+    date: "2026-11-24",
+    title: "Client accounts, from a review link",
+    changes: [
+      "Review links now say an account is optional and doesn't change how the client gives feedback, with Create an account beside Log in. It emails the name they chose a fresh invite to their own address, so they can see all their posts in one place. Pressed again within 10 minutes, it isn't sent twice.",
+      "A Client who has accepted their invite can now be removed, from the Client tag on Workspace Settings → Team → Users. They lose access straight away and come off their client's review links. Their name stays on comments they've already made.",
+    ],
+  },
+  {
     version: "1.99.0",
     date: "2026-11-24",
     title: "Safe zones and sizes from the Instagram guide",

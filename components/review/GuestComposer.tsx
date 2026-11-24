@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import type { ReviewController } from "@/hooks/use-review-controller";
 import { formatVideoTime } from "@/lib/annotations";
 import { STAGE } from "@/lib/stage-labels";
+import { useRequestSharedAccount, type AccountRequestStatus } from "@/hooks/use-shared-actions";
 
 // Shared by both the phone and desktop layouts — same state, same
 // handlers, only the wrapping markup differs (developer handover, "one
@@ -49,6 +50,13 @@ export function GuestComposer({
     controller.data?.status === "ok" ? controller.data.client_name : null;
   const workspaceName =
     controller.data?.status === "ok" ? controller.data.agency_name : null;
+  // Whose account Create an account is for: the remembered name, or the one picked.
+  const chosenEmail = knowsWho ? identity.email! : pickerValue ? email : null;
+  const accountLine = noOne ? (
+    <SignInLine />
+  ) : (
+    <AccountLine controller={controller} email={chosenEmail} clientName={clientName} workspaceName={workspaceName} />
+  );
   const alreadyApproved = !!active?.approved_at;
   const approveDisabled = approving || alreadyApproved || noOne;
 
@@ -104,7 +112,7 @@ export function GuestComposer({
   if (active && active.stage !== STAGE.review) {
     return (
       <div className={barClass}>
-        <SignInLine />
+        {accountLine}
         <p className="m-noone">
           {active.stage < STAGE.review
             ? "This post isn't ready for your review yet. You can read it, and comment once it is."
@@ -130,7 +138,7 @@ export function GuestComposer({
     <div className={barClass}>
       {knowsWho ? (
         <>
-          <SignInLine />
+          {accountLine}
           <div className="m-signedin">
             <span className="av" style={{ background: "var(--action)" }}>
               {name.slice(0, 1).toUpperCase()}
@@ -154,10 +162,10 @@ export function GuestComposer({
         </>
       ) : (
         <>
-          {/* A plain link back to the real app — present, never required.
+          {/* Signing in or creating an account — offered, never required.
               This page stays fully anonymous either way: picking a name
               below is enough to comment or approve on its own. */}
-          <SignInLine />
+          {accountLine}
 
           {noOne ? (
             <p className="m-noone">
@@ -282,6 +290,75 @@ function describeStatus(status: string) {
       return "Only the client's own people can comment here. Choose your name from the list.";
     default:
       return "That didn't go through.";
+  }
+}
+
+// An account, offered on every state of the link and never needed (direct
+// instruction: the client should know it's optional and changes nothing
+// about giving feedback). Create an account emails the chosen name a fresh
+// invite to their own address; nothing is shown that would let someone
+// else in.
+function AccountLine({
+  controller,
+  email,
+  clientName,
+  workspaceName,
+}: {
+  controller: ReviewController;
+  email: string | null;
+  clientName: string | null;
+  workspaceName: string | null;
+}) {
+  const pathname = usePathname();
+  const request = useRequestSharedAccount(controller.token, controller.passcode);
+  const [asked, setAsked] = useState<{ status: AccountRequestStatus | "no_name"; email: string | null } | null>(null);
+  const logIn = (
+    <a href={`/login?redirect_to=${encodeURIComponent(pathname)}`} style={{ color: "var(--action)" }}>
+      log in
+    </a>
+  );
+  // The answer is for the name it was asked for; picking another starts again.
+  const result = asked && (asked.status === "no_name" ? !email : asked.email === email) ? asked.status : null;
+
+  async function create() {
+    if (!email) {
+      setAsked({ status: "no_name", email: null });
+      return;
+    }
+    const status = await request.mutateAsync(email);
+    setAsked({ status, email });
+  }
+
+  return (
+    <div className="rv-signin">
+      An account is optional and doesn&apos;t change how you give feedback here.{" "}
+      <button type="button" className="rv-linkbtn" disabled={request.isPending} onClick={() => void create()}>
+        {request.isPending ? "Sending…" : "Create an account"}
+      </button>{" "}
+      to see all of {clientName ? `${clientName}'s` : "your"} posts in one place, or {logIn}.
+      {result && (
+        <div className="rv-accountnote" role="status">
+          {accountNote(result, email, workspaceName)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function accountNote(status: AccountRequestStatus | "no_name", email: string | null, workspaceName: string | null) {
+  switch (status) {
+    case "no_name":
+      return "Choose your name first, then Create an account.";
+    case "sent":
+      return `We've emailed ${email} a link to set up your account. Your feedback here works the same either way.`;
+    case "already_sent":
+      return `We've just emailed ${email} a link to set up your account. Check your inbox.`;
+    case "has_account":
+      return "You already have an account. Log in to see everything in one place.";
+    case "not_invited":
+      return `Ask ${workspaceName ?? "the team who sent this"} to invite you, then you can create an account.`;
+    default:
+      return "That didn't go through. Try again in a moment.";
   }
 }
 

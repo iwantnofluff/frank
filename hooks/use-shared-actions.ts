@@ -242,3 +242,22 @@ export function useSubmitSharedRequestChanges(token: string, passcode: string | 
     },
   });
 }
+
+// Create an account, from the link (direct instruction): emails the picked
+// name a fresh invite (app/api/shared-review/account). Optional; nothing
+// about commenting depends on it.
+export type AccountRequestStatus = "sent" | "already_sent" | "has_account" | "not_invited" | "not_found" | "error";
+
+export function useRequestSharedAccount(token: string, passcode: string | null) {
+  return useMutation({
+    mutationFn: async (email: string): Promise<AccountRequestStatus> => {
+      const res = await fetch("/api/shared-review/account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, passcode, email }),
+      });
+      const data = (await res.json().catch(() => null)) as { status?: AccountRequestStatus } | null;
+      return data?.status ?? "error";
+    },
+  });
+}

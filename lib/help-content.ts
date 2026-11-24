@@ -484,8 +484,9 @@ export const HELP_ARTICLES: HelpArticle[] = [
       { kind: "p", text: "An approval counts once, however many times it's pressed." },
       {
         kind: "p",
-        text: "[People](client:/settings/people) you've invited as Clients of that client are listed under Who are you?, so they can comment under their own name straight away. Only they can comment on a link.",
+        text: "[People](client:/settings/people) you've invited as Clients of that client are listed under Who are you?, so they can comment under their own name straight away, before they've accepted their invite and after it expires. Only they can comment on a link.",
       },
+      { kind: "p", text: "The link tells your client an account is optional and doesn't change how they give feedback. Create an account emails the name they chose a fresh invite to their own address (never to anyone else, and not twice within 10 minutes); with it they see all their posts in one place. Someone who has already joined is asked to log in instead." },
     ],
   },
   {
