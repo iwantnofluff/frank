@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import { formatVideoTime } from "@/lib/annotations";
 import { avatarColour } from "@/lib/avatar-colour";
 import { VideoSafeZones } from "./SafeZoneOverlay";
+import { captureFrame } from "@/lib/video-frame";
 
 export interface TimelineMarker {
   commentId: string;
@@ -33,6 +34,7 @@ export function VideoPlayer({
   ratio,
   expandable = false,
   cover,
+  frameAction,
 }: {
   // Not yet known while the file's address is fetched: the player is
   // drawn at its size anyway, so nothing moves when the video arrives.
@@ -59,8 +61,58 @@ export function VideoPlayer({
   // that fills the phone's screen with it, as the app does — the phone's,
   // not the computer's (direct instruction).
   expandable?: boolean;
+  // Use a paused frame (direct instruction: a Reel's thumbnail from its
+  // video): a button in the bar while paused, then a check of the frame
+  // before `onUse` takes it. The team's, where the post has a thumbnail.
+  frameAction?: {
+    // The button's words and its confirm's ("Use as Thumbnail", "Save as V3").
+    label: string;
+    confirmLabel: string;
+    onUse: (file: File, t: number) => Promise<void> | void;
+  };
 }) {
   const ref = useRef<HTMLVideoElement>(null);
+  // The frame being checked before it's used: its image, file and moment.
+  const [frame, setFrame] = useState<{ url: string; file: File; t: number } | null>(null);
+  const [frameBusy, setFrameBusy] = useState(false);
+  const [frameError, setFrameError] = useState<string | null>(null);
+  useEffect(() => () => {
+    if (frame) URL.revokeObjectURL(frame.url);
+  }, [frame]);
+  async function takeFrame() {
+    const v = ref.current;
+    if (!v) return;
+    setFrameError(null);
+    try {
+      const file = await captureFrame(v);
+      setFrame({ url: URL.createObjectURL(file), file, t: v.currentTime });
+    } catch (e) {
+      setFrameError(e instanceof Error ? e.message : "This frame couldn't be copied.");
+    }
+  }
+  async function confirmFrame() {
+    if (!frame || !frameAction) return;
+    setFrameBusy(true);
+    setFrameError(null);
+    try {
+      await frameAction.onUse(frame.file, frame.t);
+      setFrame(null);
+    } catch (e) {
+      setFrameError(e instanceof Error ? e.message : "It couldn't be saved.");
+    } finally {
+      setFrameBusy(false);
+    }
+  }
+  // Paused, ← and → step a frame at a time (about 1/30s), to land on the
+  // exact one; kept to this player.
+  function stepKeys(e: React.KeyboardEvent) {
+    if (!frameAction || !paused || frame) return;
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    if ((e.target as HTMLElement).closest(".vtrack, input, textarea")) return;
+    e.preventDefault();
+    e.stopPropagation();
+    goTo(time + (e.key === "ArrowRight" ? 1 : -1) / 30);
+  }
   const [full, setFull] = useState(false);
   const [ownRatio, setOwnRatio] = useState<number | null>(null);
   const r = ownRatio ?? ratio;
@@ -126,7 +178,7 @@ export function VideoPlayer({
   const pct = (t: number) => (duration ? `${(Math.min(t, duration) / duration) * 100}%` : "0%");
 
   return (
-    <div className={`vplayer${full ? " full" : ""}`} style={{ "--vr": r } as CSSProperties}>
+    <div className={`vplayer${full ? " full" : ""}`} style={{ "--vr": r } as CSSProperties} onKeyDown={stepKeys}>
       {/* Sized from the shape, not from the loaded video (.vframe): as wide
           as fits, no taller than 62% of the screen, or a Story's screen. */}
       <div className="vframe" style={{ "--vr": r } as CSSProperties}>
@@ -163,6 +215,9 @@ export function VideoPlayer({
           // draw a frame from metadata alone; asking for the first moment
           // makes them load and show it.
           src={src ? `${src}#t=0.001` : src}
+          // So a paused frame can be copied (frameAction): storage allows
+          // any origin, and no cookies are sent.
+          crossOrigin="anonymous"
           playsInline
           preload="metadata"
           style={{ width: "100%", aspectRatio: String(r) }}
@@ -268,7 +323,53 @@ export function VideoPlayer({
         <span className="vtime">
           {formatVideoTime(time)} / {formatVideoTime(duration)}
         </span>
+        {frameAction && paused && (started || !cover) && (
+          <button
+            type="button"
+            className="vplay vframe-pick"
+            aria-label={frameAction.label}
+            title={`${frameAction.label} (← → step a frame)`}
+            onClick={() => void takeFrame()}
+          >
+            <svg viewBox="0 0 24 24">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <path d="M21 15l-5-5L5 21" />
+            </svg>
+          </button>
+        )}
       </div>
+      {/* The frame, checked before it's used; nothing happens until then. */}
+      {(frame || frameError) && (
+        <div className="vframe-pop" role="dialog" aria-label={frameAction?.label}>
+          {frame && (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element -- a local preview */}
+              <img src={frame.url} alt={`The frame at ${formatVideoTime(frame.t)}`} />
+              <span className="vframe-pop-t">{`${frameAction?.label ?? "Frame"} from ${formatVideoTime(frame.t)}`}</span>
+            </>
+          )}
+          {frameError && <p className="autherr tiny">{frameError}</p>}
+          <div className="vframe-pop-acts">
+            <button
+              type="button"
+              className="btn sm"
+              disabled={frameBusy}
+              onClick={() => {
+                setFrame(null);
+                setFrameError(null);
+              }}
+            >
+              Cancel
+            </button>
+            {frame && (
+              <button type="button" className="btn sm primary" disabled={frameBusy} onClick={() => void confirmFrame()}>
+                {frameBusy ? "Saving…" : frameAction?.confirmLabel}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

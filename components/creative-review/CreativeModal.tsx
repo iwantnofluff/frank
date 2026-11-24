@@ -47,6 +47,7 @@ import {
   hasVideoFormat,
   storedSlideCount,
   wordsOnly,
+  formatRatio,
   type FormatSizes,
 } from "@/lib/formats";
 import { slideFields, tidySlideText } from "@/lib/slide-text";
@@ -3006,6 +3007,10 @@ export function CreativeModal(props: CreativeModalProps) {
               creativeId={creativeId}
               agencyId={agencyId}
               aspectRatio={aspectRatioCss(format, keptSizes)}
+              // Pick from Video (direct instruction): the latest version's
+              // first video, to take a frame from.
+              videoKey={versionSlides(creativeVersions[0]).find((sl) => sl.asset.mime_type.startsWith("video/"))?.asset.storage_key ?? null}
+              videoRatio={formatRatio(format, keptSizes)}
             />
           )}
 

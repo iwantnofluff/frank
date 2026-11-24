@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useArtworkUrl } from "@/hooks/use-asset-signed-url";
 import { THUMBNAIL_TYPES, useSaveThumbnail, useThumbnailVersions, type ThumbnailVersion } from "@/hooks/use-thumbnails";
 import { errorMessage } from "@/lib/errors";
+import { VideoPlayer } from "./VideoPlayer";
 
 // A video post's Thumbnail on the Content tab, after Creative (phase118,
 // direct instruction): one image in Creative's slot, saved as V1, V2 and so
@@ -14,11 +15,19 @@ export function ThumbnailSection({
   creativeId,
   agencyId,
   aspectRatio,
+  videoKey,
+  videoRatio,
 }: {
   creativeId: string;
   agencyId: string;
   aspectRatio: string;
+  // The post's latest video, for Pick from Video (direct instruction): a
+  // paused frame as the thumbnail. null: no video yet.
+  videoKey?: string | null;
+  videoRatio?: number;
 }) {
+  const [pickingFrame, setPickingFrame] = useState(false);
+  const { data: videoUrl } = useArtworkUrl(pickingFrame ? (videoKey ?? undefined) : undefined);
   const { data: versions } = useThumbnailVersions(creativeId);
   const latest = versions?.[0] ?? null;
   const [viewingNo, setViewingNo] = useState<number | null>(null);
@@ -109,7 +118,40 @@ export function ThumbnailSection({
           />
           <p className="sub" style={{ marginBottom: 8 }}>
             Drop an image on the slot, or click it to browse. JPG, PNG or WebP up to 20MB.
+            {videoKey && (
+              <>
+                {" "}
+                Or{" "}
+                <button type="button" className="linkbtn" aria-expanded={pickingFrame} onClick={() => setPickingFrame((on) => !on)}>
+                  {pickingFrame ? "close the video" : "pick a frame from the video"}
+                </button>
+                .
+              </>
+            )}
           </p>
+          {/* The video to pause on the frame wanted; Use This Frame puts it
+              in the slot, to save as any picked image is. */}
+          {pickingFrame && videoKey && (
+            <div className="thumb-pick">
+              <VideoPlayer
+                src={videoUrl ?? undefined}
+                ratio={videoRatio ?? 9 / 16}
+                markers={[]}
+                highlightedCommentId={null}
+                onMarker={() => {}}
+                seek={null}
+                frameAction={{
+                  label: "Use This Frame",
+                  confirmLabel: "Use This Frame",
+                  onUse: (file) => {
+                    choose(file);
+                    setPickingFrame(false);
+                  },
+                }}
+              />
+              <p className="sub">Pause on the frame you want (← → step a frame), then press the image button in the bar.</p>
+            </div>
+          )}
           <div
             className="cslots"
             aria-label="Thumbnail"

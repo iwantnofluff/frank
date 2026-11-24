@@ -8758,6 +8758,66 @@ button.avatar {
 .vplay:hover {
   background: rgba(255, 255, 255, 0.14);
 }
+/* Use as Thumbnail (direct instruction: a paused frame as the thumbnail):
+   the image icon at the bar's end, only while paused; its outline icon, as
+   the prototype draws it. */
+.vplay.vframe-pick svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* Pick from Video in the post window's Thumbnail (ThumbnailSection): the
+   video, small, under the slot's words. */
+.thumb-pick {
+  max-width: 300px;
+  margin: 4px 0 14px;
+}
+/* The video held to about 340px tall, its bar the full width, so the
+   timeline keeps its room. */
+.thumb-pick .vframe {
+  width: min(100%, calc(340px * var(--vr)));
+}
+.thumb-pick .sub {
+  margin-top: 6px;
+}
+/* The frame, checked above the bar before it's used. */
+.vplayer:has(.vframe-pop) {
+  position: relative;
+}
+.vframe-pop {
+  position: absolute;
+  right: 8px;
+  bottom: 54px;
+  z-index: 7;
+  width: 230px;
+  padding: 10px;
+  border-radius: var(--r);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  animation: rise-in var(--dur-fast) var(--ease-out);
+}
+.vframe-pop img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  max-height: 220px;
+  margin: 0 auto;
+  border-radius: 6px;
+}
+.vframe-pop-t {
+  display: block;
+  margin: 8px 0 10px;
+  font-size: 12.2px;
+  font-weight: 600;
+}
+.vframe-pop-acts {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
 .vplay svg {
   width: 16px;
   height: 16px;

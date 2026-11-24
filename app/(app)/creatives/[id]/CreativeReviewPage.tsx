@@ -36,7 +36,7 @@ import { type ReviewSection } from "@/components/creative-review/ReviewNav";
 import { SectionRail } from "@/components/creative-review/SectionRail";
 import { FeedPreviewGrid } from "@/components/creative-review/FeedPreviewGrid";
 import { PhoneFrame } from "@/components/creative-review/PhoneFrame";
-import { useThumbnailVersions } from "@/hooks/use-thumbnails";
+import { useSaveThumbnail, useThumbnailVersions } from "@/hooks/use-thumbnails";
 import { useProductionVersions } from "@/hooks/use-production-versions";
 import { ScrollHint, hasScrollHint } from "@/components/creative-review/ScrollHint";
 import { PNAV_CURRENT_H, PostNeighbours } from "@/components/creative-review/PostNeighbours";
@@ -231,6 +231,10 @@ export function CreativeReviewPage({ id }: { id: string }) {
   const activeThumbnail =
     thumbnailVersions?.find((v) => v.id === thumbnailId) ?? thumbnailVersions?.find((v) => v.asset) ?? null;
   const { data: thumbnailUrl } = useArtworkUrl(activeThumbnail?.asset?.storage_key);
+  // A paused frame as the next thumbnail (direct instruction), from the
+  // video's bar; saved as uploading one is.
+  const saveThumbnail = useSaveThumbnail(id, creative?.agency_id ?? "");
+  const latestThumbnailNo = thumbnailVersions?.[0]?.versionNo ?? 0;
   // The Text on Image's and VO's versions (phase161, direct instruction):
   // the team's only, as their versions are, picked beside Creative and Copy
   // while the placeholder shows their words. Else the latest.
@@ -690,6 +694,19 @@ export function CreativeReviewPage({ id }: { id: string }) {
           cover={slidePosition === 1 ? (thumbnailUrl ?? null) : null}
           ratio={formatRatio(shownFormat, creative.sizes)}
           expandable={isReelFormat(shownFormat)}
+          frameAction={
+            isStaff && creative.agency_id && hasVideoFormat(postFormats(creative))
+              ? {
+                  label: "Use as Thumbnail",
+                  confirmLabel: `Save as V${latestThumbnailNo + 1}`,
+                  onUse: async (file) => {
+                    await saveThumbnail.mutateAsync({ file, latestVersionNo: latestThumbnailNo });
+                    // The new one, as the cover.
+                    setThumbnailId(null);
+                  },
+                }
+              : undefined
+          }
           markers={videoMarkers}
           highlightedCommentId={highlightedCommentId}
           onMarker={setHighlightedCommentId}
