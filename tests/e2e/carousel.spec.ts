@@ -444,7 +444,7 @@ test("a format change the artwork no longer fits warns, and confirming removes a
   await expect(warning).toContainText("E2E, changing the format will remove all uploaded creatives");
   await expect(warning).toContainText("Instagram Carousel is a carousel and Instagram Reel is a single piece.");
   await expect(warning).toContainText("Instagram Carousel is an image and Instagram Reel is a video.");
-  await expect(warning).toContainText("Instagram Carousel is 4:5 and Instagram Reel is 9:16.");
+  await expect(warning).toContainText("Instagram Carousel is 3:4 and Instagram Reel is 9:16.");
 
   // Cancel changes nothing.
   await warning.getByRole("button", { name: "Cancel" }).click();

@@ -10,7 +10,7 @@ test("carousel to reel warns about the carousel, the video and the shape", () =>
   assert.equal(r.length, 3);
   assert.match(r[0], /Instagram Carousel is a carousel and Instagram Reel is a single piece/);
   assert.match(r[1], /an image and Instagram Reel is a video/);
-  assert.match(r[2], /4:5 and Instagram Reel is 9:16/);
+  assert.match(r[2], /3:4 and Instagram Reel is 9:16/);
 });
 
 test("a change the artwork still fits says nothing", () => {
@@ -26,7 +26,7 @@ test("a change the artwork still fits says nothing", () => {
 
 test("shape, single to carousel, and fewer slides each warn on their own", () => {
   assert.deepEqual(artworkChangeReasons(post(["ig_feed"]), post(["meta_feed"]), 1), [
-    "Instagram Post is 4:5 and Meta Feed Ad is 1:1.",
+    "Instagram Post is 3:4 and Meta Feed Ad is 4:5.",
   ]);
   assert.deepEqual(artworkChangeReasons(post(["ig_feed"]), post(["ig_carousel"], 3), 1), [
     "Instagram Post is a single piece and Instagram Carousel is a carousel.",

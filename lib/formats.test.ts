@@ -145,7 +145,8 @@ test("each format's default size keeps the shape it had before sizes (phase139)"
 });
 
 test("a post's chosen size wins over the default, per format; none falls back to square", () => {
-  assert.deepEqual(postSize("ig_feed"), { w: 1080, h: 1350 });
+  // 3:4 by default (24 Nov 2026, the user's Instagram guide).
+  assert.deepEqual(postSize("ig_feed"), { w: 1080, h: 1440 });
   assert.deepEqual(postSize("ig_feed", { ig_feed: { w: 1080, h: 1080 } }), { w: 1080, h: 1080 });
   assert.deepEqual(postSize("li_image", { ig_feed: { w: 1080, h: 1080 } }), { w: 1200, h: 627 });
   assert.equal(aspectRatioCss("ig_feed", { ig_feed: { w: 1080, h: 566 } }), "1080 / 566");

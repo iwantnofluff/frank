@@ -99,7 +99,7 @@ test("Safe Zones is in Fullscreen only, over a Reel's playing video, with the Re
   await toggle.click();
   await expect(toggle).toHaveAttribute("aria-pressed", "true");
   // The video draws its own, in its frame.
-  const zones = post.locator(".vframe .safezones");
+  const zones = post.locator('.vframe .safezones[data-kind="reel"]');
   await expect(zones.locator(".safezone-covered")).toHaveText(["Back and create", "Buttons", "Name and caption"]);
   // Exactly over the video's picture, and the video plays under it.
   const frame = (await post.locator(".vframe").boundingBox())!;
@@ -118,6 +118,14 @@ test("Safe Zones is in Fullscreen only, over a Reel's playing video, with the Re
   await expect(fullFrame.locator(".safezones")).toBeVisible();
   await post.getByRole("button", { name: "Collapse video" }).click();
   await expect(post.locator(".vplayer.full")).toHaveCount(0);
+  // Feed Crop: the middle 1080×1440, the rest darkened, with or without
+  // the zones.
+  await page.getByRole("button", { name: "Feed Crop Off" }).click();
+  const crop = post.locator('.vframe .safezones[data-kind="feedCrop"]');
+  await expect(crop.locator(".safezone-covered")).toHaveText(["Cropped in the feed", "Cropped in the feed"]);
+  await expect(zones.locator(".safezone-covered")).toHaveCount(3);
+  await page.getByRole("button", { name: "Feed Crop On" }).click();
+  await expect(crop).toHaveCount(0);
   // Out of Fullscreen: gone; back in, as it was left.
   await page.keyboard.press("Escape");
   await expect(zones).toHaveCount(0);
@@ -127,7 +135,7 @@ test("Safe Zones is in Fullscreen only, over a Reel's playing video, with the Re
   await expect(zones).toHaveCount(0);
 });
 
-test("a Story and a Short have their own zones; a feed post and a client have no switch", async ({ page, browser, frank }) => {
+test("Stories, Shorts, posts and carousels have their own zones; other formats and a client have no switch", async ({ page, browser, frank }) => {
   test.setTimeout(120_000);
   await frank.createArtworkVersion(frank.creativeId, 1, "story.png");
   await admin.from("creatives").update({ format: "ig_story", formats: ["ig_story"], slide_count: null }).eq("id", frank.creativeId);
@@ -136,7 +144,9 @@ test("a Story and a Short have their own zones; a feed post and a client have no
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
   await fullscreen(page);
   await page.getByRole("button", { name: /^Safe Zones/ }).click();
-  await expect(page.locator(".ig.story .safezone-covered")).toHaveText(["Account and progress", "Reply bar or call to action"]);
+  // The guide's 250px top and foot, the good zones inside them.
+  await expect(page.locator(".ig.story .safezone-covered")).toHaveText(["Account and progress", "Reply bar"]);
+  await expect(page.locator(".ig.story .safezone-good")).toHaveText(["Good zone", "Good zone"]);
 
   await admin.from("creatives").update({ format: "yt_short", formats: ["yt_short"] }).eq("id", frank.creativeId);
   await page.reload();
@@ -144,7 +154,28 @@ test("a Story and a Short have their own zones; a feed post and a client have no
   await page.getByRole("button", { name: /^Safe Zones/ }).click();
   await expect(page.locator(".yt-short .safezone-covered")).toHaveText(["Search and menu", "Buttons", "Channel, title and audio"]);
 
+  // A post (3:4): its margins; a carousel: the strip on the right.
   await admin.from("creatives").update({ format: "ig_feed", formats: ["ig_feed"] }).eq("id", frank.creativeId);
+  await page.reload();
+  await fullscreen(page);
+  await page.getByRole("button", { name: /^Safe Zones/ }).click();
+  const postZones = page.locator('.safezones[data-kind="post"]');
+  await expect(postZones.locator(".safezone-covered")).toHaveCount(4);
+  await expect(postZones.locator(".safezone-covered span")).toHaveText(["Margin", "Margin"]);
+  // Over the whole picture, not a 9:16 frame.
+  const pic = (await page.locator(".ig-media").first().boundingBox())!;
+  const over = (await postZones.boundingBox())!;
+  expect(Math.abs(over.height - pic.height)).toBeLessThan(3);
+  await expect(page.getByRole("button", { name: /^Feed Crop/ })).toHaveCount(0);
+
+  await admin.from("creatives").update({ format: "ig_carousel", formats: ["ig_carousel"], slide_count: 2 }).eq("id", frank.creativeId);
+  await page.reload();
+  await fullscreen(page);
+  await page.getByRole("button", { name: /^Safe Zones/ }).click();
+  await expect(page.locator('.safezones[data-kind="carousel"] .safezone-covered')).toHaveText(["Count and buttons"]);
+
+  // A format with no zones: no switch.
+  await admin.from("creatives").update({ format: "li_image", formats: ["li_image"], slide_count: null }).eq("id", frank.creativeId);
   await page.reload();
   await fullscreen(page);
   await expect(page.getByRole("button", { name: /^Safe Zones/ })).toHaveCount(0);

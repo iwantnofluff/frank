@@ -13,6 +13,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.99.0",
+    date: "2026-11-24",
+    title: "Safe zones and sizes from the Instagram guide",
+    changes: [
+      "Safe Zones in Fullscreen now follow the Instagram guide. Reels: 220px top, 35px sides, 450px foot, an L round the buttons. Stories: 250px top and foot, with the good zones inside them shaded lighter. Meta Stories and Reels ads: 220px top, 450px foot.",
+      "Safe Zones for Instagram Posts (50px sides, 180px top and foot) and Carousels (120px down the right, for the count and the buttons).",
+      "Feed Crop, for a Reel in Fullscreen: what a follower sees of it in the feed, its middle 1080×1440, the rest darkened. On with Safe Zones or on its own.",
+      "New Instagram Posts and Carousels start at 1080×1440 (3:4), and Meta Feed and Carousel Ads at 1080×1350 (4:5), as the guide recommends. The other sizes are still there to pick, and posts already made keep theirs.",
+    ],
+  },
+  {
     version: "1.98.2",
     date: "2026-11-24",
     title: "Thumbnails from Fullscreen",

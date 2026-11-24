@@ -19,7 +19,8 @@ test("a format's size is chosen under Format, and the post is drawn at it", asyn
   const media = page.locator(".ig-media .awaiting").first();
   await expect(media).toBeVisible({ timeout: 20_000 });
   const shape = () => media.evaluate((e) => getComputedStyle(e).aspectRatio);
-  expect(await shape()).toContain("1080 / 1350");
+  // 3:4 by default (24 Nov 2026, the user's Instagram guide).
+  expect(await shape()).toContain("1080 / 1440");
 
   const open = async () => {
     await expect(async () => {
@@ -31,7 +32,8 @@ test("a format's size is chosen under Format, and the post is drawn at it", asyn
   await open();
   const ig = page.getByLabel("Instagram Post size");
   expect(await ig.locator("option").allTextContents()).toEqual([
-    "1080 × 1350 · 4:5 (default)",
+    "1080 × 1440 · 3:4 (default)",
+    "1080 × 1350 · 4:5",
     "1080 × 1080 · 1:1",
     "1080 × 566 · 1.91:1",
     "Custom size",
@@ -47,7 +49,7 @@ test("a format's size is chosen under Format, and the post is drawn at it", asyn
 
   // Back to the default: nothing kept for it.
   await open();
-  await page.getByLabel("Instagram Post size").selectOption({ label: "1080 × 1350 · 4:5 (default)" });
+  await page.getByLabel("Instagram Post size").selectOption({ label: "1080 × 1440 · 3:4 (default)" });
   await page.getByRole("button", { name: "Update", exact: true }).click();
   await expect.poll(() => sizesOf(frank.creativeId), { timeout: 10_000 }).toEqual({ li_image: { w: 1200, h: 900 } });
   await page.keyboard.press("Escape");

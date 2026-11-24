@@ -127,6 +127,9 @@ export function CreativeReviewPage({ id }: { id: string }) {
   // zones once it's full size); off until turned on, kept while the post
   // is open.
   const [safeZonesOn, setSafeZonesOn] = useState(false);
+  // A Reel's crop in the feed (its middle 1080×1440, from the user's guide):
+  // its own switch beside Safe Zones.
+  const [feedCropOn, setFeedCropOn] = useState(false);
   // Another of the post's formats picked to show it as (FormatSwitch).
   const [viewFormat, setViewFormat] = useState<string | null>(null);
   useEffect(() => {
@@ -1203,6 +1206,17 @@ export function CreativeReviewPage({ id }: { id: string }) {
                       Safe Zones {safeZonesOn ? "On" : "Off"}
                     </button>
                   )}
+                  {isStaff && shownFormat === "ig_reel" && (
+                    <button
+                      type="button"
+                      className="pexpand-zones"
+                      aria-pressed={feedCropOn}
+                      title="What a follower sees of the Reel in the feed: its middle 1080×1440"
+                      onClick={() => setFeedCropOn((on) => !on)}
+                    >
+                      Feed Crop {feedCropOn ? "On" : "Off"}
+                    </button>
+                  )}
                   {/* A paused frame as the next thumbnail: usable once the
                       video's paused, said so while it plays. */}
                   {thumbFromFrame && (
@@ -1273,6 +1287,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
                 format={shownFormat}
                 frame="phone"
                 safeZones={isStaff && expanded && safeZonesOn}
+                feedCrop={isStaff && expanded && feedCropOn}
                 accountName={accountName}
                 // The connected Instagram's own picture, else the client's
                 // logo (direct instruction), else the ring.

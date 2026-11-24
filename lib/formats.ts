@@ -52,8 +52,8 @@ export const FORMAT_CATEGORIES = [
 
 export const FORMATS: FormatDefinition[] = [
   // Social — organic
-  { id: "ig_feed", category: "Social — organic", label: "Instagram Post", aspectRatio: "4:5", copyFields: ["caption", "alt"] },
-  { id: "ig_carousel", category: "Social — organic", label: "Instagram Carousel", aspectRatio: "4:5", copyFields: ["caption", "alt"] },
+  { id: "ig_feed", category: "Social — organic", label: "Instagram Post", aspectRatio: "3:4", copyFields: ["caption", "alt"] },
+  { id: "ig_carousel", category: "Social — organic", label: "Instagram Carousel", aspectRatio: "3:4", copyFields: ["caption", "alt"] },
   { id: "ig_reel", category: "Social — organic", label: "Instagram Reel", aspectRatio: "9:16", copyFields: ["caption", "hook"] },
   { id: "ig_story", category: "Social — organic", label: "Instagram Story", aspectRatio: "9:16", copyFields: [] },
   { id: "fb_feed", category: "Social — organic", label: "Facebook Post", aspectRatio: "1.91:1", copyFields: ["caption"] },
@@ -70,9 +70,9 @@ export const FORMATS: FormatDefinition[] = [
   { id: "pin", category: "Social — organic", label: "Pinterest Pin", aspectRatio: "2:3", copyFields: ["title", "description"] },
 
   // Performance marketing
-  { id: "meta_feed", category: "Performance marketing", label: "Meta Feed Ad", aspectRatio: "1:1", copyFields: ["primary", "headline", "description", "cta"] },
+  { id: "meta_feed", category: "Performance marketing", label: "Meta Feed Ad", aspectRatio: "4:5", copyFields: ["primary", "headline", "description", "cta"] },
   { id: "meta_story", category: "Performance marketing", label: "Meta Stories / Reels Ad", aspectRatio: "9:16", copyFields: ["primary", "headline", "cta"] },
-  { id: "meta_carousel", category: "Performance marketing", label: "Meta Carousel Ad", aspectRatio: "1:1", copyFields: ["primary", "headline", "cta"] },
+  { id: "meta_carousel", category: "Performance marketing", label: "Meta Carousel Ad", aspectRatio: "4:5", copyFields: ["primary", "headline", "cta"] },
   { id: "g_display", category: "Performance marketing", label: "Google Display Banner", aspectRatio: "multi", copyFields: ["headline", "description"] },
   { id: "g_rsa", category: "Performance marketing", label: "Google Responsive Search Ad", aspectRatio: "—", copyFields: ["headline", "description"] },
   { id: "g_pmax", category: "Performance marketing", label: "Performance Max Asset Group", aspectRatio: "multi", copyFields: ["headline", "description", "cta"] },
@@ -281,8 +281,11 @@ export type FormatSizes = Record<string, FormatSize>;
 // artwork's own shape unless a custom size is chosen; the text-only ones
 // have no size at all.
 const SIZE_PRESETS: Record<string, [number, number][]> = {
-  ig_feed: [[1080, 1350], [1080, 1080], [1080, 566]],
-  ig_carousel: [[1080, 1350], [1080, 1080], [1080, 566]],
+  // Instagram Post and Carousel: 3:4 first (direct instruction, 24 Nov
+  // 2026, from the user's guide: it takes more of the feed); existing posts
+  // keep 4:5 (phase165).
+  ig_feed: [[1080, 1440], [1080, 1350], [1080, 1080], [1080, 566]],
+  ig_carousel: [[1080, 1440], [1080, 1350], [1080, 1080], [1080, 566]],
   ig_reel: [[1080, 1920]],
   ig_story: [[1080, 1920]],
   fb_feed: [[1200, 630], [1080, 1080], [1080, 1350]],
@@ -295,9 +298,10 @@ const SIZE_PRESETS: Record<string, [number, number][]> = {
   yt_thumb: [[1280, 720]],
   wa_status: [[1080, 1920]],
   pin: [[1000, 1500], [1000, 1000], [1000, 2100]],
-  meta_feed: [[1080, 1080], [1080, 1350], [1200, 628]],
+  // Meta ads: 4:5 first (the same guide: 3:4 can't be promoted).
+  meta_feed: [[1080, 1350], [1080, 1080], [1200, 628]],
   meta_story: [[1080, 1920]],
-  meta_carousel: [[1080, 1080]],
+  meta_carousel: [[1080, 1350], [1080, 1080]],
   g_display: [[300, 250], [728, 90], [160, 600], [320, 50], [336, 280], [300, 600]],
   g_pmax: [[1200, 628], [1200, 1200], [960, 1200]],
   yt_preroll: [[1920, 1080]],

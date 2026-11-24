@@ -5,7 +5,7 @@ import { DEFAULT_CTA, postTemplate } from "@/lib/post-templates";
 import { copyFieldsFor } from "@/lib/formats";
 import { StoryReplyBar } from "./StoryReplyBar";
 import { SafeZoneContext, SafeZoneOverlay } from "./SafeZoneOverlay";
-import { safeZoneKind } from "@/lib/safe-zones";
+import { safeZoneKind, type SafeZoneKind } from "@/lib/safe-zones";
 
 // A post as its platform shows it (decided directly), for the post page and
 // the review link, on a computer (in the phone) and on a phone (in its
@@ -26,6 +26,7 @@ export function PlatformPost({
   commentButton,
   footer,
   safeZones = false,
+  feedCrop = false,
 }: {
   format: string | null | undefined;
   // In the phone on a computer, or the phone's own card (where a Story is
@@ -48,10 +49,16 @@ export function PlatformPost({
   // The platform's covered areas over a vertical post (SafeZoneOverlay):
   // the team's switch in the post page's Fullscreen.
   safeZones?: boolean;
+  // A Reel's crop in the feed (its middle 1080×1440), the same way.
+  feedCrop?: boolean;
 }) {
   const t = postTemplate(format);
   const story = t.story && frame === "phone";
-  const zoneKind = safeZones && frame === "phone" ? safeZoneKind(format) : null;
+  const formatKind = safeZones && frame === "phone" ? safeZoneKind(format) : null;
+  const zoneKinds: SafeZoneKind[] = [
+    ...(formatKind ? [formatKind] : []),
+    ...(feedCrop && frame === "phone" && format === "ig_reel" ? (["feedCrop"] as const) : []),
+  ];
   const raw = fields?.[t.textField]?.trim() ?? "";
   const text = raw ? (t.textField === "caption" && captionNode ? captionNode : <span>{raw}</span>) : null;
   // An ad's headline: the first, where the copy lists several, one a line
@@ -133,9 +140,11 @@ export function PlatformPost({
   // them in its own frame (VideoSafeZones), so they follow it when it's
   // expanded, and this one stands aside (CSS).
   const shownMedia = (
-    <SafeZoneContext.Provider value={zoneKind}>
+    <SafeZoneContext.Provider value={zoneKinds}>
       {media}
-      {zoneKind && <SafeZoneOverlay kind={zoneKind} />}
+      {zoneKinds.map((k) => (
+        <SafeZoneOverlay key={k} kind={k} />
+      ))}
     </SafeZoneContext.Provider>
   );
 
