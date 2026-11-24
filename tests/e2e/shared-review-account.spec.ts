@@ -38,20 +38,32 @@ async function seedClient(frank: Frank, name: string, joined: boolean) {
 test("Create an account on a review link emails the chosen name an invite", async ({ page, frank }) => {
   const invited = await seedClient(frank, "Dana Invited", false);
   await seedClient(frank, "Joe Joined", true);
-  const token = await frank.createSharedLink();
+  const token = await frank.createSharedLink({ canApprove: true });
   await page.goto(`/review/${token}`);
   await page.waitForSelector(".m-top");
 
-  const line = page.locator(".rv-signin");
-  await expect(line).toContainText("An account is optional and doesn't change how you give feedback here.");
-  await expect(line).toContainText("to see all of E2E Test Client's posts in one place, or log in.");
+  // In order (direct instruction): the first step leads, the account comes last.
+  const bar = page.locator(".m-bar");
+  await expect(bar.locator(".rv-lead")).toHaveText("Pick your name, then comment or approve.");
+  const line = bar.locator(".rv-account");
+  await expect(line).toContainText(
+    "Optional" + "Want all of E2E Test Client's posts in one place? Create an account or log in. You don't need one to comment or approve.",
+  );
+  const order = await bar.evaluate((el) =>
+    [".rv-lead", "select", "textarea", ".m-decide", ".rv-account"].map((sel) =>
+      Array.from(el.querySelectorAll("*")).indexOf(el.querySelector(sel)!),
+    ),
+  );
+  expect(order).toEqual([...order].sort((a, b) => a - b));
+  // No Close (reported directly: it did nothing).
+  await expect(bar.getByRole("button", { name: "Close" })).toHaveCount(0);
 
   // No name yet.
   await line.getByRole("button", { name: "Create an account" }).click();
-  await expect(line.getByRole("status")).toHaveText("Choose your name first, then Create an account.");
+  await expect(line.getByRole("status")).toHaveText("Pick your name above first.");
 
   // The invited name: emailed, a fresh invite in place of the old one.
-  await page.locator("select").first().selectOption({ label: "Dana Invited" });
+  await page.getByLabel("Who are you?").selectOption({ label: "Dana Invited" });
   await expect(line.getByRole("status")).toHaveCount(0);
   await line.getByRole("button", { name: "Create an account" }).click();
   await expect(line.getByRole("status")).toHaveText(
@@ -67,14 +79,36 @@ test("Create an account on a review link emails the chosen name an invite", asyn
   expect((await admin.from("invites").select("id").eq("membership_id", invited.membershipId)).data).toHaveLength(1);
 
   // Someone who's joined already.
-  await page.locator("select").first().selectOption({ label: "Joe Joined" });
+  await page.getByLabel("Who are you?").selectOption({ label: "Joe Joined" });
   await line.getByRole("button", { name: "Create an account" }).click();
   await expect(line.getByRole("status")).toHaveText("You already have an account. Log in to see everything in one place.");
 
   // Commenting still works without one.
+  await page.getByLabel("Who are you?").selectOption({ label: "Dana Invited" });
   await page.locator("textarea").first().fill("Fine without an account");
   await page.getByRole("button", { name: /^(Post|Send)/ }).first().click();
   await expect(page.getByText("Fine without an account").first()).toBeVisible();
+});
+
+// Reported directly: on a post not in review yet there's no name list, and
+// Create an account asked for a name with nowhere to pick it. It asks itself.
+test("Create an account on a post not in review yet asks for the name itself", async ({ page, frank }) => {
+  const invited = await seedClient(frank, "Dana Invited", false);
+  // The link's post back before Client Review.
+  await admin.from("creatives").update({ stage: 3 }).eq("id", frank.creativeId);
+  const token = await frank.createSharedLink();
+  await page.goto(`/review/${token}`);
+  await page.waitForSelector(".m-top");
+  const bar = page.locator(".m-bar");
+  await expect(bar.locator(".m-noone")).toContainText("isn't ready for your review yet");
+  await expect(bar.getByLabel("Who are you?")).toHaveCount(0);
+  const line = bar.locator(".rv-account");
+  await line.getByRole("button", { name: "Create an account" }).click();
+  await line.getByLabel("Your name, for your account").selectOption({ label: "Dana Invited" });
+  await line.getByRole("button", { name: "Email Me a Link" }).click();
+  await expect(line.getByRole("status")).toHaveText(
+    `We've emailed ${invited.email} a link to set up your account. Your feedback here works the same either way.`,
+  );
 });
 
 test("Create an account refuses a name not on the link, and never returns the invite", async ({ request, frank }) => {

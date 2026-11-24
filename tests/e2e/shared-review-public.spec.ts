@@ -104,27 +104,26 @@ test("shared review — posting a comment fires classification without waiting o
   expect(comment?.id).toBe(body.commentId);
 });
 
-test("shared review — no Make Changes button; Close is always present; Approve works standalone", async ({
+test("shared review — no Make Changes button and no Close; Approve works standalone", async ({
   page,
   frank,
 }) => {
   await frank.createClientContact("Guest Reviewer", "guest@example.com");
-  // A can_approve: false link — Close should still be there, Approve
-  // shouldn't render at all.
+  // A can_approve: false link — Approve shouldn't render at all. No Close
+  // either (reported directly: a page can't close a tab it didn't open).
   const plainToken = await frank.createSharedLink();
   await page.goto(`/review/${plainToken}`);
   await page.waitForSelector(".m-top");
   await expect(page.locator('button:has-text("Make Changes")')).toHaveCount(0);
-  await expect(page.locator('button:has-text("Close")').first()).toBeVisible();
+  await expect(page.locator('button:has-text("Close")')).toHaveCount(0);
   await expect(page.locator('button:has-text("Approve")')).toHaveCount(0);
 
-  // A can_approve: true link — Approve is the only real action next to
-  // Close, and clicking it still does the real thing (stage 5, Approved).
+  // A can_approve: true link — Approve is the only action, and clicking it
+  // still does the real thing (stage 5, Approved).
   const token = await frank.createSharedLink({ canApprove: true });
   await page.goto(`/review/${token}`);
   await page.waitForSelector(".m-top");
   await expect(page.locator('button:has-text("Make Changes")')).toHaveCount(0);
-  await expect(page.locator('button:has-text("Close")').first()).toBeVisible();
 
   await page.locator("select").first().selectOption({ label: "Guest Reviewer" });
   const approveBtn = page.locator('button:has-text("Approve")').first();

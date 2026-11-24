@@ -52,11 +52,6 @@ export function GuestComposer({
     controller.data?.status === "ok" ? controller.data.agency_name : null;
   // Whose account Create an account is for: the remembered name, or the one picked.
   const chosenEmail = knowsWho ? identity.email! : pickerValue ? email : null;
-  const accountLine = noOne ? (
-    <SignInLine />
-  ) : (
-    <AccountLine controller={controller} email={chosenEmail} clientName={clientName} workspaceName={workspaceName} />
-  );
   const alreadyApproved = !!active?.approved_at;
   const approveDisabled = approving || alreadyApproved || noOne;
 
@@ -106,13 +101,30 @@ export function GuestComposer({
 
   const barClass = variant === "mobile" ? "m-bar" : "dk-foot";
   const inputClass = variant === "mobile" ? "m-in" : "bin";
+  // Where to do it, in order (direct instruction: make it easy to know what
+  // to do and what to skip): pick a name, comment, Approve; then, last and
+  // optional, an account. There's no Close: a browser won't let a page
+  // close a tab it didn't open, so it did nothing on a link opened from an
+  // email or a message (reported directly).
+  const account = noOne ? (
+    <div className="rv-account">
+      <SignInLine />
+    </div>
+  ) : (
+    <AccountLine
+      controller={controller}
+      email={chosenEmail}
+      clientName={clientName}
+      workspaceName={workspaceName}
+      inReview={!!active && active.stage === STAGE.review}
+    />
+  );
 
   // The client has their say only in Client Review (phase150, direct
   // instruction): a post shared before or after it is theirs to read.
   if (active && active.stage !== STAGE.review) {
     return (
       <div className={barClass}>
-        {accountLine}
         <p className="m-noone">
           {active.stage < STAGE.review
             ? "This post isn't ready for your review yet. You can read it, and comment once it is."
@@ -120,16 +132,14 @@ export function GuestComposer({
               ? "This post is approved."
               : "This post has moved on from review."}
         </p>
-        <div className="m-decide">
-          <button type="button" className="m-close" onClick={() => window.close()}>
-            Close
-          </button>
-          {canApprove && alreadyApproved && (
+        {canApprove && alreadyApproved && (
+          <div className="m-decide">
             <button type="button" className="m-ok" disabled>
               Approved
             </button>
-          )}
-        </div>
+          </div>
+        )}
+        {account}
       </div>
     );
   }
@@ -137,60 +147,56 @@ export function GuestComposer({
   return (
     <div className={barClass}>
       {knowsWho ? (
-        <>
-          {accountLine}
-          <div className="m-signedin">
-            <span className="av" style={{ background: "var(--action)" }}>
-              {name.slice(0, 1).toUpperCase()}
-            </span>
-            <span>
-              Commenting as <b>{identity.name}</b>
-            </span>
-            <button
-              type="button"
-              className="m-notyou"
-              onClick={() => {
-                identity.forget();
-                setName("");
-                setEmail("");
-                setPickerValue("");
-              }}
-            >
-              Not you?
-            </button>
-          </div>
-        </>
+        <div className="m-signedin">
+          <span className="av" style={{ background: "var(--action)" }}>
+            {name.slice(0, 1).toUpperCase()}
+          </span>
+          <span>
+            Commenting as <b>{identity.name}</b>
+          </span>
+          <button
+            type="button"
+            className="m-notyou"
+            onClick={() => {
+              identity.forget();
+              setName("");
+              setEmail("");
+              setPickerValue("");
+            }}
+          >
+            Not you?
+          </button>
+        </div>
+      ) : noOne ? (
+        <p className="m-noone">
+          Only {clientName ?? "the client"}&apos;s people can comment here.
+          Ask {workspaceName ?? "the team who sent it"} to add you as a
+          Client of {clientName ?? "this client"}.
+        </p>
       ) : (
         <>
-          {/* Signing in or creating an account — offered, never required.
-              This page stays fully anonymous either way: picking a name
-              below is enough to comment or approve on its own. */}
-          {accountLine}
-
-          {noOne ? (
-            <p className="m-noone">
-              Only {clientName ?? "the client"}&apos;s people can comment here.
-              Ask {workspaceName ?? "the team who sent it"} to add you as a
-              Client of {clientName ?? "this client"}.
-            </p>
-          ) : (
-            <div className="field" style={{ marginBottom: 8 }}>
-              <select
-                className={inputClass}
-                value={pickerValue}
-                onChange={(e) => handlePickerChange(e.target.value)}
-              >
-                <option value="" disabled>
-                  Who are you?
+          {/* The first thing to do. Picking a name is all it takes: no
+              account, no sign-in. */}
+          <p className="rv-lead">
+            Pick your name, then comment{canApprove ? " or approve" : ""}.
+          </p>
+          <div className="field" style={{ marginBottom: 8 }}>
+            <select
+              className={inputClass}
+              aria-label="Who are you?"
+              value={pickerValue}
+              onChange={(e) => handlePickerChange(e.target.value)}
+            >
+              <option value="" disabled>
+                Who are you?
+              </option>
+              {contacts.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
                 </option>
-                {contacts.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+              ))}
+            </select>
+          </div>
         </>
       )}
 
@@ -243,33 +249,20 @@ export function GuestComposer({
         </>
       )}
 
-      {active && (
+      {active && canApprove && (
         <div className="m-decide">
-          {/* Best-effort — a browser only allows a script to close a tab it
-              opened itself, so on a tab the guest navigated to directly
-              (the normal way a shared link is opened) this can silently
-              no-op. There's no reliable way to detect that from here, so
-              this stays a plain, un-gated button rather than one that
-              claims to have worked. */}
           <button
             type="button"
-            className="m-close"
-            onClick={() => window.close()}
+            className="m-ok"
+            disabled={approveDisabled}
+            onClick={handleApprove}
           >
-            Close
+            {alreadyApproved ? "Approved" : "Approve"}
           </button>
-          {canApprove && (
-            <button
-              type="button"
-              className="m-ok"
-              disabled={approveDisabled}
-              onClick={handleApprove}
-            >
-              {alreadyApproved ? "Approved" : "Approve"}
-            </button>
-          )}
         </div>
       )}
+
+      {account}
     </div>
   );
 }
@@ -293,53 +286,89 @@ function describeStatus(status: string) {
   }
 }
 
-// An account, offered on every state of the link and never needed (direct
-// instruction: the client should know it's optional and changes nothing
-// about giving feedback). Create an account emails the chosen name a fresh
-// invite to their own address; nothing is shown that would let someone
-// else in.
+
+// An account, last on the link and never needed (direct instruction: lead
+// with what it's for and how, say it's optional, and keep it below
+// everything, since it doesn't matter for this feedback). Create an account
+// emails the chosen name a fresh invite to their own address; nothing is
+// shown that would let someone else in. With no name list above (a post
+// not in review yet), it asks for the name itself.
 function AccountLine({
   controller,
   email,
   clientName,
   workspaceName,
+  inReview,
 }: {
   controller: ReviewController;
   email: string | null;
   clientName: string | null;
   workspaceName: string | null;
+  inReview: boolean;
 }) {
   const pathname = usePathname();
   const request = useRequestSharedAccount(controller.token, controller.passcode);
   const [asked, setAsked] = useState<{ status: AccountRequestStatus | "no_name"; email: string | null } | null>(null);
-  const logIn = (
-    <a href={`/login?redirect_to=${encodeURIComponent(pathname)}`} style={{ color: "var(--action)" }}>
-      log in
-    </a>
-  );
+  // Its own name list, only where the one above isn't shown.
+  const [ownEmail, setOwnEmail] = useState("");
+  const [showPicker, setShowPicker] = useState(false);
+  const who = email ?? (ownEmail || null);
   // The answer is for the name it was asked for; picking another starts again.
-  const result = asked && (asked.status === "no_name" ? !email : asked.email === email) ? asked.status : null;
+  const result = asked && (asked.status === "no_name" ? !who : asked.email === who) ? asked.status : null;
 
   async function create() {
-    if (!email) {
-      setAsked({ status: "no_name", email: null });
+    if (!who) {
+      if (!inReview) setShowPicker(true);
+      else setAsked({ status: "no_name", email: null });
       return;
     }
-    const status = await request.mutateAsync(email);
-    setAsked({ status, email });
+    const status = await request.mutateAsync(who);
+    setAsked({ status, email: who });
   }
 
   return (
-    <div className="rv-signin">
-      An account is optional and doesn&apos;t change how you give feedback here.{" "}
-      <button type="button" className="rv-linkbtn" disabled={request.isPending} onClick={() => void create()}>
-        {request.isPending ? "Sending…" : "Create an account"}
-      </button>{" "}
-      to see all of {clientName ? `${clientName}'s` : "your"} posts in one place, or {logIn}.
+    <div className="rv-account">
+      <div className="rv-account-h">Optional</div>
+      <p>
+        Want all of {clientName ? `${clientName}'s` : "your"} posts in one place?{" "}
+        <button type="button" className="rv-linkbtn" disabled={request.isPending} onClick={() => void create()}>
+          {request.isPending ? "Sending…" : "Create an account"}
+        </button>{" "}
+        or{" "}
+        <a href={`/login?redirect_to=${encodeURIComponent(pathname)}`} style={{ color: "var(--action)" }}>
+          log in
+        </a>
+        . You don&apos;t need one to comment or approve.
+      </p>
+      {showPicker && !email && (
+        <select
+          className="rv-account-pick"
+          aria-label="Your name, for your account"
+          value={ownEmail}
+          onChange={(e) => {
+            setOwnEmail(e.target.value);
+            setAsked(null);
+          }}
+        >
+          <option value="" disabled>
+            Who are you?
+          </option>
+          {controller.contacts.map((c) => (
+            <option key={c.id} value={c.email}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      )}
+      {showPicker && ownEmail && !result && (
+        <button type="button" className="btn sm primary rv-account-go" disabled={request.isPending} onClick={() => void create()}>
+          {request.isPending ? "Sending…" : "Email Me a Link"}
+        </button>
+      )}
       {result && (
-        <div className="rv-accountnote" role="status">
-          {accountNote(result, email, workspaceName)}
-        </div>
+        <p className="rv-accountnote" role="status">
+          {accountNote(result, who, workspaceName)}
+        </p>
       )}
     </div>
   );
@@ -348,7 +377,7 @@ function AccountLine({
 function accountNote(status: AccountRequestStatus | "no_name", email: string | null, workspaceName: string | null) {
   switch (status) {
     case "no_name":
-      return "Choose your name first, then Create an account.";
+      return "Pick your name above first.";
     case "sent":
       return `We've emailed ${email} a link to set up your account. Your feedback here works the same either way.`;
     case "already_sent":

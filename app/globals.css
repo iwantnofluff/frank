@@ -7633,18 +7633,6 @@ a.inlink {
 .m-ok:hover:not(:disabled) {
   filter: brightness(0.94);
 }
-/* A plain escape hatch, not a real alternative action like Approve —
-   outlined rather than filled, so it doesn't compete with it. Scoped to
-   ".m-decide .m-close" (not just ".m-close"), since ".m-decide button"'s
-   own transparent border would otherwise win on specificity. */
-.m-decide .m-close {
-  background: var(--surface);
-  color: var(--ink);
-  border: 1px solid var(--line-2);
-}
-.m-decide .m-close:hover {
-  background: var(--canvas);
-}
 .m-cmt {
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -13274,6 +13262,49 @@ textarea.bin.tallbox {
   font-size: 12.7px;
   color: var(--muted);
   margin-bottom: 8px;
+}
+/* The review link's first step, above the name list (GuestComposer). */
+.rv-lead {
+  font-size: 13.7px;
+  font-weight: 500;
+  color: var(--ink);
+  margin: 0 0 6px;
+}
+/* An account: last, set apart, and quieter than what comes before it. */
+.rv-account {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 12.7px;
+  color: var(--muted);
+}
+.rv-account p {
+  margin: 0;
+}
+.rv-account .rv-signin {
+  margin-bottom: 0;
+}
+.rv-account-h {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+.rv-account-pick {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 7px 10px;
+  font: inherit;
+  font-size: 13.7px;
+  color: var(--ink);
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  background: var(--surface);
+}
+.rv-account-go {
+  margin-top: 8px;
 }
 /* Create an account, a link in the line's own words (GuestComposer). */
 .rv-linkbtn {
