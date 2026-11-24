@@ -122,7 +122,8 @@ export function TeamSettings({ view }: { view: View }) {
   // Oldest first to begin with (direct instruction).
   const [peopleSort, setPeopleSort] = useState<PeopleSort>("date-asc");
   const [notice, setNotice] = useState<string | null>(null);
-  const [removeTarget, setRemoveTarget] = useState<TeamMemberRow | null>(null);
+  // A team member, or a Client, whose own client is named in the window.
+  const [removeTarget, setRemoveTarget] = useState<{ id: string; name: string; client?: string } | null>(null);
   const updateMember = useUpdateMember(agency?.agencyId ?? "");
 
   const activeClients = (clients ?? []).filter((c) => !c.archived_at);
@@ -173,7 +174,7 @@ export function TeamSettings({ view }: { view: View }) {
               { onSuccess: () => setNotice(`${displayName(m)} reactivated`) },
             ),
         },
-        { label: "Remove from Team", tone: "danger" as const, onClick: () => setRemoveTarget(m) },
+        { label: "Remove from Team", tone: "danger" as const, onClick: () => setRemoveTarget({ id: m.id, name: displayName(m) }) },
       ];
     }
     return [
@@ -185,7 +186,7 @@ export function TeamSettings({ view }: { view: View }) {
             { onSuccess: () => setNotice(`${displayName(m)} deactivated`) },
           ),
       },
-      { label: "Remove from Team", tone: "danger" as const, onClick: () => setRemoveTarget(m) },
+      { label: "Remove from Team", tone: "danger" as const, onClick: () => setRemoveTarget({ id: m.id, name: displayName(m) }) },
     ];
   }
 
@@ -491,7 +492,23 @@ export function TeamSettings({ view }: { view: View }) {
                 <div style={{ fontSize: 14.2, color: "var(--muted)" }}>{addedOn(m)}</div>
                 <div>
                   {m.accepted_at ? (
-                    <span className="tag blue">Client</span>
+                    // Removing them is their only action once they've joined
+                    // (direct instruction).
+                    <RoleMenu
+                      name={name}
+                      value="client"
+                      current="Client"
+                      options={[]}
+                      onPick={() => {}}
+                      extra={[
+                        {
+                          label: "Remove from Team",
+                          tone: "danger" as const,
+                          onClick: () =>
+                            setRemoveTarget({ id: m.id, name, client: clientName.get(m.client_id) ?? undefined }),
+                        },
+                      ]}
+                    />
                   ) : (
                     <RoleMenu
                       name={name}
@@ -632,8 +649,9 @@ export function TeamSettings({ view }: { view: View }) {
 
       {removeTarget && agency && (
         <RemoveMemberConfirm
-          name={displayName(removeTarget)}
+          name={removeTarget.name}
           agencyName={agency.name}
+          clientName={removeTarget.client}
           isPending={remove.isPending}
           error={remove.error}
           onClose={() => {
@@ -643,7 +661,7 @@ export function TeamSettings({ view }: { view: View }) {
           onConfirm={() =>
             remove.mutate(removeTarget.id, {
               onSuccess: () => {
-                setNotice(`${displayName(removeTarget)} removed from the team`);
+                setNotice(`${removeTarget.name} removed from the team`);
                 setRemoveTarget(null);
               },
             })

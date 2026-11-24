@@ -60,6 +60,7 @@ export function useRemoveMember(agencyId: string) {
     onSettled: async () => {
       await queryClient.invalidateQueries({ queryKey: ["team-members", agencyId] });
       await queryClient.invalidateQueries({ queryKey: ["staff-client-access", agencyId] });
+      await queryClient.invalidateQueries({ queryKey: ["client-members", agencyId] });
     },
   });
 }

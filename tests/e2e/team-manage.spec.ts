@@ -491,3 +491,37 @@ test("an Admin deactivates, reactivates, changes and removes a User, and can't t
     .poll(async () => (await admin.from("memberships").select("removed_permanently_at").eq("id", user.membershipId).single()).data!.removed_permanently_at)
     .not.toBeNull();
 });
+
+// A Client who's joined can be removed too (direct instruction), by an Owner
+// or an Admin: access goes, and their name comes off the review link's list.
+test("an Owner and an Admin remove a Client who has joined", async ({ page, frank }) => {
+  async function seedClient(name: string) {
+    const member = await seedMember(frank, { role: "user", name });
+    // As a Client of the fixture's client, joined (the trigger adds them to its review list).
+    await admin.from("memberships").update({ client_id: frank.clientId }).eq("id", member.membershipId);
+    return member;
+  }
+  const first = await seedClient("Client Gone");
+  const second = await seedClient("Client Also Gone");
+
+  for (const [role, member] of [["owner", first], ["admin", second]] as const) {
+    await setStaffRole(frank, role);
+    await frank.loginAsStaff(page);
+    await page.goto(`${APP_URL}/settings/team/users`);
+    const row = page.locator('.crow[data-kind="client"]', { hasText: member.email });
+    await row.getByRole("button", { name: /Client/ }).click();
+    await page.getByRole("menuitem", { name: "Remove from Team" }).click();
+    const confirm = page.getByRole("dialog", { name: "Remove from team?" });
+    await expect(confirm).toContainText("their name comes off E2E Test Client's review links");
+    await confirm.getByRole("button", { name: "Remove from Team" }).click();
+    await expect(page.getByRole("status")).toHaveText(`${role === "owner" ? "Client Gone" : "Client Also Gone"} removed from the team`);
+    await expect(row).toHaveCount(0);
+
+    const { data: m } = await admin.from("memberships").select("removed_at, removed_permanently_at").eq("id", member.membershipId).single();
+    expect(m!.removed_at).not.toBeNull();
+    expect(m!.removed_permanently_at).not.toBeNull();
+    const { data: contact } = await admin.from("client_contacts").select("archived_at").eq("client_id", frank.clientId).eq("email", member.email).single();
+    expect(contact!.archived_at).not.toBeNull();
+    await page.context().clearCookies();
+  }
+});
