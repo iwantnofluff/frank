@@ -362,7 +362,7 @@ test("shared review — names link into Frank: sign in first, and the post for t
   // The review page's own look-up (useReviewViewer), not the Clients page's
   // that signing in lands on, which can still be answering.
   const known = page.waitForResponse(
-    (r) => r.url().includes("/rest/v1/memberships?select=id&") && r.url().includes("client_id=is.null"),
+    (r) => r.url().includes("/rest/v1/memberships?select=client_id&") && r.url().includes("accepted_at=not.is.null"),
   );
   await page.goto(`/review/${token}`);
   await known;

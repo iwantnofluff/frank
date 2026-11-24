@@ -13306,6 +13306,13 @@ textarea.bin.tallbox {
 .rv-account-go {
   margin-top: 8px;
 }
+/* Create Your Account, the window on a review link (GuestComposer). */
+.rv-accountwin .sub {
+  margin: 0 0 12px;
+}
+.rv-accountwin .field:last-of-type {
+  margin-bottom: 12px;
+}
 /* Create an account, a link in the line's own words (GuestComposer). */
 .rv-linkbtn {
   background: none;

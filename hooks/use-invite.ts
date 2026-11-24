@@ -54,3 +54,20 @@ export function useAcceptInvite(token: string) {
     },
   });
 }
+
+// Activating an account made from a review link, once logged in with its
+// password (app/api/invite/activate).
+export function useActivateInvite(token: string) {
+  return useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/invite/activate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Couldn't activate your account");
+      return data as { clientId: string | null };
+    },
+  });
+}

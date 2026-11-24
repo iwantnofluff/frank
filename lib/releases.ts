@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.102.0",
+    date: "2026-11-24",
+    title: "Clients create an account on the review link",
+    changes: [
+      "Create an account on a review link now opens a window: the client's email is filled in, they choose a password, and Frank emails them a link to activate it. The link opens a log-in with their email filled in; logging in with that password activates the account and takes them back to the review link, signed in, with a link to their content planner.",
+      "Both the email and the password are needed, so someone else picking their name on the link can't switch on their account. Someone who already uses Frank keeps their own password and just gets the link.",
+    ],
+  },
+  {
     version: "1.101.1",
     date: "2026-11-24",
     title: "Review links: what to do first",
