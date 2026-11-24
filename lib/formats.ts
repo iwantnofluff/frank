@@ -137,6 +137,14 @@ export function isStoryFormat(id: string | null | undefined): boolean {
   return !!id && STORY_FORMAT_IDS.has(id);
 }
 
+// On the grid (direct instruction: Stories are never on the feed, so never
+// in its grid): any post with a format that isn't a Story, or none yet. A
+// post made for a feed and a Story is on the grid. Matches
+// get_shared_review_feed (phase164).
+export function onGrid(ids: string[]): boolean {
+  return ids.length === 0 || ids.some((id) => !STORY_FORMAT_IDS.has(id));
+}
+
 // Reels and their like (direct instruction): full-screen vertical video,
 // whose player gets a full-screen button.
 const REEL_FORMAT_IDS = new Set(["ig_reel", "yt_short", "meta_story"]);

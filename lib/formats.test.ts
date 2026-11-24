@@ -2,7 +2,7 @@
 // (or `npm run test:unit`).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { FORMATS, FORMAT_CATEGORIES, formatById, formatsByCategory, postFormats, formatsLabel, copyFieldsFor, copySummary, copySummaryParts, VIDEO_FORMAT_IDS, hasVideoFormat, frameLimits, expectedContent, categoriesFor, formatsFor, formatsOffLimits, defaultSize, postSize, sizePresets, sizeLabel, hasSize, aspectRatioCss, formatRatio, artworkNoun, copyNoun, storedSlideCount, wordsOnly } from "./formats.ts";
+import { FORMATS, FORMAT_CATEGORIES, formatById, formatsByCategory, postFormats, formatsLabel, copyFieldsFor, copySummary, copySummaryParts, VIDEO_FORMAT_IDS, hasVideoFormat, frameLimits, expectedContent, categoriesFor, formatsFor, formatsOffLimits, defaultSize, postSize, sizePresets, sizeLabel, hasSize, aspectRatioCss, formatRatio, artworkNoun, copyNoun, storedSlideCount, wordsOnly, onGrid } from "./formats.ts";
 
 test("FORMATS has the prototype's 41 entries, plus Listing Image Set and LinkedIn Text Post", () => {
   assert.equal(FORMATS.length, 43);
@@ -184,4 +184,13 @@ test("a single story is saved with no count; a set keeps its number", () => {
   assert.equal(storedSlideCount(undefined), null);
   assert.equal(storedSlideCount(2), 2);
   assert.equal(storedSlideCount(20), 20);
+});
+
+test("Stories aren't on the grid; a post that's also on the feed is", () => {
+  assert.equal(onGrid(["ig_story"]), false);
+  assert.equal(onGrid(["fb_story", "wa_status"]), false);
+  assert.equal(onGrid(["meta_story"]), false);
+  assert.equal(onGrid(["ig_feed", "ig_story"]), true);
+  assert.equal(onGrid(["ig_reel"]), true);
+  assert.equal(onGrid([]), true);
 });

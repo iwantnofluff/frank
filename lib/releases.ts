@@ -13,6 +13,24 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.98.1",
+    date: "2026-11-24",
+    title: "Stories off the grid",
+    changes: [
+      "Stories (Instagram, Facebook, WhatsApp Status and Meta Stories ads) no longer appear in the Feed grid, on a post's page or a review link, as they're never on the feed. A post made for the feed and a Story still shows, and Stories are still there to review.",
+    ],
+  },
+  {
+    version: "1.98.0",
+    date: "2026-11-24",
+    title: "Thumbnails from the video",
+    changes: [
+      "Pause a video post on its page and an image button appears in the bar: Use as Thumbnail shows the frame, and Save saves it as the next thumbnail version. While paused, the arrow keys step a frame at a time. It works in Fullscreen too.",
+      "In the post window's Thumbnail, \"pick a frame from the video\" opens the video right there; Use This Frame puts it in the slot, to save as any image.",
+      "Uploading a thumbnail image works as before, and is the way to a full-resolution cover: a frame is as sharp as the uploaded video (up to 720p).",
+    ],
+  },
+  {
     version: "1.97.2",
     date: "2026-11-23",
     title: "Safe Zones on an expanded video",

@@ -15,7 +15,7 @@ import { FeedProfile, FeedTabs, LiveTile, type FeedTab } from "@/components/crea
 import { LivePostView } from "@/components/creative-review/LivePostView";
 import { useClientInstagramSlides } from "@/hooks/use-instagram";
 import type { LiveFeed } from "@/lib/instagram/store";
-import { postFormats } from "@/lib/formats";
+import { onGrid, postFormats } from "@/lib/formats";
 import { useClientLogoUrl } from "@/hooks/use-client-logo-url";
 
 const GRID_SLOTS = 9;
@@ -66,7 +66,8 @@ export function FeedPreviewGrid({
     };
     // Ideas aren't on the Review page (direct instruction).
     return (allCreatives ?? [])
-      .filter((c) => !c.archived_at && !isIdea(c) && (c.id === activeCreativeId || !isHiddenPost(c, hiddenStatuses)))
+      // Nor a Story, never on the feed (direct instruction), even this one.
+      .filter((c) => !c.archived_at && !isIdea(c) && onGrid(postFormats(c)) && (c.id === activeCreativeId || !isHiddenPost(c, hiddenStatuses)))
       .map((c, i) => ({ c, i, t: when(c) }))
       .sort((a, b) => (a.t === b.t ? a.i - b.i : b.t - a.t))
       .map(({ c }) => c);
