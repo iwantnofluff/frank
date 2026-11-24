@@ -13310,6 +13310,15 @@ textarea.bin.tallbox {
 .rv-accountwin .sub {
   margin: 0 0 12px;
 }
+.rv-pwrow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.rv-pwrow input {
+  flex: 1;
+  min-width: 0;
+}
 .rv-accountwin .field:last-of-type {
   margin-bottom: 12px;
 }
@@ -13453,6 +13462,20 @@ textarea.bin.tallbox {
   box-shadow: 0 10px 28px rgba(20, 22, 26, 0.16);
   font-size: 13.7px;
   animation: updready-in var(--dur-open) var(--ease-open);
+}
+/* On a review link: at the top, clear of the comment box and Approve. */
+.updready.on-link {
+  top: 12px;
+  bottom: auto;
+  width: calc(100% - 24px);
+  max-width: 480px;
+}
+.updready.on-link span {
+  flex: 1;
+  min-width: 0;
+}
+.updready.on-link .btn {
+  flex-shrink: 0;
 }
 @keyframes updready-in {
   from {

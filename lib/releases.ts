@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.102.1",
+    date: "2026-11-24",
+    title: "Review links offer a reload",
+    changes: [
+      "Create an account asks for the password once, with Show to check it, and can send its email again after a minute (it was 10).",
+      "A review link left open while Frank updates now says so at the top, \"This page has been updated. Reload to see the latest.\", with Reload and Later, so a client never works on the old version.",
+    ],
+  },
+  {
     version: "1.102.0",
     date: "2026-11-24",
     title: "Clients create an account on the review link",

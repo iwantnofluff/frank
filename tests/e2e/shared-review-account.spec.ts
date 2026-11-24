@@ -72,16 +72,18 @@ test("Create an account: a window to choose a password, then an email to activat
   await expect(win.getByRole("button", { name: "Create Account" })).toBeDisabled();
   await win.getByLabel("Who are you?").selectOption({ label: "Dana Invited" });
   await expect(win.getByLabel("Email")).toHaveValue(invited.email);
-  await win.getByLabel("Password", { exact: true }).fill(PASSWORD);
-  await win.getByLabel("Password again").fill("Something-else-1");
-  await win.getByRole("button", { name: "Create Account" }).click();
-  await expect(win.locator(".autherr")).toHaveText("The two passwords don't match.");
-  await win.getByLabel("Password", { exact: true }).fill("short");
-  await win.getByLabel("Password again").fill("short");
+  // One box (direct instruction), with Show.
+  const box = win.getByLabel("Password", { exact: true });
+  await expect(win.locator('input[type="password"]')).toHaveCount(1);
+  await box.fill("short");
+  await expect(box).toHaveAttribute("type", "password");
+  await win.getByRole("button", { name: "Show" }).click();
+  await expect(box).toHaveAttribute("type", "text");
+  await win.getByRole("button", { name: "Hide" }).click();
+  await expect(box).toHaveAttribute("type", "password");
   await win.getByRole("button", { name: "Create Account" }).click();
   await expect(win.locator(".autherr")).toHaveText("Use at least 8 characters.");
-  await win.getByLabel("Password", { exact: true }).fill(PASSWORD);
-  await win.getByLabel("Password again").fill(PASSWORD);
+  await box.fill(PASSWORD);
   await win.getByRole("button", { name: "Create Account" }).click();
   const sent = page.getByRole("dialog", { name: "Check Your Email" });
   await expect(sent).toContainText(
@@ -99,7 +101,7 @@ test("Create an account: a window to choose a password, then an email to activat
   await page.getByLabel("Who are you?").selectOption({ label: "Dana Invited" });
   await line.getByRole("button", { name: "Create an account" }).click();
   await expect(win.getByRole("status")).toHaveText(
-    `We emailed ${invited.email} a link a few minutes ago. Use that one, or try again in 10 minutes.`,
+    `We emailed ${invited.email} a link a moment ago. Use that one, or try again in a minute.`,
   );
   await win.getByRole("button", { name: "Done" }).click();
 
@@ -198,6 +200,13 @@ test("the endpoint refuses a name not on the link, never returns a link, and lea
   expect(await (await post({ email: invited.email.toUpperCase(), step: "check" })).json()).toEqual({ status: "new" });
   expect(await (await post({ email: invited.email, step: "send", password: "short" })).json()).toEqual({ status: "short_password" });
   expect(await (await post({ email: invited.email, step: "send", password: PASSWORD })).json()).toEqual({ status: "sent" });
+  // One a minute: straight away it waits, a minute on it's offered again.
+  expect(await (await post({ email: invited.email, step: "check" })).json()).toEqual({ status: "already_sent" });
+  await admin
+    .from("invites")
+    .update({ created_at: new Date(Date.now() - 61_000).toISOString() })
+    .eq("membership_id", invited.membershipId);
+  expect(await (await post({ email: invited.email, step: "check" })).json()).toEqual({ status: "new" });
 
   expect(await (await post({ email: existing.email, step: "check" })).json()).toEqual({ status: "existing" });
   expect(await (await post({ email: existing.email, step: "send", password: "Attacker-pass-1" })).json()).toEqual({ status: "sent" });

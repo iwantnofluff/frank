@@ -5179,6 +5179,21 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Create an account: one password box, a minute's wait (1.102.1, 2026-11-24)
+
+Reported directly, with a screenshot: the window had no password box. It was the 10-minute wait (an email had gone to that address minutes before, from the old tab), which shows its note in place of the boxes. Asked directly, yes to both: the wait cut to a minute (`RESEND_AFTER_MS`), and one password box, as first described, with Show/Hide (`aria-pressed`) in place of Password again. The note reads "We emailed {email} a link a moment ago. Use that one, or try again in a minute."
+
+**Verified**: shared-review-account.spec.ts: one password box, Show and Hide switch it, a short one refused, then sent; the "a moment ago" note; through the endpoint, already_sent straight after, then new once the invite is a minute old. A screenshot of the window looked right. Full local suite, with the reload notice below: 355 passed, 52 failed, nearly all timing out at 25s or more while another project's local Supabase used over a processor; rerun two at a time, 50 passed; the last two passed alone.
+
+## Review links offer a reload (1.102.1, 2026-11-24)
+
+Reported directly, with a screenshot: Create an account on a live link showed 1.100.0's "We've just emailed…" note, not the new window. Live was serving 1.102.0 (`/api/version`); the tab had been opened before the push, and review links never offered a reload the way the app does (UpdateReady is in AppShell only). Asked directly, yes to adding it.
+
+- **`UpdateReady onLink`** on the review page: "This page has been updated. Reload to see the latest.", Later and Reload, at the top (`.updready.on-link`), clear of the comment box and Approve, the width of a phone less 12px each side. `/api/version` answers signed out already. Checked every five minutes and when the tab comes back into view, as in the app.
+- **Found on the way**: that earlier click sent a real invite email (1.100.0's) to Nikesh Farmah (HAPI Dental). It still works if he opens it.
+
+**Verified**: updates.spec.ts, new: with a newer version live, the link shows the notice at the top on a phone, and Reload loads the page again; the app's own notice test still passes. Screenshots on a phone (first too narrow, Reload cut off; widened) and a computer looked right.
+
 ## Create an account on the review link: a password, then activate (1.102.0, 2026-11-24)
 
 Asked directly, with a screenshot of the sent note: a window with the email filled in to pick a password; then they check their email to activate, and its link has them log in again, email filled in. Asked where they should land: "The review link they came from: now signed in - with a link below somewhere to also go to the planner."

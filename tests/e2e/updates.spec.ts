@@ -47,3 +47,20 @@ test("a new version is in the team's bell, opens Updates, and a newer one offers
   await expect(c.getByRole("dialog", { name: "Notifications" }).locator(".nrow", { hasText: "is here" })).toHaveCount(0);
   await ctx.close();
 });
+
+// A review link too (direct instruction: a client's open tab ran the old
+// version): in their words, at the top, and Reload loads the page again.
+test("a review link offers a reload once a newer version is live", async ({ page, frank }) => {
+  const token = await frank.createSharedLink();
+  const next = CURRENT_RELEASE.version.replace(/^(\d+)\.(\d+)\..*$/, (_, a, b) => `${a}.${Number(b) + 1}.0`);
+  await page.route("**/api/version", (r) => r.fulfill({ json: { version: next } }));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${APP_URL}/review/${token}`);
+  const bar = page.locator(".updready.on-link");
+  await expect(bar).toHaveText(/This page has been updated\. Reload to see the latest\./, { timeout: 20_000 });
+  const box = (await bar.boundingBox())!;
+  expect(box.y).toBeLessThan(100);
+  const reloaded = page.waitForEvent("load");
+  await bar.getByRole("button", { name: "Reload" }).click();
+  await reloaded;
+});

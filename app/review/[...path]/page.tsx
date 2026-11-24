@@ -6,6 +6,7 @@ import { useReviewController } from "@/hooks/use-review-controller";
 import { MobileReview } from "@/components/review/MobileReview";
 import { DesktopReview } from "@/components/review/DesktopReview";
 import { usePhoneScreen } from "@/hooks/use-phone-screen";
+import { UpdateReady } from "@/components/app-shell/UpdateReady";
 
 function PasscodeGate({
   onSubmit,
@@ -114,6 +115,7 @@ export default function SharedReviewPage({
       ) : (
         <DesktopReview controller={controller} clientName={clientName} projectName={projectName} agencyName={agencyName} logoUrl={branding?.logo_url ?? null} shown />
       )}
+      <UpdateReady onLink />
     </div>
   );
 }

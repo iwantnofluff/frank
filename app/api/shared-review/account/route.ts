@@ -19,9 +19,11 @@ import { INVITE_TTL_MS, MIN_PASSWORD_LENGTH } from "@/lib/invites/constants";
 //
 // step "check": new (needs a password), existing (already uses Frank: their
 // own password, never changed here), has_account (joined), not_invited,
-// already_sent (one in the last few minutes), not_found.
+// already_sent (one in the last minute), not_found.
 // step "send": sent, short_password, already_sent, and the above.
-const RESEND_AFTER_MS = 10 * 60 * 1000;
+// A minute (direct instruction, down from 10: the wait hid the password box
+// while testing); still one email at a time.
+const RESEND_AFTER_MS = 60 * 1000;
 
 function reply(status: string, httpStatus = 200) {
   return NextResponse.json({ status }, { status: httpStatus });
@@ -99,7 +101,7 @@ export async function POST(request: Request) {
   const isNew = !authUser.user?.last_sign_in_at;
 
   // Pressed again (or by someone else picking the same name): one email per
-  // few minutes, so the link can't be used to flood their inbox.
+  // minute, so the link can't be used to flood their inbox.
   const { data: recent } = await admin
     .from("invites")
     .select("id")

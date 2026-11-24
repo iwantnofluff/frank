@@ -379,7 +379,7 @@ function CreateAccountWindow({
   const [answer, setAnswer] = useState<{ email: string; status: AccountRequestStatus } | null>(null);
   const status = answer && answer.email === email ? answer.status : null;
   const [password, setPassword] = useState("");
-  const [again, setAgain] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
 
   // What this person needs, once there's a name (again if it changes).
@@ -394,7 +394,6 @@ function CreateAccountWindow({
     setProblem(null);
     if (status === "new") {
       if (password.length < MIN_PASSWORD_LENGTH) return setProblem(`Use at least ${MIN_PASSWORD_LENGTH} characters.`);
-      if (password !== again) return setProblem("The two passwords don't match.");
     }
     const result = await request.mutateAsync({ email, step: "send", password: status === "new" ? password : undefined, back });
     if (result === "short_password") return setProblem(`Use at least ${MIN_PASSWORD_LENGTH} characters.`);
@@ -471,27 +470,27 @@ function CreateAccountWindow({
             )}
             {status === "new" && (
               <>
+                {/* One box (direct instruction), with Show to check it. */}
                 <div className="field">
                   <label htmlFor="rv-acc-pw">Password</label>
-                  <input
-                    id="rv-acc-pw"
-                    className="bin"
-                    type="password"
-                    autoComplete="new-password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                </div>
-                <div className="field">
-                  <label htmlFor="rv-acc-pw2">Password again</label>
-                  <input
-                    id="rv-acc-pw2"
-                    className="bin"
-                    type="password"
-                    autoComplete="new-password"
-                    value={again}
-                    onChange={(e) => setAgain(e.target.value)}
-                  />
+                  <div className="rv-pwrow">
+                    <input
+                      id="rv-acc-pw"
+                      className="bin"
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="new-password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      className="btn sm"
+                      aria-pressed={showPassword}
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? "Hide" : "Show"}
+                    </button>
+                  </div>
                 </div>
                 <p className="sub">Then we&apos;ll email you a link to activate it.</p>
               </>
@@ -514,7 +513,7 @@ function CreateAccountWindow({
 function accountNote(status: AccountRequestStatus, email: string | null, workspaceName: string | null) {
   switch (status) {
     case "already_sent":
-      return `We emailed ${email} a link a few minutes ago. Use that one, or try again in 10 minutes.`;
+      return `We emailed ${email} a link a moment ago. Use that one, or try again in a minute.`;
     case "has_account":
       return "You already have an account. Log in to see everything in one place.";
     case "not_invited":
