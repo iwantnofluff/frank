@@ -37,6 +37,7 @@ import { SectionRail } from "@/components/creative-review/SectionRail";
 import { FeedPreviewGrid } from "@/components/creative-review/FeedPreviewGrid";
 import { PhoneFrame } from "@/components/creative-review/PhoneFrame";
 import { useSaveThumbnail, useThumbnailVersions } from "@/hooks/use-thumbnails";
+import { FrameDialog } from "@/components/creative-review/FrameDialog";
 import { useProductionVersions } from "@/hooks/use-production-versions";
 import { ScrollHint, hasScrollHint } from "@/components/creative-review/ScrollHint";
 import { PNAV_CURRENT_H, PostNeighbours } from "@/components/creative-review/PostNeighbours";
@@ -45,7 +46,7 @@ import { CommentsPanel } from "@/components/creative-review/CommentsPanel";
 import { AnnotationLayer, type ToolMode } from "@/components/creative-review/AnnotationLayer";
 import { NoArtwork } from "@/components/creative-review/NoArtwork";
 import { CarouselNav } from "@/components/creative-review/CarouselNav";
-import { VideoPlayer, type TimelineMarker } from "@/components/creative-review/VideoPlayer";
+import { VideoPlayer, type FrameApi, type TimelineMarker } from "@/components/creative-review/VideoPlayer";
 import { CaptionHighlighter } from "@/components/creative-review/CaptionHighlighter";
 import { useProjectPresence } from "@/hooks/use-project-presence";
 import { PresenceAvatars } from "@/components/app-shell/PresenceAvatars";
@@ -131,7 +132,8 @@ export function CreativeReviewPage({ id }: { id: string }) {
   useEffect(() => {
     if (!expanded) return;
     const escape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setExpanded(false);
+      // The frame window closes first, on its own.
+      if (e.key === "Escape" && !document.querySelector(".framedlg")) setExpanded(false);
     };
     document.addEventListener("keydown", escape);
     return () => document.removeEventListener("keydown", escape);
@@ -235,6 +237,20 @@ export function CreativeReviewPage({ id }: { id: string }) {
   // video's bar; saved as uploading one is.
   const saveThumbnail = useSaveThumbnail(id, creative?.agency_id ?? "");
   const latestThumbnailNo = thumbnailVersions?.[0]?.versionNo ?? 0;
+  const thumbFromFrame = isStaff && !!creative?.agency_id && hasVideoFormat(postFormats(creative ?? { format: null, formats: null }));
+  const [frameApi, setFrameApi] = useState<FrameApi | null>(null);
+  const [frameToUse, setFrameToUse] = useState<{ url: string; file: File; t: number } | null>(null);
+  const [frameError, setFrameError] = useState<string | null>(null);
+  async function pickFrame() {
+    if (!frameApi?.paused) return;
+    setFrameError(null);
+    try {
+      const { file, t } = await frameApi.capture();
+      setFrameToUse({ url: URL.createObjectURL(file), file, t });
+    } catch (e) {
+      setFrameError(e instanceof Error ? e.message : "This frame couldn't be copied.");
+    }
+  }
   // The Text on Image's and VO's versions (phase161, direct instruction):
   // the team's only, as their versions are, picked beside Creative and Copy
   // while the placeholder shows their words. Else the latest.
@@ -694,19 +710,9 @@ export function CreativeReviewPage({ id }: { id: string }) {
           cover={slidePosition === 1 ? (thumbnailUrl ?? null) : null}
           ratio={formatRatio(shownFormat, creative.sizes)}
           expandable={isReelFormat(shownFormat)}
-          frameAction={
-            isStaff && creative.agency_id && hasVideoFormat(postFormats(creative))
-              ? {
-                  label: "Use as Thumbnail",
-                  confirmLabel: `Save as V${latestThumbnailNo + 1}`,
-                  onUse: async (file) => {
-                    await saveThumbnail.mutateAsync({ file, latestVersionNo: latestThumbnailNo });
-                    // The new one, as the cover.
-                    setThumbnailId(null);
-                  },
-                }
-              : undefined
-          }
+          // Fullscreen's Use as Thumbnail reads the paused frame (direct
+          // instruction: there only, not on the video's own bar).
+          onFrameApi={expanded && thumbFromFrame ? setFrameApi : undefined}
           markers={videoMarkers}
           highlightedCommentId={highlightedCommentId}
           onMarker={setHighlightedCommentId}
@@ -1181,33 +1187,67 @@ export function CreativeReviewPage({ id }: { id: string }) {
                   if (expanded && e.target === e.currentTarget) setExpanded(false);
                 }}
               >
+              {/* Fullscreen's tools, top right (direct instruction): Safe
+                  Zones, Use as Thumbnail, then close. The first two the
+                  team's only, on the formats they're for. */}
               {expanded && (
-                <button
-                  type="button"
-                  className="pexpand-btn"
-                  aria-label="Close the full-size view"
-                  title="Close (Esc)"
-                  onClick={() => setExpanded(false)}
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />
-                  </svg>
-                </button>
+                <div className="pexpand-tools">
+                  {isStaff && safeZoneKind(shownFormat) && (
+                    <button
+                      type="button"
+                      className="pexpand-zones"
+                      aria-pressed={safeZonesOn}
+                      title="Where the app's own buttons and words sit over the post"
+                      onClick={() => setSafeZonesOn((on) => !on)}
+                    >
+                      Safe Zones {safeZonesOn ? "On" : "Off"}
+                    </button>
+                  )}
+                  {/* A paused frame as the next thumbnail: usable once the
+                      video's paused, said so while it plays. */}
+                  {thumbFromFrame && (
+                    <button
+                      type="button"
+                      className="pexpand-zones pexpand-thumb"
+                      disabled={!frameApi?.paused}
+                      title={frameApi?.paused ? "Use this frame as the thumbnail (← → step a frame)" : "Pause on a frame first"}
+                      onClick={() => void pickFrame()}
+                    >
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="3" y="3" width="18" height="18" rx="2" />
+                        <circle cx="8.5" cy="8.5" r="1.5" />
+                        <path d="M21 15l-5-5L5 21" />
+                      </svg>
+                      Use as Thumbnail
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="pexpand-btn"
+                    aria-label="Close the full-size view"
+                    title="Close (Esc)"
+                    onClick={() => setExpanded(false)}
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />
+                    </svg>
+                  </button>
+                </div>
               )}
-              {/* Safe Zones, beside the close button: for a Reel, Story or
-                  Short, what the app covers, over the playing video. The
-                  team's only. */}
-              {expanded && isStaff && safeZoneKind(shownFormat) && (
-                <button
-                  type="button"
-                  className="pexpand-zones"
-                  aria-pressed={safeZonesOn}
-                  title="Where the app's own buttons and words sit over the post"
-                  onClick={() => setSafeZonesOn((on) => !on)}
-                >
-                  Safe Zones {safeZonesOn ? "On" : "Off"}
-                </button>
+              {frameToUse && (
+                <FrameDialog
+                  frame={frameToUse}
+                  title="Use as Thumbnail"
+                  confirmLabel={`Save as Thumbnail V${latestThumbnailNo + 1}`}
+                  onConfirm={async (file) => {
+                    await saveThumbnail.mutateAsync({ file, latestVersionNo: latestThumbnailNo });
+                    // The new one, as the cover.
+                    setThumbnailId(null);
+                  }}
+                  onClose={() => setFrameToUse(null)}
+                />
               )}
+              {frameError && expanded && <p className="autherr pexpand-err">{frameError}</p>}
               <PhoneFrame device={tablet ? "tablet" : "phone"} orientation={orientation} reserveX={tablet ? 320 : 0} scale={0.85} reserve={PNAV_CURRENT_H + (postFormats(creative).length > 3 ? 10 : 0) + (hasScrollHint(postFormats(creative)) ? 46 : 0)} fill={expanded}>
               {/* The phone's "Posts" bar, back to the feed; not on an iPad
                   (reported directly: it's Instagram's, not the iPad's). */}

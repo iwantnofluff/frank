@@ -3500,12 +3500,29 @@ select.sort:hover {
 .pexpand.on .phoneframe {
   margin: 0;
 }
-.pexpand.on .pexpand-btn {
+/* Fullscreen's tools, top right (direct instruction): Safe Zones, Use as
+   Thumbnail, then close, in one row. */
+.pexpand-tools {
   position: fixed;
   top: 20px;
   right: 24px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pexpand.on .pexpand-btn {
   background: rgba(255, 255, 255, 0.14);
   color: #fff;
+}
+.pexpand-err {
+  position: fixed;
+  top: 64px;
+  right: 24px;
+  max-width: 320px;
+  padding: 8px 12px;
+  border-radius: 9px;
+  background: var(--surface);
 }
 .pexpand.on .pexpand-btn:hover {
   background: rgba(255, 255, 255, 0.24);
@@ -3513,9 +3530,6 @@ select.sort:hover {
 /* Safe Zones in Fullscreen (direct instruction), left of the close
    button, in its look; on, in the zones' red. */
 .pexpand-zones {
-  position: fixed;
-  top: 20px;
-  right: 68px;
   height: 34px;
   padding: 0 12px;
   border-radius: 9px;
@@ -3530,6 +3544,29 @@ select.sort:hover {
 }
 .pexpand-zones[aria-pressed="true"] {
   background: rgba(255, 0, 0, 0.55);
+}
+/* Use as Thumbnail: the prototype's image icon, then its words; while the
+   video plays, dimmed (its title says to pause first). */
+.pexpand-thumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.pexpand-thumb svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.pexpand-thumb:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.pexpand-thumb:disabled:hover {
+  background: rgba(255, 255, 255, 0.14);
 }
 .pexpand.on .annot-layer {
   display: none;
@@ -8782,41 +8819,21 @@ button.avatar {
 .thumb-pick .sub {
   margin-top: 6px;
 }
-/* The frame, checked above the bar before it's used. */
-.vplayer:has(.vframe-pop) {
-  position: relative;
-}
-.vframe-pop {
-  position: absolute;
-  right: 8px;
-  bottom: 54px;
-  z-index: 7;
-  width: 230px;
-  padding: 10px;
-  border-radius: var(--r);
-  background: var(--surface);
-  color: var(--ink);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
-  animation: rise-in var(--dur-fast) var(--ease-out);
-}
-.vframe-pop img {
+/* The frame's check (FrameDialog): the frame large, in the middle, as
+   the other windows are (direct instruction). */
+.framedlg img {
   display: block;
   width: auto;
   max-width: 100%;
-  max-height: 220px;
-  margin: 0 auto;
-  border-radius: 6px;
+  max-height: 58vh;
+  margin: 0 auto 10px;
+  border-radius: 8px;
 }
-.vframe-pop-t {
-  display: block;
-  margin: 8px 0 10px;
-  font-size: 12.2px;
-  font-weight: 600;
+.framedlg .sub {
+  text-align: center;
 }
-.vframe-pop-acts {
-  display: flex;
-  justify-content: flex-end;
-  gap: 6px;
+.vframe-err {
+  margin: 6px 0 0;
 }
 .vplay svg {
   width: 16px;

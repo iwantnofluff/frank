@@ -2,10 +2,11 @@ import { createClient } from "@supabase/supabase-js";
 import type { Page } from "@playwright/test";
 import { test, expect, APP_URL, type Frank } from "./fixtures";
 
-// A Reel's thumbnail from its own video (direct instruction): paused, the
-// bar offers Use as Thumbnail, a check of the frame, then it's saved as the
-// next version; ← → step a frame. In the post window's Thumbnail too, as
-// "pick a frame from the video". The team's only.
+// A Reel's thumbnail from its own video (direct instruction): in the post
+// page's Fullscreen, Use as Thumbnail beside Safe Zones, ready once the
+// video's paused; a window in the middle checks the frame, then it's saved
+// as the next version; ← → step a frame. In the post window's Thumbnail
+// too, as "pick a frame from the video". The team's only.
 const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
@@ -77,7 +78,7 @@ async function seedReel(page: Page, frank: Frank) {
 const versions = async (creativeId: string) =>
   (await admin.from("thumbnail_versions").select("version_no, asset:assets(filename, mime_type)").eq("creative_id", creativeId).order("version_no")).data ?? [];
 
-test("a paused frame becomes the Reel's thumbnail, on the post page and in the post window", async ({ page, frank }) => {
+test("a paused frame becomes the Reel's thumbnail, from Fullscreen and in the post window", async ({ page, frank }) => {
   test.setTimeout(120_000);
   await seedReel(page, frank);
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -85,44 +86,54 @@ test("a paused frame becomes the Reel's thumbnail, on the post page and in the p
   await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
   const player = page.locator(".vplayer").first();
   await expect(player.locator("video")).toBeVisible({ timeout: 20_000 });
-  const pick = player.getByRole("button", { name: "Use as Thumbnail" });
+  // Not on the page's own video (reported directly: fiddly there).
+  await expect(page.getByRole("button", { name: /Use as Thumbnail/ })).toHaveCount(0);
 
-  // Playing: no button. Paused: there.
+  // Fullscreen: Safe Zones, Use as Thumbnail, close, in that order.
+  await page.getByRole("button", { name: "See the phone full size" }).click();
+  const tools = page.locator(".pexpand-tools button");
+  await expect(tools).toHaveText(["Safe Zones Off", "Use as Thumbnail", ""]);
+  const pick = page.getByRole("button", { name: "Use as Thumbnail" });
+  // Playing: dimmed, saying to pause. Paused: ready.
   await player.getByRole("button", { name: "Play" }).click();
-  await expect(pick).toHaveCount(0);
+  await expect(pick).toBeDisabled();
+  await expect(pick).toHaveAttribute("title", "Pause on a frame first");
   await expect.poll(() => player.locator("video").evaluate((v) => (v as HTMLVideoElement).currentTime), { timeout: 10_000 }).toBeGreaterThan(1);
   await player.getByRole("button", { name: "Pause" }).click();
-  await expect(pick).toBeVisible();
+  await expect(pick).toBeEnabled();
 
-  // ← → step a frame (1/30s), kept to the player.
+  // ← → step a frame (1/30s), in the player.
   const at = () => player.locator("video").evaluate((v) => (v as HTMLVideoElement).currentTime);
   const before = await at();
-  await pick.focus();
   await page.keyboard.press("ArrowRight");
   await expect.poll(at).toBeCloseTo(before + 1 / 30, 2);
   await page.keyboard.press("ArrowLeft");
   await expect.poll(at).toBeCloseTo(before, 2);
 
-  // The frame, checked; Cancel saves nothing.
+  // A window in the middle with the frame; Cancel saves nothing.
   await pick.click();
-  const pop = player.getByRole("dialog", { name: "Use as Thumbnail" });
-  await expect(pop.locator("img")).toBeVisible();
-  await expect(pop).toContainText("Use as Thumbnail from 0:0");
-  await pop.getByRole("button", { name: "Cancel" }).click();
-  await expect(pop).toHaveCount(0);
+  const dialog = page.getByRole("dialog", { name: "Use as Thumbnail" });
+  await expect(dialog.locator(".framedlg img")).toBeVisible();
+  await expect(dialog).toContainText("From the video at 0:0");
+  const box = (await dialog.boundingBox())!;
+  expect(Math.abs(box.x + box.width / 2 - 720)).toBeLessThan(40);
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(dialog).toHaveCount(0);
+  // Still in Fullscreen.
+  await expect(page.getByRole("dialog", { name: "The post full size" })).toBeVisible();
   expect(await versions(frank.creativeId)).toHaveLength(0);
 
   // Saved as V1, a JPEG named for its moment.
   await pick.click();
-  await pop.getByRole("button", { name: "Save as V1" }).click();
-  await expect(pop).toHaveCount(0, { timeout: 20_000 });
+  await dialog.getByRole("button", { name: "Save as Thumbnail V1" }).click();
+  await expect(dialog).toHaveCount(0, { timeout: 20_000 });
   await expect.poll(async () => (await versions(frank.creativeId)).length).toBe(1);
   const v1 = (await versions(frank.creativeId))[0].asset as unknown as { filename: string; mime_type: string };
   expect(v1.mime_type).toBe("image/jpeg");
   expect(v1.filename).toMatch(/^frame-0m0\d(\.\d)?s\.jpg$/);
+  await page.getByRole("button", { name: "Close the full-size view" }).click();
 
-  // The post window: pick a frame from the video, Use This Frame, then
-  // Save Thumbnail V2 as for any image.
+  // The post window: its picker's bar button, and the same window.
   await page.getByRole("button", { name: "Edit", exact: true }).click();
   await page.getByRole("tab", { name: "Content" }).click();
   await page.getByRole("button", { name: "pick a frame from the video" }).click();
@@ -132,7 +143,9 @@ test("a paused frame becomes the Reel's thumbnail, on the post page and in the p
   await page.waitForTimeout(600);
   await small.getByRole("button", { name: "Pause" }).click();
   await small.getByRole("button", { name: "Use This Frame" }).click();
-  await small.getByRole("dialog", { name: "Use This Frame" }).getByRole("button", { name: "Use This Frame" }).click();
+  const use = page.getByRole("dialog", { name: "Use This Frame" });
+  await expect(use.locator(".framedlg img")).toBeVisible();
+  await use.getByRole("button", { name: "Use This Frame" }).click();
   await expect(page.locator(".thumb-pick")).toHaveCount(0);
   await expect(page.locator('[aria-label="Thumbnail"] .cslot.filled img')).toBeVisible();
   await page.getByRole("button", { name: "Save Thumbnail V2" }).click();
@@ -151,5 +164,6 @@ test("a client never gets Use as Thumbnail", async ({ page, frank }) => {
   await player.getByRole("button", { name: "Play" }).click();
   await page.waitForTimeout(500);
   await player.getByRole("button", { name: "Pause" }).click();
-  await expect(player.getByRole("button", { name: "Use as Thumbnail" })).toHaveCount(0);
+  await page.getByRole("button", { name: "See the phone full size" }).click();
+  await expect(page.getByRole("button", { name: /Use as Thumbnail/ })).toHaveCount(0);
 });

@@ -5,6 +5,7 @@ import { formatVideoTime } from "@/lib/annotations";
 import { avatarColour } from "@/lib/avatar-colour";
 import { VideoSafeZones } from "./SafeZoneOverlay";
 import { captureFrame } from "@/lib/video-frame";
+import { FrameDialog } from "./FrameDialog";
 
 export interface TimelineMarker {
   commentId: string;
@@ -22,6 +23,12 @@ export interface TimelineMarker {
 // the overlay) then shows on the frame. Pausing reports the moment, which
 // is what a new comment is attached to. Not in the prototype, which has no
 // video review — docs/parity-gaps.md.
+// What a player tells a button outside it (onFrameApi).
+export interface FrameApi {
+  paused: boolean;
+  capture: () => Promise<{ file: File; t: number }>;
+}
+
 export function VideoPlayer({
   src,
   markers,
@@ -35,6 +42,7 @@ export function VideoPlayer({
   expandable = false,
   cover,
   frameAction,
+  onFrameApi,
 }: {
   // Not yet known while the file's address is fetched: the player is
   // drawn at its size anyway, so nothing moves when the video arrives.
@@ -70,15 +78,15 @@ export function VideoPlayer({
     confirmLabel: string;
     onUse: (file: File, t: number) => Promise<void> | void;
   };
+  // For a button outside the player (the post page's Fullscreen, direct
+  // instruction): whether it's paused, and the paused frame on request.
+  onFrameApi?: (api: FrameApi | null) => void;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
-  // The frame being checked before it's used: its image, file and moment.
+  // The frame being checked before it's used (FrameDialog): its image,
+  // file and moment.
   const [frame, setFrame] = useState<{ url: string; file: File; t: number } | null>(null);
-  const [frameBusy, setFrameBusy] = useState(false);
   const [frameError, setFrameError] = useState<string | null>(null);
-  useEffect(() => () => {
-    if (frame) URL.revokeObjectURL(frame.url);
-  }, [frame]);
   async function takeFrame() {
     const v = ref.current;
     if (!v) return;
@@ -90,23 +98,10 @@ export function VideoPlayer({
       setFrameError(e instanceof Error ? e.message : "This frame couldn't be copied.");
     }
   }
-  async function confirmFrame() {
-    if (!frame || !frameAction) return;
-    setFrameBusy(true);
-    setFrameError(null);
-    try {
-      await frameAction.onUse(frame.file, frame.t);
-      setFrame(null);
-    } catch (e) {
-      setFrameError(e instanceof Error ? e.message : "It couldn't be saved.");
-    } finally {
-      setFrameBusy(false);
-    }
-  }
   // Paused, ← and → step a frame at a time (about 1/30s), to land on the
   // exact one; kept to this player.
   function stepKeys(e: React.KeyboardEvent) {
-    if (!frameAction || !paused || frame) return;
+    if ((!frameAction && !onFrameApi) || !paused || frame) return;
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
     if ((e.target as HTMLElement).closest(".vtrack, input, textarea")) return;
     e.preventDefault();
@@ -149,6 +144,20 @@ export function VideoPlayer({
   useEffect(() => {
     onMoment?.(paused ? time : null);
   }, [paused, time, onMoment]);
+
+  // The paused frame for a button outside the player (onFrameApi).
+  useEffect(() => {
+    if (!onFrameApi) return;
+    onFrameApi({
+      paused,
+      capture: async () => {
+        const v = ref.current;
+        if (!v) throw new Error("The video isn't ready yet.");
+        return { file: await captureFrame(v), t: v.currentTime };
+      },
+    });
+  }, [paused, onFrameApi]);
+  useEffect(() => () => onFrameApi?.(null), [onFrameApi]);
 
   // Back ten seconds (direct instruction), still playing if it was.
   function back10() {
@@ -339,36 +348,16 @@ export function VideoPlayer({
           </button>
         )}
       </div>
-      {/* The frame, checked before it's used; nothing happens until then. */}
-      {(frame || frameError) && (
-        <div className="vframe-pop" role="dialog" aria-label={frameAction?.label}>
-          {frame && (
-            <>
-              {/* eslint-disable-next-line @next/next/no-img-element -- a local preview */}
-              <img src={frame.url} alt={`The frame at ${formatVideoTime(frame.t)}`} />
-              <span className="vframe-pop-t">{`${frameAction?.label ?? "Frame"} from ${formatVideoTime(frame.t)}`}</span>
-            </>
-          )}
-          {frameError && <p className="autherr tiny">{frameError}</p>}
-          <div className="vframe-pop-acts">
-            <button
-              type="button"
-              className="btn sm"
-              disabled={frameBusy}
-              onClick={() => {
-                setFrame(null);
-                setFrameError(null);
-              }}
-            >
-              Cancel
-            </button>
-            {frame && (
-              <button type="button" className="btn sm primary" disabled={frameBusy} onClick={() => void confirmFrame()}>
-                {frameBusy ? "Saving…" : frameAction?.confirmLabel}
-              </button>
-            )}
-          </div>
-        </div>
+      {frameError && <p className="autherr tiny vframe-err">{frameError}</p>}
+      {/* The frame, checked in a window before it's used. */}
+      {frame && frameAction && (
+        <FrameDialog
+          frame={frame}
+          title={frameAction.label}
+          confirmLabel={frameAction.confirmLabel}
+          onConfirm={frameAction.onUse}
+          onClose={() => setFrame(null)}
+        />
       )}
     </div>
   );

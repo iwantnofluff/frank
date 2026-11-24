@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.98.2",
+    date: "2026-11-24",
+    title: "Thumbnails from Fullscreen",
+    changes: [
+      "Use as Thumbnail has moved to Fullscreen, between Safe Zones and the close button. It's ready once the video is paused (dimmed while it plays), and the arrow keys still step a frame at a time.",
+      "Picking a frame now opens a window in the middle of the screen with the frame shown large, then Save. The post window's \"pick a frame from the video\" uses the same window.",
+    ],
+  },
+  {
     version: "1.98.1",
     date: "2026-11-24",
     title: "Stories off the grid",

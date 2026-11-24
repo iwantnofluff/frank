@@ -5179,6 +5179,16 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Thumbnails from Fullscreen (1.98.2, 2026-11-24)
+
+Reported directly, with a screenshot: on the post page, the bar's image button and its small popover over the video's foot were fiddly (the popover sat over the timeline). Decided directly: in Fullscreen only, as a centred window like the others; the button between Safe Zones and close; the post window's picker kept, with the same window.
+
+- **Fullscreen**: `.pexpand-tools`, top right, one row: Safe Zones, Use as Thumbnail (the image icon and its words, in Safe Zones' look), close. Use as Thumbnail is disabled while the video plays, titled "Pause on a frame first". It reads the paused frame through the player's `onFrameApi` (paused, and the frame on request), given only while Fullscreen is open. Escape closes the frame window first, not Fullscreen with it.
+- **The window** (FrameDialog, the shared Modal): the frame up to 58% of the screen's height, "From the video at 0:10.", Cancel and Save as Thumbnail V{n} (the post window: Use This Frame). The small popover and its styles are gone.
+- **The page's own video**: no image button on its bar any more; the post window's picker keeps its bar button.
+
+**Verified**: thumbnail-frame.spec.ts rewritten: no Use as Thumbnail on the page; in Fullscreen the three tools in order; disabled while playing with its title, enabled paused; → ← step a frame; the window centred on the screen (within 40px), Cancel saves nothing and leaves Fullscreen open; Save as Thumbnail V1 saves a JPEG; the post window's picker opens the same window, Use This Frame fills the slot, Save Thumbnail V2 saves. A client has no button in Fullscreen. Screenshots: the toolbar while playing (the button dimmed), and the window with the frame.
+
 ## Stories off the grid (1.98.1, phase164, 2026-11-24)
 
 Asked directly: Stories are never on the feed, so they should never appear in the grid. `onGrid(formats)` in lib/formats.ts: on the grid unless every format is a Story (`STORY_FORMAT_IDS`: Instagram Story, Facebook Story, WhatsApp Status, Meta Stories / Reels Ad); a post with a feed format too stays, and one with no format yet. The post page's Feed grid (FeedPreviewGrid) uses it, leaving the Story out even when it's the post the grid was opened from. The review link's Feed view is built by `get_shared_review_feed`, so phase164 adds the same rule there. Not changed: the share window's post picker (it's for choosing what to share, Stories included), and Stories stay on review links to review.
