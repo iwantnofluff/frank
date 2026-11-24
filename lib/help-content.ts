@@ -465,7 +465,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         items: [
           "Choose Share on a post's page, at any status, then Create link, for this post or several.",
           "Add a passcode if you'd like the link protected.",
-          "Choose Copy. It greys out with Link copied once it's on your clipboard.",
+          "Copy it with a message to send: Link + Instructions (no account needed, open it, pick your name, comment, Approve; an optional login) or Link + Request (a short ask to comment or approve). Approve is left out when the link can't approve. The one you chose greys out with Copied once it's on your clipboard.",
           "Send the link to your client, or keep it for your team. It's up to you.",
         ],
       },

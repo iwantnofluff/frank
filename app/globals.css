@@ -6964,6 +6964,12 @@ a.inlink {
   gap: 8px;
   align-items: center;
 }
+/* The share window's two copy buttons (Link + Instructions, Link + Request). */
+.sharecopy {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
 .linkrow code {
   flex: 1;
   min-width: 0;
@@ -12028,7 +12034,9 @@ button.feedgrid-live {
 }
 /* Copied: greyed out, not a faded blue (direct instruction). */
 .linkrow .btn.copied,
-.linkrow .btn.copied:disabled {
+.linkrow .btn.copied:disabled,
+.sharecopy .btn.copied,
+.sharecopy .btn.copied:disabled {
   background: var(--canvas);
   border-color: var(--line-2);
   color: var(--muted);

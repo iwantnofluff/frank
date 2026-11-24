@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.101.0",
+    date: "2026-11-24",
+    title: "Review links copy with a message",
+    changes: [
+      "After Create link, copy it with a message ready to send: Link + Instructions (no account needed, how to open it, pick their name, comment and approve, and that a login is optional) or Link + Request (a short ask to comment or approve). Both are always there; pick whichever suits the client.",
+      "When a link can't approve, the message leaves Approve out.",
+    ],
+  },
+  {
     version: "1.100.0",
     date: "2026-11-24",
     title: "Client accounts, from a review link",

@@ -5179,6 +5179,16 @@ Direct instruction: on a phone, the post's page in Frank and the review link sho
 
 mobile-post.spec has a new test (both pages, the count and its label, the box focused and on screen), and passed twice (4). Full suite on the local database: 339 passed, 2 failed. admin-overview passed on rerun. shared-review-phone.png differed only by the new bubble and "0" before "1 / 1", and was regenerated after looking at its diff.
 
+## Review links copy with a message (1.101.0, 2026-11-24)
+
+Asked directly: the Copy link screen to offer the link with a message. First asked as Link and Link + Instructions, the instructions the default for a client's first 5 reviews; then, asked what counts as one of the 5, changed: no count, two buttons always, Link + Instructions and Link + Request, the user's own wording for both. Asked about step 3's "You can highlight copy or pause videos…": a review link can't highlight copy (only the post page can, for the team), so that part was dropped, as recommended.
+
+- **ShareModal**, once the link is made: the link (no copy button of its own now), then "Copy and send" with the two buttons; the one pressed greys to Copied, with "Link and instructions copied." or "Link and request copied." under them. The last line now says the client picks their name to comment (or approve) with no account needed; it used to say they're asked for a name and email.
+- **`lib/review-message.ts`** writes both, plain text with the user's curly apostrophes: "{title} is ready for review: {link}", the title as the link is named (the post, the one picked, or the project for several). Approve (step 4, or "or hit Approve if you're happy") is left out when the link can't approve.
+- **Not done**: a passcode isn't put in the message (sent separately, as before). The video line is there whether or not the link has a video.
+
+**Verified**: unit tests for both messages word for word, and without Approve. share-copy.spec.ts, new: both buttons after Create link; each copies its message, read back from the clipboard word for word with the real link; only the one pressed shows Copied. A screenshot of the window after copying looked right. Full local suite: 405 passed, 2 failed, ask-frank's Show Me and frank-tour's Show Me, both waiting 60s for the tour's first card. Wrongly put down to the Help text at first (undoing it made frank-tour pass once); with it back, frank-tour passed twice, and ask-frank failed on the first run after the test app started and passed the next two: the first walkthrough after a cold start, not this change.
+
 ## Create an account, from a review link (1.100.0, 2026-11-24)
 
 Asked directly: does a client have to make an account to review? (No: they pick their name.) Then, choosing wording and a Create an account button over wording alone: "The user should know it's optional and will not affect them giving feedback."

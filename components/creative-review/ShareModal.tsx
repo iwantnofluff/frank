@@ -19,6 +19,7 @@ import { useLatestVersionAt } from "@/hooks/use-latest-version-at";
 import { FeedTileArt, EmptyTileArt } from "@/components/creative-review/FeedTileArt";
 import { FeedCaptionPopover } from "@/components/creative-review/FeedCaptionPopover";
 import { isIdea, STAGE } from "@/lib/stage-labels";
+import { reviewMessage, type ReviewMessageKind } from "@/lib/review-message";
 
 const GRID_SLOTS = 9;
 
@@ -47,6 +48,11 @@ const SCOPE_OPTIONS: {
 // every tile now, matching Feed Preview exactly, not the creative's own
 // format — a deliberate loss of the per-format-accurate shape in exchange
 // for looking like the same grid.
+const COPY_OPTIONS: { kind: ReviewMessageKind; label: string }[] = [
+  { kind: "instructions", label: "Link + Instructions" },
+  { kind: "request", label: "Link + Request" },
+];
+
 function PieceTile({
   creative,
   gridIds,
@@ -126,9 +132,10 @@ export function ShareModal({
   }
   // A client that can't approve at all: no link lets them.
   const approveLocked = !!prefs && !prefs.client_can_approve;
-  const [link, setLink] = useState<string | null>(null);
+  // The link made, with what its message names it and whether it lets them approve.
+  const [link, setLink] = useState<{ url: string; title: string; canApprove: boolean } | null>(null);
   // Copied to the clipboard (direct instruction: say so, and grey the button).
-  const [copied, setCopied] = useState<"yes" | "failed" | null>(null);
+  const [copied, setCopied] = useState<{ kind: ReviewMessageKind; ok: boolean } | null>(null);
 
   const { data: allCreatives } = useCreatives(projectId);
   // Nor a post on a status that hides it (phase143), such as a Cancelled one.
@@ -257,7 +264,11 @@ export function ShareModal({
     // the post, or the project when it's for several.
     const onePick = scope === "pick" && picked.size === 1 ? allCreatives?.find((c) => picked.has(c.id))?.name : null;
     const title = scope === "one" ? currentName : (onePick ?? project?.name);
-    setLink(`${window.location.origin}${reviewLinkPath(token, brandName, title)}`);
+    setLink({
+      url: `${window.location.origin}${reviewLinkPath(token, brandName, title)}`,
+      title: title ?? currentName,
+      canApprove: canApprove && !approveLocked,
+    });
   }
 
   return (
@@ -303,27 +314,42 @@ export function ShareModal({
           <div className="field">
             <label>Link</label>
             <div className="linkrow">
-              <code>{link}</code>
-              <button
-                type="button"
-                className={copied === "yes" ? "btn sm copied" : "btn sm primary"}
-                disabled={copied === "yes"}
-                onClick={() =>
-                  navigator.clipboard.writeText(link).then(
-                    () => setCopied("yes"),
-                    () => setCopied("failed"),
-                  )
-                }
-              >
-                {copied === "yes" ? "Copied" : "Copy"}
-              </button>
+              <code>{link.url}</code>
             </div>
-            {copied === "yes" && (
+          </div>
+          {/* Two messages, always both (direct instruction): the link with
+              step-by-step instructions, or with a short request. */}
+          <div className="field">
+            <label>Copy and send</label>
+            <div className="sharecopy">
+              {COPY_OPTIONS.map((opt) => {
+                const done = copied?.kind === opt.kind && copied.ok;
+                return (
+                  <button
+                    key={opt.kind}
+                    type="button"
+                    className={done ? "btn sm copied" : "btn sm"}
+                    disabled={done}
+                    onClick={() =>
+                      navigator.clipboard
+                        .writeText(reviewMessage({ kind: opt.kind, title: link.title, link: link.url, canApprove: link.canApprove }))
+                        .then(
+                          () => setCopied({ kind: opt.kind, ok: true }),
+                          () => setCopied({ kind: opt.kind, ok: false }),
+                        )
+                    }
+                  >
+                    {done ? "Copied" : opt.label}
+                  </button>
+                );
+              })}
+            </div>
+            {copied?.ok && (
               <span className="bsaved" role="status">
-                Link copied. Paste it wherever you&apos;re sending it.
+                {copied.kind === "instructions" ? "Link and instructions" : "Link and request"} copied. Paste it wherever you&apos;re sending it.
               </span>
             )}
-            {copied === "failed" && (
+            {copied && !copied.ok && (
               <span className="berr" role="status">
                 Couldn&apos;t copy it here. Select the link above and copy it.
               </span>
@@ -331,8 +357,8 @@ export function ShareModal({
           </div>
           <p className="sub">
             Anyone with this link can read the work covered by the scope you
-            picked. Commenting or approving asks them for a name and email
-            first — no account required.
+            picked. Your client picks their name to comment
+            {link.canApprove ? " or approve" : ""} — no account needed.
           </p>
         </>
       ) : (
