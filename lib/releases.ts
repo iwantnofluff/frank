@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.104.5",
+    date: "2026-11-25",
+    title: "Find a workspace in Admin Users",
+    changes: [
+      "Admin › Users' Workspace filter has a search box, with All Found to tick what it finds.",
+      "Every option in the Admin › Users filters has an Only on hover, to pick just that one.",
+    ],
+  },
+  {
     version: "1.104.4",
     date: "2026-11-25",
     title: "Admin Users: role in its own column",

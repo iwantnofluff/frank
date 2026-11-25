@@ -155,6 +155,19 @@ test("the admin filters Users by workspace, role and status", async ({ page, fra
     await expect(page.getByRole("button", { name: "Workspace" })).toHaveText("All Workspaces");
     await expect(rows).toHaveCount(total);
     await expect(page.getByRole("button", { name: "Clear Filters" })).toHaveCount(0);
+
+    // A long list: found by searching, and picked alone with its Only.
+    await page.getByRole("button", { name: "Workspace" }).click();
+    const find = list.getByRole("textbox", { name: "Find a workspace" });
+    await expect(find).toBeFocused();
+    await find.fill("zzz-no-such-workspace");
+    await expect(list.getByText("Nothing matches that.")).toBeVisible();
+    await find.fill(agency!.name);
+    await expect(list.getByRole("checkbox", { name: /^All \d+ Found$/ })).toBeVisible();
+    await list.getByRole("checkbox", { name: named }).hover();
+    await list.getByRole("button", { name: `Only ${named}` }).click();
+    await expect(page.getByRole("button", { name: "Workspace" })).toHaveText(named);
+    await expect(rows).toHaveCount(2);
   } finally {
     await pa.cleanup();
   }

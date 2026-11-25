@@ -5185,6 +5185,22 @@ Direct instruction: the review link had no brief; add an icon before Content, so
 
 **Verified**: In the real app (dev server, staging), as a visitor with no session, at 1440 × 900 and 390 × 844, with a concept, a reference and a team member seeded: Brief showed them, Notes for Designer didn't, and the brief fitted the phone's screen (it first ran off the right edge, fixed with `width: auto`). Screenshots checked after the highlight's fade; one taken straight after the click showed Content still lit, which the logged `aria-pressed`/`aria-current` showed was the fade, not the state. shared-review-brief.spec.ts is new (desktop menu order and the brief; phone icon order, pressed state, fit). shared-review-phone.png and shared-review-desktop.png differed only by the new icon and menu item and were regenerated after looking at each diff. shared-review-public, shared-review-account, designer-note-versions and new-brief run with it against staging: 20 passed, 10 failed while the machine was loaded. Rerun, all 10 passed except the two baselines above, which then passed once regenerated. Unit tests: 311 passed.
 
+## Admin › Users' Workspace filter: search and Only (1.104.5, 2026-11-25)
+
+Direct instruction: the Workspace dropdown needs a search, as the list grows with Frank, "or suggest another approach".
+- **Search.** The dropdown opens on a "Find a workspace" box that narrows the list as you type. While searching, the top row becomes "All N Found", ticking or clearing just those, and an empty result says "Nothing matches that."
+- **Only.** Every row has an Only button on hover or keyboard focus that picks that workspace alone. Without it, picking one workspace from hundreds meant clearing All first, then finding it.
+- **Where it's on.** `AdminFilterMenu` takes the search as an option (`searchable`). It's on for Workspace only; Role, Status and Last signed in are short. Only is on every row of every filter.
+- The search starts empty each time the dropdown opens.
+
+**Verified**: In the real app (staging admin address) at 1440 × 900: "no" found 3 workspaces with All 3 Found, and hovering a row showed its Only. admin-users.spec.ts's filter test adds:
+- the search box focused on opening;
+- a search with no result;
+- a search for the fixture's workspace showing All N Found;
+- its Only picking it alone, with 2 rows.
+
+admin-users against staging: 3 passed. Type check and lint clean; the first version cleared the search in an effect, which lint refused, so it now clears on opening.
+
 ## Workspace and role in their own columns on Admin › Users (1.104.4, 2026-11-25)
 
 Direct instruction: each line read "No Fluff (nofluff) · Primary Owner". Now Workspaces and Role are separate columns, a line per workspace in each, side by side; Invited or Deactivated stays after the role. Each line keeps to one row (`white-space: nowrap`) so the two columns stay level. An agency's own People table is unchanged; it already had Role.

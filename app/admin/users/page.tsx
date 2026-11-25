@@ -85,6 +85,7 @@ export default function AdminUsersPage() {
           allLabel="All Workspaces"
           plural="Workspaces"
           options={workspaceOptions}
+          searchable="Find a workspace"
           value={workspaces ?? workspaceOptions.map((o) => o.value)}
           onChange={set(setWorkspaces, workspaceOptions.length)}
         />
