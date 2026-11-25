@@ -130,13 +130,17 @@ export function CreativeReviewPage({ id }: { id: string }) {
   // A Reel's crop in the feed (its middle 1080×1440, from the user's guide):
   // its own switch beside Safe Zones.
   const [feedCropOn, setFeedCropOn] = useState(false);
+  // The comments beside the phone in Fullscreen (direct instruction: to
+  // write them there too), shown until hidden, kept while the post is open.
+  const [fsCommentsOn, setFsCommentsOn] = useState(true);
   // Another of the post's formats picked to show it as (FormatSwitch).
   const [viewFormat, setViewFormat] = useState<string | null>(null);
   useEffect(() => {
     if (!expanded) return;
     const escape = (e: KeyboardEvent) => {
-      // The frame window closes first, on its own.
-      if (e.key === "Escape" && !document.querySelector(".framedlg")) setExpanded(false);
+      // The frame window closes first, on its own; Esc in the comments
+      // (a half-written comment, the @ list) is theirs.
+      if (e.key === "Escape" && !document.querySelector(".framedlg") && !(e.target instanceof Element && e.target.closest(".cmts"))) setExpanded(false);
     };
     document.addEventListener("keydown", escape);
     return () => document.removeEventListener("keydown", escape);
@@ -798,7 +802,8 @@ export function CreativeReviewPage({ id }: { id: string }) {
       onHighlight={highlightComment}
       toolMode={toolMode}
       onToolModeChange={setToolMode}
-      canAnnotate={!!currentSlide && !phone}
+      // Not in Fullscreen, where the artwork's pins aren't drawn.
+      canAnnotate={!!currentSlide && !phone && !expanded}
       videoMoment={isVideo ? videoMoment : null}
       videoSlide={isVideo && frames.length > 1 ? slidePosition : null}
       creativeVersionId={activeCreativeVersion?.id ?? null}
@@ -849,7 +854,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
   }
 
   return (
-    <div className={`review${showComments ? "" : " nocomments"}`}>
+    <div className={`review${showComments ? "" : " nocomments"}${expanded && showComments && fsCommentsOn ? " fscmts" : ""}`}>
 
       {/* Laid out, but not shown, until what decides its size is known —
           who's looking (the staff controls can add a header row, which
@@ -1191,7 +1196,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
                 }}
               >
               {/* Fullscreen's tools, top right (direct instruction): Safe
-                  Zones, Use as Thumbnail, then close. The first two the
+                  Zones, Use as Thumbnail, Hide Comments, then close. The first two the
                   team's only, on the formats they're for. */}
               {expanded && (
                 <div className="pexpand-tools">
@@ -1233,6 +1238,17 @@ export function CreativeReviewPage({ id }: { id: string }) {
                         <path d="M21 15l-5-5L5 21" />
                       </svg>
                       Use as Thumbnail
+                    </button>
+                  )}
+                  {/* The comments beside it (direct instruction), last
+                      before close. */}
+                  {showComments && (
+                    <button
+                      type="button"
+                      className="pexpand-zones"
+                      onClick={() => setFsCommentsOn((on) => !on)}
+                    >
+                      {fsCommentsOn ? "Hide Comments" : "Show Comments"}
                     </button>
                   )}
                   <button

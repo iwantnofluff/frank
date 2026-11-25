@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.104.0",
+    date: "2026-11-25",
+    title: "Comments in Fullscreen",
+    changes: [
+      "Fullscreen now has the comments at the right, so you can read and write them while looking at the post full size. Hide Comments at the top gives the phone the whole window, and Show Comments brings them back.",
+      "Pins and areas on the artwork are still added outside Fullscreen.",
+    ],
+  },
+  {
     version: "1.103.6",
     date: "2026-11-25",
     title: "New posts open on Production",

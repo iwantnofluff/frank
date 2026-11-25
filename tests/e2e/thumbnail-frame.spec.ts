@@ -89,10 +89,11 @@ test("a paused frame becomes the Reel's thumbnail, from Fullscreen and in the po
   // Not on the page's own video (reported directly: fiddly there).
   await expect(page.getByRole("button", { name: /Use as Thumbnail/ })).toHaveCount(0);
 
-  // Fullscreen: Safe Zones, Feed Crop (a Reel's), Use as Thumbnail, close.
+  // Fullscreen: Safe Zones, Feed Crop (a Reel's), Use as Thumbnail, Hide
+  // Comments, close.
   await page.getByRole("button", { name: "See the phone full size" }).click();
   const tools = page.locator(".pexpand-tools button");
-  await expect(tools).toHaveText(["Safe Zones Off", "Feed Crop Off", "Use as Thumbnail", ""]);
+  await expect(tools).toHaveText(["Safe Zones Off", "Feed Crop Off", "Use as Thumbnail", "Hide Comments", ""]);
   const pick = page.getByRole("button", { name: "Use as Thumbnail" });
   // Playing: dimmed, saying to pause. Paused: ready.
   await player.getByRole("button", { name: "Play" }).click();

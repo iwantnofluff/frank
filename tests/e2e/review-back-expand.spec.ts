@@ -117,3 +117,61 @@ test("the phone opens full size over the page, on the same slide, and closes wit
   await page.mouse.click(40, 410);
   await expect(dialog).toHaveCount(0);
 });
+
+// Comments in Fullscreen (direct instruction: to write them there): the
+// page's own panel at the right, the phone centred in what's left; Esc
+// while writing stays; Hide Comments gives the phone the whole window.
+test("Fullscreen has the comments beside the phone, to write in, hidden and shown again", async ({ page, frank }) => {
+  test.setTimeout(120_000);
+  await seedCarousel(page, frank);
+  await page.setViewportSize({ width: 1440, height: 820 });
+  await frank.loginAsStaff(page);
+  await page.goto(`${APP_URL}/creatives/${frank.creativeId}`);
+  await expect(page.locator(".phoneframe .car-count")).toBeVisible({ timeout: 20_000 });
+  await page.getByRole("button", { name: "See the phone full size" }).click();
+  const dialog = page.getByRole("dialog", { name: "The post full size" });
+  await expect(dialog).toBeVisible();
+
+  const panel = page.locator("aside.cmts");
+  await expect(panel).toBeVisible();
+  const p = (await panel.boundingBox())!;
+  expect(p.x + p.width).toBeCloseTo(1440, 0);
+  expect(p.y).toBe(0);
+  // Above the dark: what's at its middle is the panel.
+  expect(await page.evaluate(([x, y]) => !!document.elementFromPoint(x, y)?.closest("aside.cmts"), [p.x + p.width / 2, 400])).toBe(true);
+  // The phone centred left of it.
+  const f = (await page.locator(".phoneframe").boundingBox())!;
+  expect(Math.abs(f.x + f.width / 2 - p.x / 2)).toBeLessThan(4);
+  // The tools clear of it.
+  const close = (await page.getByRole("button", { name: "Close the full-size view" }).boundingBox())!;
+  expect(close.x + close.width).toBeLessThan(p.x);
+
+  const box = panel.locator(".composer");
+  await box.locator("textarea").fill("Written in Fullscreen");
+  // Esc while writing is the comment's, not Fullscreen's.
+  await box.locator("textarea").press("Escape");
+  await expect(dialog).toBeVisible();
+  await box.getByRole("button", { name: "Post", exact: true }).click();
+  await expect(page.locator(".cmt:not(.pending)", { hasText: "Written in Fullscreen" })).toBeVisible({ timeout: 15_000 });
+  await expect(dialog).toBeVisible();
+
+  // Hidden, it's back in its place on the page, under the dark.
+  const onTop = () => page.evaluate(([x, y]) => !!document.elementFromPoint(x, y)?.closest("aside.cmts"), [1440 - 100, 400]);
+  await page.getByRole("button", { name: "Hide Comments" }).click();
+  await expect.poll(onTop).toBe(false);
+  await expect(dialog).toBeVisible();
+  await expect
+    .poll(async () => {
+      const g = (await page.locator(".phoneframe").boundingBox())!;
+      return Math.round(g.x + g.width / 2);
+    })
+    .toBeCloseTo(720, -1);
+  await page.getByRole("button", { name: "Show Comments" }).click();
+  await expect.poll(onTop).toBe(true);
+
+  // Closed, the panel's back beside the post as before.
+  await page.getByRole("button", { name: "Close the full-size view" }).click();
+  await expect(dialog).toHaveCount(0);
+  const back = (await panel.boundingBox())!;
+  expect(back.y).toBeGreaterThan(0);
+});

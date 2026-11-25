@@ -407,7 +407,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         kind: "list",
         items: [
           "The project's name with a back arrow, above the section icons on the left, takes you back to [the table](project:) on that post's month, its row brought into view and lit for a moment, so you don't have to scroll to find it. On a phone the name at the top of the post does the same with its card.",
-          "Fullscreen, on the right under Copy, shows the phone over the whole window, as large as it fits, for a video or artwork that's too small on a laptop. The post plays and steps through its slides as usual. Esc, the close button at the top right, or a click outside it closes it.",
+          "Fullscreen, on the right under Copy, shows the phone over the whole window, as large as it fits, for a video or artwork that's too small on a laptop. The post plays and steps through its slides as usual. The comments sit at the right, to read and write there; Hide Comments at the top gives the phone the whole window, and Show Comments brings them back. Pins on the artwork are added outside Fullscreen. Esc, the close button at the top right, or a click outside it closes it.",
         ],
       },
     ],

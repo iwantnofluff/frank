@@ -3571,6 +3571,39 @@ select.sort:hover {
 .pexpand.on .annot-layer {
   display: none;
 }
+/* The comments in Fullscreen (direct instruction: to write them there),
+   the page's own panel lifted over the dark at the right, the phone
+   centred in what's left; Hide Comments gives it the whole window. */
+.review.fscmts > .cmts {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 363px;
+  z-index: 951;
+  background: var(--surface);
+  box-shadow: -1px 0 0 var(--line-2);
+  animation: pexpand-in var(--dur-open) var(--ease-open);
+}
+.review.fscmts .pexpand.on {
+  right: 363px;
+}
+.review.fscmts .pexpand-tools,
+.review.fscmts .pexpand-err {
+  right: calc(363px + 24px);
+}
+@media (min-width: 1700px) {
+  .review.fscmts > .cmts {
+    width: 413px;
+  }
+  .review.fscmts .pexpand.on {
+    right: 413px;
+  }
+  .review.fscmts .pexpand-tools,
+  .review.fscmts .pexpand-err {
+    right: calc(413px + 24px);
+  }
+}
 @keyframes pexpand-in {
   from {
     opacity: 0;
