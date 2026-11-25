@@ -84,6 +84,8 @@ export function cropToFile(
   img: HTMLImageElement,
   crop: Crop,
   type: "image/jpeg" | "image/png" = "image/jpeg",
+  // What shows around a logo zoomed out past its edges.
+  fill?: string,
 ): Promise<File> {
   const canvas = document.createElement("canvas");
   canvas.width = AVATAR_OUTPUT_PX;
@@ -91,7 +93,14 @@ export function cropToFile(
   const ctx = canvas.getContext("2d");
   if (!ctx) return Promise.reject(new Error("Couldn't prepare the photo"));
   ctx.imageSmoothingQuality = "high";
-  ctx.drawImage(img, crop.x, crop.y, crop.size, crop.size, 0, 0, AVATAR_OUTPUT_PX, AVATAR_OUTPUT_PX);
+  if (fill) {
+    ctx.fillStyle = fill;
+    ctx.fillRect(0, 0, AVATAR_OUTPUT_PX, AVATAR_OUTPUT_PX);
+  }
+  // The crop in output pixels; drawn whole, so a crop past the picture's
+  // edges leaves the fill showing there.
+  const k = AVATAR_OUTPUT_PX / crop.size;
+  ctx.drawImage(img, -crop.x * k, -crop.y * k, img.naturalWidth * k, img.naturalHeight * k);
   const ext = type === "image/png" ? "png" : "jpg";
   return new Promise((resolve, reject) => {
     canvas.toBlob(
@@ -103,4 +112,18 @@ export function cropToFile(
       0.9,
     );
   });
+}
+
+// The colour round a logo's edge, for the space around it when zoomed out:
+// its top left pixel, so a logo on a solid colour carries on in it; white
+// for a see-through one.
+export function edgeColour(img: HTMLImageElement): string {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1;
+  canvas.height = 1;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return "#fff";
+  ctx.drawImage(img, 0, 0, 1, 1, 0, 0, 1, 1);
+  const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
+  return a < 255 ? "#fff" : `rgb(${r}, ${g}, ${b})`;
 }

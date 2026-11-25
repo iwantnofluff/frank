@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.103.4",
+    date: "2026-11-25",
+    title: "Logo edges and zoom",
+    changes: [
+      "Every client logo now has a fine grey line round it, so a white logo still has an edge, in the client list, client settings, the post page, the Feed Preview and review links.",
+      "When positioning a client's image or the workspace logo, you can zoom out a little past filling the circle, so a logo that runs to its edges fits inside it. The space round it takes the logo's background colour, or white if it has none.",
+    ],
+  },
+  {
     version: "1.103.3",
     date: "2026-11-25",
     title: "Add Reference, Asset or Link",

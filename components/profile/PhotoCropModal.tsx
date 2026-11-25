@@ -2,10 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
-import { cropToFile, detectFace, loadImage } from "@/lib/face-crop";
+import { cropToFile, detectFace, edgeColour, loadImage } from "@/lib/face-crop";
 import { clampCrop, initialCrop, resizeCrop, type Crop } from "@/lib/face-crop-math";
 
 const VIEW = 280;
+// How far a logo zooms out (direct instruction: slightly): to a square a
+// quarter wider than the picture's longer side, so all of it fits in the
+// circle with room round it.
+const LOGO_ZOOM_OUT = 1.25;
 
 type Status = "detecting" | "found" | "none" | "manual";
 
@@ -31,6 +35,8 @@ export function PhotoCropModal({
   const [crop, setCrop] = useState<Crop | null>(null);
   const [status, setStatus] = useState<Status>(detectFaces ? "detecting" : "manual");
   const [error, setError] = useState<string | null>(null);
+  // Round a logo zoomed out past its edges (edgeColour).
+  const [fill, setFill] = useState<string | undefined>(undefined);
   const [saving, setSaving] = useState(false);
   const drag = useRef<{ startX: number; startY: number; from: Crop } | null>(null);
 
@@ -42,6 +48,7 @@ export function PhotoCropModal({
         loaded = image;
         if (cancelled) return;
         setImg(image);
+        if (!detectFaces) setFill(edgeColour(image));
         const face = detectFaces ? await detectFace(image) : null;
         if (cancelled) return;
         setCrop(initialCrop(image.naturalWidth, image.naturalHeight, face));
@@ -57,9 +64,11 @@ export function PhotoCropModal({
   }, [file, detectFaces]);
 
   const scale = crop ? VIEW / crop.size : 1;
-  const maxSize = img ? Math.min(img.naturalWidth, img.naturalHeight) : 1;
+  // Filling the square; a photo zooms out no further, a logo slightly.
+  const fillSize = img ? Math.min(img.naturalWidth, img.naturalHeight) : 1;
+  const maxSize = img && !detectFaces ? Math.max(img.naturalWidth, img.naturalHeight) * LOGO_ZOOM_OUT : fillSize;
   // Zooming in further than ~6% of the shorter side just shows pixels.
-  const minSize = Math.min(Math.max(maxSize * 0.06, 32), maxSize);
+  const minSize = Math.min(Math.max(fillSize * 0.06, 32), fillSize);
 
   function onPointerDown(e: React.PointerEvent) {
     if (!crop) return;
@@ -80,6 +89,7 @@ export function PhotoCropModal({
         },
         img.naturalWidth,
         img.naturalHeight,
+        maxSize,
       ),
     );
   }
@@ -91,7 +101,7 @@ export function PhotoCropModal({
     if (!img || !crop) return;
     setSaving(true);
     try {
-      onConfirm(await cropToFile(img, crop, !detectFaces && file.type === "image/png" ? "image/png" : "image/jpeg"));
+      onConfirm(await cropToFile(img, crop, !detectFaces && file.type === "image/png" ? "image/png" : "image/jpeg", fill));
     } catch (e) {
       setError((e as Error).message);
       setSaving(false);
@@ -122,7 +132,7 @@ export function PhotoCropModal({
     >
       <div
         className="pcrop"
-        style={{ width: VIEW, height: VIEW }}
+        style={{ width: VIEW, height: VIEW, background: fill }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -157,7 +167,7 @@ export function PhotoCropModal({
             value={Math.round(((maxSize - crop.size) / (maxSize - minSize || 1)) * 100)}
             onChange={(e) => {
               const t = Number(e.target.value) / 100;
-              setCrop(resizeCrop(crop, maxSize - t * (maxSize - minSize), img.naturalWidth, img.naturalHeight));
+              setCrop(resizeCrop(crop, maxSize - t * (maxSize - minSize), img.naturalWidth, img.naturalHeight, maxSize));
             }}
           />
         </label>

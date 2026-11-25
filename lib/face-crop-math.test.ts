@@ -40,6 +40,20 @@ test("zooming keeps the same centre", () => {
   assert.deepEqual(c, { x: 450, y: 450, size: 100 });
 });
 
+test("a photo can't zoom out past filling the square", () => {
+  assert.equal(resizeCrop({ x: 0, y: 0, size: 600 }, 900, 1000, 600).size, 600);
+});
+
+test("a logo zooms out past its edges, the picture kept inside the square", () => {
+  // 1000 × 600, zoomed out to 1250: wider than the picture both ways.
+  const c = resizeCrop({ x: 200, y: 0, size: 600 }, 1250, 1000, 600, 1250);
+  assert.deepEqual(c, { x: -125, y: -325, size: 1250 });
+  // Dragged too far, the picture stops at the square's edge.
+  assert.deepEqual(clampCrop({ x: 500, y: -900, size: 1250 }, 1000, 600, 1250), { x: 0, y: -650, size: 1250 });
+  // Never further than allowed.
+  assert.equal(clampCrop({ x: 0, y: 0, size: 5000 }, 1000, 600, 1250).size, 1250);
+});
+
 test("several faces: the biggest is the subject", () => {
   const small = { x: 0, y: 0, width: 50, height: 50 };
   const big = { x: 500, y: 500, width: 200, height: 220 };

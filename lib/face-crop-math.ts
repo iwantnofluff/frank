@@ -24,12 +24,15 @@ function clamp(n: number, min: number, max: number) {
   return Math.min(Math.max(n, min), max);
 }
 
-export function clampCrop(c: Crop, imageW: number, imageH: number): Crop {
-  const size = clamp(c.size, 1, Math.min(imageW, imageH));
+// A logo can be zoomed out past filling the square (direct instruction), up
+// to maxSize: then the square is wider than the picture that way, and the
+// picture moves about inside it rather than the square inside the picture.
+export function clampCrop(c: Crop, imageW: number, imageH: number, maxSize = Math.min(imageW, imageH)): Crop {
+  const size = clamp(c.size, 1, Math.max(maxSize, Math.min(imageW, imageH)));
   return {
     size,
-    x: clamp(c.x, 0, imageW - size),
-    y: clamp(c.y, 0, imageH - size),
+    x: clamp(c.x, Math.min(0, imageW - size), Math.max(0, imageW - size)),
+    y: clamp(c.y, Math.min(0, imageH - size), Math.max(0, imageH - size)),
   };
 }
 
@@ -47,10 +50,10 @@ export function initialCrop(imageW: number, imageH: number, face: Box | null): C
 }
 
 // Zooming keeps the square centred on the same point of the photo.
-export function resizeCrop(c: Crop, size: number, imageW: number, imageH: number): Crop {
+export function resizeCrop(c: Crop, size: number, imageW: number, imageH: number, maxSize?: number): Crop {
   const cx = c.x + c.size / 2;
   const cy = c.y + c.size / 2;
-  return clampCrop({ size, x: cx - size / 2, y: cy - size / 2 }, imageW, imageH);
+  return clampCrop({ size, x: cx - size / 2, y: cy - size / 2 }, imageW, imageH, maxSize);
 }
 
 // Of several faces, the most prominent one — biggest box — is the subject.
