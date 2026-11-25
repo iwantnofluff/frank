@@ -60,7 +60,7 @@ test("shared review — a plain login link is present but never required", async
   await page.goto(`/review/${token}`);
   await page.waitForSelector(".m-top");
 
-  const loginLink = page.locator('a:has-text("Log in")').first();
+  const loginLink = page.locator('a:has-text("Log In")').first();
   // Back to this link once signed in (direct instruction, 1.83.0).
   await expect(loginLink).toHaveAttribute("href", `/login?redirect_to=${encodeURIComponent(`/review/${token}`)}`);
 

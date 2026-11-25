@@ -149,7 +149,7 @@ export async function POST(request: Request) {
         // Looked up for exactly the creatives that function just returned
         // for this validated token, nothing wider.
         ids.length
-          ? serviceRole.from("creatives").select("id, formats, slide_count, sizes, artwork_removed_at, due_on, publish_on, thumbnail_text, slide_text").in("id", ids).then((r) => r.data ?? [])
+          ? serviceRole.from("creatives").select("id, formats, slide_count, sizes, artwork_removed_at, due_on, publish_on, thumbnail_text, slide_text, concept, reference_urls, team_user_ids").in("id", ids).then((r) => r.data ?? [])
           : [],
         // Each comment's anchor — get_shared_review returns only the text —
         // so a comment made at a moment in a video can show, and jump to,
@@ -224,6 +224,25 @@ export async function POST(request: Request) {
     slideCountById.set(r.id, r.slide_count);
     removedById.set(r.id, r.artwork_removed_at);
   }
+  // Each post's brief, as a signed-in Client reads it (direct instruction):
+  // its concept, references and team; Notes for Designer stay the team's.
+  const briefRows = creativeRows as { id: string; concept?: string | null; reference_urls?: string[] | null; team_user_ids?: string[] | null }[];
+  const teamIds = [...new Set(briefRows.flatMap((r) => r.team_user_ids ?? []))];
+  const teamUsers =
+    serviceRole && teamIds.length
+      ? ((await serviceRole.from("users").select("id, name").in("id", teamIds)).data ?? [])
+      : [];
+  const nameOfUser = new Map(teamUsers.map((u) => [u.id as string, (u.name as string | null) ?? "Someone"]));
+  const briefById = new Map(
+    briefRows.map((r) => [
+      r.id,
+      {
+        concept: r.concept ?? null,
+        reference_urls: r.reference_urls ?? [],
+        team: (r.team_user_ids ?? []).map((uid) => nameOfUser.get(uid) ?? "Someone"),
+      },
+    ]),
+  );
   const anchorById = new Map<string, unknown>();
   for (const r of anchorRows) if (r.anchor) anchorById.set(r.id, r.anchor);
   const editedById = new Map(anchorRows.map((r) => [r.id, r.edited_at as string | null]));
@@ -344,6 +363,7 @@ export async function POST(request: Request) {
       due_on: dueOnById.get(raw.id) ?? null,
       publish_on: publishOnById.get(raw.id) ?? null,
       slide_text: slideTextById.get(raw.id) ?? [],
+      brief: briefById.get(raw.id) ?? null,
       // A video's thumbnail and its words (phase118); no storage key leaves.
       thumbnail: (() => {
         const t = thumbById.get(raw.id);

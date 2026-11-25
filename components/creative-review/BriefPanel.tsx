@@ -21,12 +21,6 @@ export function BriefPanel({
   creative: CreativeRow;
   teamNames: string[];
 }) {
-  const formats = postFormats(creative);
-  // Each content type once, in the order its formats were chosen.
-  const categories = [...new Set(formats.map((id) => formatById(id)?.category).filter(Boolean))];
-  const delivery = creative.projects?.delivery ?? "scheduled";
-  // On the post itself (phase57), not a copy version.
-  const slideText = creative.slide_text ?? [];
   // Notes for Designer (direct instruction): the post's overall note, and
   // one per image on a multi-image post. The team's only (phase112): a
   // Client reads none, and the section doesn't show.
@@ -35,11 +29,77 @@ export function BriefPanel({
   const slideNotes = notes?.slides ?? [];
 
   return (
+    <BriefFields
+      name={creative.name}
+      formats={postFormats(creative)}
+      delivery={creative.projects?.delivery ?? "scheduled"}
+      scheduledAt={creative.scheduled_at}
+      dueOn={creative.due_on}
+      publishOn={creative.publish_on}
+      teamNames={teamNames}
+      concept={creative.concept}
+      referenceUrls={creative.reference_urls}
+      slideText={creative.slide_text ?? []}
+    >
+      {(overallNote || slideNotes.some((n) => n.trim())) && (
+        <div className="bsec">
+          <div className="bl">Notes for Designer</div>
+          {overallNote && (
+            <p className="fd-d">
+              <NotesText text={overallNote} />
+            </p>
+          )}
+          {slideNotes.map((note, i) =>
+            note.trim() ? (
+              <p className="fd-d" key={i}>
+                <b>Slide {i + 1}: </b>
+                {note}
+              </p>
+            ) : null,
+          )}
+        </div>
+      )}
+    </BriefFields>
+  );
+}
+
+// The brief as read-only text, from plain values: the post's page above,
+// and the review link, which has no session to read the post with.
+export function BriefFields({
+  name,
+  formats,
+  delivery,
+  scheduledAt,
+  dueOn,
+  publishOn,
+  teamNames,
+  concept,
+  referenceUrls,
+  slideText,
+  children,
+}: {
+  name: string;
+  formats: string[];
+  delivery: "scheduled" | "continuous";
+  scheduledAt: string | null;
+  dueOn: string | null | undefined;
+  publishOn: string | null | undefined;
+  teamNames: string[];
+  concept: string | null | undefined;
+  referenceUrls: string[] | null | undefined;
+  // On the post itself (phase57), not a copy version.
+  slideText: string[];
+  children?: React.ReactNode;
+}) {
+  // Each content type once, in the order its formats were chosen.
+  const categories = [...new Set(formats.map((id) => formatById(id)?.category).filter(Boolean))];
+
+  return (
     <div className="brief open reviewpanel">
       <div className="bf-b" style={{ display: "block" }}>
       <div className="bsec">
         <div className="bl">What Is It Called?</div>
-        <p className="fd-d">{creative.name}</p>
+        <p className="fd-d">{name}</p>
       </div>
 
       <div className="bsec">
@@ -56,8 +116,8 @@ export function BriefPanel({
         <div className="bsec">
           <div className="bl">Publish Date</div>
           <p className="fd-d">
-            {creative.scheduled_at
-              ? new Date(creative.scheduled_at).toLocaleString(undefined, {
+            {scheduledAt
+              ? new Date(scheduledAt).toLocaleString(undefined, {
                   dateStyle: "medium",
                   timeStyle: "short",
                 })
@@ -70,13 +130,13 @@ export function BriefPanel({
           <div className="bsec">
             <div className="bl">Due Date</div>
             <p className="fd-d">
-              {creative.due_on ? new Date(`${creative.due_on}T00:00:00`).toLocaleDateString("en-GB") : "—"}
+              {dueOn ? new Date(`${dueOn}T00:00:00`).toLocaleDateString("en-GB") : "—"}
             </p>
           </div>
           <div className="bsec">
             <div className="bl">Publish Date</div>
             <p className="fd-d">
-              {creative.publish_on ? new Date(`${creative.publish_on}T00:00:00`).toLocaleDateString("en-GB") : "—"}
+              {publishOn ? new Date(`${publishOn}T00:00:00`).toLocaleDateString("en-GB") : "—"}
             </p>
           </div>
         </>
@@ -89,14 +149,14 @@ export function BriefPanel({
 
       <div className="bsec">
         <div className="bl">Concept</div>
-        <p className="fd-d">{creative.concept ? <ConceptText text={creative.concept} /> : "—"}</p>
+        <p className="fd-d">{concept ? <ConceptText text={concept} /> : "—"}</p>
       </div>
 
       <div className="bsec">
         <div className="bl">References</div>
-        {creative.reference_urls?.length ? (
+        {referenceUrls?.length ? (
           <p className="fd-d fd-refs">
-            <ReferenceLinks urls={creative.reference_urls} className="fd-ref" />
+            <ReferenceLinks urls={referenceUrls} className="fd-ref" />
           </p>
         ) : (
           <p className="fd-d">—</p>
@@ -117,25 +177,7 @@ export function BriefPanel({
         )}
       </div>
 
-      {(overallNote || slideNotes.some((n) => n.trim())) && (
-        <div className="bsec">
-          <div className="bl">Notes for Designer</div>
-          {overallNote && (
-            <p className="fd-d">
-              <NotesText text={overallNote} />
-            </p>
-          )}
-          {slideNotes.map((note, i) =>
-            note.trim() ? (
-              <p className="fd-d" key={i}>
-                <b>Slide {i + 1}: </b>
-                {note}
-              </p>
-            ) : null,
-          )}
-        </div>
-      )}
-
+      {children}
       </div>
     </div>
   );

@@ -55,7 +55,7 @@ test("Create an account: a window to choose a password, then an email to activat
   await expect(bar.locator(".rv-lead")).toHaveText("Pick your name, then comment or approve.");
   const line = bar.locator(".rv-account");
   await expect(line).toContainText(
-    "Optional" + "Want all of E2E Test Client's posts in one place? Create an account or log in. You don't need one to comment or approve.",
+    "Optional" + "Want all of E2E Test Client's posts in one place? Create an account or Log In. You don't need one to comment or approve.",
   );
   const order = await bar.evaluate((el) =>
     [".rv-lead", "select", "textarea", ".m-decide", ".rv-account"].map((sel) =>
@@ -155,10 +155,12 @@ test("the email's link activates the account with its password, back on the revi
   const { data: on } = await admin.from("memberships").select("accepted_at").eq("id", invited.membershipId).single();
   expect(on!.accepted_at).not.toBeNull();
   const bar = page.locator(".m-bar");
-  await expect(bar.locator(".rv-account")).toHaveText(
-    `Signed in as ${invited.email}. See all of E2E Test Client's posts in your content planner.`,
+  await expect(bar.locator(".rv-account p")).toHaveText(
+    `Signed in as ${invited.email}. All of E2E Test Client's posts are in one place in your content planner.`,
   );
-  await expect(bar.getByRole("link", { name: "See all of E2E Test Client's posts in your content planner" })).toHaveAttribute(
+  await expect(bar.getByRole("button", { name: "Create an account" })).toHaveCount(0);
+  await expect(bar.getByRole("link", { name: "Log In" })).toHaveCount(0);
+  await expect(bar.getByRole("link", { name: "Open Your Content Planner" })).toHaveAttribute(
     "href",
     `/clients/${frank.clientId}`,
   );
@@ -212,4 +214,19 @@ test("the endpoint refuses a name not on the link, never returns a link, and lea
   expect(await (await post({ email: existing.email, step: "send", password: "Attacker-pass-1" })).json()).toEqual({ status: "sent" });
   const { error: ownStill } = await anon().auth.signInWithPassword({ email: existing.email, password: "Their-own-1234" });
   expect(ownStill).toBeNull();
+});
+
+// Logged in from the link (direct instruction): the planner in place of
+// Log In, here on a link with no Client Team to pick from.
+test("a client logged in from the link gets their planner, not Log In", async ({ page, frank }) => {
+  await page.setViewportSize(PHONE_VIEWPORT);
+  const token = await frank.createSharedLink();
+  await page.goto(`/review/${token}`);
+  await expect(page.getByRole("link", { name: "Log In" })).toBeVisible();
+  await frank.loginAsClient(page);
+  await page.goto(`/review/${token}`);
+  const planner = page.getByRole("link", { name: "Open Your Content Planner" });
+  await expect(planner).toHaveAttribute("href", `/clients/${frank.clientId}`);
+  await expect(page.getByRole("link", { name: "Log In" })).toHaveCount(0);
+  await expect(page.locator(".rv-planner p")).toContainText(`Signed in as ${frank.clientEmail}.`);
 });

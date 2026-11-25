@@ -13,6 +13,7 @@ import { copySummaryParts, postFormats } from "@/lib/formats";
 import { FormatSwitch } from "@/components/creative-review/FormatSwitch";
 import { PlatformPost } from "@/components/creative-review/PlatformPost";
 import { ReviewMedia } from "./ReviewMedia";
+import { ReviewBrief } from "./ReviewBrief";
 import { MomentBadge } from "./MomentBadge";
 import { SharedCommentText } from "./SharedCommentText";
 import { GuestComposer } from "./GuestComposer";
@@ -61,10 +62,23 @@ export function MobileReview({
             clientId={controller.data?.status === "ok" ? controller.data.client_id : null}
             projectName={projectName}
             projectId={controller.data?.status === "ok" ? controller.data.project.id : null}
-            // Content and Feed as the Review page's icons, in line with the
-            // logos (direct instruction), in place of the switch under it.
+            // Brief, Content and Feed as the Review page's icons, in line
+            // with the logos (direct instruction), in place of the switch
+            // under it.
             tools={
               <div className="m-views" role="group" aria-label="View">
+                <button
+                  type="button"
+                  className="m-view"
+                  aria-label="Brief"
+                  title="Brief"
+                  aria-pressed={controller.view === "brief"}
+                  onClick={() => controller.setView("brief")}
+                >
+                  <svg className="rn-ic" viewBox="0 0 1200 1200" aria-hidden="true">
+                    {ICONS.brief}
+                  </svg>
+                </button>
                 <button
                   type="button"
                   className="m-view"
@@ -165,6 +179,13 @@ export function MobileReview({
               <div className="m-empty">
                 <b>Nothing to review</b>
                 <p>There&rsquo;s nothing in scope for this link right now.</p>
+              </div>
+            ) : controller.view === "brief" ? (
+              <div className="m-brief">
+                <ReviewBrief
+                  active={active}
+                  delivery={controller.data?.status === "ok" ? controller.data.project.delivery : "scheduled"}
+                />
               </div>
             ) : (
               <>

@@ -17,6 +17,7 @@ import { FormatSwitch } from "@/components/creative-review/FormatSwitch";
 import { PlatformPost } from "@/components/creative-review/PlatformPost";
 import { postTemplate, tabletOrientation } from "@/lib/post-templates";
 import { ReviewMedia } from "./ReviewMedia";
+import { ReviewBrief } from "./ReviewBrief";
 import { MomentBadge } from "./MomentBadge";
 import { SharedCommentText } from "./SharedCommentText";
 import { GuestComposer } from "./GuestComposer";
@@ -29,6 +30,7 @@ import { publishDate } from "@/lib/publish-date";
 const RESERVE = 46;
 
 const SECTIONS: { id: ReviewSection; label: string }[] = [
+  { id: "brief", label: "Brief" },
   { id: "content", label: "Content" },
   { id: "feed", label: "Feed" },
 ];
@@ -54,8 +56,8 @@ export function DesktopReview({
   // Signed in, and on the workspace's team: the post's name links into Frank.
   // The project's kind, for each post's date after its name.
   const projectDelivery = controller.data?.status === "ok" ? controller.data.project.delivery : null;
-  // The Review page's section menu, with only Content and Feed (direct
-  // instruction); Content is the post, Feed the grid.
+  // The Review page's section menu, with only Brief, Content and Feed
+  // (direct instruction); Content is the post, Feed the grid.
   const [navCollapsed, setNavCollapsed] = useState(false);
   // Other Content's formats sit in an iPad (decided directly).
   const tablet = postTemplate(controller.shownFormat).device === "tablet";
@@ -138,8 +140,8 @@ export function DesktopReview({
         <div className="dk-nav">
           <ReviewNav
             sections={SECTIONS}
-            active={controller.view === "feed" ? "feed" : "content"}
-            onSelect={(section) => controller.setView(section === "feed" ? "feed" : "post")}
+            active={controller.view === "post" ? "content" : controller.view}
+            onSelect={(section) => controller.setView(section === "feed" || section === "brief" ? section : "post")}
             collapsed={navCollapsed}
             onToggleCollapsed={() => setNavCollapsed((c) => !c)}
           />
@@ -151,6 +153,10 @@ export function DesktopReview({
               <PhoneFrame reserve={RESERVE}>
                 <SharedFeedGrid controller={controller} brandName={clientName} />
               </PhoneFrame>
+            </div>
+          ) : controller.view === "brief" && active ? (
+            <div className="dk-brief">
+              <ReviewBrief active={active} delivery={projectDelivery ?? "scheduled"} />
             </div>
           ) : !active ? (
             <div className="m-empty">

@@ -34,6 +34,8 @@ export interface SharedCreative {
   // Text on Image, one a slide: shown where the artwork goes until there's
   // some.
   slide_text?: string[];
+  // Its brief, as a signed-in Client reads it (absent from an older answer).
+  brief?: { concept: string | null; reference_urls: string[]; team: string[] } | null;
   // A video's latest thumbnail, and the words on it (phase118).
   // small_url: its small copy (lib/artwork-preview.ts), for the feed grid.
   thumbnail?: { version_no: number; filename: string; signed_url: string | null; small_url?: string | null } | null;

@@ -125,9 +125,13 @@ export function GuestComposer({
   // close a tab it didn't open, so it did nothing on a link opened from an
   // email or a message (reported directly).
   const account = noOne ? (
-    <div className="rv-account">
-      <SignInLine />
-    </div>
+    viewer?.signedIn ? (
+      <PlannerLine clientId={controller.data?.status === "ok" ? controller.data.client_id : null} clientName={clientName} />
+    ) : (
+      <div className="rv-account">
+        <SignInLine />
+      </div>
+    )
   ) : (
     <AccountLine controller={controller} email={chosenEmail} clientName={clientName} />
   );
@@ -319,21 +323,10 @@ function AccountLine({
   const clientId = controller.data?.status === "ok" ? controller.data.client_id : null;
   const theirs = clientName ? `${clientName}'s` : "your";
 
-  // Back on the link after activating, or signed in some other time
-  // (direct instruction: with a link to the planner).
-  if (viewer?.signedIn && clientId && viewer.clientIds.includes(clientId)) {
-    return (
-      <div className="rv-account">
-        <p>
-          Signed in as {viewer.email}.{" "}
-          <a href={`/clients/${clientId}`} style={{ color: "var(--action)" }}>
-            See all of {theirs} posts in your content planner
-          </a>
-          .
-        </p>
-      </div>
-    );
-  }
+  // Signed in (back on the link after activating, or logged in from it):
+  // the way to the planner in place of Create an account and Log In
+  // (direct instruction).
+  if (viewer?.signedIn) return <PlannerLine clientId={clientId} clientName={clientName} />;
 
   return (
     <div className="rv-account">
@@ -345,7 +338,7 @@ function AccountLine({
         </button>{" "}
         or{" "}
         <a href={`/login?redirect_to=${encodeURIComponent(pathname)}`} style={{ color: "var(--action)" }}>
-          log in
+          Log In
         </a>
         . You don&apos;t need one to comment or approve.
       </p>
@@ -533,9 +526,30 @@ function SignInLine() {
     <div className="rv-signin">
       Have an account?{" "}
       <a href={`/login?redirect_to=${encodeURIComponent(pathname)}`} style={{ color: "var(--action)" }}>
-        Log in
+        Log In
       </a>
       .
+    </div>
+  );
+}
+
+// Signed in on the link (direct instruction): who as, and the way to the
+// main planner, the client's own when they're on its team or one of its
+// Clients, otherwise Frank's front page.
+function PlannerLine({ clientId, clientName }: { clientId: string | null; clientName: string | null }) {
+  const { data: viewer } = useReviewViewer();
+  const ours = !!clientId && (viewer?.isTeam || viewer?.clientIds.includes(clientId));
+  return (
+    <div className="rv-account rv-planner">
+      <p>
+        Signed in as {viewer?.email}.{" "}
+        {ours
+          ? `All of ${clientName ? `${clientName}'s` : "your"} posts are in one place in your content planner.`
+          : "Your posts are in one place in your content planner."}
+      </p>
+      <a className="rv-planner-link" href={ours ? `/clients/${clientId}` : "/dashboard"}>
+        Open Your Content Planner
+      </a>
     </div>
   );
 }

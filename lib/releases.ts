@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.103.0",
+    date: "2026-11-25",
+    title: "The brief and the planner on review links",
+    changes: [
+      "Review links now have Brief before Content and Feed: at the top right on a phone, in the menu beside the post on a computer. It shows the post's brief as a Client reads it in Frank (name, content type, format, dates, team, concept, references and text on image). Notes for Designer stay the team's.",
+      "Someone signed in on a review link now sees who they're signed in as and Open Your Content Planner, in place of Create an account and Log In.",
+    ],
+  },
+  {
     version: "1.102.1",
     date: "2026-11-24",
     title: "Review links offer a reload",

@@ -7351,6 +7351,11 @@ a.inlink {
 .dk-card.wide {
   width: 100%;
 }
+/* A review link's Brief (ReviewBrief.tsx): the phone's width, from the top. */
+.dk-brief {
+  width: 460px;
+  max-width: 100%;
+}
 /* A review link's post with several formats: which it's shown as, above
    the phone (FormatSwitch). */
 .dk-fmt {
@@ -7566,6 +7571,12 @@ a.inlink {
 }
 .m-body {
   padding: 14px 16px 20px;
+}
+.m-brief {
+  margin-bottom: 12px;
+}
+.m-brief .brief {
+  width: auto;
 }
 .m-card {
   border: 1px solid var(--line);
@@ -13283,6 +13294,13 @@ textarea.bin.tallbox {
 }
 .rv-account .rv-signin {
   margin-bottom: 0;
+}
+/* Signed in: the way to the planner, in place of the account. */
+.rv-planner-link {
+  display: inline-block;
+  margin-top: 4px;
+  font-weight: 500;
+  color: var(--action);
 }
 .rv-account-h {
   font-size: 11px;

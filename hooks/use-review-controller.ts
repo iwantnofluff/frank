@@ -54,7 +54,7 @@ export function useReviewController(token: string) {
     loading: instagram.isFetchingNextPage,
     onMore: () => void instagram.fetchNextPage(),
   };
-  const [view, setView] = useState<"post" | "feed">("post");
+  const [view, setView] = useState<"brief" | "post" | "feed">("post");
   // Who's commenting, remembered for this client only (the workspace and
   // client's names; the page has no ids to key on).
   const identities = useGuestIdentityStore();
