@@ -5185,6 +5185,12 @@ Direct instruction: the review link had no brief; add an icon before Content, so
 
 **Verified**: In the real app (dev server, staging), as a visitor with no session, at 1440 × 900 and 390 × 844, with a concept, a reference and a team member seeded: Brief showed them, Notes for Designer didn't, and the brief fitted the phone's screen (it first ran off the right edge, fixed with `width: auto`). Screenshots checked after the highlight's fade; one taken straight after the click showed Content still lit, which the logged `aria-pressed`/`aria-current` showed was the fade, not the state. shared-review-brief.spec.ts is new (desktop menu order and the brief; phone icon order, pressed state, fit). shared-review-phone.png and shared-review-desktop.png differed only by the new icon and menu item and were regenerated after looking at each diff. shared-review-public, shared-review-account, designer-note-versions and new-brief run with it against staging: 20 passed, 10 failed while the machine was loaded. Rerun, all 10 passed except the two baselines above, which then passed once regenerated. Unit tests: 311 passed.
 
+## Workspace and role in their own columns on Admin › Users (1.104.4, 2026-11-25)
+
+Direct instruction: each line read "No Fluff (nofluff) · Primary Owner". Now Workspaces and Role are separate columns, a line per workspace in each, side by side; Invited or Deactivated stays after the role. Each line keeps to one row (`white-space: nowrap`) so the two columns stay level. An agency's own People table is unchanged; it already had Role.
+
+**Verified**: In the real app (staging admin address) at 1440 × 900: Raj Ewan's two workspaces line up with Primary Owner and User. admin-users.spec.ts now checks the workspace and the role ("User · Invited") in their own cells; admin-users against staging: 3 passed. Type check and lint clean.
+
 ## Filters on Admin › Users (1.104.3, 2026-11-25)
 
 Direct instruction: multi-select dropdowns for filtering the Admin Users table. Four sit under the search:

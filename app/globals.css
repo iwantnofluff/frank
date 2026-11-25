@@ -9457,9 +9457,12 @@ button.avatar {
   display: block;
   font-size: 12.2px;
 }
-/* The Users page (view-only): one line per agency a person is in. */
+/* The Users page (view-only): one line per agency a person is in, its
+   workspace and role in columns side by side, each on one line so the two
+   stay level. */
 .admintbl td .tline {
   display: block;
+  white-space: nowrap;
 }
 .admintbl td .tline + .tline {
   margin-top: 3px;

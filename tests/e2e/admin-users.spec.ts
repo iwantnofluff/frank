@@ -70,8 +70,9 @@ test("the admin finds a person, sees their role, clients, projects and pending i
     await page.getByLabel("Search users").fill(email);
     const row = page.locator(".admintbl-row", { hasText: email });
     await expect(page.locator(".admintbl-row")).toHaveCount(1);
-    await expect(row).toContainText("E2E Test Agency");
-    await expect(row).toContainText("· User · Invited");
+    // Workspace and role in their own columns (direct instruction).
+    await expect(row.locator("td").nth(2)).toHaveText("E2E Test Agency");
+    await expect(row.locator("td").nth(3)).toHaveText("User · Invited");
     await expect(row).toContainText("Never");
 
     // Anywhere on the row opens them.

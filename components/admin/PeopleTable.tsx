@@ -41,6 +41,7 @@ export function PeopleTable({ people, agencyId }: { people: AdminPerson[]; agenc
             <>
               <th>Email</th>
               <th>Workspaces</th>
+              <th>Role</th>
             </>
           )}
           <th>Last signed in</th>
@@ -70,6 +71,8 @@ export function PeopleTable({ people, agencyId }: { people: AdminPerson[]; agenc
               ) : (
                 <>
                   <td>{p.email}</td>
+                  {/* Workspace and role in their own columns (direct
+                      instruction), a line each, side by side. */}
                   <td>
                     {p.memberships.length === 0 ? (
                       <span className="tdim">None</span>
@@ -77,11 +80,18 @@ export function PeopleTable({ people, agencyId }: { people: AdminPerson[]; agenc
                       p.memberships.map((m) => (
                         <span className="tline" key={m.membershipId}>
                           {m.agencyName}
-                          {m.agencySubdomain && <span className="tdim-inline"> ({m.agencySubdomain})</span>} · {m.typeLabel}
-                          {m.status !== "Active" && <span className="tdim-inline"> · {m.status}</span>}
+                          {m.agencySubdomain && <span className="tdim-inline"> ({m.agencySubdomain})</span>}
                         </span>
                       ))
                     )}
+                  </td>
+                  <td>
+                    {p.memberships.map((m) => (
+                      <span className="tline" key={m.membershipId}>
+                        {m.typeLabel}
+                        {m.status !== "Active" && <span className="tdim-inline"> · {m.status}</span>}
+                      </span>
+                    ))}
                   </td>
                 </>
               )}

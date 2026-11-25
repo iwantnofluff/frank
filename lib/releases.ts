@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.104.4",
+    date: "2026-11-25",
+    title: "Admin Users: role in its own column",
+    changes: ["Admin › Users shows each person's workspaces and their role there in separate columns, side by side."],
+  },
+  {
     version: "1.104.3",
     date: "2026-11-25",
     title: "Admin Users filters",
