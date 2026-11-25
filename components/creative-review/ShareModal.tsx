@@ -21,6 +21,7 @@ import { FeedTileArt, EmptyTileArt } from "@/components/creative-review/FeedTile
 import { FeedCaptionPopover } from "@/components/creative-review/FeedCaptionPopover";
 import { isIdea, STAGE } from "@/lib/stage-labels";
 import { reviewMessage, type ReviewMessageKind } from "@/lib/review-message";
+import { goLiveDay } from "@/lib/post-live";
 
 const GRID_SLOTS = 9;
 
@@ -129,7 +130,8 @@ export function ShareModal({
   const [canApprove, setCanApprove] = useState(true);
   // What a new link starts with, from the client's Preferences (phase70),
   // set once they've loaded; then the window's own choices are kept.
-  const { data: project } = useProject(projectId);
+  const projectQuery = useProject(projectId);
+  const project = projectQuery.data;
   const { data: prefs } = useClientPreferences(project?.client_id);
   const [seeded, setSeeded] = useState(false);
   if (!seeded && prefs) {
@@ -154,10 +156,20 @@ export function ShareModal({
   // Deleted (archived_at) posts are never shareable — useCreatives now
   // returns them too, for the project page's own Active/Archived toggle.
   // Nor are Ideas (direct instruction): the link never carries one (phase106).
-  const creatives = useMemo(
-    () => (allCreatives ?? []).filter((c) => !c.archived_at && !isIdea(c) && !isHiddenPost(c, hiddenStatuses)),
-    [allCreatives, hiddenStatuses],
-  );
+  // Newest first, as the Review page's Feed Preview and Instagram's grid
+  // read (direct instruction: it was the planner's order, oldest first).
+  const creatives = useMemo(() => {
+    const when = (c: CreativeListRow) => {
+      const day = goLiveDay(c);
+      const at = c.scheduled_at ?? (day ? `${day}T00:00:00` : null);
+      return at ? new Date(at).getTime() : Infinity;
+    };
+    return (allCreatives ?? [])
+      .filter((c) => !c.archived_at && !isIdea(c) && !isHiddenPost(c, hiddenStatuses))
+      .map((c, i) => ({ c, i, t: when(c) }))
+      .sort((a, b) => (a.t === b.t ? a.i - b.i : b.t - a.t))
+      .map(({ c }) => c);
+  }, [allCreatives, hiddenStatuses]);
   const creativeIds = useMemo(() => creatives.map((c) => c.id), [creatives]);
   const createLink = useCreateSharedLink();
 
@@ -274,7 +286,11 @@ export function ShareModal({
     // Named for whose and what it is (lib/review-link.ts): the client, then
     // the post, or the project when it's for several.
     const onePick = scope === "pick" && picked.size === 1 ? allCreatives?.find((c) => picked.has(c.id))?.name : null;
-    const title = scope === "one" ? currentName : (onePick ?? project?.name);
+    // The project's name, fetched now if it isn't here yet (found in a
+    // test: a link for several posts went out without it, its address
+    // missing the project).
+    const projectName = project?.name ?? (scope === "one" || onePick ? null : (await projectQuery.refetch()).data?.name);
+    const title = scope === "one" ? currentName : (onePick ?? projectName);
     // The message names a post either way (direct instruction): this one
     // when it's in the link, else the first picked, in the project's order.
     const firstPicked = scope === "pick" && !picked.has(currentCreativeId) ? allCreatives?.find((c) => picked.has(c.id))?.name : null;

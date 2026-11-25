@@ -106,6 +106,24 @@ test("a link for several posts names this one, and others", async ({ page, conte
     await dialog.getByRole("button", { name }).click();
     const text = await page.evaluate(() => navigator.clipboard.readText());
     expect(text).toContain('Hello,\n\nThe post "E2E Test Creative", and others are ready for review:\n\n');
-    expect(text).not.toContain("project");
+    expect(text).not.toContain("The project");
   }
+});
+
+// The share window's grid newest first (direct instruction: it was the
+// planner's order, oldest first), as the Review page's Feed Preview reads.
+test("the share window's posts run newest first", async ({ page, frank }) => {
+  const admin = (await import("@supabase/supabase-js")).createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  for (const [name, day] of [["Older Post", 2], ["Newer Post", 20], ["Middle Post", 10]] as const) {
+    const id = await frank.createCreativeAtStage(4, name);
+    await admin.from("creatives").update({ scheduled_at: new Date(2027, 3, day, 10).toISOString() }).eq("id", id);
+  }
+  await frank.loginAsStaff(page);
+  await page.goto(`/creatives/${frank.creativeId}`);
+  await page.waitForSelector(".stage-h");
+  await page.getByRole("button", { name: "Share for review" }).click();
+  const titles = page.getByRole("dialog").locator(".pktile .pp-art-title, .pktile .pp-empty > b");
+  await expect(titles.filter({ hasText: / Post$/ })).toHaveText(["Newer Post", "Middle Post", "Older Post"]);
 });

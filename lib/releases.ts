@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.104.2",
+    date: "2026-11-25",
+    title: "Share window newest first",
+    changes: [
+      "The posts in the share window now run newest first, as in the Feed Preview.",
+      "A review link for several posts now always carries the project's name in its address; one made quickly could leave it out.",
+    ],
+  },
+  {
     version: "1.104.1",
     date: "2026-11-25",
     title: "Clearer review messages, fuller review Feed",
