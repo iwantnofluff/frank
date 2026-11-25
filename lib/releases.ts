@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.104.3",
+    date: "2026-11-25",
+    title: "Admin Users filters",
+    changes: [
+      "Admin › Users has filters under the search: Workspace, Role, Status and Last signed in, each a list to tick any combination of, with Clear Filters to reset.",
+    ],
+  },
+  {
     version: "1.104.2",
     date: "2026-11-25",
     title: "Share window newest first",

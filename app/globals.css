@@ -910,6 +910,14 @@ body.lightrail .search input::placeholder {
 .listsearch input:focus {
   outline: none;
 }
+/* The admin Users table's filters (direct instruction), under its search. */
+.adminfilters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: -4px 0 14px;
+}
 
 .secthead {
   display: flex;

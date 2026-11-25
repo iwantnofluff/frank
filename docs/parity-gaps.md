@@ -5185,6 +5185,30 @@ Direct instruction: the review link had no brief; add an icon before Content, so
 
 **Verified**: In the real app (dev server, staging), as a visitor with no session, at 1440 × 900 and 390 × 844, with a concept, a reference and a team member seeded: Brief showed them, Notes for Designer didn't, and the brief fitted the phone's screen (it first ran off the right edge, fixed with `width: auto`). Screenshots checked after the highlight's fade; one taken straight after the click showed Content still lit, which the logged `aria-pressed`/`aria-current` showed was the fade, not the state. shared-review-brief.spec.ts is new (desktop menu order and the brief; phone icon order, pressed state, fit). shared-review-phone.png and shared-review-desktop.png differed only by the new icon and menu item and were regenerated after looking at each diff. shared-review-public, shared-review-account, designer-note-versions and new-brief run with it against staging: 20 passed, 10 failed while the machine was loaded. Rerun, all 10 passed except the two baselines above, which then passed once regenerated. Unit tests: 311 passed.
 
+## Filters on Admin › Users (1.104.3, 2026-11-25)
+
+Direct instruction: multi-select dropdowns for filtering the Admin Users table. Four sit under the search:
+- **Workspace:** every workspace anyone's in, with its address when it has one.
+- **Role:** Primary Owner, Owner, Admin, User, Finance, Client.
+- **Status:** Active, Invited, Deactivated.
+- **Last signed in:** in the last 7 days, 8 to 30 days ago, over 30 days ago, never.
+
+How they work:
+- Each reads like the planner's Status filter: All at the top, ticks, Done. The new `components/admin/AdminFilterMenu.tsx` copies StatusFilterMenu's pattern for any list.
+- Workspace, role and status must hold on the same membership. An Admin at one workspace who's a Client at another isn't shown as a Client of the first.
+- Everything ticked means no filter, so a workspace made later is included.
+- The count reads "N people on Frank, M shown" while anything filters, and Clear Filters resets them and the search.
+
+The filters are in the page only; nothing new is read.
+
+**Verified**: In the real app (dev server, staging admin address) at 1440 × 900: the four buttons under the search, and Role open with its ticks. admin-users.spec.ts has a new test:
+- the fixture's workspace alone: its 2 people, and the count;
+- then Client only: the client;
+- then Deactivated: nobody;
+- then Clear Filters: everyone again and the button gone.
+
+Its first run expected the workspace's address in the label; the fixture has none, so the test was corrected. The spec's existing test failed once on a missing element and passed on the next run. admin-users against staging: 3 passed. Type check, lint and build clean. Full suite left for the end of the day (AGENTS.md).
+
 ## Share window's posts newest first, and links always named for the project (1.104.2, 2026-11-25)
 
 **Newest first.** Direct instruction, with a screenshot of Kikkoman's share window running 2 Nov, 3 Nov, 4 Nov… The grid was in the planner's order, oldest first. It now runs newest first, by Publish Date or a continuous project's Live Date, with the same sort as the Review page's Feed Preview (phase93), so the two grids read alike. Unlike the Feed Preview, Stories stay in the share window, since they can still be shared for review.

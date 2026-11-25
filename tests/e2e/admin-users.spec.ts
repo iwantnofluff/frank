@@ -107,6 +107,58 @@ test("the admin finds a person, sees their role, clients, projects and pending i
   }
 });
 
+// Multi-select filters (direct instruction): workspace, role, status and
+// last sign-in, held on one membership together, cleared in one go.
+test("the admin filters Users by workspace, role and status", async ({ page, frank }) => {
+  test.setTimeout(90_000);
+  const { data: agency } = await admin.from("agencies").select("name, subdomain").eq("id", frank.agencyId).single();
+  const named = agency!.subdomain ? `${agency!.name} (${agency!.subdomain})` : agency!.name;
+  const pa = await makePlatformAdmin();
+  try {
+    await signIn(page, pa.email);
+    await page.goto(`${ADMIN}/admin/users`);
+    const rows = page.locator(".admintbl-row");
+    await rows.first().waitFor();
+    const total = await rows.count();
+
+    // Just the fixture's workspace: All cleared, then it ticked.
+    await page.getByRole("button", { name: "Workspace" }).click();
+    const list = page.getByRole("dialog", { name: "Workspaces" });
+    await list.getByRole("checkbox", { name: "All Workspaces" }).click();
+    await expect(page.getByRole("button", { name: "Workspace" })).toHaveText("No Workspaces");
+    await expect(rows).toHaveCount(0);
+    await list.getByRole("checkbox", { name: named }).click();
+    await list.getByRole("button", { name: "Done" }).click();
+    await expect(page.getByRole("button", { name: "Workspace" })).toHaveText(named);
+    await expect(rows).toHaveCount(2);
+    await expect(page.locator(".adminhead .sub")).toContainText(", 2 shown.");
+
+    // Clients only there.
+    await page.getByRole("button", { name: "Role" }).click();
+    const roles = page.getByRole("dialog", { name: "Roles" });
+    await roles.getByRole("checkbox", { name: "All Roles" }).click();
+    await roles.getByRole("checkbox", { name: "Client" }).click();
+    await roles.getByRole("button", { name: "Done" }).click();
+    await expect(rows).toHaveCount(1);
+    await expect(rows.first()).toContainText(frank.clientEmail);
+
+    // A status nobody there has.
+    await page.getByRole("button", { name: "Status" }).click();
+    const statuses = page.getByRole("dialog", { name: "Statuses" });
+    await statuses.getByRole("checkbox", { name: "All Statuses" }).click();
+    await statuses.getByRole("checkbox", { name: "Deactivated" }).click();
+    await statuses.getByRole("button", { name: "Done" }).click();
+    await expect(rows).toHaveCount(0);
+
+    await page.getByRole("button", { name: "Clear Filters" }).click();
+    await expect(page.getByRole("button", { name: "Workspace" })).toHaveText("All Workspaces");
+    await expect(rows).toHaveCount(total);
+    await expect(page.getByRole("button", { name: "Clear Filters" })).toHaveCount(0);
+  } finally {
+    await pa.cleanup();
+  }
+});
+
 test("only a platform admin can read people across Frank", async ({ page, frank }) => {
   // On an agency's own address the admin API isn't there at all…
   await frank.loginAsStaff(page);
