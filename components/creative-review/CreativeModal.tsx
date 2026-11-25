@@ -1241,8 +1241,9 @@ export function CreativeModal(props: CreativeModalProps) {
       }
       setSavedFields({ principles: principles.trim() });
       props.onCreated?.(scheduledAt, delivery === "continuous" ? dueOn || null : null);
-      // Straight on to the artwork and copy (direct instruction).
-      setActiveTab("upload");
+      // On to Production, for the Text on Image before the artwork
+      // (direct instruction; it went straight to Content before).
+      setActiveTab("production");
       return true;
     }
 

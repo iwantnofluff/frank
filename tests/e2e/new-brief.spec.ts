@@ -19,9 +19,10 @@ test("creates a scheduled creative end to end", async ({ page, frank }) => {
   // CreativeModal stays open on success rather than closing — creating the
   // brief unlocks the Content tab in the same window (the merge that
   // replaced New Brief / Upload or Edit / Draft from Brief as three
-  // separate entry points), and goes straight to it (direct instruction).
-  await expect(page.getByRole("tab", { name: "Content" })).toHaveAttribute("aria-selected", "true");
-  await expect(page.locator(".msection-h", { hasText: /^Creative$/ })).toBeVisible();
+  // separate entry points), and goes on to Production first, for the Text
+  // on Image before the artwork (direct instruction).
+  await expect(page.getByRole("tab", { name: "Production" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.locator(".msection-h", { hasText: /^Text on Image$/ })).toBeVisible();
   await page.click('button:has-text("Cancel")');
   await expect(page.locator(".scrim")).toHaveCount(0);
   await expect(page.locator(".pname", { hasText: "New Brief E2E — Scheduled" })).toBeVisible();
@@ -64,7 +65,7 @@ test("a post saved with no publish date is made as an Idea", async ({ page, fran
 
   // No Publish Date is fine: it's made as an Idea (direct instruction),
   // under the weeks.
-  await expect(page.getByRole("tab", { name: "Content" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tab", { name: "Production" })).toHaveAttribute("aria-selected", "true");
   await page.click('button:has-text("Cancel")');
   await expect(page.locator(".scrim")).toHaveCount(0);
   const row = page.locator("tr[data-row]", { hasText: "Pumpkin Bread Idea" });

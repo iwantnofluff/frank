@@ -5185,6 +5185,12 @@ Direct instruction: the review link had no brief; add an icon before Content, so
 
 **Verified**: In the real app (dev server, staging), as a visitor with no session, at 1440 × 900 and 390 × 844, with a concept, a reference and a team member seeded: Brief showed them, Notes for Designer didn't, and the brief fitted the phone's screen (it first ran off the right edge, fixed with `width: auto`). Screenshots checked after the highlight's fade; one taken straight after the click showed Content still lit, which the logged `aria-pressed`/`aria-current` showed was the fade, not the state. shared-review-brief.spec.ts is new (desktop menu order and the brief; phone icon order, pressed state, fit). shared-review-phone.png and shared-review-desktop.png differed only by the new icon and menu item and were regenerated after looking at each diff. shared-review-public, shared-review-account, designer-note-versions and new-brief run with it against staging: 20 passed, 10 failed while the machine was loaded. Rerun, all 10 passed except the two baselines above, which then passed once regenerated. Unit tests: 311 passed.
 
+## A new post opens on Production (1.103.6, 2026-11-25)
+
+Direct instruction: after Create Post, the window went from Brief straight to Content. It now goes to Production, so the Text on Image can be written before the artwork goes up on Content. This replaces the earlier direct instruction to go straight to the artwork and copy. Only creating a post changes; Update and opening an existing post land where they did. No database change.
+
+**Verified**: new-brief.spec.ts now expects Production selected after Create Post, for both a scheduled and a continuous post, with the Text on Image section showing. The specs that create posts (new-brief, carousel, design-direction, linkedin-text, post-team-default, project-calendar, stories) against staging: 51 passed. Type check, lint and build clean. Full suite left for the end of the day (AGENTS.md).
+
 ## Client logo line at 25% black (1.103.5, 2026-11-25)
 
 Direct instruction: the line round client logos (1.103.4) at 25% black, not 30%. Both places it's drawn changed: the inset line on `.logo` pictures and the outline on the post mock-ups' avatars.

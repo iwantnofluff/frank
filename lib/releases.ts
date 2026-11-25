@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.103.6",
+    date: "2026-11-25",
+    title: "New posts open on Production",
+    changes: [
+      "After Create Post, the window now goes to Production rather than Content, so you can write the Text on Image before adding the artwork.",
+    ],
+  },
+  {
     version: "1.103.5",
     date: "2026-11-25",
     title: "Lighter logo edge",
