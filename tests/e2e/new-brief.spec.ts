@@ -167,10 +167,10 @@ test("a post takes several references, each a link in the table and on its Brief
   await page.fill("#nbName", "References E2E");
   await page.fill("#nbDate", "2027-03-16");
   await page.getByRole("textbox", { name: "Reference 1" }).fill("example.com/first");
-  await page.getByRole("button", { name: "+ Add Reference" }).click();
+  await page.getByRole("button", { name: "+ Add Reference, Asset or Link" }).click();
   await page.getByRole("textbox", { name: "Reference 2" }).fill("https://example.com/second");
   // A blank third one is dropped on save.
-  await page.getByRole("button", { name: "+ Add Reference" }).click();
+  await page.getByRole("button", { name: "+ Add Reference, Asset or Link" }).click();
   await expect(page.getByRole("link", { name: "Open reference 1" })).toHaveAttribute("href", "https://example.com/first");
   await chooseFormat(page);
   await page.click('button:has-text("Create Post")');

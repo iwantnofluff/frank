@@ -2669,8 +2669,9 @@ export function CreativeModal(props: CreativeModalProps) {
                 </div>
               );
             })}
+            {/* Named as the field is (direct instruction). */}
             <button type="button" className="badd" onClick={() => setReferenceUrls((prev) => [...prev, ""])}>
-              + Add Reference
+              + Add Reference, Asset or Link
             </button>
             <ReferenceImages
               creativeId={creativeId}

@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.103.3",
+    date: "2026-11-25",
+    title: "Add Reference, Asset or Link",
+    changes: [
+      "In the post window's Brief, the button under References, Assets, Links now reads + Add Reference, Asset or Link, to match the field.",
+    ],
+  },
+  {
     version: "1.103.2",
     date: "2026-11-25",
     title: "Clearer field notes",
