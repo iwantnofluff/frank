@@ -37,7 +37,7 @@ export default function NewAgencyPage() {
       </div>
       <div className="field">
         <label htmlFor="agSub">
-          Address <span className="hint">lower-case letters, numbers and hyphens</span>
+          Address <span className="hint">(lower-case letters, numbers and hyphens)</span>
         </label>
         <div className="subfield">
           <input

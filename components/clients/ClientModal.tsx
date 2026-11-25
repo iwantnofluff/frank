@@ -140,7 +140,7 @@ export function ClientModal(props: { agencyId: string; activeClientCount: number
       {canAdd && (
         <div className="field">
           <label htmlFor="ncTeam">
-            Team <span className="hint">optional</span>
+            Team <span className="hint">(optional)</span>
           </label>
           <div style={{ fontSize: 12.7, color: "var(--muted)", marginBottom: 8 }}>
             Users on your team who&rsquo;ll work on this client. Owners and Admins see every client already. To bring

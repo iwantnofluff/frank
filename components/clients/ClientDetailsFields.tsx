@@ -74,7 +74,7 @@ export function ClientDetailsFields({ draft }: { draft: ClientDraft }) {
     <>
       <div className="field">
         <label>
-          Profile Image <span className="hint">optional</span>
+          Profile Image <span className="hint">(optional)</span>
         </label>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div
@@ -129,7 +129,7 @@ export function ClientDetailsFields({ draft }: { draft: ClientDraft }) {
 
       <div className="field">
         <label htmlFor="cInd">
-          Industry <span className="hint">optional</span>
+          Industry <span className="hint">(optional)</span>
         </label>
         <input
           id="cInd"
@@ -141,7 +141,7 @@ export function ClientDetailsFields({ draft }: { draft: ClientDraft }) {
 
       <div className="field">
         <label htmlFor="cDesc">
-          Description <span className="hint">optional, {draft.description.length}/500</span>
+          Description <span className="hint">(optional, {draft.description.length}/500)</span>
         </label>
         <textarea
           id="cDesc"

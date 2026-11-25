@@ -287,7 +287,7 @@ function AgencyForm({ agency }: { agency: AdminAgency }) {
         </div>
         <div className="field">
           <label htmlFor="agXStorage">
-            Extra Storage <span className="hint">GB</span>
+            Extra Storage <span className="hint">(GB)</span>
           </label>
           <input
             id="agXStorage"

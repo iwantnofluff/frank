@@ -2317,7 +2317,7 @@ export function CreativeModal(props: CreativeModalProps) {
 
           <div className="field">
             <label htmlFor="nbFmt">
-              Format <span className="hint">optional for now: tick every format this goes out as</span>
+              Format <span className="hint">(optional for now: tick every format this goes out as)</span>
             </label>
             <FormatPicker
               id="nbFmt"
@@ -2339,11 +2339,11 @@ export function CreativeModal(props: CreativeModalProps) {
               <label htmlFor="nbSlides">
                 {frames.noun === "Story" ? (
                   <>
-                    Stories <span className="hint">how many stories this post has</span>
+                    Stories <span className="hint">(how many stories this post has)</span>
                   </>
                 ) : (
                   <>
-                    Slides <span className="hint">how many slides this carousel has</span>
+                    Slides <span className="hint">(how many slides this carousel has)</span>
                   </>
                 )}
               </label>
@@ -2486,7 +2486,7 @@ export function CreativeModal(props: CreativeModalProps) {
               directly). Design with Frank's Use This fills them. */}
           <div className="field">
             <label htmlFor="nbNotes">
-              Notes for Designer <span className="bnote">optional</span>
+              Notes for Designer <span className="hint">(optional)</span>
             </label>
             {noteVersions && noteVersions.length > 1 && (
               <div className="viewbar" style={{ marginBottom: 10 }}>
@@ -2548,7 +2548,7 @@ export function CreativeModal(props: CreativeModalProps) {
           {!!slideCount && !viewedOldNotes && (
             <div className="field" data-focus="slideNotes">
               <label>
-                Notes for Designer, by {frameNoun.toLowerCase()} <span className="bnote">optional</span>
+                Notes for Designer, by {frameNoun.toLowerCase()} <span className="hint">(optional)</span>
               </label>
               <ListEditor
                 itemLabel={(i) => `${frameNoun} ${i + 1}`}
@@ -2635,7 +2635,7 @@ export function CreativeModal(props: CreativeModalProps) {
             }}
           >
             <label htmlFor="nbRef">
-              References <span className="bnote">optional</span>
+              References, Assets, Links <span className="hint">(optional)</span>
             </label>
             {referenceUrls.map((url, i) => {
               const href = linkHref(url);
@@ -2718,7 +2718,7 @@ export function CreativeModal(props: CreativeModalProps) {
           {delivery === "continuous" && (
             <div className="field">
               <label htmlFor="nbPrinciples">
-                Principles <span className="bnote">optional</span>
+                Principles <span className="hint">(optional)</span>
               </label>
               <input
                 id="nbPrinciples"

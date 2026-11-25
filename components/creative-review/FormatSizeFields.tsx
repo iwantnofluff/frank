@@ -61,7 +61,7 @@ export function FormatSizeFields({
   return (
     <div className="field">
       <label htmlFor={`nbSize-${rows[0]}`}>
-        Size <span className="hint">in pixels: the review shows the post at this shape</span>
+        Size <span className="hint">(in pixels: the review shows the post at this shape)</span>
       </label>
       <div className="sizerows">
         {rows.map((fid) => {

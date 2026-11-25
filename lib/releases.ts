@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.103.2",
+    date: "2026-11-25",
+    title: "Clearer field notes",
+    changes: [
+      "In the post window's Brief, References is now References, Assets, Links.",
+      "Every note after a field's name is now in brackets and the same size, across Frank: (optional), and the longer ones, such as Format's (optional for now: tick every format this goes out as). Some optional notes were larger than the rest.",
+    ],
+  },
+  {
     version: "1.103.1",
     date: "2026-11-25",
     title: "Review message previews, and a steadier review link",

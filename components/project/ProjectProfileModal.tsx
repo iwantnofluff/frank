@@ -182,7 +182,7 @@ export function ProjectProfileModal({
               </div>
               <div className="field">
                 <label htmlFor="ppDesc">
-                  Description <span className="hint">optional, {description.length}/1000</span>
+                  Description <span className="hint">(optional, {description.length}/1000)</span>
                 </label>
                 <textarea
                   id="ppDesc"
