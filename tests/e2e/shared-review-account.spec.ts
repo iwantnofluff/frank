@@ -230,3 +230,23 @@ test("a client logged in from the link gets their planner, not Log In", async ({
   await expect(page.getByRole("link", { name: "Log In" })).toHaveCount(0);
   await expect(page.locator(".rv-planner p")).toContainText(`Signed in as ${frank.clientEmail}.`);
 });
+
+// A Client who hasn't made an account is still on the link's name list, and
+// the client's People page says so (direct instruction): "No account yet",
+// not "Invited", with a note that every Client there can pick their name.
+test("a Client with no account yet is on the link's list, and People says so", async ({ page, browser, frank }) => {
+  await seedClient(frank, "Nora Noaccount", false);
+  const token = await frank.createSharedLink();
+  await page.goto(`/review/${token}`);
+  await expect(page.getByLabel("Who are you?").locator("option", { hasText: "Nora Noaccount" })).toHaveCount(1);
+
+  const staff = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await frank.loginAsStaff(staff);
+  await staff.goto(`/clients/${frank.clientId}/settings/people`);
+  const row = staff.locator(".profperson", { hasText: "Nora Noaccount" });
+  await expect(row.locator(".tag")).toHaveText("No account yet");
+  await expect(staff.locator(".msection-d").first()).toContainText(
+    "Every Client here can pick their name on review links to comment or approve, account or not.",
+  );
+  await staff.close();
+});

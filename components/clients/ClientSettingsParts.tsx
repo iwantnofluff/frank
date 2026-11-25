@@ -75,7 +75,7 @@ export function ClientPeople({
       <div className="msection-h">People</div>
       <p className="msection-d">
         {canManage
-          ? `Users and Clients on ${clientName}, and their projects. Owners and Admins see everything. Changes apply straight away.`
+          ? `Users and Clients on ${clientName}, and their projects. Owners and Admins see everything. Changes apply straight away. Every Client here can pick their name on review links to comment or approve, account or not.`
           : "Owners and Admins choose who's on each project."}
       </p>
       {canManage &&
@@ -110,7 +110,10 @@ export function ClientPeople({
                           </span>
                         )}
                       </div>
-                      {!p.accepted && <span className="tag grey">Invited</span>}
+                      {/* A Client is on the link's name list from their invite
+                          on (phase45), so it's their account that's missing,
+                          not their access (direct instruction). */}
+                      {!p.accepted && <span className="tag grey">{p.kind === "client" ? "No account yet" : "Invited"}</span>}
                       {savedRow === p.membershipId && (
                         <span className="bsaved" role="status">
                           Saved

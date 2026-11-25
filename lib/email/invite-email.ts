@@ -24,7 +24,7 @@ export function inviteEmail({
     "",
     `Accept the invite: ${url}`,
     "",
-    "This link expires in 48 hours. If you weren't expecting it, you can ignore this email.",
+    "This link expires in 3 months. If you weren't expecting it, you can ignore this email.",
   ].join("\n");
   const a = escapeHtml(agencyName);
   const html = `<!doctype html>
@@ -35,7 +35,7 @@ export function inviteEmail({
         <div style="font-size:20px;font-weight:600;margin:0 0 12px">Join ${a} on Frank</div>
         <p style="font-size:15px;line-height:1.5;margin:0 0 24px;color:#555">${escapeHtml(inviterName)} invited you to join ${a} as ${escapeHtml(roleLabel)}.</p>
         <a href="${escapeHtml(url)}" style="display:inline-block;background:#1a1a1a;color:#fff;text-decoration:none;font-size:15px;font-weight:500;padding:11px 20px;border-radius:7px">Accept invite</a>
-        <p style="font-size:13px;line-height:1.5;margin:24px 0 0;color:#888">This link expires in 48 hours. If you weren't expecting it, you can ignore this email.</p>
+        <p style="font-size:13px;line-height:1.5;margin:24px 0 0;color:#888">This link expires in 3 months. If you weren't expecting it, you can ignore this email.</p>
       </td></tr>
     </table>
   </td></tr></table>

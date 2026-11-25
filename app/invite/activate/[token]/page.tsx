@@ -63,7 +63,7 @@ export default function ActivatePage({ params }: { params: Promise<{ token: stri
       <Notice title="This link isn't valid" body="Check you used the whole link from the email, or create your account again from the review link." />
     );
   } else if (invite?.status === "expired") {
-    content = <Notice title="This link has expired" body="Links last 48 hours. Create your account again from the review link." />;
+    content = <Notice title="This link has expired" body="Links last 3 months. Create your account again from the review link." />;
   } else if (invite?.status === "accepted") {
     content = <Notice title="Your account is already active" body="Sign in to continue." />;
   } else if (invite?.status === "ok") {

@@ -108,8 +108,9 @@ test("an Owner invites a User with access to one client, and re-sending replaces
     .eq("membership_id", m!.id);
   expect(firstInvites).toHaveLength(1);
   const hoursLeft = (new Date(firstInvites![0].expires_at).getTime() - Date.now()) / 3_600_000;
-  expect(hoursLeft).toBeGreaterThan(47.9);
-  expect(hoursLeft).toBeLessThanOrEqual(48);
+  // 3 months (direct instruction; it was 48 hours).
+  expect(hoursLeft).toBeGreaterThan(90 * 24 - 0.1);
+  expect(hoursLeft).toBeLessThanOrEqual(90 * 24);
 
   await page.getByRole("button", { name: "Invite Member" }).click();
   await modal.getByLabel("First Name").fill("Invited");

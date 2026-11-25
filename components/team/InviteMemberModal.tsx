@@ -167,7 +167,7 @@ export function InviteMemberModal({
               ? "They'll see this client next time they open Frank"
               : addOnly
                 ? ""
-                : "Invite link expires in 48 hours"}
+                : "Invite link expires in 3 months"}
           </span>
           <button type="button" className="btn" onClick={onClose}>
             Cancel

@@ -6964,11 +6964,22 @@ a.inlink {
   gap: 8px;
   align-items: center;
 }
-/* The share window's two copy buttons (Link + Instructions, Link + Request). */
+/* The share window's copy buttons (Link Only, Link + Instructions, Link +
+   Request). */
 .sharecopy {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+/* A copy button's full message on hover, line breaks kept as it pastes. */
+.msgpop {
+  pointer-events: none;
+}
+.msgpop .cp-row {
+  white-space: pre-wrap;
+  font-size: 12.7px;
+  line-height: 1.5;
+  color: var(--ink);
 }
 .linkrow code {
   flex: 1;
@@ -7149,6 +7160,14 @@ a.inlink {
   padding: 16px 12px;
   border-right: 1px solid var(--line-2);
   min-height: 0;
+}
+/* Spaced as the post page's section icons (.secrail): 42px each, 6px
+   apart (direct instruction). */
+.dk-nav .reviewnav-list {
+  gap: 6px;
+}
+.dk-nav .reviewnav-item {
+  height: 42px;
 }
 .dk-list {
   border-right: 1px solid var(--line);
@@ -7343,9 +7362,25 @@ a.inlink {
 /* Centred top to bottom (direct instruction), by auto margins so a card
    taller than the pane still scrolls from its top rather than being cut. */
 .dk-card {
+  position: relative;
   width: 460px;
   max-width: 100%;
   margin-block: auto;
+}
+/* The format switch above the phone and the scroll note under it sit
+   outside the card's height, so Content's phone sits exactly where Feed's
+   does (reported directly: it moved when switching). */
+.dk-card > .dk-fmt {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  right: 0;
+}
+.dk-card > .dk-scrollhint {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
 }
 /* An iPad on the review link takes the middle's whole width. */
 .dk-card.wide {
@@ -7355,6 +7390,8 @@ a.inlink {
 .dk-brief {
   width: 460px;
   max-width: 100%;
+  /* Clear of the pane's top (direct instruction). */
+  margin-top: 35px;
 }
 /* A review link's post with several formats: which it's shown as, above
    the phone (FormatSwitch). */

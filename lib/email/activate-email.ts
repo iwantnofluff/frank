@@ -27,7 +27,7 @@ export function activateEmail({
     "",
     `Activate your account: ${url}`,
     "",
-    "This link expires in 48 hours. If you didn't ask for this, you can ignore this email: nothing is switched on.",
+    "This link expires in 3 months. If you didn't ask for this, you can ignore this email: nothing is switched on.",
   ].join("\n");
   const html = `<!doctype html>
 <html><body style="margin:0;padding:32px 16px;background:#f6f6f4;font-family:Inter,-apple-system,Segoe UI,Helvetica,Arial,sans-serif;color:#1a1a1a">
@@ -38,7 +38,7 @@ export function activateEmail({
         <p style="font-size:15px;line-height:1.5;margin:0 0 12px;color:#555">You asked for a Frank account to see all of ${escapeHtml(clientName)}'s posts from ${escapeHtml(agencyName)} in one place.</p>
         <p style="font-size:15px;line-height:1.5;margin:0 0 24px;color:#555">${escapeHtml(how)}</p>
         <a href="${escapeHtml(url)}" style="display:inline-block;background:#1a1a1a;color:#fff;text-decoration:none;font-size:15px;font-weight:500;padding:11px 20px;border-radius:7px">Activate account</a>
-        <p style="font-size:13px;line-height:1.5;margin:24px 0 0;color:#888">This link expires in 48 hours. If you didn't ask for this, you can ignore this email: nothing is switched on.</p>
+        <p style="font-size:13px;line-height:1.5;margin:24px 0 0;color:#888">This link expires in 3 months. If you didn't ask for this, you can ignore this email: nothing is switched on.</p>
       </td></tr>
     </table>
   </td></tr></table>

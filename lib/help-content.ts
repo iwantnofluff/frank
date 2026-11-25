@@ -465,7 +465,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         items: [
           "Choose Share on a post's page, at any status, then Create link, for this post or several.",
           "Add a passcode if you'd like the link protected.",
-          "Copy it as Link Only, or with a message to send: Link + Instructions (no account needed, open it, pick your name, comment, Approve; an optional login) or Link + Request (the post or project named in quotes, the link on its own line, and a short ask to comment or approve). Approve is left out when the link can't approve. The one you chose greys out with Copied once it's on your clipboard.",
+          "Copy it as Link Only, or with a message to send: Link + Instructions (no account needed, open it, pick your name, comment, Approve; an optional login) or Link + Request (the post or project named in quotes, the link on its own line, and a short ask to comment or approve). Approve is left out when the link can't approve. The one you chose greys out with Copied once it's on your clipboard. Hover a button to read its whole message first.",
           "Send the link to your client, or keep it for your team. It's up to you.",
         ],
       },
@@ -485,7 +485,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       { kind: "p", text: "An approval counts once, however many times it's pressed." },
       {
         kind: "p",
-        text: "[People](client:/settings/people) you've invited as Clients of that client are listed under Who are you?, so they can comment under their own name straight away, before they've accepted their invite and after it expires. Only they can comment on a link.",
+        text: "[People](client:/settings/people) you've invited as Clients of that client are listed under Who are you?, so they can comment under their own name straight away, before they've accepted their invite and after it expires. On People, a Client who hasn't made an account yet is marked No account yet. Only they can comment on a link.",
       },
       { kind: "p", text: "On the link your client is told what to do first: Pick your name, then comment or approve, above the name list, then the comment box and Approve. Last, under Optional: Want all of their posts in one place? Create an account or Log In; they don't need one to comment or approve. Once they're signed in, those are replaced by who they're signed in as and Open Your Content Planner, their planner for that client. There's no Close: a browser won't let a page close a tab it didn't open. Create an account opens a window with their email filled in (from the name they picked, or asked for in the window) to choose a password (one box, with Show); Frank then emails them a link, and logging in with that password from it activates the account and brings them back to the link, signed in, with a link to their content planner. Both the email and the password are needed, so nobody else can switch on their account by picking their name. Someone who already uses Frank keeps their own password and just gets the link. Not sent twice within a minute. Someone who has already joined is asked to log in instead." },
     ],

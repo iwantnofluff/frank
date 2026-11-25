@@ -63,3 +63,29 @@ test("a review link copies with instructions or with a request", async ({ page, 
   await expect(dialog.getByRole("status")).toHaveText("Link copied. Paste it wherever you're sending it.");
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(link);
 });
+
+// Each copy button shows its whole message on hover (direct instruction),
+// line breaks and all, and it goes again when the pointer leaves.
+test("hovering a copy button shows the message it copies", async ({ page, frank }) => {
+  await frank.loginAsStaff(page);
+  await page.goto(`/creatives/${frank.creativeId}`);
+  await page.waitForSelector(".stage-h");
+  await page.getByRole("button", { name: "Share for review" }).click();
+  await page.click('button:has-text("Create link")');
+  const link = (await page.locator(".linkrow code").textContent())!.trim();
+  const dialog = page.getByRole("dialog");
+  const preview = page.locator(".msgpop");
+
+  await dialog.getByRole("button", { name: "Link + Request" }).hover();
+  await expect(preview).toBeVisible();
+  const text = await preview.locator(".cp-row").innerText();
+  expect(text).toContain('Hello,\n\nThe post "E2E Test Creative" is ready for review:');
+  expect(text).toContain(link);
+  expect(text).toContain("Any questions? Just reply here.");
+
+  await dialog.getByRole("button", { name: "Link Only" }).hover();
+  await expect(preview.locator(".cp-row")).toHaveText(link);
+
+  await dialog.locator(".linkrow code").hover();
+  await expect(preview).toHaveCount(0);
+});

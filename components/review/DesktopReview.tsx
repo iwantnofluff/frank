@@ -25,9 +25,11 @@ import { PhoneFrame } from "@/components/creative-review/PhoneFrame";
 import { ScrollHint } from "@/components/creative-review/ScrollHint";
 import { publishDate } from "@/lib/publish-date";
 
-// Kept free beside the phone: the scroll note below it. No title above it
-// (direct instruction: the list names the post).
-const RESERVE = 46;
+// Kept free beside the phone: the scroll note below it and a format switch
+// above it, on Content and Feed alike, so the phone is one size and in one
+// place whichever is shown (reported directly: it moved when switching).
+// No title above it (direct instruction: the list names the post).
+const RESERVE = 76;
 
 const SECTIONS: { id: ReviewSection; label: string }[] = [
   { id: "brief", label: "Brief" },
@@ -172,10 +174,16 @@ export function DesktopReview({
               {/* In the same phone as the Review page (direct instruction:
                   desktop only; the phone layout is the phone itself). It
                   fits the window, and the post scrolls inside it. */}
-              <PhoneFrame device={tablet ? "tablet" : "phone"} orientation={orientation} reserve={RESERVE + (postFormats(active).length > 1 ? 30 : 0)}>
+              <PhoneFrame device={tablet ? "tablet" : "phone"} orientation={orientation} reserve={RESERVE}>
                 {/* The phone's "Posts" bar; not on an iPad. */}
                 {!tablet && (
                   <div className="lpv-bar">
+                    {/* Back to the feed, as on the post's page. */}
+                    <button type="button" className="lpv-back" aria-label="Back to the feed" onClick={() => controller.setView("feed")}>
+                      <svg viewBox="0 0 24 24">
+                        <path d="M15 18l-6-6 6-6" />
+                      </svg>
+                    </button>
                     <b>Posts</b>
                   </div>
                 )}

@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
+import { useViewportFit } from "@/hooks/use-viewport-fit";
 import { useCreatives, type CreativeListRow } from "@/hooks/use-creatives";
 import { isHiddenPost, useHiddenStatusIds } from "@/hooks/use-stage-statuses";
 import {
@@ -142,6 +143,9 @@ export function ShareModal({
   const [link, setLink] = useState<{ url: string; title: string; titleIs: "post" | "project"; canApprove: boolean } | null>(null);
   // Copied to the clipboard (direct instruction: say so, and grey the button).
   const [copied, setCopied] = useState<{ kind: ReviewMessageKind; ok: boolean } | null>(null);
+  // The copy button under the pointer or focus, and where it is: its full
+  // message shows beside it (direct instruction).
+  const [previewing, setPreviewing] = useState<{ kind: ReviewMessageKind; rect: DOMRect } | null>(null);
 
   const { data: allCreatives } = useCreatives(projectId);
   // Nor a post on a status that hides it (phase143), such as a Cancelled one.
@@ -337,6 +341,10 @@ export function ShareModal({
                     type="button"
                     className={done ? "btn sm copied" : "btn sm"}
                     disabled={done}
+                    onMouseEnter={(e) => setPreviewing({ kind: opt.kind, rect: e.currentTarget.getBoundingClientRect() })}
+                    onMouseLeave={() => setPreviewing(null)}
+                    onFocus={(e) => setPreviewing({ kind: opt.kind, rect: e.currentTarget.getBoundingClientRect() })}
+                    onBlur={() => setPreviewing(null)}
                     onClick={() =>
                       navigator.clipboard
                         .writeText(reviewMessage({ kind: opt.kind, title: link.title, titleIs: link.titleIs, link: link.url, canApprove: link.canApprove }))
@@ -551,6 +559,12 @@ export function ShareModal({
         </>
       )}
     </Modal>
+    {previewing && link && (
+      <MessagePreview
+        text={reviewMessage({ kind: previewing.kind, title: link.title, titleIs: link.titleIs, link: link.url, canApprove: link.canApprove })}
+        anchorRect={previewing.rect}
+      />
+    )}
     {hover && (
       <FeedCaptionPopover
         creative={hover.creative}
@@ -560,5 +574,18 @@ export function ShareModal({
       />
     )}
     </>
+  );
+}
+
+// A copy button's whole message, as it will paste (direct instruction), in
+// the caption hover's card. Read only: it never takes the pointer, so it
+// can't hold itself open over the buttons.
+function MessagePreview({ text, anchorRect }: { text: string; anchorRect: DOMRect }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useViewportFit(ref, anchorRect, { side: "below", gap: 6 });
+  return (
+    <div ref={ref} className="copypop on msgpop" role="tooltip">
+      <div className="cp-row">{text}</div>
+    </div>
   );
 }

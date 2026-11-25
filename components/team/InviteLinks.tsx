@@ -10,7 +10,7 @@ export function InviteLinks({ sent }: { sent: { email: string; name: string; url
     <div className="invitelinks">
       <p className="sub">
         {sent.length === 1 ? "Invite sent." : `${sent.length} invites sent.`} You can also share the invite{" "}
-        {sent.length === 1 ? "link" : "links"} below directly. Each works once, for 48 hours, for that person&rsquo;s email.
+        {sent.length === 1 ? "link" : "links"} below directly. Each works once, for 3 months, for that person&rsquo;s email.
       </p>
       {sent.map((s) => (
         <div className="invitelink" key={s.url}>

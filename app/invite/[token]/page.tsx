@@ -139,7 +139,7 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
     content = (
       <Notice
         title="This invite has expired"
-        body="Invite links last 48 hours. Ask whoever invited you to send a new one."
+        body="Invite links last 3 months. Ask whoever invited you to send a new one."
       />
     );
   } else if (invite?.status === "accepted") {

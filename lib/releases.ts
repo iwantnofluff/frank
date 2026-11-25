@@ -13,6 +13,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.103.1",
+    date: "2026-11-25",
+    title: "Review message previews, and a steadier review link",
+    changes: [
+      "In the share window, hovering Link Only, Link + Instructions or Link + Request shows the whole message it copies, laid out as it will paste.",
+      "Invite links now stay open for 3 months (they lasted 48 hours), for your team and your clients alike, and so do the activation emails from Create an account on a review link.",
+      "On a client's People page, a Client who hasn't made an account is marked No account yet (it said Invited), and the page says every Client there can pick their name on review links to comment or approve, account or not.",
+      "On a review link on a computer, the phone stays the same size and in the same place between Content and Feed, its Posts bar has the arrow back to the feed as on the post's page, Brief, Content and Feed are spaced as on the post's page, and the Brief sits lower, clear of the top.",
+    ],
+  },
+  {
     version: "1.103.0",
     date: "2026-11-25",
     title: "The brief and the planner on review links",
