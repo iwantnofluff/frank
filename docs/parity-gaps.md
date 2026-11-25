@@ -5185,6 +5185,12 @@ Direct instruction: the review link had no brief; add an icon before Content, so
 
 **Verified**: In the real app (dev server, staging), as a visitor with no session, at 1440 × 900 and 390 × 844, with a concept, a reference and a team member seeded: Brief showed them, Notes for Designer didn't, and the brief fitted the phone's screen (it first ran off the right edge, fixed with `width: auto`). Screenshots checked after the highlight's fade; one taken straight after the click showed Content still lit, which the logged `aria-pressed`/`aria-current` showed was the fade, not the state. shared-review-brief.spec.ts is new (desktop menu order and the brief; phone icon order, pressed state, fit). shared-review-phone.png and shared-review-desktop.png differed only by the new icon and menu item and were regenerated after looking at each diff. shared-review-public, shared-review-account, designer-note-versions and new-brief run with it against staging: 20 passed, 10 failed while the machine was loaded. Rerun, all 10 passed except the two baselines above, which then passed once regenerated. Unit tests: 311 passed.
 
+## Client logo line at 25% black (1.103.5, 2026-11-25)
+
+Direct instruction: the line round client logos (1.103.4) at 25% black, not 30%. Both places it's drawn changed: the inset line on `.logo` pictures and the outline on the post mock-ups' avatars.
+
+**Verified**: the dev server's stylesheet serves both lines as `#00000040` (25% black), and 30% (`#0000004d`) appears nowhere in it. CSS only, a colour value; no spec asserts on it. Type check and lint clean.
+
 ## A line around every client logo (1.103.4, 2026-11-25)
 
 Direct instruction: every client logo gets a 1px border at 30% black by default, so a white logo still has an edge. It's drawn over the picture's edge, not added outside it, so no logo changes size or moves. In the client list, client settings and the client window (`.logo` with a picture) it's an inset line on a `::after` over the picture. On the post mock-ups (`.ig-av`, `.fp-av`, `.pp-av`) it's an outline inside the white gap of the platform's ring, so the ring is unchanged. It covers the post page, the Feed Preview, the preview popover and review links. Coloured initials tiles, which have no picture, are left as they were. The workspace (agency) logos aren't client logos and are unchanged. No database change.

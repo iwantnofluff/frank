@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.103.5",
+    date: "2026-11-25",
+    title: "Lighter logo edge",
+    changes: ["The line round client logos is a touch lighter."],
+  },
+  {
     version: "1.103.4",
     date: "2026-11-25",
     title: "Logo edges and zoom",
