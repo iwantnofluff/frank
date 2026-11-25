@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.104.1",
+    date: "2026-11-25",
+    title: "Clearer review messages, fuller review Feed",
+    changes: [
+      "Link + Request and Link + Instructions now name the post: The post \"Name\" is ready for review, or for several, The post \"Name\", and others are ready for review. They used to name the project.",
+      "In the share window the copy buttons now read Link + Request, Link + Instructions, Link Only.",
+      "On a review link's Feed, Approved and Live posts now show their artwork, name and date, rather than their stage alone. They don't open. Once the client's Instagram is connected, posts that have gone live show as the real Instagram posts instead.",
+    ],
+  },
+  {
     version: "1.104.0",
     date: "2026-11-25",
     title: "Comments in Fullscreen",

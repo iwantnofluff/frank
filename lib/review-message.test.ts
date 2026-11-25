@@ -6,7 +6,7 @@ const link = "https://x.beingfrank.app/review/hapi/smile/abc";
 
 test("Link + Instructions, as written", () => {
   assert.equal(
-    reviewMessage({ kind: "instructions", title: "Don’t wait until you lose it all", titleIs: "post", link, canApprove: true }),
+    reviewMessage({ kind: "instructions", postName: "Don’t wait until you lose it all", others: false, link, canApprove: true }),
     [
       "Hello,",
       "",
@@ -30,7 +30,7 @@ test("Link + Instructions, as written", () => {
 
 test("Link + Request, as written", () => {
   assert.equal(
-    reviewMessage({ kind: "request", title: "Don’t wait until you lose it all", titleIs: "post", link, canApprove: true }),
+    reviewMessage({ kind: "request", postName: "Don’t wait until you lose it all", others: false, link, canApprove: true }),
     [
       "Hello,",
       "",
@@ -43,18 +43,25 @@ test("Link + Request, as written", () => {
       "Any questions? Just reply here.",
     ].join("\n"),
   );
-  assert.ok(reviewMessage({ kind: "request", title: "Smile Week", titleIs: "project", link, canApprove: true }).includes("The project \"Smile Week\" is ready"));
+});
+
+test("several posts: one by name, and others", () => {
+  for (const kind of ["request", "instructions"] as const) {
+    const m = reviewMessage({ kind, postName: "Smile Week Reel", others: true, link, canApprove: true });
+    assert.ok(m.includes('\n\nThe post "Smile Week Reel", and others are ready for review:\n\n'));
+    assert.ok(!m.includes("project"));
+  }
 });
 
 test("Link Only is the link", () => {
-  assert.equal(reviewMessage({ kind: "link", title: "T", titleIs: "post", link, canApprove: true }), link);
+  assert.equal(reviewMessage({ kind: "link", postName: "T", others: false, link, canApprove: true }), link);
 });
 
 test("no Approve when the link can't approve", () => {
-  const steps = reviewMessage({ kind: "instructions", title: "T", titleIs: "post", link, canApprove: false });
+  const steps = reviewMessage({ kind: "instructions", postName: "T", others: false, link, canApprove: false });
   assert.ok(!steps.includes("Approve"));
   assert.ok(steps.includes("3. Scroll down") && !steps.includes("4."));
-  const request = reviewMessage({ kind: "request", title: "T", titleIs: "post", link, canApprove: false });
+  const request = reviewMessage({ kind: "request", postName: "T", others: false, link, canApprove: false });
   assert.ok(request.includes("Comment directly on anything you’d like changed.\n"));
   assert.ok(!request.includes("Approve"));
 });

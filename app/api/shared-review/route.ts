@@ -124,7 +124,7 @@ export async function POST(request: Request) {
   // again by its own function; started now so it runs alongside the rest.
   const feedPromise = anon
     .rpc("get_shared_review_feed", { p_token: token, p_passcode: passcode ?? null })
-    .then(({ data: f }) => (f?.status === "ok" ? (f.feed as { id: string | null; name?: string | null; stage: number; reel: boolean }[]) : null));
+    .then(({ data: f }) => (f?.status === "ok" ? (f.feed as FeedRow[]) : null));
 
   // When each post last had a new version of anything the client reviews
   // (artwork, copy, VO, Text on Image, a thumbnail), to tell whether the
@@ -311,6 +311,47 @@ export async function POST(request: Request) {
     if (t.asset && !thumbById.has(t.creative_id)) thumbById.set(t.creative_id, { version_no: t.version_no, ...t.asset });
   }
 
+  // The Approved and Live posts the link doesn't share (phase166, direct
+  // instruction): their artwork for the feed's tiles, the latest version's
+  // (or a video's thumbnail), unless it's been removed. Only posts the feed
+  // function returned for this token, so only this link's project.
+  const feed = await feedPromise;
+  // Shared, as the function says; before phase166 only shared posts had an id.
+  const isShared = (e: FeedRow) => e.shared ?? !!e.id;
+  const coverIds = (feed ?? []).filter((e) => e.id && !isShared(e)).map((e) => e.id!);
+  const coverById = new Map<string, { storage_key: string; mime_type: string }>();
+  if (serviceRole && coverIds.length) {
+    const [{ data: kept }, { data: versions }, { data: thumbs }] = await Promise.all([
+      serviceRole.from("creatives").select("id").in("id", coverIds).is("artwork_removed_at", null),
+      serviceRole
+        .from("creative_versions")
+        .select("creative_id, version_no, asset:assets(storage_key, mime_type)")
+        .in("creative_id", coverIds)
+        .order("version_no", { ascending: false }),
+      serviceRole
+        .from("thumbnail_versions")
+        .select("creative_id, version_no, asset:assets(storage_key, mime_type)")
+        .in("creative_id", coverIds)
+        .not("asset_id", "is", null)
+        .order("version_no", { ascending: false }),
+    ]);
+    const keptIds = new Set((kept ?? []).map((r) => r.id as string));
+    type CoverRow = { creative_id: string; asset: { storage_key: string; mime_type: string } | null };
+    // A thumbnail first, as the feed shows a video; else the latest
+    // version's artwork (none when it was saved with nothing).
+    const seen = new Set<string>();
+    for (const t of (thumbs ?? []) as unknown as CoverRow[])
+      if (keptIds.has(t.creative_id) && t.asset && !seen.has(t.creative_id)) {
+        seen.add(t.creative_id);
+        coverById.set(t.creative_id, t.asset);
+      }
+    for (const v of (versions ?? []) as unknown as CoverRow[]) {
+      if (seen.has(v.creative_id)) continue;
+      seen.add(v.creative_id);
+      if (keptIds.has(v.creative_id) && v.asset) coverById.set(v.creative_id, v.asset);
+    }
+  }
+
   // Every file the page shows — each post's artwork, each slide, and the two
   // logos — signed in one request rather than one at a time. Signed here
   // because a visitor has no session to read storage with.
@@ -324,6 +365,7 @@ export async function POST(request: Request) {
       keys.add(c.asset.storage_key).add(previewKey(c.asset.storage_key)).add(thumbKey(c.asset.storage_key));
   for (const r of slideRows) if (r.asset) keys.add(r.asset.storage_key).add(previewKey(r.asset.storage_key));
   for (const t of thumbById.values()) keys.add(t.storage_key).add(previewKey(t.storage_key)).add(thumbKey(t.storage_key));
+  for (const a of coverById.values()) keys.add(a.storage_key).add(previewKey(a.storage_key)).add(thumbKey(a.storage_key));
   if (settings?.logo_asset) keys.add(settings.logo_asset.storage_key);
   if (clientLogo) keys.add(clientLogo.storage_key);
   const signedByKey = new Map<string, string>();
@@ -403,7 +445,6 @@ export async function POST(request: Request) {
     ? { theme: settings?.theme ?? null, logo_url: signedUrl(settings?.logo_asset?.storage_key) }
     : { theme: null, logo_url: null };
 
-  const feed = await feedPromise;
   return NextResponse.json({
     ...data,
     // A client that can't approve (phase70) gets no Approve, whatever the
@@ -431,9 +472,24 @@ export async function POST(request: Request) {
     // project's other posts in Client Review (phase69); the page opens on
     // these and lists them first, the rest under their own heading.
     sent_ids: sentIds(link, ids),
-    feed,
+    // The feed's entries; a post the link doesn't share keeps its id only
+    // for its artwork's small copy here (phase166), never a storage key.
+    feed: feed?.map((row) => {
+      const shared = isShared(row);
+      const e = { ...row };
+      delete e.shared;
+      const cover = !shared && e.id ? coverById.get(e.id) : undefined;
+      return {
+        ...e,
+        id: shared ? e.id : null,
+        ...(cover ? { cover_url: smallUrl(cover.storage_key), cover_video: cover.mime_type.startsWith("video/") } : {}),
+      };
+    }) ?? null,
   });
 }
+
+// One of the feed function's entries (phase67, phase166).
+type FeedRow = { id: string | null; shared?: boolean; name?: string | null; date?: string | null; stage: number; reel: boolean };
 
 function sentIds(link: LinkRow | null, shown: string[]): string[] | null {
   const chosen = link?.scope === "one" ? [link.creative_id] : link?.scope === "pick" ? (link.picked_creatives ?? []) : null;

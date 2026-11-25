@@ -1,7 +1,7 @@
 import { test, expect } from "./fixtures";
 
 // Three ways to copy a review link, always all (direct instruction):
-// Link Only, Link + Instructions and Link + Request. What lands on the
+// Link + Request, Link + Instructions and Link Only. What lands on the
 // clipboard is read back, not just the button.
 test("a review link copies with instructions or with a request", async ({ page, context, frank }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
@@ -12,9 +12,8 @@ test("a review link copies with instructions or with a request", async ({ page, 
   await page.click('button:has-text("Create link")');
   const link = (await page.locator(".linkrow code").textContent())!.trim();
   const dialog = page.getByRole("dialog");
-  await expect(dialog.getByRole("button", { name: "Link Only" })).toBeVisible();
-  await expect(dialog.getByRole("button", { name: "Link + Instructions" })).toBeVisible();
-  await expect(dialog.getByRole("button", { name: "Link + Request" })).toBeVisible();
+  // The fullest first (direct instruction).
+  await expect(dialog.locator(".sharecopy button")).toHaveText(["Link + Request", "Link + Instructions", "Link Only"]);
   await expect(dialog).toContainText("Your client picks their name to comment or approve — no account needed.");
 
   await dialog.getByRole("button", { name: "Link + Instructions" }).click();
@@ -88,4 +87,25 @@ test("hovering a copy button shows the message it copies", async ({ page, frank 
 
   await dialog.locator(".linkrow code").hover();
   await expect(preview).toHaveCount(0);
+});
+
+// Several posts: the message still names a post, this one, "and others"
+// (direct instruction: it named the project).
+test("a link for several posts names this one, and others", async ({ page, context, frank }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await frank.createCreativeAtStage(4, "Second Post");
+  await frank.loginAsStaff(page);
+  await page.goto(`/creatives/${frank.creativeId}`);
+  await page.waitForSelector(".stage-h");
+  await page.getByRole("button", { name: "Share for review" }).click();
+  await page.click('button[role="radio"]:has-text("Multiple Posts")');
+  await page.locator(".pktile", { hasText: "Second Post" }).click();
+  await page.click('button:has-text("Create link")');
+  const dialog = page.getByRole("dialog");
+  for (const name of ["Link + Request", "Link + Instructions"]) {
+    await dialog.getByRole("button", { name }).click();
+    const text = await page.evaluate(() => navigator.clipboard.readText());
+    expect(text).toContain('Hello,\n\nThe post "E2E Test Creative", and others are ready for review:\n\n');
+    expect(text).not.toContain("project");
+  }
 });

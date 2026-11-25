@@ -8,22 +8,25 @@ export type ReviewMessageKind = "link" | "instructions" | "request";
 
 export function reviewMessage({
   kind,
-  title,
-  titleIs,
+  postName,
+  others,
   link,
   canApprove,
 }: {
   kind: ReviewMessageKind;
-  // The post, or the project when the link is for several (as the link is named).
-  title: string;
-  titleIs: "post" | "project";
+  // A post the link is for, by name, even when it's for several (direct
+  // instruction, 25 Nov 2026: it named the project then); others says
+  // there are more.
+  postName: string;
+  others: boolean;
   link: string;
   canApprove: boolean;
 }): string {
   if (kind === "link") return link;
   // The user's own structure for both (24 Nov 2026): which post, in quotes,
   // and the link on a line of its own.
-  const opening = ["Hello,", "", `The ${titleIs} "${title}" is ready for review:`, "", link, ""];
+  const ready = others ? `The post "${postName}", and others are ready for review:` : `The post "${postName}" is ready for review:`;
+  const opening = ["Hello,", "", ready, "", link, ""];
   if (kind === "request") {
     return [
       ...opening,

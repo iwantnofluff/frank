@@ -117,7 +117,7 @@ export default function ClientPreferencesPage({ params }: { params: Promise<{ id
             </Row>
             <Row
               title="Feed shows other posts"
-              hint="The project's other posts in a review link's Feed: their stage, and their name while in Internal Review."
+              hint="The project's other posts in a review link's Feed: their stage, their name while in Internal Review, and Approved and Live posts' artwork, name and date."
             >
               <YesNo
                 label="Feed shows other posts"

@@ -237,6 +237,66 @@ test("shared review — the feed shows other posts by stage, and opens this link
   await expect(page.locator(".dk-card .lpv-bar")).toBeVisible();
 });
 
+// Approved and Live posts the link doesn't share (phase166, direct
+// instruction): their artwork, name and date on the Feed, as on the Review
+// page's Feed Preview, but they don't open; removed artwork shows none. No
+// storage key reaches the page, only signed links, and not their ids.
+test("shared review — the feed shows Approved and Live posts with their artwork, name and date", async ({ page, frank }) => {
+  const staffId = (await admin.from("users").select("id").eq("email", frank.staffEmail).single()).data!.id;
+  await page.setViewportSize({ width: 300, height: 400 });
+  await page.setContent(`<body style="margin:0;background:#2a6"></body>`);
+  const png = await page.screenshot();
+  const seed = async (stage: number, name: string, day: number, removed = false) => {
+    const id = await frank.createCreativeAtStage(stage, name);
+    await admin.from("creatives").update({ scheduled_at: new Date(2026, 9, day, 10).toISOString(), ...(removed ? { artwork_removed_at: new Date().toISOString() } : {}) }).eq("id", id);
+    const key = `${frank.agencyId}/${id}/done-${stage}.png`;
+    await admin.storage.from("assets").upload(key, png, { contentType: "image/png" });
+    const { data: a } = await admin
+      .from("assets")
+      .insert({ agency_id: frank.agencyId, storage_key: key, filename: "done.png", mime_type: "image/png", bytes: png.length, created_by: staffId })
+      .select("id")
+      .single();
+    await admin.from("creative_versions").insert({ creative_id: id, version_no: 1, asset_id: a!.id, created_by: staffId });
+    return id;
+  };
+  await seed(5, "Approved Done Post", 3);
+  await seed(6, "Live Done Post", 2);
+  await seed(6, "Removed Done Post", 1, true);
+  const token = await frank.createSharedLink();
+  await admin.from("shared_links").update({ scope: "one", creative_id: frank.creativeId }).eq("token", token);
+
+  const res = await page.request.post("/api/shared-review", { data: { token } });
+  const text = await res.text();
+  const body = JSON.parse(text) as { feed: { id: string | null; name?: string | null; date?: string | null; cover_url?: string; stage: number }[] };
+  const done = body.feed.filter((e) => e.stage >= 5);
+  expect(done.map((e) => [e.stage, e.name, !!e.date, !!e.cover_url, e.id])).toEqual([
+    [5, "Approved Done Post", true, true, null],
+    [6, "Live Done Post", true, true, null],
+    [6, "Removed Done Post", true, false, null],
+  ]);
+  // Signed links only, as for the link's own posts: no storage key.
+  expect(text).not.toContain("storage_key");
+  for (const e of done) if (e.cover_url) expect(e.cover_url).toContain("/object/sign/");
+  expect(body.feed.filter((e) => e.id).length).toBe(1);
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(`/review/${token}`);
+  await page.locator(".dk-nav").getByRole("button", { name: "Feed" }).click();
+  const tiles = page.locator(".dk-main .feedgrid .sharedfeed-done");
+  await expect(tiles).toHaveCount(3);
+  await expect(tiles.locator(".pp-art-title")).toHaveText(["Approved Done Post", "Live Done Post", "Removed Done Post"]);
+  await expect(tiles.locator(".pp-art-time")).toHaveText([/Oct 3|3 Oct/, /Oct 2|2 Oct/, /Oct 1|1 Oct/]);
+  await expect(tiles.locator(".stagepill")).toHaveText(["5.Approved", "6.Live", "6.Live"]);
+  const img = tiles.nth(0).locator("img");
+  await expect(img).toBeVisible();
+  await expect.poll(() => img.evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth > 0)).toBe(true);
+  await expect(tiles.nth(2).locator("img")).toHaveCount(0);
+  // They don't open: no button, and the post on show stays the same.
+  await expect(tiles.nth(0)).not.toHaveRole("button");
+  await tiles.nth(0).click();
+  await expect(page.locator(".dk-main .feedgrid")).toBeVisible();
+});
+
 // Reported directly: a No Fluff link opened as someone remembered from a
 // Casa Carigar link in the same browser. The name is remembered per client,
 // and "Not you?" lets someone else on the browser give their own.

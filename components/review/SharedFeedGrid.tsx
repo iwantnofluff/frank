@@ -10,6 +10,8 @@ import { useSharedInstagramSlides } from "@/hooks/use-shared-review";
 import type { LiveFeed } from "@/lib/instagram/store";
 import { CommentCount } from "./CommentCount";
 import { StagePill } from "@/components/creative-review/StagePill";
+import { isLive } from "@/lib/post-live";
+import { STAGE } from "@/lib/stage-labels";
 
 const GRID_SLOTS = 9;
 
@@ -17,8 +19,10 @@ const GRID_SLOTS = 9;
 // project's posts in grid order, then the client's real posts once their
 // Instagram is connected (placeholders until then, as on the Review page).
 // The posts this link shares show their thumbnail, open on a click and show
-// how many comments they have; every other post is a tile with its stage
-// (and its name while in Internal Review). Every tile carries its stage pill.
+// how many comments they have; an Approved or Live post it doesn't share
+// shows its artwork, name and date but doesn't open (phase166); every other
+// post is a tile with its stage (and its name while in Internal Review).
+// Every tile carries its stage pill.
 // As the Review page's Feed Preview writes a tile's date.
 const tileDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
@@ -29,8 +33,16 @@ export function SharedFeedGrid({ controller, brandName }: { controller: ReviewCo
   const [openPost, setOpenPost] = useState<LiveFeed["posts"][number] | null>(null);
   const slides = useSharedInstagramSlides(controller.token, controller.passcode, openPost?.carousel ? openPost.id : null);
   const indexOf = new Map(creatives.map((c, i) => [c.id, i]));
+  // A post that's gone live is among the real posts once the client's
+  // Instagram is connected, so it isn't shown twice, as on the Review
+  // page's Feed Preview (direct instruction); without one it stays.
+  const [now] = useState(() => Date.now());
+  const liveNow = (e: (typeof feed)[number]) => {
+    const c = e.id ? creatives[indexOf.get(e.id) ?? -1] : null;
+    return isLive(c ?? { stage: e.stage, scheduled_at: e.date ?? null }, now);
+  };
   // Posts, or just the Reels (a Reel-format post, or a real Reel).
-  const planned = feed.filter((e) => tab === "posts" || e.reel);
+  const planned = feed.filter((e) => (tab === "posts" || e.reel) && !(liveFeed && liveNow(e)));
   const live = liveFeed ? (tab === "reels" ? liveFeed.posts.filter((p) => p.reel) : liveFeed.posts) : [];
   const empties = tab === "reels" || liveFeed ? 0 : Math.max(0, GRID_SLOTS - planned.length);
   return (
@@ -60,6 +72,27 @@ export function SharedFeedGrid({ controller, brandName }: { controller: ReviewCo
         {planned.map((e, n) => {
           const i = e.id ? indexOf.get(e.id) : undefined;
           const c = i === undefined ? null : creatives[i];
+          // Approved or Live, not on this link (phase166, direct
+          // instruction): its artwork, name and date, as the link's own
+          // posts show them, but it doesn't open.
+          if ((!c || i === undefined) && e.stage >= STAGE.approved) {
+            const url = e.cover_url ?? null;
+            return (
+              <div key={`done-${n}`} className="feedgrid-tile sharedfeed-planned sharedfeed-done" title={e.name ?? undefined}>
+                {url && e.cover_video ? (
+                  <video src={`${url}#t=0.1`} muted playsInline preload="metadata" aria-label={e.name ?? undefined} />
+                ) : url ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
+                  <img src={url} alt={e.name ?? ""} loading="lazy" decoding="async" />
+                ) : null}
+                <div className={url ? "pp-art-overlay" : "pp-art-overlay bare"}>
+                  {e.name && <div className="pp-art-title">{e.name}</div>}
+                  {e.date && <div className="pp-art-time">{tileDate(e.date)}</div>}
+                </div>
+                <StagePill stage={e.stage} />
+              </div>
+            );
+          }
           if (!c || i === undefined) {
             return (
               <div key={`stage-${n}`} className="feedgrid-tile-empty sharedfeed-stage">

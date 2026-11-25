@@ -50,9 +50,10 @@ const SCOPE_OPTIONS: {
 // format — a deliberate loss of the per-format-accurate shape in exchange
 // for looking like the same grid.
 const COPY_OPTIONS: { kind: ReviewMessageKind; label: string }[] = [
-  { kind: "link", label: "Link Only" },
-  { kind: "instructions", label: "Link + Instructions" },
+  // The fullest first (direct instruction, 25 Nov 2026).
   { kind: "request", label: "Link + Request" },
+  { kind: "instructions", label: "Link + Instructions" },
+  { kind: "link", label: "Link Only" },
 ];
 const COPIED_NOTE: Record<ReviewMessageKind, string> = {
   link: "Link",
@@ -140,7 +141,7 @@ export function ShareModal({
   // A client that can't approve at all: no link lets them.
   const approveLocked = !!prefs && !prefs.client_can_approve;
   // The link made, with what its message names it and whether it lets them approve.
-  const [link, setLink] = useState<{ url: string; title: string; titleIs: "post" | "project"; canApprove: boolean } | null>(null);
+  const [link, setLink] = useState<{ url: string; postName: string; others: boolean; canApprove: boolean } | null>(null);
   // Copied to the clipboard (direct instruction: say so, and grey the button).
   const [copied, setCopied] = useState<{ kind: ReviewMessageKind; ok: boolean } | null>(null);
   // The copy button under the pointer or focus, and where it is: its full
@@ -274,10 +275,13 @@ export function ShareModal({
     // the post, or the project when it's for several.
     const onePick = scope === "pick" && picked.size === 1 ? allCreatives?.find((c) => picked.has(c.id))?.name : null;
     const title = scope === "one" ? currentName : (onePick ?? project?.name);
+    // The message names a post either way (direct instruction): this one
+    // when it's in the link, else the first picked, in the project's order.
+    const firstPicked = scope === "pick" && !picked.has(currentCreativeId) ? allCreatives?.find((c) => picked.has(c.id))?.name : null;
     setLink({
       url: `${window.location.origin}${reviewLinkPath(token, brandName, title)}`,
-      title: title ?? currentName,
-      titleIs: scope === "one" || onePick ? "post" : "project",
+      postName: firstPicked ?? currentName,
+      others: scope === "pick" && picked.size > 1,
       canApprove: canApprove && !approveLocked,
     });
   }
@@ -347,7 +351,7 @@ export function ShareModal({
                     onBlur={() => setPreviewing(null)}
                     onClick={() =>
                       navigator.clipboard
-                        .writeText(reviewMessage({ kind: opt.kind, title: link.title, titleIs: link.titleIs, link: link.url, canApprove: link.canApprove }))
+                        .writeText(reviewMessage({ kind: opt.kind, postName: link.postName, others: link.others, link: link.url, canApprove: link.canApprove }))
                         .then(
                           () => setCopied({ kind: opt.kind, ok: true }),
                           () => setCopied({ kind: opt.kind, ok: false }),
@@ -561,7 +565,7 @@ export function ShareModal({
     </Modal>
     {previewing && link && (
       <MessagePreview
-        text={reviewMessage({ kind: previewing.kind, title: link.title, titleIs: link.titleIs, link: link.url, canApprove: link.canApprove })}
+        text={reviewMessage({ kind: previewing.kind, postName: link.postName, others: link.others, link: link.url, canApprove: link.canApprove })}
         anchorRect={previewing.rect}
       />
     )}

@@ -5185,6 +5185,89 @@ Direct instruction: the review link had no brief; add an icon before Content, so
 
 **Verified**: In the real app (dev server, staging), as a visitor with no session, at 1440 × 900 and 390 × 844, with a concept, a reference and a team member seeded: Brief showed them, Notes for Designer didn't, and the brief fitted the phone's screen (it first ran off the right edge, fixed with `width: auto`). Screenshots checked after the highlight's fade; one taken straight after the click showed Content still lit, which the logged `aria-pressed`/`aria-current` showed was the fade, not the state. shared-review-brief.spec.ts is new (desktop menu order and the brief; phone icon order, pressed state, fit). shared-review-phone.png and shared-review-desktop.png differed only by the new icon and menu item and were regenerated after looking at each diff. shared-review-public, shared-review-account, designer-note-versions and new-brief run with it against staging: 20 passed, 10 failed while the machine was loaded. Rerun, all 10 passed except the two baselines above, which then passed once regenerated. Unit tests: 311 passed.
 
+## Approved and Live posts on a review link's Feed (1.104.1, phase166, 2026-11-25)
+
+Direct instruction, with a screenshot of Kikkoman's link on a phone: the Approved and Live tiles were blank, stage only. That was phase67's rule (8 Oct 2026: posts the link doesn't share show by stage, no name, no artwork), not Instagram placeholders. Kikkoman has no Instagram connected, and its Approved and Live posts all had artwork. Asked and answered: Approved and Live posts now show their artwork, name and date, as the link's own posts do, but they don't open. Concept to Client Review stay as they were.
+
+How it works:
+- **The database (phase166).** `get_shared_review_feed` now also returns, for Approved and Live posts the link doesn't share, their id, whether the link shares the post, their name and their date.
+- **The server.** `/api/shared-review` signs their artwork's small copy: a video's latest thumbnail first, else the latest version. It skips any post whose artwork was removed. The id goes no further: the page gets `id: null`, `cover_url` and `cover_video`, and no storage key.
+- **The tiles.** They have the other posts' dashed edge, not the link's red one.
+- **Instagram connected.** A post that's gone live is left out of the Frank tiles, as on the Review page's Feed Preview, so it isn't shown twice. Without a connection (the default), Frank's posts show.
+- **Old answers.** An answer from before phase166 has no `shared` flag; an entry with an id is then taken as shared.
+- **Wording.** Client Preferences' "Feed shows other posts" now says it covers this.
+
+**Verified**: phase166 rehearsed on staging in a transaction that rolled back, calling the function for real links, then applied to staging; then on live the same way right before the push, and checked there through the service-role client: Kikkoman's link returns all 18 of its Approved and Live posts with name and date, and every entry carries `shared`. In the real app (dev server, staging) at 390 × 844, with an Approved post, a Live post and a Live post with its artwork removed, all outside the link: the two showed their artwork, name and date, and the removed one its name and date on the plain tile. shared-review-public.spec.ts has a new test checking:
+- what the page is sent: name, date, a signed cover except for the removed one, no ids, no storage key;
+- the three tiles' names, dates and stages;
+- the image loading, the removed one with none;
+- that the tiles aren't buttons.
+
+The Instagram-connected rule isn't covered by a test, as the suite has no connected Instagram. Every review link spec and stories-off-grid against staging: 23 passed. shared-review-desktop.png differed once only by Frank's logo not having loaded yet, and passed on rerun. Unit tests: 314 passed. Type check, lint and build clean. Full suite left for the end of the day (AGENTS.md).
+
+## Review messages name a post, and the fullest first (1.104.1, 2026-11-25)
+
+Direct instruction, with a copied message for a link to several posts: its first line said `The project "Content Planner" is ready for review:`. Now Link + Request and Link + Instructions always name a post. One post reads `The post "Name" is ready for review:`. Several read `The post "Name", and others are ready for review:`, as the user wrote it. The post named is the one being shared from when it's in the link, otherwise the first picked in the project's order. The link's own address still carries the project's name for several posts, as before; only the message changed. The copy buttons now read Link + Request, Link + Instructions, Link Only. No database change.
+
+**Verified**: review-message unit tests updated, with a new one for several posts (both messages; no "project"); 314 passed. share-copy.spec.ts checks the button order and has a new test: two posts picked, both messages copied and read back from the clipboard with `The post "E2E Test Creative", and others are ready for review:`. share-copy and share-eligibility against staging: 7 passed, 1 timed out loading a review link while the specs ran together and passed alone. Type check, lint and build clean. Full suite left for the end of the day (AGENTS.md).
+
+## Parked: Profile → Preferences (planned 2026-11-25, not built)
+
+Direct instruction, then parked by the user before any building: a Preferences section in each person's Profile. To pick it up, say "Build Profile Preferences as parked in parity-gaps".
+
+Decided directly (25 Nov 2026):
+- **Notifications split.** Who hears stays per client in Client Preferences, with Owners and Admins. In Frank and By email become each person's own choice, across all clients.
+- **Open posts in Fullscreen from the Table** is saved on the person's account, not the browser.
+- **Extras, all three:**
+  - In Frank and By email for each kind of notice.
+  - New comments start as Private or Public.
+  - Where Frank opens after sign-in.
+
+Found before planning:
+- **What Client Preferences → Notifications does today.** `client_preferences.notify_in_app`, `notify_email` and `notify_who` (phase80) are read by `notify_client_activity` when a notice is written.
+- **Nothing to carry over.** On 25 Nov 2026 no client had email on or the bell off: staging had 2 real clients, live had 4. So personal defaults of bell on and email off change nothing for anyone.
+- **The kinds of notice:** `client_comment`, `client_approval`, `comment_mention`, `discussion_mention`, `live_unapproved`, `artwork_removal`.
+- **Only client activity sends email today**, through `/api/notify/client-activity`. That route is called after any comment by `lib/notify-client-activity.ts`.
+- **Where the other notices come from.** `live_unapproved` and `artwork_removal` are written by `mark_posts_live` (latest in phase102) and `run_artwork_housekeeping` (latest in phase140), from the nightly `/api/cron/artwork` and Instagram live dates.
+- **Profile → Notifications holds Tips only** (`users.tips_every_hours`), for the team only.
+- **Every new comment starts as Private.** In CommentsPanel, `internal` defaults to true.
+- **After sign-in, Frank goes to `/dashboard`:** from `LoginForm` (`redirect_to` or `/dashboard`), `app/page.tsx`, and `lib/supabase/middleware.ts`.
+- **Both Tables open a post with `router.push` to `/creatives/{id}`:** `ProjectCalendarTable` and `ContinuousCalendarTable`, from the name and from the artwork.
+
+Plan:
+- **One migration on `users`:**
+  - `open_fullscreen` (false)
+  - `comment_default_private` (true)
+  - `home_client_id` (null means the Clients list; set null if the client is deleted)
+  - notification preferences for four groups, each with In Frank and By email, defaulting to bell on and email off:
+    1. client comments and approvals
+    2. @mentions, in comments and the discussion
+    3. live without approval
+    4. artwork about to be removed
+- **A BEFORE INSERT trigger on `notifications`** sets `in_app` and `email_due` from the recipient's preferences, and skips the row when both are off. That's one place, rather than redefining the five functions that write notices.
+- **Client Preferences** stops reading `notify_in_app` and `notify_email`; Who hears stays.
+- **Email:**
+  - Widen the sender to every owed kind, with three new templates (mention, live without approval, artwork removal).
+  - Mentions are sent after the comment or discussion post.
+  - Live without approval and artwork removal are sent from the nightly job.
+- **Profile → Preferences** replaces Profile → Notifications, which redirects to it. It holds:
+  - Notifications, with Tips moved in
+  - Comments
+  - Viewing
+  - Start page
+  - Clients' people see Viewing only.
+- **Opening from the Table:** with the setting on, both Tables open `/creatives/{id}?full=1`, and the post page opens in Fullscreen on Content.
+- **Start page:** used after sign-in and on `/`, but not the Clients link in the menu.
+- **Tests:**
+  - each setting saving
+  - the Table opening Fullscreen
+  - the comment default
+  - the start page
+  - a notice skipped or emailed by the person's choice, seeded through real sessions
+  - the client-notification specs updated
+
+Roughly a day's work. The migration goes to staging first and to live right before the push.
+
 ## Comments in Fullscreen (1.104.0, 2026-11-25)
 
 Direct instruction: a hide/unhide comments panel in Fullscreen, to write comments there. The page's own comments panel is lifted over the dark at the right when Fullscreen opens, at its usual width (363px, 413px from 1700px), with the phone centred in what's left. It's one panel, not a second copy, so a half-written comment carries between the page and Fullscreen. A Hide Comments / Show Comments button sits among Fullscreen's tools, before close. Hidden, the panel goes back to its place under the dark and the phone takes the whole window. Shown is the default, kept while the post is open. Only where the page shows comments (a Client outside Client Review has neither). Esc typed in the comments is theirs and no longer closes Fullscreen. No database change.

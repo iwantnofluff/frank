@@ -117,10 +117,16 @@ export type SharedReviewResult =
     };
 
 export interface SharedFeedEntry {
+  // Only for a post this link shares.
   id: string | null;
-  // Only for a post this link doesn't share that's still in Internal
-  // Review (phase68); null otherwise.
+  // For a post this link doesn't share: in Internal Review (phase68), or
+  // Approved or Live (phase166); null otherwise.
   name?: string | null;
+  // An Approved or Live post's date, and its artwork's small copy unless
+  // removed (phase166).
+  date?: string | null;
+  cover_url?: string | null;
+  cover_video?: boolean;
   stage: number;
   reel: boolean;
 }

@@ -10540,6 +10540,13 @@ a.profproject:hover .pp-t b {
   background: var(--canvas);
   border: 1px dashed var(--line-2);
 }
+/* An Approved or Live post the link doesn't share (phase166): its artwork,
+   name and date as the link's own tiles show them, but with the other
+   posts' dashed edge rather than the link's red one, and it doesn't open. */
+.sharedfeed-planned.sharedfeed-done {
+  border: 1px dashed var(--line-2);
+  cursor: default;
+}
 /* A tile's stage, in the Review page's stage switch colours (direct
    instruction), Frank's own. The tints are see-through, so over artwork they sit on
    white. */
