@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.111.1",
+    date: "2026-11-26",
+    title: "Share's months count the statuses picked",
+    changes: ["In the Table's Share window, each month counts only the posts on the statuses picked, and months with none drop out."],
+  },
+  {
     version: "1.111.0",
     date: "2026-11-26",
     title: "Share a Table on a chosen month",

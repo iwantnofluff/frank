@@ -33,7 +33,7 @@ export function ShareTableModal({
   clientId,
   clientName,
   isAdmin,
-  months,
+  monthsFor,
   onClose,
 }: {
   projectId: string;
@@ -42,8 +42,9 @@ export function ShareTableModal({
   clientId: string;
   clientName: string;
   isAdmin: boolean;
-  // The months the project's posts fall in (postMonths), to open on.
-  months: { month: string; count: number }[];
+  // The months the project's posts fall in (postMonths), to open on,
+  // counted for the statuses picked.
+  monthsFor: (statuses: StatusKey[]) => { month: string; count: number }[];
   onClose: () => void;
 }) {
   // The statuses it opens on (direct instruction), with the Table's own
@@ -56,6 +57,13 @@ export function ShareTableModal({
   const query = [param && `statuses=${param}`, month && `month=${month}`].filter(Boolean).join("&");
   const url = `${window.location.origin}/projects/${projectId}${query ? `?${query}` : ""}`;
   const word = itemWord(planner ? "scheduled" : "continuous");
+  // Months with none of those statuses drop out, but not the one picked,
+  // which says 0 rather than change by itself.
+  const counted = monthsFor(statuses);
+  const months =
+    month && !counted.some((m) => m.month === month)
+      ? [...counted, { month, count: 0 }].sort((a, b) => a.month.localeCompare(b.month))
+      : counted;
   const monthName = (m: string) => new Date(`${m}-01T00:00:00`).toLocaleString("en-GB", { month: "long", year: "numeric" });
   const [copied, setCopied] = useState<{ kind: TableMessageKind; ok: boolean } | null>(null);
   const [previewing, setPreviewing] = useState<{ kind: TableMessageKind; rect: DOMRect } | null>(null);

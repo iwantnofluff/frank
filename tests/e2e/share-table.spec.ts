@@ -50,14 +50,16 @@ test("Share copies the Table's link, which a client signs in to open", async ({ 
   await frank.createCreativeAtStage(2, "Unshared Production Post");
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Share Table" }).click();
+  const month = dlg.getByLabel("Month it opens on");
+  await expect(month.locator("option", { hasText: "March 2027" })).toHaveText("March 2027 · 3 posts");
   await dlg.getByRole("button", { name: "Status" }).click();
   await statuses.getByRole("checkbox", { name: "All Statuses" }).click();
   await statuses.getByRole("checkbox", { name: /^1\./ }).click();
   await statuses.getByRole("checkbox", { name: /^4\./ }).click();
   await statuses.getByRole("button", { name: "Done" }).click();
-  const month = dlg.getByLabel("Month it opens on");
   await expect(month.locator("option").first()).toHaveText("This month, when it’s opened");
-  await expect(month.locator("option", { hasText: "March 2027" })).toHaveText("March 2027 · 3 posts");
+  // Counted for the statuses picked (direct instruction): not In Production's.
+  await expect(month.locator("option", { hasText: "March 2027" })).toHaveText("March 2027 · 2 posts");
   await month.selectOption("2027-03");
   await dlg.getByRole("button", { name: "Just Link" }).click();
   const picked = await page.evaluate(() => navigator.clipboard.readText());

@@ -16,7 +16,7 @@ import { useMyMembership } from "@/hooks/use-my-membership";
 import { seesAllClients } from "@/lib/roles";
 import { SplitButton } from "@/components/ui/SplitButton";
 import { errorMessage } from "@/lib/errors";
-import { parseMonthParam, parseStatusesParam, postMonths } from "@/lib/post-filters";
+import { matchesFilter, parseMonthParam, parseStatusesParam, postMonths } from "@/lib/post-filters";
 import { ProjectCalendarTable } from "@/components/project/ProjectCalendarTable";
 import { ContinuousCalendarTable } from "@/components/project/ContinuousCalendarTable";
 import { ProjectSettings } from "@/components/project/ProjectSettings";
@@ -147,7 +147,7 @@ export default function ProjectPage({
   // Which statuses hide their posts (phase143), before the posts are
   // drawn, so a hidden one never shows for a moment. Read here and kept
   // for the tables, which filter with it.
-  const { isPending: hiddenPending } = useHiddenStatusIds();
+  const { data: hiddenStatuses, isPending: hiddenPending } = useHiddenStatusIds();
   const isLoading = projectLoading || creativesLoading || hiddenPending;
   const columns = customColumns ?? [];
   // Fails closed like every other isStaff gate this session: hidden/
@@ -442,7 +442,15 @@ export default function ProjectPage({
           clientId={project.client_id}
           clientName={project.clients?.name ?? "the client"}
           isAdmin={isAdmin}
-          months={postMonths(activeCreatives.map((c) => (project.delivery === "continuous" ? c.due_on : c.scheduled_at)))}
+          // Counted for the statuses picked (direct instruction), as the
+          // Table will show them: hidden ones (phase143) left out.
+          monthsFor={(statuses) =>
+            postMonths(
+              activeCreatives
+                .filter((c) => matchesFilter(c, { statuses, platform: "all", hidden: hiddenStatuses }))
+                .map((c) => (project.delivery === "continuous" ? c.due_on : c.scheduled_at)),
+            )
+          }
           onClose={() => setShareOpen(false)}
         />
       )}
