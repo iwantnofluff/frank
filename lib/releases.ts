@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.111.2",
+    date: "2026-11-26",
+    title: "Tidier comment box options",
+    changes: [
+      "Private, Slack and On behalf under the comment box are the size of the table's small buttons, and no longer shift when ticked.",
+      "On behalf has a row of its own, with its Source beside it; Approve Concept and Post sit together at the left.",
+    ],
+  },
+  {
     version: "1.111.1",
     date: "2026-11-26",
     title: "Share's months count the statuses picked",

@@ -277,8 +277,9 @@ function Composer({
           {atMoment ? `At ${formatVideoTime(moment)}` : `Not at ${formatVideoTime(moment)}`}
         </button>
       )}
-      {/* Every option in one row, Post at its end (direct instruction),
-          wrapping in a narrow panel. */}
+      {/* The options in a row, wrapping in a narrow panel, then Approve
+          Concept and Post on their own line, at the left (direct
+          instruction). */}
       <div className="cf opts">
         {onVo && showInternalToggle ? (
           <span className="intog">Private (the VO is for your team only)</span>
@@ -307,7 +308,9 @@ function Composer({
           </label>
         )}
         {clientName && !onVo && (
-          <>
+          // On behalf and its Source wrap as one (direct instruction: below
+          // the others when a long name won't fit beside them).
+          <span className="cf-behalf">
             <label className="intog">
             <input
               type="checkbox"
@@ -332,11 +335,10 @@ function Composer({
               </select>
             </span>
           )}
-          </>
+          </span>
         )}
         <div className="grow" />
-        {/* Approve Concept and Post together at the end (direct
-            instruction), wrapping as one. */}
+        {/* Approve Concept and Post together (direct instruction). */}
         <span className="cf-send">
           {beside}
           <button
