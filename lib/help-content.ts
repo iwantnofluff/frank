@@ -121,7 +121,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         kind: "steps",
         items: [
-          "Concept: the post is planned and its Concept written, waiting for your team to approve it.",
+          "Concept: the post is planned and its Concept written, waiting for the client or your team to approve it.",
           "In Production: the Concept is approved and your team is making the artwork and copy.",
           "Internal Review: your team checks the artwork and copy.",
           "Client Review: the client sees it, through Frank or a review link, and comments.",
@@ -130,7 +130,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         ],
       },
       { kind: "p", text: "On a post, the stage switch shows all six as numbered pills, the post's own stage in its colour: Concept and In Production red, Internal Review and Client Review orange, Approved and Live green." },
-      { kind: "p", text: "A post moves to In Production when someone approves its Concept: Approve Concept, beside Post in its comments, or the green Approve Concept button in [the table's](project:) Concept column. Only your team can; a client changes no stage. It moves to Internal Review by itself when its first artwork or copy is saved, approved or not. Pick Internal Review, Client Review, Approved or Live to move it on from there." },
+      { kind: "p", text: "A post moves to In Production when someone approves its Concept: Approve Concept, beside Post in its comments, or the green Approve Concept button in [the table's](project:) Concept column. The client can approve it too; it's the only stage a client changes. It moves to Internal Review by itself when its first artwork or copy is saved, approved or not. Pick Internal Review, Client Review, Approved or Live to move it on from there." },
       { kind: "p", text: "Every stage can have statuses for your team, set for the whole workspace in [Settings → General → Statuses](/settings/general/statuses). A post takes its stage's first status when it gets there, and its stage pill shows it, lettered within the stage: 2a. In Progress (Content), 3b. Internal QC (Creative). In Production and Internal Review start with In Progress (Content) and In Progress (Creative); Internal QC (Copy), Internal QC (Creative), Hold and Cancel. The other stages start with none. For your team that pill opens a list: on the post, the stage alone (3. Internal) and its statuses; in [the table's](project:) Status column, every stage and status, so a post can be moved to any of them from there, back to Concept or Production too. A post still in Concept moves on once its Concept is approved: Frank asks first, with Approve Concept. Owners and Admins add, rename, reorder and remove them; removing one moves its posts to the first left in that stage. Clients don't see them, even in Client Review." },
       { kind: "p", text: "A client can have its own statuses instead, in its [Client Settings → Statuses](client:/settings/statuses): Use Its Own starts them as a copy of the workspace's, to change for that client alone. Changes to the workspace's statuses then don't reach it. Use the Agency's goes back, moving its posts to the workspace's status of the same name, or the stage's first." },
       { kind: "p", text: "A post with no date yet is an Idea (0. Idea), listed under No Scheduled Date at the foot of [the table](project:), where Add Date gives it one. Ideas are your team's only: clients don't see them." },
@@ -180,7 +180,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       },
       {
         kind: "p",
-        text: "Open a project on your phone and its posts show as cards, a month at a time, in date order. Each card has its date and stage, the first line of its caption (See more shows the rest), Copy Caption, Final Asset for your team, See Post to open it, and for your team, Approve Concept while a concept is waiting. The arrows change the month, Today goes to today's posts (or the latest day before with one), and the menu beside them picks a platform. Your team can tap a card's stage to move the post to another stage or status, as in the table.",
+        text: "Open a project on your phone and its posts show as cards, a month at a time, in date order. Each card has its date and stage, the first line of its caption (See more shows the rest), Copy Caption, Final Asset for your team, See Post to open it, and Approve Concept while a concept is waiting. The arrows change the month, Today goes to today's posts (or the latest day before with one), and the menu beside them picks a platform. Your team can tap a card's stage to move the post to another stage or status, as in the table.",
       },
       {
         kind: "p",
@@ -191,7 +191,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         items: [
           "Copy Caption copies the caption with its line breaks and paragraphs, ready to paste.",
           "Final Asset opens the link to the finished creative, for your team only.",
-          "Comments are under the post: read them, reply, and add your own. Approve Concept is there for your team while a concept is waiting.",
+          "Comments are under the post: read them, reply, and add your own. Approve Concept is there while a concept is waiting.",
           "The project's name at the top takes you back to it.",
           "Adding clients, projects and posts, the table's columns and views, Ideas, editing, sharing, choosing versions and pinning comments on the artwork stay on a computer.",
           "Settings, a client's Settings and Knowledge, Analytics, Calendar and My Profile are made for a computer: on a phone they say so, with a way back to your clients.",
@@ -515,8 +515,8 @@ export const HELP_ARTICLES: HelpArticle[] = [
         ],
       },
       { kind: "h", text: "Approve the Concept" },
-      { kind: "p", text: "While a post is in Concept with its Concept written, Approve Concept sits beside Post. Anyone on your team who can see the post can press it, or use the green Approve Concept button in [the table's](project:) Concept column. Clients can't." },
-      { kind: "p", text: "Approving moves the post to In Production and adds an Approved Concept comment in the approver's name. Concepts a client approved before 26 Nov 2026 say Client Approved Concept, and show in [the table's](project:) Client Feedback column." },
+      { kind: "p", text: "While a post is in Concept with its Concept written, Approve Concept sits beside Post. Anyone on the post can press it, the client included, or use the green Approve Concept button in [the table's](project:) Concept column." },
+      { kind: "p", text: "Approving moves the post to In Production and adds a comment in the approver's name: Approved Concept from your team, Client Approved Concept from the client. The client's shows in [the table's](project:) Client Feedback column." },
       { kind: "note", text: "Clients see and add comments while a post is in Concept or Client Review, and never see private ones." },
     ],
   },
@@ -690,7 +690,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         items: [
           "Someone at one of your clients, signed in to Frank. Can be at more than one of your clients.",
           "Sees that client's projects (or the ones they're on), the posts (not Ideas) and [the client's Knowledge](client:/settings/knowledge).",
-          "Sees and adds public comments only while a post is in Client Review. Sees only each post's latest artwork and copy, with no Checks, and changes no stage or status.",
+          "Sees and adds public comments only while a post is in Concept or Client Review, and approves a post's Concept. Sees only each post's latest artwork and copy, with no Checks, and changes no other stage or status.",
           "Approves on review links unless [the client's Preferences](client:/settings/preferences) say the agency approves.",
           "Never sees private comments, other clients, or your settings.",
         ],

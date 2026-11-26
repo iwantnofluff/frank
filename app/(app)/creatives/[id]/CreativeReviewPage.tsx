@@ -334,12 +334,13 @@ export function CreativeReviewPage({ id }: { id: string }) {
   // clicking a marker here and clicking a comment there both read and write
   // the same "which thread is highlighted" state.
   const { data: fetchedComments } = useComments(id);
-  // A client sees the comments only while the post is in Client Review
-  // (direct instruction, 26 Nov 2026; Concept too from phase115 until
-  // then): no panel, pins or timeline marks before or after. Hidden until
-  // we know who's looking, so a client never glimpses them. The database
-  // holds them to it as well (phase167).
-  const showComments = !!membership && (membership.client_id === null || creative?.stage === STAGE.review);
+  // A client sees the comments only while the post is in Concept or Client
+  // Review (direct instruction, 26 Nov 2026): no panel, pins or timeline
+  // marks at the other stages. Hidden until we know who's looking, so a
+  // client never glimpses them. The database holds them to it as well
+  // (phase168).
+  const showComments =
+    !!membership && (membership.client_id === null || creative?.stage === STAGE.concept || creative?.stage === STAGE.review);
   const allComments = showComments ? fetchedComments : [];
   const clientLogoUrl = useClientLogoUrl(creative?.projects?.client_id);
   // A comment made anywhere, on any device, shows here at once (direct

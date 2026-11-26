@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.107.0",
+    date: "2026-11-26",
+    title: "Clients comment and approve in Concept",
+    changes: [
+      "Signed in to Frank, a client comments on a post in Concept as well as in Client Review.",
+      "A client can approve a concept again, from the post or the Table. It's the only stage they change.",
+    ],
+  },
+  {
     version: "1.106.1",
     date: "2026-11-26",
     title: "Fullscreen comments line up",
