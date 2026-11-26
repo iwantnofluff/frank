@@ -35,5 +35,9 @@ export function useProject(projectId: string) {
       return data as unknown as ProjectRow;
     },
     enabled: !!projectId,
+    // A project the caller can't see comes back as no row (PGRST116): said
+    // at once, not after three retries (a shared Table link, opened by
+    // someone not on the project).
+    retry: (count, error) => (error as { code?: string }).code !== "PGRST116" && count < 3,
   });
 }

@@ -2,7 +2,6 @@
 
 import { useMemo, useRef, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
-import { useViewportFit } from "@/hooks/use-viewport-fit";
 import { useCreatives, type CreativeListRow } from "@/hooks/use-creatives";
 import { isHiddenPost, useHiddenStatusIds } from "@/hooks/use-stage-statuses";
 import {
@@ -19,6 +18,7 @@ import { useLatestFeedbackByCreative } from "@/hooks/use-latest-feedback-by-crea
 import { useLatestVersionAt } from "@/hooks/use-latest-version-at";
 import { FeedTileArt, EmptyTileArt } from "@/components/creative-review/FeedTileArt";
 import { FeedCaptionPopover } from "@/components/creative-review/FeedCaptionPopover";
+import { MessagePreview } from "@/components/creative-review/MessagePreview";
 import { isIdea, STAGE } from "@/lib/stage-labels";
 import { reviewMessage, type ReviewMessageKind } from "@/lib/review-message";
 import { goLiveDay } from "@/lib/post-live";
@@ -594,18 +594,5 @@ export function ShareModal({
       />
     )}
     </>
-  );
-}
-
-// A copy button's whole message, as it will paste (direct instruction), in
-// the caption hover's card. Read only: it never takes the pointer, so it
-// can't hold itself open over the buttons.
-function MessagePreview({ text, anchorRect }: { text: string; anchorRect: DOMRect }) {
-  const ref = useRef<HTMLDivElement>(null);
-  useViewportFit(ref, anchorRect, { side: "below", gap: 6 });
-  return (
-    <div ref={ref} className="copypop on msgpop" role="tooltip">
-      <div className="cp-row">{text}</div>
-    </div>
   );
 }

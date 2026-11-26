@@ -7048,6 +7048,27 @@ a.inlink {
   gap: 8px;
   flex-wrap: wrap;
 }
+/* Share Table: who at the client can open it, a name and an email a line. */
+.sharepeople {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sharepeople li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+}
+.sharepeople li span {
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 /* A copy button's full message on hover, line breaks kept as it pastes. */
 .msgpop {
   pointer-events: none;

@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.105.0",
+    date: "2026-11-26",
+    title: "Share a Table with your client",
+    changes: [
+      "A project's Table has Share beside + New: its link, for clients who sign in to Frank, copied as Link + Instructions, Link + Review or Just Link.",
+      "Owners and Admins see in the same window who at the client is on the project and can open it.",
+      "Someone signed out who opens the link signs in, then lands on the Table. Someone not on the project is told the Table isn't available, instead of an empty page.",
+    ],
+  },
+  {
     version: "1.104.6",
     date: "2026-11-26",
     title: "Workspace search sits evenly",

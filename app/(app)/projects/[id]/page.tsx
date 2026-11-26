@@ -29,6 +29,7 @@ import { useWarmUp } from "@/components/ui/useWarmUp";
 // The post editor opens on a click: loaded then, not with the page (and
 // warmed once the page settles, so it still opens at once).
 const CreativeModal = lazyWindow(() => import("@/components/creative-review/CreativeModal").then((m) => m.CreativeModal));
+const ShareTableModal = lazyWindow(() => import("@/components/project/ShareTableModal").then((m) => m.ShareTableModal));
 const WINDOWS = [CreativeModal.preload];
 
 type ArchiveFilter = "active" | "archived";
@@ -40,7 +41,7 @@ export default function ProjectPage({
 }) {
   useWarmUp(WINDOWS);
   const { id } = use(params);
-  const { data: project, isLoading: projectLoading } = useProject(id);
+  const { data: project, isLoading: projectLoading, error: projectError } = useProject(id);
   const {
     data: creatives,
     isLoading: creativesLoading,
@@ -84,6 +85,7 @@ export default function ProjectPage({
   // archive, delete), from its "…" menu now its row's arrow on the client's
   // page has gone (direct instruction).
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   // Its Activity Log or Discussion, in a panel from the right (phase84).
   // A mention in the bell opens it on the Discussion (?panel=discussion).
   const asked = useSearchParams().get("panel");
@@ -167,6 +169,22 @@ export default function ProjectPage({
       ),
     [creatives, archiveFilter],
   );
+
+  // Not on this project, or it's gone: said plainly, not an empty page
+  // (direct instruction: the Table's link is shared with clients).
+  if (projectError) {
+    const hidden = (projectError as { code?: string }).code === "PGRST116";
+    return (
+      <div className="pad">
+        <div className="empty">
+          <b>{hidden ? "This Table isn\u2019t available" : "Couldn\u2019t load this Table"}</b>
+          <span>
+            {hidden ? "You may not be on this project. Ask whoever sent the link to add you." : errorMessage(projectError, "Unknown error")}
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   // On a phone, the posts as cards (direct instruction): the client and
   // project, then MobileProject. Adding, the project's panels and settings,
@@ -303,7 +321,16 @@ export default function ProjectPage({
               </button>
             </>
           )}
-          {confirmedStaff && showNewBrief && <span className="toolsep" />}
+          {/* Share the Table with clients who sign in (direct
+              instruction), as the post page's Share sits beside + New. */}
+          {confirmedStaff && project && (
+            <>
+              <span className="toolsep" />
+              <button type="button" className="btn primary" aria-label="Share Table" onClick={() => setShareOpen(true)}>
+                Share
+              </button>
+            </>
+          )}
           {showNewBrief && project && (
             <SplitButton
               // "+ New" (direct instruction), its full name for screen readers.
@@ -398,6 +425,17 @@ export default function ProjectPage({
 
       <ProjectPanel projectId={id} projectName={project?.name ?? "Project"} view={panel} onClose={() => setPanel(null)} />
 
+      {shareOpen && project && (
+        <ShareTableModal
+          projectId={id}
+          projectName={project.name}
+          planner={project.delivery === "scheduled"}
+          clientId={project.client_id}
+          clientName={project.clients?.name ?? "the client"}
+          isAdmin={isAdmin}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
       {settingsOpen && project && (
         <ProjectSettings
           projectId={id}
