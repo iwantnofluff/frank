@@ -912,8 +912,10 @@ body.lightrail .search input::placeholder {
 }
 /* The admin filters' own search (a long list, direct instruction), at the
    top of the dropdown, and each row's Only, shown on hover or focus. */
-.afm-s {
-  margin-top: 10px;
+/* As far from the top as from the sides (reported directly: it sat
+   against the top; .cp-s, later in this file, had set it to 0). */
+.cp-s.afm-s {
+  margin-top: 15px;
 }
 .afm-row {
   position: relative;

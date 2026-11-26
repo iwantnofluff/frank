@@ -5185,6 +5185,12 @@ Direct instruction: the review link had no brief; add an icon before Content, so
 
 **Verified**: In the real app (dev server, staging), as a visitor with no session, at 1440 × 900 and 390 × 844, with a concept, a reference and a team member seeded: Brief showed them, Notes for Designer didn't, and the brief fitted the phone's screen (it first ran off the right edge, fixed with `width: auto`). Screenshots checked after the highlight's fade; one taken straight after the click showed Content still lit, which the logged `aria-pressed`/`aria-current` showed was the fade, not the state. shared-review-brief.spec.ts is new (desktop menu order and the brief; phone icon order, pressed state, fit). shared-review-phone.png and shared-review-desktop.png differed only by the new icon and menu item and were regenerated after looking at each diff. shared-review-public, shared-review-account, designer-note-versions and new-brief run with it against staging: 20 passed, 10 failed while the machine was loaded. Rerun, all 10 passed except the two baselines above, which then passed once regenerated. Unit tests: 311 passed.
 
+## Workspace search's gap above it (1.104.6, 2026-11-25)
+
+Reported directly, with a screenshot: in 1.104.5 the Workspace filter's search box sat against the top of its dropdown. Its `.afm-s { margin-top: 10px }` came earlier in globals.css than `.cp-s`'s own `margin: 0 15px 10px`, which won. Now `.cp-s.afm-s` sets 15px, as far from the top as from the sides.
+
+**Verified**: In the real app (staging admin address) at 1440 × 900, measured: the box is 16px from the dropdown's top and 16px from its left (15px plus the border), and it looks even in the screenshot. CSS only.
+
 ## Admin › Users' Workspace filter: search and Only (1.104.5, 2026-11-25)
 
 Direct instruction: the Workspace dropdown needs a search, as the list grows with Frank, "or suggest another approach".

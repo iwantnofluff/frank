@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.104.6",
+    date: "2026-11-26",
+    title: "Workspace search sits evenly",
+    changes: ["The search box in Admin › Users' Workspace filter sits as far from the top of its list as from the sides."],
+  },
+  {
     version: "1.104.5",
     date: "2026-11-25",
     title: "Find a workspace in Admin Users",
