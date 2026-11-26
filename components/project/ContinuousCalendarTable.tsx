@@ -1345,9 +1345,11 @@ export function ContinuousCalendarTable({
                                       {(isStaff || canApproveConcept(c)) && (
                                         <span className="cc-after">
                                           {isStaff && <EditContent onFill={fill(c, "concept").onFill} label="Concept" />}
-                                          {/* Approve Concept (phase115): anyone, the
-                                              client too, while it's in Concept. */}
-                                          {canApproveConcept(c) && <ApproveConceptButton creativeId={c.id} />}
+                                          {/* Approve Concept (phase115), while it's in
+                                              Concept: the team's only (direct
+                                              instruction, 26 Nov 2026: a client
+                                              changes no status). */}
+                                          {isStaff && canApproveConcept(c) && <ApproveConceptButton creativeId={c.id} />}
                                         </span>
                                       )}
                                     </span>

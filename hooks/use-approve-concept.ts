@@ -3,11 +3,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 
-// Approving a post's concept (phase115, direct instruction): the client or
-// anyone on the team, from the post's comments or its Concept & Reference
-// cell. The database checks who may and that it's still in Concept, moves
-// it to In Production, and records the comment in the approver's name
-// ("Client Approved Concept" or "Approved Concept").
+// Approving a post's concept (phase115, direct instruction): anyone on the
+// team (the client too until phase167: a client changes no status), from
+// the post's comments or its Concept & Reference cell. The database checks
+// who may and that it's still in Concept, moves it to In Production, and
+// records the comment in the approver's name ("Approved Concept").
 export function canApproveConcept(c: { stage: number; concept: string | null; archived_at?: string | null }): boolean {
   return c.stage === 1 && !!c.concept?.trim() && !c.archived_at;
 }

@@ -32,7 +32,7 @@ import {
 } from "@/lib/annotations";
 import { BriefPanel } from "@/components/creative-review/BriefPanel";
 import { ChecksPanel } from "@/components/creative-review/ChecksPanel";
-import { type ReviewSection } from "@/components/creative-review/ReviewNav";
+import { ALL_SECTIONS, type ReviewSection } from "@/components/creative-review/ReviewNav";
 import { SectionRail } from "@/components/creative-review/SectionRail";
 import { FeedPreviewGrid } from "@/components/creative-review/FeedPreviewGrid";
 import { PhoneFrame } from "@/components/creative-review/PhoneFrame";
@@ -73,6 +73,8 @@ import { safeZoneKind } from "@/lib/safe-zones";
 const CreativeModal = lazyWindow(() => import("@/components/creative-review/CreativeModal").then((m) => m.CreativeModal));
 const ShareModal = lazyWindow(() => import("@/components/creative-review/ShareModal").then((m) => m.ShareModal));
 const WINDOWS = [CreativeModal.preload, ShareModal.preload];
+// A client's sections: no Checks (direct instruction, 26 Nov 2026).
+const CLIENT_SECTIONS = ALL_SECTIONS.filter((s) => s.id !== "checks");
 
 // How close, in seconds, the paused moment has to be to a pin's for it to
 // show on the frame — about a frame or two either side.
@@ -332,14 +334,12 @@ export function CreativeReviewPage({ id }: { id: string }) {
   // clicking a marker here and clicking a comment there both read and write
   // the same "which thread is highlighted" state.
   const { data: fetchedComments } = useComments(id);
-  // A client sees the comments only while the post is in Concept (to
-  // comment on and approve it, phase115, direct instruction) or Client
-  // Review (direct instruction): no panel, pins or timeline marks between
-  // or after. Hidden until we know who's looking, so a client never
-  // glimpses them.
-  const showComments =
-    !!membership &&
-    (membership.client_id === null || creative?.stage === STAGE.review || creative?.stage === STAGE.concept);
+  // A client sees the comments only while the post is in Client Review
+  // (direct instruction, 26 Nov 2026; Concept too from phase115 until
+  // then): no panel, pins or timeline marks before or after. Hidden until
+  // we know who's looking, so a client never glimpses them. The database
+  // holds them to it as well (phase167).
+  const showComments = !!membership && (membership.client_id === null || creative?.stage === STAGE.review);
   const allComments = showComments ? fetchedComments : [];
   const clientLogoUrl = useClientLogoUrl(creative?.projects?.client_id);
   // A comment made anywhere, on any device, shows here at once (direct
@@ -410,21 +410,22 @@ export function CreativeReviewPage({ id }: { id: string }) {
     setHighlightedCommentId(commentId);
     const picked = (allComments ?? []).find((c) => c.id === commentId);
     // Made on another version: that version shows, its picker lit up for a
-    // moment (direct instruction).
+    // moment (direct instruction). Not for a client, who sees only the
+    // latest (direct instruction, 26 Nov 2026).
     const lit: ("creative" | "copy" | "toi" | "vo")[] = [];
-    if (picked?.creative_version_id && picked.creative_version_id !== activeCreativeVersion?.id && creativeVersions?.some((v) => v.id === picked.creative_version_id)) {
+    if (isStaff && picked?.creative_version_id && picked.creative_version_id !== activeCreativeVersion?.id && creativeVersions?.some((v) => v.id === picked.creative_version_id)) {
       setCreativeVersionId(picked.creative_version_id);
       lit.push("creative");
     }
-    if (picked?.copy_version_id && picked.copy_version_id !== activeCopyVersion?.id && copyVersions?.some((v) => v.id === picked.copy_version_id)) {
+    if (isStaff && picked?.copy_version_id && picked.copy_version_id !== activeCopyVersion?.id && copyVersions?.some((v) => v.id === picked.copy_version_id)) {
       setCopyVersionId(picked.copy_version_id);
       lit.push("copy");
     }
-    if (picked?.slide_text_version_id && picked.slide_text_version_id !== activeToi?.id && toiVersions.some((v) => v.id === picked.slide_text_version_id)) {
+    if (isStaff && picked?.slide_text_version_id && picked.slide_text_version_id !== activeToi?.id && toiVersions.some((v) => v.id === picked.slide_text_version_id)) {
       setToiVersionId(picked.slide_text_version_id);
       lit.push("toi");
     }
-    if (picked?.voiceover_version_id && picked.voiceover_version_id !== activeVo?.id && voVersions.some((v) => v.id === picked.voiceover_version_id)) {
+    if (isStaff && picked?.voiceover_version_id && picked.voiceover_version_id !== activeVo?.id && voVersions.some((v) => v.id === picked.voiceover_version_id)) {
       setVoVersionId(picked.voiceover_version_id);
       lit.push("vo");
     }
@@ -1036,11 +1037,15 @@ export function CreativeReviewPage({ id }: { id: string }) {
             <span>{creative.projects.name}</span>
           </Link>
         )}
-        <SectionRail active={activeSection} onSelect={setActiveSection} />
+        {/* No Checks for a client (direct instruction, 26 Nov 2026). */}
+        <SectionRail active={activeSection} onSelect={setActiveSection} sections={isStaff ? ALL_SECTIONS : CLIENT_SECTIONS} />
         {/* The Creative and Copy versions in the centre panel's top-right
             corner, opposite the sections (direct instruction: to give the
-            pills and buttons room). */}
+            pills and buttons room). A client sees only the latest, so no
+            pickers (direct instruction, 26 Nov 2026). */}
         <div className="vselbar">
+              {isStaff && (
+              <>
               <div className={`vsel${flash?.which.includes("creative") ? " vflash" : ""}`} key={`c${flash?.at ?? 0}`}>
                 <label htmlFor="vCreative">Creative</label>
                 <select
@@ -1096,6 +1101,8 @@ export function CreativeReviewPage({ id }: { id: string }) {
                   )}
                 </select>
               </div>
+              </>
+              )}
               {/* Text on Image's and the VO's versions (phase161, direct
                   instruction): the team's, while the placeholder shows
                   their words; the VO's on a video post only. */}
@@ -1363,7 +1370,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
               <ScrollHint formats={postFormats(creative)} />
               </PostNeighbours>
             )}
-            {activeSection === "checks" && (
+            {activeSection === "checks" && isStaff && (
               <ChecksPanel
                 creative={creative}
                 latestCopyVersion={copyVersions?.[0] ?? null}

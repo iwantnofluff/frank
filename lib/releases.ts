@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.106.0",
+    date: "2026-11-26",
+    title: "Clients comment in Client Review only",
+    changes: [
+      "Signed in to Frank, a client comments on a post only while it's in Client Review, not in Concept.",
+      "Approve Concept is your team's only: a client changes no stage or status.",
+      "A client no longer sees Checks on a post, or its version pickers: they see the latest artwork and copy.",
+    ],
+  },
+  {
     version: "1.105.1",
     date: "2026-11-26",
     title: "Share window names the project",

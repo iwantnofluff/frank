@@ -9,13 +9,15 @@ import { ALL_SECTIONS, ICONS, type ReviewSection } from "./ReviewNav";
 export function SectionRail({
   active,
   onSelect,
+  sections = ALL_SECTIONS,
 }: {
   active: ReviewSection;
   onSelect: (section: ReviewSection) => void;
+  sections?: typeof ALL_SECTIONS;
 }) {
   return (
     <nav className="secrail" aria-label="Review sections">
-      {ALL_SECTIONS.map((s) => (
+      {sections.map((s) => (
         <button
           key={s.id}
           type="button"

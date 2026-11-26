@@ -55,7 +55,7 @@ export const TIPS: Tip[] = [
   {
     id: "approve-concept",
     title: "Approve the Concept",
-    text: "A post stays in Concept until it's approved: by your team, or the client, with one click.",
+    text: "A post stays in Concept until your team approves it, with one click.",
     articleId: "comments",
     place: "table",
     // A post waiting for approval, else the column it's in, else (an empty

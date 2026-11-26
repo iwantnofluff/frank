@@ -63,15 +63,16 @@ test("a Reel's thumbnail saves as versions with its words, shows in the table an
   await expect(page.locator(".phonepop :is(.pp-media, .ig-media) img")).toBeVisible({ timeout: 15_000 });
   await expect(page.locator(".phonepop :is(.pp-media, .ig-media) video")).toHaveCount(0);
 
-  // The client, on the post's page, sees it.
+  // The client, on the post's page, sees the post, the latest only: no
+  // version pickers (direct instruction, 26 Nov 2026), Thumbnail's included.
   const ctx = await browser.newContext();
   const clientPage = await ctx.newPage();
   await admin.from("creatives").update({ stage: 4 }).eq("id", frank.creativeId);
   await frank.loginAsClient(clientPage);
   await clientPage.goto(`/creatives/${frank.creativeId}`);
-  // As the video's cover in the phone, and its version beside Creative's.
-  await expect(clientPage.getByLabel("Thumbnail")).toHaveValue(/.+/, { timeout: 15_000 });
-  await expect(clientPage.locator("#vThumb option")).toHaveText(["V2", "V1"]);
+  await expect(clientPage.getByRole("button", { name: "See the phone full size" })).toBeVisible({ timeout: 15_000 });
+  await expect(clientPage.locator(".vselbar label")).toHaveText(["Fullscreen"]);
+  await expect(clientPage.locator("#vThumb, #vCreative, #vCopy")).toHaveCount(0);
   await ctx.close();
 });
 

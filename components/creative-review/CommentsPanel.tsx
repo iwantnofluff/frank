@@ -933,8 +933,9 @@ export function CommentsPanel({
         slack={slack}
         beside={
           // Approve Concept (phase115, direct instruction): while the post
-          // is in Concept with one written, for the client or the team.
-          creative && canApproveConcept(creative) ? (
+          // is in Concept with one written, for the team only (direct
+          // instruction, 26 Nov 2026: a client changes no status).
+          isStaff && creative && canApproveConcept(creative) ? (
             <button
               type="button"
               className="btn sm approve-concept"

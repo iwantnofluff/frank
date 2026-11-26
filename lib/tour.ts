@@ -195,7 +195,7 @@ export const TOURS: Record<TourKind, TourStep[]> = {
       post: "comments",
       spot: [".composer"],
       title: "Comment and approve",
-      body: "Leave feedback here. While a post is a concept, Approve Concept sits beside Post. For the finished post, your agency sends a review link to approve it.",
+      body: "Leave feedback here while a post is in Client Review. To approve it, your agency sends a review link.",
     },
     BELL,
     END,

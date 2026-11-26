@@ -240,7 +240,9 @@ function PostCard({
         <Link className="btn mproj-see" href={`/creatives/${c.id}`}>
           See Post
         </Link>
-        {canApproveConcept(c) && <ApproveConceptButton creativeId={c.id} />}
+        {/* The team's only (direct instruction, 26 Nov 2026: a client changes
+            no status). */}
+        {statuses !== null && canApproveConcept(c) && <ApproveConceptButton creativeId={c.id} />}
       </div>
     </article>
   );
