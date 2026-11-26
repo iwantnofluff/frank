@@ -1628,14 +1628,20 @@ export function ProjectCalendarTable({
                                     expanded={expandedRow === c.id}
                                     onToggle={() => toggleRow(c.id)}
                                     tone={key === "clientFeedback" ? "client" : undefined}
-                                    // Add Client Feedback (direct instruction): into the
-                                    // post's comment box, for the team on the client's
-                                    // behalf; for a client, while they can comment
+                                    // Add Feedback (direct instruction): a client's only,
+                                    // into the post's comment box, while they can comment
                                     // (Concept or Client Review, phase168).
                                     add={
-                                      key === "clientFeedback" && !c.archived_at && (isStaff || c.stage === 1 || c.stage === 4)
-                                        ? { href: `/creatives/${c.id}?compose=${isStaff ? "client" : "1"}`, label: "Add Client Feedback" }
+                                      key === "clientFeedback" && !isStaff && !c.archived_at && (c.stage === 1 || c.stage === 4)
+                                        ? { href: `/creatives/${c.id}?compose=1`, label: "Add Feedback" }
                                         : undefined
+                                    }
+                                    // With the green Approve Concept beside it while a
+                                    // concept waits (direct instruction).
+                                    beside={
+                                      key === "clientFeedback" && !isStaff && canApproveConcept(c) ? (
+                                        <ApproveConceptButton creativeId={c.id} />
+                                      ) : undefined
                                     }
                                   />
                                 </td>

@@ -180,7 +180,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       },
       {
         kind: "p",
-        text: "Open a project on your phone and its posts show as cards, a month at a time, in date order. Each card has its date and stage, the first line of its caption (See more shows the rest), Copy Caption, Final Asset for your team, See Post to open it, and Approve Concept while a concept is waiting. The arrows change the month, Today goes to today's posts (or the latest day before with one), and the menu beside them picks a platform. Your team can tap a card's stage to move the post to another stage or status, as in the table.",
+        text: "Open a project on your phone and its posts show as cards, a month at a time, in date order. Each card has its date and stage, the first line of its caption (See more shows the rest), Copy Caption and Final Asset for your team, See Post to open it, Add Feedback for the client where they can comment, and Approve Concept while a concept is waiting. The arrows change the month, Today goes to today's posts (or the latest day before with one), and the menu beside them picks a platform. Your team can tap a card's stage to move the post to another stage or status, as in the table.",
       },
       {
         kind: "p",
@@ -399,7 +399,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "Columns, above [the table](project:), chooses its columns: tick one to show or hide it, and drag it to move it. Owners and Admins can also rename a column (for the whole project) and add the project's own with + Add Column: Single Line Text, Large Text, Number, Date, Dropdown or Checkbox. A post's own columns are filled in on its Brief, under Other Fields. Which columns show, and their order, belong to the view you're on: the tabs above the table, with + to add another.",
           "Nothing is typed straight into a cell. Each cell has its own Edit button, or Add when it's empty (Add Date, Add Team, Add Notes…), with an arrow, which opens the post's window at that field.",
           "The Creative column shows the latest artwork in a small phone with its file name under it (a video's thumbnail if it has one); hover it to see it larger, a video's thumbnail in place of the video.",
-          "Internal Feedback shows your team's latest open comment, private or public, with who said it and when above it; only your team sees the column. Client Feedback, after it, shows the client's latest open comment the same way. Show All under either lists every comment from that side, newest first, on hover. Add Client Feedback under it opens the post with its comment box ready: for your team, On behalf of the client already ticked, to log what they said elsewhere; for the client, while the post is in Concept or Client Review.",
+          "Internal Feedback shows your team's latest open comment, private or public, with who said it and when above it; only your team sees the column. Client Feedback, after it, shows the client's latest open comment the same way. Show All under either lists every comment from that side, newest first, on hover. For the client, Add Feedback under it opens the post with its comment box ready, while the post is in Concept or Client Review, with Approve Concept beside it while a concept waits.",
         ],
       },
       { kind: "h", text: "A post's page" },

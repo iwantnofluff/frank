@@ -133,11 +133,11 @@ function Composer({
   onClearDraft,
   clientName = null,
   slack = null,
-  asked = null,
+  asked = false,
 }: {
-  // Opened from the table's Add Client Feedback (direct instruction): the
-  // box focused, and for the team, On behalf of the client ticked.
-  asked?: "comment" | "client" | null;
+  // Opened from the table's Add Feedback (direct instruction): the box
+  // focused.
+  asked?: boolean;
   // The project's Slack channel and what it's sent, for the team's tick
   // (phase162); none without one, or for a client.
   slack?: ComposerSlack | null;
@@ -181,21 +181,12 @@ function Composer({
   // Sent to Slack, ticked as it starts (phase162).
   const [slackOn, setSlackOn] = useState(true);
 
-  // Asked for from the table: into the box once, ready to type, and for
-  // the team on the client's behalf once there's a client to name.
-  const [askHandled, setAskHandled] = useState(false);
-  if (asked && !askHandled && (asked === "comment" || clientName)) {
-    setAskHandled(true);
-    if (asked === "client") {
-      setForClient(true);
-      setInternal(false);
-    }
-  }
+  // Asked for from the table: into the box once, ready to type.
   useEffect(() => {
-    if (!askHandled) return;
+    if (!asked) return;
     box.current?.focus();
     box.current?.scrollIntoView({ block: "nearest" });
-  }, [askHandled, box]);
+  }, [asked, box]);
 
   // Placed: straight into the box to say what it's about.
   useEffect(() => {
@@ -344,15 +335,19 @@ function Composer({
           </>
         )}
         <div className="grow" />
-        {beside}
-        <button
-          type="button"
-          className="btn primary sm"
-          disabled={!body.trim() || submitting}
-          onClick={handleSubmit}
-        >
-          {submitting ? "Posting…" : submitLabel}
-        </button>
+        {/* Approve Concept and Post together at the end (direct
+            instruction), wrapping as one. */}
+        <span className="cf-send">
+          {beside}
+          <button
+            type="button"
+            className="btn primary sm"
+            disabled={!body.trim() || submitting}
+            onClick={handleSubmit}
+          >
+            {submitting ? "Posting…" : submitLabel}
+          </button>
+        </span>
       </div>
       {error && <p className="autherr">{error}</p>}
     </div>
@@ -672,11 +667,11 @@ export function CommentsPanel({
   slideTextVersionId = null,
   draft = null,
   onClearDraft,
-  compose = null,
+  compose = false,
 }: {
   creativeId: string;
-  // From the table's Add Client Feedback: straight into the comment box.
-  compose?: "comment" | "client" | null;
+  // From the table's Add Feedback: straight into the comment box.
+  compose?: boolean;
   // A pin, area or words placed on the post, to be commented on here.
   draft?: CommentDraft | null;
   onClearDraft?: () => void;

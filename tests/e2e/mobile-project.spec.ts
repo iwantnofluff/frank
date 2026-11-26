@@ -75,7 +75,7 @@ test("on a phone the team sees the month's posts as cards: copy, Final Asset, ap
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });
 
-test("on a phone a client's cards have Copy Caption and no Final Asset", async ({ page, frank }) => {
+test("on a phone a client's cards have Add Feedback, and no Copy Caption or Final Asset", async ({ page, frank }) => {
   test.setTimeout(90_000);
   await page.setViewportSize({ width: 390, height: 844 });
   await admin.from("creatives").update({ scheduled_at: thisMonth(2) }).eq("id", frank.creativeId);
@@ -86,11 +86,19 @@ test("on a phone a client's cards have Copy Caption and no Final Asset", async (
   await page.goto(`${APP_URL}/projects/${frank.projectId}`);
   const card = page.locator(".mproj-card", { hasText: "E2E Test Creative" });
   await expect(card).toBeVisible({ timeout: 20_000 });
-  await expect(card.getByRole("button", { name: "Copy Caption" })).toBeVisible();
+  // Copy is the team's, as on the table (direct instruction).
+  await expect(card.getByRole("button", { name: "Copy Caption" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Final Asset" })).toHaveCount(0);
   // Their stage shows, and isn't theirs to change.
   await expect(card.locator(".stg")).toBeVisible();
   await expect(card.getByRole("button", { name: /^Status of / })).toHaveCount(0);
+  // In Client Review: Add Feedback, into the post's comment box.
+  await admin.from("creatives").update({ stage: 4 }).eq("id", frank.creativeId);
+  await page.reload();
+  await card.getByRole("link", { name: "Add Feedback" }).click();
+  await page.waitForURL(new RegExp(`/creatives/${frank.creativeId}$`));
+  await expect(page.getByPlaceholder("Add a comment…")).toBeFocused({ timeout: 15_000 });
+  await expect(page.getByPlaceholder("Add a comment…")).toBeInViewport();
 });
 
 test("on a phone an Other Content project's cards go by their due date", async ({ page, frank }) => {

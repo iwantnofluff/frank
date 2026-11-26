@@ -60,7 +60,10 @@ test("a client approves a concept from the table, and it shows as their feedback
   await page.waitForSelector(".tblwrap, .empty");
   await goToMonth(page, "March 2027");
   const row = page.locator("tr[data-row]", { hasText: "Client Approves Concept" });
-  await row.getByRole("button", { name: "Approve Concept" }).click();
+  // In Concept and, beside Add Feedback, in Client Feedback (direct
+  // instruction); the latter pressed.
+  await expect(row.getByRole("button", { name: "Approve Concept" })).toHaveCount(2);
+  await row.getByRole("button", { name: "Approve Concept" }).last().click();
   await expect(row.getByRole("button", { name: "Approve Concept" })).toHaveCount(0, { timeout: 15_000 });
   const { data: client } = await admin.from("users").select("id, name").eq("email", frank.clientEmail).single();
   // Client Feedback: their name, small, over what they said.

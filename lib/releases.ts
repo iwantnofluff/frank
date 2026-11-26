@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.110.0",
+    date: "2026-11-26",
+    title: "Add Feedback for clients",
+    changes: [
+      "On the Table, Add Feedback is for clients only, with Approve Concept beside it while a concept waits.",
+      "On a phone, a client's cards have Add Feedback and no Copy Caption, as on the Table.",
+      "On a post, Approve Concept sits beside Post, and its hover matches the other buttons.",
+    ],
+  },
+  {
     version: "1.109.0",
     date: "2026-11-26",
     title: "Add Client Feedback from the Table",

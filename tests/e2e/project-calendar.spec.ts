@@ -560,8 +560,7 @@ test("project calendar — a filled cell's Edit opens the post at that field", a
   const row = page.locator("tr[data-row]", { hasText: "E2E Test Creative" });
   // Post Name, Concept, VO, Text on Image and Caption/Copy (direct
   // instruction); the copy's own button just says Copy.
-  // Add Client Feedback wears the same chip, but adds, not updates.
-  await expect(row.locator(".tedit-btn:not(.addfb-btn)")).toHaveCount(5);
+  await expect(row.locator(".tedit-btn")).toHaveCount(5);
   await expect(row.locator(".copychip:not(.tedit-btn)")).toHaveText(["Copy"]);
   for (const [title, field] of [
     ["Update the Post Name", "#nbName"],

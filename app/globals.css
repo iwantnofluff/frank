@@ -14037,6 +14037,18 @@ td.tlate {
   background: #4caf50;
   border: 0;
 }
+/* A client's Add Feedback and Approve Concept together in Client
+   Feedback (direct instruction), on their own line under any comment. */
+.fb-acts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+.fb-acts:first-child {
+  margin-top: 0;
+}
 .tpending-btn.approve:disabled {
   opacity: 0.6;
   cursor: default;
@@ -14051,10 +14063,9 @@ td.tlate {
   background: #4caf50;
   border-color: #4caf50;
   color: #fff;
-  margin-right: 6px;
-}
-.btn.approve-concept:hover:not(:disabled) {
-  filter: brightness(1.06);
+  /* Its hover swipes in as Post's does (direct instruction: the same
+     treatment as the other buttons), in its own green at 45% on white. */
+  --btn-hover: color-mix(in srgb, #4caf50 45%, #fff);
 }
 .tpending-btn svg {
   width: 10px;
@@ -16140,9 +16151,16 @@ button.help-link {
   padding-top: 3px;
   padding-bottom: 3px;
 }
-/* Post at the row's right end, on whichever line it wraps to. */
-.composer .cf.opts > .btn.primary {
+/* Post at the row's right end, on whichever line it wraps to, with
+   Approve Concept beside it (direct instruction: together). */
+.composer .cf.opts > .btn.primary,
+.composer .cf.opts > .cf-send {
   margin-left: auto;
+}
+.composer .cf-send {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 /* A reply's Edit and Delete at its right, spaced as a comment's own
    (direct instruction). */

@@ -235,11 +235,18 @@ function PostCard({
         </>
       )}
       <div className="mproj-acts">
-        {caption && <CopyCaptionChip caption={caption} label="Copy Caption" className="btn mpost-copy" />}
+        {/* As on the table (direct instruction): Copy is the team's, and a
+            client has Add Feedback where they can comment (phase168). */}
+        {caption && statuses !== null && <CopyCaptionChip caption={caption} label="Copy Caption" className="btn mpost-copy" />}
         {assetLink && <OpenAsset url={assetLink} className="mpost-asset" />}
         <Link className="btn mproj-see" href={`/creatives/${c.id}`}>
           See Post
         </Link>
+        {statuses === null && !c.archived_at && (c.stage === 1 || c.stage === 4) && (
+          <Link className="btn mproj-see" href={`/creatives/${c.id}?compose=1`}>
+            Add Feedback
+          </Link>
+        )}
         {canApproveConcept(c) && <ApproveConceptButton creativeId={c.id} />}
       </div>
     </article>

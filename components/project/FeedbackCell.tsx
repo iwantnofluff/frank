@@ -19,15 +19,18 @@ export function FeedbackCell({
   onToggle,
   tone,
   add,
+  beside,
 }: {
   feedback: PostFeedback | undefined;
   expanded: boolean;
   onToggle: () => void;
   // The client's in Client Feedback's red.
   tone?: "client";
-  // Add Client Feedback (direct instruction): straight into the post's
-  // comment box. None where the viewer can't comment.
+  // Add Feedback (direct instruction): a client's, straight into the
+  // post's comment box. None where the viewer can't comment.
   add?: { href: string; label: string };
+  // Approve Concept, beside it (direct instruction).
+  beside?: React.ReactNode;
 }) {
   const [hover, setHover] = useState<DOMRect | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -37,7 +40,9 @@ export function FeedbackCell({
   };
   const latest = feedback?.latest;
   const all = feedback?.all ?? [];
-  const addButton = add && (
+  const addButton = (add || beside) && (
+    <span className="fb-acts">
+      {add && (
     <Link
       href={add.href}
       // Update's chip and arrow (MissingContent's EditContent).
@@ -51,6 +56,9 @@ export function FeedbackCell({
         <path d="M7 17L17 7M9 7h8v8" />
       </svg>
     </Link>
+      )}
+      {beside}
+    </span>
   );
   if (!latest && !all.length) return addButton || <span className="tdim">—</span>;
   return (

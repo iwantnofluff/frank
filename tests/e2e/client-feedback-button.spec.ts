@@ -1,12 +1,12 @@
 import { test, expect, goToMonth } from "./fixtures";
 import { admin } from "./sweep";
 
-// Add Client Feedback (direct instruction): in the table's Client Feedback
-// column, straight into the post's comment box. A client gets it only where
-// they can comment (Concept or Client Review, phase168), and no Add, Update
-// or Copy buttons anywhere on the table; the team gets it on every post,
-// commenting on the client's behalf.
-test("a client's only table buttons are Add Client Feedback (and Approve Concept), into the comment box", async ({ page, frank }) => {
+// Add Feedback (direct instruction): in the table's Client Feedback column,
+// a client's only, straight into the post's comment box, where they can
+// comment (Concept or Client Review, phase168), with the green Approve
+// Concept beside it while a concept waits. A client has no Add, Update or
+// Copy buttons anywhere on the table.
+test("a client's only table buttons are Add Feedback and Approve Concept, into the comment box", async ({ page, frank }) => {
   test.setTimeout(90_000);
   const concept = await frank.createCreativeAtStage(1, "Concept Post");
   await admin.from("creatives").update({ concept: "Rain on the window.", approach_notes: ["Warmth"] }).eq("id", concept);
@@ -20,26 +20,24 @@ test("a client's only table buttons are Add Client Feedback (and Approve Concept
   await goToMonth(page, "March 2027");
   const buttons = (name: string) =>
     page.locator("tr[data-row]", { hasText: name }).locator("button:not(.pname), a.copychip").allTextContents();
-  await expect(page.locator("tr[data-row]", { hasText: "Review Post" }).getByRole("link", { name: "Add Client Feedback" })).toBeVisible({ timeout: 15_000 });
-  expect((await buttons("Concept Post")).map((t) => t.trim())).toEqual(["Approve Concept", "Add Client Feedback"]);
-  expect((await buttons("Review Post")).map((t) => t.trim())).toEqual(["Add Client Feedback"]);
+  await expect(page.locator("tr[data-row]", { hasText: "Review Post" }).getByRole("link", { name: "Add Feedback" })).toBeVisible({ timeout: 15_000 });
+  // Concept's own Approve Concept, then Client Feedback's pair.
+  expect((await buttons("Concept Post")).map((t) => t.trim())).toEqual(["Approve Concept", "Add Feedback", "Approve Concept"]);
+  expect((await buttons("Review Post")).map((t) => t.trim())).toEqual(["Add Feedback"]);
   expect(await buttons("Approved Post")).toEqual([]);
 
-  await page.locator("tr[data-row]", { hasText: "Review Post" }).getByRole("link", { name: "Add Client Feedback" }).click();
+  await page.locator("tr[data-row]", { hasText: "Review Post" }).getByRole("link", { name: "Add Feedback" }).click();
   await page.waitForURL(new RegExp(`/creatives/${review}$`));
   await expect(page.getByPlaceholder("Add a comment…")).toBeFocused({ timeout: 15_000 });
 });
 
-test("the team's Add Client Feedback opens the comment box on the client's behalf", async ({ page, frank }) => {
+test("the team has no Add Feedback on the table", async ({ page, frank }) => {
   test.setTimeout(90_000);
-  const approved = await frank.createCreativeAtStage(5, "Approved Post");
+  await frank.createCreativeAtStage(4, "Review Post");
   await frank.loginAsStaff(page);
   await page.goto(`/projects/${frank.projectId}`);
   await page.waitForSelector(".tblwrap, .empty");
   await goToMonth(page, "March 2027");
-  await page.locator("tr[data-row]", { hasText: "Approved Post" }).getByRole("link", { name: "Add Client Feedback" }).click();
-  await page.waitForURL(new RegExp(`/creatives/${approved}$`));
-  await expect(page.getByPlaceholder("Add a comment…")).toBeFocused({ timeout: 15_000 });
-  await expect(page.getByRole("checkbox", { name: /On behalf of/ })).toBeChecked();
-  await expect(page.getByRole("checkbox", { name: "Private" })).not.toBeChecked();
+  await expect(page.locator("tr[data-row]", { hasText: "Review Post" })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("link", { name: "Add Feedback" })).toHaveCount(0);
 });

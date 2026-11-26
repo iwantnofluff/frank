@@ -446,13 +446,10 @@ export function CreativeReviewPage({ id }: { id: string }) {
     }
   }
 
-  // From the table's Add Client Feedback (direct instruction): ?compose=1
-  // (a client) or ?compose=client (the team, on the client's behalf) opens
+  // From the table's Add Feedback (direct instruction): ?compose=1 opens
   // with the comment box focused, read once, then leaves the address.
   const askedCompose = useSearchParams().get("compose");
-  const [compose] = useState<"comment" | "client" | null>(() =>
-    askedCompose === "client" ? "client" : askedCompose ? "comment" : null,
-  );
+  const [compose] = useState(() => !!askedCompose);
   useEffect(() => {
     const url = new URL(window.location.href);
     if (!url.searchParams.has("compose")) return;
