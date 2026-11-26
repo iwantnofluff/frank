@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.112.0",
+    date: "2026-11-26",
+    title: "Clients write feedback in the Table",
+    changes: ["A client can type feedback straight into the Table's Client Feedback cell, on posts in Concept or Client Review. It's added as a comment on the post."],
+  },
+  {
     version: "1.111.2",
     date: "2026-11-26",
     title: "Tidier comment box options",

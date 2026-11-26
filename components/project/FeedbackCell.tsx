@@ -2,6 +2,8 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
+import { useCreateComment } from "@/hooks/use-create-comment";
+import { errorMessage } from "@/lib/errors";
 import type { PostFeedback } from "@/hooks/use-latest-feedback-by-creative";
 import { ClampText } from "@/components/project/ClampText";
 import { useViewportFit } from "@/hooks/use-viewport-fit";
@@ -20,6 +22,7 @@ export function FeedbackCell({
   tone,
   add,
   beside,
+  writeFor,
 }: {
   feedback: PostFeedback | undefined;
   expanded: boolean;
@@ -31,6 +34,9 @@ export function FeedbackCell({
   add?: { href: string; label: string };
   // Approve Concept, beside it (direct instruction).
   beside?: React.ReactNode;
+  // The post a client writes feedback on in the cell itself (direct
+  // instruction), where they can comment.
+  writeFor?: string;
 }) {
   const [hover, setHover] = useState<DOMRect | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -60,8 +66,18 @@ export function FeedbackCell({
       {beside}
     </span>
   );
-  if (!latest && !all.length) return addButton || <span className="tdim">—</span>;
+  const write = writeFor && <FeedbackWrite creativeId={writeFor} />;
+  if (!latest && !all.length)
+    return write || addButton ? (
+      <>
+        {write}
+        {addButton}
+      </>
+    ) : (
+      <span className="tdim">—</span>
+    );
   return (
+    <>
     <span className={`copyc${tone === "client" ? " feedback-note" : ""}`}>
       {latest ? (
         <>
@@ -89,7 +105,6 @@ export function FeedbackCell({
           Show All ({all.length})
         </span>
       )}
-      {addButton}
       {hover && (
         <FeedbackPopover
           all={all}
@@ -99,6 +114,10 @@ export function FeedbackCell({
         />
       )}
     </span>
+    {/* Under the comment, not in its red (direct instruction). */}
+    {write}
+    {addButton}
+    </>
   );
 }
 
@@ -127,5 +146,45 @@ function FeedbackPopover({
         </div>
       ))}
     </div>
+  );
+}
+
+// Written in the cell (direct instruction): a new comment on the post, as
+// if written on its page, posted with Enter (Shift+Enter for a new line)
+// or Post. It shows above once saved, as the client's latest.
+function FeedbackWrite({ creativeId }: { creativeId: string }) {
+  const [body, setBody] = useState("");
+  const create = useCreateComment(creativeId);
+  const post = () => {
+    const text = body.trim();
+    if (!text || create.isPending) return;
+    create.mutate({ body: text, parentId: null, visibility: "public" }, { onSuccess: () => setBody("") });
+  };
+  return (
+    // Not the row's own click, which opens the post's page.
+    <span className="fb-write" onClick={(e) => e.stopPropagation()}>
+      <textarea
+        className="cxin fb-in"
+        rows={1}
+        placeholder="Write feedback…"
+        aria-label="Write feedback"
+        value={body}
+        disabled={create.isPending}
+        onChange={(e) => setBody(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            post();
+          }
+          if (e.key === "Escape") setBody("");
+        }}
+      />
+      {body.trim() && (
+        <button type="button" className="copychip fb-post" disabled={create.isPending} onClick={post}>
+          {create.isPending ? "Posting…" : "Post"}
+        </button>
+      )}
+      {create.error && <span className="autherr tiny">{errorMessage(create.error, "Couldn't post that")}</span>}
+    </span>
   );
 }

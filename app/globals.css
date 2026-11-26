@@ -14037,6 +14037,31 @@ td.tlate {
   background: #4caf50;
   border: 0;
 }
+/* A client's feedback written in the Client Feedback cell (direct
+   instruction): the editable cells' box, one line until focused. */
+.fb-write {
+  display: block;
+  margin-top: 4px;
+}
+.fb-write:first-child {
+  margin-top: 0;
+}
+textarea.cxin.fb-in {
+  display: block;
+  min-height: 0;
+  resize: none;
+  font-size: 12.7px;
+  border-color: var(--line-2);
+  background: var(--surface);
+}
+/* Open while focused or written in, so leaving it for Post moves nothing. */
+textarea.cxin.fb-in:focus,
+textarea.cxin.fb-in:not(:placeholder-shown) {
+  min-height: 54px;
+}
+.fb-write .fb-post {
+  margin-top: 4px;
+}
 /* A client's Add Feedback and Approve Concept together in Client
    Feedback (direct instruction), on their own line under any comment. */
 .fb-acts {

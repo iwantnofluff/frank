@@ -1636,6 +1636,10 @@ export function ProjectCalendarTable({
                                         ? { href: `/creatives/${c.id}?compose=1`, label: "Add Feedback" }
                                         : undefined
                                     }
+                                    // And written in the cell itself (direct instruction).
+                                    writeFor={
+                                      key === "clientFeedback" && !isStaff && !c.archived_at && (c.stage === 1 || c.stage === 4) ? c.id : undefined
+                                    }
                                     // With the green Approve Concept beside it while a
                                     // concept waits (direct instruction).
                                     beside={
