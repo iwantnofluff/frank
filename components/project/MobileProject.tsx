@@ -40,6 +40,7 @@ export function MobileProject({
   isStaff,
   projectId,
   focusPostId,
+  initialMonth,
 }: {
   // The project's active posts.
   creatives: CreativeListRow[];
@@ -48,9 +49,11 @@ export function MobileProject({
   projectId: string;
   // The post just come back from (?post=): its month, its card in view.
   focusPostId?: string | null;
+  // A shared link's month (?month=, direct instruction).
+  initialMonth?: string | null;
 }) {
   const [anchor, setAnchor] = useState(() => {
-    const d = new Date();
+    const d = initialMonth ? new Date(initialMonth) : new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
   const [platform, setPlatform] = useState<PlatformFilter>("all");

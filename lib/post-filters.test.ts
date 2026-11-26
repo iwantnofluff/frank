@@ -1,7 +1,7 @@
 // Run with: node --experimental-strip-types --test lib/post-filters.test.ts
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { ALL_STATUSES, matchesFilter, parseStatusesParam, platformOf, STATUS_OPTIONS, statusesParam, statusFilterLabel, statusKey } from "./post-filters.ts";
+import { ALL_STATUSES, matchesFilter, parseMonthParam, parseStatusesParam, postMonths, platformOf, STATUS_OPTIONS, statusesParam, statusFilterLabel, statusKey } from "./post-filters.ts";
 
 test("status filter: Idea, then the six stages, In Production second (phase102), Live last", () => {
   assert.deepEqual(STATUS_OPTIONS.map((f) => f.value), ["idea", "1", "2", "3", "4", "5", "6"]);
@@ -57,4 +57,18 @@ test("a shared Table link's statuses: every one is the plain link, the rest roun
   assert.equal(parseStatusesParam(null), null);
   assert.deepEqual(parseStatusesParam("4,1,nope"), ["1", "4"]);
   assert.deepEqual(parseStatusesParam(""), []);
+});
+
+test("a shared Table link's month: a real one opens on its 1st, anything else on today's", () => {
+  assert.equal(parseMonthParam("2027-03"), "2027-03-01T00:00:00");
+  assert.equal(parseMonthParam(null), null);
+  assert.equal(parseMonthParam("2027-13"), null);
+  assert.equal(parseMonthParam("March"), null);
+});
+
+test("the months a project's posts fall in, counted, in order; Ideas (no date) left out", () => {
+  assert.deepEqual(postMonths(["2027-03-15T19:30:00", "2027-01-02", null, "2027-03-01"]), [
+    { month: "2027-01", count: 1 },
+    { month: "2027-03", count: 2 },
+  ]);
 });

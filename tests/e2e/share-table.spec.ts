@@ -1,4 +1,4 @@
-import { test, expect, APP_URL, goToMonth } from "./fixtures";
+import { test, expect, APP_URL } from "./fixtures";
 import { admin } from "./sweep";
 
 // Share on the Table (direct instruction): the Table's own link, for clients
@@ -43,12 +43,26 @@ test("Share copies the Table's link, which a client signs in to open", async ({ 
   await statuses.getByRole("button", { name: "Done" }).click();
   await expect(dlg.getByRole("button", { name: "Status" })).toHaveText("2 Statuses");
   await expect(dlg.locator(".linkrow code")).toHaveText(`${APP_URL}/projects/${frank.projectId}?statuses=1,4`);
-  await dlg.getByRole("button", { name: "Just Link" }).click();
-  const picked = await page.evaluate(() => navigator.clipboard.readText());
-  expect(picked).toBe(`${APP_URL}/projects/${frank.projectId}?statuses=1,4`);
 
+  // And the month it opens on (direct instruction): the months with posts,
+  // counted.
   await frank.createCreativeAtStage(1, "Shared Concept Post");
   await frank.createCreativeAtStage(2, "Unshared Production Post");
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Share Table" }).click();
+  await dlg.getByRole("button", { name: "Status" }).click();
+  await statuses.getByRole("checkbox", { name: "All Statuses" }).click();
+  await statuses.getByRole("checkbox", { name: /^1\./ }).click();
+  await statuses.getByRole("checkbox", { name: /^4\./ }).click();
+  await statuses.getByRole("button", { name: "Done" }).click();
+  const month = dlg.getByLabel("Month it opens on");
+  await expect(month.locator("option").first()).toHaveText("This month, when it’s opened");
+  await expect(month.locator("option", { hasText: "March 2027" })).toHaveText("March 2027 · 3 posts");
+  await month.selectOption("2027-03");
+  await dlg.getByRole("button", { name: "Just Link" }).click();
+  const picked = await page.evaluate(() => navigator.clipboard.readText());
+  expect(picked).toBe(`${APP_URL}/projects/${frank.projectId}?statuses=1,4&month=2027-03`);
+
   await context.clearCookies();
   await page.goto(picked);
   await page.waitForURL(/\/login\?redirect_to=/);
@@ -56,11 +70,12 @@ test("Share copies the Table's link, which a client signs in to open", async ({ 
   await page.fill('input[type="password"]', frank.clientPassword);
   await page.keyboard.press("Enter");
   // Signing in keeps the whole address, so it opens on those statuses.
-  await page.waitForURL(new RegExp(`/projects/${frank.projectId}\\?statuses=1(,|%2C)4$`));
+  await page.waitForURL(new RegExp(`/projects/${frank.projectId}\\?statuses=1(,|%2C)4&month=2027-03$`));
   await expect(page.getByRole("heading", { name: /E2E Test Project/ })).toBeVisible();
   await expect(page.getByRole("button", { name: "Share Table" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Status" })).toHaveText("2 Statuses");
-  await goToMonth(page, "March 2027");
+  // On March, without moving there.
+  await expect(page.locator(".calmonth")).toHaveText("Mar 2027");
   await expect(page.locator("tr[data-row]", { hasText: "Shared Concept Post" })).toBeVisible({ timeout: 15_000 });
   await expect(page.locator("tr[data-row]", { hasText: "Unshared Production Post" })).toHaveCount(0);
 });

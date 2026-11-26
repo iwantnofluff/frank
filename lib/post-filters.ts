@@ -36,6 +36,26 @@ export function parseStatusesParam(param: string | null): StatusKey[] | null {
   return ALL_STATUSES.filter((s) => asked.has(s));
 }
 
+// A shared Table link's starting month (direct instruction: picked in its
+// Share window): ?month=2027-03. None is whatever month it's opened in.
+export function parseMonthParam(param: string | null): string | null {
+  if (!param || !/^\d{4}-(0[1-9]|1[0-2])$/.test(param)) return null;
+  // Local midnight on the 1st, as the tables' own dates are.
+  return `${param}-01T00:00:00`;
+}
+
+// The months a project's posts fall in, as ?month= takes them, in order.
+export function postMonths(dates: (string | null | undefined)[]): { month: string; count: number }[] {
+  const counts = new Map<string, number>();
+  for (const d of dates) {
+    if (!d) continue;
+    const dt = new Date(d.length === 10 ? `${d}T00:00:00` : d);
+    const month = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}`;
+    counts.set(month, (counts.get(month) ?? 0) + 1);
+  }
+  return [...counts].sort(([a], [b]) => a.localeCompare(b)).map(([month, count]) => ({ month, count }));
+}
+
 // Which status a post counts as: Idea while it has no date, else its stage.
 export function statusKey(post: { stage: number; scheduled_at?: string | null; due_on?: string | null }): StatusKey {
   return isIdea(post) ? "idea" : (String(post.stage) as StatusKey);

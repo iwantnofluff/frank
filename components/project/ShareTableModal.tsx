@@ -7,6 +7,7 @@ import { MessagePreview } from "@/components/creative-review/MessagePreview";
 import { tableMessage, type TableMessageKind } from "@/lib/table-message";
 import { StatusFilterMenu } from "@/components/project/StatusFilterMenu";
 import { ALL_STATUSES, statusesParam, type StatusKey } from "@/lib/post-filters";
+import { itemWord } from "@/lib/item-word";
 
 // As the review link's Share window offers them (direct instruction), in
 // the order asked for.
@@ -32,6 +33,7 @@ export function ShareTableModal({
   clientId,
   clientName,
   isAdmin,
+  months,
   onClose,
 }: {
   projectId: string;
@@ -40,13 +42,21 @@ export function ShareTableModal({
   clientId: string;
   clientName: string;
   isAdmin: boolean;
+  // The months the project's posts fall in (postMonths), to open on.
+  months: { month: string; count: number }[];
   onClose: () => void;
 }) {
   // The statuses it opens on (direct instruction), with the Table's own
   // filter: every one is the plain link.
   const [statuses, setStatuses] = useState<StatusKey[]>(ALL_STATUSES);
   const param = statusesParam(statuses);
-  const url = `${window.location.origin}/projects/${projectId}${param ? `?statuses=${param}` : ""}`;
+  // And the month it opens on (direct instruction): none is whatever month
+  // it's opened in.
+  const [month, setMonth] = useState<string | null>(null);
+  const query = [param && `statuses=${param}`, month && `month=${month}`].filter(Boolean).join("&");
+  const url = `${window.location.origin}/projects/${projectId}${query ? `?${query}` : ""}`;
+  const word = itemWord(planner ? "scheduled" : "continuous");
+  const monthName = (m: string) => new Date(`${m}-01T00:00:00`).toLocaleString("en-GB", { month: "long", year: "numeric" });
   const [copied, setCopied] = useState<{ kind: TableMessageKind; ok: boolean } | null>(null);
   const [previewing, setPreviewing] = useState<{ kind: TableMessageKind; rect: DOMRect } | null>(null);
   const message = (kind: TableMessageKind) => tableMessage({ kind, projectName, planner, link: url });
@@ -83,6 +93,26 @@ export function ShareTableModal({
             Pick at least one status to share.
           </span>
         )}
+      </div>
+      <div className="field">
+        <label htmlFor="share-month">Month it opens on</label>
+        <span className="vsel">
+          <select
+            id="share-month"
+            value={month ?? ""}
+            onChange={(e) => {
+              setMonth(e.target.value || null);
+              setCopied(null);
+            }}
+          >
+            <option value="">This month, when it’s opened</option>
+            {months.map((m) => (
+              <option key={m.month} value={m.month}>
+                {monthName(m.month)} · {m.count} {m.count === 1 ? word.lower : word.manyLower}
+              </option>
+            ))}
+          </select>
+        </span>
       </div>
       <div className="field">
         <label>Link</label>

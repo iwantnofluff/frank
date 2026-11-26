@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.111.0",
+    date: "2026-11-26",
+    title: "Share a Table on a chosen month",
+    changes: ["The Table's Share window picks the month the Table opens on, from the months with posts, on a computer or a phone."],
+  },
+  {
     version: "1.110.0",
     date: "2026-11-26",
     title: "Add Feedback for clients",

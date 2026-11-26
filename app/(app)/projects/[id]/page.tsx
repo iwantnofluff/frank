@@ -16,7 +16,7 @@ import { useMyMembership } from "@/hooks/use-my-membership";
 import { seesAllClients } from "@/lib/roles";
 import { SplitButton } from "@/components/ui/SplitButton";
 import { errorMessage } from "@/lib/errors";
-import { parseStatusesParam } from "@/lib/post-filters";
+import { parseMonthParam, parseStatusesParam, postMonths } from "@/lib/post-filters";
 import { ProjectCalendarTable } from "@/components/project/ProjectCalendarTable";
 import { ContinuousCalendarTable } from "@/components/project/ContinuousCalendarTable";
 import { ProjectSettings } from "@/components/project/ProjectSettings";
@@ -125,6 +125,9 @@ export default function ProjectPage({
   // loses it once read.
   // A shared link's starting statuses (?statuses=, picked in Share).
   const askedStatuses = useMemo(() => parseStatusesParam(query.get("statuses")), [query]);
+  // And its starting month (?month=, picked in Share); a post asked for
+  // (?post=) or just added still goes to its own.
+  const askedMonth = useMemo(() => parseMonthParam(query.get("month")), [query]);
   const askedPost = query.get("post");
   const [focusPost, setFocusPost] = useState<string | null>(null);
   const [postHandled, setPostHandled] = useState<string | null>(null);
@@ -210,6 +213,7 @@ export default function ProjectPage({
             isStaff={confirmedStaff}
             projectId={id}
             focusPostId={focusPost}
+            initialMonth={askedMonth}
           />
         )}
       </div>
@@ -401,7 +405,7 @@ export default function ProjectPage({
           columnLabels={project.column_labels ?? {}}
           canAddColumns={isAdmin}
           isStaff={confirmedStaff}
-          initialFocusDate={calendarFocusDate}
+          initialFocusDate={calendarFocusDate ?? askedMonth}
           focusPostId={focusPost}
           draftRow={draftRow}
           initialStatuses={askedStatuses}
@@ -421,7 +425,7 @@ export default function ProjectPage({
           columnLabels={project.column_labels ?? {}}
           canAddColumns={isAdmin}
           isStaff={confirmedStaff}
-          initialFocusDate={calendarFocusDate}
+          initialFocusDate={calendarFocusDate ?? askedMonth}
           focusPostId={focusPost}
           draftRow={draftRow}
           initialStatuses={askedStatuses}
@@ -438,6 +442,7 @@ export default function ProjectPage({
           clientId={project.client_id}
           clientName={project.clients?.name ?? "the client"}
           isAdmin={isAdmin}
+          months={postMonths(activeCreatives.map((c) => (project.delivery === "continuous" ? c.due_on : c.scheduled_at)))}
           onClose={() => setShareOpen(false)}
         />
       )}
