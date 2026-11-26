@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.105.1",
+    date: "2026-11-26",
+    title: "Share window names the project",
+    changes: ["The Table's Share window is titled Share and the project's name, in place of Share Table."],
+  },
+  {
     version: "1.105.0",
     date: "2026-11-26",
     title: "Share a Table with your client",

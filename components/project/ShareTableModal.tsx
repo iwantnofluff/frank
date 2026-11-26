@@ -50,7 +50,8 @@ export function ShareTableModal({
   return (
     <>
     <Modal
-      title="Share Table"
+      // Named for the project (direct instruction).
+      title={`Share ${projectName}`}
       size="sm"
       onClose={onClose}
       footer={

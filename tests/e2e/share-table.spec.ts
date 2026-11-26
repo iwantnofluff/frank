@@ -9,7 +9,7 @@ test("Share copies the Table's link, which a client signs in to open", async ({ 
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/projects/${frank.projectId}`);
   await page.getByRole("button", { name: "Share Table" }).click();
-  const dlg = page.getByRole("dialog", { name: "Share Table" });
+  const dlg = page.getByRole("dialog", { name: "Share E2E Test Project" });
   await expect(dlg.locator(".sharepeople li")).toHaveCount(1);
   // As on a review link's Share window: three ways, each message shown on
   // hover as it will paste.

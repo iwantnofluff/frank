@@ -5185,6 +5185,14 @@ Direct instruction: the review link had no brief; add an icon before Content, so
 
 **Verified**: In the real app (dev server, staging), as a visitor with no session, at 1440 × 900 and 390 × 844, with a concept, a reference and a team member seeded: Brief showed them, Notes for Designer didn't, and the brief fitted the phone's screen (it first ran off the right edge, fixed with `width: auto`). Screenshots checked after the highlight's fade; one taken straight after the click showed Content still lit, which the logged `aria-pressed`/`aria-current` showed was the fade, not the state. shared-review-brief.spec.ts is new (desktop menu order and the brief; phone icon order, pressed state, fit). shared-review-phone.png and shared-review-desktop.png differed only by the new icon and menu item and were regenerated after looking at each diff. shared-review-public, shared-review-account, designer-note-versions and new-brief run with it against staging: 20 passed, 10 failed while the machine was loaded. Rerun, all 10 passed except the two baselines above, which then passed once regenerated. Unit tests: 311 passed.
 
+## Share window named for the project (1.105.1, 2026-11-26)
+
+Direct instruction: the Table's Share window is titled "Share <project name>" (e.g. "Share Content Planner") instead of "Share Table". The window's name for screen readers follows it. The Table's Share button keeps its accessible name, "Share Table".
+
+**Verified**: share-table.spec.ts now finds the window by "Share E2E Test Project" and passes; tsc and eslint clean.
+
+**Found on the way, not fixed** (26 Nov 2026, checking what a client sees by stage with a real client session): a client's post page reports a hydration mismatch in development ("the server rendered HTML didn't match the client"), and one request on it comes back 406. Seen on a Concept post; the team's view not checked. Left for a decision.
+
 ## Share on the Table (1.105.0, 2026-11-26)
 
 Direct instruction: a Share button on the Table that shares a link straight to it. After first planning a guest link that opens without an account (as review links do), the user narrowed it: only clients who sign in to see it. So there is no new link, schema or permission: the Table's own address already sends anyone signed out to sign in and back, and only opens for people on the project.
