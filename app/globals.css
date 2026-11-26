@@ -3629,6 +3629,17 @@ select.sort:hover {
   box-shadow: -1px 0 0 var(--line-2);
   animation: pexpand-in var(--dur-open) var(--ease-open);
 }
+/* Its heading and filter centred on the same line as the tools beside it
+   (direct instruction: they sat high): as tall as the tools' 20px from
+   the top, their height, and 20px again (and its 1px rule), and even
+   above and below (the
+   page's own header is padded unevenly, to line up with the centre's
+   buttons, which Fullscreen covers). */
+.review.fscmts > .cmts > .cmts-h {
+  min-height: calc(20px * 2 + 34px + 1px);
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
 .review.fscmts .pexpand.on {
   right: 363px;
 }

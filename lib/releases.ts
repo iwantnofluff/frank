@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.106.1",
+    date: "2026-11-26",
+    title: "Fullscreen comments line up",
+    changes: ["In Fullscreen, the comments panel's heading and filter sit level with the buttons beside them."],
+  },
+  {
     version: "1.106.0",
     date: "2026-11-26",
     title: "Clients comment in Client Review only",

@@ -5185,6 +5185,12 @@ Direct instruction: the review link had no brief; add an icon before Content, so
 
 **Verified**: In the real app (dev server, staging), as a visitor with no session, at 1440 × 900 and 390 × 844, with a concept, a reference and a team member seeded: Brief showed them, Notes for Designer didn't, and the brief fitted the phone's screen (it first ran off the right edge, fixed with `width: auto`). Screenshots checked after the highlight's fade; one taken straight after the click showed Content still lit, which the logged `aria-pressed`/`aria-current` showed was the fade, not the state. shared-review-brief.spec.ts is new (desktop menu order and the brief; phone icon order, pressed state, fit). shared-review-phone.png and shared-review-desktop.png differed only by the new icon and menu item and were regenerated after looking at each diff. shared-review-public, shared-review-account, designer-note-versions and new-brief run with it against staging: 20 passed, 10 failed while the machine was loaded. Rerun, all 10 passed except the two baselines above, which then passed once regenerated. Unit tests: 311 passed.
 
+## Fullscreen comments' heading centred with the tools (1.106.1, 2026-11-26)
+
+Reported directly, with a screenshot: in Fullscreen, Comments and its filter sat high in the panel, above the line of the tools beside them (Safe Zones, Hide Comments, close). The panel's header there is now as tall as the tools' band (20px, their 34px, 20px, and its 1px rule) and padded evenly: the page's own header is padded 1.6px above and 17.6px below, to sit level with the centre's buttons, which Fullscreen covers. Fullscreen only.
+
+**Verified**: In the real app, measured at 1440 and 1800 wide: the tools' middle at 37px from the top, Comments' and the filter's at 37px too. Screenshot looked at. review-back-expand and thumbnail-frame specs pass.
+
 ## A client comments only in Client Review, and changes no status (1.106.0, 2026-11-26)
 
 Direct instruction: signed in, a client comments only on posts in Client Review, can't change any status, doesn't see Checks, and sees only the latest versions. Replaces phase115's choice (22 Oct) that a client sees a post's comments in Concept too and approves its Concept.
