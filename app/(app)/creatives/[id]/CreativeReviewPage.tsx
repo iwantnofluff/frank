@@ -446,6 +446,20 @@ export function CreativeReviewPage({ id }: { id: string }) {
     }
   }
 
+  // From the table's Add Client Feedback (direct instruction): ?compose=1
+  // (a client) or ?compose=client (the team, on the client's behalf) opens
+  // with the comment box focused, read once, then leaves the address.
+  const askedCompose = useSearchParams().get("compose");
+  const [compose] = useState<"comment" | "client" | null>(() =>
+    askedCompose === "client" ? "client" : askedCompose ? "comment" : null,
+  );
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has("compose")) return;
+    url.searchParams.delete("compose");
+    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+  }, []);
+
   // From the bell (a mention, phase138): ?comment= opens at that comment's
   // thread, once the comments are here, then leaves the address.
   // Asked again from the bell while already here, it does so again.
@@ -814,6 +828,7 @@ export function CreativeReviewPage({ id }: { id: string }) {
       voiceoverVersionId={showVoPicker ? (activeVo?.id ?? null) : null}
       draft={draft}
       onClearDraft={() => setPlaced(null)}
+      compose={compose}
     />
   ) : null;
 

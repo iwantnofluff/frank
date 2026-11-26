@@ -133,7 +133,11 @@ function Composer({
   onClearDraft,
   clientName = null,
   slack = null,
+  asked = null,
 }: {
+  // Opened from the table's Add Client Feedback (direct instruction): the
+  // box focused, and for the team, On behalf of the client ticked.
+  asked?: "comment" | "client" | null;
   // The project's Slack channel and what it's sent, for the team's tick
   // (phase162); none without one, or for a client.
   slack?: ComposerSlack | null;
@@ -176,6 +180,22 @@ function Composer({
   const [source, setSource] = useState("");
   // Sent to Slack, ticked as it starts (phase162).
   const [slackOn, setSlackOn] = useState(true);
+
+  // Asked for from the table: into the box once, ready to type, and for
+  // the team on the client's behalf once there's a client to name.
+  const [askHandled, setAskHandled] = useState(false);
+  if (asked && !askHandled && (asked === "comment" || clientName)) {
+    setAskHandled(true);
+    if (asked === "client") {
+      setForClient(true);
+      setInternal(false);
+    }
+  }
+  useEffect(() => {
+    if (!askHandled) return;
+    box.current?.focus();
+    box.current?.scrollIntoView({ block: "nearest" });
+  }, [askHandled, box]);
 
   // Placed: straight into the box to say what it's about.
   useEffect(() => {
@@ -652,8 +672,11 @@ export function CommentsPanel({
   slideTextVersionId = null,
   draft = null,
   onClearDraft,
+  compose = null,
 }: {
   creativeId: string;
+  // From the table's Add Client Feedback: straight into the comment box.
+  compose?: "comment" | "client" | null;
   // A pin, area or words placed on the post, to be commented on here.
   draft?: CommentDraft | null;
   onClearDraft?: () => void;
@@ -924,6 +947,7 @@ export function CommentsPanel({
       {approve.error && <p className="autherr">{errorMessage(approve.error, "Couldn't approve the concept")}</p>}
       <Composer
         placeholder="Add a comment…"
+        asked={compose}
         showInternalToggle={isStaff}
         moment={videoMoment}
         team={team}

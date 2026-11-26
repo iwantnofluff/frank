@@ -1479,7 +1479,7 @@ export function ContinuousCalendarTable({
                                         onToggle={() => toggleRow(c.id)}
                                         after={
                                           <>
-                                            <CopyCaptionChip caption={alt} title="Copy the Alt Text" />
+                                            {isStaff && <CopyCaptionChip caption={alt} title="Copy the Alt Text" />}
                                             <EditContent onFill={fill(c, "alt").onFill} label="Alt Text" />
                                           </>
                                         }
@@ -1508,6 +1508,7 @@ export function ContinuousCalendarTable({
                                     rows={rows}
                                     expected={exp.copy}
                                     {...fill(c, "copy")}
+                                    copyable={isStaff}
                                     expanded={expandedRow === c.id}
                                     onToggle={() => toggleRow(c.id)}
                                   />
@@ -1525,10 +1526,13 @@ export function ContinuousCalendarTable({
                                         expanded={expandedRow === c.id}
                                         onToggle={() => toggleRow(c.id)}
                                         after={
-                                          <CopyCaptionChip
-                                            caption={c.approach_notes.map((a) => `• ${a}`).join("\n")}
-                                            title="Copy the WIIFM Direction, one point a line"
-                                          />
+                                          // Copying is the team's (direct instruction: a client has no Copy).
+                                          isStaff && (
+                                            <CopyCaptionChip
+                                              caption={c.approach_notes.map((a) => `• ${a}`).join("\n")}
+                                              title="Copy the WIIFM Direction, one point a line"
+                                            />
+                                          )
                                         }
                                       >
                                         {c.approach_notes.map((a) => `• ${a}`).join("\n")}

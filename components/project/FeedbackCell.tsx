@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import type { PostFeedback } from "@/hooks/use-latest-feedback-by-creative";
 import { ClampText } from "@/components/project/ClampText";
 import { useViewportFit } from "@/hooks/use-viewport-fit";
@@ -17,12 +18,16 @@ export function FeedbackCell({
   expanded,
   onToggle,
   tone,
+  add,
 }: {
   feedback: PostFeedback | undefined;
   expanded: boolean;
   onToggle: () => void;
   // The client's in Client Feedback's red.
   tone?: "client";
+  // Add Client Feedback (direct instruction): straight into the post's
+  // comment box. None where the viewer can't comment.
+  add?: { href: string; label: string };
 }) {
   const [hover, setHover] = useState<DOMRect | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -32,7 +37,22 @@ export function FeedbackCell({
   };
   const latest = feedback?.latest;
   const all = feedback?.all ?? [];
-  if (!latest && !all.length) return <span className="tdim">—</span>;
+  const addButton = add && (
+    <Link
+      href={add.href}
+      // Update's chip and arrow (MissingContent's EditContent).
+      className="copychip tedit-btn addfb-btn"
+      title={`${add.label} on the post`}
+      // Not the row's own click, which opens the post's page.
+      onClick={(e) => e.stopPropagation()}
+    >
+      {add.label}
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M7 17L17 7M9 7h8v8" />
+      </svg>
+    </Link>
+  );
+  if (!latest && !all.length) return addButton || <span className="tdim">—</span>;
   return (
     <span className={`copyc${tone === "client" ? " feedback-note" : ""}`}>
       {latest ? (
@@ -61,6 +81,7 @@ export function FeedbackCell({
           Show All ({all.length})
         </span>
       )}
+      {addButton}
       {hover && (
         <FeedbackPopover
           all={all}

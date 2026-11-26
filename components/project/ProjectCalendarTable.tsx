@@ -1426,10 +1426,13 @@ export function ProjectCalendarTable({
                                         expanded={expandedRow === c.id}
                                         onToggle={() => toggleRow(c.id)}
                                         after={
-                                          <CopyCaptionChip
-                                            caption={c.approach_notes.map((a) => `• ${a}`).join("\n")}
-                                            title="Copy the WIIFM Direction, one point a line"
-                                          />
+                                          // Copying is the team's (direct instruction: a client has no Copy).
+                                          isStaff && (
+                                            <CopyCaptionChip
+                                              caption={c.approach_notes.map((a) => `• ${a}`).join("\n")}
+                                              title="Copy the WIIFM Direction, one point a line"
+                                            />
+                                          )
                                         }
                                       >
                                         {c.approach_notes.map((a) => `• ${a}`).join("\n")}
@@ -1561,7 +1564,7 @@ export function ProjectCalendarTable({
                                         onToggle={() => toggleRow(c.id)}
                                         after={
                                           <>
-                                            <CopyCaptionChip caption={alt} title="Copy the Alt Text" />
+                                            {isStaff && <CopyCaptionChip caption={alt} title="Copy the Alt Text" />}
                                             <EditContent onFill={fill(c, "alt").onFill} label="Alt Text" />
                                           </>
                                         }
@@ -1589,7 +1592,7 @@ export function ProjectCalendarTable({
                                         onToggle={() => toggleRow(c.id)}
                                         after={
                                           <>
-                                            <CopyCaptionChip caption={latest.text} title="Copy it, paragraphs and all" />
+                                            {isStaff && <CopyCaptionChip caption={latest.text} title="Copy it, paragraphs and all" />}
                                             <EditContent onFill={fill(c, "copy").onFill} label={copyNoun(postFormats(c))} />
                                           </>
                                         }
@@ -1625,6 +1628,15 @@ export function ProjectCalendarTable({
                                     expanded={expandedRow === c.id}
                                     onToggle={() => toggleRow(c.id)}
                                     tone={key === "clientFeedback" ? "client" : undefined}
+                                    // Add Client Feedback (direct instruction): into the
+                                    // post's comment box, for the team on the client's
+                                    // behalf; for a client, while they can comment
+                                    // (Concept or Client Review, phase168).
+                                    add={
+                                      key === "clientFeedback" && !c.archived_at && (isStaff || c.stage === 1 || c.stage === 4)
+                                        ? { href: `/creatives/${c.id}?compose=${isStaff ? "client" : "1"}`, label: "Add Client Feedback" }
+                                        : undefined
+                                    }
                                   />
                                 </td>
                               );

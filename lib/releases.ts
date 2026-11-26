@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.109.0",
+    date: "2026-11-26",
+    title: "Add Client Feedback from the Table",
+    changes: [
+      "The Table's Client Feedback column has Add Client Feedback: it opens the post with the comment box ready.",
+      "For your team it starts On behalf of the client, to log what they said elsewhere. A client gets it on posts in Concept or Client Review.",
+      "A client's Table has no Copy buttons, as it has no Add or Update.",
+    ],
+  },
+  {
     version: "1.108.0",
     date: "2026-11-26",
     title: "Share a Table on chosen statuses",

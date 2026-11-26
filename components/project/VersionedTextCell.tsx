@@ -19,6 +19,7 @@ export function VersionedTextCell({
   expected = false,
   onFill,
   addLabel,
+  copyable = true,
 }: {
   label: string;
   // node: the same, formatted, when there is one. Copy copies the text;
@@ -32,6 +33,8 @@ export function VersionedTextCell({
   // Pending's button, for the team: the post's Edit window at Copy.
   onFill?: () => void;
   addLabel?: string;
+  // Its Copy: the team's (direct instruction: a client has no Copy).
+  copyable?: boolean;
 }) {
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -60,7 +63,7 @@ export function VersionedTextCell({
           onToggle={onToggle}
           after={
             <>
-              <CopyCaptionChip caption={latest.text} title="Copy it, paragraphs and all" />
+              {copyable && <CopyCaptionChip caption={latest.text} title="Copy it, paragraphs and all" />}
               <EditContent onFill={onFill} label={label} />
             </>
           }
