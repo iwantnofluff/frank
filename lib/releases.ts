@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.108.0",
+    date: "2026-11-26",
+    title: "Share a Table on chosen statuses",
+    changes: [
+      "The Table's Share window picks which statuses the Table shows when the link opens.",
+      "Signing in from a link now lands on the whole address it was for.",
+    ],
+  },
+  {
     version: "1.107.0",
     date: "2026-11-26",
     title: "Clients comment and approve in Concept",

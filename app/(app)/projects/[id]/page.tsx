@@ -16,6 +16,7 @@ import { useMyMembership } from "@/hooks/use-my-membership";
 import { seesAllClients } from "@/lib/roles";
 import { SplitButton } from "@/components/ui/SplitButton";
 import { errorMessage } from "@/lib/errors";
+import { parseStatusesParam } from "@/lib/post-filters";
 import { ProjectCalendarTable } from "@/components/project/ProjectCalendarTable";
 import { ContinuousCalendarTable } from "@/components/project/ContinuousCalendarTable";
 import { ProjectSettings } from "@/components/project/ProjectSettings";
@@ -122,6 +123,8 @@ export default function ProjectPage({
   // Back from a post's page (?post=, direct instruction): the table opens on
   // its date, its row brought into view and lit (useFocusRow); the address
   // loses it once read.
+  // A shared link's starting statuses (?statuses=, picked in Share).
+  const askedStatuses = useMemo(() => parseStatusesParam(query.get("statuses")), [query]);
   const askedPost = query.get("post");
   const [focusPost, setFocusPost] = useState<string | null>(null);
   const [postHandled, setPostHandled] = useState<string | null>(null);
@@ -401,6 +404,7 @@ export default function ProjectPage({
           initialFocusDate={calendarFocusDate}
           focusPostId={focusPost}
           draftRow={draftRow}
+          initialStatuses={askedStatuses}
         />
       )}
 
@@ -420,6 +424,7 @@ export default function ProjectPage({
           initialFocusDate={calendarFocusDate}
           focusPostId={focusPost}
           draftRow={draftRow}
+          initialStatuses={askedStatuses}
         />
       )}
 

@@ -242,7 +242,10 @@ export async function updateSession(request: NextRequest) {
   if (!user && !isPublicPath(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    url.searchParams.set("redirect_to", pathname);
+    url.search = "";
+    // The whole address, so a shared Table link's ?statuses= survives
+    // signing in.
+    url.searchParams.set("redirect_to", pathname + request.nextUrl.search);
     return NextResponse.redirect(url);
   }
 

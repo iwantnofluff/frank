@@ -5,6 +5,8 @@ import { Modal } from "@/components/ui/Modal";
 import { useClientPeople } from "@/hooks/use-project-access";
 import { MessagePreview } from "@/components/creative-review/MessagePreview";
 import { tableMessage, type TableMessageKind } from "@/lib/table-message";
+import { StatusFilterMenu } from "@/components/project/StatusFilterMenu";
+import { ALL_STATUSES, statusesParam, type StatusKey } from "@/lib/post-filters";
 
 // As the review link's Share window offers them (direct instruction), in
 // the order asked for.
@@ -40,7 +42,11 @@ export function ShareTableModal({
   isAdmin: boolean;
   onClose: () => void;
 }) {
-  const url = `${window.location.origin}/projects/${projectId}`;
+  // The statuses it opens on (direct instruction), with the Table's own
+  // filter: every one is the plain link.
+  const [statuses, setStatuses] = useState<StatusKey[]>(ALL_STATUSES);
+  const param = statusesParam(statuses);
+  const url = `${window.location.origin}/projects/${projectId}${param ? `?statuses=${param}` : ""}`;
   const [copied, setCopied] = useState<{ kind: TableMessageKind; ok: boolean } | null>(null);
   const [previewing, setPreviewing] = useState<{ kind: TableMessageKind; rect: DOMRect } | null>(null);
   const message = (kind: TableMessageKind) => tableMessage({ kind, projectName, planner, link: url });
@@ -62,6 +68,23 @@ export function ShareTableModal({
     >
       <p className="msection-d">For clients who sign in to Frank. Anyone else is asked to sign in, and only people on this project can open it.</p>
       <div className="field">
+        <label>Statuses shown when it opens</label>
+        <div>
+          <StatusFilterMenu
+            value={statuses}
+            onChange={(next) => {
+              setStatuses(next);
+              setCopied(null);
+            }}
+          />
+        </div>
+        {statuses.length === 0 && (
+          <span className="berr" role="status">
+            Pick at least one status to share.
+          </span>
+        )}
+      </div>
+      <div className="field">
         <label>Link</label>
         <div className="linkrow">
           <code>{url}</code>
@@ -77,7 +100,7 @@ export function ShareTableModal({
                 key={opt.kind}
                 type="button"
                 className={done ? "btn sm copied" : "btn sm"}
-                disabled={done}
+                disabled={done || statuses.length === 0}
                 onMouseEnter={(e) => setPreviewing({ kind: opt.kind, rect: e.currentTarget.getBoundingClientRect() })}
                 onMouseLeave={() => setPreviewing(null)}
                 onFocus={(e) => setPreviewing({ kind: opt.kind, rect: e.currentTarget.getBoundingClientRect() })}

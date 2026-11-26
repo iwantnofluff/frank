@@ -23,6 +23,19 @@ export function statusFilterLabel(statuses: StatusKey[]): string {
   return `${statuses.length} Statuses`;
 }
 
+// A shared Table link's starting statuses (direct instruction: picked in
+// its Share window): ?statuses=1,4. Every status is the plain link.
+export function statusesParam(statuses: StatusKey[]): string | null {
+  return statuses.length === ALL_STATUSES.length ? null : statuses.join(",");
+}
+
+// What a link asked for, in the list's own order; null when it asked nothing.
+export function parseStatusesParam(param: string | null): StatusKey[] | null {
+  if (param === null) return null;
+  const asked = new Set(param.split(","));
+  return ALL_STATUSES.filter((s) => asked.has(s));
+}
+
 // Which status a post counts as: Idea while it has no date, else its stage.
 export function statusKey(post: { stage: number; scheduled_at?: string | null; due_on?: string | null }): StatusKey {
   return isIdea(post) ? "idea" : (String(post.stage) as StatusKey);

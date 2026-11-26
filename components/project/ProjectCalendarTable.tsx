@@ -250,6 +250,7 @@ export function ProjectCalendarTable({
   initialFocusDate,
   focusPostId,
   draftRow,
+  initialStatuses,
 }: {
   projectId: string;
   projectName: string;
@@ -278,6 +279,9 @@ export function ProjectCalendarTable({
   draftRow?: { onClose: () => void; onCreated: (focusDate: string | null) => void } | null;
   // The post just come back from (?post=), its row brought into view.
   focusPostId?: string | null;
+  // The statuses a shared link opens on (?statuses=, direct instruction);
+  // the filter is the viewer's to change from there.
+  initialStatuses?: StatusKey[] | null;
 }) {
   const router = useRouter();
   const prefetchPost = usePrefetchPost();
@@ -296,7 +300,7 @@ export function ProjectCalendarTable({
   // switches to the Month table (the prototype refuses instead).
   if (draftRow && viewMode === "calendar") setViewMode("month");
   // Status and platform (lib/post-filters.ts; direct instruction).
-  const [statusFilter, setStatusFilter] = useState<StatusKey[]>(ALL_STATUSES);
+  const [statusFilter, setStatusFilter] = useState<StatusKey[]>(() => initialStatuses ?? ALL_STATUSES);
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>("all");
   // Posts on a status that hides them (phase143) are left out unless
   // Show Hidden is ticked.

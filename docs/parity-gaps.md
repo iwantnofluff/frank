@@ -5185,6 +5185,14 @@ Direct instruction: the review link had no brief; add an icon before Content, so
 
 **Verified**: In the real app (dev server, staging), as a visitor with no session, at 1440 × 900 and 390 × 844, with a concept, a reference and a team member seeded: Brief showed them, Notes for Designer didn't, and the brief fitted the phone's screen (it first ran off the right edge, fixed with `width: auto`). Screenshots checked after the highlight's fade; one taken straight after the click showed Content still lit, which the logged `aria-pressed`/`aria-current` showed was the fade, not the state. shared-review-brief.spec.ts is new (desktop menu order and the brief; phone icon order, pressed state, fit). shared-review-phone.png and shared-review-desktop.png differed only by the new icon and menu item and were regenerated after looking at each diff. shared-review-public, shared-review-account, designer-note-versions and new-brief run with it against staging: 20 passed, 10 failed while the machine was loaded. Rerun, all 10 passed except the two baselines above, which then passed once regenerated. Unit tests: 311 passed.
 
+## Share picks the statuses a Table opens on (1.108.0, 2026-11-26)
+
+Direct instruction: in the Table's Share window, choose which statuses are on when the link opens.
+- The Table's Share window has "Statuses shown when it opens": the Table's own Status filter (StatusFilterMenu), every status ticked to start. With all of them the link is the plain Table address; otherwise it carries `?statuses=1,4` (`statusesParam`/`parseStatusesParam`, lib/post-filters.ts), and all three copy buttons use it. With none ticked it says to pick one and the copy buttons are off. Both tables start their Status filter from it (`initialStatuses`); the viewer can change it from there. Signing in kept only the path, so the sign-in redirect (`lib/supabase/middleware.ts`) now keeps the whole address in `redirect_to` (and no longer carries the original query onto `/login` beside it).
+- **Not done:** on a phone the project has no Status filter, so a link's statuses don't apply there; it shows every post as before.
+
+**Verified**: In the real app (dev server, staging): unticking statuses changes the link and the button's label ("2 Statuses"), none disables copying; signed out, the copied link went through sign-in and opened the Table on "2 Statuses", showing the Concept post and not the In Production one. Screenshots of the window, with the list open and closed, looked at. share-table.spec.ts covers the status choice and sign-in; post-filters unit tests cover the link's statuses. Every spec touching the status filter or sign-in run against staging, passing (some on a rerun while the machine was loaded). tsc, eslint, unit tests (318) and the build clean.
+
 ## A client comments and approves in Concept (1.107.0, 2026-11-26)
 
 Direct instruction: open commenting at Concept, and let the client approve a concept.

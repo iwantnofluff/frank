@@ -1,7 +1,7 @@
 // Run with: node --experimental-strip-types --test lib/post-filters.test.ts
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { ALL_STATUSES, matchesFilter, platformOf, STATUS_OPTIONS, statusFilterLabel, statusKey } from "./post-filters.ts";
+import { ALL_STATUSES, matchesFilter, parseStatusesParam, platformOf, STATUS_OPTIONS, statusesParam, statusFilterLabel, statusKey } from "./post-filters.ts";
 
 test("status filter: Idea, then the six stages, In Production second (phase102), Live last", () => {
   assert.deepEqual(STATUS_OPTIONS.map((f) => f.value), ["idea", "1", "2", "3", "4", "5", "6"]);
@@ -49,4 +49,12 @@ test("a post on a status that hides it is left out, unless Show Hidden takes the
   assert.equal(matchesFilter(held, { statuses: ALL_STATUSES, platform: "all", hidden }), true);
   assert.equal(matchesFilter(none, { statuses: ALL_STATUSES, platform: "all", hidden }), true);
   assert.equal(matchesFilter(cancelled, { statuses: ALL_STATUSES, platform: "all" }), true);
+});
+
+test("a shared Table link's statuses: every one is the plain link, the rest round-trip in order", () => {
+  assert.equal(statusesParam(ALL_STATUSES), null);
+  assert.equal(statusesParam(["1", "4"]), "1,4");
+  assert.equal(parseStatusesParam(null), null);
+  assert.deepEqual(parseStatusesParam("4,1,nope"), ["1", "4"]);
+  assert.deepEqual(parseStatusesParam(""), []);
 });
