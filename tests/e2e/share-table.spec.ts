@@ -17,13 +17,15 @@ test("Share copies the Table's link, which a client signs in to open", async ({ 
   await expect(dlg.locator(".sharecopy .btn")).toHaveText(["Link + Instructions", "Link + Review", "Just Link"]);
   for (const [label, line] of [
     ["Link + Instructions", "2. Log in with the email we invited you with."],
-    ["Link + Review", "Log in to see everything planned"],
+    ["Link + Review", "Log in to comment directly in the table, in the Client Feedback column"],
   ] as const) {
     await dlg.getByRole("button", { name: label }).hover();
     await expect(page.getByRole("tooltip")).toContainText(line);
     await dlg.getByRole("button", { name: label }).click();
     const text = await page.evaluate(() => navigator.clipboard.readText());
-    expect(text).toContain(`Your content planner "E2E Test Project" is ready for review:\n\n${APP_URL}/projects/${frank.projectId}\n`);
+    // Worded for what it opens on (direct instruction): every status, any
+    // month, and the project's one post.
+    expect(text).toContain(`Your post for E2E Test Project is ready for review:\n\n${APP_URL}/projects/${frank.projectId}\n`);
     expect(text).toContain(line);
     expect(text).not.toContain("Approve");
   }
@@ -61,6 +63,9 @@ test("Share copies the Table's link, which a client signs in to open", async ({ 
   // Counted for the statuses picked (direct instruction): not In Production's.
   await expect(month.locator("option", { hasText: "March 2027" })).toHaveText("March 2027 · 2 posts");
   await month.selectOption("2027-03");
+  // The message follows: March's two, in Concept and Client Review, posts.
+  await dlg.getByRole("button", { name: "Link + Instructions" }).click();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toContain("Your Mar posts for E2E Test Project are ready for review:");
   await dlg.getByRole("button", { name: "Just Link" }).click();
   const picked = await page.evaluate(() => navigator.clipboard.readText());
   expect(picked).toBe(`${APP_URL}/projects/${frank.projectId}?statuses=1,4&month=2027-03`);

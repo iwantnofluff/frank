@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.113.0",
+    date: "2026-11-26",
+    title: "Share messages say what's shared",
+    changes: [
+      "The Table's Link + Instructions and Link + Review messages name the month and whether it's concepts or posts, worded for one or several.",
+      "The instructions point to commenting in the Client Feedback column, or opening a post.",
+    ],
+  },
+  {
     version: "1.112.0",
     date: "2026-11-26",
     title: "Clients write feedback in the Table",

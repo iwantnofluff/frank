@@ -34,6 +34,7 @@ export function ShareTableModal({
   clientName,
   isAdmin,
   monthsFor,
+  feedbackColumn,
   onClose,
 }: {
   projectId: string;
@@ -45,6 +46,8 @@ export function ShareTableModal({
   // The months the project's posts fall in (postMonths), to open on,
   // counted for the statuses picked.
   monthsFor: (statuses: StatusKey[]) => { month: string; count: number }[];
+  // The Client Feedback column's name in this project, for the messages.
+  feedbackColumn: string;
   onClose: () => void;
 }) {
   // The statuses it opens on (direct instruction), with the Table's own
@@ -67,7 +70,19 @@ export function ShareTableModal({
   const monthName = (m: string) => new Date(`${m}-01T00:00:00`).toLocaleString("en-GB", { month: "long", year: "numeric" });
   const [copied, setCopied] = useState<{ kind: TableMessageKind; ok: boolean } | null>(null);
   const [previewing, setPreviewing] = useState<{ kind: TableMessageKind; rect: DOMRect } | null>(null);
-  const message = (kind: TableMessageKind) => tableMessage({ kind, projectName, planner, link: url });
+  // The messages say what it opens on (direct instruction): the month,
+  // concepts or posts, and one or several.
+  const message = (kind: TableMessageKind) =>
+    tableMessage({
+      kind,
+      projectName,
+      planner,
+      link: url,
+      month: month ? new Date(`${month}-01T00:00:00`).toLocaleString("en-GB", { month: "short" }) : null,
+      conceptsOnly: statuses.every((st) => st === "idea" || st === "1"),
+      count: month ? (counted.find((m) => m.month === month)?.count ?? 0) : counted.reduce((n, m) => n + m.count, 0),
+      feedbackColumn,
+    });
   const { data: people, isLoading } = useClientPeople(clientId, isAdmin);
   const onProject = (people ?? []).filter((p) => p.kind === "client" && p.projectIds.includes(projectId));
 

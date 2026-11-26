@@ -8,20 +8,20 @@ test("Just Link is the link alone", () => {
   assert.equal(tableMessage({ kind: "link", projectName: "Content Planner", planner: true, link }), link);
 });
 
-test("Link + Instructions, as written", () => {
+test("Link + Instructions, as written: a month's concepts", () => {
   assert.equal(
-    tableMessage({ kind: "instructions", projectName: "Content Planner", planner: true, link }),
+    tableMessage({ kind: "instructions", projectName: "Content Planner", planner: true, link, month: "Dec", conceptsOnly: true, count: 15 }),
     [
       "Hello,",
       "",
-      "Your content planner \"Content Planner\" is ready for review:",
+      "Your Dec concepts for Content Planner are ready for review:",
       "",
       link,
       "",
       "1. Open the link.",
       "2. Log in with the email we invited you with.",
-      "3. Open any post in the content planner to see it in full.",
-      "4. Comment directly on anything you’d like changed. You can pause a video to comment on a specific moment.",
+      "3. Directly comment in the table, in the Client Feedback column, or",
+      "4. Open any post in the content planner to see it in full. Pause a video to comment on a specific moment.",
       "",
       "No login yet? Reply here and we’ll send you an invite.",
       "",
@@ -30,17 +30,23 @@ test("Link + Instructions, as written", () => {
   );
 });
 
+test("one post is worded as one; no month when it opens on whatever month it is", () => {
+  const text = tableMessage({ kind: "instructions", projectName: "Launch", planner: true, link, count: 1, feedbackColumn: "Feedback" });
+  assert.match(text, /^Hello,\n\nYour post for Launch is ready for review:\n/);
+  assert.match(text, /3\. Directly comment in the table, in the Feedback column, or\n4\. Open the post in the content planner/);
+});
+
 test("Link + Review, as written, and a project that isn't a planner", () => {
   assert.equal(
-    tableMessage({ kind: "review", projectName: "Launch", planner: false, link }),
+    tableMessage({ kind: "review", projectName: "Launch", planner: false, link, month: "Mar", count: 3 }),
     [
       "Hello,",
       "",
-      "Your project \"Launch\" is ready for review:",
+      "Your Mar assets for Launch are ready for review:",
       "",
       link,
       "",
-      "Log in to see everything planned, and comment directly on any post you’d like changed.",
+      "Log in to comment directly in the table, in the Client Feedback column, or open any post to see it in full.",
       "",
       "Any questions? Just reply here.",
     ].join("\n"),

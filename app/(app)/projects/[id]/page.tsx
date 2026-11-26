@@ -444,6 +444,7 @@ export default function ProjectPage({
           isAdmin={isAdmin}
           // Counted for the statuses picked (direct instruction), as the
           // Table will show them: hidden ones (phase143) left out.
+          feedbackColumn={project.column_labels?.clientFeedback ?? "Client Feedback"}
           monthsFor={(statuses) =>
             postMonths(
               activeCreatives
