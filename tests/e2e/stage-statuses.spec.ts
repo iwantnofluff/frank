@@ -170,6 +170,10 @@ test("a post takes its stage's first status, the team picks another from its pil
   expect((await menu.boundingBox())!.y).toBeGreaterThanOrEqual(pill.y + pill.height);
   await menu.getByRole("option", { name: "3c. Hold" }).click();
   await expect.poll(async () => (await now()).status_id).toBe(id("Hold"));
+  // Settled on screen too: the stages are off while a pick is saving, so a
+  // point at one meanwhile opens nothing.
+  await expect(postPill).toHaveText("3c. Hold");
+  await expect(page.locator(".stagesw").getByRole("button", { name: "Client Review", exact: true })).toBeEnabled();
 
   // Pointing at another stage opens its statuses (direct instruction);
   // picking one moves the post there with it.
@@ -216,10 +220,14 @@ test("a post takes its stage's first status, the team picks another from its pil
     "6. Live",
   ]);
   await page.keyboard.press("Escape");
+  // Each pick shown before the next: the menu reopened while the table
+  // redraws from the last one moves under the pointer.
   await pick("2b. In Progress (Creative)");
   await expect.poll(now).toEqual({ stage: 2, status_id: id("In Progress (Creative)") });
+  await expect(tablePill).toHaveText("2b. In Progress (Creative)");
   await pick("3. Internal Review");
   await expect.poll(now).toEqual({ stage: 3, status_id: null });
+  await expect(tablePill).toHaveText("3. Internal Review");
   await pick("4a. Chased Once");
   await expect.poll(now).toEqual({ stage: 4, status_id: id("Chased Once") });
   await expect(tablePill).toHaveText("4a. Chased Once");
