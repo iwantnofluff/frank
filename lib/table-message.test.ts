@@ -20,8 +20,8 @@ test("Link + Instructions, as written: a month's concepts", () => {
       "",
       "1. Open the link.",
       "2. Log in with the email we invited you with.",
-      "3. Directly comment in the table, in the Client Feedback column, or",
-      "4. Open any post in the content planner to see it in full. Pause a video to comment on a specific moment.",
+      "3. Comment directly in the table’s Client Feedback column, or",
+      "4. Open any post in the content planner to see it in full and comment there. Pause a video to comment on a specific moment.",
       "",
       "No login yet? Reply here and we’ll send you an invite.",
       "",
@@ -33,7 +33,7 @@ test("Link + Instructions, as written: a month's concepts", () => {
 test("one post is worded as one; no month when it opens on whatever month it is", () => {
   const text = tableMessage({ kind: "instructions", projectName: "Launch", planner: true, link, count: 1, feedbackColumn: "Feedback" });
   assert.match(text, /^Hello,\n\nYour post for Launch is ready for review:\n/);
-  assert.match(text, /3\. Directly comment in the table, in the Feedback column, or\n4\. Open the post in the content planner/);
+  assert.match(text, /3\. Comment directly in the table’s Feedback column, or\n4\. Open the post in the content planner to see it in full and comment there/);
 });
 
 test("Link + Review, as written, and a project that isn't a planner", () => {
@@ -46,7 +46,7 @@ test("Link + Review, as written, and a project that isn't a planner", () => {
       "",
       link,
       "",
-      "Log in to comment directly in the table, in the Client Feedback column, or open any post to see it in full.",
+      "Log in to comment in the table’s Client Feedback column, or open any post to see it in full and comment there.",
       "",
       "Any questions? Just reply here.",
     ].join("\n"),

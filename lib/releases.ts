@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.113.1",
+    date: "2026-11-26",
+    title: "Clearer Share messages",
+    changes: ["The Table's Share messages give the two ways to comment one step each: in the table's Client Feedback column, or on the post."],
+  },
+  {
     version: "1.113.0",
     date: "2026-11-26",
     title: "Share messages say what's shared",

@@ -17,7 +17,7 @@ test("Share copies the Table's link, which a client signs in to open", async ({ 
   await expect(dlg.locator(".sharecopy .btn")).toHaveText(["Link + Instructions", "Link + Review", "Just Link"]);
   for (const [label, line] of [
     ["Link + Instructions", "2. Log in with the email we invited you with."],
-    ["Link + Review", "Log in to comment directly in the table, in the Client Feedback column"],
+    ["Link + Review", "Log in to comment in the table’s Client Feedback column"],
   ] as const) {
     await dlg.getByRole("button", { name: label }).hover();
     await expect(page.getByRole("tooltip")).toContainText(line);

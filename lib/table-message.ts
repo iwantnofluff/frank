@@ -42,15 +42,16 @@ export function tableMessage({
   if (kind === "review") {
     return [
       ...opening,
-      `Log in to comment directly in the table, in the ${feedbackColumn} column, or open ${one ? "the post" : "any post"} to see it in full.`,
+      `Log in to comment in the table’s ${feedbackColumn} column, or open ${one ? "the post" : "any post"} to see it in full and comment there.`,
       ...ending,
     ].join("\n");
   }
   const steps = [
     "Open the link.",
     "Log in with the email we invited you with.",
-    `Directly comment in the table, in the ${feedbackColumn} column, or`,
-    `Open ${one ? "the post" : "any post"} in the ${what} to see it in full. Pause a video to comment on a specific moment.`,
+    // The two ways to comment, one each (direct instruction).
+    `Comment directly in the table’s ${feedbackColumn} column, or`,
+    `Open ${one ? "the post" : "any post"} in the ${what} to see it in full and comment there. Pause a video to comment on a specific moment.`,
   ];
   return [
     ...opening,
