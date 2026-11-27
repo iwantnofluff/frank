@@ -258,7 +258,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "Each person's projects are listed by name under them. Click one to open that project.",
           "Edit Projects opens a window to choose their projects. Save greys out with Saved once it's done.",
           "The User or Client tag is a dropdown: pick the other to switch them, straight away. A pending invite can be resent or removed from the same dropdown.",
-          "+ Add People gives a User already on your team this client, from A User on Your Team. Each one added brings you back to the window for the next. Someone new, or one of the client's own people, is invited from [Workspace Settings, under Team](/settings/team/users).",
+          "+ Add or Invite People gives a User already on your team this client, from A User on Your Team, or invites someone new by email as a User or one of the client's own people, with the projects they're on. Each one added or invited brings you back to the window for the next.",
         ],
       },
       {

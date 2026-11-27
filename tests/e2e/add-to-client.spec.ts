@@ -57,15 +57,16 @@ test("an inviting Admin gives team Users this client, alphabetically listed, one
 
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/clients/${two.clientId}/settings/people`);
-  await page.getByRole("button", { name: "+ Add People" }).click();
+  await page.getByRole("button", { name: "+ Add or Invite People" }).click();
   const picker = page.locator("#ivExisting");
   await expect(picker).toBeVisible();
   // Joined team Users only, alphabetical: not the client's person from the
   // other client, nor an Owner, nor a pending invite, nor the Admin.
   await expect(picker.locator("option")).toHaveText(["Choose someone", "Aaron Teamwork", "Zoe Teamwork"]);
-  // Add only (direct instruction): no invite fields; new people are invited from Team.
-  await expect(page.locator("#ivFirst")).toHaveCount(0);
-  await expect(page.locator(".modal")).toContainText("invited from Workspace Settings → Team");
+  // Someone new can be invited from here too, as from a project (direct
+  // instruction).
+  await expect(page.locator("#ivFirst")).toBeVisible();
+  await expect(page.locator(".modal")).toContainText("Or invite someone new by email below");
 
   await picker.selectOption({ label: "Aaron Teamwork" });
   await expect(page.locator("#ivEmail")).toHaveCount(0);
@@ -101,14 +102,55 @@ test("an inviting Admin gives team Users this client, alphabetically listed, one
 
   // Nobody left to add: the field still shows, and says so.
   await page.reload();
-  await page.getByRole("button", { name: "+ Add People" }).click();
+  await page.getByRole("button", { name: "+ Add or Invite People" }).click();
   await expect(picker).toBeDisabled();
   await expect(picker.locator("option")).toHaveText(["Every User on your team has this client"]);
-  // Nobody chosen, nothing sent.
-  await page.getByRole("button", { name: "Add to Client" }).click();
-  await expect(modal.locator(".autherr")).toHaveText("Choose someone from your team");
+  // Nobody chosen and no one new, nothing sent.
+  await page.getByRole("button", { name: "Send Invite" }).click();
+  await expect(modal.locator(".autherr")).toHaveText("Enter their first and last name");
   await page.getByRole("button", { name: "Cancel" }).click();
   await expect(page.locator(".scrim:not(.closing)")).toHaveCount(0);
+});
+
+// Client Settings → People invites someone new too, as a project's Settings
+// does (direct instruction): this client only, with its projects to pick.
+test("Add or Invite People in Client Settings invites someone new to chosen projects", async ({ page, frank }) => {
+  test.setTimeout(120_000);
+  const two = await secondClient(frank);
+  await frank.loginAsStaff(page);
+  await page.goto(`${APP_URL}/clients/${two.clientId}/settings/people`);
+  await page.getByRole("button", { name: "+ Add or Invite People" }).click();
+  const win = page.getByRole("dialog", { name: "Add or Invite People" });
+  const invited = `e2e-client-invite-${Date.now()}@example.invalid`;
+  await win.getByLabel("First Name").fill("Cara");
+  await win.getByLabel("Last Name").fill("Client");
+  await win.getByLabel("Email Address").fill(invited);
+  // Only a User or a Client from here, and no other client to pick.
+  await expect(win.getByLabel("Role").locator("option")).toHaveText(["User", "Client"]);
+  await win.getByLabel("Role").selectOption("client");
+  await expect(win.getByLabel("Their Client")).toHaveCount(0);
+  await expect(win.getByText("Client Access")).toHaveCount(0);
+  await expect(win.locator(".iv-fixed")).toHaveCount(0);
+  // Its projects to choose from: all but Second Planner.
+  await win.locator("#ivProjects").click();
+  await page.getByRole("dialog", { name: "Projects" }).getByRole("checkbox", { name: "Second Planner" }).click();
+  await expect(win.locator("#ivProjects")).toHaveText("Second Launch");
+  await win.locator("#ivProjects").click();
+  await win.getByRole("button", { name: "Send Invite" }).click();
+  await expect(page.getByRole("dialog", { name: "Invite Sent" })).toBeVisible({ timeout: 20_000 });
+
+  const { data: invitedUser } = await admin.from("users").select("id").eq("email", invited).single();
+  const { data: member } = await admin
+    .from("memberships")
+    .select("id, role, client_id, accepted_at")
+    .eq("user_id", invitedUser!.id)
+    .eq("agency_id", frank.agencyId)
+    .single();
+  // A Client is a "user" membership with the client on it.
+  expect(member).toMatchObject({ role: "user", client_id: two.clientId, accepted_at: null });
+  expect((await admin.from("invites").select("id").eq("membership_id", member!.id)).data).toHaveLength(1);
+  const { data: access } = await admin.from("project_access").select("project_id").eq("membership_id", member!.id);
+  expect(access).toEqual([{ project_id: two.projects.find((x) => x.name === "Second Launch")!.id }]);
 });
 
 // The New Client window picks from the team rather than inviting (direct

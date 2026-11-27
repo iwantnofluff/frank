@@ -199,11 +199,11 @@ test("a client's profile lists its people with their projects, and an Owner chan
   await expect(person.locator(".pp-projs")).toContainText(/^E2E Continuous Project/);
   await expect.poll(() => projectsOf(frank, user.email)).toEqual([second]);
 
-  // Add People only adds Users already on the team; invites are Team's alone.
-  await modal.getByRole("button", { name: "+ Add People" }).click();
-  const add = page.getByRole("dialog", { name: "Add People" });
-  await expect(add.getByLabel("Email Address")).toHaveCount(0);
-  await expect(add).toContainText("invited from Workspace Settings → Team");
+  // Add or Invite People adds Users already on the team, or invites someone
+  // new, as from a project (direct instruction).
+  await modal.getByRole("button", { name: "+ Add or Invite People" }).click();
+  const add = page.getByRole("dialog", { name: "Add or Invite People" });
+  await expect(add.getByLabel("Email Address")).toBeVisible();
 });
 
 test("a User sees a client's details read-only; nobody changes a project's delivery", async ({ browser, frank }) => {

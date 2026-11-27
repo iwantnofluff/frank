@@ -485,7 +485,7 @@ function ProjectPeople({
           agencyId={agencyId}
           roles={inviteRoles}
           presetClientId={clientId}
-          allowInvite
+          inProject
           onClose={() => setInviting(false)}
           onSent={() => {}}
         />

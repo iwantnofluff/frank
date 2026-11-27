@@ -149,7 +149,7 @@ export function ClientPeople({
         ))}
       {canInvite && (
         <button type="button" className="badd" onClick={onInvite}>
-          + Add People
+          + Add or Invite People
         </button>
       )}
     </>

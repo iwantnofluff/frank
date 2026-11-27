@@ -16,13 +16,15 @@ import { INVITE_ROLE_HINTS, INVITE_ROLE_LABELS, type InviteRole } from "@/lib/ro
 // role — only the roles this person may give (rolesICanInvite) — then the
 // link to share directly, as well as the email. Opened from a client, it
 // also offers the team's Users who haven't got that client yet (phase62):
-// picking one gives it to them straight away, with no invite. There,
-// each add or invite comes back to the empty window, for the next person.
+// picking one gives it to them straight away, with no invite, or invites
+// someone new as a User or one of the client's own people (direct
+// instruction: from a client's Settings as from a project's). There, each
+// add or invite comes back to the empty window, for the next person.
 export function InviteMemberModal({
   agencyId,
   roles: allRoles,
   presetClientId,
-  allowInvite = false,
+  inProject = false,
   onClose,
   onSent,
 }: {
@@ -30,14 +32,14 @@ export function InviteMemberModal({
   roles: InviteRole[];
   // Opened from a Client Profile (phase46): that client, chosen already.
   presetClientId?: string;
-  // Opened from a project's Settings (direct instruction): a teammate, or
-  // someone new invited by email as a User or Client of that client.
-  allowInvite?: boolean;
+  // Opened from a project's Settings: given all the client's projects, that
+  // one included, with no projects to choose (direct instruction).
+  inProject?: boolean;
   onClose: () => void;
   onSent: (email: string) => void;
 }) {
-  // From a project, only its client's own kind of people: a User or a Client.
-  const offered = presetClientId && allowInvite ? allRoles.filter((r) => r === "user" || r === "client") : allRoles;
+  // From a client or project, only its own kind of people: a User or a Client.
+  const offered = presetClientId ? allRoles.filter((r) => r === "user" || r === "client") : allRoles;
   const roles = offered.length ? offered : allRoles;
   const invite = useInviteMember();
   const { data: clients } = useClients();
@@ -73,13 +75,9 @@ export function InviteMemberModal({
   // What was just done, shown when the window comes back for the next one.
   const [done, setDone] = useState<string | null>(null);
   const clientName = activeClients.find((c) => c.id === presetClientId)?.name ?? "this client";
-  // Opened from a client, it only adds Users already on the team (direct
-  // instruction: invites happen in Workspace Settings → Team only); from a
-  // project, it invites too (direct instruction, allowInvite).
-  const addOnly = !!presetClientId && !allowInvite;
-  // From a project: its client only, and all its projects (direct
-  // instruction: no other clients or projects to choose from there).
-  const fixedClient = !!presetClientId && allowInvite;
+  // From a client or project: that client only (direct instruction: no
+  // other clients to choose from there).
+  const fixedClient = !!presetClientId;
 
   // Back to the empty window (opened from a client).
   function startAgain(note: string) {
@@ -112,7 +110,6 @@ export function InviteMemberModal({
       startAgain(`${existing.name} added to ${clientName}.`);
       return;
     }
-    if (addOnly) return setValidation("Choose someone from your team");
     const trimmed = email.trim();
     if (!firstName.trim() || !lastName.trim()) return setValidation("Enter their first and last name");
     if (!trimmed || !trimmed.includes("@")) return setValidation("Enter a valid email");
@@ -157,17 +154,13 @@ export function InviteMemberModal({
   return (
     <Modal
       hideCloseButton
-      title={addOnly ? "Add People" : presetClientId ? "Add or Invite People" : "Invite Team Member"}
+      title={presetClientId ? "Add or Invite People" : "Invite Team Member"}
       size="sm"
       onClose={onClose}
       footer={
         <>
           <span className="grow">
-            {existing
-              ? "They'll see this client next time they open Frank"
-              : addOnly
-                ? ""
-                : "Invite link expires in 3 months"}
+            {existing ? "They'll see this client next time they open Frank" : "Invite link expires in 3 months"}
           </span>
           <button type="button" className="btn" onClick={onClose}>
             Cancel
@@ -178,7 +171,7 @@ export function InviteMemberModal({
             disabled={invite.isPending || add.isPending}
             onClick={() => handleSubmit().catch(() => {})}
           >
-            {existing || addOnly
+            {existing
               ? add.isPending
                 ? "Adding…"
                 : "Add to Client"
@@ -228,14 +221,12 @@ export function InviteMemberModal({
           )}
           {!existing && (
             <div className="hint" style={{ marginTop: 5 }}>
-              {addOnly
-                ? "Someone new, or one of this client's own people, is invited from Workspace Settings → Team."
-                : "Or invite someone new by email below, as a User or one of this client's own people."}
+              Or invite someone new by email below, as a User or one of this client&apos;s own people.
             </div>
           )}
         </div>
       )}
-      {!existing && !addOnly && (
+      {!existing && (
         <>
           <div className="frow">
             <div className="field">
@@ -294,13 +285,13 @@ export function InviteMemberModal({
           )}
         </>
       )}
-      {fixedClient && (existing || role === "user" || role === "client") && (
+      {inProject && (existing || role === "user" || role === "client") && (
         <div className="field">
           <label>Access</label>
           <p className="hint iv-fixed">{clientName}, and all its projects, this one included.</p>
         </div>
       )}
-      {!fixedClient && (existing || (!addOnly && (role === "user" || role === "client"))) && projectGroups.length > 0 && (
+      {!inProject && (existing || role === "user" || role === "client") && projectGroups.length > 0 && (
         <div className="field">
           <label htmlFor="ivProjects">Projects</label>
           <ProjectPicker id="ivProjects" groups={projectGroups} value={projectIds} onChange={setProjectIds} />

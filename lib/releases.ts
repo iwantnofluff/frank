@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.114.0",
+    date: "2026-11-27",
+    title: "Invite from Client Settings",
+    changes: [
+      "Client Settings → People's + Add or Invite People invites someone new by email, as a User or one of the client's own people, as a project's Settings does.",
+      "From the client, the invite can be limited to some of its projects.",
+    ],
+  },
+  {
     version: "1.113.2",
     date: "2026-11-27",
     title: "Text on Image named",
