@@ -42,7 +42,7 @@ const KNOWLEDGE: { section: string; title: string; body: string; overview: strin
     section: "features",
     title: "What to lead with",
     body: "1. The Daily Glow Serum: 10% niacinamide for even tone and calmer skin. 2. A three-step routine anyone can keep. 3. Barrier Cream for dry winter skin.",
-    overview: "Lead with the Daily Glow Serum and its 10% niacinamide, then the simple three-step routine, then the Barrier Cream for dry winter skin.",
+    overview: "1. Daily Glow Serum, 10% niacinamide\n2. A three-step routine\n3. Barrier Cream for dry winter skin",
   },
 ];
 
@@ -215,7 +215,7 @@ async function seed(
     client_id: clientId,
     section: k.section,
     overview: k.overview,
-    source_hash: overviewHash(sectionSource([{ kind: "text", title: k.title, body: k.body }])),
+    source_hash: overviewHash(sectionSource([{ kind: "text", title: k.title, body: k.body }]), k.section),
   }));
   const { error: oError } = await admin.from("client_strategy_overviews").insert(overviews);
   if (oError) throw oError;

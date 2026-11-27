@@ -128,13 +128,17 @@ test("the boxes show their overviews, and only a changed one is asked for again"
   await admin.from("knowledge_entries").insert([
     { ...entry, section: "tone", title: "Voice", body: "Warm and plain." },
     { ...entry, section: "audience", title: "Primary", body: "Home cooks in Mumbai." },
+    { ...entry, section: "features", title: "Lead with", body: "The Diwali hamper, then free delivery." },
   ]);
   const month = new Date().toISOString().slice(0, 7) + "-01";
   const strategy = { objective: "Sell the Diwali hamper", key_messages: "Order by 25 October" };
   await admin.from("client_monthly_strategies").insert({ agency_id: frank.agencyId, client_id: frank.clientId, month, ...strategy });
   const tone = sectionSource([{ kind: "text", title: "Voice", body: "Warm and plain." }]);
   const ms = monthSource(strategy);
+  const features = sectionSource([{ kind: "text", title: "Lead with", body: "The Diwali hamper, then free delivery." }]);
   await admin.from("client_strategy_overviews").insert([
+    // Prioritised Features as a numbered list (direct instruction).
+    { client_id: frank.clientId, section: "features", overview: "1. The Diwali hamper\n2. Free delivery", source_hash: overviewHash(features, "features") },
     { client_id: frank.clientId, section: "tone", overview: "Overview of the voice, up to date.\n\nA second paragraph about it.", source_hash: overviewHash(tone) },
     // Written before the audience last changed.
     { client_id: frank.clientId, section: "audience", overview: "An older overview of the audience.", source_hash: "00000000" },
@@ -162,6 +166,9 @@ test("the boxes show their overviews, and only a changed one is asked for again"
   await expect(toneBox.locator(".brandrem-full")).toHaveCSS("opacity", "0");
   await toneBox.hover();
   await expect(toneBox.locator(".brandrem-full")).toHaveCSS("opacity", "1");
+  // Prioritised Features, numbered, up to date (not asked for again).
+  await expect(page.locator(".brandrem-box", { hasText: "Prioritised Features" }).locator(".brandrem-ov ol li").first()).toHaveText("The Diwali hamper");
+  await expect(page.locator(".brandrem-box", { hasText: "Prioritised Features" }).locator(".brandrem-ov ol").first().locator("li")).toHaveText(["The Diwali hamper", "Free delivery"]);
   // The out-of-date one stays up while Frank is asked for a new one.
   await expect(page.locator(".brandrem-box", { hasText: "Target Audience" })).toContainText("An older overview of the audience.");
   await expect.poll(() => asked).toEqual(["audience"]);

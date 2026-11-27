@@ -14,10 +14,12 @@ import {
 } from "@/hooks/use-strategy-overviews";
 import { filledFields, monthOf } from "@/lib/monthly-strategy";
 import {
+  isListSection,
   monthBoxLabel,
   monthSection,
   monthSource,
   overviewHash,
+  overviewItems,
   overviewParagraphs,
   sectionSource,
 } from "@/lib/strategy-overview";
@@ -139,7 +141,7 @@ function Overview({
   fallback: React.ReactNode;
 }) {
   const refresh = useRefreshStrategyOverview(clientId);
-  const hash = overviewHash(source);
+  const hash = overviewHash(source, section);
   const written = overviews?.find((o) => o.section === section);
   const stale = !!overviews && written?.source_hash !== hash;
   // Asked once for each version of what it's from, not on every render.
@@ -152,7 +154,18 @@ function Overview({
   }, [canRefresh, stale, hash, section, mutate]);
 
   if (written) {
-    const paragraphs = overviewParagraphs(written.overview).map((p, i) => <p key={i}>{p}</p>);
+    // Prioritised Features as a numbered list (direct instruction); one
+    // written before as paragraphs shows as those until it's rewritten.
+    const items = isListSection(section) ? overviewItems(written.overview) : null;
+    const paragraphs = items ? (
+      <ol className="brandrem-list">
+        {items.map((item, i) => (
+          <li key={i}>{item}</li>
+        ))}
+      </ol>
+    ) : (
+      overviewParagraphs(written.overview).map((p, i) => <p key={i}>{p}</p>)
+    );
     return (
       <>
         {/* Focusable, so the full overview opens from the keyboard too. */}

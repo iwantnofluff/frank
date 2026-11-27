@@ -6,6 +6,7 @@ import {
   monthSection,
   monthSource,
   monthWhat,
+  isListSection,
   overviewHash,
   overviewPrompt,
   sectionSource,
@@ -86,7 +87,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ overview: null });
   }
 
-  const hash = overviewHash(source);
+  const hash = overviewHash(source, key);
   const { data: existing } = await supabase
     .from("client_strategy_overviews")
     .select("overview, source_hash")
@@ -97,7 +98,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ overview: existing.overview });
   }
 
-  const result = await runAiTask(supabase, client.agency_id, user.id, "strategy_overview", overviewPrompt(client.name, what, source));
+  const result = await runAiTask(supabase, client.agency_id, user.id, "strategy_overview", overviewPrompt(client.name, what, source, isListSection(key)));
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }

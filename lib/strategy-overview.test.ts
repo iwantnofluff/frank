@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { monthBoxLabel, monthSection, monthSource, overviewHash, overviewParagraphs, sectionSource, sourceHash } from "./strategy-overview.ts";
+import { isListSection, monthBoxLabel, monthSection, monthSource, overviewHash, overviewItems, overviewParagraphs, sectionSource, sourceHash } from "./strategy-overview.ts";
 
 test("a section's source has notes in full and links and files by name, skipping the unnamed", () => {
   const source = sectionSource([
@@ -38,4 +38,14 @@ test("an overview splits into its paragraphs, however they're spaced", () => {
 test("the month's box is named short, with fixed month names", () => {
   assert.equal(monthBoxLabel("2026-10-01"), "Oct 2026 Strategy");
   assert.equal(monthBoxLabel("2026-09-01"), "Sep 2026 Strategy");
+});
+
+test("Prioritised Features is a numbered list: its items read without numbers; paragraphs aren't a list", () => {
+  assert.deepEqual(overviewItems("1. Daily Glow Serum\n2. A three-step routine\n\n3) Barrier Cream"), ["Daily Glow Serum", "A three-step routine", "Barrier Cream"]);
+  assert.equal(overviewItems("Lead with the serum.\n\nThen the routine."), null);
+  assert.equal(isListSection("features"), true);
+  assert.equal(isListSection("tone"), false);
+  // Its own fingerprint, so a features box written as paragraphs is rewritten once.
+  assert.notEqual(overviewHash("x", "features"), overviewHash("x", "tone"));
+  assert.equal(overviewHash("x", "tone"), overviewHash("x"));
 });

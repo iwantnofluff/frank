@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.116.1",
+    date: "2026-11-27",
+    title: "Prioritised Features as a list",
+    changes: [
+      "A client's Prioritised Features, in its Strategy Overview, is now a short numbered list, the most important first. Each client's is rewritten as a list the next time your team opens it.",
+    ],
+  },
+  {
     version: "1.116.0",
     date: "2026-11-27",
     title: "Facebook Carousel, Video Carousel and Reel",

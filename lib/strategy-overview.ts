@@ -47,11 +47,20 @@ export function monthSection(month: string): string {
 // Which way overviews are written: changing it (as when they became
 // paragraphs) has each box rewritten once, the next time the team opens it.
 const OVERVIEW_STYLE = "paragraphs-1";
+// Prioritised Features as a short numbered list instead (direct
+// instruction, 27 Nov 2026).
+const LIST_STYLE = "list-1";
+
+// Whether a box is written as a numbered list rather than paragraphs.
+export function isListSection(section: string): boolean {
+  return section === "features";
+}
 
 // The fingerprint an overview is saved with: what it's from, and how it's
 // written.
-export function overviewHash(source: string): string {
-  return sourceHash(`${OVERVIEW_STYLE}\n${source}`);
+export function overviewHash(source: string, section?: string): string {
+  const style = section && isListSection(section) ? LIST_STYLE : OVERVIEW_STYLE;
+  return sourceHash(`${style}\n${source}`);
 }
 
 // FNV-1a, 32-bit: the same in the browser and on the server.
@@ -65,7 +74,19 @@ export function sourceHash(source: string): string {
 }
 
 // What Frank is asked to write.
-export function overviewPrompt(clientName: string, what: string, source: string): string {
+export function overviewPrompt(clientName: string, what: string, source: string, list = false): string {
+  if (list) {
+    return [
+      `You write short snapshots for an agency team about their client ${clientName}.`,
+      `Below is everything the team has recorded as the client's ${what}.`,
+      "List the features as a numbered list, the most important first, so someone can take them in at a glance before starting work for this client.",
+      "One feature per line, written as 1. 2. 3. and so on, each two to six words, at most eight.",
+      "Use only what is below; never add anything, and don't give advice of your own.",
+      "The list only: no heading, no preamble, no sentences around it, no other markdown.",
+      "",
+      source,
+    ].join("\n");
+  }
   return [
     `You write short snapshots for an agency team about their client ${clientName}.`,
     `Below is everything the team has recorded as the client's ${what}.`,
@@ -82,6 +103,17 @@ export function overviewPrompt(clientName: string, what: string, source: string)
 // The label of a month's box.
 export function monthWhat(month: string): string {
   return `strategy for ${monthLabel(month)}`;
+}
+
+// A list overview's items, without their numbers; null when it isn't a
+// numbered list (one written before, as paragraphs).
+export function overviewItems(overview: string): string[] | null {
+  const lines = overview
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (!lines.length || !lines.every((l) => /^\d+[.)]\s+/.test(l))) return null;
+  return lines.map((l) => l.replace(/^\d+[.)]\s+/, "").replace(/\*\*/g, "").trim()).filter(Boolean);
 }
 
 // An overview's paragraphs, however many blank lines Frank put between them.

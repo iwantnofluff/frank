@@ -13095,6 +13095,21 @@ button.hbrand-add:hover {
 .brandrem-ov p + p {
   margin-top: 8px;
 }
+/* Prioritised Features, numbered (direct instruction). */
+.brandrem-list {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 13.2px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.brandrem-list li + li {
+  margin-top: 4px;
+}
+.brandrem-list li::marker {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
 /* The whole overview over its box while it's hovered or focused: the
    hover previews' motion (opacity only, so it doesn't move under the
    pointer), opening with --dur-open, closing faster. */
