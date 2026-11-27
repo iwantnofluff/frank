@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.113.2",
+    date: "2026-11-27",
+    title: "Text on Image named",
+    changes: ["A post with no artwork yet names its Text on Image above the words, on its page and on the review link, as the VO already was."],
+  },
+  {
     version: "1.113.1",
     date: "2026-11-26",
     title: "Clearer Share messages",

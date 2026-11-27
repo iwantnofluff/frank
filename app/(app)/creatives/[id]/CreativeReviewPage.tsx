@@ -648,8 +648,8 @@ export function CreativeReviewPage({ id }: { id: string }) {
               <>
                 {slideTextNow && (
                   <div className="noart-toi">
-                    {/* Named once the VO is under it too. */}
-                    {voNow && <span className="noart-lbl">Text on Image</span>}
+                    {/* Always named, as the VO is (direct instruction). */}
+                    <span className="noart-lbl">Text on Image</span>
                     <CaptionHighlighter
                       text={slideTextNow}
                       field="slide_text"

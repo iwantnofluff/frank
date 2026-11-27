@@ -5185,6 +5185,12 @@ Direct instruction: the review link had no brief; add an icon before Content, so
 
 **Verified**: In the real app (dev server, staging), as a visitor with no session, at 1440 × 900 and 390 × 844, with a concept, a reference and a team member seeded: Brief showed them, Notes for Designer didn't, and the brief fitted the phone's screen (it first ran off the right edge, fixed with `width: auto`). Screenshots checked after the highlight's fade; one taken straight after the click showed Content still lit, which the logged `aria-pressed`/`aria-current` showed was the fade, not the state. shared-review-brief.spec.ts is new (desktop menu order and the brief; phone icon order, pressed state, fit). shared-review-phone.png and shared-review-desktop.png differed only by the new icon and menu item and were regenerated after looking at each diff. shared-review-public, shared-review-account, designer-note-versions and new-brief run with it against staging: 20 passed, 10 failed while the machine was loaded. Rerun, all 10 passed except the two baselines above, which then passed once regenerated. Unit tests: 311 passed.
 
+## Text on Image always named where the artwork goes (1.113.2, 2026-11-27)
+
+Reported directly: a post with no artwork shows its Text on Image in the artwork's place, but only named it ("TEXT ON IMAGE", small, uppercase, grey) when a VO sat under it, so on its own it read like the artwork's words with no say what they were. Now it's always named, on the post's page for the team and a client, and on the review link (ReviewMedia), the same small label the VO already had. The label can't be picked up by a drag that selects the words for a comment.
+
+**Verified**: in the real app, a post with only Text on Image shows the label in the phone for an Admin and on the review link (screenshots looked at). text-on-image-comments.spec.ts updated (a client now sees the Text on Image label, still never the VO's) and passes; production-version-pickers, copy-only-post, carousel, format-sizes and artwork-names specs pass; tsc and eslint clean.
+
 ## The Share messages' two ways to comment, one each (1.113.1, 2026-11-26)
 
 Reported directly: step 3 said the same place twice ("in the table, in the Client Feedback column"), and step 4 didn't say the post is the other place to comment. Now "3. Comment directly in the table’s Client Feedback column, or" and "4. Open any post in the content planner to see it in full and comment there. Pause a video…"; Link + Review the same in its line.

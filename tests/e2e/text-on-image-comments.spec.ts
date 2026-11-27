@@ -252,7 +252,9 @@ test("the VO shows under the Text on Image for the team, never for a client", as
   await frank.loginAsClient(c);
   await c.goto(`${APP_URL}/creatives/${frank.creativeId}`);
   await expect(c.locator(".noart-toi")).toContainText("Phones down, glasses up", { timeout: 20_000 });
-  await expect(c.locator(".noart-vo, .noart-lbl")).toHaveCount(0);
+  // Its Text on Image is named for a client too, the VO's never there.
+  await expect(c.locator(".noart-lbl")).toHaveText(["Text on Image"]);
+  await expect(c.locator(".noart-vo")).toHaveCount(0);
   await expect(c.getByText(/of the voiceover/)).toHaveCount(0);
   // Nor its comment.
   await expect(c.getByText("Slow this line down")).toHaveCount(0);

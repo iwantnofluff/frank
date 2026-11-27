@@ -4995,8 +4995,8 @@ select.sort:hover {
   line-height: 1.45;
   color: var(--ink);
 }
-/* Text on Image and the VO named, once both are in the artwork's place
-   (direct instruction); the VO under it, apart. */
+/* Text on Image and the VO always named in the artwork's place (direct
+   instruction); the VO under it, apart. */
 .noart-lbl {
   display: block;
   margin-bottom: calc(4px / var(--pf-zoom, 1));
@@ -5005,6 +5005,9 @@ select.sort:hover {
   letter-spacing: 0.4px;
   text-transform: uppercase;
   color: var(--muted);
+  /* Not part of the words a drag picks for a comment. */
+  -webkit-user-select: none;
+  user-select: none;
 }
 .noart-toi + .noart-vo {
   margin-top: calc(16px / var(--pf-zoom, 1));

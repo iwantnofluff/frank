@@ -148,7 +148,13 @@ export function ReviewMedia({
 }
 
 // Text on Image where the artwork goes, until there is some (direct
-// instruction), read only, as the caption is on a review link.
+// instruction), read only, as the caption is on a review link. Named, as
+// on the post's page.
 function slideTextTop(text: string | undefined) {
-  return text?.trim() ? <div className="noart-toi">{text}</div> : undefined;
+  return text?.trim() ? (
+    <div className="noart-toi">
+      <span className="noart-lbl">Text on Image</span>
+      {text}
+    </div>
+  ) : undefined;
 }
