@@ -19,6 +19,9 @@ test("Feed Preview dates every tile, marks live posts, and doesn't show them twi
   };
   await dated("Went Live Yesterday", 5, -1);
   await dated("Approved For Next Week", 5, 7);
+  // At Live (under a status like Scheduled) with its date still ahead: not
+  // on Instagram yet (reported directly: it vanished once connected).
+  await dated("Scheduled For Next Week", 6, 7);
   await dated("Still In Review", 3, 3);
   await dated("Late In Review", 3, -2);
 
@@ -50,6 +53,8 @@ test("Feed Preview dates every tile, marks live posts, and doesn't show them twi
   await page.reload();
   await page.getByRole("button", { name: "Feed", exact: true }).click();
   await expect(tile("Approved For Next Week")).toBeVisible();
+  await expect(tile("Scheduled For Next Week")).toBeVisible();
+  await expect(tile("Scheduled For Next Week")).toHaveClass(/not-live/);
   await expect(tile("Went Live Yesterday")).toHaveCount(0);
 
   // Looking at a post that has itself gone live: its own tile goes too

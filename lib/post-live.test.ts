@@ -2,7 +2,7 @@
 // (or `npm run test:unit`).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { isLive, isOverdue, liveTiming } from "./post-live.ts";
+import { isLive, isOnInstagramYet, isOverdue, liveTiming } from "./post-live.ts";
 
 const now = Date.parse("2026-10-13T09:00:00Z");
 
@@ -44,4 +44,13 @@ test("liveTiming — on time that day or before, late from the next day", () => 
   assert.equal(liveTiming({ scheduled_at: null, due_on: "2026-10-14" }, "continuous", "2026-10-14T23:00:00"), "on_time");
   assert.equal(liveTiming({ scheduled_at: null, due_on: "2026-10-14" }, "continuous", "2026-10-15T10:00:00"), "late");
   assert.equal(liveTiming({ scheduled_at: null }, "scheduled", "2026-10-15T10:00:00"), null);
+});
+
+test("isOnInstagramYet — at Live with its date still ahead (Scheduled), not yet", () => {
+  assert.equal(isOnInstagramYet({ stage: 6, scheduled_at: "2026-10-14T10:00:00Z" }, now), false);
+  assert.equal(isOnInstagramYet({ stage: 6, scheduled_at: "2026-10-12T10:00:00Z" }, now), true);
+  assert.equal(isOnInstagramYet({ stage: 6, scheduled_at: null }, now), true);
+  assert.equal(isOnInstagramYet({ stage: 5, scheduled_at: "2026-10-12T10:00:00Z" }, now), true);
+  assert.equal(isOnInstagramYet({ stage: 5, scheduled_at: "2026-10-14T10:00:00Z" }, now), false);
+  assert.equal(isOnInstagramYet({ stage: 4, scheduled_at: "2026-10-12T10:00:00Z" }, now), false);
 });

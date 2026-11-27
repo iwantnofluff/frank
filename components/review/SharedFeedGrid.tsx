@@ -10,7 +10,7 @@ import { useSharedInstagramSlides } from "@/hooks/use-shared-review";
 import type { LiveFeed } from "@/lib/instagram/store";
 import { CommentCount } from "./CommentCount";
 import { StagePill } from "@/components/creative-review/StagePill";
-import { isLive } from "@/lib/post-live";
+import { isOnInstagramYet } from "@/lib/post-live";
 import { STAGE } from "@/lib/stage-labels";
 
 const GRID_SLOTS = 9;
@@ -39,7 +39,7 @@ export function SharedFeedGrid({ controller, brandName }: { controller: ReviewCo
   const [now] = useState(() => Date.now());
   const liveNow = (e: (typeof feed)[number]) => {
     const c = e.id ? creatives[indexOf.get(e.id) ?? -1] : null;
-    return isLive(c ?? { stage: e.stage, scheduled_at: e.date ?? null }, now);
+    return isOnInstagramYet(c ?? { stage: e.stage, scheduled_at: e.date ?? null }, now);
   };
   // Posts, or just the Reels (a Reel-format post, or a real Reel).
   const planned = feed.filter((e) => (tab === "posts" || e.reel) && !(liveFeed && liveNow(e)));

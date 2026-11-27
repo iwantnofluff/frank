@@ -1,7 +1,7 @@
 "use client";
 
 import { isIdea } from "@/lib/stage-labels";
-import { goLiveDay, isLive, isOverdue } from "@/lib/post-live";
+import { goLiveDay, isLive, isOnInstagramYet, isOverdue } from "@/lib/post-live";
 import { useMemo, useRef, useState } from "react";
 import { useCreatives, type CreativeListRow } from "@/hooks/use-creatives";
 import { isHiddenPost, useHiddenStatusIds } from "@/hooks/use-stage-statuses";
@@ -99,8 +99,9 @@ export function FeedPreviewGrid({
   const connected = !!feed;
   const [now] = useState(() => Date.now());
   // The post being looked at too: once it's live, the real one stands for
-  // it, as for any other (direct instruction: it showed twice).
-  const planned = connected ? creatives.filter((c) => !isLive(c, now)) : creatives;
+  // it, as for any other (direct instruction: it showed twice). Not one at
+  // Live whose date is still ahead, which isn't on Instagram yet.
+  const planned = connected ? creatives.filter((c) => !isOnInstagramYet(c, now)) : creatives;
   // Both tabs' tiles read their artwork in one batch (FeedTileArt).
   const plannedIds = planned.map((c) => c.id);
   const shown = tab === "reels" ? planned.filter((c) => postFormats(c).includes("ig_reel")) : planned;
@@ -171,7 +172,7 @@ export function FeedPreviewGrid({
               <button
                 key={c.id}
                 type="button"
-                className={`feedgrid-tile${c.published_at || isLive(c, now) ? "" : " not-live"}`}
+                className={`feedgrid-tile${c.published_at || isOnInstagramYet(c, now) ? "" : " not-live"}`}
                 aria-current={c.id === activeCreativeId}
                 onClick={() => onSelect(c.id)}
                 onMouseEnter={(e) => handleEnter(c, e.currentTarget)}

@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.115.1",
+    date: "2026-11-27",
+    title: "Scheduled posts on the Feed",
+    changes: ["A post at Live that's scheduled for a later date stays on the Feed until its day, where it went missing once the client's Instagram was connected."],
+  },
+  {
     version: "1.115.0",
     date: "2026-11-27",
     title: "Approve at Client",

@@ -40,6 +40,20 @@ export function isLive(
   return !!at && new Date(at).getTime() <= now;
 }
 
+// Whether a live post is on Instagram yet, so a connected Feed can leave
+// it to the real one: not while its date is still ahead, as a post at
+// Live under a status like Scheduled is (reported directly: it vanished
+// from the Feed before its day).
+export function isOnInstagramYet(
+  post: { stage: number; scheduled_at: string | null; due_on?: string | null; publish_on?: string | null },
+  now: number = Date.now(),
+): boolean {
+  if (!isLive(post, now)) return false;
+  const day = goLiveDay(post);
+  const at = post.scheduled_at ?? (day ? `${day}T00:00:00` : null);
+  return !at || new Date(at).getTime() <= now;
+}
+
 // When a post really went live against the date it was planned for
 // (phase99, direct instruction): on time if live that day or before, late
 // from the day after, by the calendar in the viewer's own time zone. The
