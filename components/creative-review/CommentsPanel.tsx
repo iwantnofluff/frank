@@ -1,6 +1,7 @@
 "use client";
 
 import { canApproveConcept, useApproveConcept } from "@/hooks/use-approve-concept";
+import { canApprovePost, useApprovePost } from "@/hooks/use-approve-post";
 import { useCreativeVersions } from "@/hooks/use-creative-versions";
 import { useCopyVersions } from "@/hooks/use-copy-versions";
 import { useProductionVersions, type ProductionVersion } from "@/hooks/use-production-versions";
@@ -703,6 +704,7 @@ export function CommentsPanel({
   const { data: creative } = useCreative(creativeId);
   const { data: agency } = useMyAgency();
   const approve = useApproveConcept();
+  const approvePost = useApprovePost();
   const clientName = creative?.projects?.clients?.name ?? null;
   const fromName = (c: CommentRow) => (c.from === "agency" ? (agency?.name ?? null) : clientName);
   // The version a comment was made on, after its Public or Private pill,
@@ -942,6 +944,7 @@ export function CommentsPanel({
       </div>
 
       {approve.error && <p className="autherr">{errorMessage(approve.error, "Couldn't approve the concept")}</p>}
+      {approvePost.error && <p className="autherr">{errorMessage(approvePost.error, "Couldn't approve the post")}</p>}
       <Composer
         placeholder="Add a comment…"
         asked={compose}
@@ -963,6 +966,17 @@ export function CommentsPanel({
               onClick={() => approve.mutate(creativeId)}
             >
               {approve.isPending ? "Approving…" : "Approve Concept"}
+            </button>
+          ) : // Approve (phase170, direct instruction): at Client, for the
+          // client or the team. It moves the post to Approved.
+          creative && canApprovePost(creative) ? (
+            <button
+              type="button"
+              className="btn sm approve-concept"
+              disabled={approvePost.isPending}
+              onClick={() => approvePost.mutate(creativeId)}
+            >
+              {approvePost.isPending ? "Approving…" : "Approve"}
             </button>
           ) : null
         }

@@ -241,6 +241,10 @@ export function useSetCreativeStage() {
       await queryClient.invalidateQueries({ queryKey: ["creative", creativeId], refetchType: "all" });
       await queryClient.invalidateQueries({ queryKey: ["creatives"], refetchType: "all" });
       await queryClient.invalidateQueries({ queryKey: ["post-live-date", creativeId] });
+      // Approved leaves a comment in the mover's name (phase170): fetched
+      // behind, so the move doesn't wait on it.
+      void queryClient.invalidateQueries({ queryKey: ["comments", creativeId] });
+      void queryClient.invalidateQueries({ queryKey: ["latest-feedback-by-creative"] });
     },
   });
 }

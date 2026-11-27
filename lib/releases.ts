@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.115.0",
+    date: "2026-11-27",
+    title: "Approve at Client",
+    changes: [
+      "While a post is at Client, a green Approve sits beside Post in its comments, for the client and your team. It moves the post to Approved and leaves an Approved comment (Client Approved from the client).",
+      "Your team picking Approved as a post's stage leaves the same Approved comment.",
+    ],
+  },
+  {
     version: "1.114.1",
     date: "2026-11-27",
     title: "Client profile photos",

@@ -45,6 +45,10 @@ export function useAdvanceCreativeStage(creativeId: string) {
       });
       // Live set by hand records its live date; leaving Live takes it away.
       await queryClient.invalidateQueries({ queryKey: ["post-live-date", creativeId] });
+      // Approved leaves a comment in the mover's name (phase170): fetched
+      // behind, so the move doesn't wait on it.
+      void queryClient.invalidateQueries({ queryKey: ["comments", creativeId] });
+      void queryClient.invalidateQueries({ queryKey: ["latest-feedback-by-creative"] });
     },
   });
 }
