@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.115.2",
+    date: "2026-11-27",
+    title: "New Client for Owners and Admins",
+    changes: ["New Client shows only for Owners and Admins, who can add clients. A User saw it and got an error when creating one."],
+  },
+  {
     version: "1.115.1",
     date: "2026-11-27",
     title: "Scheduled posts on the Feed",

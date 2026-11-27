@@ -80,8 +80,12 @@ export function ClientModal(props: { agencyId: string; activeClientCount: number
   }
 
   const isPending = createClient.isPending || saveLogo.isPending || giveClient.isPending;
+  // Should someone not allowed get here (their role changed while it was
+  // open), say so plainly rather than the database's own words.
   const submitError = createClient.error
-    ? errorMessage(createClient.error, "Couldn't create the client")
+    ? /row-level security/.test(errorMessage(createClient.error, ""))
+      ? "Only Owners and Admins can add a client. Ask one of them to add it, and to give you access."
+      : errorMessage(createClient.error, "Couldn't create the client")
     : saveLogo.error
       ? errorMessage(saveLogo.error, "Couldn't save the client's image")
       : null;

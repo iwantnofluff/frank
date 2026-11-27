@@ -5,6 +5,8 @@ import { useTouring } from "@/lib/use-touring";
 import Link from "next/link";
 import { useClients } from "@/hooks/use-clients";
 import { useMyAgency } from "@/hooks/use-my-agency";
+import { useMyMembership } from "@/hooks/use-my-membership";
+import { seesAllClients } from "@/lib/roles";
 import { useAgencyCreativeStats } from "@/hooks/use-agency-creative-stats";
 import { useClientListStats } from "@/hooks/use-client-list-stats";
 import { useIsStaff } from "@/hooks/use-is-staff";
@@ -59,6 +61,11 @@ export default function DashboardPage() {
   // Fails closed like every other isStaff gate in this app: hidden while
   // still resolving, not shown by default.
   const confirmedStaff = isStaff && !isStaffPending;
+  // Only Owners and Admins may add a client (clients_insert,
+  // is_unrestricted_staff); a User's New Client only ended in a
+  // row-level security error (reported directly), so they don't see it.
+  const { data: me } = useMyMembership(agency?.agencyId);
+  const canAddClient = confirmedStaff && !!me && !me.client_id && seesAllClients(me.role);
 
   const touring = useTouring();
   const filtered = useMemo(() => {
@@ -148,8 +155,8 @@ export default function DashboardPage() {
           >
             Archived ({clients?.filter((c) => c.archived_at && !c.is_sample).length ?? 0})
           </button>
-          {confirmedStaff && <span className="toolsep" />}
-          {confirmedStaff && (
+          {canAddClient && <span className="toolsep" />}
+          {canAddClient && (
             <button
               className="btn sm"
               type="button"

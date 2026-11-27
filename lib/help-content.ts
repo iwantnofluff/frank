@@ -209,7 +209,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         kind: "steps",
         items: [
-          "Go to [Clients](/dashboard) and choose New Client.",
+          "Go to [Clients](/dashboard) and choose New Client. Only Owners and Admins can add a client; a User asks one of them.",
           "Give it a name, and if you like an industry, a description and a logo. Drag and zoom to fit the logo in the circle; zoom out a little to fit one that runs to its edges.",
           "Under Team, pick the Users on your team who'll work on it, if any. Owners and Admins see every client already.",
           "Choose Create Client. It appears in [your clients list](/dashboard).",
