@@ -152,3 +152,49 @@ test("a profile photo shows on the rail, the Team page and comments — for clie
     await removePhotoFile(assetId);
   }
 });
+
+// A client's own people upload a photo too (reported directly: it failed
+// with "new row violates row-level security policy"). Only into their own
+// avatar folder (phase169): not someone else's, nor a post's.
+test("a client uploads their own profile photo, and only into their own folder", async ({ page, frank }) => {
+  test.setTimeout(60_000);
+  const clientRow = async () =>
+    (await admin.from("users").select("id, avatar_asset_id").eq("email", frank.clientEmail).single()).data!;
+  let assetId: string | null = null;
+  try {
+    await frank.loginAsClient(page);
+    await page.goto(`${APP_URL}/profile`);
+    const picture = await page.evaluate(() => {
+      const c = document.createElement("canvas");
+      c.width = 400;
+      c.height = 400;
+      const g = c.getContext("2d")!;
+      g.fillStyle = "#16a34a";
+      g.fillRect(0, 0, 400, 400);
+      return c.toDataURL("image/png").split(",")[1];
+    });
+    await page.getByLabel("Profile photo").setInputFiles({ name: "me.png", mimeType: "image/png", buffer: Buffer.from(picture, "base64") });
+    const cropper = page.getByRole("dialog", { name: "Position your photo" });
+    await cropper.getByRole("button", { name: "Use photo" }).click();
+    await expect(page.getByRole("button", { name: "Change photo" })).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText("row-level security")).toHaveCount(0);
+    assetId = (await clientRow()).avatar_asset_id;
+    expect(assetId).not.toBeNull();
+
+    // Through the client's own session: refused anywhere but their folder.
+    const c = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+      auth: { persistSession: false },
+    });
+    await c.auth.signInWithPassword({ email: frank.clientEmail, password: frank.clientPassword });
+    const staffId = (await staffRow(frank)).id;
+    const blob = new Blob([Buffer.from(picture, "base64")], { type: "image/png" });
+    for (const path of [`${frank.agencyId}/avatars/${staffId}/x.png`, `${frank.agencyId}/${frank.creativeId}/x.png`]) {
+      const { error } = await c.storage.from("assets").upload(path, blob, { contentType: "image/png" });
+      expect(error, path).not.toBeNull();
+    }
+    await c.auth.signOut();
+  } finally {
+    await removePhotoFile(assetId);
+    if (assetId) await admin.from("users").update({ avatar_asset_id: null }).eq("email", frank.clientEmail);
+  }
+});

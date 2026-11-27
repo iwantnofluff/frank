@@ -22,9 +22,10 @@ export function validateAvatar(file: File): string | null {
 
 // Same shape as uploadKnowledgeAsset: file first, then its assets row,
 // then point the caller's own users row at it. Path is
-// {agency_id}/avatars/{user_id}/{uuid}-{filename} — the bucket policies
-// (phase8_storage.sql) only look at the agency segment, so staff can upload
-// here and every member of the agency can read it.
+// {agency_id}/avatars/{user_id}/{uuid}-{filename} — staff can upload
+// anywhere in their agency (phase8_storage.sql), a client's people only to
+// their own avatar folder (phase169), and every member of the agency can
+// read it.
 export async function uploadAvatar(agencyId: string, file: File): Promise<string> {
   const problem = validateAvatar(file);
   if (problem) throw new Error(problem);

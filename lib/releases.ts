@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.114.1",
+    date: "2026-11-27",
+    title: "Client profile photos",
+    changes: ["A client's people can upload a profile photo on My Profile, which failed with an error before."],
+  },
+  {
     version: "1.114.0",
     date: "2026-11-27",
     title: "Invite from Client Settings",
