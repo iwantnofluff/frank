@@ -2,10 +2,10 @@
 // (or `npm run test:unit`).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { FORMATS, FORMAT_CATEGORIES, formatById, formatsByCategory, postFormats, formatsLabel, copyFieldsFor, copySummary, copySummaryParts, VIDEO_FORMAT_IDS, hasVideoFormat, frameLimits, expectedContent, categoriesFor, formatsFor, formatsOffLimits, defaultSize, postSize, sizePresets, sizeLabel, hasSize, aspectRatioCss, formatRatio, artworkNoun, copyNoun, storedSlideCount, wordsOnly, onGrid } from "./formats.ts";
+import { FORMATS, FORMAT_CATEGORIES, formatById, formatsByCategory, postFormats, formatsLabel, copyFieldsFor, copySummary, copySummaryParts, VIDEO_FORMAT_IDS, hasVideoFormat, frameLimits, expectedContent, categoriesFor, formatsFor, formatsOffLimits, defaultSize, postSize, sizePresets, sizeLabel, hasSize, aspectRatioCss, formatRatio, artworkNoun, copyNoun, storedSlideCount, wordsOnly, onGrid, carouselMaxSlides, isReelFormat } from "./formats.ts";
 
-test("FORMATS has the prototype's 41 entries, plus Listing Image Set and LinkedIn Text Post", () => {
-  assert.equal(FORMATS.length, 43);
+test("FORMATS has the prototype's 41 entries, plus Listing Image Set, LinkedIn Text Post and Facebook's carousels and Reel", () => {
+  assert.equal(FORMATS.length, 46);
 });
 
 test("Listing Image Set: up to 9 square images, as a carousel's slides, with the listing's copy", () => {
@@ -194,4 +194,15 @@ test("Stories aren't on the grid; a post that's also on the feed is", () => {
   assert.equal(onGrid(["ig_feed", "ig_story"]), true);
   assert.equal(onGrid(["ig_reel"]), true);
   assert.equal(onGrid([]), true);
+});
+
+test("Facebook's carousels hold up to 10 slides, its Reel and Video Carousel are video", () => {
+  assert.equal(carouselMaxSlides(["fb_carousel"]), 10);
+  assert.equal(carouselMaxSlides(["fb_video_carousel"]), 10);
+  assert.equal(carouselMaxSlides(["fb_reel"]), null);
+  assert.equal(hasVideoFormat(["fb_reel"]), true);
+  assert.equal(hasVideoFormat(["fb_video_carousel"]), true);
+  assert.equal(hasVideoFormat(["fb_carousel"]), false);
+  assert.equal(isReelFormat("fb_reel"), true);
+  assert.equal(artworkNoun(["fb_video_carousel"]), "Creatives");
 });

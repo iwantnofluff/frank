@@ -4,7 +4,7 @@ import { carouselMaxSlides, formatById, frameLimits, TEXT_ONLY_FORMAT_IDS } from
 // doesn't say, so this is a reading of its formats: "either" (stories,
 // Performance Max, Other Creative) never conflicts, and "text" is the
 // formats with no artwork at all. docs/parity-gaps.md.
-const VIDEO = new Set(["ig_reel", "li_video", "yt_video", "yt_short", "yt_preroll"]);
+const VIDEO = new Set(["ig_reel", "fb_reel", "fb_video_carousel", "li_video", "yt_video", "yt_short", "yt_preroll"]);
 const EITHER = new Set(["ig_story", "fb_story", "wa_status", "meta_story", "g_pmax", "general"]);
 const TEXT = TEXT_ONLY_FORMAT_IDS;
 

@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.116.0",
+    date: "2026-11-27",
+    title: "Facebook Carousel, Video Carousel and Reel",
+    changes: [
+      "Three new post formats: Facebook Carousel (up to 10 images), Facebook Video Carousel (up to 10 videos) and Facebook Reel, each shown as a Facebook post.",
+    ],
+  },
+  {
     version: "1.115.2",
     date: "2026-11-27",
     title: "New Client for Owners and Admins",

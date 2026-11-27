@@ -1,4 +1,4 @@
-// The 41-format catalog, ported from the prototype's FORMATS object
+// The format catalog: the 41 formats ported from the prototype's FORMATS object
 // (frank-prototype.html). Application data, not a schema decision — the
 // format_directions table's own comment already says the format list
 // "lives in application data, not the database." creatives.format still
@@ -57,6 +57,11 @@ export const FORMATS: FormatDefinition[] = [
   { id: "ig_reel", category: "Social — organic", label: "Instagram Reel", aspectRatio: "9:16", copyFields: ["caption", "hook"] },
   { id: "ig_story", category: "Social — organic", label: "Instagram Story", aspectRatio: "9:16", copyFields: [] },
   { id: "fb_feed", category: "Social — organic", label: "Facebook Post", aspectRatio: "1.91:1", copyFields: ["caption"] },
+  // Facebook's carousels and Reel (direct instruction, 27 Nov 2026). Not in
+  // the prototype. A Video Carousel is a carousel whose slides are videos.
+  { id: "fb_carousel", category: "Social — organic", label: "Facebook Carousel", aspectRatio: "1:1", copyFields: ["caption"] },
+  { id: "fb_video_carousel", category: "Social — organic", label: "Facebook Video Carousel", aspectRatio: "1:1", copyFields: ["caption"] },
+  { id: "fb_reel", category: "Social — organic", label: "Facebook Reel", aspectRatio: "9:16", copyFields: ["caption", "hook"] },
   { id: "fb_story", category: "Social — organic", label: "Facebook Story", aspectRatio: "9:16", copyFields: [] },
   { id: "li_image", category: "Social — organic", label: "LinkedIn Single Image", aspectRatio: "1.91:1", copyFields: ["caption"] },
   { id: "li_doc", category: "Social — organic", label: "LinkedIn Carousel (Document)", aspectRatio: "1:1", copyFields: ["caption"] },
@@ -119,6 +124,8 @@ export const VIDEO_FORMAT_IDS = new Set([
   "ig_reel",
   "ig_story",
   "fb_story",
+  "fb_reel",
+  "fb_video_carousel",
   "li_video",
   "yt_video",
   "yt_short",
@@ -147,7 +154,7 @@ export function onGrid(ids: string[]): boolean {
 
 // Reels and their like (direct instruction): full-screen vertical video,
 // whose player gets a full-screen button.
-const REEL_FORMAT_IDS = new Set(["ig_reel", "yt_short", "meta_story"]);
+const REEL_FORMAT_IDS = new Set(["ig_reel", "fb_reel", "yt_short", "meta_story"]);
 export function isReelFormat(id: string | null | undefined): boolean {
   return !!id && REEL_FORMAT_IDS.has(id);
 }
@@ -213,9 +220,16 @@ export function copyFieldsFor(ids: string[]): string[] {
 }
 
 // Carousels (phase31). Decided directly: 2–20 slides, with Meta Carousel Ad
-// held to Meta's own limit of 10. LinkedIn's document carousel works the
+// held to Meta's own limit of 10, as Facebook's own carousels are. LinkedIn's document carousel works the
 // same way, with slide images rather than a PDF.
-const CAROUSEL_MAX_SLIDES: Record<string, number> = { ig_carousel: 20, li_doc: 20, meta_carousel: 10, amz_gallery: 9 };
+const CAROUSEL_MAX_SLIDES: Record<string, number> = {
+  ig_carousel: 20,
+  fb_carousel: 10,
+  fb_video_carousel: 10,
+  li_doc: 20,
+  meta_carousel: 10,
+  amz_gallery: 9,
+};
 export const CAROUSEL_MIN_SLIDES = 2;
 
 // The most slides the chosen formats allow, or null when none is a
@@ -289,6 +303,9 @@ const SIZE_PRESETS: Record<string, [number, number][]> = {
   ig_reel: [[1080, 1920]],
   ig_story: [[1080, 1920]],
   fb_feed: [[1200, 630], [1080, 1080], [1080, 1350]],
+  fb_carousel: [[1080, 1080], [1080, 1350]],
+  fb_video_carousel: [[1080, 1080], [1080, 1350]],
+  fb_reel: [[1080, 1920]],
   fb_story: [[1080, 1920]],
   li_image: [[1200, 627], [1200, 1200], [1080, 1350]],
   li_doc: [[1080, 1080], [1080, 1350]],
