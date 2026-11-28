@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.119.0",
+    date: "2026-11-28",
+    title: "Check the Month",
+    changes: [
+      "Check the Month, on a post's Checks tab: Frank reviews the direction of that month's posts in the project against the client's Knowledge and strategy, with a verdict, what's carried and missed, the mix, risks and suggestions.",
+      "The last review is kept for your team and says when the posts have changed since; Run Again writes a new one.",
+    ],
+  },
+  {
     version: "1.118.1",
     date: "2026-11-28",
     title: "One Pending in Discovery",

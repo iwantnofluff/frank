@@ -38,6 +38,8 @@ export type AiTask =
   | "classify_comment"
   // Check VO and Text on Image (phase159).
   | "check_vo"
+  // Check the Month (phase173).
+  | "month_review"
   // Ask Frank (phase147): logged, never counted towards the limit.
   | "ask_frank";
 

@@ -1,6 +1,10 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMonthPostsStamp, useMonthReview, useRunMonthReview } from "@/hooks/use-month-review";
+import { VERDICT_LABELS } from "@/lib/month-review";
+import { monthLabel, monthOf } from "@/lib/monthly-strategy";
+import { goLiveDay } from "@/lib/post-live";
 import { Modal } from "@/components/ui/Modal";
 import { FitTextarea } from "@/components/ui/FitTextarea";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -844,6 +848,106 @@ function VoCheckWindow({
   );
 }
 
+// Check the Month (phase173, direct instruction): Frank's review of the
+// direction of this post's month in its project, as a whole, against the
+// client's Knowledge and the month's strategy. The last review is kept and
+// shown as it opens (decided directly); with none yet, it's written as it
+// opens. Run Again writes a new one over it.
+function MonthCheckWindow({ projectId, month, onClose }: { projectId: string; month: string; onClose: () => void }) {
+  const saved = useMonthReview(projectId, month);
+  const stamp = useMonthPostsStamp(projectId, month);
+  const run = useRunMonthReview(projectId, month);
+  const { mutate } = run;
+  // Once, as it opens, when there's no review of this month yet.
+  const ran = useRef(false);
+  useEffect(() => {
+    if (ran.current || saved.isPending || saved.isError || saved.data) return;
+    ran.current = true;
+    mutate();
+  }, [saved.isPending, saved.isError, saved.data, mutate]);
+
+  const row = saved.data ?? null;
+  const review = row?.review ?? null;
+  const changed =
+    !!row && !!stamp.data && (stamp.data.count !== row.post_count || (stamp.data.at ?? "") > (row.posts_at ?? ""));
+  // Green where the month does well, amber where it falls short, grey for
+  // what's simply observed or suggested.
+  const sections: { title: string; items: string[]; tone: "ok" | "warn" | "info" }[] = review
+    ? [
+        { title: "Strategy carried", items: review.strategyCovered, tone: "ok" },
+        { title: "Strategy missing", items: review.strategyMissing, tone: "warn" },
+        { title: "Fits the brand", items: review.brandStrengths, tone: "ok" },
+        { title: "Brand gaps", items: review.brandGaps, tone: "warn" },
+        { title: "Mix and rhythm", items: review.mix, tone: "info" },
+        { title: "Risks", items: review.risks, tone: "warn" },
+        { title: "Suggestions for the rest of the month", items: review.suggestions, tone: "info" },
+      ]
+    : [];
+
+  return (
+    <Modal
+      hideCloseButton
+      size="lg"
+      title={`Check the Month: ${monthLabel(month)}`}
+      onClose={onClose}
+      footer={
+        <>
+          <button type="button" className="btn" onClick={onClose}>
+            Done
+          </button>
+          <button type="button" className="btn primary" disabled={run.isPending || saved.isPending} onClick={() => run.mutate()}>
+            {run.isPending ? "Checking…" : review ? "Run Again" : "Check the Month"}
+          </button>
+        </>
+      }
+    >
+      <div className="monthcheck" role="region" aria-label="Frank's review of the month" aria-busy={run.isPending}>
+        {run.isPending ? (
+          <CheckWait />
+        ) : saved.isPending ? (
+          <p className="msection-empty">Frank is working…</p>
+        ) : run.isError ? (
+          <p className="autherr">{errorMessage(run.error, "Couldn't check the month")}</p>
+        ) : saved.isError ? (
+          <p className="autherr">{errorMessage(saved.error, "Couldn't load the last review")}</p>
+        ) : review && row ? (
+          <>
+            <p className="monthcheck-meta">
+              {row.post_count} {row.post_count === 1 ? "post" : "posts"} in {monthLabel(month)} · checked{" "}
+              {new Date(row.updated_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+            </p>
+            {changed && (
+              <p className="monthcheck-changed">The month&rsquo;s posts have changed since. Run Again to check them as they are now.</p>
+            )}
+            <div className={`checkfind ${review.verdict === "on_track" ? "ok" : "warn"}`}>
+              <span className="dot" />
+              <div>
+                <b>{VERDICT_LABELS[review.verdict]}</b>
+                <p>{review.summary}</p>
+              </div>
+            </div>
+            {sections
+              .filter((s) => s.items.length)
+              .map((s) => (
+                <section className="monthcheck-sec" key={s.title}>
+                  <div className="msection-h">{s.title}</div>
+                  {s.items.map((item, i) => (
+                    <div className={`checkfind ${s.tone}`} key={i}>
+                      <span className="dot" />
+                      <div>
+                        <p>{item}</p>
+                      </div>
+                    </div>
+                  ))}
+                </section>
+              ))}
+          </>
+        ) : null}
+      </div>
+    </Modal>
+  );
+}
+
 function CheckSection({
   kind,
   creativeId,
@@ -1109,6 +1213,10 @@ export function CreativeModal(props: CreativeModalProps) {
   const [conflict, setConflict] = useState<PostChangedError | null>(null);
   // Check VO and Text on Image's window (direct instruction).
   const [voCheckOpen, setVoCheckOpen] = useState(false);
+  // Check the Month's window (phase173): the month this post goes live in
+  // (this month, for one with no date yet), as it's saved.
+  const [monthCheckOpen, setMonthCheckOpen] = useState(false);
+  const checkMonth = isCreate ? null : monthOf(props.creative.scheduled_at ?? goLiveDay(props.creative) ?? new Date());
   // The brief as this window last knew it on record: as opened, then as
   // saved or taken from someone else. Not the live post (the page refreshes
   // that as others save), or someone's change would look like nothing
@@ -3279,10 +3387,26 @@ export function CreativeModal(props: CreativeModalProps) {
               )}
             </Fragment>
           ))}
+
+          <div className="msection-h">Check the Month</div>
+          <p className="msection-d">
+            Frank reviews the direction of {checkMonth ? monthLabel(checkMonth) : "this month"}&rsquo;s posts in this project as a
+            whole, against the client&rsquo;s Knowledge and the month&rsquo;s strategy: what they carry, what they miss, the mix,
+            and where to take the rest of the month. Reads the posts&rsquo; words, not their artwork. Your team shares the last
+            review.
+          </p>
+          <div className="field">
+            <button type="button" className="btn sm primary" disabled={!checkMonth} onClick={() => setMonthCheckOpen(true)}>
+              Check the Month
+            </button>
+          </div>
         </div>
       )}
 
     </Modal>
+    {monthCheckOpen && checkMonth && (
+      <MonthCheckWindow projectId={projectId} month={checkMonth} onClose={() => setMonthCheckOpen(false)} />
+    )}
     {voCheckOpen && creativeId && (
       <VoCheckWindow
         creativeId={creativeId}

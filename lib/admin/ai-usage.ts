@@ -29,6 +29,7 @@ export const TASK_LABELS: Record<AiTask, string> = {
   strategy_overview: "Strategy overview",
   classify_comment: "Sorting client comments",
   check_vo: "Check VO and Text on Image",
+  month_review: "Check the Month",
   ask_frank: "Ask Frank (not counted)",
 };
 

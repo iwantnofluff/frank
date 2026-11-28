@@ -118,6 +118,8 @@ export async function sweepStepByStep(agencyId: string): Promise<void> {
     ["creatives", () => admin.from("creatives").delete().eq("agency_id", agencyId)],
     ["project_slack", () => admin.from("project_slack").delete().eq("agency_id", agencyId)],
     ["project_slack_list", () => admin.from("project_slack_list").delete().eq("agency_id", agencyId)],
+    // phase173: a project's month reviews.
+    ["month_reviews", () => admin.from("month_reviews").delete().eq("agency_id", agencyId)],
     ["slack_connections", () => admin.from("slack_connections").delete().eq("agency_id", agencyId)],
     // The agency's and its clients' statuses (phase151), once no post is on one.
     ["stage_statuses", () => admin.from("stage_statuses").delete().eq("agency_id", agencyId)],

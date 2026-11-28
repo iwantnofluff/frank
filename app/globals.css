@@ -16187,6 +16187,30 @@ button.help-link {
 .vocheck-add {
   margin-top: 12px;
 }
+/* Check the Month (phase173): Frank's review of a month's direction, in
+   Check VO's large window, its parts as the checks' findings. */
+.monthcheck-meta {
+  margin: 0 0 10px;
+  font-size: 12.2px;
+  color: var(--muted);
+}
+.monthcheck-changed {
+  margin: 0 0 12px;
+  padding: 9px 11px;
+  border-radius: 7px;
+  background: var(--amber-bg);
+  font-size: 13.2px;
+  color: var(--ink);
+}
+.monthcheck-sec {
+  margin-top: 16px;
+}
+.monthcheck .checkfind.info .dot {
+  background: var(--muted);
+}
+.monthcheck-sec .msection-h {
+  margin: 0 0 8px;
+}
 /* A long comment, cut to its first six lines until Read More (direct
    instruction). */
 .cbody.clamp {
