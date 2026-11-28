@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { test, expect, APP_URL, type Frank, APP_PORT } from "./fixtures";
+import { sweepStepByStep } from "./sweep";
 
 // What a plan allows, enforced (phase41): new agencies on Free with a
 // 30-day trial, read-only after it, storage by plan, branding from Growth,
@@ -82,8 +83,10 @@ test("an agency signs itself up at beingfrank.app, confirms, works through its t
     await expect(page.locator(".autherr")).toContainText("Confirm your email first");
 
     // The email's link (sent to a .invalid address, so made here the same
-    // way): it confirms, signs in on the new address, and opens it.
-    const { data: link } = await admin.auth.admin.generateLink({ type: "magiclink", email });
+    // way): it confirms, signs in on the new address, and opens it. A
+    // signup link, as the email's is: a magic link confirms too, but leaves
+    // the account's password refusing sign-in, which no real person meets.
+    const { data: link } = await admin.auth.admin.generateLink({ type: "signup", email, password });
     await page.goto(`${home}/confirm?token_hash=${encodeURIComponent(link.properties!.hashed_token)}`);
     await page.waitForURL(`${home}/dashboard`, { timeout: 20_000 });
     await expect(page.locator(".robanner")).toHaveCount(0);
@@ -142,9 +145,9 @@ test("an agency signs itself up at beingfrank.app, confirms, works through its t
     const { data: agency } = await admin.from("agencies").select("id").eq("subdomain", sub).maybeSingle();
     if (agency) {
       const { data: m } = await admin.from("memberships").select("user_id").eq("agency_id", agency.id);
-      await admin.from("clients").delete().eq("agency_id", agency.id);
-      await admin.from("memberships").delete().eq("agency_id", agency.id);
-      await admin.from("agencies").delete().eq("id", agency.id);
+      // Everything in it, in order (its sample client and default notes
+      // stopped plain deletes on their foreign keys, leaving it behind).
+      await sweepStepByStep(agency.id);
       for (const row of m ?? []) {
         await admin.from("users").delete().eq("id", row.user_id);
         await admin.auth.admin.deleteUser(row.user_id);

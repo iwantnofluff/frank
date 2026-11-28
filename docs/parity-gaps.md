@@ -5185,6 +5185,15 @@ Direct instruction: the review link had no brief; add an icon before Content, so
 
 **Verified**: In the real app (dev server, staging), as a visitor with no session, at 1440 × 900 and 390 × 844, with a concept, a reference and a team member seeded: Brief showed them, Notes for Designer didn't, and the brief fitted the phone's screen (it first ran off the right edge, fixed with `width: auto`). Screenshots checked after the highlight's fade; one taken straight after the click showed Content still lit, which the logged `aria-pressed`/`aria-current` showed was the fade, not the state. shared-review-brief.spec.ts is new (desktop menu order and the brief; phone icon order, pressed state, fit). shared-review-phone.png and shared-review-desktop.png differed only by the new icon and menu item and were regenerated after looking at each diff. shared-review-public, shared-review-account, designer-note-versions and new-brief run with it against staging: 20 passed, 10 failed while the machine was loaded. Rerun, all 10 passed except the two baselines above, which then passed once regenerated. Unit tests: 311 passed.
 
+## Two test failures fixed: Format Directions screenshot, and plan-enforcement's sign-up (tests only, 2026-11-28)
+
+Tests only; nothing in the app changed.
+- **settings-knowledge.png** differed only by the three Facebook formats added in 1.116.0 (Format Directions lists every format); the diff was looked at and the baseline refreshed. It was missed then because the settings spec wasn't among those run.
+- **plan-enforcement's sign-up test**, long recorded as "a staging sign-in refused": the test confirmed the new owner's email with a magic link, and on this Supabase a magic link confirms the account but leaves its password refusing sign-in ("Invalid login credentials"). The app's own email sends a signup link, verified as type email on /confirm, which keeps the password: checked directly against staging both ways (signup link: signs in; magic link: refused), so no real person meets it. The test now makes a signup link, as the email does.
+- **Its cleanup never worked** once a workspace had a sample client: it deleted clients directly, which their projects (and, since phase172, default notes) block on foreign keys, silently, so every run since 10 Nov left an "E2E Signup Agency" behind. It now uses the suite's step-by-step sweep (`sweepStepByStep`, exported; the one-call `e2e_sweep_agency` refuses any workspace not named E2E Test Agency, by design). The 10 left on staging were swept, with their test accounts (only e2e-signup-…@example.invalid ones).
+
+**Verified**: settings.spec.ts's Format Directions test passes on the new baseline. plan-enforcement.spec.ts passes in full (5), twice, with no cleanup error, and afterwards staging has no E2E Signup Agency or E2E Test Agency left. tsc and eslint clean.
+
 ## Client Rules, default Discovery notes, and the Strategy box's months (1.118.0, 2026-11-28)
 
 Direct instruction:

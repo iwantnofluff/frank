@@ -73,7 +73,9 @@ async function removeFiles(agencyId: string): Promise<{ error: unknown }> {
 // agency-scoped table has that column (denormalised for RLS), and specs
 // are free to create their own extra rows; agency_id sweeps all of it.
 // People's rows and accounts are the caller's to remove.
-async function sweepStepByStep(agencyId: string): Promise<void> {
+// Also on its own, for a workspace the one-call sweep refuses (not named
+// E2E Test Agency, as plan-enforcement's self-signup one).
+export async function sweepStepByStep(agencyId: string): Promise<void> {
   const steps: [string, () => PromiseLike<{ error: unknown }>][] = [
     // By agency_id, not by the tokens tracked in sharedLinkTokens — that
     // array only sees links made via frank.createSharedLink(); one made
