@@ -9,6 +9,7 @@ import {
   HELP_CATEGORIES,
   HELP_TOPICS,
   helpArticle,
+  helpVisible,
   searchHelp,
   type HelpArticle,
   type HelpBlock,
@@ -94,6 +95,7 @@ function useLinkPlaces(): { client: string | null; project: string | null; asset
 function Rich({ text, onHelp, onShow }: { text: string; onHelp?: (id: string) => void; onShow?: (id: string) => void }) {
   const router = useRouter();
   const places = useLinkPlaces();
+  const { isStaff: linkStaff, isPending: linkPending } = useIsStaff();
   const out: ReactNode[] = [];
   let at = 0;
   for (const m of text.matchAll(HELP_LINK)) {
@@ -103,7 +105,14 @@ function Rich({ text, onHelp, onShow }: { text: string; onHelp?: (id: string) =>
     // starts its walkthrough (Ask Frank's answers, phase147).
     if (target.startsWith("help:") || target.startsWith("showme:")) {
       const id = target.slice(target.indexOf(":") + 1);
-      const act = target.startsWith("help:") ? (helpArticle(id) ? onHelp : undefined) : GUIDES[id] ? onShow : undefined;
+      const linked = helpArticle(id);
+      const act = target.startsWith("help:")
+        ? linked && helpVisible(linked, linkPending ? null : linkStaff)
+          ? onHelp
+          : undefined
+        : GUIDES[id]
+          ? onShow
+          : undefined;
       out.push(
         act ? (
           <button key={m.index} type="button" className={target.startsWith("showme:") ? "help-link help-showlink" : "help-link"} onClick={() => act(id)}>
@@ -423,7 +432,9 @@ export function HelpPanel({
 
   const push = (v: View) => setHistory((h) => [...h, v]);
   const back = () => setHistory((h) => (h.length > 1 ? h.slice(0, -1) : h));
-  const results = searchHelp(query);
+  // Which articles are theirs: the team's or a client's (helpVisible).
+  const known = staffPending ? null : isStaff;
+  const results = searchHelp(query, known);
   const article = view.kind === "article" ? helpArticle(view.id) : null;
   const category = view.kind === "category" ? HELP_CATEGORIES.find((c) => c.id === view.id) : null;
 
@@ -516,11 +527,11 @@ export function HelpPanel({
         {category && (
           <>
             <h2 className="help-title">{category.label}</h2>
-            {canShow && HELP_ARTICLES.some((a) => a.category === category.id && GUIDES[a.id]) && (
+            {canShow && HELP_ARTICLES.some((a) => a.category === category.id && helpVisible(a, known) && GUIDES[a.id]) && (
               <ShowMe label={`Show me ${category.label}`} onClick={() => startTour({ category: category.id })} />
             )}
             <div className="help-list">
-              {HELP_ARTICLES.filter((a) => a.category === category.id).map((a) => (
+              {HELP_ARTICLES.filter((a) => a.category === category.id && helpVisible(a, known)).map((a) => (
                 <ArticleRow key={a.id} a={a} onOpen={() => push({ kind: "article", id: a.id })} />
               ))}
             </div>

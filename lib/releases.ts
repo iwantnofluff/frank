@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.117.0",
+    date: "2026-11-28",
+    title: "Help for what clients see",
+    changes: [
+      "Help → Your Team has What Your Clients See When They Sign In: every difference between a client's view of Frank and your team's.",
+      "Your clients' Help has Signed In or Using a Review Link, on what changes when they sign in.",
+    ],
+  },
+  {
     version: "1.116.2",
     date: "2026-11-28",
     title: "Agency approves, in Frank too",

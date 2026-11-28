@@ -99,3 +99,40 @@ test("Ask Frank opens from the header: topics, categories, articles and search",
   await help.getByRole("button", { name: "Close Ask Frank" }).click();
   await expect(help).toHaveCount(0);
 });
+
+// What a client sees is the team's article; signed in against a review
+// link is the client's (direct instruction). Each finds only its own.
+test("Ask Frank's client-view article is the team's, and signed in or link the client's", async ({ page, browser, frank }) => {
+  await frank.loginAsStaff(page);
+  await page.goto(`${APP_URL}/dashboard`);
+  await page.getByRole("button", { name: "Ask Frank", exact: true }).click();
+  const help = page.getByRole("complementary", { name: "Ask Frank" });
+  await help.getByRole("button", { name: "Your Team" }).click();
+  await help.getByRole("button", { name: /What Your Clients See When They Sign In/ }).click();
+  await expect(help.getByRole("heading", { name: "A post's page" })).toBeVisible();
+  await help.getByRole("button", { name: "Back" }).click();
+  await help.getByRole("button", { name: "Back" }).click();
+  await help.getByRole("button", { name: "Reviews and Approvals" }).click();
+  await expect(help.getByRole("button", { name: /Send Posts to Your Client for Review/ })).toBeVisible();
+  await expect(help.getByRole("button", { name: /Signed In or Using a Review Link/ })).toHaveCount(0);
+
+  const ctx = await browser.newContext();
+  const c = await ctx.newPage();
+  await frank.loginAsClient(c);
+  await c.goto(`${APP_URL}/dashboard`);
+  await c.getByRole("button", { name: "Ask Frank", exact: true }).click();
+  const chelp = c.getByRole("complementary", { name: "Ask Frank" });
+  await chelp.getByRole("button", { name: "Reviews and Approvals" }).click();
+  await chelp.getByRole("button", { name: /Signed In or Using a Review Link/ }).click();
+  await expect(chelp.getByRole("heading", { name: "On a review link" })).toBeVisible();
+  await chelp.getByRole("button", { name: "Back" }).click();
+  await chelp.getByRole("button", { name: "Back" }).click();
+  await chelp.getByRole("button", { name: "Your Team" }).click();
+  await expect(chelp.getByRole("button", { name: /Roles: Who Can Do What/ })).toBeVisible();
+  await expect(chelp.getByRole("button", { name: /What Your Clients See When They Sign In/ })).toHaveCount(0);
+  await chelp.getByRole("button", { name: "Back" }).click();
+  await chelp.getByRole("searchbox", { name: "Search topics" }).fill("sign in");
+  await expect(chelp.getByRole("button", { name: /Signed In or Using a Review Link/ })).toBeVisible();
+  await expect(chelp.getByRole("button", { name: /What Your Clients See When They Sign In/ })).toHaveCount(0);
+  await ctx.close();
+});

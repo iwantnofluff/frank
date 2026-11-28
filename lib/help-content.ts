@@ -18,6 +18,10 @@ export interface HelpArticle {
   category: string;
   summary: string;
   blocks: HelpBlock[];
+  // Only for the team, or only for a client's own people (direct
+  // instruction: what a client sees is the team's to know, and signed in
+  // against a review link the client's). Everyone, when not set.
+  audience?: "team" | "client";
 }
 
 export interface HelpCategory {
@@ -130,7 +134,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         ],
       },
       { kind: "p", text: "On a post, the stage switch shows all six as numbered pills, the post's own stage in its colour: Concept and In Production red, Internal Review and Client Review orange, Approved and Live green." },
-      { kind: "p", text: "A post moves to In Production when someone approves its Concept: Approve Concept, beside Post in its comments, or the green Approve Concept button in [the table's](project:) Concept column. The client can approve it too. It moves to Internal Review by itself when its first artwork or copy is saved, approved or not. Pick Internal Review, Client Review, Approved or Live to move it on from there. In Client Review, Approve beside Post moves it to Approved, for the client or your team: those are the only stages a client changes. Approved, by the button or picked by your team, leaves an Approved comment in that person's name (Client Approved from the client)." },
+      { kind: "p", text: "A post moves to In Production when someone approves its Concept: Approve Concept, beside Post in its comments, or the green Approve Concept button in [the table's](project:) Concept column. The client can approve it too. It moves to Internal Review by itself when its first artwork or copy is saved, approved or not. Pick Internal Review, Client Review, Approved or Live to move it on from there. In Client Review, Approve beside Post moves it to Approved, for your team, and for the client unless [the client's Preferences](client:/settings/preferences) say the agency approves: those are the only stages a client changes. Approved, by the button or picked by your team, leaves an Approved comment in that person's name (Client Approved from the client)." },
       { kind: "p", text: "Every stage can have statuses for your team, set for the whole workspace in [Settings → General → Statuses](/settings/general/statuses). A post takes its stage's first status when it gets there, and its stage pill shows it, lettered within the stage: 2a. In Progress (Content), 3b. Internal QC (Creative). In Production and Internal Review start with In Progress (Content) and In Progress (Creative); Internal QC (Copy), Internal QC (Creative), Hold and Cancel. The other stages start with none. For your team that pill opens a list: on the post, the stage alone (3. Internal) and its statuses; in [the table's](project:) Status column, every stage and status, so a post can be moved to any of them from there, back to Concept or Production too. A post still in Concept moves on once its Concept is approved: Frank asks first, with Approve Concept. Owners and Admins add, rename, reorder and remove them; removing one moves its posts to the first left in that stage. Clients don't see them, even in Client Review." },
       { kind: "p", text: "A client can have its own statuses instead, in its [Client Settings → Statuses](client:/settings/statuses): Use Its Own starts them as a copy of the workspace's, to change for that client alone. Changes to the workspace's statuses then don't reach it. Use the Agency's goes back, moving its posts to the workspace's status of the same name, or the stage's first." },
       { kind: "p", text: "A post with no date yet is an Idea (0. Idea), listed under No Scheduled Date at the foot of [the table](project:), where Add Date gives it one. Ideas are your team's only: clients don't see them." },
@@ -493,6 +497,53 @@ export const HELP_ARTICLES: HelpArticle[] = [
     ],
   },
   {
+    id: "signed-in-or-link",
+    title: "Signed In or Using a Review Link",
+    category: "reviews",
+    audience: "client",
+    summary: "What changes when you sign in to Frank, compared with opening a review link.",
+    blocks: [
+      {
+        kind: "p",
+        text: "Your agency can send you a review link, which opens without an account, or invite you to sign in to Frank. Both show you posts and let you comment. Signing in puts all of your posts in one place, with more ways to give feedback.",
+      },
+      { kind: "h", text: "On a review link" },
+      {
+        kind: "list",
+        items: [
+          "Opens on any phone or computer without signing in, with a passcode if your agency added one. A link stops working after a time your agency sets; it then says it isn't available.",
+          "Shows the posts it was sent for, then the project's other posts waiting for your review, then recently approved ones. Posts not ready yet are under Not ready for review yet, to read.",
+          "Pick your name under Who are you? and comment as that name.",
+          "Comment only while a post is in Client Review, and approve if your agency allows approving on links.",
+          "Comments are words, with the moment kept on a video. No pins or marked areas, no replies and no resolving. You can edit a comment from the same browser while the post is in review.",
+          "Brief, Content and Feed, as signed in.",
+        ],
+      },
+      { kind: "h", text: "Signed in to Frank" },
+      {
+        kind: "list",
+        items: [
+          "Every project of yours, each in a table by month, with Week, Month and Calendar views, and each post's own page.",
+          "You comment as yourself, with your photo.",
+          "Comment in Concept as well as Client Review: Approve Concept on a post's concept, and Approve when it's in Client Review if your agency lets you approve.",
+          "Pin a spot on the artwork, mark an area, or select words in the caption to comment on just those. Reply, edit, and resolve your own comments, and filter them.",
+          "Give feedback straight from the table, in its Client Feedback column.",
+          "Read your brand's Knowledge (Discovery and Strategy) and its Strategy Overview on your client's page.",
+          "Search for a project or page, and set your photo in My Profile.",
+        ],
+      },
+      { kind: "h", text: "Moving between them" },
+      {
+        kind: "list",
+        items: [
+          "On a link, under Optional: Create an account or Log In. Once you're signed in, the link shows who you're signed in as and Open Your Content Planner.",
+          "On a link you still comment by picking your name, even when signed in.",
+        ],
+      },
+      { kind: "note", text: "Neither shows your agency's private comments, or any other client's work." },
+    ],
+  },
+  {
     id: "comments",
     title: "Comment, Pin and Resolve",
     category: "reviews",
@@ -516,7 +567,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       },
       { kind: "h", text: "Approve the Concept" },
       { kind: "p", text: "While a post is in Concept with its Concept written, Approve Concept sits beside Post. Anyone on the post can press it, the client included, or use the green Approve Concept button in [the table's](project:) Concept column." },
-      { kind: "p", text: "While a post is in Client Review, Approve sits beside Post, for the client and your team. It moves the post to Approved and leaves a comment in your name: Approved, or Client Approved from the client. Your team picking Approved as the post's stage leaves the same Approved comment." },
+      { kind: "p", text: "While a post is in Client Review, Approve sits beside Post, for your team, and for the client unless [the client's Preferences](client:/settings/preferences) say the agency approves. It moves the post to Approved and leaves a comment in your name: Approved, or Client Approved from the client. Your team picking Approved as the post's stage leaves the same Approved comment." },
       { kind: "p", text: "Approving moves the post to In Production and adds a comment in the approver's name: Approved Concept from your team, Client Approved Concept from the client. The client's shows in [the table's](project:) Client Feedback column." },
       { kind: "note", text: "Clients see and add comments while a post is in Concept or Client Review, and never see private ones." },
     ],
@@ -692,7 +743,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "Someone at one of your clients, signed in to Frank. Can be at more than one of your clients.",
           "Sees that client's projects (or the ones they're on), the posts (not Ideas) and [the client's Knowledge](client:/settings/knowledge).",
           "Sees and adds public comments only while a post is in Concept or Client Review, and approves a post's Concept. Sees only each post's latest artwork and copy, with no Checks, and changes no other stage or status.",
-          "Approves on review links unless [the client's Preferences](client:/settings/preferences) say the agency approves.",
+          "Approves posts in Client Review, in Frank and on review links, unless [the client's Preferences](client:/settings/preferences) say the agency approves.",
           "Never sees private comments, other clients, or your settings.",
         ],
       },
@@ -703,6 +754,76 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "Anyone with a review link, without signing in. Not a role, but worth knowing what they can do.",
           "Sees the posts in Client Review (and what the link shares), comments under their name, and approves if the link and the client allow it.",
           "Never sees private comments, other projects' work, or anything beyond the link. A passcode can be added when sharing.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "client-view",
+    title: "What Your Clients See When They Sign In",
+    category: "team",
+    audience: "team",
+    summary: "Every difference between a Client's view of Frank and your team's, screen by screen.",
+    blocks: [
+      {
+        kind: "p",
+        text: "A Client is someone at one of your clients who signs in to Frank with the email you invited. They see Frank much as your team does, with less in it and nothing they can change beyond their own comments. Here is every difference. For what anyone sees on a review link without signing in, see [Send Posts to Your Client for Review](help:send-for-review); for roles, [Roles: Who Can Do What](help:roles).",
+      },
+      { kind: "h", text: "Everywhere" },
+      {
+        kind: "list",
+        items: [
+          "Only their own client, or clients, and of its projects only the ones they're on. Never your other clients.",
+          "No Ideas, no archived posts and no posts on a hidden status (Show Hidden is your team's).",
+          "No Workspace Settings in their menu. Search finds their clients, projects and the client's Knowledge, never Settings.",
+          "The bell, without release notes or notification settings. Frank's notices (mentions, client activity, artwork removal) go to your team, so a client's bell stays quiet.",
+          "Help, Ask Frank and their own Frank Tour, but no Show Me walkthroughs and no tips.",
+          "Drafting with Frank, Checks, Proofread and WIIFM are your team's only.",
+          "My Profile, with their photo, but no Notifications tab.",
+          "If your workspace becomes read-only, they're told comments and approvals are paused.",
+        ],
+      },
+      { kind: "h", text: "Clients and the client's page" },
+      {
+        kind: "list",
+        items: [
+          "No New Client, New Project, Add Folder, or renaming and deleting folders.",
+          "Strategy Overview to read, without the links to add to it.",
+          "Client Settings is only Knowledge: Discovery and Strategy, both to read. Nothing can be added, edited or removed.",
+        ],
+      },
+      { kind: "h", text: "A project's table" },
+      {
+        kind: "list",
+        items: [
+          "No Share, + New, Discussion, Activity Log or Settings, no Active and Archived switch, and no faces of who else is looking.",
+          "The VO, Notes for Designer and Internal Feedback columns are left out. They can't add or rename columns, save views, or tick rows.",
+          "Every cell is to read: dates, times, copy and artwork. Status shows the post's stage, not your own status names.",
+          "Only the latest copy and Text on Image, with no earlier versions on hover, as on a post's page.",
+          "The Client Feedback column is theirs: while a post is in Concept or Client Review they choose Add Feedback or write in the cell, and approve a Concept there.",
+        ],
+      },
+      { kind: "h", text: "A post's page" },
+      {
+        kind: "list",
+        items: [
+          "The stage pills to read; no Share, + New or Edit, so no post window.",
+          "Brief, Content and Feed, but no Checks. The Brief has no Notes for Designer.",
+          "Only the latest artwork and copy, with no Creative, Copy, Text on Image or VO version pickers.",
+          "No VO. Until there's artwork, the Text on Image shows in its place, as it does for you.",
+          "Fullscreen, without Safe Zones or the feed crop. The Final Asset link is your team's.",
+          "Without artwork it says the agency hasn't uploaded it yet, with no Upload button.",
+        ],
+      },
+      { kind: "h", text: "Comments" },
+      {
+        kind: "list",
+        items: [
+          "Only while a post is in Concept or Client Review. At any other stage the comments panel isn't there.",
+          "Always Public. They never see Private comments, and have no Private filter, On behalf of or @mentions.",
+          "They pin a spot, mark an area, select caption words, comment at a video's moment, reply, and edit and resolve their own comments.",
+          "Approve Concept while a post is in Concept, and Approve while it's in Client Review, unless [the client's Preferences](client:/settings/preferences) say the agency approves. Each leaves a comment in their name: Client Approved Concept, or Client Approved.",
+          "Their name shows with the client's, such as Parth Dogra (Casa Carigar), and in Slack as the client's.",
         ],
       },
     ],
@@ -721,8 +842,8 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "Clients are the brand's own people. They see their own projects, review posts and read their [Knowledge](client:/settings/knowledge).",
         ],
       },
-      { kind: "p", text: "Invite people from [Workspace Settings, under Team](/settings/team/users): it's the only place invites are sent from." },
-      { kind: "p", text: "[A client's People page](client:/settings/people), and the New Client window on [Clients](/dashboard), add Users already on your team." },
+      { kind: "p", text: "Invite people from [Workspace Settings, under Team](/settings/team/users). A project's Settings and [a client's People page](client:/settings/people) also invite someone new, as a User or one of the client's own people, or add Users already on your team." },
+      { kind: "p", text: "The New Client window on [Clients](/dashboard) adds Users already on your team." },
       { kind: "p", text: "Each person can change the type of, resend invites to, and remove only the people below them." },
       {
         kind: "note",
@@ -784,6 +905,14 @@ export const HELP_ARTICLES: HelpArticle[] = [
 const BY_ID = new Map(HELP_ARTICLES.map((a) => [a.id, a]));
 export const helpArticle = (id: string) => BY_ID.get(id) ?? null;
 
+// Whether someone sees an article: one for the team or for clients only
+// once it's known which they are.
+export function helpVisible(a: HelpArticle, isStaff: boolean | null): boolean {
+  if (!a.audience) return true;
+  if (isStaff === null) return false;
+  return a.audience === "team" ? isStaff : !isStaff;
+}
+
 // Articles whose title, summary or text has every word typed, best first
 // (title matches ahead of body matches).
 // Help text's links (phase147, direct instruction): "[words](target)": a
@@ -798,12 +927,12 @@ export function helpPlain(text: string): string {
   return text.replace(HELP_LINK, "$1");
 }
 
-export function searchHelp(query: string): HelpArticle[] {
+export function searchHelp(query: string, isStaff: boolean | null = null): HelpArticle[] {
   const words = query.toLowerCase().split(/\s+/).filter(Boolean);
   if (!words.length) return [];
   const text = (a: HelpArticle) =>
     helpPlain([a.summary, ...a.blocks.flatMap((b) => ("items" in b ? b.items : [b.text]))].join(" ")).toLowerCase();
-  return HELP_ARTICLES.map((a) => {
+  return HELP_ARTICLES.filter((a) => helpVisible(a, isStaff)).map((a) => {
     const title = a.title.toLowerCase();
     const body = text(a);
     if (!words.every((w) => title.includes(w) || body.includes(w))) return null;

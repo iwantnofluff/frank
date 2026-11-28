@@ -1,7 +1,7 @@
 // Run with: node --experimental-strip-types --test lib/help-links.test.ts
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { HELP_ARTICLES, HELP_LINK } from "./help-content.ts";
+import { HELP_ARTICLES, HELP_LINK, helpArticle, helpVisible, searchHelp } from "./help-content.ts";
 import { SETTINGS_SECTIONS } from "./settings-nav.ts";
 import { clientSettingsSections } from "./client-settings-nav.ts";
 
@@ -31,4 +31,20 @@ test("every help link's target exists", () => {
   }
   assert.deepEqual(wrong, []);
   assert.ok(count > 100, `only ${count} links`);
+});
+
+// What a client sees is the team's to read; signed in against a review
+// link is a client's (direct instruction). Neither shows until it's known
+// who's asking.
+test("the client-view article is the team's, the signed-in-or-link one a client's", () => {
+  const team = helpArticle("client-view")!;
+  const client = helpArticle("signed-in-or-link")!;
+  assert.equal(helpVisible(team, true), true);
+  assert.equal(helpVisible(team, false), false);
+  assert.equal(helpVisible(client, false), true);
+  assert.equal(helpVisible(client, true), false);
+  assert.equal(helpVisible(team, null), false);
+  assert.equal(helpVisible(helpArticle("comments")!, false), true);
+  assert.ok(searchHelp("review link signed", false).some((a) => a.id === "signed-in-or-link"));
+  assert.ok(!searchHelp("review link signed", true).some((a) => a.id === "signed-in-or-link"));
 });
