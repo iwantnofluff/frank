@@ -6109,11 +6109,14 @@ textarea.cxin {
 }
 /* An area with nothing in it yet (direct instruction): smaller, in red,
    with room around it, lined up with the panel's title. */
+/* An area with nothing in it: Pending, as a default note still to write
+   reads (.kb-pending; direct instruction: the two the same). */
 .kb-empty {
   margin: 0;
   padding: 18px 15px;
-  font-size: 12.2px;
-  color: var(--rose);
+  font-size: 13.2px;
+  line-height: 1.55;
+  color: var(--stage-concept-ink);
 }
 .kb-foot {
   padding: 11px 15px;

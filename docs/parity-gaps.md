@@ -5185,6 +5185,12 @@ Direct instruction: the review link had no brief; add an icon before Content, so
 
 **Verified**: In the real app (dev server, staging), as a visitor with no session, at 1440 × 900 and 390 × 844, with a concept, a reference and a team member seeded: Brief showed them, Notes for Designer didn't, and the brief fitted the phone's screen (it first ran off the right edge, fixed with `width: auto`). Screenshots checked after the highlight's fade; one taken straight after the click showed Content still lit, which the logged `aria-pressed`/`aria-current` showed was the fade, not the state. shared-review-brief.spec.ts is new (desktop menu order and the brief; phone icon order, pressed state, fit). shared-review-phone.png and shared-review-desktop.png differed only by the new icon and menu item and were regenerated after looking at each diff. shared-review-public, shared-review-account, designer-note-versions and new-brief run with it against staging: 20 passed, 10 failed while the machine was loaded. Rerun, all 10 passed except the two baselines above, which then passed once regenerated. Unit tests: 311 passed.
 
+## One Pending for empty areas and unwritten notes (1.118.1, 2026-11-28)
+
+Reported directly: an empty Discovery area said "Content pending" (smaller, rose) while a default note still to write says "Pending" (Concept's red); decided directly to make them the same. An empty area now says Pending, in the same red and size as a note's (`.kb-empty` matches `.kb-pending`), on a client's Discovery and on the workspace's Reference Material, which shares the look. Discovery's "N of 9 areas filled" no longer counts an area holding only Pending notes, since Frank leaves those out. Help's Knowledge article says so.
+
+**Verified**: in the real app, Discovery's empty areas and the default notes read Pending identically, and a client with only default notes reads 0 of 9 areas filled (screenshots looked at). new-client, brand-reminder, user-rights, client-workspace and settings specs pass (20). 326 unit tests, tsc and eslint clean. The dev server had stopped and was started again; its log showed a stale parse error from an earlier mid-edit save of BrandReminder.tsx, since fixed.
+
 ## Two test failures fixed: Format Directions screenshot, and plan-enforcement's sign-up (tests only, 2026-11-28)
 
 Tests only; nothing in the app changed.

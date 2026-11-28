@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.118.1",
+    date: "2026-11-28",
+    title: "One Pending in Discovery",
+    changes: [
+      "An empty Discovery area says Pending, the same as a note still to write, where it said Content pending.",
+      "Discovery's areas filled no longer counts an area with only Pending notes.",
+    ],
+  },
+  {
     version: "1.118.0",
     date: "2026-11-28",
     title: "Client Rules and default notes",

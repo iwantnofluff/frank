@@ -6,7 +6,7 @@ import { useKnowledgeEntries } from "@/hooks/use-knowledge-entries";
 import { useIsStaff } from "@/hooks/use-is-staff";
 import { useMyAgency } from "@/hooks/use-my-agency";
 import { KnowledgeSection } from "@/components/knowledge/KnowledgeSection";
-import { KNOWLEDGE_SECTIONS } from "@/lib/knowledge-sections";
+import { KNOWLEDGE_SECTIONS, isPendingNote } from "@/lib/knowledge-sections";
 import { SettingsHead } from "@/components/settings/SettingsHead";
 
 export default function ClientSettingsKnowledgePage({
@@ -32,8 +32,10 @@ export default function ClientSettingsKnowledgePage({
     document.getElementById(window.location.hash.slice(1))?.scrollIntoView({ block: "start" });
   }, [loaded]);
 
+  // An area holding only notes still reading Pending isn't filled: Frank
+  // leaves those out (phase172).
   const filledCount = KNOWLEDGE_SECTIONS.filter((s) =>
-    entries?.some((e) => e.section === s.key),
+    entries?.some((e) => e.section === s.key && !isPendingNote(e)),
   ).length;
 
   // Client Settings → Knowledge (direct instruction: moved here from the

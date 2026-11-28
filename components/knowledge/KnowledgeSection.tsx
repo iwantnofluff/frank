@@ -212,7 +212,7 @@ export function KnowledgeSection({
         );
       })}
 
-      {entries.length === 0 && !adding && <p className="kb-empty">Content pending</p>}
+      {entries.length === 0 && !adding && <p className="kb-empty">Pending</p>}
 
       {isStaff && adding && (
         <EntryEditor
