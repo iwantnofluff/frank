@@ -298,3 +298,64 @@ test("a mention in a comment tags the person in the channel's post", async ({ pa
     }
   }
 });
+
+// Share to Slack (phase174, direct instruction): a saved Check Brand or
+// Check the Month posts to the project's channel, naming the post, and links
+// to the saved check in its Edit window. Nothing's shared until it's saved.
+test("a saved check shares to the project's channel, naming the post and linking to it", async ({ page, frank }) => {
+  test.setTimeout(120_000);
+  const channel = `C_CHECK_${Date.now()}`;
+  await connect(frank.agencyId, "xoxb-e2e-check");
+  await admin.from("project_slack").insert({ project_id: frank.projectId, channel_id: channel, channel_name: "q4-social" });
+  await frank.loginAsStaff(page);
+  await page.goto(`${APP_URL}/dashboard`);
+  const share = (data: Record<string, unknown>) => page.request.post(`${APP_URL}/api/slack/share-check`, { data });
+
+  // Not saved yet: refused, nothing posted.
+  const early = await share({ creativeId: frank.creativeId, kind: "brand" });
+  expect(early.status()).toBe(409);
+  expect((await early.json()).error).toBe("Save the check first, then share it");
+
+  const s = anon();
+  await s.auth.signInWithPassword({ email: frank.staffEmail, password: frank.staffPassword });
+  const { error } = await s.from("brand_checks").insert({
+    creative_id: frank.creativeId,
+    findings: [
+      { tone: "warn", title: "Too shouty", body: "Drop the capitals." },
+      { tone: "ok", title: "On tone", body: "Warm and plain." },
+    ],
+    copy_version_no: 1,
+  });
+  expect(error).toBeNull();
+  const ok = await share({ creativeId: frank.creativeId, kind: "brand" });
+  expect(ok.status()).toBe(200);
+  expect(await ok.json()).toEqual({ channel: "q4-social" });
+  await expect.poll(() => onChannel(channel).length).toBe(1);
+  const msg = onChannel(channel)[0];
+  expect(headline(msg)).toBe("*E2E Staff* shared *Check Brand* for *E2E Test Creative*");
+  expect(msg.blocks[1].text!.text).toBe("1 to look at\n• Too shouty: Drop the capitals.");
+  const button = msg.blocks.at(-1)!.elements![0];
+  expect(button.url).toMatch(new RegExp(`^https?://[^/]+/creatives/${frank.creativeId}\\?edit=checks&check=brand$`));
+
+  // The month's: its verdict, and the month in the link.
+  const month = new Date().toISOString().slice(0, 8) + "01";
+  await s.from("month_reviews").insert({
+    project_id: frank.projectId,
+    month,
+    review: { verdict: "drifting", summary: "Leans on offers.", strategyCovered: [], strategyMissing: ["No Amazon."], brandStrengths: [], brandGaps: [], mix: [], risks: [], suggestions: ["Add a Reel."] },
+    post_count: 1,
+  });
+  expect((await share({ creativeId: frank.creativeId, kind: "month", month })).status()).toBe(200);
+  await expect.poll(() => onChannel(channel).length).toBe(2);
+  const m = onChannel(channel)[1];
+  expect(headline(m)).toMatch(/^\*E2E Staff\* shared \*Check the Month \([A-Z][a-z]{2} \d{4}\)\* for \*E2E Test Creative\*$/);
+  expect(m.blocks[1].text!.text).toBe("Drifting: Leans on offers.\n• No Amazon.\n• Add a Reel.");
+  expect(m.blocks.at(-1)!.elements![0].url).toContain(`edit=checks&check=month&month=${month}`);
+
+  // The link opens the post's Edit window on the saved Check Brand.
+  await page.goto(`${APP_URL}/creatives/${frank.creativeId}?edit=checks&check=brand`);
+  const modal = page.locator(".scrim .modal").first();
+  await expect(modal.getByRole("tab", { name: "Checks" })).toHaveAttribute("aria-selected", "true", { timeout: 20_000 });
+  await expect(modal).toContainText("Too shouty");
+  await expect(modal).toContainText(/Saved \d{1,2} [A-Z][a-z]{2}, checked against copy V1\./);
+});

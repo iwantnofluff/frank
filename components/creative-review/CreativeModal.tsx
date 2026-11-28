@@ -1,7 +1,9 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useMonthPostsStamp, useMonthReview, useRunMonthReview } from "@/hooks/use-month-review";
+import { useMonthPostsStamp, useMonthReview, useRunMonthReview, useSaveMonthReview, type MonthReviewRun } from "@/hooks/use-month-review";
+import { useBrandCheck, useSaveBrandCheck, useShareCheckToSlack } from "@/hooks/use-brand-check";
+import { useProjectSlack, useSlackConnection } from "@/hooks/use-slack";
 import { VERDICT_LABELS } from "@/lib/month-review";
 import { monthLabel, monthOf } from "@/lib/monthly-strategy";
 import { goLiveDay } from "@/lib/post-live";
@@ -197,6 +199,9 @@ type CreativeModalProps =
       copyVersions: CopyVersionRow[];
       initialTab?: Tab;
       initialFocus?: FocusTarget;
+      // A saved check to show as it opens (phase174: Share to Slack's link):
+      // Check Brand, scrolled to; or Check the Month's window, for a month.
+      openCheck?: { kind: "brand" | "month"; month?: string | null };
       // Others on the team with this post's Edit window open (phase82).
       othersEditing?: string[];
       onCreativeVersionCreated: (versionId: string) => void;
@@ -221,7 +226,7 @@ const CHECK_LABELS: Record<CheckKind, string> = {
 const CHECK_SECTION_DESCRIPTIONS: Record<CheckKind, string> = {
   wiifm:
     "Whether this copy leads with a real reader benefit, and draws on the workspace's own reference material.",
-  brand: "Whether this copy fits this client's brand knowledge — tone, protected terms, and anything else documented for them.",
+  brand: "Whether this copy fits this client's brand knowledge — tone, client rules, and anything else documented for them.",
   creative: "Whether each slide of the latest artwork says what its Text on Image says: missing or changed words, misspellings, wrong numbers.",
   design:
     "The latest artwork's logo size and position and its fonts, against this client's last 10 Approved or Live posts and any fonts named in their Knowledge, and its visual hierarchy: alignment, size, proximity and spacing.",
@@ -605,6 +610,8 @@ function LiveCheck({
   referenceNotes,
   attachments,
   knowledgeLoading,
+  projectId,
+  copyVersionNo,
 }: {
   kind: "brand" | "wiifm";
   creativeId: string;
@@ -624,10 +631,45 @@ function LiveCheck({
   // this button. Still tracked explicitly so an empty array while still
   // loading doesn't get mistaken for "genuinely no knowledge configured".
   knowledgeLoading: boolean;
+  // Check Brand's saved check and Slack (phase174): the post's project, and
+  // the copy version saved now, which a saved check is compared against.
+  projectId?: string;
+  copyVersionNo?: number | null;
 }) {
   const [findings, setFindings] = useState<CheckFinding[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
+  // Check Brand keeps its last saved check and shares it (phase174); Check
+  // WIIFM doesn't.
+  const keeps = kind === "brand";
+  const savedCheck = useBrandCheck(keeps ? creativeId : null);
+  const saveCheck = useSaveBrandCheck(creativeId);
+  const share = useShareCheckToSlack();
+  const slack = useSlackShareReady(keeps ? agencyId : undefined, keeps ? projectId : undefined);
+  // This run saved (Save, or Share's save first).
+  const [runSaved, setRunSaved] = useState(false);
+  const [shared, setShared] = useState<string | null>(null);
+  const [keepError, setKeepError] = useState<string | null>(null);
+  const saved = keeps ? (savedCheck.data ?? null) : null;
+  // What's shown: this run, else the saved check.
+  const shown = findings ?? saved?.findings ?? null;
+  const unsaved = keeps && !!findings && !runSaved;
+  async function keep() {
+    if (!unsaved || !findings) return;
+    await saveCheck.mutateAsync({ findings, copyVersionNo: copyVersionNo ?? null });
+    setRunSaved(true);
+  }
+  async function shareIt() {
+    setKeepError(null);
+    setShared(null);
+    try {
+      await keep();
+      const r = await share.mutateAsync({ creativeId, kind: "brand" });
+      setShared(r.channel ? `Shared to #${r.channel}.` : "Shared to Slack.");
+    } catch (e) {
+      setKeepError(errorMessage(e, "Couldn't share it to Slack"));
+    }
+  }
 
   const hasReference = referenceNotes.length > 0 || attachments.length > 0;
   const canRun = !!agencyId && !knowledgeLoading && !!copyText.trim() && hasReference;
@@ -641,6 +683,9 @@ function LiveCheck({
     if (!canRun || running) return;
     setRunning(true);
     setError(null);
+    setRunSaved(false);
+    setShared(null);
+    setKeepError(null);
     try {
       const prompt = buildCheckPrompt({
         intro: CHECK_INTROS[kind],
@@ -684,21 +729,44 @@ function LiveCheck({
       </div>
       {!running && disabledReason && <p className="msection-empty" style={{ marginBottom: 6 }}>{disabledReason}</p>}
       {running && <CheckWait />}
-      {!running && findings && findings.length > 0 && (
+      {!running && shown && shown.length > 0 && (
         <div>
-          <FindingsList findings={findings} />
+          {keeps && !findings && saved && (
+            <p className="checksource">
+              Saved {new Date(saved.updated_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+              {saved.copy_version_no ? `, checked against copy V${saved.copy_version_no}` : ""}.
+              {(copyVersionNo ?? null) !== (saved.copy_version_no ?? null) && " The copy has changed since: check it again to see it as it is now."}
+            </p>
+          )}
+          <FindingsList findings={shown} />
           <p className="checksource">Checked against {CHECK_AGAINST_LABELS[kind]}.</p>
+          {keeps && (
+            <CheckKeep
+              unsaved={unsaved}
+              saving={saveCheck.isPending}
+              onSave={() => {
+                setKeepError(null);
+                keep().catch((e) => setKeepError(errorMessage(e, "Couldn't save the check")));
+              }}
+              onShare={() => void shareIt()}
+              sharing={share.isPending}
+              shared={shared}
+              error={keepError}
+              slack={slack}
+              canShare
+            />
+          )}
           <CheckComment
             creativeId={creativeId}
-            text={checkCommentText(CHECK_LABELS[kind], findings)}
+            text={checkCommentText(CHECK_LABELS[kind], shown)}
             beside={
               // The pointers to act on, not the ones it found fine.
-              onDraft && findings.some((f) => f.tone === "warn") ? (
+              onDraft && shown.some((f) => f.tone === "warn") ? (
                 <button
                   type="button"
                   className="btn sm btn-frank"
                   onClick={() =>
-                    onDraft(checkPointersMessage(CHECK_LABELS[kind], findings.filter((f) => f.tone === "warn")))
+                    onDraft(checkPointersMessage(CHECK_LABELS[kind], shown.filter((f) => f.tone === "warn")))
                   }
                 >
                   <svg className="aicon" viewBox="0 0 24 24">
@@ -848,28 +916,126 @@ function VoCheckWindow({
   );
 }
 
+// Whether a check can be shared to Slack (phase174): the workspace
+// connected and the post's project given a channel; why not, when not.
+function useSlackShareReady(agencyId: string | undefined, projectId: string | undefined) {
+  const conn = useSlackConnection(agencyId);
+  const project = useProjectSlack(conn.data ? projectId : undefined);
+  if (conn.isPending || (conn.data && project.isPending)) return { ready: false, reason: null, channel: null };
+  if (!conn.data) return { ready: false, reason: "Connect Slack in Workspace Settings → Connections → Slack to share checks.", channel: null };
+  if (!project.data?.channel_id) return { ready: false, reason: "Pick a Slack channel in the project's Settings to share checks.", channel: null };
+  return { ready: true, reason: null, channel: project.data.channel_name ?? null };
+}
+
+// Save and Share to Slack, under a check (phase174, direct instruction):
+// Save keeps the run as the saved check, over the last one; Share posts
+// the saved check to the project's channel, saving the run first.
+function CheckKeep({
+  unsaved,
+  saving,
+  onSave,
+  onShare,
+  sharing,
+  shared,
+  error,
+  slack,
+  canShare,
+}: {
+  unsaved: boolean;
+  saving: boolean;
+  onSave: () => void;
+  onShare: () => void;
+  sharing: boolean;
+  shared: string | null;
+  error: string | null;
+  slack: { ready: boolean; reason: string | null };
+  canShare: boolean;
+}) {
+  return (
+    <div className="checkkeep">
+      <div className="checkkeep-btns">
+        {unsaved && (
+          <button type="button" className="btn sm" disabled={saving || sharing} onClick={onSave}>
+            {saving ? "Saving…" : "Save"}
+          </button>
+        )}
+        <button type="button" className="btn sm" disabled={!slack.ready || !canShare || sharing || saving} onClick={onShare}>
+          {sharing ? "Sharing…" : "Share to Slack"}
+        </button>
+      </div>
+      {error ? (
+        <p className="autherr">{error}</p>
+      ) : shared ? (
+        <p className="checkkeep-note">{shared}</p>
+      ) : slack.reason ? (
+        <p className="checkkeep-note">{slack.reason}</p>
+      ) : null}
+    </div>
+  );
+}
+
 // Check the Month (phase173, direct instruction): Frank's review of the
 // direction of this post's month in its project, as a whole, against the
-// client's Knowledge and the month's strategy. The last review is kept and
-// shown as it opens (decided directly); with none yet, it's written as it
-// opens. Run Again writes a new one over it.
-function MonthCheckWindow({ projectId, month, onClose }: { projectId: string; month: string; onClose: () => void }) {
+// client's Knowledge and the month's strategy. The saved review shows as it
+// opens; with none yet, it's written (and saved) as it opens. Run Again
+// shows a new one, kept only on Save (phase174, decided directly), so a
+// teammate's saved review isn't written over by a run to look.
+function MonthCheckWindow({
+  projectId,
+  month,
+  creativeId,
+  agencyId,
+  onClose,
+}: {
+  projectId: string;
+  month: string;
+  creativeId: string;
+  agencyId: string | undefined;
+  onClose: () => void;
+}) {
   const saved = useMonthReview(projectId, month);
   const stamp = useMonthPostsStamp(projectId, month);
   const run = useRunMonthReview(projectId, month);
-  const { mutate } = run;
+  const save = useSaveMonthReview(projectId, month);
+  const share = useShareCheckToSlack();
+  const slack = useSlackShareReady(agencyId, projectId);
+  // A run not saved yet.
+  const [fresh, setFresh] = useState<MonthReviewRun["row"] | null>(null);
+  const [shared, setShared] = useState<string | null>(null);
+  const [keepError, setKeepError] = useState<string | null>(null);
+  const runNow = useCallback(() => {
+    setShared(null);
+    setKeepError(null);
+    run.mutate(undefined, { onSuccess: (r) => setFresh(r.saved ? null : r.row) });
+  }, [run]);
   // Once, as it opens, when there's no review of this month yet.
   const ran = useRef(false);
   useEffect(() => {
     if (ran.current || saved.isPending || saved.isError || saved.data) return;
     ran.current = true;
-    mutate();
-  }, [saved.isPending, saved.isError, saved.data, mutate]);
+    runNow();
+  }, [saved.isPending, saved.isError, saved.data, runNow]);
 
-  const row = saved.data ?? null;
+  const row = fresh ?? saved.data ?? null;
   const review = row?.review ?? null;
   const changed =
-    !!row && !!stamp.data && (stamp.data.count !== row.post_count || (stamp.data.at ?? "") > (row.posts_at ?? ""));
+    !fresh && !!row && !!stamp.data && (stamp.data.count !== row.post_count || (stamp.data.at ?? "") > (row.posts_at ?? ""));
+  async function keep() {
+    if (!fresh) return;
+    await save.mutateAsync(fresh);
+    setFresh(null);
+  }
+  async function shareIt() {
+    setKeepError(null);
+    setShared(null);
+    try {
+      await keep();
+      const r = await share.mutateAsync({ creativeId, kind: "month", month });
+      setShared(r.channel ? `Shared to #${r.channel}.` : "Shared to Slack.");
+    } catch (e) {
+      setKeepError(errorMessage(e, "Couldn't share it to Slack"));
+    }
+  }
   // Green where the month does well, amber where it falls short, grey for
   // what's simply observed or suggested.
   const sections: { title: string; items: string[]; tone: "ok" | "warn" | "info" }[] = review
@@ -895,7 +1061,7 @@ function MonthCheckWindow({ projectId, month, onClose }: { projectId: string; mo
           <button type="button" className="btn" onClick={onClose}>
             Done
           </button>
-          <button type="button" className="btn primary" disabled={run.isPending || saved.isPending} onClick={() => run.mutate()}>
+          <button type="button" className="btn primary" disabled={run.isPending || saved.isPending} onClick={runNow}>
             {run.isPending ? "Checking…" : review ? "Run Again" : "Check the Month"}
           </button>
         </>
@@ -913,12 +1079,32 @@ function MonthCheckWindow({ projectId, month, onClose }: { projectId: string; mo
         ) : review && row ? (
           <>
             <p className="monthcheck-meta">
-              {row.post_count} {row.post_count === 1 ? "post" : "posts"} in {monthLabel(month)} · checked{" "}
-              {new Date(row.updated_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+              {row.post_count} {row.post_count === 1 ? "post" : "posts"} in {monthLabel(month)} ·{" "}
+              {fresh ? "checked just now, not saved yet" : `saved ${new Date(row.updated_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`}
             </p>
+            {fresh && saved.data && (
+              <p className="monthcheck-changed">
+                Save keeps this review for your team, over the one saved{" "}
+                {new Date(saved.data.updated_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}.
+              </p>
+            )}
             {changed && (
               <p className="monthcheck-changed">The month&rsquo;s posts have changed since. Run Again to check them as they are now.</p>
             )}
+            <CheckKeep
+              unsaved={!!fresh}
+              saving={save.isPending}
+              onSave={() => {
+                setKeepError(null);
+                keep().catch((e) => setKeepError(errorMessage(e, "Couldn't save the review")));
+              }}
+              onShare={() => void shareIt()}
+              sharing={share.isPending}
+              shared={shared}
+              error={keepError}
+              slack={slack}
+              canShare
+            />
             <div className={`checkfind ${review.verdict === "on_track" ? "ok" : "warn"}`}>
               <span className="dot" />
               <div>
@@ -961,6 +1147,8 @@ function CheckSection({
   referenceNotes,
   attachments,
   knowledgeLoading,
+  projectId,
+  copyVersionNo,
 }: {
   kind: CheckKind;
   creativeId: string;
@@ -974,6 +1162,8 @@ function CheckSection({
   referenceNotes: string[];
   attachments: CheckAttachmentRef[];
   knowledgeLoading: boolean;
+  projectId?: string;
+  copyVersionNo?: number | null;
 }) {
   if (kind === "creative" || kind === "design")
     return <ArtworkCheck kind={kind} creativeId={creativeId} versionId={versionId} hasArtwork={hasArtwork} hasText={hasText} />;
@@ -988,6 +1178,8 @@ function CheckSection({
       referenceNotes={referenceNotes}
       attachments={attachments}
       knowledgeLoading={knowledgeLoading}
+      projectId={projectId}
+      copyVersionNo={copyVersionNo}
     />
   );
 }
@@ -1215,8 +1407,18 @@ export function CreativeModal(props: CreativeModalProps) {
   const [voCheckOpen, setVoCheckOpen] = useState(false);
   // Check the Month's window (phase173): the month this post goes live in
   // (this month, for one with no date yet), as it's saved.
-  const [monthCheckOpen, setMonthCheckOpen] = useState(false);
-  const checkMonth = isCreate ? null : monthOf(props.creative.scheduled_at ?? goLiveDay(props.creative) ?? new Date());
+  const [monthCheckOpen, setMonthCheckOpen] = useState(!isCreate && props.openCheck?.kind === "month");
+  const checkMonth = isCreate
+    ? null
+    : (props.openCheck?.kind === "month" && props.openCheck.month) || monthOf(props.creative.scheduled_at ?? goLiveDay(props.creative) ?? new Date());
+  // Check Brand's saved check, brought into view (Share to Slack's link).
+  const brandCheckRef = useRef<HTMLDivElement>(null);
+  const openBrand = !isCreate && props.openCheck?.kind === "brand";
+  useEffect(() => {
+    if (!openBrand) return;
+    const t = setTimeout(() => brandCheckRef.current?.scrollIntoView({ block: "start", behavior: "smooth" }), 300);
+    return () => clearTimeout(t);
+  }, [openBrand]);
   // The brief as this window last knew it on record: as opened, then as
   // saved or taken from someone else. Not the live post (the page refreshes
   // that as others save), or someone's change would look like nothing
@@ -3334,7 +3536,9 @@ export function CreativeModal(props: CreativeModalProps) {
 
           {(Object.keys(CHECK_LABELS) as CheckKind[]).map((kind) => (
             <Fragment key={kind}>
-              <div className="msection-h">{CHECK_LABELS[kind]}</div>
+              <div className="msection-h" ref={kind === "brand" ? brandCheckRef : undefined} id={`check-${kind}`}>
+                {CHECK_LABELS[kind]}
+              </div>
               <p className="msection-d">{CHECK_SECTION_DESCRIPTIONS[kind]}</p>
               <CheckSection
                 kind={kind}
@@ -3356,6 +3560,8 @@ export function CreativeModal(props: CreativeModalProps) {
                 referenceNotes={kind === "wiifm" ? agencyNotes : kind === "brand" ? clientNotesLabeled : []}
                 attachments={kind === "wiifm" ? agencyPdfAttachments : kind === "brand" ? clientPdfAttachments : []}
                 knowledgeLoading={kind === "wiifm" ? agencyKnowledgeLoading : clientKnowledgeLoading}
+                projectId={projectId}
+                copyVersionNo={latestCopyVersion?.version_no ?? null}
               />
               {kind === "wiifm" && isVideo && (
                 <>
@@ -3405,7 +3611,13 @@ export function CreativeModal(props: CreativeModalProps) {
 
     </Modal>
     {monthCheckOpen && checkMonth && (
-      <MonthCheckWindow projectId={projectId} month={checkMonth} onClose={() => setMonthCheckOpen(false)} />
+      <MonthCheckWindow
+        projectId={projectId}
+        month={checkMonth}
+        creativeId={creativeId!}
+        agencyId={agencyId}
+        onClose={() => setMonthCheckOpen(false)}
+      />
     )}
     {voCheckOpen && creativeId && (
       <VoCheckWindow

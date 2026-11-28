@@ -115,6 +115,8 @@ export async function sweepStepByStep(agencyId: string): Promise<void> {
     ["creative_asset_links", () => admin.from("creative_asset_links").delete().eq("agency_id", agencyId)],
     // What Slack was owed (phase154), before the posts it names.
     ["slack_outbox", () => admin.from("slack_outbox").delete().eq("agency_id", agencyId)],
+    // phase174: a post's saved Check Brand.
+    ["brand_checks", () => admin.from("brand_checks").delete().eq("agency_id", agencyId)],
     ["creatives", () => admin.from("creatives").delete().eq("agency_id", agencyId)],
     ["project_slack", () => admin.from("project_slack").delete().eq("agency_id", agencyId)],
     ["project_slack_list", () => admin.from("project_slack_list").delete().eq("agency_id", agencyId)],

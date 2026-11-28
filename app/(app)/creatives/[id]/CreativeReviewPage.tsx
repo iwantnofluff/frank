@@ -234,7 +234,10 @@ export function CreativeReviewPage({ id }: { id: string }) {
   // null = closed. CreativeModal replaced the separate Upload or Edit /
   // Draft from Brief entry points with one window — this just remembers
   // which tab it should open on for whichever button was clicked.
-  const [creativeModalTab, setCreativeModalTab] = useState<"brief" | "upload" | null>(null);
+  const [creativeModalTab, setCreativeModalTab] = useState<"brief" | "upload" | "checks" | null>(null);
+  // A saved check to show (phase174: Share to Slack's link,
+  // ?edit=checks&check=brand|month&month=YYYY-MM-01).
+  const [openCheck, setOpenCheck] = useState<{ kind: "brand" | "month"; month: string | null } | null>(null);
   // A video's thumbnail (phase118): the version picked, else the latest
   // with a file, shown as the video's cover.
   const { data: thumbnailVersions } = useThumbnailVersions(id);
@@ -271,18 +274,27 @@ export function CreativeReviewPage({ id }: { id: string }) {
   const activeToi = toiVersions.find((v) => v.id === toiVersionId) ?? toiVersions[0] ?? null;
   const activeVo = voVersions.find((v) => v.id === voVersionId) ?? voVersions[0] ?? null;
   // A tip's See it in Action (lib/tips.ts): ?edit=upload opens the Edit
-  // window at Content, for the team, once.
-  const askedEdit = useSearchParams().get("edit");
+  // window at Content, for the team, once. ?edit=checks&check=… (a check
+  // shared to Slack, phase174) opens it at Checks on the saved check.
+  const params = useSearchParams();
+  const askedEdit = params.get("edit");
+  const askedCheck = params.get("check");
+  const askedMonth = params.get("month");
   const [editAsked, setEditAsked] = useState(false);
-  if (!editAsked && isStaff && creative && (askedEdit === "upload" || askedEdit === "brief")) {
+  if (!editAsked && isStaff && creative && (askedEdit === "upload" || askedEdit === "brief" || askedEdit === "checks")) {
     setEditAsked(true);
     setCreativeModalTab(askedEdit);
+    if (askedEdit === "checks" && (askedCheck === "brand" || askedCheck === "month")) {
+      setOpenCheck({ kind: askedCheck, month: askedMonth?.match(/^\d{4}-\d{2}-01$/) ? askedMonth : null });
+    }
   }
   useEffect(() => {
     if (!editAsked) return;
     const url = new URL(window.location.href);
     if (!url.searchParams.has("edit")) return;
     url.searchParams.delete("edit");
+    url.searchParams.delete("check");
+    url.searchParams.delete("month");
     window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
   }, [editAsked]);
   // Who else on the team is on this post, and editing it (phase82, direct
@@ -1424,8 +1436,12 @@ export function CreativeReviewPage({ id }: { id: string }) {
           creativeVersions={creativeVersions ?? []}
           copyVersions={copyVersions ?? []}
           initialTab={creativeModalTab}
+          openCheck={openCheck ?? undefined}
           othersEditing={editingNow}
-          onClose={() => setCreativeModalTab(null)}
+          onClose={() => {
+            setCreativeModalTab(null);
+            setOpenCheck(null);
+          }}
           onCreativeVersionCreated={setCreativeVersionId}
           onCopyVersionCreated={setCopyVersionId}
         />

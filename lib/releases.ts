@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.120.0",
+    date: "2026-11-28",
+    title: "Save and share checks",
+    changes: [
+      "Check Brand can be saved: it shows again with the copy version it checked, and says when the copy has changed since.",
+      "Check the Month keeps its saved review until someone presses Save, so Run Again never writes over it by itself.",
+      "Share to Slack on both posts the saved check to the project's channel, naming the post, with a button that opens it in Frank.",
+    ],
+  },
+  {
     version: "1.119.1",
     date: "2026-11-28",
     title: "Search finds posts",

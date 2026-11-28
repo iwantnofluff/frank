@@ -2,7 +2,7 @@
 // (or `npm run test:unit`).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { escapeSlack, slackMessage, type SlackEvent } from "./message.ts";
+import { escapeSlack, slackCheckMessage, slackMessage, type SlackEvent } from "./message.ts";
 
 const event = (over: Partial<SlackEvent> = {}): SlackEvent => ({
   kind: "client_comment",
@@ -54,4 +54,25 @@ test("whoever's mentioned is tagged where Slack knows them, named otherwise, and
   assert.match(texts(m.blocks), /Mentions: <@U123>, Mira &lt;B&gt;/);
   assert.ok(m.text.startsWith("<@U123> Priya Shah"));
   assert.doesNotMatch(texts(slackMessage(event()).blocks), /Mentions/);
+});
+
+test("a shared check names the post and the check, its points, and links to it", () => {
+  const m = slackCheckMessage({
+    who: "Raj Rana",
+    checkName: "Check the Month (Nov 2026)",
+    postName: "Diwali <Teaser>",
+    projectName: "Q4 Social",
+    clientName: "Casa Carigar",
+    lead: "Drifting: leans on offers.",
+    points: ["Add a Reel", "Mention Amazon"],
+    more: 2,
+    url: "https://nofluff.beingfrank.app/creatives/p1?edit=checks&check=month&month=2026-11-01",
+  });
+  assert.equal(m.text, "Raj Rana shared Check the Month (Nov 2026) for Diwali <Teaser>");
+  const t = JSON.stringify(m.blocks);
+  assert.match(t, /\*Raj Rana\* shared \*Check the Month \(Nov 2026\)\* for \*Diwali &lt;Teaser&gt;\*/);
+  assert.match(t, /Drifting: leans on offers\.\\n• Add a Reel\\n• Mention Amazon\\n_and 2 more in Frank_/);
+  assert.match(t, /Q4 Social · Casa Carigar/);
+  assert.match(t, /Open the Check in Frank/);
+  assert.match(t, /edit=checks&check=month&month=2026-11-01/);
 });

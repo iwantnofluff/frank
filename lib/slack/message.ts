@@ -63,3 +63,43 @@ export function slackMessage(e: SlackEvent): { text: string; blocks: unknown[] }
   const text = `${tags ? `${tags} ` : ""}${e.who} ${VERB[e.kind]} ${e.postName}${e.body?.trim() ? `: ${e.body.trim().slice(0, 200)}` : ""}`;
   return { text, blocks };
 }
+
+// A saved check shared to the project's channel (phase174, direct
+// instruction): who shared which check of which post, its verdict or what to
+// fix, and a button to the saved check in the post's Edit window.
+export interface SlackCheckShare {
+  who: string;
+  // "Check Brand", "Check the Month (Nov 2026)".
+  checkName: string;
+  postName: string;
+  projectName: string;
+  clientName: string | null;
+  // The verdict and summary (the month), or none.
+  lead: string | null;
+  // What it found, one a line, at most a few.
+  points: string[];
+  // How many more there are, beyond those shown.
+  more: number;
+  url: string;
+}
+
+export function slackCheckMessage(e: SlackCheckShare): { text: string; blocks: unknown[] } {
+  const headline = `*${escapeSlack(e.who)}* shared *${escapeSlack(e.checkName)}* for *${escapeSlack(e.postName)}*`;
+  const where = [e.projectName, e.clientName].filter(Boolean).map((s) => escapeSlack(s!)).join(" · ");
+  const cut = (s: string, max: number) => (s.length > max ? `${s.slice(0, max)}…` : s);
+  const lines = [
+    ...(e.lead ? [escapeSlack(cut(e.lead, 600))] : []),
+    ...e.points.map((p) => `• ${escapeSlack(cut(p, 300))}`),
+    ...(e.more > 0 ? [`_and ${e.more} more in Frank_`] : []),
+  ];
+  const blocks: unknown[] = [
+    { type: "section", text: { type: "mrkdwn", text: headline } },
+    ...(lines.length ? [{ type: "section", text: { type: "mrkdwn", text: lines.join("\n") } }] : []),
+    { type: "context", elements: [{ type: "mrkdwn", text: where }] },
+    {
+      type: "actions",
+      elements: [{ type: "button", text: { type: "plain_text", text: "Open the Check in Frank" }, url: e.url }],
+    },
+  ];
+  return { text: `${e.who} shared ${e.checkName} for ${e.postName}`, blocks };
+}

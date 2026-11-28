@@ -5,7 +5,7 @@ import { slackMessage, type SlackKind } from "@/lib/slack/message";
 import { decryptSlackToken } from "@/lib/slack/secrets";
 
 // What Slack said, in words for the project's Settings.
-const PROBLEMS: Record<string, string> = {
+export const PROBLEMS: Record<string, string> = {
   not_in_channel: "Frank isn't in the channel. Invite it with /invite @Frank there.",
   channel_not_found: "The channel can't be found. It may be private, deleted or renamed; pick it again.",
   is_archived: "The channel is archived. Pick another.",

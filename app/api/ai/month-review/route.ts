@@ -19,7 +19,8 @@ type Row = Record<string, unknown>;
 // (not notes still reading Pending) and the month's strategy. The team's
 // only. One call through runAiTask (task month_review), so the monthly limit
 // and usage log apply. Everything is read here, as the caller, never taken
-// from the page; the review is saved over the last one for that month.
+// from the page. The month's first review is saved; later runs come back
+// unsaved, for Save (hooks/use-month-review.ts) to keep.
 export async function POST(request: Request) {
   const supabase = await createClient();
   const {
@@ -135,6 +136,16 @@ export async function POST(request: Request) {
     const at = c.updated_at as string | null;
     return at && (!m || at > m) ? at : m;
   }, null);
+  // Saved only on the month's first run (decided directly): after that a
+  // run is shown and kept only when someone presses Save, so a teammate's
+  // saved review isn't written over by a run to look.
+  const { data: existing } = await supabase.from("month_reviews").select("id").eq("project_id", project.id).eq("month", month).maybeSingle();
+  if (existing) {
+    return NextResponse.json({
+      saved: false,
+      row: { project_id: project.id, month, review, posts_at: postsAt, post_count: monthPosts.length, updated_at: new Date().toISOString() },
+    });
+  }
   const { data: saved, error: saveError } = await supabase
     .from("month_reviews")
     .upsert(
@@ -152,5 +163,5 @@ export async function POST(request: Request) {
     .select("id, project_id, month, review, posts_at, post_count, created_by, updated_at")
     .maybeSingle();
   if (saveError || !saved) return NextResponse.json({ error: "Couldn't save the review" }, { status: 500 });
-  return NextResponse.json(saved);
+  return NextResponse.json({ saved: true, row: saved });
 }

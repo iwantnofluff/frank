@@ -16208,6 +16208,23 @@ button.help-link {
 .monthcheck .checkfind.info .dot {
   background: var(--muted);
 }
+/* Save and Share to Slack under a check (phase174). */
+.checkkeep {
+  margin: 10px 0 12px;
+}
+.checkkeep-btns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.checkkeep-note {
+  margin: 6px 0 0;
+  font-size: 12.2px;
+  color: var(--muted);
+}
+.checkkeep .autherr {
+  margin-top: 6px;
+}
 .monthcheck-sec .msection-h {
   margin: 0 0 8px;
 }

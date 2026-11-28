@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { signedInUser } from "@/lib/supabase/signed-in-user";
 import { inMonth, type MonthReview } from "@/lib/month-review";
 import { goLiveDay } from "@/lib/post-live";
 
@@ -39,10 +40,14 @@ export function useMonthReview(projectId: string | null | undefined, month: stri
   });
 }
 
+// A run (app/api/ai/month-review): saved when it's the month's first,
+// otherwise returned unsaved for Save to keep (decided directly).
+export type MonthReviewRun = { saved: boolean; row: Omit<MonthReviewRow, "id" | "created_by"> & Partial<Pick<MonthReviewRow, "id" | "created_by">> };
+
 export function useRunMonthReview(projectId: string | null | undefined, month: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (): Promise<MonthReviewRow> => {
+    mutationFn: async (): Promise<MonthReviewRun> => {
       const res = await fetch("/api/ai/month-review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -50,12 +55,44 @@ export function useRunMonthReview(projectId: string | null | undefined, month: s
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Couldn't check the month");
-      return data as MonthReviewRow;
+      return data as MonthReviewRun;
     },
-    onSuccess: (row) => {
-      queryClient.setQueryData(["month-review", projectId, month], row);
+    onSuccess: (run) => {
+      if (run.saved) queryClient.setQueryData(["month-review", projectId, month], run.row);
       void queryClient.invalidateQueries({ queryKey: ["month-posts-stamp", projectId, month] });
     },
+  });
+}
+
+// Keeps a run as the month's saved review, over the last one. Through the
+// person's own session (month_reviews' policies); a refused write says so.
+export function useSaveMonthReview(projectId: string | null | undefined, month: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (run: MonthReviewRun["row"]): Promise<MonthReviewRow> => {
+      const supabase = createClient();
+      const { data: auth } = await signedInUser(supabase);
+      const { data, error } = await supabase
+        .from("month_reviews")
+        .upsert(
+          {
+            project_id: projectId,
+            month,
+            review: run.review,
+            posts_at: run.posts_at,
+            post_count: run.post_count,
+            created_by: auth.user?.id ?? null,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "project_id,month" },
+        )
+        .select(COLUMNS)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) throw new Error("Couldn't save the review");
+      return data as MonthReviewRow;
+    },
+    onSuccess: (row) => queryClient.setQueryData(["month-review", projectId, month], row),
   });
 }
 
