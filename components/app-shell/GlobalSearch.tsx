@@ -6,11 +6,14 @@ import { useClients } from "@/hooks/use-clients";
 import { useProjectsOfClients } from "@/hooks/use-projects";
 import { usePresence } from "@/hooks/use-presence";
 import { useIsStaff } from "@/hooks/use-is-staff";
+import { useSearchPosts } from "@/hooks/use-search-posts";
 import { SETTINGS_SECTIONS } from "@/lib/settings-nav";
 import { clientSettingsSections } from "@/lib/client-settings-nav";
 import { SearchIcon } from "./icons";
 
-type Hit = { kind: "page" | "client" | "project"; id: string; name: string; detail?: string; href: string };
+type Hit = { kind: "page" | "client" | "project" | "post"; id: string; name: string; detail?: string; href: string };
+
+const KIND_LABEL = { page: "Page", client: "Client", project: "Project", post: "Post" } as const;
 
 const MAX = 10;
 
@@ -26,7 +29,9 @@ const APP_PAGES: { name: string; href: string; words: string[] }[] = [
 // Client or Project in a subtle pill, with its client or section greyed
 // out. Pages are Clients, Settings' pages (staff) and each client's Client
 // Settings pages; a project is also found by its type, so "planner" lists
-// every Content Planner. Arrow keys and Enter, or a click, open one; ⌘K /
+// every Content Planner. Posts by their name too (direct instruction),
+// asked of the database as you type (useSearchPosts), each with its client
+// and project. Arrow keys and Enter, or a click, open one; ⌘K /
 // Ctrl K jumps here from anywhere. What's listed is what RLS lets you
 // read, archived clients and projects left out.
 export function GlobalSearch() {
@@ -41,6 +46,7 @@ export function GlobalSearch() {
   const { data: projects } = useProjectsOfClients(live.map((c) => c.id));
   const { isStaff, isPending: staffPending } = useIsStaff();
   const staff = isStaff && !staffPending;
+  const { data: posts } = useSearchPosts(query, MAX);
 
   const hits = useMemo<Hit[]>(() => {
     const q = query.trim().toLowerCase();
@@ -86,14 +92,31 @@ export function GlobalSearch() {
         detail: [names.get(p.client_id), DELIVERY_LABEL[p.delivery]].filter(Boolean).join(" · "),
         href: `/projects/${p.id}`,
       }));
-    // Names that start with what's typed first, then pages, clients and
-    // projects, in that order.
+    // Posts in the projects listed (not an archived client's or project's),
+    // and still matching what's typed (the last answer shows while the
+    // next is asked).
+    const projectById = new Map((projects ?? []).map((p) => [p.id, p]));
+    const postHits: Hit[] = (posts ?? []).flatMap((post) => {
+      const project = projectById.get(post.project_id);
+      if (!project || !has(post.name)) return [];
+      return [
+        {
+          kind: "post" as const,
+          id: post.id,
+          name: post.name,
+          detail: [names.get(project.client_id), project.name].filter(Boolean).join(" · "),
+          href: `/creatives/${post.id}`,
+        },
+      ];
+    });
+    // Names that start with what's typed first, then pages, clients,
+    // projects and posts, in that order.
     const starts = (h: Hit) => (h.name.toLowerCase().startsWith(q) ? 0 : 1);
-    const order = { page: 0, client: 1, project: 2 };
-    return [...pages, ...clientHits, ...projectHits]
+    const order = { page: 0, client: 1, project: 2, post: 3 };
+    return [...pages, ...clientHits, ...projectHits, ...postHits]
       .sort((a, b) => starts(a) - starts(b) || order[a.kind] - order[b.kind])
       .slice(0, MAX);
-  }, [query, live, projects, staff]);
+  }, [query, live, projects, staff, posts]);
 
   const shown = open && query.trim().length > 0;
   const pop = usePresence(shown);
@@ -136,7 +159,7 @@ export function GlobalSearch() {
           ref={input}
           type="search"
           placeholder="Search"
-          aria-label="Search pages, clients and projects"
+          aria-label="Search pages, clients, projects and posts"
           role="combobox"
           aria-expanded={shown}
           aria-controls="gsearch-results"
@@ -173,7 +196,7 @@ export function GlobalSearch() {
           className={`colpop on motion gsearch-pop${pop.isOpen ? " is-open" : ""}`}
         >
           {hits.length === 0 ? (
-            <p className="gsearch-none">No page, client or project called that.</p>
+            <p className="gsearch-none">No page, client, project or post called that.</p>
           ) : (
             hits.map((h, i) => (
               <button
@@ -189,7 +212,7 @@ export function GlobalSearch() {
                   <b>{h.name}</b>
                   {h.detail && <span className="gsearch-client">{h.detail}</span>}
                 </span>
-                <span className="gsearch-kind">{h.kind === "page" ? "Page" : h.kind === "client" ? "Client" : "Project"}</span>
+                <span className="gsearch-kind">{KIND_LABEL[h.kind]}</span>
               </button>
             ))
           )}

@@ -1,4 +1,5 @@
 import { test, expect, APP_URL } from "./fixtures";
+import { admin } from "./sweep";
 
 // The header (direct instruction): no "Preview as", a working search for
 // clients and projects, and Help in the bell's place.
@@ -10,7 +11,7 @@ test("search lists matching clients and projects, marked as such, and opens one"
 
   // ⌘K jumps into search from anywhere.
   await page.keyboard.press("Meta+k");
-  const box = page.getByRole("combobox", { name: "Search pages, clients and projects" });
+  const box = page.getByRole("combobox", { name: "Search pages, clients, projects and posts" });
   await expect(box).toBeFocused();
   await box.fill("e2e test");
   const results = page.getByRole("listbox", { name: "Search results" });
@@ -29,13 +30,43 @@ test("search lists matching clients and projects, marked as such, and opens one"
 
   // Nothing matching says so.
   await box.fill("zzqx");
-  await expect(page.getByRole("listbox", { name: "Search results" })).toContainText("No page, client or project called that.");
+  await expect(page.getByRole("listbox", { name: "Search results" })).toContainText("No page, client, project or post called that.");
+});
+
+// Posts by their name too (direct instruction), with their client and
+// project; a client finds their own, never another client's or an Idea.
+test("search finds posts by name and opens one; a client finds only theirs", async ({ page, browser, frank }) => {
+  const named = await frank.createCreativeAtStage(4, "Searchable Hamper Reveal");
+  const idea = await frank.createCreativeAtStage(1, "Searchable Hamper Idea");
+  // An Idea has no date.
+  await admin.from("creatives").update({ scheduled_at: null, due_on: null }).eq("id", idea);
+  await frank.loginAsStaff(page);
+  await page.goto(`${APP_URL}/dashboard`);
+  const box = page.getByRole("combobox", { name: "Search pages, clients, projects and posts" });
+  const results = page.getByRole("listbox", { name: "Search results" });
+  await box.fill("hamper reveal");
+  const post = results.getByRole("option", { name: /Searchable Hamper Reveal/ });
+  await expect(post).toContainText("E2E Test Client · E2E Test Project");
+  await expect(post.locator(".gsearch-kind")).toHaveText("Post");
+  await post.click();
+  await page.waitForURL(`${APP_URL}/creatives/${named}`);
+
+  const ctx = await browser.newContext();
+  const c = await ctx.newPage();
+  await frank.loginAsClient(c);
+  await c.goto(`${APP_URL}/dashboard`);
+  const cbox = c.getByRole("combobox", { name: "Search pages, clients, projects and posts" });
+  await cbox.fill("searchable hamper");
+  const cresults = c.getByRole("listbox", { name: "Search results" });
+  await expect(cresults.getByRole("option", { name: /Searchable Hamper Reveal/ })).toBeVisible();
+  await expect(cresults.getByRole("option", { name: /Searchable Hamper Idea/ })).toHaveCount(0);
+  await ctx.close();
 });
 
 test("search opens pages, and finds projects by their type", async ({ page, frank }) => {
   await frank.loginAsStaff(page);
   await page.goto(`${APP_URL}/projects/${frank.projectId}`);
-  const box = page.getByRole("combobox", { name: "Search pages, clients and projects" });
+  const box = page.getByRole("combobox", { name: "Search pages, clients, projects and posts" });
   const results = page.getByRole("listbox", { name: "Search results" });
 
   // "Clients" opens the clients list, marked Page, first.
@@ -64,7 +95,7 @@ test("search opens pages, and finds projects by their type", async ({ page, fran
 test("a client's own people find no Settings pages, but their Knowledge", async ({ page, frank }) => {
   await frank.loginAsClient(page);
   await page.goto(`${APP_URL}/dashboard`);
-  const box = page.getByRole("combobox", { name: "Search pages, clients and projects" });
+  const box = page.getByRole("combobox", { name: "Search pages, clients, projects and posts" });
   const results = page.getByRole("listbox", { name: "Search results" });
   await box.fill("knowledge");
   // Knowledge's page is Discovery (direct instruction); its section still finds it.

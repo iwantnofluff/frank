@@ -152,13 +152,13 @@ export const HELP_ARTICLES: HelpArticle[] = [
   },
   {
     id: "search",
-    title: "Find a Page, Client or Project Fast",
+    title: "Find a Page, Client, Project or Post Fast",
     category: "start",
     summary: "Search from the header, or press ⌘K.",
     blocks: [
       {
         kind: "p",
-        text: "The search box in the header finds pages, clients and projects you can see. Start typing and matches appear straight away, each marked Page, Client or Project.",
+        text: "The search box in the header finds pages, clients, projects and posts you can see. Start typing and matches appear straight away, each marked Page, Client, Project or Post.",
       },
       {
         kind: "list",
@@ -168,6 +168,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "Press ⌘K (Ctrl K on Windows) to jump into search from anywhere.",
           "Use the arrow keys to move through the results and Enter to open one, or click it.",
           "Projects show their client and type, so similar names are easy to tell apart.",
+          "Type two or more letters of a post's name to find it; it shows its client and project, and opens on the post's page.",
         ],
       },
     ],

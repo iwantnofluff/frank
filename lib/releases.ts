@@ -13,6 +13,12 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.119.1",
+    date: "2026-11-28",
+    title: "Search finds posts",
+    changes: ["The search in the header finds posts by name too, each with its client and project, and opens the post."],
+  },
+  {
     version: "1.119.0",
     date: "2026-11-28",
     title: "Check the Month",

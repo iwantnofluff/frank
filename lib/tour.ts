@@ -393,9 +393,9 @@ export const GUIDES: Record<string, TourStep[]> = {
     {
       id: "search-box",
       place: "here",
-      spot: ['[aria-label="Search pages, clients and projects"]', ".topbar .search"],
+      spot: ['[aria-label="Search pages, clients, projects and posts"]', ".topbar .search"],
       title: "Find anything fast",
-      body: "Click the search box at the top, or press ⌘K (Ctrl K on Windows), and type a client, a project or a page. Type planner to list every Content Planner.",
+      body: "Click the search box at the top, or press ⌘K (Ctrl K on Windows), and type a client, a project, a post or a page. Type planner to list every Content Planner.",
     },
   ],
   "create-client": [

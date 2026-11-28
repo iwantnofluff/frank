@@ -5185,6 +5185,14 @@ Direct instruction: the review link had no brief; add an icon before Content, so
 
 **Verified**: In the real app (dev server, staging), as a visitor with no session, at 1440 × 900 and 390 × 844, with a concept, a reference and a team member seeded: Brief showed them, Notes for Designer didn't, and the brief fitted the phone's screen (it first ran off the right edge, fixed with `width: auto`). Screenshots checked after the highlight's fade; one taken straight after the click showed Content still lit, which the logged `aria-pressed`/`aria-current` showed was the fade, not the state. shared-review-brief.spec.ts is new (desktop menu order and the brief; phone icon order, pressed state, fit). shared-review-phone.png and shared-review-desktop.png differed only by the new icon and menu item and were regenerated after looking at each diff. shared-review-public, shared-review-account, designer-note-versions and new-brief run with it against staging: 20 passed, 10 failed while the machine was loaded. Rerun, all 10 passed except the two baselines above, which then passed once regenerated. Unit tests: 311 passed.
 
+## Search finds posts by name (1.119.1, 2026-11-28)
+
+Direct instruction: the header search also finds posts by their title. Pages, clients and projects are filtered in the browser as before; posts are asked of the database a moment after typing stops (two letters or more), by name, newest-changed first, at most ten (`useSearchPosts`), since a workspace's posts run to thousands. RLS keeps it to what the person can see: a client finds their own posts, never Ideas; archived posts, and posts in an archived client or project, are left out. Each is marked Post with its client and project, after pages, clients and projects, and opens the post's page. The box is now labelled "Search pages, clients, projects and posts", with "No page, client, project or post called that."; Help's search article and the tour's search step say so.
+
+Not done: matching is on the name only, not the concept or copy; and it's a plain `ilike` with no index, fine at today's sizes.
+
+**Verified**: in the real app, typing "e2e" lists the client, the project and two posts, each with its client and project and a Post pill (screenshot looked at). New header.spec.ts test: a post found by part of its name shows its client and project and opens its page; a client's session finds their post but not an Idea of the same name. header and frank-tour specs pass (14). 329 unit tests, tsc and eslint clean.
+
 ## Check the Month (1.119.0, 2026-11-28)
 
 Direct instruction: a check of the month's content as a whole against the brand's Knowledge, not of any one post, in a bigger window with a more holistic analysis. Decided directly: on the Edit window's Checks tab (the user moved it there from the post page's Checks mid-build), words only, and the last review saved.
