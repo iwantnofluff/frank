@@ -13,6 +13,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.120.1",
+    date: "2026-11-28",
+    title: "Industry dates in Discovery",
+    changes: [
+      "Discovery has a new area, Industry Dates, Events and Special Occasions, for the awards, festivals and special days that matter in a client's industry. Frank reads it when drafting and checking, and Check the Month points out any in its month that no post marks.",
+    ],
+  },
+  {
     version: "1.120.0",
     date: "2026-11-28",
     title: "Save and share checks",

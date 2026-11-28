@@ -9,6 +9,9 @@ export const KNOWLEDGE_SECTIONS = [
   { key: "brand_research", label: "Brand Research" },
   { key: "products", label: "Products and Services" },
   { key: "brands_admired", label: "Brands They Look Up To" },
+  // The client's industry's dates (direct instruction, 28 Nov 2026):
+  // awards, festivals, trade events and special days worth planning around.
+  { key: "industry_dates", label: "Industry Dates, Events and Special Occasions" },
   // Client Rules (direct instruction, 28 Nov 2026; was Protected Terms):
   // the key stays, so existing notes and proofreading keep working.
   { key: "protected_terms", label: "Client Rules" },

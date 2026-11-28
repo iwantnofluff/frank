@@ -278,7 +278,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     category: "clients",
     summary: "Tone of voice, audience, research and more, for better copy and checks.",
     blocks: [
-      { kind: "p", text: "A client's Knowledge is in its [Client Settings](client:/settings/details), under [Knowledge → Discovery](client:/settings/knowledge). It has nine areas, from About (who the client is) to Moodboard and References." },
+      { kind: "p", text: "A client's Knowledge is in its [Client Settings](client:/settings/details), under [Knowledge → Discovery](client:/settings/knowledge). It has ten areas, from About (who the client is) to Moodboard and References. Industry Dates, Events and Special Occasions is for the dates that matter in the client's industry: awards, festivals, trade events and special days, so posts can be planned around them." },
       { kind: "p", text: "Every client starts with notes to fill in, each reading Pending (in red) until it's written: Primary TG and Secondary TG under Target Audience, and Copy Do's, Copy Don'ts, Creative Do's and Creative Don'ts under Client Rules. Edit one to write it. Frank leaves a note out of everything it writes and checks while it still reads Pending." },
       { kind: "p", text: "The more of them are filled in, the more [Draft with Frank](help:write-with-claude) and [the checks](help:plan-posts) can draw on. An area with nothing in it yet says Pending, as a note still to write does." },
       {

@@ -5185,6 +5185,14 @@ Direct instruction: the review link had no brief; add an icon before Content, so
 
 **Verified**: In the real app (dev server, staging), as a visitor with no session, at 1440 × 900 and 390 × 844, with a concept, a reference and a team member seeded: Brief showed them, Notes for Designer didn't, and the brief fitted the phone's screen (it first ran off the right edge, fixed with `width: auto`). Screenshots checked after the highlight's fade; one taken straight after the click showed Content still lit, which the logged `aria-pressed`/`aria-current` showed was the fade, not the state. shared-review-brief.spec.ts is new (desktop menu order and the brief; phone icon order, pressed state, fit). shared-review-phone.png and shared-review-desktop.png differed only by the new icon and menu item and were regenerated after looking at each diff. shared-review-public, shared-review-account, designer-note-versions and new-brief run with it against staging: 20 passed, 10 failed while the machine was loaded. Rerun, all 10 passed except the two baselines above, which then passed once regenerated. Unit tests: 311 passed.
 
+## Industry Dates, Events and Special Occasions in Discovery (1.120.1, 2026-11-28)
+
+Direct instruction: a new Knowledge area for the dates that matter in the client's industry (awards, festivals, special days). Discovery now has ten areas; Industry Dates, Events and Special Occasions sits after Brands They Look Up To, before Client Rules (`industry_dates`, application data in lib/knowledge-sections.ts; knowledge_entries takes any section, so no migration). It's written in like any area (notes, links, files); Frank reads its notes wherever it reads Discovery's: Draft with Frank, Check Brand, Check Design, Design with Frank, Check the Month. Check the Month is now asked to name, under what's missing, any of these dates falling in its month that no post marks. No default notes in it. Help's Knowledge article says ten areas and what this one is for.
+
+Not done: the dates aren't read as dates (no calendar or reminders from them); they're words Frank reads.
+
+**Verified**: in the real app, Discovery shows the new area in its place, takes a note ("Cannes Lions", its dates), and reads "of 10 areas filled" (screenshot looked at). user-rights, client-workspace, new-client, brand-reminder and month-review specs pass (17). 330 unit tests, tsc and eslint clean.
+
 ## Save and Share to Slack for Check Brand and Check the Month (1.120.0, 2026-11-28)
 
 Direct instruction: a Share to Slack button on Check the Month and on Check Brand; once a check has run it can be saved (when the content has moved on); the Slack message names the post and links to the saved check. Decided directly: the link opens the post's Edit window on its Checks tab, and Check the Month keeps its saved review until Save, as Check Brand does.

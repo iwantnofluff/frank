@@ -87,7 +87,7 @@ export function monthReviewPrompt(input: {
     '- "verdict": "on_track", "drifting" or "off_track".',
     '- "summary": two or three sentences on the month\'s direction.',
     '- "strategyCovered": the strategy\'s objective, key messages, themes, offers and key dates that the posts carry, each with the posts that carry it.',
-    '- "strategyMissing": those the posts leave out or barely touch.',
+    '- "strategyMissing": those the posts leave out or barely touch, and any industry dates, events or special occasions in the brand knowledge that fall in this month and that no post marks.',
     '- "brandStrengths": where the month fits the brand: tone, the audiences it speaks to, the prioritised features it leads with, the client rules it keeps.',
     '- "brandGaps": audiences, features or rules it neglects or goes against.',
     '- "mix": the balance of formats and themes, repetition, how the posts fall across the month, and the count against the contract.',
