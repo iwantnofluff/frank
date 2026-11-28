@@ -73,3 +73,31 @@ test("the team approves with the button, or by the Approved status; nobody appro
   expect(error?.message).toBe("This post isn't waiting on the client's review");
   expect((await post(internal)).stage).toBe(3);
 });
+
+// The client's Preferences can say the agency approves (phase171, decided
+// directly): then the client's people get no Approve, and are refused, as on
+// a review link; the team still approves.
+test("when the agency approves, a client has no Approve and is refused; the team still approves", async ({ page, frank }) => {
+  test.setTimeout(120_000);
+  const id = await frank.createCreativeAtStage(4, "Agency Approves Post");
+  const { error: pe } = await admin
+    .from("client_preferences")
+    .upsert({ client_id: frank.clientId, agency_id: frank.agencyId, client_can_approve: false }, { onConflict: "client_id" });
+  if (pe) throw pe;
+
+  await frank.loginAsClient(page);
+  await page.goto(`/creatives/${id}`);
+  await expect(page.locator(".composer")).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator(".composer").getByRole("button", { name: "Approve", exact: true })).toHaveCount(0);
+  const c = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { auth: { persistSession: false } });
+  await c.auth.signInWithPassword({ email: frank.clientEmail, password: frank.clientPassword });
+  const { error } = await c.rpc("approve_post", { p_creative_id: id });
+  expect(error?.message).toContain("Your agency approves posts for you");
+  expect((await post(id)).stage).toBe(4);
+
+  const s = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { auth: { persistSession: false } });
+  await s.auth.signInWithPassword({ email: frank.staffEmail, password: frank.staffPassword });
+  const { error: staffError } = await s.rpc("approve_post", { p_creative_id: id });
+  expect(staffError).toBeNull();
+  expect((await post(id)).stage).toBe(5);
+});

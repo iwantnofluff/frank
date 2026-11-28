@@ -335,6 +335,22 @@ test("project calendar — Post Copy cell shows the latest version, older ones o
   await expect(rows.nth(1)).toContainText("First draft caption");
 });
 
+// A client sees the latest copy alone, as on the post's page (decided
+// directly): no "+1 earlier".
+test("project calendar — a client sees only the latest copy, with no earlier versions", async ({ page, frank }) => {
+  await frank.createCopyVersion(frank.creativeId, 1, { caption: "First draft caption" });
+  await frank.createCopyVersion(frank.creativeId, 2, { caption: "Second, revised caption" });
+  await frank.loginAsClient(page);
+  await page.goto(`/projects/${frank.projectId}`);
+  await page.waitForSelector(".tblwrap, .empty");
+  await goToMonth(page, "March 2027");
+  await page.waitForSelector(".tbl");
+  const cell = page.locator("td:has(.cc-v)").first();
+  await expect(cell.locator(".cc-t")).toHaveText("Second, revised caption");
+  await expect(cell.locator(".cc-n")).toHaveCount(0);
+  await expect(page.getByText("First draft caption")).toHaveCount(0);
+});
+
 test("project calendar — resizing a column shows the Save button, Discard Changes reverts it", async ({
   page,
   frank,

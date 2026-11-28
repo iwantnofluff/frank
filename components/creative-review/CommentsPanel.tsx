@@ -2,6 +2,7 @@
 
 import { canApproveConcept, useApproveConcept } from "@/hooks/use-approve-concept";
 import { canApprovePost, useApprovePost } from "@/hooks/use-approve-post";
+import { useClientPreferences } from "@/hooks/use-client-preferences";
 import { useCreativeVersions } from "@/hooks/use-creative-versions";
 import { useCopyVersions } from "@/hooks/use-copy-versions";
 import { useProductionVersions, type ProductionVersion } from "@/hooks/use-production-versions";
@@ -784,6 +785,9 @@ export function CommentsPanel({
   }, [highlightedCommentId]);
 
   const isStaff = membership ? membership.client_id === null : false;
+  // Whether a client's own people may approve (phase171): the client's
+  // Preferences, read only for them.
+  const { data: clientPrefs } = useClientPreferences(membership && !isStaff ? creative?.projects?.client_id : null);
   // The project's Slack channel, for the team's tick (phase162): only while
   // the workspace is connected and the project has a channel.
   const { data: slackConnection } = useSlackConnection(isStaff ? creative?.agency_id : undefined);
@@ -969,7 +973,7 @@ export function CommentsPanel({
             </button>
           ) : // Approve (phase170, direct instruction): at Client, for the
           // client or the team. It moves the post to Approved.
-          creative && canApprovePost(creative) ? (
+          creative && membership && canApprovePost(creative, { isStaff, clientCanApprove: clientPrefs?.client_can_approve }) ? (
             <button
               type="button"
               className="btn sm approve-concept"

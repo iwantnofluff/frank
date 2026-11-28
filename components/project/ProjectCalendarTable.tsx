@@ -1533,7 +1533,8 @@ export function ProjectCalendarTable({
 
                                         label="Text on Image"
 
-                                        rows={slideVersions.map((v) => ({
+                                        // The team's only, as Caption's (decided directly).
+                                        rows={(isStaff ? slideVersions : []).map((v) => ({
 
                                           versionNo: v.versionNo,
 
@@ -1601,7 +1602,9 @@ export function ProjectCalendarTable({
                                       </ClampText>
                                       {/* Earlier versions on hover, on this label alone, so
                                           reaching for Read more doesn't open them. */}
-                                      {rows.length > 1 && (
+                                      {/* The team's only: a client sees the latest copy alone,
+                                          as on the post's page (decided directly). */}
+                                      {isStaff && rows.length > 1 && (
                                         <span
                                           className="cc-n"
                                           onMouseEnter={(e) => handleCopyEnter(label, rows, e.currentTarget)}

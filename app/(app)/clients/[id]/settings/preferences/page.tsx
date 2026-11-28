@@ -107,7 +107,7 @@ export default function ClientPreferencesPage({ params }: { params: Promise<{ id
             <div className="panel-h">
               <b>Review Links</b>
             </div>
-            <Row title="Client can approve" hint="When No, the client can comment on review links but not approve; the agency approves.">
+            <Row title="Client can approve" hint="When No, the client comments, in Frank and on review links, but doesn't approve; the agency approves.">
               <YesNo
                 label="Client can approve"
                 value={prefs.client_can_approve}

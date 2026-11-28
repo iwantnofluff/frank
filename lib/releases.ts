@@ -13,6 +13,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.116.2",
+    date: "2026-11-28",
+    title: "Agency approves, in Frank too",
+    changes: [
+      "When a client's Preferences say the agency approves, the client's people no longer see Approve on a post in Client Review in Frank, as on review links.",
+      "In a project's table, a client sees only the latest copy and Text on Image, as on a post's page.",
+    ],
+  },
+  {
     version: "1.116.1",
     date: "2026-11-27",
     title: "Prioritised Features as a list",

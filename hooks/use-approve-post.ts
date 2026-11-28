@@ -8,8 +8,14 @@ import { createClient } from "@/lib/supabase/client";
 // and that it's still at Client, moves it to Approved, records who approved
 // it, and leaves the comment in their name ("Client Approved" or
 // "Approved").
-export function canApprovePost(c: { stage: number; archived_at?: string | null }): boolean {
-  return c.stage === 4 && !c.archived_at;
+// A client's own people only when the client's Preferences let them
+// (phase171); unknown (still loading) counts as no.
+export function canApprovePost(
+  c: { stage: number; archived_at?: string | null },
+  who: { isStaff: boolean; clientCanApprove: boolean | undefined } = { isStaff: true, clientCanApprove: true },
+): boolean {
+  if (c.stage !== 4 || c.archived_at) return false;
+  return who.isStaff || who.clientCanApprove === true;
 }
 
 export function useApprovePost() {

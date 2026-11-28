@@ -1448,7 +1448,8 @@ export function ContinuousCalendarTable({
 
                                         label="Text on Image"
 
-                                        rows={slideVersions.map((v) => ({
+                                        // The team's only, as Caption's (decided directly).
+                                        rows={(isStaff ? slideVersions : []).map((v) => ({
 
                                           versionNo: v.versionNo,
 
@@ -1505,7 +1506,8 @@ export function ContinuousCalendarTable({
                                 <td key={key} className="cellw">
                                   <VersionedTextCell
                                     label={copyNoun(postFormats(c))}
-                                    rows={rows}
+                                    // A client sees the latest alone, as on the post's page.
+                                    rows={isStaff ? rows : rows.slice(0, 1)}
                                     expected={exp.copy}
                                     {...fill(c, "copy")}
                                     copyable={isStaff}
