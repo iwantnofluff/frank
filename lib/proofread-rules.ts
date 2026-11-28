@@ -31,7 +31,7 @@ export const BUILTIN_RULES: BuiltinRule[] = [
   {
     key: "names",
     title: "Names as the brand writes them",
-    description: "Brand, product and people's names, spelled and capitalised as in the client's Knowledge (About, Products and Services, Protected Terms).",
+    description: "Brand, product and people's names, spelled and capitalised as in the client's Knowledge (About, Products and Services, Client Rules).",
     group: "Language",
     ai: true,
   },

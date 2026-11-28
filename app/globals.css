@@ -6076,6 +6076,11 @@ textarea.cxin {
   white-space: pre-wrap;
   margin: 4px 0 5px;
 }
+/* A default note still to write (phase172): Pending in Concept's red, as
+   the table's empty cells (.tpending). */
+.kb-b .body.kb-pending {
+  color: var(--stage-concept-ink);
+}
 .kb-b .meta {
   display: block;
   font-size: 11.7px;
@@ -13058,6 +13063,41 @@ button.hbrand-add:hover {
 }
 .brandrem-all:hover {
   text-decoration: underline;
+}
+/* The month box's arrows, between the months with a strategy (direct
+   instruction), beside See All. */
+.brandrem-step {
+  display: inline-flex;
+  gap: 2px;
+  align-self: center;
+  flex-shrink: 0;
+}
+.brandrem-step button {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+.brandrem-step button:hover:not(:disabled) {
+  background: var(--btn-hover);
+}
+.brandrem-step button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.brandrem-step svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 .brandrem-first b {
   display: block;

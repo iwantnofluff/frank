@@ -21,6 +21,19 @@ test("creates a client end to end", async ({ page, frank }) => {
   await expect(
     page.locator(".crow", { hasText: "New Client E2E — Lotus Skincare" }),
   ).toBeVisible();
+
+  // Its default Discovery notes (phase172), each Pending, in order.
+  const { data: made } = await admin.from("clients").select("id").eq("agency_id", frank.agencyId).eq("name", "New Client E2E — Lotus Skincare").single();
+  const { data: notes } = await admin.from("knowledge_entries").select("section, title, body").eq("client_id", made!.id).order("created_at");
+  const by = (section: string) => (notes ?? []).filter((n) => n.section === section).map((n) => n.title);
+  expect(by("protected_terms")).toEqual(["Copy Do's", "Copy Don'ts", "Creative Do's", "Creative Don'ts"]);
+  expect(by("audience")).toEqual(["Primary TG", "Secondary TG"]);
+  expect(new Set((notes ?? []).map((n) => n.body))).toEqual(new Set(["Pending"]));
+  // Shown under Client Rules, Pending in red.
+  await page.goto(`/clients/${made!.id}/settings/knowledge`);
+  const rules = page.locator("#kb-protected_terms");
+  await expect(rules.locator(".panel-h b")).toHaveText("Client Rules");
+  await expect(rules.locator(".kb-pending")).toHaveCount(4);
 });
 
 test("missing name is caught before submit", async ({ page, frank }) => {

@@ -84,7 +84,7 @@ import {
 } from "@/lib/ai/copy-chat";
 import { buildCheckPrompt, parseCheckFindings, type CheckFinding } from "@/lib/ai/build-check-prompt";
 import type { VoCheckResult } from "@/lib/ai/build-vo-check-prompt";
-import { KNOWLEDGE_SECTIONS } from "@/lib/knowledge-sections";
+import { KNOWLEDGE_SECTIONS, isPendingNote } from "@/lib/knowledge-sections";
 import { modelById } from "@/lib/ai/models";
 import { errorMessage } from "@/lib/errors";
 import { VoicePost } from "@/components/creative-review/VoicePost";
@@ -1826,7 +1826,7 @@ export function CreativeModal(props: CreativeModalProps) {
   // Shared by Draft and both Checks — every agency Reference Material /
   // client Knowledge text entry, no cap, no filtering beyond "has a body".
   // clientNotesLabeled additionally prefixes each note with its section
-  // (Tone of Voice, Protected Terms, ...) — Check Brand cares which section
+  // (Tone of Voice, Client Rules, ...) — Check Brand cares which section
   // a note came from in a way Draft's own flatter prompt doesn't need to.
   const agencyNotes = useMemo(
     () => (agencyKnowledge ?? []).filter((e) => e.kind === "text" && e.body).map((e) => e.body as string),
@@ -1835,7 +1835,7 @@ export function CreativeModal(props: CreativeModalProps) {
   const clientNotesLabeled = useMemo(
     () =>
       (clientKnowledge ?? [])
-        .filter((e) => e.kind === "text" && e.body)
+        .filter((e) => e.kind === "text" && e.body && !isPendingNote(e))
         .map((e) => `[${KNOWLEDGE_SECTION_LABELS[e.section] ?? e.section}] ${e.body}`),
     [clientKnowledge],
   );

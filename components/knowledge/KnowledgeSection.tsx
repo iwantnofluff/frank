@@ -12,6 +12,7 @@ import { KnowledgeFilePreviewModal } from "@/components/knowledge/KnowledgeFileP
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { KNOWLEDGE_FILE_EXTENSIONS } from "@/lib/knowledge-file-validation";
 import { errorMessage } from "@/lib/errors";
+import { isPendingNote } from "@/lib/knowledge-sections";
 
 // Kind colours and marks: the prototype's own KBCOL/KBICO
 // (frank-prototype.html), as Settings' Reference Material uses.
@@ -162,7 +163,11 @@ export function KnowledgeSection({
             </span>
             <span className="kb-b">
               <b>{entry.title}</b>
-              {entry.kind === "text" && entry.body && <span className="body">{entry.body}</span>}
+              {/* A default note still to write reads Pending in red, as the
+                  table's empty cells do (phase172). */}
+              {entry.kind === "text" && entry.body && (
+                <span className={isPendingNote(entry) ? "body kb-pending" : "body"}>{entry.body}</span>
+              )}
               {entry.kind === "link" && entry.url && (
                 <span className="note">
                   <a className="reflink" href={entry.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>

@@ -278,10 +278,11 @@ export const HELP_ARTICLES: HelpArticle[] = [
     summary: "Tone of voice, audience, research and more, for better copy and checks.",
     blocks: [
       { kind: "p", text: "A client's Knowledge is in its [Client Settings](client:/settings/details), under [Knowledge → Discovery](client:/settings/knowledge). It has nine areas, from About (who the client is) to Moodboard and References." },
+      { kind: "p", text: "Every client starts with notes to fill in, each reading Pending (in red) until it's written: Primary TG and Secondary TG under Target Audience, and Copy Do's, Copy Don'ts, Creative Do's and Creative Don'ts under Client Rules. Edit one to write it. Frank leaves a note out of everything it writes and checks while it still reads Pending." },
       { kind: "p", text: "The more of them are filled in, the more [Draft with Frank](help:write-with-claude) and [the checks](help:plan-posts) can draw on. An area with nothing in it yet says Content pending." },
       {
         kind: "p",
-        text: "Its Tone of Voice, Target Audience and Prioritised Features also show on [the client's page](client:), under Strategy Overview, with [this month's strategy](client:/settings/strategy) beside them, so the brand is in front of you before you start. See All opens that area here.",
+        text: "Its Tone of Voice, Target Audience and Prioritised Features also show on [the client's page](client:), under Strategy Overview, with [the latest month's strategy](client:/settings/strategy) beside them (a month still to come, if that's the latest written; its arrows step through the others), so the brand is in front of you before you start. See All opens that area here.",
       },
       { kind: "p", text: "Each of those boxes is a short overview Frank writes from everything in it, in a few paragraphs, as a snapshot. A longer one fades at the foot of its box; hover over it to read it in full." },
       { kind: "p", text: "When something in it changes, Frank rewrites that box the next time someone on the team opens the client; until then the last one stays up." },

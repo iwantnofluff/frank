@@ -191,3 +191,45 @@ test("the boxes show their overviews, and only a changed one is asked for again"
   expect(cs.status()).toBe(403);
   await ctx.close();
 });
+
+// The month box opens on the latest month with a strategy, even one to come,
+// and its arrows step through the others (direct instruction, 28 Nov 2026).
+test("the strategy box opens on the latest month and steps through the others", async ({ page, frank }) => {
+  const m = (d: number) => {
+    const x = new Date();
+    x.setUTCDate(1);
+    x.setUTCMonth(x.getUTCMonth() + d);
+    return x.toISOString().slice(0, 8) + "01";
+  };
+  await admin
+    .from("client_monthly_strategies")
+    .insert([-1, 2].map((d) => ({ agency_id: frank.agencyId, client_id: frank.clientId, month: m(d), objective: `Objective ${d}` })));
+  await page.route("**/api/ai/strategy-overview", (r) => r.fulfill({ status: 502, json: { error: "Not in tests" } }));
+  await frank.loginAsStaff(page);
+  await page.goto(APP_URL + "/clients/" + frank.clientId);
+  const box = page.locator(".brandrem-box").nth(3);
+  await expect(box).toContainText("Objective 2", { timeout: 20_000 });
+  const prev = box.getByRole("button", { name: "Previous month's strategy" }).first();
+  const next = box.getByRole("button", { name: "Next month's strategy" }).first();
+  await expect(next).toBeDisabled();
+  await prev.click();
+  await expect(box).toContainText("Objective -1");
+  await expect(prev).toBeDisabled();
+  await next.click();
+  await expect(box).toContainText("Objective 2");
+});
+
+// A default note still reading Pending (phase172) isn't the brand: its box
+// says there's nothing yet, and Frank isn't asked to write from it.
+test("a box whose notes are all Pending says nothing's there yet", async ({ page, frank }) => {
+  const asked: string[] = [];
+  await page.route("**/api/ai/strategy-overview", async (r) => {
+    asked.push(JSON.parse(r.request().postData() ?? "{}").section);
+    await r.fulfill({ status: 502, json: {} });
+  });
+  await frank.loginAsStaff(page);
+  await page.goto(APP_URL + "/clients/" + frank.clientId);
+  await expect(page.locator(".brandrem-box", { hasText: "Target Audience" })).toContainText("Nothing here yet.", { timeout: 20_000 });
+  await page.waitForTimeout(1000);
+  expect(asked).not.toContain("audience");
+});

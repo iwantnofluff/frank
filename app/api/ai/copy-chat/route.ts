@@ -18,6 +18,7 @@ import {
 import { monthOf, strategyForPrompt, type StrategyFields } from "@/lib/monthly-strategy";
 import { COPY_FIELD_LABELS, copyFieldsFor, formatsLabel, hasVideoFormat, postFormats } from "@/lib/formats";
 import { clientContext, loadKnowledgeFiles } from "@/lib/ai/client-context";
+import { isPendingNote } from "@/lib/knowledge-sections";
 
 const fail = (error: string, status: number) => NextResponse.json({ error }, { status });
 
@@ -164,7 +165,8 @@ export async function POST(request: Request) {
     .join("\n\n");
   const textNotes = (rows: Row[] | null) =>
     (rows ?? [])
-      .filter((e) => e.kind === "text" && typeof e.body === "string" && (e.body as string).trim())
+      // Not a note still reading Pending (phase172).
+      .filter((e) => e.kind === "text" && typeof e.body === "string" && (e.body as string).trim() && !isPendingNote(e as { kind: string; body: string }))
       .map((e) => ({ title: e.title as string, body: (e.body as string).trim() }));
 
   // Files: PDFs and images, within the caps.

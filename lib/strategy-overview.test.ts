@@ -49,3 +49,14 @@ test("Prioritised Features is a numbered list: its items read without numbers; p
   assert.notEqual(overviewHash("x", "features"), overviewHash("x", "tone"));
   assert.equal(overviewHash("x", "tone"), overviewHash("x"));
 });
+
+test("a note still reading Pending isn't written from", () => {
+  assert.equal(sectionSource([{ kind: "text", title: "Primary TG", body: "Pending" }]), "");
+  assert.equal(
+    sectionSource([
+      { kind: "text", title: "Primary TG", body: " pending " },
+      { kind: "text", title: "Secondary TG", body: "Parents of toddlers." },
+    ]),
+    "Secondary TG: Parents of toddlers.",
+  );
+});

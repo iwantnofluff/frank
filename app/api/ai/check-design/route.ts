@@ -7,7 +7,7 @@ import { modelById } from "@/lib/ai/models";
 import { buildDesignCheckPrompt, designCheckFindings } from "@/lib/ai/build-design-check-prompt";
 import { CREATIVE_VERSIONS_SELECT, versionSlides, type CreativeVersionRow } from "@/lib/creative-queries";
 import { frameLimits, postFormats } from "@/lib/formats";
-import { KNOWLEDGE_SECTIONS } from "@/lib/knowledge-sections";
+import { KNOWLEDGE_SECTIONS, isPendingNote } from "@/lib/knowledge-sections";
 
 // This check's limit for all its images together, so one check's request
 // (and what it costs against the cap) stays predictable.
@@ -159,7 +159,7 @@ export async function POST(request: Request) {
     ? await supabase.from("knowledge_entries").select("section, body").eq("client_id", clientId).eq("kind", "text")
     : { data: [] as { section: string; body: string | null }[] };
   const brandNotes = (notes ?? [])
-    .filter((n) => n.body?.trim())
+    .filter((n) => n.body?.trim() && !isPendingNote(n))
     .map((n) => `[${SECTION_LABELS[n.section] ?? n.section}] ${n.body!.trim()}`);
 
   const prompt = buildDesignCheckPrompt({ noun, slides: shown, earlier, hasLogo, brandNotes });

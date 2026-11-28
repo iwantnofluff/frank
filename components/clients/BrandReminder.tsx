@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   useKnowledgeEntries,
@@ -13,6 +13,7 @@ import {
   type StrategyOverviewRow,
 } from "@/hooks/use-strategy-overviews";
 import { filledFields, monthOf } from "@/lib/monthly-strategy";
+import { isPendingNote } from "@/lib/knowledge-sections";
 import {
   isListSection,
   monthBoxLabel,
@@ -64,7 +65,9 @@ export function BrandReminder({
       </div>
       <div className="brandrem-grid">
         {BOXES.map((b) => {
-          const list = (entries ?? []).filter((e) => e.section === b.key);
+          // Not a note still reading Pending (phase172): until one's
+          // written, the box says there's nothing yet.
+          const list = (entries ?? []).filter((e) => e.section === b.key && !isPendingNote(e));
           const head = (
             <div className="brandrem-h">
               <b>{b.label}</b>
@@ -187,7 +190,10 @@ function Overview({
   return <>{fallback}</>;
 }
 
-// This month's strategy: its filled fields, the first few lines of each.
+// A month's strategy: its filled fields, the first few lines of each.
+// Opens on the latest month with one, even one still to come, and steps
+// through the others with its arrows (direct instruction, 28 Nov 2026);
+// with none, this month.
 function ThisMonth({
   clientId,
   canEdit,
@@ -199,7 +205,16 @@ function ThisMonth({
   query: ReturnType<typeof useMonthlyStrategies>;
   overviews: StrategyOverviewRow[] | undefined;
 }) {
-  const month = monthOf(new Date(query.dataUpdatedAt || 0));
+  // The months written, oldest first: not archived ones, as the Strategy
+  // page's Active list.
+  const months = (query.data ?? [])
+    .filter((r) => !r.archived_at && filledFields(r).length > 0)
+    .map((r) => r.month)
+    .sort();
+  const [picked, setPicked] = useState<string | null>(null);
+  const month =
+    picked && months.includes(picked) ? picked : (months[months.length - 1] ?? monthOf(new Date(query.dataUpdatedAt || 0)));
+  const at = months.indexOf(month);
   const row = query.data?.find((r) => r.month === month);
   const filled = filledFields(row);
   const href = `/clients/${clientId}/settings/strategy`;
@@ -207,6 +222,30 @@ function ThisMonth({
     <div className="brandrem-h">
       {/* "Oct 2026 Strategy" here only (direct instruction). */}
       <b>{query.data ? monthBoxLabel(month) : "This Month"}</b>
+      {months.length > 1 && (
+        <span className="brandrem-step">
+          <button
+            type="button"
+            aria-label="Previous month's strategy"
+            disabled={at <= 0}
+            onClick={() => setPicked(months[at - 1])}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            aria-label="Next month's strategy"
+            disabled={at < 0 || at >= months.length - 1}
+            onClick={() => setPicked(months[at + 1])}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          </button>
+        </span>
+      )}
       {filled.length > 0 && (
         <Link href={href} className="brandrem-all">
           See All
@@ -231,6 +270,7 @@ function ThisMonth({
         </p>
       ) : (
         <Overview
+          key={month}
           clientId={clientId}
           section={monthSection(month)}
           head={head}

@@ -13,6 +13,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "1.118.0",
+    date: "2026-11-28",
+    title: "Client Rules and default notes",
+    changes: [
+      "Discovery's Protected Terms is now Client Rules.",
+      "Every client starts with Copy Do's, Copy Don'ts, Creative Do's and Creative Don'ts under Client Rules, and Primary TG and Secondary TG under Target Audience, each Pending until written. Frank leaves out a note while it's Pending.",
+      "On a client's page, the Strategy box opens on the latest month with a strategy, with arrows to step through the others.",
+    ],
+  },
+  {
     version: "1.117.0",
     date: "2026-11-28",
     title: "Help for what clients see",

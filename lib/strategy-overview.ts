@@ -1,4 +1,5 @@
 import { filledFields, monthLabel, type StrategyFields } from "./monthly-strategy.ts";
+import { isPendingNote } from "./knowledge-sections.ts";
 
 // The overview in each Strategy box on a client's page (phase83, decided
 // directly): what it's written from, and a fingerprint of that, worked out
@@ -22,6 +23,8 @@ export interface OverviewEntry {
 // file or picture by its name only (Frank can't read those here).
 export function sectionSource(entries: OverviewEntry[]): string {
   return entries
+    // Not one still reading Pending (phase172).
+    .filter((e) => !isPendingNote(e))
     .map((e) => {
       const title = e.title?.trim();
       if (e.kind === "text" && e.body?.trim()) return title ? `${title}: ${e.body.trim()}` : e.body.trim();

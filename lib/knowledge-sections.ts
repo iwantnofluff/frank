@@ -9,8 +9,18 @@ export const KNOWLEDGE_SECTIONS = [
   { key: "brand_research", label: "Brand Research" },
   { key: "products", label: "Products and Services" },
   { key: "brands_admired", label: "Brands They Look Up To" },
-  { key: "protected_terms", label: "Protected Terms" },
+  // Client Rules (direct instruction, 28 Nov 2026; was Protected Terms):
+  // the key stays, so existing notes and proofreading keep working.
+  { key: "protected_terms", label: "Client Rules" },
   { key: "moodboard", label: "Moodboard and References" },
 ] as const;
 
 export type KnowledgeSectionKey = (typeof KNOWLEDGE_SECTIONS)[number]["key"];
+
+// A note still to be written: every client starts with some reading
+// "Pending" (phase172). Frank skips them, so nothing it writes or checks
+// leans on a placeholder.
+export const PENDING_NOTE = "Pending";
+export function isPendingNote(entry: { kind?: string | null; body?: string | null }): boolean {
+  return (entry.kind ?? "text") === "text" && (entry.body ?? "").trim().toLowerCase() === "pending";
+}

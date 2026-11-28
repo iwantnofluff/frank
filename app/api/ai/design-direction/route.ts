@@ -13,6 +13,7 @@ import { fetchImage, readPreview } from "@/lib/link-fetch";
 import { fetchableUrl } from "@/lib/link-preview";
 import { monthOf, strategyForPrompt, type StrategyFields } from "@/lib/monthly-strategy";
 import { COPY_FIELD_LABELS, formatsLabel, frameLimits, hasVideoFormat, postFormats } from "@/lib/formats";
+import { isPendingNote } from "@/lib/knowledge-sections";
 
 const fail = (error: string, status: number) => NextResponse.json({ error }, { status });
 
@@ -309,7 +310,8 @@ export async function POST(request: Request) {
     .join("\n\n");
   const textNotes = (rows: Row[] | null) =>
     (rows ?? [])
-      .filter((e) => e.kind === "text" && typeof e.body === "string" && (e.body as string).trim())
+      // Not a note still reading Pending (phase172).
+      .filter((e) => e.kind === "text" && typeof e.body === "string" && (e.body as string).trim() && !isPendingNote(e as { kind: string; body: string }))
       .map((e) => ({ title: e.title as string, body: (e.body as string).trim() }));
 
   // The copy as it is in the window, else the post's latest version.

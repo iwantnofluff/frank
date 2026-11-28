@@ -4,6 +4,7 @@ import { runAiTask } from "@/lib/ai/run-ai-task";
 import { COPY_FIELD_LABELS } from "@/lib/formats";
 import { buildProofreadPrompt, paragraphSuggestions, parseProofread, type ProofreadSuggestion } from "@/lib/proofread";
 import { aiRules, checkedApart, proofreadField, resolveRules, type ProofreadRuleRow } from "@/lib/proofread-rules";
+import { isPendingNote } from "@/lib/knowledge-sections";
 
 // Proofreads a version just saved (phase121, direct instruction): a copy
 // version, or one Production field's version. The words are read here, from
@@ -96,10 +97,11 @@ export async function POST(request: Request) {
       : Promise.resolve({ data: [] as { section: string; title: string | null; body: string | null }[] }),
   ]);
   const rules = resolveRules((ruleRows ?? []) as ProofreadRuleRow[]);
-  const entries = knowledge ?? [];
+  // Not a note still reading Pending (phase172).
+  const entries = (knowledge ?? []).filter((e) => !isPendingNote(e));
   const line = (t: { title: string | null; body: string | null }, max: number) => [t.title, t.body].filter(Boolean).join(": ").slice(0, max);
   const tone = entries.filter((e) => e.section === "tone").slice(0, 10).map((t) => line(t, 600)).filter(Boolean);
-  // How the brand writes its names: Protected Terms first, then its
+  // How the brand writes its names: Client Rules first, then its
   // products and About, kept short.
   const names = [project?.clients?.name ?? null, ...["protected_terms", "products", "about"].flatMap((sec) => entries.filter((e) => e.section === sec).map((e) => line(e, 300)))]
     .filter((n): n is string => !!n)
